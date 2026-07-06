@@ -1,22 +1,17 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { Plugin } from "vite";
-import { extractTailwindUtilitiesLayer } from "./parse-css.js";
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { Plugin } from 'vite';
+import { extractTailwindUtilitiesLayer } from './parse-css.js';
 
 interface VertesiaPluginBuilderOptions {
-    inlineCss?: boolean,
+    inlineCss?: boolean;
     cssVar?: string;
     // the input file. defaults to src/index.css
     input?: string;
     // the output file name. Defaults to plugin.css
     output?: string;
 }
-export function vertesiaPluginBuilder({
-    inlineCss,
-    cssVar,
-    input,
-    output,
-}: VertesiaPluginBuilderOptions = {}) {
+export function vertesiaPluginBuilder({ inlineCss, cssVar, input, output }: VertesiaPluginBuilderOptions = {}) {
     const CSS_VAR = cssVar || 'css';
     if (!input) input = 'src/index.css';
     if (!output) output = 'plugin.css';
@@ -55,24 +50,33 @@ export function vertesiaPluginBuilder({
             for (const chunk of Object.values(bundle)) {
                 if (chunk.type === 'chunk' && chunk.code) {
                     chunk.imports = chunk.imports.filter((entry) => !entry.endsWith(virtualChunkFileName));
-                    chunk.dynamicImports = chunk.dynamicImports.filter((entry) => !entry.endsWith(virtualChunkFileName));
+                    chunk.dynamicImports = chunk.dynamicImports.filter(
+                        (entry) => !entry.endsWith(virtualChunkFileName),
+                    );
                 }
             }
         },
         writeBundle(this, options, bundle) {
             if (!inlineCss) return;
             // Look for the generated CSS file in the output directory
-            const keys = Object.keys(bundle).filter(k => k === output);
+            const keys = Object.keys(bundle).filter((k) => k === output);
             if (keys.length === 1) {
                 const asset = bundle[jsOutput];
                 if (asset) {
-                    const cssContent = readFileSync(join(options.dir!, output), 'utf8')
+                    const outputDir = options.dir;
+                    if (!outputDir) {
+                        throw new Error('inlineCss requires Rollup output.dir to be set');
+                    }
+                    const cssContent = readFileSync(join(outputDir, output), 'utf8');
                     if (cssContent) {
                         const exportedContent = extractTailwindUtilitiesLayer(cssContent);
                         if (exportedContent) {
-                            const jsFile = join(options.dir!, jsOutput);
+                            const jsFile = join(outputDir, jsOutput);
                             const jsContent = readFileSync(jsFile, 'utf8');
-                            writeFileSync(jsFile, `${jsContent}\nexport const ${CSS_VAR} = \`\n${exportedContent}\n\`;\n`);
+                            writeFileSync(
+                                jsFile,
+                                `${jsContent}\nexport const ${CSS_VAR} = \`\n${exportedContent}\n\`;\n`,
+                            );
                         }
                     }
                 }

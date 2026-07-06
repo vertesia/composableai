@@ -1,2 +1,0 @@
-ui: npx vite dev
-server: npm run build:server && node ./lib/server-node.js

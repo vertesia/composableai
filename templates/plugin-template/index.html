@@ -1,21 +1,32 @@
 <!doctype html>
-<html lang="en" class="bg-background">
+<html lang="en" dir="ltr" class="bg-background">
 
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{PLUGIN_TITLE}}</title>
-  <script type="importmap">
-      {
-        "imports": {
-          "react": "https://esm.sh/react@19.1.2",
-          "react-dom": "https://esm.sh/react-dom@19.1.2",
-          "react-dom/client": "https://esm.sh/react-dom@19.1.2/client",
-          "react/jsx-runtime": "https://esm.sh/react@19.1.2/jsx-runtime"
-        }
-      }
-    </script>
+  <script>
+    // Apply language + dir before the React bundle loads to avoid an LTR-to-RTL
+    // flash. Must mirror the resolution logic in
+    // @vertesia/ui/i18n's resolveLanguage / isRTL utilities.
+    (function () {
+      try {
+        var supported = ['ar','de','en','es','fr','it','ja','ko','pt','ru','tr','zh','zh-TW'];
+        var rtl = ['ar','he','fa','ur'];
+        var stored = localStorage.getItem('vertesia-ui-language');
+        var navLng = (navigator.language || 'en');
+        var raw = stored || navLng;
+        var lng = supported.indexOf(raw) >= 0
+          ? raw
+          : (supported.indexOf(raw.split('-')[0]) >= 0 ? raw.split('-')[0] : 'en');
+        document.documentElement.lang = lng;
+        document.documentElement.dir = rtl.indexOf(lng.split('-')[0]) >= 0 ? 'rtl' : 'ltr';
+      } catch (_e) {}
+    })();
+  </script>
+  <!-- vertesia-react-importmap -->
+  <!-- vertesia-stale-asset-recovery -->
 </head>
 
 <body>

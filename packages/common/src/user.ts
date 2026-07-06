@@ -1,10 +1,9 @@
-import { ApiKey } from "./apikey.js";
-import { ProjectRoles } from "./project.js";
+import type { ApiKey } from './apikey.js';
+import type { ProjectRef, SystemRoles } from './project.js';
 
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];
 }
-
 
 export interface User {
     id: string;
@@ -19,8 +18,13 @@ export interface User {
     last_selected_account?: string;
     source?: 'firebase' | 'scim';
     updated_by?: string;
+    /** Custom properties for dynamic permission matching */
+    properties?: Record<string, unknown>;
+    /** BLP clearance level — determines max document sensitivity the user can access */
+    clearance?: number;
+    /** Compartments the user belongs to — restricts access to documents in matching compartments */
+    compartments?: string[];
 }
-
 
 export interface UpdateUserPayload {
     name?: string;
@@ -29,8 +33,10 @@ export interface UpdateUserPayload {
     language?: string;
     phone?: string;
     last_selected_account?: string;
+    properties?: Record<string, unknown>;
+    clearance?: number;
+    compartments?: string[];
 }
-
 
 export interface UserRef {
     id: string;
@@ -39,18 +45,17 @@ export interface UserRef {
     picture?: string;
 }
 
-export const UserRefPopulate = "id name email picture";
+export const UserRefPopulate = 'id name email picture';
 
 export enum Datacenters {
     aws = 'aws',
     gcp = 'gcp',
-    azure = 'azure'
+    azure = 'azure',
 }
-
 
 export enum BillingMethod {
     stripe = 'stripe',
-    invoice = 'invoice'
+    invoice = 'invoice',
 }
 
 export enum AccountType {
@@ -59,7 +64,7 @@ export enum AccountType {
     free = 'free',
     customer = 'customer',
     prospect = 'prospect',
-    unknown = 'unknown'
+    unknown = 'unknown',
 }
 
 export interface AccountBilling {
@@ -67,6 +72,33 @@ export interface AccountBilling {
     stripe_customer_id?: string;
 }
 
+/**
+ * Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota`
+ * (`QUOTA_TIERS`); these names must match its keys.
+ * - `standard` — protective baseline limits (the default for most accounts).
+ * - `enterprise` — high limits for contracted customers / internal / partners.
+ *
+ * An account with no explicit `quota_tier` derives its tier from its `account_type`.
+ */
+export enum QuotaTier {
+    standard = 'standard',
+    enterprise = 'enterprise',
+}
+
+/**
+ * Default tier for an account that has no explicit `quota_tier`, derived from its `account_type`:
+ * contracted customers and internal Vertesia accounts get `enterprise`; everyone else (partner,
+ * free, prospect, unknown) gets the protective `standard` baseline.
+ */
+export function quotaTierForAccountType(accountType: AccountType | undefined | null): QuotaTier {
+    switch (accountType) {
+        case AccountType.customer:
+        case AccountType.vertesia:
+            return QuotaTier.enterprise;
+        default:
+            return QuotaTier.standard;
+    }
+}
 
 export interface Account {
     id: string;
@@ -75,8 +107,8 @@ export interface Account {
     email_domains: string[];
 
     onboarding: {
-        completed: boolean,
-        completed_at: Date,
+        completed: boolean;
+        completed_at: Date;
     };
 
     datacenter: string;
@@ -85,41 +117,52 @@ export interface Account {
 
     billing: AccountBilling;
 
+    /** Quota/rate-limit tier. Unset → the deployment default tier (env `QUOTA_BASE_TIER`). */
+    quota_tier?: QuotaTier;
+
     created_by: string;
     updated_by: string;
     created_at: string;
     updated_at: string;
 }
 
-
 export interface UpdateAccountPayload {
     name?: string;
     email_domains?: string[];
     billing?: AccountBilling;
+    quota_tier?: QuotaTier;
 }
-
 
 export interface AccountRef {
     id: string;
     name: string;
 }
 
-export const AccountRefPopulate = "id name";
+export const AccountRefPopulate = 'id name';
 
 export interface InviteUserRequestPayload {
     email: string;
-    role: ProjectRoles;
+    role: SystemRoles;
 }
-
 
 export interface InviteUserResponsePayload {
     action: 'invited' | 'added';
 }
 
+export interface InviteAcceptanceResponse {
+    status: 'added';
+}
 
+export interface InviteDeclineResponse {
+    status: 'deleted';
+}
+
+export interface AccountProjectsResponse {
+    data: ProjectRef[];
+}
 
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
-type SessionType<T extends User | ApiKey> = T extends User ? "user" : "apikey";
+type SessionType<T extends User | ApiKey> = T extends User ? 'user' : 'apikey';
 export interface SessionInfo<T extends User | ApiKey> {
     isNew?: boolean;
     type: SessionType<T>;
@@ -130,18 +173,15 @@ export interface SessionInfo<T extends User | ApiKey> {
     accounts: AccountRef[];
 }
 
-
-export interface UserSessionInfo extends SessionInfo<User> { }
-export interface ApiKeySessionInfo extends SessionInfo<ApiKey> { }
+export interface UserSessionInfo extends SessionInfo<User> {}
+export interface ApiKeySessionInfo extends SessionInfo<ApiKey> {}
 
 export interface OnboardingProgress {
-    interactions: boolean,
-    prompts: boolean,
-    environments: boolean,
-    default_environment_defined: boolean
+    interactions: boolean;
+    prompts: boolean;
+    environments: boolean;
+    default_environment_defined: boolean;
 }
-
-
 
 /**
  * Data collected at signup
@@ -154,7 +194,6 @@ export interface SignupData {
     companyWebsite?: string;
     maturity?: string;
 }
-
 
 /**
  * Signup Payload: used to create a new user

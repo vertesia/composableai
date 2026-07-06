@@ -6,37 +6,33 @@
  * 3. Here we export the API to be used to validate workflows and the types required to create workflow TS definitions.
  */
 
+export * from './activities/advanced/createDocumentTypeFromInteractionRun.js';
+export * from './activities/advanced/createOrUpdateDocumentFromInteractionRun.js';
+export * from './activities/advanced/updateDocumentFromInteractionRun.js';
+export * from './activities/chunkDocument.js';
+export * from './activities/detectDocumentLanguage.js';
+export * from './activities/executeInteraction.js';
+export * from './activities/extractDocumentText.js';
+export * from './activities/generateDocumentProperties.js';
+export * from './activities/generateEmbeddings.js';
+export * from './activities/generateOrAssignContentType.js';
+export * from './activities/media/prepareAudio.js';
+export * from './activities/media/prepareVideo.js';
+export * from './activities/notifyWebhook.js';
+export * from './activities/rateLimiter.js';
+export * from './activities/renditions/generateImageRendition.js';
+export * from './activities/renditions/generateVideoRendition.js';
+export * from './activities/setDocumentStatus.js';
+export * from './conversion/image.js';
 //TODO remove this - it is only for backward compat - iot is used from old workflows
-export { dslWorkflow } from "./dsl/dsl-workflow.js";
-export * from "./iterative-generation/iterativeGenerationWorkflow.js";
-
-export * from "./activities/advanced/createDocumentTypeFromInteractionRun.js";
-export * from "./activities/advanced/createOrUpdateDocumentFromInteractionRun.js";
-export * from "./activities/advanced/updateDocumentFromInteractionRun.js";
-export * from "./activities/chunkDocument.js";
-export * from "./activities/executeInteraction.js";
-export * from "./activities/extractDocumentText.js";
-export * from "./activities/generateDocumentProperties.js";
-export * from "./activities/generateEmbeddings.js";
-export * from "./activities/generateOrAssignContentType.js";
-export * from "./activities/media/prepareAudio.js";
-export * from "./activities/media/prepareVideo.js";
-export * from "./activities/notifyWebhook.js";
-export * from "./activities/rateLimiter.js";
-export * from "./activities/renditions/generateImageRendition.js";
-export * from "./activities/renditions/generateVideoRendition.js";
-export * from "./activities/setDocumentStatus.js";
-export * from "./iterative-generation/activities/index.js";
-
-export * from "./dsl/setup/ActivityContext.js";
-export * from "./errors.js";
-export * from "./result-types.js";
-export * from "./utils/blobs.js";
-export * from "./utils/client.js";
-export * from "./utils/memory.js";
-export * from "./utils/renditions.js";
-export * from "./utils/storage.js";
-export * from "./utils/text-preview-utils.js";
-export * from "./utils/tokens.js";
-
-export * from "./conversion/image.js";
+export { dslWorkflow } from './dsl/dsl-workflow.js';
+export * from './dsl/setup/ActivityContext.js';
+export * from './errors.js';
+export * from './result-types.js';
+export * from './utils/activity-info.js';
+export * from './utils/blobs.js';
+export * from './utils/client.js';
+export * from './utils/renditions.js';
+export * from './utils/storage.js';
+export * from './utils/text-preview-utils.js';
+export * from './utils/tokens.js';

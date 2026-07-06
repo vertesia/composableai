@@ -1,35 +1,50 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import {
-    AsyncExecutionPayload, ComputeInteractionFacetPayload, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload,
+import { ApiTopic, type ClientBase, type IRequestParams, ServerError } from '@vertesia/api-fetch-client';
+import type {
+    AsyncExecutionPayload,
+    AsyncExecutionResult,
+    ComputedFacetResponse,
+    ComputeInteractionFacetPayload,
+    DeleteByIdResult,
+    GeneratedInteractionDefinition,
+    GeneratedTestDataRecord,
+    GenerateInteractionPayload,
+    GenerateTestDataPayload,
+    ImprovePromptPayload,
     ImprovePromptPayloadConfig,
-    Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery,
-    InteractionExecutionPayload, InteractionForkPayload,
-    InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery,
-    InteractionsExportPayload, InteractionTags, InteractionUpdatePayload,
-    RateLimitRequestPayload, RateLimitRequestResponse, ResolvedInteractionExecutionInfo
-} from "@vertesia/common";
-import { VertesiaClient } from "./client.js";
-import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
-import { InteractionCatalogApi } from "./InteractionCatalogApi.js";
-import { EnhancedExecutionRun, EnhancedInteractionExecutionResult, enhanceExecutionRun, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
+    Interaction,
+    InteractionCreatePayload,
+    InteractionDeletePayload,
+    InteractionEndpoint,
+    InteractionEndpointQuery,
+    InteractionExecutionPayload,
+    InteractionForkPayload,
+    InteractionPublishPayload,
+    InteractionRef,
+    InteractionRefWithSchema,
+    InteractionSearchPayload,
+    InteractionSearchQuery,
+    InteractionsExportPayload,
+    InteractionTags,
+    InteractionUpdatePayload,
+    PromptImprovementResponse,
+    RateLimitRequestPayload,
+    RateLimitRequestResponse,
+    ResolvedInteractionExecutionInfo,
+} from '@vertesia/common';
+import type { VertesiaClient } from './client.js';
+import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from './execute.js';
+import { InteractionCatalogApi } from './InteractionCatalogApi.js';
+import { type EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from './InteractionOutput.js';
 
-export interface ComputeInteractionFacetsResponse {
-    tags?: { _id: string, count: number }[];
-    status?: { _id: string, count: number }[];
-    total?: { count: number }[];
-}
-
-export interface AsyncExecutionResult {
-    runId: string;
-    workflowId: string;
-    agentRunId?: string;
+function hasIdPayload(payload: unknown): payload is { id: string } {
+    return !!payload && typeof payload === 'object' && 'id' in payload && typeof payload.id === 'string';
 }
 
 export default class InteractionsApi extends ApiTopic {
     catalog: InteractionCatalogApi;
 
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/interactions");
+        super(parent, '/api/v1/interactions');
         this.catalog = new InteractionCatalogApi(parent);
     }
 
@@ -38,21 +53,22 @@ export default class InteractionsApi extends ApiTopic {
      * @returns InteractionRef[]
      **/
     list(payload: InteractionSearchPayload = {}): Promise<InteractionRef[]> {
-        const query = payload.query || {} as InteractionSearchQuery;
+        const query = payload.query || ({} as InteractionSearchQuery);
 
-        return this.get("/", {
+        return this.get('/', {
             query: {
-                ...query
-            }
+                ...query,
+            },
         });
     }
+
     /**
      * Find interactions given a mongo match query.
      * You can also specify if prompts schemas are included in the result
      */
     listEndpoints(payload: InteractionEndpointQuery): Promise<InteractionEndpoint[]> {
-        return this.post("/endpoints", {
-            payload
+        return this.post('/endpoints', {
+            payload,
         });
     }
 
@@ -71,21 +87,21 @@ export default class InteractionsApi extends ApiTopic {
      * @returns InteractionTags[]
      **/
     listTags(query?: InteractionSearchQuery): Promise<InteractionTags[]> {
-        return this.get("/tags", {
+        return this.get('/tags', {
             query: {
-                ...query
-            }
+                ...query,
+            },
         });
     }
 
     /**
      * Get the list of all interactions facets
      * @param payload query payload to filter facet search
-     * @returns ComputeInteractionFacetsResponse[]
+     * @returns ComputedFacetResponse
      **/
-    computeFacets(query: ComputeInteractionFacetPayload): Promise<ComputeInteractionFacetsResponse> {
-        return this.post("/facets", {
-            payload: query
+    computeFacets(query: ComputeInteractionFacetPayload): Promise<ComputedFacetResponse> {
+        return this.post('/facets', {
+            payload: query,
         });
     }
 
@@ -93,7 +109,7 @@ export default class InteractionsApi extends ApiTopic {
      * List interaction names in the current project
      * @returns
      */
-    listNames(): Promise<{ id: string, name: string }[]> {
+    listNames(): Promise<{ id: string; name: string }[]> {
         return this.get('/names');
     }
 
@@ -115,7 +131,7 @@ export default class InteractionsApi extends ApiTopic {
      **/
     create(payload: InteractionCreatePayload): Promise<Interaction> {
         return this.post('/', {
-            payload
+            payload,
         });
     }
 
@@ -140,8 +156,23 @@ export default class InteractionsApi extends ApiTopic {
      **/
     update(id: string, payload: InteractionUpdatePayload): Promise<Interaction> {
         return this.put(`/${id}`, {
-            payload
+            payload,
         });
+    }
+
+    /**
+     * Delete an interaction. Pass `{ cascade: true }` to also delete every interaction in the
+     * target's family — see {@link InteractionDeletePayload}.
+     *
+     * The signature must stay assignment-compatible with the inherited
+     * `ApiTopic.delete(path, params)`, so the parameter is `IRequestParams & InteractionDeletePayload`.
+     * Callers can keep passing only the payload (`{ cascade: true }`); IRequestParams fields are all
+     * optional.
+     */
+    delete(id: string, payload?: IRequestParams & InteractionDeletePayload): Promise<DeleteByIdResult> {
+        const { cascade, query, ...rest } = payload ?? {};
+        const mergedQuery = cascade ? { ...(query ?? {}), cascade: 'true' } : (query ?? undefined);
+        return super.delete(`/${id}`, { ...rest, query: mergedQuery }) as Promise<DeleteByIdResult>;
     }
 
     /**
@@ -160,15 +191,20 @@ export default class InteractionsApi extends ApiTopic {
      * @throws 500 if interaction execution fails
      * @throws 500 if interaction execution times out
      **/
-    async execute<ResultT = any, ParamsT = any>(id: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
-        const r = await executeInteraction<ParamsT>(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
-            if (err instanceof ServerError && err.payload?.id) {
-                throw err.updateDetails({ run_id: err.payload.id });
-            } else {
-                throw err;
-            }
-        });
+    async execute<ResultT = unknown, ParamsT = unknown>(
+        id: string,
+        payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void,
+    ): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
+        const r = await executeInteraction<ParamsT>(this.client as VertesiaClient, id, payload, onChunk).catch(
+            (err) => {
+                if (err instanceof ServerError && hasIdPayload(err.payload)) {
+                    throw err.updateDetails({ run_id: err.payload.id });
+                } else {
+                    throw err;
+                }
+            },
+        );
         return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
     }
 
@@ -187,10 +223,18 @@ export default class InteractionsApi extends ApiTopic {
      * @param onChunk
      * @returns
      */
-    async executeByName<ResultT = any, ParamsT = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
-        const r = await executeInteractionByName<ParamsT>(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
-            if (err instanceof ServerError && err.payload?.id) {
+    async executeByName<ResultT = unknown, ParamsT = unknown>(
+        nameWithTag: string,
+        payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void,
+    ): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
+        const r = await executeInteractionByName<ParamsT>(
+            this.client as VertesiaClient,
+            nameWithTag,
+            payload,
+            onChunk,
+        ).catch((err) => {
+            if (err instanceof ServerError && hasIdPayload(err.payload)) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
                 throw err;
@@ -210,34 +254,31 @@ export default class InteractionsApi extends ApiTopic {
 
     publish(id: string, payload: InteractionPublishPayload): Promise<Interaction> {
         return this.post(`/${id}/publish`, {
-            payload
+            payload,
         });
     }
 
     fork(id: string, payload: InteractionForkPayload): Promise<Interaction> {
         return this.post(`/${id}/fork`, {
-            payload
+            payload,
         });
     }
 
     /**
      * Generate Composable definition of an interaction
      **/
-    generateInteraction(id: string, payload: GenerateInteractionPayload): Promise<any[]> {
-
+    generateInteraction(id: string, payload: GenerateInteractionPayload): Promise<GeneratedInteractionDefinition[]> {
         return this.post(`${id}/generate-interaction`, {
-            payload
+            payload,
         });
-
     }
 
     /**
      * Generate Test Data for an interaction
      **/
-    generateTestData(id: string, payload: GenerateTestDataPayload): Promise<any[]> {
-
+    generateTestData(id: string, payload: GenerateTestDataPayload): Promise<GeneratedTestDataRecord[]> {
         return this.post(`${id}/generate-test-data`, {
-            payload
+            payload,
         });
     }
 
@@ -245,20 +286,17 @@ export default class InteractionsApi extends ApiTopic {
      * Suggest Improvement for a prompt
      * @deprecated use suggestPromptImprovements instead
      */
-    async suggestImprovements<ResultT = any, ParamsT = any>(id: string, payload: ImprovePromptPayloadConfig): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
-        const r = await this.post(`${id}/suggest-prompt-improvements`, {
-            payload
+    suggestImprovements(id: string, payload: ImprovePromptPayloadConfig): Promise<PromptImprovementResponse> {
+        return this.post(`${id}/suggest-prompt-improvements`, {
+            payload,
         });
-        return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
 
-    async suggestPromptImprovements<ResultT = any, ParamsT = any>(payload: ImprovePromptPayload): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
-        const r = await this.post(`/improve`, {
-            payload
+    suggestPromptImprovements(payload: ImprovePromptPayload): Promise<PromptImprovementResponse> {
+        return this.post(`/improve`, {
+            payload,
         });
-        return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
     }
-
 
     /**
      * List the versions of the interaction. Returns an empty array if no versions are found
@@ -301,15 +339,17 @@ export default class InteractionsApi extends ApiTopic {
      * @param options Optional environment and/or model to resolve with
      * @returns ResolvedInteractionExecutionInfo with the resolved environment and model
      */
-    resolve(nameOrId: string, options?: {
-        environment?: string;
-        model?: string;
-        hasImage?: boolean;
-        hasVideo?: boolean;
-    }): Promise<ResolvedInteractionExecutionInfo> {
+    resolve(
+        nameOrId: string,
+        options?: {
+            environment?: string;
+            model?: string;
+            hasImage?: boolean;
+            hasVideo?: boolean;
+        },
+    ): Promise<ResolvedInteractionExecutionInfo> {
         return this.get(`/resolve/${encodeURIComponent(nameOrId)}`, {
-            query: options
+            query: options,
         });
     }
-
 }

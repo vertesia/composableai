@@ -1,24 +1,32 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
-    AlterTablePayload,
-    CreateDataStorePayload,
-    CreateSnapshotPayload,
-    CreateTablesPayload,
-    DataSchema,
-    DataSchemaForAI,
-    DataStore,
+    type AlterTablePayload,
+    type BatchQueryResult,
+    type CreateDataStorePayload,
+    type CreateSnapshotPayload,
+    type CreateTablesPayload,
+    type DataSchema,
+    type DataSchemaForAI,
+    type DataStore,
     DataStoreApiHeaders,
-    DataStoreItem,
-    DataStoreVersion,
-    DataTable,
-    DataTableSummary,
-    ImportDataPayload,
-    ImportJob,
-    QueryPayload,
-    QueryResult,
-    UpdateSchemaPayload,
-} from "@vertesia/common";
-import { DashboardApi } from "./DashboardApi.js";
+    type DataStoreArchiveResult,
+    type DataStoreDownloadInfo,
+    type DataStoreItem,
+    type DataStoreMutateRowsPayload,
+    type DataStoreMutateRowsResult,
+    type DataStoreTableDetail,
+    type DataStoreTableDropResult,
+    type DataStoreVersion,
+    type DataTable,
+    type DataTableSummary,
+    type ImportDataPayload,
+    type ImportJob,
+    type QueryPayload,
+    type QueryResult,
+    type QueryValidationResult,
+    type UpdateSchemaPayload,
+} from '@vertesia/common';
+import { DashboardApi } from './DashboardApi.js';
 
 /**
  * Client API for managing versioned analytical data stores.
@@ -31,7 +39,7 @@ import { DashboardApi } from "./DashboardApi.js";
  */
 export class DataApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/data");
+        super(parent, '/api/v1/data');
     }
 
     /**
@@ -50,7 +58,7 @@ export class DataApi extends ApiTopic {
      * List all data stores in the project.
      */
     list(): Promise<DataStoreItem[]> {
-        return this.get("/");
+        return this.get('/');
     }
 
     /**
@@ -68,7 +76,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     create(payload: CreateDataStorePayload): Promise<DataStore> {
-        return this.post("/", { payload });
+        return this.post('/', { payload });
     }
 
     /**
@@ -89,7 +97,7 @@ export class DataApi extends ApiTopic {
      * @param id - Data store ID
      * @returns Object with the archived store ID
      */
-    delete(id: string): Promise<{ id: string }> {
+    delete(id: string): Promise<DataStoreArchiveResult> {
         return this.del(`/${id}`, { headers: this.storeHeaders(id) });
     }
 
@@ -204,7 +212,7 @@ export class DataApi extends ApiTopic {
      * @param sample - If true, includes sample rows
      * @returns The table with metadata and optional sample data
      */
-    getTable(id: string, tableName: string, sample?: boolean): Promise<DataTable & { sampleRows?: Record<string, unknown>[] }> {
+    getTable(id: string, tableName: string, sample?: boolean): Promise<DataStoreTableDetail> {
         const query = sample ? '?sample=true' : '';
         return this.get(`/${id}/tables/${tableName}${query}`, { headers: this.storeHeaders(id) });
     }
@@ -227,7 +235,7 @@ export class DataApi extends ApiTopic {
      * @param id - Data store ID
      * @param tableName - Table name
      */
-    dropTable(id: string, tableName: string): Promise<void> {
+    dropTable(id: string, tableName: string): Promise<DataStoreTableDropResult> {
         return this.del(`/${id}/tables/${tableName}`, { headers: this.storeHeaders(id) });
     }
 
@@ -247,7 +255,7 @@ export class DataApi extends ApiTopic {
      *
      * @example
      * ```typescript
-     * const job = await client.data.import(storeId, {
+     * const job = await client.data.importData(storeId, {
      *   mode: 'append',
      *   message: 'Monthly data import',
      *   tables: {
@@ -264,7 +272,7 @@ export class DataApi extends ApiTopic {
      * });
      * ```
      */
-    import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
+    importData(id: string, payload: ImportDataPayload): Promise<ImportJob> {
         return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
     }
 
@@ -383,6 +391,24 @@ export class DataApi extends ApiTopic {
         return this.post(`/${id}/query`, { payload, headers: this.storeHeaders(id) });
     }
 
+    queryBatch(id: string, queries: QueryPayload[]): Promise<BatchQueryResult> {
+        return this.post(`/${id}/query/batch`, { payload: { queries }, headers: this.storeHeaders(id) });
+    }
+
+    /**
+     * Execute a single row mutation statement against the data store.
+     *
+     * Only UPDATE and DELETE statements are accepted. The mutation is versioned
+     * and rolled back automatically if the statement or subsequent persistence fails.
+     *
+     * @param id - Data store ID
+     * @param payload - Mutation SQL and commit message
+     * @returns Resulting version ID and affected table row counts
+     */
+    mutateRows(id: string, payload: DataStoreMutateRowsPayload): Promise<DataStoreMutateRowsResult> {
+        return this.post(`/${id}/mutate`, { payload, headers: this.storeHeaders(id) });
+    }
+
     /**
      * Validate SQL queries without executing them.
      *
@@ -408,10 +434,7 @@ export class DataApi extends ApiTopic {
      * }
      * ```
      */
-    validateQueries(
-        id: string,
-        queries: Array<{ name: string; sql: string }>
-    ): Promise<QueryValidationResult> {
+    validateQueries(id: string, queries: Array<{ name: string; sql: string }>): Promise<QueryValidationResult> {
         return this.post(`/${id}/query/validate`, { payload: { queries }, headers: this.storeHeaders(id) });
     }
 
@@ -478,39 +501,4 @@ export class DataApi extends ApiTopic {
     dashboards(storeId: string): DashboardApi {
         return new DashboardApi(this.client, storeId);
     }
-}
-
-/**
- * Response from the download endpoint.
- */
-export interface DataStoreDownloadInfo {
-    /** Signed download URL (expires in 15 min) */
-    url: string;
-    /** GCS generation number for cache validation */
-    gcs_generation: number;
-    /** Schema version */
-    schema_version: string;
-    /** Store ID */
-    store_id: string;
-    /** Store name */
-    store_name: string;
-    /** List of table names */
-    tables: string[];
-    /** URL expiry time in seconds */
-    expires_in: number;
-}
-
-/**
- * Result from SQL query validation.
- */
-export interface QueryValidationResult {
-    /** Whether all queries are valid */
-    valid: boolean;
-    /** Validation errors (if any) */
-    errors: Array<{
-        /** Query name that failed validation */
-        query: string;
-        /** Error message describing the issue */
-        error: string;
-    }>;
 }

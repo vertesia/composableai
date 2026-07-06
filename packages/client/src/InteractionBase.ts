@@ -1,11 +1,18 @@
-import { ExecutionRun, InteractionUpdatePayload, InteractionExecutionPayload } from "@vertesia/common";
-import { VertesiaClient, VertesiaClientProps } from "./client.js";
-import { executeInteraction } from "./execute.js";
+import type {
+    InteractionExecutionPayload,
+    InteractionExecutionResult,
+    InteractionUpdatePayload,
+} from '@vertesia/common';
+import { VertesiaClient, type VertesiaClientProps } from './client.js';
+import { executeInteraction } from './execute.js';
 
-export class InteractionBase<P = any> {
+export class InteractionBase<P = unknown> {
     client: VertesiaClient;
 
-    constructor(public id: string, clientOrOpts: VertesiaClient | VertesiaClientProps) {
+    constructor(
+        public id: string,
+        clientOrOpts: VertesiaClient | VertesiaClientProps,
+    ) {
         if (clientOrOpts instanceof VertesiaClient) {
             this.client = clientOrOpts;
         } else {
@@ -23,7 +30,7 @@ export class InteractionBase<P = any> {
 
     //TODO - Not implemented
     render(_data: P) {
-        throw new Error("Not implemented");
+        throw new Error('Not implemented');
     }
 
     /**
@@ -35,10 +42,12 @@ export class InteractionBase<P = any> {
      * @param id of the interaction to execute
      * @param payload InteractionExecutionPayload
      * @param onChunk callback to be called when the next chunk of the response is available
-     * @returns the resolved execution run as Promise<ExecutionRun>
+     * @returns the resolved interaction execution result
      */
-    async execute(payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P>> {
+    async execute(
+        payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void,
+    ): Promise<InteractionExecutionResult<P>> {
         return executeInteraction<P>(this.client, this.id, payload, onChunk);
     }
 }

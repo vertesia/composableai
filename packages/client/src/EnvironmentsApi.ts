@@ -1,6 +1,9 @@
-import type { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import type { AIModel, ModelSearchPayload } from '@llumiverse/common';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    EmbeddingsApiRequest,
+    EmbeddingsApiResult,
+    EnableEnvironmentModelPayload,
     ExecutionEnvironment,
     ExecutionEnvironmentCreatePayload,
     ExecutionEnvironmentRef,
@@ -8,12 +11,12 @@ import {
     LoadBalancingEnvConfig,
     MediatorEnvConfig,
     MigrateInteractionsPayload,
-    MigrateInteractionsResult
-} from "@vertesia/common";
+    MigrateInteractionsResult,
+} from '@vertesia/common';
 
 export default class EnvironmentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/environments");
+        super(parent, '/api/v1/environments');
     }
 
     /**
@@ -28,17 +31,17 @@ export default class EnvironmentsApi extends ApiTopic {
 
     create(payload: ExecutionEnvironmentCreatePayload): Promise<ExecutionEnvironment> {
         return this.post('/', {
-            payload
+            payload,
         });
     }
 
     retrieve(id: string): Promise<ExecutionEnvironment> {
-        return this.get('/' + id);
+        return this.get(`/${id}`);
     }
 
     update(id: string, payload: ExecutionEnvironmentUpdatePayload): Promise<ExecutionEnvironment> {
-        return this.put('/' + id, {
-            payload
+        return this.put(`/${id}`, {
+            payload,
         });
     }
 
@@ -51,28 +54,41 @@ export default class EnvironmentsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    updateConfig(id: string, payload: {
-        enabled_models?: AIModel[],
-        config?: MediatorEnvConfig | LoadBalancingEnvConfig
-    }): Promise<ExecutionEnvironment> {
-        return this.put('/' + id + '/config', {
-            payload
+    updateConfig(
+        id: string,
+        payload: {
+            enabled_models?: AIModel[];
+            config?: MediatorEnvConfig | LoadBalancingEnvConfig;
+        },
+    ): Promise<ExecutionEnvironment> {
+        return this.put(`/${id}/config`, {
+            payload,
         });
     }
 
     listModels(id: string, payload?: ModelSearchPayload): Promise<AIModel[]> {
-        return this.get('/' + id + '/models', {
-            query: payload ? { ...payload } : undefined
+        return this.get(`/${id}/models`, {
+            query: payload ? { ...payload } : undefined,
         });
+    }
+
+    enableModel(id: string, payload: EnableEnvironmentModelPayload): Promise<ExecutionEnvironment> {
+        return this.post(`/${id}/models/enabled`, {
+            payload,
+        });
+    }
+
+    disableModel(id: string, modelId: string): Promise<ExecutionEnvironment> {
+        return this.del(`/${id}/models/enabled/${encodeURIComponent(modelId)}`);
     }
 
     listTrainableModels(id: string): Promise<AIModel[]> {
         return this.get(`/${id}/trainable-models`);
     }
 
-    embeddings(id: string, payload?: EmbeddingsOptions): Promise<EmbeddingsResult> {
-        return this.post('/' + id + '/embeddings', {
-            payload
+    embeddings(id: string, payload: EmbeddingsApiRequest): Promise<EmbeddingsApiResult> {
+        return this.post(`/${id}/embeddings`, {
+            payload,
         });
     }
 
@@ -87,8 +103,7 @@ export default class EnvironmentsApi extends ApiTopic {
      */
     migrateInteractions(payload: MigrateInteractionsPayload): Promise<MigrateInteractionsResult> {
         return this.post(`/migrate-interactions`, {
-            payload
+            payload,
         });
     }
-
 }

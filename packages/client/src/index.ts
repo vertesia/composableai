@@ -1,15 +1,20 @@
-export type { OrphanedAppInstallation } from "./AppsApi.js";
+import type { AsyncExecutionResult } from '@vertesia/common';
+
+export type { EnableEnvironmentModelPayload, OrphanedAppInstallation } from '@vertesia/common';
+export { getOAuthPermissionScopes, Permission } from '@vertesia/common';
 export * from './client.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';
 export * from './InteractionOutput.js';
+export { default as InternalSecretsApi } from './InternalSecretsApi.js';
 export { default as OAuthClientsApi } from './OAuthClientsApi.js';
 export { default as OAuthGrantsApi } from './OAuthGrantsApi.js';
 export { default as OAuthProvidersApi } from './OAuthProvidersApi.js';
 export { default as OAuthServerApi } from './OAuthServerApi.js';
-export { default as RemoteMcpConnectionsApi } from './RemoteMcpConnectionsApi.js';
-export type { AsyncExecutionResult, ComputeInteractionFacetsResponse } from './InteractionsApi.js';
 export type { ComputePromptFacetsResponse, ListInteractionsResponse } from './PromptsApi.js';
+export { default as RemoteMcpConnectionsApi } from './RemoteMcpConnectionsApi.js';
 export type { ComputeRunFacetsResponse, FilterOption } from './RunsApi.js';
-export * from "./store/index.js";
-export * from "./StreamSource.js";
+export { default as SecretsApi } from './SecretsApi.js';
+export * from './StreamSource.js';
+export * from './store/index.js';
+export type { AsyncExecutionResult };

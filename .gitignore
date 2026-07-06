@@ -132,5 +132,10 @@ dist
 # Turbo
 .turbo/
 
+# pnpm local store
+.pnpm-store/
+
 # Claude
 **/.claude/settings.local.json
+
+lib/

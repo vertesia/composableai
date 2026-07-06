@@ -1,4 +1,4 @@
-import { AppUINavItem } from "@vertesia/common";
+import type { AppUINavItem } from '@vertesia/common';
 
 /**
  * Optional App UI Navigation configuration
@@ -9,6 +9,6 @@ import { AppUINavItem } from "@vertesia/common";
  * Note: this does not create the actual UI routes -- it is a map of existing routes you wish to expose as subitems in the Composite App.
  */
 export default [
-    { label: "Home", icon: "Home", route: "/" },
-    { label: "Chat", icon: "MessageSquare", route: "/chat" },
+    { label: 'Home', icon: 'Home', route: '/' },
+    { label: 'Chat', icon: 'MessageSquare', route: '/chat' },
 ] satisfies AppUINavItem[];

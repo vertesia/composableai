@@ -1,9 +1,7 @@
-import { ReactNode, useMemo } from 'react';
-
-import { ContentObjectTypeItem } from '@vertesia/common';
-import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
+import type { ContentObjectTypeItem } from '@vertesia/common';
+import { useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { useUITranslation } from '../../../../i18n/index.js';
+import { type ReactNode, useMemo } from 'react';
 
 import { useDocumentSelection } from '../DocumentSelectionProvider';
 import { useDocumentSearch } from '../search/DocumentSearchContext';
@@ -12,15 +10,13 @@ import { ChangeTypeAction } from './actions/ChangeTypeAction';
 import { DeleteObjectsAction, DeleteObjectsFromCollectionsAction } from './actions/DeleteObjectsAction';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
 import { RemoveFromCollectionAction } from './actions/RemoveFromCollectionAction';
-import { StartWorkflowAction, StartWorkflowComponent } from './actions/StartWorkflowComponent';
 import { ObjectsActionContext } from './ObjectsActionContextClass';
 import { ObjectsActionContextReact, useObjectsActionContext } from './ObjectsActionHooks';
-import { ObjectsActionSpec } from './ObjectsActionSpec';
+import type { ObjectsActionSpec } from './ObjectsActionSpec';
 
 const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
     ExportPropertiesAction,
     ChangeTypeAction,
-    StartWorkflowAction,
     AddToCollectionAction,
     DeleteObjectsAction,
     RemoveFromCollectionAction,
@@ -32,39 +28,22 @@ interface ObjectsActionContextProps {
     type?: ContentObjectTypeItem;
 }
 export function ObjectsActionContextProvider({ children, type }: ObjectsActionContextProps) {
-    const { t } = useUITranslation();
     const selection = useDocumentSelection();
     const toast = useToast();
     const { client } = useUserSession();
     const search = useDocumentSearch();
 
-    const { data: rules, error } = useFetch<ObjectsActionSpec[]>(() => {
-        return client.workflows.rules.list().then((rules) => {
-            return rules.map(rule => (
-                {
-                    id: rule.id,
-                    name: rule.name,
-                    description: rule.description,
-                    confirm: false,
-                    isWorkflow: true,
-                    component: StartWorkflowComponent
-                }
-            )).sort((a, b) => a.name.localeCompare(b.name));
-        });
-    }, []);
-
     const context = useMemo(() => {
         const context = new ObjectsActionContext({
-            selection, toast, client, search, type
+            selection,
+            toast,
+            client,
+            search,
+            type,
         });
         context.allActions = DEFAULT_ACTIONS;
-        context.wfRules = rules!;
         return context;
-    }, [selection, rules, type]);
-
-    if (error) {
-        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{error.message}</ErrorBox>
-    }
+    }, [client, search, selection, toast, type]);
 
     return (
         context && (
@@ -73,7 +52,7 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
                 {children}
             </ObjectsActionContextReact.Provider>
         )
-    )
+    );
 }
 
 function Actions() {
@@ -85,11 +64,14 @@ function Actions() {
 
     return (
         <div style={{ display: 'none' }}>
-            {
-                context.allActions.map(action => (
-                    <action.component key={action.id} action={action} objectIds={objectIds} collectionId={selection.collectionId} />
-                ))
-            }
+            {context.allActions.map((action) => (
+                <action.component
+                    key={action.id}
+                    action={action}
+                    objectIds={objectIds}
+                    collectionId={selection.collectionId}
+                />
+            ))}
         </div>
-    )
+    );
 }

@@ -140,6 +140,54 @@ try {
 }
 ```
 
+## Retries
+
+Retries are disabled by default. Enable them explicitly on a client or a single request:
+
+```typescript
+const client = new FetchClient('https://api.example.com')
+  .withRetryPolicy({
+    attempts: 3,
+    methods: ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'],
+    statuses: [502, 503, 504],
+    baseDelayMs: 250,
+    maxDelayMs: 4000
+  });
+
+// POST requests are not retried by the default method list. Opt in only when
+// the operation is safe to replay.
+await client.post('/workflow/execute', {
+  payload,
+  retryPolicy: { methods: ['POST'] }
+});
+
+// Disable a client-level retry policy for one request.
+await client.get('/no-retry', { retryPolicy: false });
+```
+
+## Timeouts
+
+No request timeout is applied by default. Set a default on the client (applies to every request) and/or override it per request. The timeout aborts the **whole** request — connection, response headers, **and** body consumption (JSON parse) — using a browser-standard `AbortSignal`, so it behaves the same in the browser and in Node (no `undici`-specific configuration).
+
+```typescript
+// Default timeout (ms) for every request on this client.
+const client = new FetchClient('https://api.example.com').withTimeout(60_000);
+
+// Override for a single slow request (e.g. one that blocks on an LLM).
+await client.post('/long-running', { payload, timeoutMs: 30 * 60_000 });
+
+// Disable the client default for one request.
+await client.get('/no-timeout', { timeoutMs: false });
+
+// Combine with a caller-supplied AbortSignal — whichever aborts first wins.
+await client.get('/data', { signal: controller.signal, timeoutMs: 5_000 });
+```
+
+- `timeoutMs`: a positive number sets the timeout; `false`/`null`/`0` disables it for that request (overriding the client default); omitted falls back to the client default (`withTimeout` / `defaultTimeoutMs`).
+- On timeout the request rejects as a connection failure. When a retry policy is enabled, a timed-out attempt is retried like any other connection error, with a **fresh deadline per attempt**.
+- SSE requests (`reader: 'sse'`) are never given a total-request timeout — they are long-lived by design; apply your own idle/close handling to the stream.
+- `ApiTopic` sub-clients inherit the parent client's default timeout, so setting it once on the root client covers all topics.
+
 ### Custom Error Factory
 
 Transform errors before they're thrown:
@@ -256,6 +304,9 @@ The main client class for making HTTP requests.
 | `payload` | `object \| BodyInit` | Request body |
 | `reader` | `'sse' \| function` | Custom response reader |
 | `jsonPayload` | `boolean` | Auto-serialize payload as JSON (default: true) |
+| `retryPolicy` | `IRequestRetryPolicy \| false` | Per-request retry policy; `false` disables the client default |
+| `timeoutMs` | `number \| false \| null` | Per-request timeout (ms). Positive sets it; `false`/`null`/`0` disables; omitted uses the client default |
+| `signal` | `AbortSignal` | Caller abort signal, merged with the timeout signal |
 
 ### Error Classes
 

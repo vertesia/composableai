@@ -1,0 +1,59 @@
+{
+    "name": "@vertesia/jst",
+    "version": "1.5.0-dev",
+    "type": "module",
+    "description": "Javascript text template",
+    "license": "Apache-2.0",
+    "homepage": "https://docs.vertesiahq.com",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "libraries/jst"
+    },
+    "keywords": [
+        "vertesia",
+        "template",
+        "handlebars",
+        "jst",
+        "javascript",
+        "prompt"
+    ],
+    "scripts": {
+        "lint": "biome lint src",
+        "test": "vitest run",
+        "build": "tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
+        "typecheck": "tsc --noEmit",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
+    },
+    "peerDependencies": {
+        "handlebars": ">=4.7.9"
+    },
+    "devDependencies": {
+        "@types/estree": "^1.0.9",
+        "@types/papaparse": "^5.5.2",
+        "@vertesia/tsconfig": "workspace:*",
+        "rolldown": "catalog:",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.9"
+    },
+    "dependencies": {
+        "@types/node": "catalog:",
+        "acorn": "8.17.0",
+        "acorn-walk": "8.3.5",
+        "dayjs": "^1.11.21",
+        "papaparse": "^5.5.4"
+    },
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        }
+    }
+}

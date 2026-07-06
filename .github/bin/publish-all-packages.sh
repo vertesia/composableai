@@ -3,7 +3,7 @@ set -e
 
 # Script to publish all composableai packages to NPM
 # Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]
-#   --ref: Git reference (main for dev builds, preview for releases)
+#   --ref: Git reference (main for dev builds, release/X.Y for releases, e.g. release/1.4)
 #   --release-type: Release type (release, snapshot). Release creates stable versions, snapshot creates dev versions.
 #   --bump-type: Bump type (minor, patch, keep). How to change the version.
 #   --dry-run: Optional flag for dry run mode (value can be true, false, or omitted which means true)
@@ -11,6 +11,22 @@ set -e
 # =============================================================================
 # Functions
 # =============================================================================
+
+workspace_package_dirs() {
+  local repo_root
+  repo_root="$(git rev-parse --show-toplevel)"
+
+  # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
+  # Published scope: all packages/* + libraries/jst. Libraries/koa-stack/* are
+  # published by a separate workflow (different release cadence).
+  pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec pwd | while IFS= read -r pkg_dir; do
+    case "$pkg_dir" in
+      "${repo_root}"/packages/*|"${repo_root}"/libraries/jst)
+        [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
+        ;;
+    esac
+  done
+}
 
 update_package_versions() {
   echo "=== Updating composableai package versions ==="
@@ -23,7 +39,7 @@ update_package_versions() {
   fi
 
   # Get current version and strip any existing -dev* suffix to get base version
-  current_version=$(pnpm pkg get version | tr -d '"')
+  current_version=$(npm pkg get version | tr -d '"')
   base_version=$(echo "$current_version" | sed 's/-dev.*//')
 
   # Apply bump if needed (for both snapshot and release)
@@ -54,38 +70,50 @@ update_package_versions() {
   # Update root package.json
   npm version "${new_version}" --no-git-tag-version --workspaces=false
 
-  # Update all workspace packages (excluding llumiverse)
-  pnpm -r --filter "./packages/**" exec npm version "${new_version}" --no-git-tag-version
+  # Update all workspace packages (excluding llumiverse and libraries/koa-stack/*)
+  pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec npm version "${new_version}" --no-git-tag-version
 }
 
 publish_packages() {
   echo "=== Publishing composableai packages ==="
 
-  for pkg_dir in packages/*; do
-    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
-      pkg_name=$(basename "$pkg_dir")
-      cd "$pkg_dir"
+  while IFS= read -r pkg_dir; do
+    pkg_name=$(basename "$pkg_dir")
+    cd "$pkg_dir"
 
-      pkg_version=$(pnpm pkg get version | tr -d '"')
+      pkg_version=$(npm pkg get version | tr -d '"')
 
-      # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
-      if [ -z "$npm_tag" ]; then
-        echo "Error: npm_tag is not set. This indicates an invalid ref/version-type combination."
-        exit 1
-      fi
-
-      echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
-
-      # Publish
-      if [ -n "$DRY_RUN_FLAG" ]; then
-        pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG}
-      else
-        pnpm publish --access public --tag "${npm_tag}" --no-git-checks
-      fi
-
-      cd ../..
+    # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
+    if [ -z "$npm_tag" ]; then
+      echo "Error: npm_tag is not set. This indicates an invalid ref/version-type combination."
+      exit 1
     fi
-  done
+
+    echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
+
+    # Publish
+    if [ -n "$DRY_RUN_FLAG" ]; then
+      pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG}
+    else
+      pnpm publish --access public --tag "${npm_tag}" --no-git-checks
+    fi
+
+    cd "$(git rev-parse --show-toplevel)"
+  done < <(workspace_package_dirs)
+}
+
+write_package_summary_rows() {
+  local version="$1"
+
+  while IFS= read -r pkg_dir; do
+    pkg_name=$(basename "$pkg_dir")
+    if [ "$DRY_RUN" = "true" ]; then
+      echo "| \`@vertesia/${pkg_name}\` | ${version} |" >> "$GITHUB_STEP_SUMMARY"
+    else
+      pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
+      echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
+    fi
+  done < <(workspace_package_dirs)
 }
 
 update_template_versions() {
@@ -124,32 +152,11 @@ update_template_versions() {
   done
 }
 
-update_template_versions() {
-  echo "=== Updating create-plugin templateVersions ==="
-
-  # Get the llumiverse version from its root package.json
-  llumiverse_version=$(node -e "console.log(JSON.parse(require('fs').readFileSync('llumiverse/package.json', 'utf8')).version)")
-
-  echo "  @vertesia version: ${new_version}"
-  echo "  @llumiverse version: ${llumiverse_version}"
-
-  # Write both versions into create-plugin's package.json templateVersions field
-  node -e "
-    const fs = require('fs');
-    const pkgPath = 'packages/create-plugin/package.json';
-    const p = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    p.templateVersions = { '@vertesia': '${new_version}', '@llumiverse': '${llumiverse_version}' };
-    fs.writeFileSync(pkgPath, JSON.stringify(p, null, 2) + '\n');
-  "
-
-  echo "  ✓ Updated packages/create-plugin/package.json templateVersions"
-}
-
 commit_and_push() {
   echo "=== Committing version changes ==="
 
   # Get the version from root package.json
-  version=$(pnpm pkg get version | tr -d '"')
+  version=$(npm pkg get version | tr -d '"')
 
   git config user.email "github-actions[bot]@users.noreply.github.com"
   git config user.name "github-actions[bot]"
@@ -184,7 +191,7 @@ write_github_summary() {
   echo "=== Writing GitHub Summary ==="
 
   # Get the version from root package.json
-  version=$(pnpm pkg get version | tr -d '"')
+  version=$(npm pkg get version | tr -d '"')
 
   # Determine title based on dry run mode
   if [ "$DRY_RUN" = "true" ]; then
@@ -201,17 +208,7 @@ ${title}
 | ------- | ------- |
 EOF
 
-  for pkg_dir in packages/*; do
-    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
-      pkg_name=$(basename "$pkg_dir")
-      if [ "$DRY_RUN" = "true" ]; then
-        echo "| \`@vertesia/${pkg_name}\` | ${version} |" >> "$GITHUB_STEP_SUMMARY"
-      else
-        pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
-        echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
-      fi
-    fi
-  done
+  write_package_summary_rows "$version"
 
   # Add metadata
   cat >> "$GITHUB_STEP_SUMMARY" << EOF
@@ -304,9 +301,10 @@ if [[ ! "$BUMP_TYPE" =~ ^(minor|patch|keep)$ ]]; then
   exit 1
 fi
 
-# Validate that releases can only be published from 'preview' or maintenance branches (skip in dry-run)
-if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [ "$REF" != "preview" ] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
-  echo "Error: Release versions can only be published from 'preview' or maintenance branches."
+# Validate that releases can only be published from a release branch (release/X.Y, e.g. release/1.4)
+# or a legacy bare-numeric maintenance branch (skip in dry-run)
+if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [[ ! "$REF" =~ ^release/[0-9]+\.[0-9]+$ ]] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: Release versions can only be published from a 'release/X.Y' branch (e.g. release/1.4) or a maintenance branch."
   echo "Current branch: $REF"
   exit 1
 fi

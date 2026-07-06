@@ -1,14 +1,33 @@
-import { ComputePromptFacetPayload, PromptSearchPayload, PromptSearchQuery, PromptTemplate, PromptTemplateForkPayload, PromptTemplateCreatePayload, PromptTemplateRef, PromptTemplateUpdatePayload } from "@vertesia/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type { PromptRole } from '@llumiverse/common';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    ComputePromptFacetPayload,
+    PromptSearchPayload,
+    PromptSearchQuery,
+    PromptTemplate,
+    PromptTemplateCreatePayload,
+    PromptTemplateForkPayload,
+    PromptTemplateRef,
+    PromptTemplateUpdatePayload,
+    TemplateType,
+} from '@vertesia/common';
 
 export interface ComputePromptFacetsResponse {
-    role?: { _id: string, count: number }[];
+    role?: { _id: string; count: number }[];
     total?: { count: number }[];
+}
+
+export interface PromptRenderResponse {
+    id: string;
+    name: string;
+    role: PromptRole;
+    content_type: TemplateType;
+    rendered: string;
 }
 
 export default class PromptsApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/prompts")
+        super(parent, '/api/v1/prompts');
     }
 
     /**
@@ -17,12 +36,12 @@ export default class PromptsApi extends ApiTopic {
      * @returns PromptTemplateRef[]
      **/
     list(payload: PromptSearchPayload = {}): Promise<PromptTemplateRef[]> {
-        const query = payload.query || {} as PromptSearchQuery;
+        const query = payload.query || ({} as PromptSearchQuery);
 
-        return this.get("/", {
+        return this.get('/', {
             query: {
-                ...query
-            }
+                ...query,
+            },
         });
     }
 
@@ -32,8 +51,8 @@ export default class PromptsApi extends ApiTopic {
      * @returns ComputePromptFacetsResponse[]
      **/
     computeFacets(query: ComputePromptFacetPayload): Promise<ComputePromptFacetsResponse> {
-        return this.post("/facets", {
-            payload: query
+        return this.post('/facets', {
+            payload: query,
         });
     }
 
@@ -47,7 +66,7 @@ export default class PromptsApi extends ApiTopic {
      **/
     create(payload: PromptTemplateCreatePayload): Promise<PromptTemplate> {
         return this.post('/', {
-            payload
+            payload,
         });
     }
 
@@ -72,7 +91,7 @@ export default class PromptsApi extends ApiTopic {
      **/
     update(id: string, payload: PromptTemplateUpdatePayload): Promise<PromptTemplate> {
         return this.put(`/${id}`, {
-            payload
+            payload,
         });
     }
 
@@ -93,24 +112,22 @@ export default class PromptsApi extends ApiTopic {
      */
     fork(id: string, payload: PromptTemplateForkPayload): Promise<PromptTemplate> {
         return this.post(`/${id}/fork`, {
-            payload
+            payload,
         });
     }
 
-    //TODO - Does this exist?
     /**
-     * Render a prompt template
+     * Render a prompt template with the given variables.
      * @param id of the prompt template to render
-     * @param payload that will be passed to the prompt template to generate the prompts
-     * @returns PromptTemplate
+     * @param payload variables to apply to the template
+     * @returns { id, name, role, content_type, rendered }
      * @throws ApiError
      * @throws 404 if not found
-     * @throws 400 if payload is invalid
-     * @throws 500 if render fails
-     **/
-    render(id: string, payload: object): Promise<PromptTemplate> {
+     * @throws 403 if the prompt is not in the current project
+     */
+    render(id: string, payload: object): Promise<PromptRenderResponse> {
         return this.post(`/${id}/render`, {
-            payload
+            payload,
         });
     }
 
@@ -133,7 +150,6 @@ export default class PromptsApi extends ApiTopic {
         return this.get(`/${id}/versions`);
     }
 
-
     /**
      * Retrieve list of interactions that use the prompt template
      */
@@ -149,14 +165,13 @@ export default class PromptsApi extends ApiTopic {
     listForks(id: string): Promise<PromptTemplateRef[]> {
         return this.get(`/${id}/forks`);
     }
-
 }
 
 export interface ListInteractionsResponse {
-    prompt: string,
+    prompt: string;
     interactions: {
-        id: string,
-        name: string,
-        versions: string[],
-    }[]
+        id: string;
+        name: string;
+        versions: string[];
+    }[];
 }

@@ -1,27 +1,31 @@
-export type AuditAction =
-    // CRUD operations
-    | 'create'
-    | 'update'
-    | 'delete'
-    | 'bulk_create'
-    | 'bulk_change_type'
-    | 'bulk_update'
-    | 'bulk_delete'
-    | 'attach'
-    | 'detach'
-    | 'publish'
-    | 'unpublish'
-    // Billable operations
-    | 'inference'
-    | 'embedding'
-    | 'image_generation';
+import type { EventCategory } from './platform-event.js';
 
-/** Billable audit actions for cost analytics queries */
-export const BILLABLE_AUDIT_ACTIONS: AuditAction[] = [
+export const AUDIT_ACTIONS = [
+    // CRUD operations
+    'create',
+    'update',
+    'delete',
+    'bulk_create',
+    'bulk_change_type',
+    'bulk_update',
+    'bulk_delete',
+    'attach',
+    'detach',
+    'credentials_fill',
+    'credentials_totp_generation',
+    'publish',
+    'unpublish',
+    // Billable operations
     'inference',
     'embedding',
     'image_generation',
-];
+] as const;
+
+export type KnownAuditAction = (typeof AUDIT_ACTIONS)[number];
+export type AuditAction = KnownAuditAction | (string & {});
+
+/** Billable audit actions for cost analytics queries */
+export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];
 
 /**
  * Generic metering entry attached to audit events.
@@ -41,6 +45,16 @@ export interface AuditMeter {
 
 export interface AuditTrailEvent {
     event_type: 'audit';
+    event_id?: string;
+    event_category?: EventCategory;
+    source?: string | null;
+    root_event_id?: string;
+    caused_by_event_id?: string;
+    hop_count?: number;
+    audit_trail?: boolean;
+    replay_of?: string;
+    replay_root_event_id?: string;
+    replayed_by?: string;
     action: AuditAction;
     resource_type: string;
     resource_id: string;

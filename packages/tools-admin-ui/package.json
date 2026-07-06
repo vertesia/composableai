@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-admin-ui",
-    "version": "1.1.0-dev.20260327.125707Z",
+    "version": "1.5.0-dev",
     "description": "Shared admin UI for Vertesia tool servers",
     "type": "module",
     "license": "Apache-2.0",
@@ -16,28 +16,32 @@
         "./theme.css": "./src/theme.css"
     },
     "scripts": {
-        "build": "rm -rf lib tsconfig.tsbuildinfo && tsc --build && vite build --mode lib",
+        "lint": "biome lint src",
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json && vite build --mode lib",
         "dev": "vite dev"
     },
     "peerDependencies": {
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0"
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7"
     },
     "devDependencies": {
-        "@tailwindcss/vite": "^4.1.17",
-        "@types/react": "^19.2.3",
-        "@types/react-dom": "^19.2.3",
-        "@vitejs/plugin-react": "^5.1.2",
-        "react": "^19.2.3",
-        "react-dom": "^19.2.3",
-        "tailwindcss": "^4.1.17",
-        "typescript": "^6.0.2",
-        "vite": "^7.3.0"
+        "@tailwindcss/vite": "^4.3.1",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "@vertesia/tsconfig": "workspace:*",
+        "@vitejs/plugin-react": "^6.0.2",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "tailwindcss": "^4.3.1",
+        "typescript": "^6.0.3",
+        "vite": "catalog:"
     },
     "dependencies": {
         "@vertesia/common": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "lucide-react": "^0.562.0"
+        "lucide-react": "^1.22.0"
     },
     "repository": {
         "type": "git",

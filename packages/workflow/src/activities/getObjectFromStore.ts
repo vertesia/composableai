@@ -1,8 +1,7 @@
-import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import { DocumentNotFoundError } from "../errors.js";
-import { projectResult } from "../dsl/projections.js";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-
+import type { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import { projectResult } from '../dsl/projections.js';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError } from '../errors.js';
 
 export interface GetObjectParams {
     select?: string;
@@ -17,7 +16,9 @@ export interface GetObject extends DSLActivitySpec<GetObjectParams> {
  * @param objectId
  * @param status
  */
-export async function getObjectFromStore(payload: DSLActivityExecutionPayload<GetObjectParams>): Promise<ContentObject> {
+export async function getObjectFromStore(
+    payload: DSLActivityExecutionPayload<GetObjectParams>,
+): Promise<ContentObject> {
     const { client, params, objectId } = await setupActivity<GetObjectParams>(payload);
 
     let obj: ContentObject;
@@ -31,11 +32,11 @@ export async function getObjectFromStore(payload: DSLActivityExecutionPayload<Ge
         throw err;
     }
 
-    const projection = projectResult(payload, params, obj, obj);
+    const projection = projectResult(payload, params, obj, obj) as Partial<ContentObject>;
 
     return {
+        ...obj,
         ...projection,
         id: obj.id,
-    }
-
+    };
 }

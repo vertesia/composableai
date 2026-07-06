@@ -1,4 +1,3 @@
-
 /**
  * Compute the intersection of the two given rects.
  * @param rect1
@@ -67,12 +66,15 @@ export function isScrollable(element: HTMLElement): boolean {
  * @param root
  * @returns
  */
-export function getScrollableParents(element: HTMLElement, root: HTMLElement = document.documentElement): HTMLElement[] {
+export function getScrollableParents(
+    element: HTMLElement,
+    root: HTMLElement = document.documentElement,
+): HTMLElement[] {
     const parents: HTMLElement[] = [];
     let parent = element.parentElement;
 
     while (parent && parent !== root) {
-        isScrollable(parent) && parents.push(parent);
+        if (isScrollable(parent)) parents.push(parent);
         parent = parent.parentElement;
     }
 

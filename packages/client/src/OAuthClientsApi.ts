@@ -1,8 +1,10 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateOAuthClientPayload,
     OAuthClient,
     OAuthClientCreateResponse,
+    OAuthClientScopeMetadata,
+    SuccessResponse,
     UpdateOAuthClientPayload,
 } from '@vertesia/common';
 
@@ -19,6 +21,10 @@ export default class OAuthClientsApi extends ApiTopic {
         return this.get(`/${clientId}`);
     }
 
+    scopeMetadata(): Promise<OAuthClientScopeMetadata> {
+        return this.get('/scope-metadata');
+    }
+
     create(payload: CreateOAuthClientPayload): Promise<OAuthClientCreateResponse> {
         return this.post('/', { payload });
     }
@@ -27,7 +33,7 @@ export default class OAuthClientsApi extends ApiTopic {
         return this.put(`/${clientId}`, { payload });
     }
 
-    remove(clientId: string): Promise<{ success: true }> {
+    remove(clientId: string): Promise<SuccessResponse> {
         return this.del(`/${clientId}`);
     }
 }

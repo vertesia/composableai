@@ -1,18 +1,22 @@
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-
-import { ContentObjectTypeItem } from "@vertesia/common";
-import { Table, TBody, THead } from "@vertesia/ui/core";
-import { useNavigate } from "@vertesia/ui/router";
-import { useUITranslation } from '../../../i18n/index.js';
+import type { ContentObjectTypeItem } from '@vertesia/common';
+import { Button, CopyButton, Table, TBody, THead, VTooltip } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useNavigate } from '@vertesia/ui/router';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { Filter } from 'lucide-react';
 
 dayjs.extend(relativeTime);
+
+const ACTION_BTN_CLASS =
+    'h-6 w-6 p-0 opacity-0 group-hover/field:opacity-100 text-muted hover:text-foreground transition-opacity shrink-0';
 
 interface ContentObjectTypesTableProps {
     objects?: ContentObjectTypeItem[];
     isLoading: boolean;
+    onFilter?: (field: string, value: string) => void;
 }
-export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTypesTableProps) {
+export function ContentObjectTypesTable({ objects, isLoading, onFilter }: ContentObjectTypesTableProps) {
     const { t } = useUITranslation();
     const navigate = useNavigate();
 
@@ -27,17 +31,44 @@ export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTyp
                 </tr>
             </THead>
             <TBody isLoading={isLoading && (!objects || objects.length === 0)} columns={4}>
-                {
-                    objects?.map((obj: any) => (
-                        <tr key={obj.id} onClick={() => navigate(`/types/${obj.id}`)} className='cursor-pointer hover:bg-muted'>
-                            <td>{obj.name}</td>
-                            <td>{obj.strict_mode ? 'Yes' : 'No'}</td>
-                            <td>{obj.is_chunkable ? 'Yes' : 'No'}</td>
-                            <td>{dayjs(obj.updated_at).fromNow()}</td>
-                        </tr>
-                    ))
-                }
+                {objects?.map((obj) => (
+                    <tr
+                        key={obj.id}
+                        onClick={() => navigate(`/types/${obj.id}`)}
+                        className="cursor-pointer hover:bg-muted"
+                    >
+                        <td className="group/field">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="truncate">{obj.name}</span>
+                                <CopyButton content={obj.id} className={ACTION_BTN_CLASS} />
+                                {onFilter && (
+                                    <VTooltip description={`Filter by ${obj.name}`} asChild size="xs">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label={`Filter by ${obj.name}`}
+                                            className={ACTION_BTN_CLASS}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onFilter('name', obj.name);
+                                            }}
+                                        >
+                                            <Filter className="size-3" />
+                                        </Button>
+                                    </VTooltip>
+                                )}
+                            </div>
+                        </td>
+                        <td>{obj.strict_mode ? 'Yes' : 'No'}</td>
+                        <td>{obj.is_chunkable ? 'Yes' : 'No'}</td>
+                        <td>
+                            <VTooltip description={dayjs(obj.updated_at).format('YYYY-MM-DD HH:mm:ss')}>
+                                {dayjs(obj.updated_at).fromNow()}
+                            </VTooltip>
+                        </td>
+                    </tr>
+                ))}
             </TBody>
         </Table>
-    )
+    );
 }

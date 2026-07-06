@@ -21,15 +21,21 @@ export function TemplateDetail() {
     const { baseUrl } = useAdminContext();
 
     const { data: template, error } = useFetch<TemplateDefinitionResponse>(
-        () => fetch(`${baseUrl}/templates/${collection}/${name}`).then(r => {
-            if (!r.ok) throw new Error(`Failed to load template: ${r.statusText}`);
-            return r.json();
-        }),
-        [baseUrl, collection, name]
+        () =>
+            fetch(`${baseUrl}/templates/${collection}/${name}`).then((r) => {
+                if (!r.ok) throw new Error(`Failed to load template: ${r.statusText}`);
+                return r.json();
+            }),
+        [baseUrl, collection, name],
     );
 
     if (error) return <div className="p-6 text-destructive">Failed to load template &ldquo;{name}&rdquo;.</div>;
-    if (!template) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
+    if (!template)
+        return (
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
+                <Spinner />
+            </div>
+        );
 
     return (
         <DetailPage
@@ -49,7 +55,7 @@ export function TemplateDetail() {
                 <div className="mb-8">
                     <h2 className="mb-3 text-lg font-semibold text-foreground">Assets</h2>
                     <div className="flex flex-wrap gap-2">
-                        {template.assets.map(asset => (
+                        {template.assets.map((asset) => (
                             <Badge key={asset} variant="success">
                                 {asset.split('/').pop()}
                             </Badge>

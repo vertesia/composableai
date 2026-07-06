@@ -1,5 +1,5 @@
 export interface FindPayload {
-    query: Record<string, any>;
+    query: Record<string, unknown>;
     offset?: number;
     limit?: number;
     select?: string;
@@ -7,19 +7,40 @@ export interface FindPayload {
     from_root?: string;
 }
 
-
 export interface GenericCommandResponse {
     status: string;
     message: string;
-    err?: any;
-    details?: any;
+    err?: unknown;
+    details?: unknown;
+}
+
+export interface DeleteByIdResult {
+    id: string;
+}
+
+export interface DeleteCountResult {
+    id: string;
+    count: number;
+}
+
+export interface SuccessResponse {
+    success: true;
+}
+
+export interface DeleteOperationResult {
+    acknowledged: boolean;
+    deletedCount: number;
+}
+
+export interface CountResult {
+    count: number;
 }
 
 export interface BulkOperationPayload {
     /**
      * The operation name
      */
-    name: "change_type" | "create" | "delete" | "start_workflow" | "update";
+    name: 'change_type' | 'create' | 'delete' | 'start_workflow' | 'update';
 
     /**
      * The IDs of the objects to operate on
@@ -29,28 +50,32 @@ export interface BulkOperationPayload {
     /**
      * The operation parameters.
      */
-    params: Record<string, any>;
+    params: Record<string, unknown>;
 }
 
-export interface BulkOperationResult {
-    status: "in_progress" | "completed" | "failed";
+export interface BulkOperationResult<TOperation extends string = 'generic'> {
+    operation: TOperation;
+    status: 'in_progress' | 'completed' | 'failed';
 }
 
-export interface BulkObjectDeleteResult extends BulkOperationResult {
+export interface BulkObjectDeleteResult extends BulkOperationResult<'delete'> {
+    operation: 'delete';
     /** Number of documents deleted (including revisions) */
     deleted: number;
     /** IDs that were not found or user had no permission to delete */
     failed: string[];
 }
 
-export interface BulkObjectUpdateResult extends BulkOperationResult {
+export interface BulkObjectUpdateResult extends BulkOperationResult<'update'> {
+    operation: 'update';
     /** Number of documents successfully updated */
     updated: number;
     /** IDs that were not found, not authorized, or failed to update */
     failed: string[];
 }
 
-export interface BulkObjectCreateResult extends BulkOperationResult {
+export interface BulkObjectCreateResult extends BulkOperationResult<'create'> {
+    operation: 'create';
     /** Number of documents successfully created */
     created: number;
     /** Successfully created objects with their IDs */
@@ -58,3 +83,12 @@ export interface BulkObjectCreateResult extends BulkOperationResult {
     /** Objects that failed to create */
     failed: { external_id?: string; index: number; error: string }[];
 }
+
+/**
+ * @discriminator operation
+ */
+export type BulkOperationResponse =
+    | BulkOperationResult
+    | BulkObjectCreateResult
+    | BulkObjectUpdateResult
+    | BulkObjectDeleteResult;

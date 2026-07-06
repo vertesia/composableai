@@ -10,7 +10,6 @@
  * These are automatically synced to the sandbox when the skill is used.
  */
 
-
 /**
  * Context provided when searching for relevant skills
  */
@@ -62,7 +61,7 @@ export interface InjectedSkill {
     /**
      * Tools related to this skill
      */
-    related_tools?: string[];
+    tools?: string[];
 
     /**
      * UI module for rendering results

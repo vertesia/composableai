@@ -1,3 +1,3 @@
-export * from "./Popup";
-export * from "./PopupController"
-export * from "./position";
+export * from './Popup';
+export * from './PopupController';
+export * from './position';

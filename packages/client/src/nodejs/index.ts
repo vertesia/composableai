@@ -1,1 +1,1 @@
-export * from "./NodeStreamSource.js";
+export * from './NodeStreamSource.js';

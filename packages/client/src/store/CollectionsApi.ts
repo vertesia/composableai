@@ -1,31 +1,40 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { Collection, ComplexCollectionSearchQuery, ComplexSearchPayload, ComputeCollectionFacetPayload, ComputeObjectFacetPayload, ContentObjectItem, ContentObjectStatus, CreateCollectionPayload, DynamicCollection } from "@vertesia/common";
-import { ComputeFacetsResponse, SearchResponse } from "./ObjectsApi.js";
-
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    Collection,
+    ComplexCollectionSearchQuery,
+    ComplexSearchPayload,
+    ComputeCollectionFacetPayload,
+    ComputedFacetResponse,
+    ComputeObjectFacetPayload,
+    ContentObjectItem,
+    ContentObjectStatus,
+    CreateCollectionPayload,
+    DynamicCollection,
+    ObjectSearchResponse,
+} from '@vertesia/common';
 
 export class CollectionsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/collections");
+        super(parent, '/api/v1/collections');
     }
 
     /**
      * List collections
      * @param payload: CollectionSearchPayload
      * @returns Collection[] list of collections
-    **/
+     **/
     search(payload: ComplexCollectionSearchQuery): Promise<Collection[]> {
-        return this.post("/search", { payload });
+        return this.post('/search', { payload });
     }
 
     /**
      * Compute facets for List collections
      * @param query: ComputeCollectionFacetPayload
      * @returns ComputeFacetsResponse list of facets
-    **/
-    computeListFacets(query: ComputeCollectionFacetPayload): Promise<ComputeFacetsResponse> {
-        return this.post("/facets", {
-            payload: query
+     **/
+    computeListFacets(query: ComputeCollectionFacetPayload): Promise<ComputedFacetResponse> {
+        return this.post('/facets', {
+            payload: query,
         });
     }
 
@@ -40,13 +49,13 @@ export class CollectionsApi extends ApiTopic {
 
     create(payload: CreateCollectionPayload): Promise<Collection> {
         return this.post(`/`, {
-            payload
+            payload,
         });
     }
 
     update(collectionId: string, payload: Partial<CreateCollectionPayload>): Promise<{ id: string }> {
         return this.put(`/${collectionId}`, {
-            payload
+            payload,
         });
     }
 
@@ -54,31 +63,34 @@ export class CollectionsApi extends ApiTopic {
         return this.post(`/${collectionId}/members`, {
             payload: {
                 action: 'add',
-                members
-            }
+                members,
+            },
         });
     }
 
-    listMembers(collectionId: string, payload: {
-        limit?: number,
-        offset?: number,
-        status?: ContentObjectStatus,
-        type?: string,
-    }): Promise<ContentObjectItem[]> {
+    listMembers(
+        collectionId: string,
+        payload: {
+            limit?: number;
+            offset?: number;
+            status?: ContentObjectStatus;
+            type?: string;
+        },
+    ): Promise<ContentObjectItem[]> {
         return this.get(`/${collectionId}/members`, {
             query: {
-                ...payload
-            }
+                ...payload,
+            },
         });
     }
 
-    computeFacets(collectionId: string, query: ComputeObjectFacetPayload): Promise<ComputeFacetsResponse> {
+    computeFacets(collectionId: string, query: ComputeObjectFacetPayload): Promise<ComputedFacetResponse> {
         return this.post(`/${collectionId}/facets`, {
-            payload: query
+            payload: query,
         });
     }
 
-    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<SearchResponse> {
+    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
         return this.post(`/${collectionId}/search`, { payload });
     }
 
@@ -86,8 +98,8 @@ export class CollectionsApi extends ApiTopic {
         return this.post(`/${collectionId}/members`, {
             payload: {
                 action: 'delete',
-                members
-            }
+                members,
+            },
         });
     }
 
@@ -95,8 +107,8 @@ export class CollectionsApi extends ApiTopic {
         return this.post(`/${collectionId}/children`, {
             payload: {
                 action: 'add',
-                children
-            }
+                children,
+            },
         });
     }
 
@@ -104,14 +116,14 @@ export class CollectionsApi extends ApiTopic {
         return this.post(`/${collectionId}/children`, {
             payload: {
                 action: 'delete',
-                children
-            }
+                children,
+            },
         });
     }
 
     searchChildren(collectionId: string, query: ComplexCollectionSearchQuery = {}): Promise<Collection[]> {
         return this.post(`/${collectionId}/children/search`, {
-            payload: query
+            payload: query,
         });
     }
 
@@ -125,12 +137,15 @@ export class CollectionsApi extends ApiTopic {
      * @param permissions - Map of permission types to principal arrays
      * @returns Object with collection id, updated security, and number of objects updated
      */
-    updatePermissions(collectionId: string, permissions: Record<string, string[]>): Promise<{
+    updatePermissions(
+        collectionId: string,
+        permissions: Record<string, string[]>,
+    ): Promise<{
         id: string;
         security: Record<string, string[]>;
     }> {
         return this.put(`/${collectionId}/permissions`, {
-            payload: permissions
+            payload: permissions,
         });
     }
 
@@ -157,10 +172,8 @@ export class CollectionsApi extends ApiTopic {
     propagateSharedProperties(collectionId: string): Promise<{
         id: string;
         message: string;
-        shared_properties: string[]
+        shared_properties: string[];
     }> {
         return this.post(`/${collectionId}/propagate-shared-props`);
     }
-
-
 }

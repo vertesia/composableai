@@ -1,5 +1,3 @@
-import { ExampleTemplates } from "./examples/index.js";
+import { ExampleTemplates } from './examples/index.js';
 
-export const templates = [
-    ExampleTemplates
-];
+export const templates = [ExampleTemplates];

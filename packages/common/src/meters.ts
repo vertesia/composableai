@@ -1,12 +1,10 @@
-import { BillingMethod } from "./user.js";
-
+import type { BillingMethod } from './user.js';
 
 export interface MeterAdjustment {
     meter: string;
     value: string;
     identifier?: string;
 }
-
 
 export interface AdjustMetersMeterWorkflowParams {
     adjustments: MeterAdjustment[];
@@ -21,10 +19,9 @@ export enum MeterNames {
     task_run = 'task_run',
 }
 
-
 export interface StripeBillingStatusResponse {
-    status: 'enabled' | 'disabled',
-    billing_method: BillingMethod | null,
-    portal_url?: string,
-    reason?: string
+    status: 'enabled' | 'disabled';
+    billing_method: BillingMethod | null;
+    portal_url?: string;
+    reason?: string;
 }

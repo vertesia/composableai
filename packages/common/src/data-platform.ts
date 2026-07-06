@@ -5,7 +5,7 @@
  * Supports AI-manageable schemas and multi-table atomic operations.
  */
 
-import { BaseObject } from './store/common.js';
+import type { BaseObject } from './store/common.js';
 
 // ============================================================================
 // Column Types
@@ -79,6 +79,8 @@ export interface DataColumn {
     default?: string;
     /** Whether this is the primary key */
     primary_key?: boolean;
+    /** Whether this column should use a sequence-backed auto-increment default */
+    auto_increment?: boolean;
     /** Whether values must be unique */
     unique?: boolean;
     /** Semantic type for AI understanding */
@@ -205,6 +207,10 @@ export interface DataSchema {
     updated_by?: string;
 }
 
+export interface DataStoreFullSchemaResponse extends DataSchema {
+    schema_format: 'full';
+}
+
 // ============================================================================
 // Data Store Types
 // ============================================================================
@@ -297,6 +303,15 @@ export interface DataStoreVersion {
     is_snapshot?: boolean;
     /** Snapshot name (if is_snapshot) */
     snapshot_name?: string;
+}
+
+export interface ListDataStoreVersionsQuery {
+    limit?: number;
+    snapshots_only?: boolean;
+}
+
+export interface GetDataStoreTableQuery {
+    sample?: boolean;
 }
 
 // ============================================================================
@@ -395,8 +410,19 @@ export interface CreateTablesPayload {
     message: string;
 }
 
+export interface QueryValidationPayload {
+    queries: Array<{ name: string; sql: string }>;
+}
+
+export interface BatchQueryPayload {
+    queries: Array<{ name: string; sql: string; limit?: number }>;
+}
+
 /**
  * Schema change operation types.
+ */
+/**
+ * @discriminator op
  */
 export type AlterTableOperation =
     | { op: 'add_column'; column: DataColumn }
@@ -493,6 +519,32 @@ export interface QueryPayload {
 }
 
 /**
+ * Payload for mutating data rows with a single SQL statement.
+ */
+export interface DataStoreMutateRowsPayload {
+    /** SQL statement. Only UPDATE and DELETE statements are accepted. */
+    sql: string;
+    /** Commit message recorded on the resulting data store version. */
+    message: string;
+    /** Allow UPDATE/DELETE statements without a WHERE clause. Defaults to false. */
+    allow_full_table?: boolean;
+}
+
+/**
+ * Result from mutating rows in a data store.
+ */
+export interface DataStoreMutateRowsResult {
+    /** Resulting data store version ID */
+    version_id: string;
+    /** Tables affected by the statement */
+    affected_tables: string[];
+    /** Current row counts for affected tables after the mutation */
+    row_counts: Record<string, number>;
+    /** Statement execution time in milliseconds */
+    execution_time_ms: number;
+}
+
+/**
  * Column metadata in query results.
  */
 export interface QueryResultColumn {
@@ -518,6 +570,75 @@ export interface QueryResult {
     error?: string;
 }
 
+export interface BatchQueryResultItem extends QueryResult {
+    name: string;
+}
+
+export interface BatchQueryResult {
+    results: BatchQueryResultItem[];
+}
+
+export interface QueryValidationError {
+    query: string;
+    error: string;
+}
+
+export interface QueryValidationResult {
+    valid: boolean;
+    errors: QueryValidationError[];
+}
+
+export interface DataStoreDownloadInfo {
+    url: string;
+    gcs_generation: number;
+    schema_version: string;
+    store_id: string;
+    store_name: string;
+    tables: string[];
+    expires_in: number;
+}
+
+export interface DataStoreArchiveResult {
+    id: string;
+    status: DataStoreStatus;
+}
+
+/**
+ * @discriminator schema_format
+ */
+export type DataStoreSchemaResponse = DataStoreFullSchemaResponse | DataSchemaForAI;
+
+export interface DataStoreTableDetail extends DataTable {
+    sample_data?: Record<string, unknown>[];
+}
+
+export interface DataStoreTableDropResult {
+    dropped: string;
+}
+
+export interface DashboardArchiveResult {
+    id: string;
+    status: DashboardStatus;
+}
+
+export interface DashboardBulkArchiveResult {
+    archived: number;
+    failed: number;
+}
+
+export interface DashboardBulkDeleteResult {
+    deleted: number;
+    failed: number;
+}
+
+export interface DashboardVersioningStatusResponse {
+    versioning_enabled: boolean;
+}
+
+export interface DashboardVersioningPayload {
+    enabled: boolean;
+}
+
 // ============================================================================
 // AI Agent Interface
 // ============================================================================
@@ -536,6 +657,8 @@ export interface DataColumnForAI {
     nullable: boolean;
     /** Whether primary key */
     primary_key: boolean;
+    /** Whether sequence-backed auto-increment is enabled */
+    auto_increment: boolean;
     /** Example values */
     examples?: string[];
 }
@@ -585,6 +708,7 @@ export interface DataRelationshipForAI {
  * Provides semantic context for understanding the data model.
  */
 export interface DataSchemaForAI {
+    schema_format: 'ai';
     /** Store name */
     name: string;
     /** Schema version */

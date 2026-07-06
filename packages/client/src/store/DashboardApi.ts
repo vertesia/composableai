@@ -1,16 +1,20 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
-    CreateDashboardPayload,
-    CreateDashboardSnapshotPayload,
-    Dashboard,
-    DashboardItem,
-    DashboardStatus,
-    DashboardVersion,
-    DashboardVersionItem,
+    type CreateDashboardPayload,
+    type CreateDashboardSnapshotPayload,
+    type Dashboard,
+    type DashboardArchiveResult,
+    type DashboardBulkArchiveResult,
+    type DashboardBulkDeleteResult,
+    type DashboardItem,
+    type DashboardStatus,
+    type DashboardVersion,
+    type DashboardVersionItem,
+    type DashboardVersioningStatusResponse,
     DataStoreApiHeaders,
-    PromoteDashboardVersionPayload,
-    UpdateDashboardPayload,
-} from "@vertesia/common";
+    type PromoteDashboardVersionPayload,
+    type UpdateDashboardPayload,
+} from '@vertesia/common';
 
 /**
  * Client API for managing Vega-based dashboards linked to data stores.
@@ -82,7 +86,7 @@ export class DashboardApi extends ApiTopic {
      * ```
      */
     create(payload: CreateDashboardPayload): Promise<Dashboard> {
-        return this.post("/", { payload, headers: this.storeHeaders() });
+        return this.post('/', { payload, headers: this.storeHeaders() });
     }
 
     /**
@@ -112,7 +116,7 @@ export class DashboardApi extends ApiTopic {
      * @param id - Dashboard ID
      * @returns Object with the archived dashboard ID
      */
-    delete(id: string): Promise<{ id: string; status: DashboardStatus }> {
+    delete(id: string): Promise<DashboardArchiveResult> {
         return this.del(`/${id}`, { headers: this.storeHeaders() });
     }
 
@@ -122,7 +126,7 @@ export class DashboardApi extends ApiTopic {
      * @param ids - Array of dashboard IDs
      * @returns Object with counts of archived and failed dashboards
      */
-    bulkArchive(ids: string[]): Promise<{ archived: number; failed: number }> {
+    bulkArchive(ids: string[]): Promise<DashboardBulkArchiveResult> {
         return this.post('/bulk/archive', { payload: { ids }, headers: this.storeHeaders() });
     }
 
@@ -132,7 +136,7 @@ export class DashboardApi extends ApiTopic {
      * @param ids - Array of dashboard IDs
      * @returns Object with counts of deleted and failed dashboards
      */
-    bulkDelete(ids: string[]): Promise<{ deleted: number; failed: number }> {
+    bulkDelete(ids: string[]): Promise<DashboardBulkDeleteResult> {
         return this.post('/bulk/delete', { payload: { ids }, headers: this.storeHeaders() });
     }
 
@@ -149,7 +153,7 @@ export class DashboardApi extends ApiTopic {
      */
     listVersions(
         dashboardId: string,
-        options?: { snapshotsOnly?: boolean; limit?: number }
+        options?: { snapshotsOnly?: boolean; limit?: number },
     ): Promise<DashboardVersionItem[]> {
         const params = new URLSearchParams();
         if (options?.snapshotsOnly) params.set('snapshots_only', 'true');
@@ -176,10 +180,7 @@ export class DashboardApi extends ApiTopic {
      * @param payload - Snapshot name and message
      * @returns The created snapshot version
      */
-    createSnapshot(
-        dashboardId: string,
-        payload: CreateDashboardSnapshotPayload
-    ): Promise<DashboardVersionItem> {
+    createSnapshot(dashboardId: string, payload: CreateDashboardSnapshotPayload): Promise<DashboardVersionItem> {
         return this.post(`/${dashboardId}/versions`, { payload, headers: this.storeHeaders() });
     }
 
@@ -195,9 +196,12 @@ export class DashboardApi extends ApiTopic {
     promoteVersion(
         dashboardId: string,
         versionId: string,
-        payload?: PromoteDashboardVersionPayload
+        payload?: PromoteDashboardVersionPayload,
     ): Promise<Dashboard> {
-        return this.post(`/${dashboardId}/versions/${versionId}/promote`, { payload: payload || {}, headers: this.storeHeaders() });
+        return this.post(`/${dashboardId}/versions/${versionId}/promote`, {
+            payload: payload || {},
+            headers: this.storeHeaders(),
+        });
     }
 
     /**
@@ -207,10 +211,7 @@ export class DashboardApi extends ApiTopic {
      * @param enabled - Whether versioning should be enabled
      * @returns The updated versioning state
      */
-    setVersioningEnabled(
-        dashboardId: string,
-        enabled: boolean
-    ): Promise<{ versioning_enabled: boolean }> {
+    setVersioningEnabled(dashboardId: string, enabled: boolean): Promise<DashboardVersioningStatusResponse> {
         return this.put(`/${dashboardId}/versioning`, { payload: { enabled }, headers: this.storeHeaders() });
     }
 }

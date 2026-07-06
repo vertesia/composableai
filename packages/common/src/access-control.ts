@@ -4,76 +4,150 @@
  * Access control interfaces
  */
 
-import { ProjectRoles } from "./project.js";
+import type { AbacScope } from './roles/types.js';
 
 export enum Permission {
-    int_read = "interaction:read",
-    int_write = "interaction:write",
-    int_delete = "interaction:delete",
+    int_read = 'interaction:read',
+    int_write = 'interaction:write',
+    int_delete = 'interaction:delete',
 
-    int_execute = "interaction:execute",
-    run_read = "run:read",
-    run_write = "run:write",
+    int_execute = 'interaction:execute',
+    run_read = 'run:read',
+    run_write = 'run:write',
 
-    env_admin = "environment:admin",
+    env_admin = 'environment:admin',
 
-    project_admin = "project:admin",
-    project_integration_read = "project:integration_read",
-    project_settings_write = "project:settings_write",
+    app_manage = 'app:manage',
+    project_admin = 'project:admin',
+    project_integration_read = 'project:integration_read',
+    project_settings_write = 'project:settings_write',
 
-    api_key_create = "api_key:create",
-    api_key_read = "api_key:read",
-    api_key_update = "api_key:update",
-    api_key_delete = "api_key:delete",
+    api_key_create = 'api_key:create',
+    api_key_read = 'api_key:read',
+    api_key_secret_read = 'api_key:secret_read',
+    api_key_update = 'api_key:update',
+    api_key_delete = 'api_key:delete',
 
-    account_read = "account:read",
-    account_write = "account:write",
-    account_admin = "account:admin",
-    manage_billing = "account:billing",
+    account_read = 'account:read',
+    account_write = 'account:write',
+    account_admin = 'account:admin',
+    manage_billing = 'account:billing',
     /** View cost and usage analytics */
-    billing_read = "billing:read",
-    account_member = "account:member",
+    billing_read = 'billing:read',
+    /** View account and project audit events. */
+    audit_read = 'audit:read',
+    account_member = 'account:member',
 
+    content_read = 'content:read',
+    content_read_all = 'content:read_all',
+    content_write = 'content:write',
+    content_delete = 'content:delete',
+    content_admin = 'content:admin', //manage schemas
+    content_superadmin = 'content:superadmin', // list all objects and collections
 
-    content_read = "content:read",
-    content_write = "content:write",
-    content_delete = "content:delete",
-    content_admin = "content:admin", //manage schemas
-    content_superadmin = "content:superadmin", // list all objects and collections
+    workflow_read = 'workflow:read',
+    workflow_run = 'workflow:run',
+    workflow_admin = 'workflow:admin',
+    workflow_superadmin = 'workflow:superadmin',
 
+    agent_run_read = 'agent_run:read',
 
-    workflow_run = "workflow:run",
-    workflow_admin = "workflow:admin",
-    workflow_superadmin = "workflow:superadmin",
+    task_read = 'task:read',
+    task_manage = 'task:manage',
 
-    iam_impersonate = "iam:impersonate",
+    iam_impersonate = 'iam:impersonate',
 
     /** whether the user has access to Sutdio App. */
-    studio_access = "studio:access",
+    studio_access = 'studio:access',
 }
 
 export enum AccessControlResourceType {
-    project = "project",
-    environment = "environment",
-    account = "account",
-    interaction = "interaction",
-    app = "application",
+    project = 'project',
+    environment = 'environment',
+    account = 'account',
+    interaction = 'interaction',
+    app = 'application',
+    /**
+     * Dynamic resource matching by property conditions at query time. The role
+     * partitions (content, future tasks/etc.) determine which kind of object
+     * the conditions match — selected via `AceConditions.scope`.
+     *
+     * NOTE: the string value remains `'content_set'` for backward compatibility
+     * with stored ACEs and JWTs. The wire/DB rename to `'resource_set'` is a
+     * separate concern (deferred). Until then, code reads
+     * `AccessControlResourceType.resource_set` but the value on the wire stays
+     * `'content_set'`.
+     */
+    resource_set = 'content_set',
 }
 
 export enum AccessControlPrincipalType {
-    user = "user",
-    group = "group",
-    apikey = "apikey",
+    user = 'user',
+    group = 'group',
+    apikey = 'apikey',
+    /** Dynamic principal matching by user/group properties at token time. */
+    principal_set = 'principal_set',
 }
 
+/**
+ * MongoDB query syntax subset for matching properties.
+ * Keys are property names, values are either direct match values or operator objects.
+ * Supported operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`, `$empty`, `$like`.
+ *
+ * In `resource_props`, values can reference principal properties using the `$principal.` prefix.
+ * These are resolved at token time by substituting the user's merged property value.
+ * If the referenced property is missing, a type-appropriate default is used (0, "", false).
+ *
+ * @example
+ * { department: "engineering" }                              // exact match (literal)
+ * { level: { $gte: 5 } }                                    // comparison (literal)
+ * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
+ * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
+ */
+/** A single condition value. Resolved and evaluated dynamically by token/content security code. */
+export type PropertyConditionValue = unknown;
 
+export type PropertyConditions = Record<string, PropertyConditionValue>;
+
+/**
+ * Conditions attached to an ACE for dynamic matching.
+ * - `principal_props`: matched against user/group properties at token time (PrincipalSet).
+ * - `resource_props`: matched against object properties at query time (ResourceSet).
+ */
+export interface AceConditions {
+    /** Property conditions matched against user/group properties at token time (PrincipalSet). */
+    principal_props?: PropertyConditions;
+    /** Property conditions matched against object properties at query time (ResourceSet). */
+    resource_props?: PropertyConditions;
+    /**
+     * Kind of object the `resource_props` matches. Used to disambiguate which
+     * partition's roles apply (e.g. content roles vs task roles) and to form
+     * the JWT `content_security` key prefix (`{scope}:{verb}`). Absent →
+     * `'document'` (default; emits bare `read`/`write`/`delete` keys for
+     * backward compatibility).
+     */
+    scope?: AbacScope;
+}
 
 export interface AccessControlEntry {
-    role: ProjectRoles;
+    /**
+     * Role name. Typed as `string` because role names now span multiple
+     * partitions: `SystemRoles` enum values for system-domain roles, and bare
+     * strings for ABAC-domain roles (e.g. `'content:reader'`,
+     * `'content:writer'`, `'content:manager'`). Mongoose schema validates the
+     * value against the registered role catalog via `getAllRoleNames()`.
+     */
+    role: string;
     resource_type: AccessControlResourceType;
     resource: string; //objectId
     principal_type: AccessControlPrincipalType;
     principal: string; //objectId
+    /** Account scope — required for principal_set/content_set ACEs. */
+    account?: string;
+    /** Project scope — narrows a principal_set/content_set ACE to a single project. */
+    project?: string;
+    /** Dynamic matching conditions for principal_set/content_set ACEs. */
+    conditions?: AceConditions;
     tags?: string[];
     expires_at?: string;
     created_at?: string;
@@ -81,20 +155,43 @@ export interface AccessControlEntry {
     id: string;
 }
 
-export interface ACECreatePayload extends
-    Omit<AccessControlEntry, "created_at" | "updated_at" | "id"> {
+export interface ACECreatePayload extends Omit<AccessControlEntry, 'created_at' | 'updated_at' | 'id'> {}
+
+export interface ACEUpdatePayload extends Partial<ACECreatePayload> {}
+
+// RoleDefinition + SystemRoleDefinition now live in `./roles/types.js` to
+// avoid a circular import with `RoleDomain`. They remain re-exported via
+// the package's index.ts so consumers see no path change.
+
+// ============================================================================
+// BLP Security Levels
+// ============================================================================
+
+/**
+ * Default sensitivity/clearance levels for the Bell-LaPadula security model.
+ * The numeric value is the index in the array (0 = lowest, 4 = highest).
+ * Projects can override these labels via project settings.
+ */
+export enum SecurityLevel {
+    public = 0,
+    internal = 1,
+    confidential = 2,
+    restricted = 3,
+    secret = 4,
 }
 
-export interface ACEUpdatePayload extends Partial<ACECreatePayload> {
-}
+/** Human-readable labels for each security level, indexed by numeric value. */
+export const SecurityLevelLabels: readonly string[] = ['Public', 'Internal', 'Confidential', 'Restricted', 'Secret'];
 
+/** Get the label for a security level value. Returns "Unknown" for out-of-range values. */
+export function getSecurityLevelLabel(level: number): string {
+    return SecurityLevelLabels[level] ?? 'Unknown';
+}
 
 export interface AcesQueryOptions {
-
-    level?: 'resource' | 'project' | 'projects' | 'account'
-    resource?: string
-    principal?: string
-    role?: string
-    type?: AccessControlResourceType
-
+    level?: 'resource' | 'project' | 'projects' | 'account';
+    resource?: string;
+    principal?: string;
+    role?: string;
+    type?: AccessControlResourceType;
 }

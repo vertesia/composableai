@@ -1,9 +1,9 @@
-import { BaseObject } from "./common.js";
-import { ColumnLayout, ContentObjectTypeRef } from "./store.js";
+import type { BaseObject } from './common.js';
+import type { ColumnLayout, ContentObjectTypeRef } from './store.js';
 
 export enum CollectionStatus {
-    active = "active",
-    archived = "archived",
+    active = 'active',
+    archived = 'archived',
 }
 
 export interface CreateCollectionPayload {
@@ -12,14 +12,18 @@ export interface CreateCollectionPayload {
     description?: string;
     skip_head_sync?: boolean;
     tags?: string[];
-    type?: string;
-    query?: Record<string, any>;
-    properties?: Record<string, any>;
+    type?: string | null;
+    query?: Record<string, unknown>;
+    properties?: Record<string, unknown>;
     parent?: string | null;
     table_layout?: ColumnLayout[] | null;
     allowed_types?: string[];
-    updated_by?: string,
+    updated_by?: string;
     shared_properties?: string[];
+    /** BLP sensitivity level for member documents */
+    sensitivity?: number;
+    /** Compartments for member documents */
+    compartments?: string[];
 }
 
 export interface CollectionItem extends BaseObject {
@@ -33,7 +37,7 @@ export interface CollectionItem extends BaseObject {
     // A ref to the object type
     type?: ContentObjectTypeRef;
     /**
-     * A flag to indicate whether to track and sync member HEAD revisions. 
+     * A flag to indicate whether to track and sync member HEAD revisions.
      * The default is to sync HEAD revisions for collection members (skip_head_sync: false)
      */
     skip_head_sync: boolean;
@@ -55,9 +59,13 @@ export interface CollectionItem extends BaseObject {
 }
 
 export interface Collection extends CollectionItem {
-    properties: Record<string, any>;
-    query?: Record<string, any>;
+    properties?: Record<string, unknown>;
+    query?: Record<string, unknown>;
     security?: Record<string, string[]>; // ACL for collection access
+    /** BLP sensitivity level — propagated to member documents (max across collections) */
+    sensitivity?: number;
+    /** Compartments — propagated to member documents (union across collections) */
+    compartments?: string[];
     /**
      * List of property names from the collection's properties that should be shared with (injected into) member objects.
      * These properties will be propagated to all members of this collection and merged as arrays.
@@ -84,4 +92,41 @@ export interface CollectionSearchPayload {
     name?: string;
     type?: string;
     types?: string[];
+}
+
+export interface CollectionMembersUpdateResult {
+    id: string;
+}
+
+export interface CollectionSecuritySettingsResponse {
+    id: string;
+    security: Record<string, string[]>;
+}
+
+export interface CollectionPropagationResponse {
+    id: string;
+    message: string;
+    security?: Record<string, string[]>;
+    shared_properties?: string[];
+}
+
+export interface CollectionChildrenUpdateResult {
+    count: number;
+}
+
+export interface CollectionMembersUpdatePayload {
+    action: 'add' | 'delete';
+    members: string[];
+}
+
+export interface CollectionChildrenUpdatePayload {
+    action: 'add' | 'delete';
+    children: string[];
+}
+
+export interface CollectionMembersQuery {
+    status?: string;
+    type?: string;
+    limit?: number;
+    offset?: number;
 }

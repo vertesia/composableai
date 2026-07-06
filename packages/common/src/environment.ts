@@ -1,18 +1,18 @@
-import type { AIModel, ProviderParams, TextFallbackOptions } from "@llumiverse/common";
-import { ProviderList, Providers } from "@llumiverse/common";
+import type { AIModel, ProviderParams } from '@llumiverse/common';
+import { ProviderList, Providers } from '@llumiverse/common';
 
 // Virtual providers from studio
 export enum CustomProviders {
     virtual_lb = 'virtual_lb',
     virtual_mediator = 'virtual_mediator',
-    test = 'test'
+    test = 'test',
 }
 
 export type SupportedProviders = Providers | CustomProviders;
 
 export const SupportedProviders = {
     ...Providers,
-    ...CustomProviders
+    ...CustomProviders,
 } as const;
 
 export interface SupportedProviderParams extends Omit<ProviderParams, 'id'> {
@@ -20,25 +20,23 @@ export interface SupportedProviderParams extends Omit<ProviderParams, 'id'> {
 }
 
 export const CustomProvidersList: Record<CustomProviders, SupportedProviderParams> = {
-    virtual_lb:
-    {
+    virtual_lb: {
         id: CustomProviders.virtual_lb,
-        name: "Virtual - Load Balancer",
+        name: 'Virtual - Load Balancer',
         requiresApiKey: false,
         requiresEndpointUrl: false,
         supportSearch: false,
     },
-    virtual_mediator:
-    {
+    virtual_mediator: {
         id: CustomProviders.virtual_mediator,
-        name: "Virtual - Mediator",
+        name: 'Virtual - Mediator',
         requiresApiKey: false,
         requiresEndpointUrl: false,
         supportSearch: false,
     },
     test: {
         id: CustomProviders.test,
-        name: "Test LLM",
+        name: 'Test LLM',
         requiresApiKey: false,
         requiresEndpointUrl: false,
         supportSearch: false,
@@ -47,12 +45,15 @@ export const CustomProvidersList: Record<CustomProviders, SupportedProviderParam
 
 export const SupportedProvidersList: Record<SupportedProviders, SupportedProviderParams> = {
     ...ProviderList,
-    ...CustomProvidersList
+    ...CustomProvidersList,
 } as const;
-
 
 export interface VirtualEnvEntry {
     model: string;
+}
+
+export interface ListEnvironmentsQuery {
+    all?: boolean;
 }
 
 /**
@@ -76,6 +77,35 @@ export interface MediatorEnvConfig {
     model_options?: TextFallbackOptions;
 }
 
+export interface TextFallbackOptions {
+    _option_id: 'text-fallback';
+    max_tokens?: number;
+    temperature?: number;
+    top_p?: number;
+    top_k?: number;
+    presence_penalty?: number;
+    frequency_penalty?: number;
+    stop_sequence?: string[];
+}
+
+export interface ExecutionEnvironmentSettings {
+    [key: string]: unknown;
+    bucket_access_principal?: string;
+}
+
+/**
+ * Returns the configured Vertex AI bucket access principal for an environment, or undefined.
+ * Only Vertex AI environments expose this setting; the value is trimmed and empty strings
+ * are treated as unset so callers get a single, normalized representation.
+ */
+export function getVertexBucketAccessPrincipal(
+    env: { provider?: SupportedProviders; settings?: ExecutionEnvironmentSettings } | undefined,
+): string | undefined {
+    if (!env || env.provider !== SupportedProviders.vertexai) return undefined;
+    const principal = env.settings?.bucket_access_principal;
+    return typeof principal === 'string' && principal.trim().length > 0 ? principal.trim() : undefined;
+}
+
 export interface ExecutionEnvironment {
     id: string;
     name: string;
@@ -90,16 +120,16 @@ export interface ExecutionEnvironment {
      * Stored alongside the encrypted key so the UI can display which key is configured.
      */
     apikey_hint?: string;
-    config?: any;
+    config?: unknown;
     /**
      * Additional provider-specific settings passed through to the driver.
      * For example, custom headers for Apigee-proxied endpoints.
      */
-    settings?: Record<string, unknown>;
+    settings?: ExecutionEnvironmentSettings;
     account: string;
     allowed_projects?: string[];
-    created_by: string,
-    updated_by: string,
+    created_by: string;
+    updated_by: string;
     created_at: string;
     updated_at: string;
 }
@@ -119,10 +149,29 @@ export interface ExecutionEnvironmentRef {
     updated_at: string;
 }
 
-export const ExecutionEnvironmentRefPopulate = "id name provider enabled_models default_model endpoint_url allowed_projects account created_at updated_at";
+export interface ExecutionEnvironmentCreatePayload
+    extends Omit<
+        ExecutionEnvironment,
+        'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project' | 'apikey_hint'
+    > {}
+export interface ExecutionEnvironmentUpdatePayload
+    extends Partial<
+        Omit<
+            ExecutionEnvironment,
+            'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'apikey_hint'
+        >
+    > {}
+export interface ExecutionEnvironmentConfigUpdatePayload {
+    enabled_models?: AIModel[];
+    config?: MediatorEnvConfig | LoadBalancingEnvConfig;
+}
 
-export interface ExecutionEnvironmentCreatePayload extends Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project'> { }
-export interface ExecutionEnvironmentUpdatePayload extends Partial<Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>> { }
+export interface EnableEnvironmentModelPayload {
+    /**
+     * Provider model ID to resolve from the environment's available model listing.
+     */
+    model_id: string;
+}
 
 export interface MigrateInteractionsPayload {
     /**

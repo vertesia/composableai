@@ -1,64 +1,71 @@
-import { ApiTopic } from "@vertesia/api-fetch-client";
+import { ApiTopic } from '@vertesia/api-fetch-client';
 import {
-    BulkObjectCreateResult,
-    BulkObjectDeleteResult,
-    BulkObjectUpdateResult,
-    canGenerateRendition,
-    ComplexSearchPayload,
-    ComputeObjectFacetPayload,
-    ContentObject,
+    type BulkObjectCreateResult,
+    type BulkObjectDeleteResult,
+    type BulkObjectUpdateResult,
+    type Collection,
+    type ComplexSearchPayload,
+    type ComputedFacetResponse,
+    type ComputeObjectFacetPayload,
+    type ContentObject,
     ContentObjectApiHeaders,
-    ContentObjectItem,
-    ContentObjectProcessingPriority,
-    ContentSource,
-    CreateContentObjectPayload,
-    Embedding,
-    ExportPropertiesPayload,
-    ExportPropertiesResponse,
-    FindPayload,
-    GetFileUrlPayload,
-    GetFileUrlResponse,
-    GetRenditionParams,
-    GetRenditionResponse,
+    type ContentObjectExportArtifactFile,
+    type ContentObjectExportResult,
+    type ContentObjectExportStatusResponse,
+    type ContentObjectItem,
+    type ContentObjectProcessingPriority,
+    type ContentObjectTextResponse,
+    type ContentSource,
+    type CreateContentObjectPayload,
+    canGenerateRendition,
+    type DeleteContentObjectExportResponse,
+    type DeleteContentObjectResult,
+    type Embedding,
+    type ExportPropertiesPayload,
+    type ExportPropertiesResponse,
+    type FindPayload,
+    type GetFileUrlPayload,
+    type GetFileUrlResponse,
+    type GetRenditionParams,
+    type GetRenditionResponse,
+    type GetUploadUrlPayload,
+    type ListContentObjectExportsResponse,
+    type ListWorkflowRunsResponse,
+    type ObjectSearchPayload,
+    type ObjectSearchQuery,
+    type ObjectSearchResponse,
+    type SetObjectEmbeddingsResponse,
+    type StartContentObjectExportRequest,
+    type StartContentObjectExportResponse,
+    type SupportedEmbeddingTypes,
+    type ZenoBulkContentObjectExportComposeRequest,
+    type ZenoBulkContentObjectExportPlanRequest,
+    type ZenoBulkContentObjectExportPlanResponse,
+    type ZenoBulkContentObjectExportRequest,
+    type ZenoBulkContentObjectExportShardRequest,
+    type ZenoBulkContentObjectExportShardResult,
+    type ZenoBulkContentObjectExportSplitShardRequest,
+    type ZenoBulkContentObjectExportSplitShardResponse,
+} from '@vertesia/common';
 
-    GetUploadUrlPayload,
-    ListWorkflowRunsResponse,
-    ObjectSearchPayload,
-    ObjectSearchQuery,
-    SupportedEmbeddingTypes,
-} from "@vertesia/common";
-
+export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
 // Re-export rendition utilities for consumers
 export { canGenerateRendition };
-export { getSupportedRenditionFormats, supportsVisualRendition } from "@vertesia/common";
 
-import { StreamSource } from "../StreamSource.js";
-import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
-import { ZenoClient } from "./client.js";
+import { StreamSource } from '../StreamSource.js';
+import { AnalyzeDocApi } from './AnalyzeDocApi.js';
+import type { ZenoClient } from './client.js';
+import { fetchSignedUrl } from './signed-url.js';
 
-export interface ComputeFacetsResponse {
-    type?: { _id: string; count: number }[];
-    location?: { _id: string; count: number }[];
-    status?: { _id: string; count: number }[];
-    [key: string]:
-        | { _id: string; count: number }[]
-        | number
-        | undefined;
-    total?: number;
-}
-
-export interface SearchResponse {
-    results: ContentObjectItem[];
-    facets: ComputeFacetsResponse;
-    /** Raw ES aggregation results. Only present when aggs were requested and ES backend was used. */
-    aggregations?: Record<string, unknown>;
-}
+type ContentObjectWritePayload = Omit<CreateContentObjectPayload, 'content'> & {
+    content?: ContentSource | File | StreamSource;
+};
 
 export class ObjectsApi extends ApiTopic {
     declare client: ZenoClient;
 
     constructor(parent: ZenoClient) {
-        super(parent, "/api/v1/objects");
+        super(parent, '/api/v1/objects');
     }
 
     analyze(objectId: string) {
@@ -66,19 +73,19 @@ export class ObjectsApi extends ApiTopic {
     }
 
     getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {
-        return this.post("/upload-url", {
+        return this.post('/upload-url', {
             payload,
         });
     }
 
-    getDownloadUrl(fileUri: string, name?: string, disposition?: "inline" | "attachment"): Promise<{ url: string }> {
-        return this.post("/download-url", {
+    getDownloadUrl(fileUri: string, name?: string, disposition?: 'inline' | 'attachment'): Promise<{ url: string }> {
+        return this.post('/download-url', {
             payload: { file: fileUri, name, disposition } satisfies GetFileUrlPayload,
         });
     }
 
     getDownloadUrlWithOptions(payload: GetFileUrlPayload): Promise<{ url: string }> {
-        return this.post("/download-url", { payload });
+        return this.post('/download-url', { payload });
     }
 
     getContentSource(objectId: string): Promise<ContentSource> {
@@ -91,14 +98,12 @@ export class ObjectsApi extends ApiTopic {
      * @param payload Search/filter parameters
      * @returns Matching content objects
      */
-    list<T = any>(
-        payload: ObjectSearchPayload = {},
-    ): Promise<ContentObjectItem<T>[]> {
+    list<T = unknown>(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem<T>[]> {
         const limit = payload.limit || 100;
         const offset = payload.offset || 0;
         const query = payload.query || ({} as ObjectSearchQuery);
 
-        return this.get("/", {
+        return this.get('/', {
             query: {
                 limit,
                 offset,
@@ -110,35 +115,128 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    computeFacets(
-        query: ComputeObjectFacetPayload,
-    ): Promise<ComputeFacetsResponse> {
-        return this.post("/facets", {
+    computeFacets(query: ComputeObjectFacetPayload): Promise<ComputedFacetResponse> {
+        return this.post('/facets', {
             payload: query,
         });
     }
 
-    listFolders(_path: string = "/") {
-        throw new Error("Not implemented yet");
+    startExport(payload: StartContentObjectExportRequest = {}): Promise<StartContentObjectExportResponse> {
+        return this.post('/export/bulk', { payload });
+    }
+
+    listExports(): Promise<ListContentObjectExportsResponse> {
+        return this.get('/export/bulk/artifacts');
+    }
+
+    deleteExport(exportId: string): Promise<DeleteContentObjectExportResponse> {
+        return this.del(`/export/bulk/artifacts/${encodeURIComponent(exportId)}`);
+    }
+
+    getExportStatus(workflowId: string, runId: string): Promise<ContentObjectExportStatusResponse> {
+        return this.get(`/export/bulk/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}`);
+    }
+
+    getExportDownloadUrl(exportId: string, role: ContentObjectExportArtifactFile['role']): Promise<GetFileUrlResponse> {
+        return this.get(`/export/bulk/artifacts/${encodeURIComponent(exportId)}/${role}/download-url`);
+    }
+
+    async downloadExportFile(
+        exportId: string,
+        role: ContentObjectExportArtifactFile['role'],
+    ): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
+        const { url } = await this.getExportDownloadUrl(exportId, role);
+        const res = await fetchSignedUrl(url, {
+            method: 'GET',
+        }).then((res: Response) => {
+            if (!res.ok) {
+                throw new Error(`Failed to download export file: ${res.status} ${res.statusText}`);
+            }
+            return res;
+        });
+
+        if (!res.body) {
+            throw new Error('No response body received when downloading export file');
+        }
+        return res.body as ReadableStream<Uint8Array<ArrayBuffer>>;
+    }
+
+    exportToBucketViaBulk(
+        payload: ZenoBulkContentObjectExportRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ContentObjectExportResult> {
+        return this.zenoBulkPost('/export', payload, timeoutMs);
+    }
+
+    planContentObjectExportViaBulk(
+        payload: ZenoBulkContentObjectExportPlanRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportPlanResponse> {
+        return this.zenoBulkPost('/export/plan', payload, timeoutMs);
+    }
+
+    exportContentObjectShardViaBulk(
+        payload: ZenoBulkContentObjectExportShardRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportShardResult> {
+        return this.zenoBulkPost('/export/shard', payload, timeoutMs);
+    }
+
+    splitContentObjectExportShardViaBulk(
+        payload: ZenoBulkContentObjectExportSplitShardRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportSplitShardResponse> {
+        return this.zenoBulkPost('/export/shard/split', payload, timeoutMs);
+    }
+
+    composeContentObjectExportViaBulk(
+        payload: ZenoBulkContentObjectExportComposeRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ContentObjectExportResult> {
+        return this.zenoBulkPost('/export/compose', payload, timeoutMs);
+    }
+
+    /**
+     * Get the zeno-bulk base URL.
+     * Dev branches: store URL contains "zeno-server" -> replace with "zeno-bulk".
+     * Production/preview: same domain, LB routes /export to zeno-bulk.
+     */
+    private get zenoBulkBaseUrl(): string {
+        const storeBaseUrl = this.client.baseUrl;
+        if (storeBaseUrl.includes('localhost:') || storeBaseUrl.includes('127.0.0.1:')) {
+            return 'https://zeno-bulk-dev-main.api.dev1.vertesia.io';
+        }
+        if (storeBaseUrl.includes('zeno-server')) {
+            return storeBaseUrl.replace(/zeno-server/, 'zeno-bulk');
+        }
+        return storeBaseUrl;
+    }
+
+    private zenoBulkPost<T>(path: string, body: object, timeoutMs?: number | false | null): Promise<T> {
+        return this.client.post(this.zenoBulkBaseUrl + path, { payload: body, timeoutMs });
+    }
+
+    listFolders(_path: string = '/') {
+        throw new Error('Not implemented yet');
     }
 
     /** Find object based on query */
     find(payload: FindPayload): Promise<ContentObject[]> {
-        return this.post("/find", {
+        return this.post('/find', {
             payload,
         });
     }
 
     /** Count number of objects matching this query */
     count(payload: FindPayload): Promise<{ count: number }> {
-        return this.post("/count", {
+        return this.post('/count', {
             payload,
         });
     }
 
     /** Search object — different from find because allow full text search */
-    search(payload: ComplexSearchPayload): Promise<SearchResponse> {
-        return this.post("/search", {
+    search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
+        return this.post('/search', {
             payload,
         });
     }
@@ -151,7 +249,7 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    getObjectText(id: string): Promise<{ text: string }> {
+    getObjectText(id: string): Promise<ContentObjectTextResponse> {
         return this.get(`/${id}/text`);
     }
 
@@ -166,48 +264,24 @@ export class ObjectsApi extends ApiTopic {
         const sourceMimeType = source.type || mime_type;
 
         // upload the file content to the signed URL
-        /*const res = await this.fetch(url, {
+        const res = await fetchSignedUrl(url, {
             method: 'PUT',
-            //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
-            duplex: isStream ? "half" : undefined,
             body: isStream ? source.stream : source,
-            headers: {
-                'Content-Type': mime_type || 'application/octet-stream'
-            }
-        }).then((res: Response) => {
-            if (res.ok) {
-                return res;
-            } else {
-                console.log(res);
-                throw new Error(`Failed to upload file: ${res.statusText}`);
-            }
-        });*/
-
-        const res = await fetch(url, {
-            method: "PUT",
-            body: isStream ? source.stream : source,
-            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
-            duplex: isStream ? "half" : undefined,
-            headers: sourceMimeType ? { "Content-Type": sourceMimeType } : undefined,
-        })
-            .then((res: Response) => {
-                if (res.ok) {
-                    return res;
-                } else {
-                    console.log(res);
-                    throw new Error(`Failed to upload file: ${res.statusText}`);
-                }
-            })
-            .catch((err) => {
-                console.error("Failed to upload file", err);
-                throw err;
-            });
+            headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
+        }).catch((err) => {
+            console.error('Failed to upload file', err);
+            throw err;
+        });
+        if (!res.ok) {
+            console.error('Failed to upload file', { status: res.status, statusText: res.statusText, url });
+            throw new Error(`Failed to upload file: ${res.statusText}`);
+        }
 
         //Etag need to be unquoted
         //When a server returns an ETag header, it includes the quotes around the actual hash value.
         //This is part of the HTTP specification (RFC 7232), which states that ETags should be
         //enclosed in double quotes.
-        const etag = res.headers.get("etag")?.replace(/^"(.*)"$/, "$1");
+        const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
 
         return {
             source: id,
@@ -218,20 +292,20 @@ export class ObjectsApi extends ApiTopic {
     }
 
     async create(
-        payload: CreateContentObjectPayload,
+        payload: ContentObjectWritePayload,
         options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
+        const { content, ...payloadWithoutContent } = payload;
         const createPayload: CreateContentObjectPayload = {
-            ...payload,
+            ...payloadWithoutContent,
         };
-        if (
-            payload.content instanceof StreamSource ||
-            payload.content instanceof File
-        ) {
-            createPayload.content = await this.upload(payload.content);
+        if (content instanceof StreamSource || content instanceof File) {
+            createPayload.content = await this.upload(content);
+        } else {
+            createPayload.content = content;
         }
 
         const headers: Record<string, string> = {};
@@ -242,7 +316,7 @@ export class ObjectsApi extends ApiTopic {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
         }
 
-        return await this.post("/", {
+        return await this.post('/', {
             payload: createPayload,
             headers: headers,
         });
@@ -265,9 +339,7 @@ export class ObjectsApi extends ApiTopic {
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
-        const metadata = await this.client.files.getMetadata(
-            uri,
-        );
+        const metadata = await this.client.files.getMetadata(uri);
         const createPayload: CreateContentObjectPayload = {
             ...payload,
             content: {
@@ -286,7 +358,7 @@ export class ObjectsApi extends ApiTopic {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
         }
 
-        return await this.post("/", {
+        return await this.post('/', {
             payload: createPayload,
             headers: headers,
         });
@@ -301,31 +373,32 @@ export class ObjectsApi extends ApiTopic {
      * @param options Additional options
      * @param options.createRevision Whether to create a new revision instead of updating in place
      * @param options.revisionLabel Optional label for the revision (e.g., "v1.2")
-     * @param options.suppressWorkflows When true, prevents this update from triggering workflow rules
+     * @param options.suppressWorkflows Deprecated. Events are always emitted; this suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
      * @returns The updated object or newly created revision
      */
     async update(
         id: string,
-        payload: Partial<CreateContentObjectPayload>,
+        payload: Partial<ContentObjectWritePayload>,
         options?: {
             createRevision?: boolean;
             revisionLabel?: string;
             processing_priority?: ContentObjectProcessingPriority;
+            /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
             suppressWorkflows?: boolean;
             /** If provided, the server will reject the update with 412 if the document's content etag no longer matches. */
             ifMatch?: string;
         },
     ): Promise<ContentObject> {
+        const { content, ...payloadWithoutContent } = payload;
         const updatePayload: Partial<CreateContentObjectPayload> = {
-            ...payload,
+            ...payloadWithoutContent,
         };
 
         // Handle file upload if content is provided as File or StreamSource
-        if (
-            payload.content instanceof StreamSource ||
-            payload.content instanceof File
-        ) {
-            updatePayload.content = await this.upload(payload.content);
+        if (content instanceof StreamSource || content instanceof File) {
+            updatePayload.content = await this.upload(content);
+        } else {
+            updatePayload.content = content;
         }
 
         const headers: Record<string, string> = {};
@@ -336,13 +409,13 @@ export class ObjectsApi extends ApiTopic {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
         }
         if (options?.createRevision) {
-            headers[ContentObjectApiHeaders.CREATE_REVISION] = "true";
+            headers[ContentObjectApiHeaders.CREATE_REVISION] = 'true';
             if (options.revisionLabel) {
                 headers[ContentObjectApiHeaders.REVISION_LABEL] = options.revisionLabel;
             }
         }
         if (options?.suppressWorkflows) {
-            headers[ContentObjectApiHeaders.SUPPRESS_WORKFLOWS] = "true";
+            headers[ContentObjectApiHeaders.SUPPRESS_WORKFLOWS] = 'true';
         }
 
         return this.put(`/${id}`, {
@@ -367,24 +440,24 @@ export class ObjectsApi extends ApiTopic {
      * @param id The ID of the object
      * @returns Array of collections containing this object (both static and dynamic)
      */
-    getCollections(id: string): Promise<any[]> {
+    getCollections(id: string): Promise<Collection[]> {
         return this.get(`/${id}/collections`);
     }
 
-    delete(id: string): Promise<{ id: string }>;
+    delete(id: string): Promise<DeleteContentObjectResult>;
     delete(ids: string[]): Promise<BulkObjectDeleteResult>;
-    delete(idOrIds: string | string[]): Promise<{ id: string } | BulkObjectDeleteResult> {
+    delete(idOrIds: string | string[]): Promise<DeleteContentObjectResult | BulkObjectDeleteResult> {
         if (Array.isArray(idOrIds)) {
             return this.client.runOperation({
                 name: 'delete',
                 ids: idOrIds,
-                params: {}
+                params: {},
             }) as Promise<BulkObjectDeleteResult>;
         }
         return this.del(`/${idOrIds}`);
     }
 
-    bulkUpdate(updates: Record<string, Record<string, any>>): Promise<BulkObjectUpdateResult> {
+    bulkUpdate(updates: Record<string, Record<string, unknown>>): Promise<BulkObjectUpdateResult> {
         const ids = Object.keys(updates);
         return this.client.runOperation({
             name: 'update',
@@ -393,10 +466,15 @@ export class ObjectsApi extends ApiTopic {
         }) as Promise<BulkObjectUpdateResult>;
     }
 
-    bulkCreate(objects: CreateContentObjectPayload[], options?: {
-        collection_id?: string;
-        skip_workflows?: boolean;
-    }): Promise<BulkObjectCreateResult> {
+    bulkCreate(
+        objects: CreateContentObjectPayload[],
+        options?: {
+            collection_id?: string;
+            /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
+            skip_workflows?: boolean;
+            processing_priority?: ContentObjectProcessingPriority;
+        },
+    ): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({
             name: 'create',
             ids: [],
@@ -412,10 +490,7 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${documentId}/renditions`);
     }
 
-    getRendition(
-        documentId: string,
-        options: GetRenditionParams,
-    ): Promise<GetRenditionResponse> {
+    getRendition(documentId: string, options: GetRenditionParams): Promise<GetRenditionResponse> {
         const query = {
             max_hw: options.max_hw,
             generate_if_missing: options.generate_if_missing,
@@ -457,19 +532,13 @@ export class ObjectsApi extends ApiTopic {
         return this.getRendition(documentId, options);
     }
 
-    exportProperties(
-        payload: ExportPropertiesPayload,
-    ): Promise<ExportPropertiesResponse> {
-        return this.post("/export", {
+    exportProperties(payload: ExportPropertiesPayload): Promise<ExportPropertiesResponse> {
+        return this.post('/export', {
             payload,
         });
     }
 
-    setEmbedding(
-        id: string,
-        type: SupportedEmbeddingTypes,
-        payload: Embedding,
-    ): Promise<Record<SupportedEmbeddingTypes, Embedding>> {
+    setEmbedding(id: string, type: SupportedEmbeddingTypes, payload: Embedding): Promise<SetObjectEmbeddingsResponse> {
         return this.put(`/${id}/embeddings/${type}`, {
             payload,
         });

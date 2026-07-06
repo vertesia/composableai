@@ -1,7 +1,7 @@
-import { FacetBucket, InteractionStatus } from '@vertesia/common';
-import { Badge, FilterGroup } from '@vertesia/ui/core';
+import { type FacetBucket, InteractionStatus } from '@vertesia/common';
+import { Badge, type FilterGroup } from '@vertesia/ui/core';
 
-interface EnrichedFacetBucket extends FacetBucket {
+export interface EnrichedFacetBucket extends FacetBucket {
     name?: string;
     status?: string;
     version?: number;
@@ -16,37 +16,38 @@ interface InteractionFacetProps {
 export function VInteractionFacet({ buckets, name, placeholder }: InteractionFacetProps): FilterGroup {
     const options = buckets.map((bucket) => ({
         label: `(${bucket.count})`,
-        value: bucket._id
+        value: bucket._id,
     }));
 
     const filterGroup: FilterGroup = {
         name: name,
         placeholder: placeholder || `${name.charAt(0).toUpperCase() + name.slice(1)}`,
         options: options,
-        type: "select",
+        type: 'select',
         labelRenderer: (interactionId: string) => {
-            const bucket = buckets.find(b => b._id === interactionId);
+            const bucket = buckets.find((b) => b._id === interactionId);
             const displayName = bucket?.name || interactionId;
 
             // Determine badge variant based on status
-            let badgeVariant: "success" | "info" | "destructive" | "default" = "success";
+            let badgeVariant: 'success' | 'info' | 'destructive' | 'default' = 'success';
             if (bucket?.status) {
                 switch (bucket.status) {
                     case InteractionStatus.published:
-                        badgeVariant = "success";
+                        badgeVariant = 'success';
                         break;
                     case InteractionStatus.archived:
-                        badgeVariant = "destructive";
+                        badgeVariant = 'destructive';
                         break;
                     case InteractionStatus.code:
-                        badgeVariant = "info";
+                        badgeVariant = 'info';
                         break;
                 }
             }
 
-            const badgeText = (bucket?.version && bucket?.status) ?
-                `v${bucket.version} ${bucket.status != InteractionStatus.unknown ? bucket.status : ''}` :
-                bucket?.status || (bucket?.version ? `v${bucket.version}` : '');
+            const badgeText =
+                bucket?.version && bucket?.status
+                    ? `v${bucket.version} ${bucket.status !== InteractionStatus.unknown ? bucket.status : ''}`
+                    : bucket?.status || (bucket?.version ? `v${bucket.version}` : '');
 
             return (
                 <div className="w-full flex items-center justify-between">
@@ -58,15 +59,15 @@ export function VInteractionFacet({ buckets, name, placeholder }: InteractionFac
                             </Badge>
                         )}
                     </div>
-                    {(bucket?.count ?? 0) > 0 && <span className="ml-2 text-xs shrink-0">({bucket!.count})</span>}
+                    {(bucket?.count ?? 0) > 0 && <span className="ms-2 text-xs shrink-0">({bucket?.count})</span>}
                 </div>
             );
         },
         filterBy: (optionValue: string, searchText: string) => {
-            const bucket = buckets.find(b => b._id === optionValue);
+            const bucket = buckets.find((b) => b._id === optionValue);
             const searchName = bucket?.name || optionValue;
             return searchName.toLowerCase().includes(searchText.toLowerCase());
-        }
+        },
     };
 
     return filterGroup;

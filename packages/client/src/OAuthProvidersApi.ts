@@ -1,14 +1,15 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateOAuthProviderPayload,
     OAuthProvider,
-    OAuthProviderAuthStatus,
+    OAuthProviderAccessTokenResponse,
     OAuthProviderAuthorizeResponse,
+    OAuthProviderAuthStatus,
+    SuccessResponse,
     UpdateOAuthProviderPayload,
 } from '@vertesia/common';
 
 export default class OAuthProvidersApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/oauth-providers');
     }
@@ -37,7 +38,7 @@ export default class OAuthProvidersApi extends ApiTopic {
         return this.get(`/${id}/authorize`);
     }
 
-    exchange(code: string, state: string): Promise<{ success: boolean }> {
+    exchange(code: string, state: string): Promise<SuccessResponse> {
         return this.post('/exchange', { payload: { code, state } });
     }
 
@@ -45,15 +46,15 @@ export default class OAuthProvidersApi extends ApiTopic {
         return this.get(`/${id}/status`);
     }
 
-    connect(id: string): Promise<{ success: boolean }> {
+    connect(id: string): Promise<SuccessResponse> {
         return this.post(`/${id}/connect`, { payload: {} });
     }
 
-    getToken(id: string): Promise<{ access_token: string }> {
+    getToken(id: string): Promise<OAuthProviderAccessTokenResponse> {
         return this.post(`/${id}/token`, { payload: {} });
     }
 
-    disconnect(id: string): Promise<void> {
+    disconnect(id: string): Promise<SuccessResponse> {
         return this.del(`/${id}/disconnect`);
     }
 }

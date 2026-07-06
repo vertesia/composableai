@@ -30,43 +30,50 @@ Where `manifest.json` describes your app:
   "publisher": "your-org",
   "visibility": "private",
   "status": "beta",
-  "endpoint": "https://your-plugin.vercel.app/api"
+  "capabilities": [
+    "ui",
+    "tools",
+    "interactions"
+  ],
+  "endpoint": ""
 }
 ```
 
 The `--install` flag installs the app in the current project and grants permissions to the creator. The `endpoint` URL points to your deployed tool server — update it after deploying (see [Deployment](#deployment)).
 
-Once created, set the app name in `.env.local` for local development:
+Once created, keep the app name in `.env.app`:
 
 ```bash
 VITE_APP_NAME=my-plugin
 ```
 
+The template generates this file from the project name, which must match the `name` field in the Vertesia app manifest. It is safe to commit because `VITE_*` values are public build-time UI configuration. Vercel reads it during `vite build --mode app`; use `.env.app.local` for uncommitted local overrides.
+
 ## Quick Start
 
 ```bash
-pnpm install
-pnpm dev          # Vite dev server with API middleware
+{{PM}} install
+{{PM_RUN}} dev          # Vite dev server with API middleware
 ```
 
 Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API is available at `/api` on the same port.
 
 ## Scripts
 
-| Script | Runs | Description |
-|--------|------|-------------|
-| `pnpm dev` | `vite dev` | Dev server (HTTPS) with UI HMR + tool server API middleware |
-| `pnpm build` | `build:server && build:ui` | Full production build (lint runs as prebuild) |
-| `pnpm build:server` | `rollup -c` | Compile tool server to `lib/` |
-| `pnpm build:ui` | `build:ui:app && build:ui:lib` | Build both UI targets |
-| `pnpm build:ui:app` | `vite build --mode app` | Standalone app to `dist/app/` |
-| `pnpm build:ui:lib` | `vite build --mode lib` | Plugin library to `dist/lib/plugin.js` |
-| `pnpm start` | `build:server && vite preview` | Preview production build locally |
-| `pnpm start:vercel` | `vercel dev` | Test Vercel deployment locally |
+| Script              | Runs                           | Description                                                 |
+| ------------------- | ------------------------------ | ----------------------------------------------------------- |
+| `{{PM_RUN}} dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
+| `{{PM_RUN}} build`        | `rollup -c && vite build (app + lib)` | Full production build (lint runs as prebuild)        |
+| `{{PM_RUN}} build:server` | `rollup -c`                    | Compile tool server to `lib/`                               |
+| `{{PM_RUN}} build:ui`     | `vite build (app + lib)`       | Build both UI targets                                       |
+| `{{PM_RUN}} build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
+| `{{PM_RUN}} build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
+| `{{PM_RUN}} start`        | `rollup -c && vite preview`    | Preview production build locally                            |
+| `{{PM_RUN}} start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
 
 ## Project Structure
 
-```
+```txt
 plugin-template/
 ├── src/
 │   ├── tool-server/
@@ -89,31 +96,29 @@ plugin-template/
 │       └── index.css              # Tailwind CSS 4 entry
 ├── api/
 │   └── index.js                   # Vercel serverless adapter
-├── vite.config.ts                 # UI + dev server config
-├── vite-api-server.ts             # Vite plugin: mounts Hono as middleware
-├── rollup.config.js               # Tool server build config
+├── vite.config.ts                 # UI + dev server config (uses apiServerPlugin from @vertesia/build-tools/vite)
 ├── vercel.json                    # Vercel deployment config
 └── package.json
 ```
 
 ## Architecture
 
-### Dev Mode (`pnpm dev`)
+### Dev Mode (`{{PM_RUN}} dev`)
 
-A single Vite dev server runs at `https://localhost:5173`. The `vite-api-server.ts` plugin mounts the Hono tool server as Connect middleware, so the API is served at `/api` on the same port. Tool server source is loaded via Vite's `ssrLoadModule` with hot reload. Import hooks (`?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates`) are handled by `vertesiaImportPlugin`. HTTPS is required for Firebase authentication.
+A single Vite dev server runs at `https://localhost:5173`. The `apiServerPlugin` from `@vertesia/build-tools/vite` mounts the Hono tool server as Connect middleware, so the API is served at `/api` on the same port. Tool server source is loaded via Vite's `ssrLoadModule` with hot reload. Import hooks (`?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates`) are handled by `vertesiaDevServerPlugin` (also from `@vertesia/build-tools/vite`, included automatically by `apiServerPlugin`). HTTPS is required for Firebase authentication.
 
-### Preview Mode (`pnpm start`)
+### Preview Mode (`{{PM_RUN}} start`)
 
 Builds the tool server first, then runs `vite preview` which loads the compiled server from `lib/` as middleware alongside the built UI. Useful for validating production output locally.
 
 ### Production Build
 
-| Component | Bundler | Entry | Output |
-|-----------|---------|-------|--------|
-| Tool Server | Rollup | `src/tool-server/server.ts` | `lib/` |
-| UI Plugin | Vite | `src/ui/plugin.tsx` | `dist/lib/plugin.js` |
-| UI App | Vite | `src/ui/main.tsx` | `dist/app/` |
-| Widgets | Rollup | `skills/**/*.tsx` | `dist/widgets/` |
+| Component   | Bundler | Entry                       | Output               |
+| ----------- | ------- | --------------------------- | -------------------- |
+| Tool Server | Rollup  | `src/tool-server/server.ts` | `lib/`               |
+| UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `dist/lib/plugin.js` |
+| UI App      | Vite    | `src/ui/main.tsx`           | `dist/app/`          |
+| Widgets     | Rollup  | `skills/**/*.tsx`           | `dist/widgets/`      |
 
 ## Creating Resources
 
@@ -129,31 +134,34 @@ Tools are executable functions invoked via API. Three files per tool:
 import { JSONSchema } from "@llumiverse/common";
 
 export interface MyToolParams {
-    input: string;
+  input: string;
 }
 
 export const Schema = {
-    type: "object",
-    properties: {
-        input: { type: "string", description: "The input to process" }
-    },
-    required: ["input"]
+  type: "object",
+  properties: {
+    input: { type: "string", description: "The input to process" },
+  },
+  required: ["input"],
 } satisfies JSONSchema;
 ```
 
 **`my-tool.ts`** -- implementation:
 
 ```typescript
-import { ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
+import {
+  ToolExecutionContext,
+  ToolExecutionPayload,
+} from "@vertesia/tools-sdk";
 import { ToolResultContent } from "@vertesia/common";
 import { type MyToolParams } from "./schema.js";
 
 export async function execute(
-    payload: ToolExecutionPayload<MyToolParams>,
-    _context: ToolExecutionContext
+  payload: ToolExecutionPayload<MyToolParams>,
+  _context: ToolExecutionContext,
 ): Promise<ToolResultContent> {
-    const { input } = payload.tool_use.tool_input!;
-    return { is_error: false, content: `Processed: ${input}` };
+  const { input } = payload.tool_use.tool_input!;
+  return { is_error: false, content: `Processed: ${input}` };
 }
 ```
 
@@ -165,10 +173,10 @@ import { execute } from "./my-tool.js";
 import { MyToolParams, Schema } from "./schema.js";
 
 export const MyTool = {
-    name: "my-tool",
-    description: "Processes input",
-    input_schema: Schema,
-    run: execute
+  name: "my-tool",
+  description: "Processes input",
+  input_schema: Schema,
+  run: execute,
 } satisfies Tool<MyToolParams>;
 ```
 
@@ -180,11 +188,11 @@ import { MyTool } from "./my-tool/index.js";
 import icon from "./icon.svg.js";
 
 export const MyTools = new ToolCollection({
-    name: "my-collection",
-    title: "My Tools",
-    description: "A collection of tools",
-    icon,
-    tools: [MyTool]
+  name: "my-collection",
+  title: "My Tools",
+  description: "A collection of tools",
+  icon,
+  tools: [MyTool],
 });
 ```
 
@@ -215,10 +223,10 @@ import { SkillCollection } from "@vertesia/tools-sdk";
 import skills from "./all?skills";
 
 export const MySkills = new SkillCollection({
-    name: "my-collection",
-    title: "My Skills",
-    description: "Skill collection description",
-    skills
+  name: "my-collection",
+  title: "My Skills",
+  description: "Skill collection description",
+  skills,
 });
 ```
 
@@ -236,12 +244,12 @@ import PROMPT from "./prompt.hbs?prompt";
 import result_schema from "./result_schema";
 
 export default {
-    name: "my_interaction",
-    title: "My Interaction",
-    description: "What this interaction does",
-    result_schema,
-    prompts: [PROMPT],
-    tags: ["tag1"]
+  name: "my_interaction",
+  title: "My Interaction",
+  description: "What this interaction does",
+  result_schema,
+  prompts: [PROMPT],
+  tags: ["tag1"],
 } satisfies InteractionSpec;
 ```
 
@@ -252,15 +260,17 @@ import { InteractionSpec, TemplateType } from "@vertesia/common";
 import { PromptRole } from "@llumiverse/common";
 
 export default {
-    name: "my_agent",
-    title: "My Agent",
-    description: "An agent interaction",
-    prompts: [{
-        role: PromptRole.user,
-        content: "You are a helpful assistant...",
-        content_type: TemplateType.text,
-    }],
-    agent_runner_options: { is_agent: true },
+  name: "my_agent",
+  title: "My Agent",
+  description: "An agent interaction",
+  prompts: [
+    {
+      role: PromptRole.user,
+      content: "You are a helpful assistant...",
+      content_type: TemplateType.text,
+    },
+  ],
+  agent_runner_options: { is_agent: true },
 } satisfies InteractionSpec;
 ```
 
@@ -272,11 +282,11 @@ import myInteraction from "./my_interaction/index.js";
 import icon from "./icon.svg.js";
 
 export const MyInteractions = new InteractionCollection({
-    name: "my-collection",
-    title: "My Interactions",
-    description: "Interaction collection",
-    icon,
-    interactions: [myInteraction]
+  name: "my-collection",
+  title: "My Interactions",
+  description: "Interaction collection",
+  icon,
+  interactions: [myInteraction],
 });
 ```
 
@@ -288,20 +298,18 @@ Define schemas for structured data stored in Vertesia:
 import { InCodeTypeSpec } from "@vertesia/common";
 
 export const MyType = {
-    name: "my-type",
-    description: "Description of this content type",
-    object_schema: {
-        type: "object",
-        properties: {
-            title: { type: "string", description: "Title" },
-        },
-        required: ["title"]
+  name: "my-type",
+  description: "Description of this content type",
+  object_schema: {
+    type: "object",
+    properties: {
+      title: { type: "string", description: "Title" },
     },
-    table_layout: [
-        { field: "properties.title", name: "Title", type: "string" }
-    ],
-    is_chunkable: true,
-    strict_mode: true
+    required: ["title"],
+  },
+  table_layout: [{ field: "properties.title", name: "Title", type: "string" }],
+  is_chunkable: true,
+  strict_mode: true,
 } satisfies InCodeTypeSpec;
 ```
 
@@ -329,10 +337,10 @@ import { RenderingTemplateCollection } from "@vertesia/tools-sdk";
 import templates from "./all?templates";
 
 export const MyTemplates = new RenderingTemplateCollection({
-    name: "my-collection",
-    title: "My Templates",
-    description: "Template collection",
-    templates
+  name: "my-collection",
+  title: "My Templates",
+  description: "Template collection",
+  templates,
 });
 ```
 
@@ -345,16 +353,18 @@ import { ToolServerConfig } from "@vertesia/tools-sdk";
 // import your collections...
 
 export const ServerConfig = {
-    title: "My Plugin",
-    prefix: "/api",
-    tools,
-    interactions,
-    types,
-    skills,
-    templates,
-    mcpProviders,
-    uiConfig: { /* ... */ },
-    settings: settingsSchema,
+  title: "My Plugin",
+  prefix: "/api",
+  tools,
+  interactions,
+  types,
+  skills,
+  templates,
+  mcpProviders,
+  uiConfig: {
+    /* ... */
+  },
+  settings: settingsSchema,
 } satisfies ToolServerConfig;
 ```
 
@@ -377,6 +387,18 @@ Key files:
 - `src/ui/index.css` -- Tailwind CSS 4 with shared styles from `@vertesia/ui`
 
 The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it maps existing UI routes (from `routes.tsx`) as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
+
+## Accessibility
+
+The scaffolded plugin targets a **WCAG 2.1 AA baseline** out of the box. The `biome.json.template` inherits the `a11y` rule group (`useButtonType`, `useAltText`, `useSemanticElements`, `useHtmlLang`, etc.) at `error` so violations break `{{PM_RUN}} build` before they ship. A few conventions to keep:
+
+- **Prefer `<Button>` over raw `<button>`.** `Button` from `@vertesia/ui/core` provides consistent focus rings, deprecation-safe ARIA forwarding, and disabled state. Use raw `<button type="button">` only inside primitives that spread hook props onto the DOM (e.g. a downshift-style toggle); add a one-line comment explaining why.
+- **Icon-only buttons require an accessible name.** Pass `aria-label`. Example: `<Button aria-label="Refresh" onClick={…}><RefreshIcon /></Button>`. The included `InlineFilterButton` follows this pattern. Avoid the deprecated `alt` prop — it is forwarded to `aria-label` for one release with a console warning.
+- **Sortable table headers use `<SortableTableHeaderCell>`** from `@vertesia/ui/core`. It renders a real `<button>` inside the `<th>`, sets `aria-sort`, and is keyboard-operable automatically. The bundled `SortableHead` example wraps this primitive.
+- **Form controls go through `<FormItem>`.** Use the `helpText` prop for persistent helper text and the `error` prop for validation messages — both auto-wire `aria-describedby` and `aria-invalid` on a single element child. The `description` prop is hover-only (renders as a tooltip on an Info icon) and is *not* an accessible substitute for `helpText`.
+- **Headers and labels matter for screen readers.** Set the page title in `index.html`, keep `lang="en"` (or your locale) on `<html>`, and make sure every input has a `<label htmlFor>` (or use `FormItem`).
+
+If you need to introduce a pattern the rules flag (a `role="separator"` resize handle, a `<div role="button">` wrapper around a render-prop child, etc.), use a `// biome-ignore lint/a11y/<rule>: <reason>` comment on the line immediately before the JSX element, with a real justification — not a blanket suppression.
 
 ## API Reference
 
@@ -438,7 +460,7 @@ vertesia apps update <appId> --manifest '{
 The template includes `src/tool-server/server-node.ts` as a standalone HTTP server entry.
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:24-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --production
@@ -452,7 +474,7 @@ CMD ["node", "lib/server-node.js"]
 
 ### Organization Restriction
 
-Restrict access to specific Vertesia organizations via environment variables (set in `.env.local` or your deployment platform):
+Restrict access to specific Vertesia organizations via environment variables (set in `.env.app`, `.env.app.local`, or your deployment platform):
 
 ```bash
 # Server-side: tool server authorize() middleware returns 403 for unlisted orgs
@@ -474,7 +496,7 @@ To test your local tool server with Vertesia agents (e.g. debug tool execution, 
 
 ```bash
 # 1. Start the dev server
-pnpm dev
+{{PM_RUN}} dev
 
 # 2. In a separate terminal, create a tunnel
 npx cloudflared tunnel --url https://localhost:5173 --no-tls-verify
@@ -485,7 +507,7 @@ Cloudflare will print a public URL like `https://resorts-built-walnut-typical.tr
 ```bash
 # 3. Update the app manifest to use the tunnel URL
 vertesia apps update <appId> --manifest '{
-  "endpoint": "https://resorts-built-walnut-typical.trycloudflare.com/api"
+  "endpoint": "https://resorts-built-walnut-typical.trycloudflare.com/api/package"
 }'
 ```
 
@@ -501,9 +523,9 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 
 **Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` only work in tool server code (compiled by Rollup). They are not available in UI code (compiled by Vite).
 
-**HTTPS required for dev**: `pnpm dev` uses HTTPS via `@vitejs/plugin-basic-ssl`. Use `-k` flag with curl to skip certificate verification.
+**HTTPS required for dev**: `{{PM_RUN}} dev` uses HTTPS via `@vitejs/plugin-basic-ssl`. Use `-k` flag with curl to skip certificate verification.
 
-**TypeScript verification**: Run `pnpm exec tsc --noEmit` to check for compilation errors without building.
+**TypeScript verification**: Run `npx tsc --noEmit` to check for compilation errors without building.
 
 ## License
 

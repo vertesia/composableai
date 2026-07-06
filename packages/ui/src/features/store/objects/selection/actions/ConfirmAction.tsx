@@ -1,12 +1,12 @@
-import { ConfirmModal } from "@vertesia/ui/core";
-import { useCallback, useState } from "react";
-import { useUITranslation } from '../../../../../i18n/index.js';
-import { ObjectsActionCallback, useObjectsActionCallback } from '../ObjectsActionHooks';
-import { ObjectsActionParams, ObjectsActionSpec } from "../ObjectsActionSpec";
+import { ConfirmModal } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useCallback, useState } from 'react';
+import { type ObjectsActionCallback, useObjectsActionCallback } from '../ObjectsActionHooks';
+import type { ObjectsActionParams, ObjectsActionSpec } from '../ObjectsActionSpec';
 
 interface ObjectsActionComponentProps {
-    action: ObjectsActionSpec,
-    callback: ObjectsActionCallback,
+    action: ObjectsActionSpec;
+    callback: ObjectsActionCallback;
     children?: React.ReactNode;
 }
 /**
@@ -20,28 +20,35 @@ export default function ConfirmAction({ action, callback, children }: ObjectsAct
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const confirmationText = action.confirmationText || `Are you sure you want to ${action.name}?`;
 
-    const _callback = useCallback((params: ObjectsActionParams) => {
-        if (action.confirm) {
-            setShowConfirmModal(true);
-            return Promise.resolve(true);
-        } else {
-            return callback(params);
-        }
-    }, [action.confirm, callback]);
+    const _callback = useCallback(
+        (params: ObjectsActionParams) => {
+            if (action.confirm) {
+                setShowConfirmModal(true);
+                return Promise.resolve(true);
+            } else {
+                return callback(params);
+            }
+        },
+        [action.confirm, callback],
+    );
 
     const ctx = useObjectsActionCallback(action.id, _callback);
 
     const onConfirm = () => {
         setShowConfirmModal(false);
-        callback({ ...ctx.params, action });
+        void callback({ ...ctx.params, action });
     };
 
     return (
         <>
             {children}
-            <ConfirmModal onConfirm={onConfirm} onCancel={() => setShowConfirmModal(false)} title={t('store.actions.areYouSure')} content={confirmationText} isOpen={showConfirmModal} />
+            <ConfirmModal
+                onConfirm={onConfirm}
+                onCancel={() => setShowConfirmModal(false)}
+                title={t('store.actions.areYouSure')}
+                content={confirmationText}
+                isOpen={showConfirmModal}
+            />
         </>
     );
-
-
 }

@@ -31,6 +31,24 @@
           "value": true
         }
       ]
+    },
+    {
+      "type": "select",
+      "name": "REGION",
+      "message": "Vertesia region",
+      "initial": 0,
+      "choices": [
+        {
+          "title": "Global (us1)",
+          "description": "Default region — api.vertesia.io / sts.vertesia.io",
+          "value": "us1"
+        },
+        {
+          "title": "Europe (eu1)",
+          "description": "EU region — api.eu1.vertesia.io / sts.eu1.vertesia.io",
+          "value": "eu1"
+        }
+      ]
     }
   ],
   "derived": {
@@ -45,6 +63,30 @@
     "SERVER_TITLE": {
       "from": "PROJECT_NAME",
       "transform": "titleCase"
+    },
+    "STUDIO_URL": {
+      "from": "REGION",
+      "transform": "map",
+      "map": {
+        "us1": "https://api.vertesia.io",
+        "eu1": "https://api.eu1.vertesia.io"
+      }
+    },
+    "ZENO_URL": {
+      "from": "REGION",
+      "transform": "map",
+      "map": {
+        "us1": "https://api.vertesia.io",
+        "eu1": "https://api.eu1.vertesia.io"
+      }
+    },
+    "STS_URL": {
+      "from": "REGION",
+      "transform": "map",
+      "map": {
+        "us1": "https://sts.vertesia.io",
+        "eu1": "https://sts.eu1.vertesia.io"
+      }
     }
   },
   "files": [
@@ -53,10 +95,13 @@
     "src/tool-server/config.ts",
     "src/ui/env.ts",
     "src/ui/plugin.tsx",
-    ".env.local.template"
+    ".env.app.template",
+    "README.md"
   ],
   "renameFiles": {
-    ".env.local.template": ".env.local"
+    "biome.json.template": "biome.json",
+    "pnpm-workspace.yaml.template": "pnpm-workspace.yaml",
+    ".env.app.template": ".env.app"
   },
   "removeAfterInstall": [
     "template.config.json"

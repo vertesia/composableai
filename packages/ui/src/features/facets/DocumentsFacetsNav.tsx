@@ -1,19 +1,31 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup, useIsInModal } from '@vertesia/ui/core';
+import type { ComputedFacetResponse } from '@vertesia/common';
+import {
+    type Filter as BaseFilter,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    FilterProvider,
+    useIsInModal,
+} from '@vertesia/ui/core';
 import { useState } from 'react';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
+import {
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+    unwrapFilterOptionValue,
+} from './utils/SearchInterface';
 import { VStringFacet } from './utils/VStringFacet';
 import { VTypeFacet } from './utils/VTypeFacet';
-import { SearchInterface } from './utils/SearchInterface';
 
 interface DocumentsFacetsNavProps {
-    facets: {
-        type?: any[];
-        status?: any[];
-        role?: any[];
-        location?: any[];
-        tags?: string[];
-    };
+    facets: ComputedFacetResponse;
     search: SearchInterface;
+}
+
+function getBuckets(value: ComputedFacetResponse[string]) {
+    return Array.isArray(value) ? value : [];
 }
 
 // Hook to create filter groups for documents
@@ -37,22 +49,21 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
 
     if (facets.type) {
         const typeFilterGroup = VTypeFacet({
-            buckets: facets.type || [],
+            buckets: getBuckets(facets.type),
             typeRegistry: typeRegistry,
             type: 'select',
-            multiple: true
+            multiple: true,
         });
         customFilterGroups.push(typeFilterGroup);
     }
 
     if (facets.status) {
         const statusFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
-            buckets: facets.status || [],
+            buckets: getBuckets(facets.status),
             name: 'status',
             placeholder: 'Status',
             type: 'select',
-            multiple: true
+            multiple: true,
         });
         customFilterGroups.push(statusFilterGroup);
     }
@@ -62,10 +73,10 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
             name: 'tags',
             placeholder: 'Tags',
             type: 'stringList',
-            options: facets.tags.map((tag: string) => ({
-                label: tag,
-                value: tag
-            }))
+            options: getBuckets(facets.tags).map((tag) => ({
+                label: tag._id,
+                value: tag._id,
+            })),
         });
     }
 
@@ -74,7 +85,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
         placeholder: 'Created Date',
         type: 'date',
         multiple: true,
-        options: []
+        options: [],
     });
 
     customFilterGroups.push({
@@ -82,7 +93,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
         placeholder: 'Updated Date',
         type: 'date',
         multiple: true,
-        options: []
+        options: [],
     });
 
     return customFilterGroups;
@@ -98,66 +109,51 @@ export function useDocumentFilterHandler(search: SearchInterface) {
 
         search.clearFilters(false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
 
-                let filterValue;
+                let filterValue: unknown;
                 if (filter.type === 'date' && filter.multiple) {
                     // Handle date range filters
                     if (Array.isArray(filter.value) && filter.value.length > 0) {
                         if (filter.value.length === 1) {
                             // Single date - use as both start and end
-                            const dateValue = typeof filter.value[0] === 'object' ? (filter.value[0] as any).value : filter.value[0];
+                            const dateValue = unwrapFilterOptionValue(filter.value[0]);
                             filterValue = {
                                 gte: dateValue,
-                                lte: dateValue
+                                lte: dateValue,
                             };
                         } else if (filter.value.length === 2) {
                             // Date range - start and end dates
-                            const startDate = typeof filter.value[0] === 'object' ? (filter.value[0] as any).value : filter.value[0];
-                            const endDate = typeof filter.value[1] === 'object' ? (filter.value[1] as any).value : filter.value[1];
+                            const startDate = unwrapFilterOptionValue(filter.value[0]);
+                            const endDate = unwrapFilterOptionValue(filter.value[1]);
                             filterValue = {
                                 gte: startDate,
-                                lte: endDate
+                                lte: endDate,
                             };
                         }
                     }
-                } else if (filter.multiple) {
-                    if (Array.isArray(filter.value)) {
-                        filterValue = filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v);
-                    } else {
-                        const singleValue = typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value;
-                        filterValue = [singleValue];
-                    }
                 } else {
-                    // Single value - don't wrap in array
-                    filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
-                        ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0]
-                            ? filter.value[0]
-                            : filter.value;
+                    filterValue = filterValueToQueryValue(filter);
                 }
 
                 if (filterName === 'name') {
-                    search.query.name = filterValue;
+                    setSearchQueryValue(search, 'name', filterValue);
                 } else if (filterName === 'id') {
-                    search.query.id = filterValue;
+                    setSearchQueryValue(search, 'id', filterValue);
                 } else {
-                    search.query[filterName] = filterValue;
+                    setSearchQueryValue(search, filterName, filterValue);
                 }
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 
 // Legacy component for backward compatibility
-export function DocumentsFacetsNav({
-    facets,
-    search,
-}: DocumentsFacetsNavProps) {
+export function DocumentsFacetsNav({ facets, search }: DocumentsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const filterGroups = useDocumentFilterGroups(facets);
     const handleFilterLogic = useDocumentFilterHandler(search);
@@ -170,12 +166,7 @@ export function DocumentsFacetsNav({
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-            inModal={inModal}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange} inModal={inModal}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />

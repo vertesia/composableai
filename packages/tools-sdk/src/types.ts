@@ -1,10 +1,19 @@
-import type { ToolDefinition, ToolUse } from "@llumiverse/common";
-import { VertesiaClient } from "@vertesia/client";
-import { AgentToolDefinition, AuthTokenPayload, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import type { ToolDefinition, ToolUse } from '@llumiverse/common';
+import type { VertesiaClient } from '@vertesia/client';
+import type {
+    AgentToolDefinition,
+    AuthTokenPayload,
+    MCPToolAnnotations,
+    ProjectConfiguration,
+    RenderingTemplateDefinition,
+    ToolExecutionMetadata,
+    ToolResult,
+    ToolResultContent,
+} from '@vertesia/common';
 
 export type { ToolExecutionMetadata };
 
-export type ICollection<T = any> = CollectionProperties & Iterable<T>
+export type ICollection<T = object> = CollectionProperties & Iterable<T>;
 
 export interface CollectionProperties {
     /**
@@ -14,7 +23,7 @@ export interface CollectionProperties {
      */
     name: string;
     /**
-     * Optional title for UI display. 
+     * Optional title for UI display.
      * If not provided the pascal case version of the name will be used
      */
     title?: string;
@@ -23,7 +32,7 @@ export interface CollectionProperties {
      */
     icon?: string;
     /**
-     * A short description 
+     * A short description
      */
     description?: string;
 }
@@ -48,7 +57,7 @@ export interface ToolExecutionResult extends ToolResultContent {
     /**
      * Medata can be used to return more info on the tool execution like stats or user messages.
      */
-    meta?: Record<string, any>;
+    meta?: Record<string, unknown>;
 }
 
 export interface ToolExecutionResponse extends ToolExecutionResult, ToolResult {
@@ -74,47 +83,72 @@ export interface ToolExecutionResponseError {
     /**
      * Additional context information
      */
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
 }
 
-export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
-    tool_use: ToolUse<ParamsT>,
+export interface ToolExecutionPayload<ParamsT extends object = object> {
+    tool_use: ToolUse<ParamsT>;
     /**
      * Optional metadata related to the current execution request
      */
-    metadata?: ToolExecutionMetadata,
+    metadata?: ToolExecutionMetadata;
 }
 
-export type ToolFn<ParamsT extends Record<string, any>> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;
+export type ToolFn<ParamsT extends object = object> = (
+    payload: ToolExecutionPayload<ParamsT>,
+    context: ToolExecutionContext,
+) => Promise<ToolExecutionResult>;
+
+/**
+ * Approval behavior class for a tool.
+ *
+ * - `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.
+ * - `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.
+ * - `control`: affects agent control flow or tool availability, not user data or external systems.
+ * - `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode.
+ */
+export type ToolApprovalClassification = 'read_only' | 'side_effecting' | 'control' | 'requires_confirmation';
 
 export interface ToolUseContext {
-    project_id?: string,
-    account_id?: string,
-    project_name?: string,
-    project_ns?: string,
+    project_id?: string;
+    account_id?: string;
+    project_name?: string;
+    project_ns?: string;
     configuration?: ProjectConfiguration;
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 }
 
-export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinition {
-    run: ToolFn<ParamsT>;
+export interface Tool<ParamsT extends object = object> extends ToolDefinition {
+    run(payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext): Promise<ToolExecutionResult>;
     /**
      * Whether this tool is available by default.
      * - true/undefined: Tool is always available to agents
-     * - false: Tool is only available when activated by a skill's related_tools
+     * - false: Tool is only available when activated by a skill's tools
      */
     default?: boolean;
+
+    /**
+     * MCP-style annotations (destructiveHint, readOnlyHint, etc). Propagated
+     * into the AgentToolDefinition on catalog / package responses.
+     */
+    annotations?: MCPToolAnnotations;
+
+    /**
+     * Internal approval classification used by interactive agent approval modes.
+     * Use `requires_confirmation` for actions that must prompt even in full-control mode.
+     * Remote/MCP tools can omit this and rely on annotations.
+     */
+    approval_class?: ToolApprovalClassification;
 
     /**
      * Optional filter to check if the tool is enabled for the given project configuration.
      * This can be used to dynamically enable/disable tools based on project settings, environment variables, or any other logic.
      * If no filter is provided, the tool will be enabled by default.
-     * @param payload 
-     * @returns 
+     * @param payload
+     * @returns
      */
     isEnabled?: (payload: ToolUseContext) => boolean;
 }
-
 
 /**
  * The interface that should be returned when requesting a collection endpoint using a GET
@@ -203,7 +237,6 @@ export interface SkillExecution {
     template?: string;
 }
 
-
 /**
  * Skill definition - parsed from SKILL.md or SKILL.jst
  */
@@ -234,7 +267,7 @@ export interface SkillDefinition {
      */
     input_schema?: {
         type: 'object';
-        properties?: Record<string, any>;
+        properties?: Record<string, unknown>;
         required?: string[];
     };
     /**
@@ -246,9 +279,10 @@ export interface SkillDefinition {
      */
     execution?: SkillExecution;
     /**
-     * Related tools that work well with this skill
+     * Tool names this skill enables (unlocks) when called. Matches the
+     * `tools:` key used in SKILL.md frontmatter.
      */
-    related_tools?: string[];
+    tools?: string[];
     /**
      * Scripts bundled with this skill (synced to sandbox when skill is used)
      */
@@ -266,11 +300,10 @@ export interface SkillDefinition {
      * Optional filter to check if the tool is enabled for the given project configuration.
      * This can be used to dynamically enable/disable tools based on project settings, environment variables, or any other logic.
      * If no filter is provided, the tool will be enabled by default.
-     * @param payload 
-     * @returns 
+     * @param payload
+     * @returns
      */
     isEnabled?: (payload: ToolUseContext) => boolean;
-
 }
 
 /**
@@ -284,7 +317,7 @@ export interface SkillExecutionPayload {
     /**
      * Data context for JST template rendering
      */
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
     /**
      * Whether to execute the code template (if present)
      */

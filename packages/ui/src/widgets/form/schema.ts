@@ -1,6 +1,6 @@
-import { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from "@vertesia/common";
-import Ajv, { ErrorObject, ValidateFunction } from "ajv";
-import addFormats from "ajv-formats";
+import type { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from '@vertesia/common';
+import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
+import addFormats from 'ajv-formats';
 
 function createSchemaFromType(type: JSONSchemaTypeName): JSONSchema {
     if (type === 'object') {
@@ -33,7 +33,7 @@ export class Schema {
     private load() {
         if (this.schema.properties) {
             const properties = this.schema.properties;
-            Object.keys(properties).forEach(name => {
+            Object.keys(properties).forEach((name) => {
                 this.loadProperty(name, properties[name]);
             });
         }
@@ -44,7 +44,10 @@ export class Schema {
     }
 
     get title() {
-        return this.schema.title || this.schema.name;
+        const title = this.schema.title;
+        if (typeof title === 'string') return title;
+        const name = this.schema.name;
+        return typeof name === 'string' ? name : undefined;
     }
 
     get description() {
@@ -66,7 +69,7 @@ export class Schema {
         return this.schema.type as JSONSchemaTypeName;
     }
 
-    validate(value: any): ErrorObject<string, Record<string, any>, unknown>[] | null {
+    validate(value: unknown): ErrorObject<string, Record<string, unknown>, unknown>[] | null {
         if (!this.validator(value)) {
             return this.validator.errors || [];
         } else {
@@ -94,7 +97,7 @@ export class Schema {
         if (this.schema.properties) {
             delete this.schema.properties[name];
             if (Array.isArray(this.schema.required)) {
-                this.schema.required = this.schema.required.filter(x => x !== name);
+                this.schema.required = this.schema.required.filter((x) => x !== name);
             }
         }
         delete this.properties[name];
@@ -105,15 +108,19 @@ export class Schema {
     }
 
     get editor() {
-        return this.schema.editor;
+        return typeof this.schema.editor === 'string' ? this.schema.editor : undefined;
     }
 }
 
 export class PropertySchema extends Schema {
-    constructor(public parent: Schema, public name: string, schema: JSONSchema) {
+    constructor(
+        public parent: Schema,
+        public name: string,
+        schema: JSONSchema,
+    ) {
         super(schema);
         if (schema.type === 'array') {
-            throw new Error("Array property must be instantiated using ArrayPropertySchema");
+            throw new Error('Array property must be instantiated using ArrayPropertySchema');
         }
         if (schema.type === 'object' && !schema.properties) {
             schema.properties = {};
@@ -133,7 +140,7 @@ export class PropertySchema extends Schema {
     }
 
     get defaultValue() {
-        return this.schema.default;
+        return this.schema.default as JSONSchemaType | undefined;
     }
 
     set defaultValue(value: JSONSchemaType | undefined) {
@@ -141,7 +148,7 @@ export class PropertySchema extends Schema {
     }
 
     get enum() {
-        return this.schema.enum;
+        return this.schema.enum as JSONSchemaType[] | undefined;
     }
 
     set enum(values: JSONSchemaType[] | undefined) {
@@ -158,7 +165,7 @@ export class PropertySchema extends Schema {
         if (value) {
             required = required.concat(this.name);
         } else {
-            required = required.filter(x => x !== this.name);
+            required = required.filter((x) => x !== this.name);
         }
         this.parent.schema.required = required;
     }
@@ -170,7 +177,8 @@ export class PropertySchema extends Schema {
     set type(value: JSONSchemaTypeName) {
         if (this.schema.type !== value) {
             this.schema.type = value;
-            if (value !== 'object') { // remove sub properties
+            if (value !== 'object') {
+                // remove sub properties
                 this.properties = {};
                 this.schema.properties = undefined;
             }
@@ -220,5 +228,4 @@ export class ArrayPropertySchema extends PropertySchema {
     get isMulti() {
         return true;
     }
-
 }

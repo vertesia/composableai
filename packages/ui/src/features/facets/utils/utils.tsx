@@ -1,4 +1,4 @@
-import { FacetBucket, FacetNameBucket } from '@vertesia/common';
+import type { FacetBucket, FacetNameBucket } from '@vertesia/common';
 
 export function facetOptionLabel(bucket: FacetBucket) {
     return `${bucket._id} (${bucket.count})`;

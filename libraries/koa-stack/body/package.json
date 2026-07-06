@@ -1,0 +1,52 @@
+{
+    "name": "@koa-stack/body",
+    "version": "0.26.0-dev",
+    "description": "Expose the request body as a promise in koa Context.body",
+    "type": "module",
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
+        "test": "echo \"Error: no test specified\""
+    },
+    "files": [
+        "lib",
+        "src"
+    ],
+    "keywords": [
+        "koa",
+        "body",
+        "parser",
+        "lazy"
+    ],
+    "author": "stefanescu.bogdan@gmail.com",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "libraries/koa-stack/body"
+    },
+    "dependencies": {
+        "formidable": "^3.5.4",
+        "inflation": "^2.1.0",
+        "koa": "^3.2.1",
+        "qs": "^6.15.2",
+        "raw-body": "^3.0.2"
+    },
+    "devDependencies": {
+        "@types/formidable": "^3.5.1",
+        "@types/inflation": "^2.0.4",
+        "@types/koa": "^3.0.3",
+        "@types/qs": "^6.15.1",
+        "@vertesia/tsconfig": "workspace:*",
+        "fast-xml-parser": "^5.9.3",
+        "typescript": "^6.0.3"
+    },
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        }
+    }
+}

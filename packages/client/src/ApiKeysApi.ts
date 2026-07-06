@@ -1,13 +1,18 @@
-import { ApiKey, ApiKeyWithValue, CreateOrUpdateApiKeyPayload, CreatePublicKeyPayload } from "@vertesia/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    ApiKey,
+    ApiKeyReadResponse,
+    ApiKeyWithValue,
+    AuthTokenResponse,
+    CreateOrUpdateApiKeyPayload,
+    CreatePublicKeyPayload,
+    DeleteOperationResult,
+} from '@vertesia/common';
 
 export class ApiKeysApi extends ApiTopic {
-
-
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/apikeys")
+        super(parent, '/api/v1/apikeys');
     }
-
 
     /**
      * List all keys for account without values
@@ -41,12 +46,21 @@ export class ApiKeysApi extends ApiTopic {
      * ALL REQUESTS ARE LOGGED IN SECURITY AUDIT LOG
      * @returns ApiKeyWithValue
      * */
-    retrieve(id: string, withValue: boolean = false): Promise<ApiKey | ApiKeyWithValue> {
+    retrieve(id: string, withValue: true): Promise<ApiKeyWithValue>;
+    retrieve(id: string, withValue?: false): Promise<ApiKey>;
+    retrieve(id: string, withValue: boolean = false): Promise<ApiKeyReadResponse> {
         if (withValue) {
             return this.get(`/${id}`, { query: { withValue: true } });
-        } else {
-            return this.get(`/${id}`);
         }
+        return this.get(`/${id}`);
+    }
+
+    delete(id: string): Promise<DeleteOperationResult> {
+        return this.del(`/${id}`);
+    }
+
+    getToken(id: string): Promise<AuthTokenResponse> {
+        return this.get(`/${id}/token`);
     }
 
     /**

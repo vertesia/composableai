@@ -1,11 +1,23 @@
-import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentSearchScope, ConversationVisibility, ExecutionEnvironmentRef, InCodeInteraction, JSONSchema, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
-import { JSONObject } from "@vertesia/json";
-import { useUserSession } from "@vertesia/ui/session";
-import Ajv, { ValidateFunction } from "ajv";
-import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
+import type { AsyncExecutionResult, VertesiaClient } from '@vertesia/client';
+import {
+    AgentSearchScope,
+    type ConversationVisibility,
+    type ExecutionEnvironmentRef,
+    type InCodeInteraction,
+    type JSONSchema,
+    mergeInCodePromptSchemas,
+    supportsToolUse,
+    type UserChannel,
+    type WorkflowInteractionVars,
+} from '@vertesia/common';
+import type { JSONObject } from '@vertesia/json';
+import { useUserSession } from '@vertesia/ui/session';
+import Ajv, { type ValidateFunction } from 'ajv';
+import type React from 'react';
+import { createContext, useContext, useState, useSyncExternalStore } from 'react';
 
 export type WorkflowMode = 'start' | 'schedule';
+type ModelOptions = NonNullable<WorkflowInteractionVars['config']['model_options']>;
 
 export interface ScheduledWorkflowConfig {
     name: string;
@@ -24,13 +36,17 @@ export class PayloadBuilderStore {
 
     subscribe = (listener: () => void) => {
         this._listeners.add(listener);
-        return () => { this._listeners.delete(listener); };
+        return () => {
+            this._listeners.delete(listener);
+        };
     };
 
     getSnapshot = () => this.snapshot;
 
     notify() {
-        this._listeners.forEach(listener => listener());
+        this._listeners.forEach((listener) => {
+            listener();
+        });
     }
 }
 
@@ -42,11 +58,13 @@ export class PayloadBuilder {
     _visibility: ConversationVisibility | undefined;
     _user_channels: UserChannel[] | undefined;
     _collection: string | undefined;
+    _disabled_mcp_collections: string[] | undefined;
     _start: boolean = false;
     _preserveRunValues: boolean = false;
     _interaction: InCodeInteraction | undefined;
     _environment: ExecutionEnvironmentRef | undefined;
     _model: string = '';
+    _model_options: InCodeInteraction['model_options'] | undefined;
     _tool_names: string[] = [];
     _data: JSONObject | undefined;
     _mode: WorkflowMode = 'start';
@@ -61,7 +79,10 @@ export class PayloadBuilder {
 
     private _store: PayloadBuilderStore;
 
-    constructor(public vertesia: VertesiaClient, store: PayloadBuilderStore) {
+    constructor(
+        public vertesia: VertesiaClient,
+        store: PayloadBuilderStore,
+    ) {
         this._store = store;
     }
 
@@ -79,6 +100,7 @@ export class PayloadBuilder {
         builder._data = this._data;
         builder._environment = this._environment;
         builder._model = this._model;
+        builder._model_options = this._model_options ? ({ ...this._model_options } as ModelOptions) : undefined;
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
@@ -89,6 +111,9 @@ export class PayloadBuilder {
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
         builder._collection = this._collection;
+        builder._disabled_mcp_collections = this._disabled_mcp_collections
+            ? [...this._disabled_mcp_collections]
+            : undefined;
         builder._preserveRunValues = this._preserveRunValues;
         builder._mode = this._mode;
         builder._scheduledWorkflowConfig = this._scheduledWorkflowConfig;
@@ -103,7 +128,7 @@ export class PayloadBuilder {
                     name: '',
                     description: '',
                     cron_expression: '0 9 * * *',
-                    timezone: 'UTC'
+                    timezone: 'UTC',
                 } as ScheduledWorkflowConfig;
             }
             this.onStateChanged();
@@ -126,7 +151,7 @@ export class PayloadBuilder {
     updateScheduledWorkflowConfig(patch: Partial<ScheduledWorkflowConfig>) {
         this._scheduledWorkflowConfig = {
             ...this._scheduledWorkflowConfig,
-            ...patch
+            ...patch,
         } as ScheduledWorkflowConfig;
         this.onStateChanged();
     }
@@ -206,12 +231,20 @@ export class PayloadBuilder {
         }
     }
 
+    get disabled_mcp_collections(): string[] | undefined {
+        return this._disabled_mcp_collections;
+    }
+
+    set disabled_mcp_collections(value: string[] | undefined) {
+        this._disabled_mcp_collections = value && value.length > 0 ? value : undefined;
+        this.onStateChanged();
+    }
+
     get search_scope() {
         return this._collection ? AgentSearchScope.Collection : undefined;
     }
 
     async restoreConversation(context: WorkflowInteractionVars) {
-        
         // Handle version-specific interaction resolution
         let interactionRef = context.interaction;
         if (context.version) {
@@ -221,16 +254,13 @@ export class PayloadBuilder {
                 interactionRef = `${interactionRef}@${context.version}`;
             }
         }
-        
+
         const inter = await this.vertesia.interactions.catalog.resolve(interactionRef);
         const envId = inter.runtime?.environment || context.config?.environment;
         const model = context.config?.model;
-        const env = await (envId ?
-            this.vertesia.environments.retrieve(envId).catch(() => undefined)
-            :
-            Promise.resolve(undefined)
-        );
-
+        const env = await (envId
+            ? this.vertesia.environments.retrieve(envId).catch(() => undefined)
+            : Promise.resolve(undefined));
 
         // Set data BEFORE the interaction setter so that initializeBooleanDefaults (called
         // inside the interactionParamsSchema setter) uses the real run values as its base
@@ -251,7 +281,10 @@ export class PayloadBuilder {
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;
         this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
+        this._disabled_mcp_collections = context.disabled_mcp_collections;
+        this._model_options = context.config?.model_options as ModelOptions | undefined;
         this.collection = context.collection_id ?? undefined;
+        this._model_options = context.config?.model_options as InCodeInteraction['model_options'] | undefined;
 
         // we need to trigger the setter to deal with default models
         this.environment = env;
@@ -273,9 +306,10 @@ export class PayloadBuilder {
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction && !this._preserveRunValues) {
+                this._model_options = interaction.model_options as ModelOptions | undefined;
                 if (interaction.runtime?.environment) {
                     const envId = interaction.runtime.environment;
-                    this.vertesia.environments.retrieve(envId).then((environment) => this.environment = environment);
+                    this.vertesia.environments.retrieve(envId).then((environment) => (this.environment = environment));
                 }
             }
             this.onStateChanged();
@@ -294,8 +328,10 @@ export class PayloadBuilder {
                 if (interactionModel && environment && supportsToolUse(interactionModel, environment.provider)) {
                     this._model = interactionModel;
                 } else {
-                    this._model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
-                        ? environment.default_model : '';
+                    this._model =
+                        environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
+                            ? environment.default_model
+                            : '';
                 }
             }
 
@@ -309,6 +345,17 @@ export class PayloadBuilder {
     set model(model: string | undefined) {
         if (model !== this._model) {
             this._model = model || '';
+            this.onStateChanged();
+        }
+    }
+
+    get model_options(): InCodeInteraction['model_options'] | undefined {
+        return this._model_options;
+    }
+
+    set model_options(modelOptions: InCodeInteraction['model_options'] | undefined) {
+        if (JSON.stringify(modelOptions) !== JSON.stringify(this._model_options)) {
+            this._model_options = modelOptions;
             this.onStateChanged();
         }
     }
@@ -330,7 +377,7 @@ export class PayloadBuilder {
     }
 
     set run(run: AsyncExecutionResult | { workflow_id: string; run_id: string }) {
-        console.log("run", run);
+        console.log('run', run);
         this.onStateChanged();
     }
 
@@ -346,19 +393,51 @@ export class PayloadBuilder {
     }
 
     // Method-style setters for use in React components (avoids react-hooks/immutability lint errors)
-    setMode(mode: 'start' | 'schedule') { this.mode = mode; }
-    setInteraction(interaction: InCodeInteraction | undefined) { this.interaction = interaction; }
-    setEnvironment(environment: ExecutionEnvironmentRef | undefined) { this.environment = environment; }
-    setModel(model: string | undefined) { this.model = model; }
-    setToolNames(tools: string[]) { this.tool_names = tools; }
-    setCollection(collection: string | undefined) { this.collection = collection; }
-    setInteractive(interactive: boolean) { this.interactive = interactive; }
-    setDebugMode(debug_mode: boolean) { this.debug_mode = debug_mode; }
-    setUserChannels(channels: UserChannel[] | undefined) { this.user_channels = channels; }
-    setCheckpointTokens(value: number | undefined) { this.checkpoint_tokens = value; }
-    setVisibility(value: ConversationVisibility | undefined) { this.visibility = value; }
-    setData(data: JSONObject) { this.data = data; }
-    setPreserveRunValues(value: boolean) { this.preserveRunValues = value; }
+    setMode(mode: 'start' | 'schedule') {
+        this.mode = mode;
+    }
+    setInteraction(interaction: InCodeInteraction | undefined) {
+        this.interaction = interaction;
+    }
+    setEnvironment(environment: ExecutionEnvironmentRef | undefined) {
+        this.environment = environment;
+    }
+    setModel(model: string | undefined) {
+        this.model = model;
+    }
+    setModelOptions(modelOptions: InCodeInteraction['model_options'] | undefined) {
+        this.model_options = modelOptions;
+    }
+    setToolNames(tools: string[]) {
+        this.tool_names = tools;
+    }
+    setCollection(collection: string | undefined) {
+        this.collection = collection;
+    }
+    setDisabledMcpCollections(collections: string[] | undefined) {
+        this.disabled_mcp_collections = collections;
+    }
+    setInteractive(interactive: boolean) {
+        this.interactive = interactive;
+    }
+    setDebugMode(debug_mode: boolean) {
+        this.debug_mode = debug_mode;
+    }
+    setUserChannels(channels: UserChannel[] | undefined) {
+        this.user_channels = channels;
+    }
+    setCheckpointTokens(value: number | undefined) {
+        this.checkpoint_tokens = value;
+    }
+    setVisibility(value: ConversationVisibility | undefined) {
+        this.visibility = value;
+    }
+    setData(data: JSONObject) {
+        this.data = data;
+    }
+    setPreserveRunValues(value: boolean) {
+        this.preserveRunValues = value;
+    }
 
     get start(): boolean {
         return this._start;
@@ -402,14 +481,11 @@ export class PayloadBuilder {
         for (const [name, propSchema] of Object.entries(schema.properties)) {
             const prop = propSchema;
             // Initialize boolean fields to false if not already set
-            if (prop.type === "boolean" && result[name] === undefined) {
+            if (prop.type === 'boolean' && result[name] === undefined) {
                 result[name] = false;
-            } else if (prop.type === "object" && prop.properties) {
+            } else if (prop.type === 'object' && prop.properties) {
                 // Recursively initialize nested object booleans
-                result[name] = this.initializeBooleanDefaults(
-                    (result[name] as JSONObject) || {},
-                    prop
-                );
+                result[name] = this.initializeBooleanDefaults((result[name] as JSONObject) || {}, prop);
             }
         }
 
@@ -425,8 +501,10 @@ export class PayloadBuilder {
         this._visibility = undefined;
         this._user_channels = undefined;
         this._collection = undefined;
+        this._disabled_mcp_collections = undefined;
         this._preserveRunValues = false;
         this._model = '';
+        this._model_options = undefined;
         this._environment = undefined;
         this._tool_names = [];
         this._interaction = undefined;
@@ -440,7 +518,8 @@ export class PayloadBuilder {
 
         if (location.hash) {
             const urlWithoutHash = window.location.origin + window.location.pathname + window.location.search;
-            history.replaceState(null, '', urlWithoutHash); location.hash = '';
+            history.replaceState(null, '', urlWithoutHash);
+            location.hash = '';
         }
     }
 
@@ -454,7 +533,7 @@ export class PayloadBuilder {
             const ajv = new Ajv({ strict: false });
             this._inputValidator = {
                 validate: ajv.compile(this._interactionParamsSchema),
-                schema: this._interactionParamsSchema
+                schema: this._interactionParamsSchema,
             };
         }
 
@@ -481,9 +560,7 @@ export function PayloadBuilderProvider({ children }: PayloadProviderProps) {
     const { client } = useUserSession();
     const [store] = useState(() => new PayloadBuilderStore(client));
     const builder = useSyncExternalStore(store.subscribe, store.getSnapshot);
-    return (
-        <PayloadContext.Provider value={builder}>{children}</PayloadContext.Provider >
-    )
+    return <PayloadContext.Provider value={builder}>{children}</PayloadContext.Provider>;
 }
 
 export function usePayloadBuilder() {

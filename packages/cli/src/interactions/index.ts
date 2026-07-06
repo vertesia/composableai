@@ -1,16 +1,27 @@
-import { Interaction, InteractionRef, InteractionStatus } from "@vertesia/common";
-import colors from "ansi-colors";
-import { Command } from "commander";
-import { getClient } from "../client.js";
-import { textToPascalCase } from "../codegen/utils.js";
+import { type Interaction, type InteractionRef, InteractionStatus } from '@vertesia/common';
+import colors from 'ansi-colors';
+import type { Command } from 'commander';
+import { getClient } from '../client.js';
 
-export async function listInteractions(program: Command, interactionId: string | undefined, options: Record<string, any>) {
+function textToPascalCase(text: string) {
+    return text
+        .trim()
+        .split(/\W/)
+        .map((w) => (w ? w[0].toUpperCase() + w.substring(1) : ''))
+        .join('');
+}
+
+export async function listInteractions(
+    program: Command,
+    interactionId: string | undefined,
+    options: Record<string, unknown>,
+) {
     const client = await getClient(program);
     if (!interactionId) {
         const interactions = await client.interactions.list();
-        interactions.map(interaction => {
-            console.log(textToPascalCase(interaction.name) + ` [${interaction.id}]`);
-        });
+        for (const interaction of interactions) {
+            console.log(`${textToPascalCase(interaction.name)} [${interaction.id}]`);
+        }
         return;
     }
     const interaction = await client.interactions.retrieve(interactionId);
@@ -22,16 +33,21 @@ export async function listInteractions(program: Command, interactionId: string |
     }
 }
 
-
-function printInteraction(interaction: Interaction, versions: InteractionRef[], _options: Record<string, any>) {
-    console.log(colors.bold(interaction.name) + " [" + interaction.id + "]");
-    console.log(colors.bold("Description:"), interaction.description || 'n/a');
-    console.log(colors.bold("Class name:"), textToPascalCase(interaction.name));
-    console.log(colors.bold("Status:"), interaction.status);
-    console.log(colors.bold("Version:"), interaction.version);
-    console.log(colors.bold("Tags:"), interaction.tags && interaction.tags.length > 0 ? interaction.tags.join(", ") : "n/a");
+function printInteraction(interaction: Interaction, versions: InteractionRef[], _options: Record<string, unknown>) {
+    console.log(`${colors.bold(interaction.name)} [${interaction.id}]`);
+    console.log(colors.bold('Description:'), interaction.description || 'n/a');
+    console.log(colors.bold('Class name:'), textToPascalCase(interaction.name));
+    console.log(colors.bold('Status:'), interaction.status);
+    console.log(colors.bold('Version:'), interaction.version);
+    console.log(
+        colors.bold('Tags:'),
+        interaction.tags && interaction.tags.length > 0 ? interaction.tags.join(', ') : 'n/a',
+    );
     if (interaction.status === InteractionStatus.draft) {
         versions.sort((a, b) => a.version - b.version);
-        console.log(colors.bold("Published Versions:"), versions.length > 0 ? versions.map(v => v.version).join(", ") : "n/a");
+        console.log(
+            colors.bold('Published Versions:'),
+            versions.length > 0 ? versions.map((v) => v.version).join(', ') : 'n/a',
+        );
     }
 }

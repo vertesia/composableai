@@ -1,0 +1,8 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#406139",
+        "titleBar.activeBackground": "#5e9055",
+        "titleBar.activeForeground": "#F8FBF7"
+    },
+    "vitest.disableWorkspaceWarning": true
+}

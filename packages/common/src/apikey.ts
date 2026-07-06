@@ -1,15 +1,41 @@
-import { UserGroupRef } from "./group.js";
-import { ProjectRef, ProjectRoles } from "./project.js";
-import { AccountRef } from "./user.js";
+import type { PropertyConditions } from './access-control.js';
+import type { UserGroupRef } from './group.js';
+import type { ProjectRef, SystemRoles } from './project.js';
+import type { AccountRef } from './user.js';
+
+/**
+ * Per-scope, per-verb property-condition arrays that narrow content visibility
+ * at query time. Each value array uses $or semantics — any matching condition
+ * set grants access. Presence of this object switches content access from
+ * allow-all to restrict mode.
+ *
+ * The bare keys `read`/`write`/`delete` apply to the default `'document'`
+ * scope. They also receive entries emitted by system-role ABAC ACEs (which
+ * predate the scope concept).
+ *
+ * Non-default scopes appear as prefixed keys: `'collection:read'`,
+ * `'collection:write'`, `'task:read'`, etc. — the prefix is the
+ * `AceConditions.scope` value, the suffix is the verb derived from the
+ * ABAC role's permission set.
+ *
+ * Consumers that aren't scope-aware can keep reading only the bare keys.
+ */
+export interface ContentSecurity {
+    read?: PropertyConditions[];
+    write?: PropertyConditions[];
+    delete?: PropertyConditions[];
+    /** Scope-prefixed entries: `'collection:read'`, `'task:write'`, etc. */
+    [scopedKey: string]: PropertyConditions[] | undefined;
+}
 
 export enum ApiKeyTypes {
-    secret = "sk",
+    secret = 'sk',
 }
 export interface ApiKey {
     id: string;
     name: string;
     type: ApiKeyTypes;
-    role: ProjectRoles;
+    role: SystemRoles;
     maskedValue?: string; //masked value
     can_retrieve_value?: boolean;
     account: string; // the account id
@@ -24,8 +50,12 @@ export interface ApiKey {
 
 export interface CreateOrUpdateApiKeyPayload extends Partial<ApiKey> {}
 
-export interface ApiKeyWithValue extends Omit<ApiKey, "maskedValue"> {
+export interface ApiKeyWithValue extends ApiKey {
     value: string;
+}
+
+export interface ApiKeyReadResponse extends ApiKey {
+    value?: string;
 }
 
 export interface CreatePublicKeyPayload {
@@ -38,6 +68,14 @@ export interface AuthTokenResponse {
     token: string;
 }
 
+export interface ApiKeyListQuery {
+    level?: 'account' | 'project';
+}
+
+export interface ApiKeyReadQuery {
+    withValue?: boolean;
+}
+
 export interface AuthTokenPayload {
     sub: string;
     name: string;
@@ -47,16 +85,30 @@ export interface AuthTokenPayload {
     type: PrincipalType;
     account: AccountRef;
 
-    account_roles: ProjectRoles[];
+    account_roles: SystemRoles[];
     accounts: AccountRef[];
 
     project?: ProjectRef;
-    project_roles?: ProjectRoles[];
+    project_roles?: SystemRoles[];
 
     /**
      * The app names enabled for this token. Defaults to an empty array if no apps are enabled.
      */
     apps: string[];
+
+    /**
+     * Apps in `apps[]` whose UI surface is restricted for this principal — present only on
+     * user tokens, and only when at least one app applies. Such apps grant functional access
+     * (tools, endpoints, contributions) but the portal must hide them from navigation unless
+     * the user holds an explicit app_member ACE.
+     *
+     * UI consumers should treat an app as visible when:
+     *   `apps.includes(name) && !ui_restrictions?.includes(name)`
+     *
+     * Omitted entirely when empty to keep the JWT compact. Not emitted on agent or service
+     * tokens — those carry only the functional `apps[]` set.
+     */
+    ui_restrictions?: string[];
 
     /**
      * The user ID (if any) attached to the token.
@@ -67,6 +119,20 @@ export interface AuthTokenPayload {
 
     /** groups */
     groups?: UserGroupRef[]; //group ids
+
+    /** Content security conditions keyed by permission (read/write/delete).
+     *  Presence triggers restrict mode: project:* is dropped from security filters.
+     *
+     *  Transitional: this field is being renamed to `abac` (see [[pending-migrations]]).
+     *  Both fields are typed so consumers can dual-read during the transition.
+     *  Only one will ever be populated in a given token. */
+    content_security?: ContentSecurity;
+    /**
+     * New name for `content_security`. Consumers should prefer this field and
+     * fall back to `content_security`. Sts will be flipped to emit this field
+     * once all consumers have shipped their dual-read.
+     */
+    abac?: ContentSecurity;
 
     /**
      * API endpoints information to be used with this token.
@@ -109,10 +175,11 @@ export interface AuthTokenPayload {
 }
 
 export enum PrincipalType {
-    User = "user",
-    Group = "group",
-    ApiKey = "apikey",
-    ServiceAccount = "service_account",
-    Agent = "agent",
-    Schedule = "schedule",
+    User = 'user',
+    OAuthAccess = 'oauth_access',
+    Group = 'group',
+    ApiKey = 'apikey',
+    ServiceAccount = 'service_account',
+    Agent = 'agent',
+    Schedule = 'schedule',
 }

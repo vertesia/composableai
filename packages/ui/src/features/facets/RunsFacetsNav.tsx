@@ -1,24 +1,45 @@
-import { Button, Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import type { FacetBucket } from '@vertesia/common';
+import {
+    type Filter as BaseFilter,
+    Button,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    FilterProvider,
+} from '@vertesia/ui/core';
+import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
+import type { EnrichedFacetBucket } from './utils/VInteractionFacet';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
-import { SearchInterface } from './utils/SearchInterface';
-import { RefreshCw } from 'lucide-react';
 
 interface RunsFacetsNavProps {
     facets: {
-        type?: any[];
-        interactions?: any[];
-        environments?: any[];
-        models?: any[];
-        statuses?: any[];
-        tags?: any[];
-        finish_reason?: any[];
-        created_by?: any[];
+        type?: FacetBucket[];
+        interactions?: EnrichedFacetBucket[];
+        environments?: FacetBucket[];
+        models?: FacetBucket[];
+        statuses?: FacetBucket[];
+        tags?: FacetBucket[];
+        finish_reason?: FacetBucket[];
+        created_by?: FacetBucket[];
     };
     search: SearchInterface;
+    actions?: React.ReactNode[];
+    selectionCount?: number;
+    /**
+     * Optional controlled filter state. When provided, the parent owns the filter list (and is
+     * responsible for translating it into the search query via {@link useRunsFilterHandler}). This
+     * lets other surfaces — e.g. per-row "quick filter" buttons in the table — add filters that show
+     * up in the filter bar. When omitted, the component manages its own filter state internally.
+     */
+    filters?: BaseFilter[];
+    setFilters?: React.Dispatch<React.SetStateAction<BaseFilter[]>>;
+    filterGroups?: FilterGroup[];
 }
 
 // Hook to create filter groups for runs
@@ -29,7 +50,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         name: 'run_ids',
         placeholder: 'Run ID',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(runIdFilterGroup);
 
@@ -55,39 +76,36 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         name: 'tags',
         placeholder: 'Tags',
         type: 'stringList' as const,
-        multiple: true
+        multiple: true,
     };
     customFilterGroups.push(tagsFilterGroup);
 
     if (facets.models) {
         const modelFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
             buckets: facets.models || [],
-            name: 'model'
+            name: 'model',
         });
         customFilterGroups.push(modelFilterGroup);
     }
 
     if (facets.statuses) {
         const statusFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
             buckets: facets.statuses || [],
-            name: 'status'
+            name: 'status',
         });
         customFilterGroups.push(statusFilterGroup);
     }
 
     if (facets.finish_reason) {
-        const processedFinishReason = facets.finish_reason.map((bucket: any) => ({
+        const processedFinishReason = facets.finish_reason.map((bucket) => ({
             ...bucket,
-            _id: bucket._id === null ? 'none' : bucket._id
+            _id: bucket._id === null ? 'none' : bucket._id,
         }));
 
         const finishReasonFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
             buckets: processedFinishReason,
             name: 'finish_reason',
-            placeholder: 'Finish Reason'
+            placeholder: 'Finish Reason',
         });
         customFilterGroups.push(finishReasonFilterGroup);
     }
@@ -96,7 +114,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         const createdByFilterGroup = VUserFacet({
             buckets: facets.created_by || [],
             name: 'created_by',
-            placeholder: 'Created By'
+            placeholder: 'Created By',
         });
         customFilterGroups.push(createdByFilterGroup);
     }
@@ -105,7 +123,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         name: 'start',
         placeholder: 'Date After',
         type: 'date' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(dateAfterFilterGroup);
 
@@ -113,7 +131,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         name: 'end',
         placeholder: 'Date Before',
         type: 'date' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(dateBeforeFilterGroup);
 
@@ -121,7 +139,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         name: 'workflow_run_ids',
         placeholder: 'Workflow Run ID',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(workflowRunIdFilterGroup);
 
@@ -129,7 +147,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         name: 'workflow_ids',
         placeholder: 'Workflow ID',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(workflowIdFilterGroup);
 
@@ -148,69 +166,92 @@ export function useRunsFilterHandler(search: SearchInterface) {
         // Clear all filters first without defaults, then apply new ones
         search.clearFilters(false, false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
-                let filterValue;
-                if (filter.type === 'stringList') {
-                    filterValue = filter.value.map(v => typeof v === 'string' ? v : v.value);
-                } else if (filter.multiple) {
-                    filterValue = Array.isArray(filter.value)
-                        ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
-                        : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
-                } else {
-                    // Single value - don't wrap in array
-                    filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
-                        ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0]
-                            ? filter.value[0]
-                            : filter.value;
-                }
+                let filterValue = filterValueToQueryValue(filter);
 
                 // Force array format for backend fields that expect arrays
-                if ((filterName === 'run_ids' || filterName === 'workflow_run_ids' || filterName === 'workflow_ids') && !Array.isArray(filterValue)) {
+                if (
+                    (filterName === 'run_ids' || filterName === 'workflow_run_ids' || filterName === 'workflow_ids') &&
+                    !Array.isArray(filterValue)
+                ) {
                     filterValue = [filterValue];
                 }
 
-                search.query[filterName] = filterValue;
+                setSearchQueryValue(search, filterName, filterValue);
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 
 // Legacy component for backward compatibility
-export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
-    const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const filterGroups = useRunsFilterGroups(facets);
+export function RunsFacetsNav({
+    facets,
+    search,
+    actions,
+    selectionCount,
+    filters: controlledFilters,
+    setFilters: controlledSetFilters,
+    filterGroups: controlledFilterGroups,
+}: RunsFacetsNavProps) {
+    const [internalFilters, setInternalFilters] = useState<BaseFilter[]>([]);
+    const internalFilterGroups = useRunsFilterGroups(facets);
     const handleFilterLogic = useRunsFilterHandler(search);
 
+    // Controlled when the parent supplies both the filter list and its setter; otherwise self-managed.
+    const isControlled = controlledFilters !== undefined && controlledSetFilters !== undefined;
+    const filters = isControlled ? controlledFilters : internalFilters;
+    const filterGroups = controlledFilterGroups ?? internalFilterGroups;
+
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-        const newFilters = typeof value === 'function' ? value(filters) : value;
-        setFilters(newFilters);
+        if (isControlled) {
+            // The parent's setter is expected to also run the filter→query translation.
+            controlledSetFilters(value);
+            return;
+        }
+        const newFilters = typeof value === 'function' ? value(internalFilters) : value;
+        setInternalFilters(newFilters);
         handleFilterLogic(newFilters);
     };
 
     const handleRefetch = () => {
-        search.search();
-    }
+        void search.search();
+    };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-        >
-            <div className='flex justify-between mb-1 sticky top-2 py-2 z-10 bg-background'>
-                <div className='flex gap-2 items-center'>
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
+            <div className="gap-2 items-center w-full">
+                <div className="flex justify-between mb-1">
                     <FilterBtn />
-                    <FilterBar />
-                    <FilterClear />
+                    <div className="flex justify-end">
+                        {!selectionCount && (
+                            <div className="flex items-center justify-between px-2 py-1">
+                                <div className="text-sm text-muted">
+                                    {search.initialized ? `${search.totalCount} calls` : 'Loading calls...'}
+                                </div>
+                            </div>
+                        )}
+                        {actions && actions.length > 0 ? (
+                            <div className="flex items-center gap-2 mb-1 me-2">
+                                {actions.map((action, index) => (
+                                    <div key={`action-${index}`}>{action}</div>
+                                ))}
+                            </div>
+                        ) : null}
+                        <Button onClick={handleRefetch} variant="outline" title="Refresh">
+                            <RefreshCw className="size-5" />
+                        </Button>
+                    </div>
                 </div>
-                <Button onClick={handleRefetch} variant='outline' title="Refresh">
-                    <RefreshCw className="size-5" />
-                </Button>
+                {filters.length > 0 && (
+                    <div className="flex items-center gap-2 mb-1">
+                        <FilterBar />
+                        <FilterClear />
+                    </div>
+                )}
             </div>
         </FilterProvider>
     );

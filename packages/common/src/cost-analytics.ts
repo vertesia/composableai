@@ -20,7 +20,15 @@ export interface CostAnalyticsQuery {
     /** End time (ISO string or epoch ms) */
     to?: string | number;
     /** Group results by this dimension */
-    group_by?: 'model' | 'environment' | 'account' | 'project' | 'project_tag' | 'provider' | 'interaction' | 'workflow';
+    group_by?:
+        | 'model'
+        | 'environment'
+        | 'account'
+        | 'project'
+        | 'project_tag'
+        | 'provider'
+        | 'interaction'
+        | 'workflow';
     /** Time series resolution */
     resolution?: 'hour' | 'day' | 'week' | 'month';
     /** Filter by model pattern */
@@ -39,6 +47,10 @@ export interface CostAnalyticsQuery {
     run_id?: string;
     /** Filter by agent run ID */
     agent_run_id?: string;
+    /** Filter by interaction id: stored ObjectId or namespaced in-code id */
+    interaction_id?: string;
+    /** Filter by principal (bare user or API key id; matched against the suffix of principal_id) */
+    principal_id?: string;
     /** Filter by account ID (set automatically by server) */
     account_id?: string;
     /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
@@ -47,6 +59,26 @@ export interface CostAnalyticsQuery {
     pricing_source?: 'list' | 'historical';
     /** Skip cache and force fresh query */
     no_cache?: boolean;
+}
+
+export interface CostModelPricesQuery {
+    /** Start time (ISO string or epoch ms) */
+    from?: string | number;
+    /** End time (ISO string or epoch ms) */
+    to?: string | number;
+}
+
+export interface CostExportQuery {
+    /** Start time (ISO string or epoch ms) */
+    from?: string | number;
+    /** End time (ISO string or epoch ms) */
+    to?: string | number;
+    /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
+    scope?: 'project' | 'org';
+    /** Filter by project ID (optional, for org scope) */
+    project_id?: string;
+    /** Filter by workflow / agent run ID */
+    workflow_id?: string;
 }
 
 // ============================================================================

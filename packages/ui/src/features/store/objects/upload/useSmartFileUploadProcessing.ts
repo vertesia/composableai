@@ -1,16 +1,19 @@
-import { ComplexSearchPayload, ContentObjectItem, FindPayload } from "@vertesia/common";
-import { useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { Md5 } from "ts-md5";
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import type { ComplexSearchPayload, ContentObjectItem, FindPayload } from '@vertesia/common';
+import { errorMessage, useToast } from '@vertesia/ui/core';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { useCallback } from 'react';
+import { Md5 } from 'ts-md5';
+
+const t = i18nInstance.getFixedT(null, NAMESPACE);
 
 /**
  * Types of actions that can be taken with a file
  */
 export enum FileUploadAction {
-    CREATE = "create", // New document, not in system
-    SKIP = "skip", // Document exists, identical, no action needed
-    UPDATE = "update", // Document exists but needs updating
+    CREATE = 'create', // New document, not in system
+    SKIP = 'skip', // Document exists, identical, no action needed
+    UPDATE = 'update', // Document exists but needs updating
 }
 
 /**
@@ -27,7 +30,7 @@ export interface FileWithMetadata {
     // Action to take with this file
     action?: FileUploadAction;
     // Any additional metadata needed
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -43,7 +46,7 @@ async function calculateFileHash(file: File): Promise<string | undefined> {
         const hash = md5.end();
         return hash?.toString();
     } catch (error) {
-        console.error("Error calculating file hash:", error);
+        console.error('Error calculating file hash:', error);
         return undefined;
     }
 }
@@ -66,17 +69,17 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
         const metadataResults = await Promise.all(
             batch.map(async (file) => {
                 // Determine the location for this file
-                let location = selectedFolder || "/";
+                let location = selectedFolder || '/';
 
                 // If file has relative path, use it to determine location
-                const hasRelativePath = !!(file as any).webkitRelativePath;
+                const hasRelativePath = !!file.webkitRelativePath;
                 if (hasRelativePath) {
-                    const relativePath = (file as any).webkitRelativePath;
-                    const pathParts = relativePath.split("/");
+                    const relativePath = file.webkitRelativePath;
+                    const pathParts = relativePath.split('/');
 
                     if (pathParts.length > 1) {
                         // Extract folder path (everything except the filename)
-                        const folderPath = pathParts.slice(0, -1).join("/");
+                        const folderPath = pathParts.slice(0, -1).join('/');
 
                         // Combine with selected folder if any
                         location = selectedFolder ? `${selectedFolder}/${folderPath}` : folderPath;
@@ -110,7 +113,6 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
 export function useSmartFileUploadProcessing() {
     const { client } = useUserSession();
     const toast = useToast();
-    const t = i18nInstance.getFixedT(null, NAMESPACE);
 
     /**
      * Check files to determine if they need to be created, updated, or skipped
@@ -119,133 +121,138 @@ export function useSmartFileUploadProcessing() {
      * @param collectionId limit the check to a collection
      * @returns Promise with information about actions to take for each file
      */
-    const prepareFilesForUpload = async (
-        files: File[],
-        selectedFolder?: string | null,
-        limitToCollectionId?: string,
-    ): Promise<FileWithMetadata[]> => {
-        try {
-            // First, prepare all the files with their metadata
-            console.log(`Preparing metadata for ${files.length} files...`);
-            const filesWithMetadata = await prepareFilesWithMetadata(files, selectedFolder);
+    const prepareFilesForUpload = useCallback(
+        async (
+            files: File[],
+            selectedFolder?: string | null,
+            limitToCollectionId?: string,
+        ): Promise<FileWithMetadata[]> => {
+            try {
+                // First, prepare all the files with their metadata
+                console.log(`Preparing metadata for ${files.length} files...`);
+                const filesWithMetadata = await prepareFilesWithMetadata(files, selectedFolder);
 
-            const identifyExistingHash = async () => {
-                const hashes = filesWithMetadata.map((file) => file.hash).filter(Boolean);
-                if (hashes.length === 0) return;
+                const identifyExistingHash = async () => {
+                    const hashes = filesWithMetadata.map((file) => file.hash).filter(Boolean);
+                    if (hashes.length === 0) return;
 
-                const query = {
-                    "content.etag": { $in: hashes },
+                    const query = {
+                        'content.etag': { $in: hashes },
+                    };
+
+                    let res: Array<Pick<ContentObjectItem, 'id' | 'content'>>;
+
+                    if (limitToCollectionId) {
+                        const payload: ComplexSearchPayload = {
+                            query: { match: query },
+                            select: 'id content.etag',
+                        };
+                        res = (await client.store.collections.searchMembers(limitToCollectionId, payload)).results;
+                    } else {
+                        const payload: FindPayload = {
+                            query,
+                            select: 'id content.etag',
+                        };
+                        res = await client.store.objects.find(payload);
+                    }
+
+                    for (const doc of res) {
+                        const file = filesWithMetadata.find((f) => f.hash === doc.content?.etag);
+                        if (file) {
+                            file.existingId = doc.id;
+                            file.action = FileUploadAction.SKIP;
+                        }
+                    }
                 };
 
-                let res: ContentObjectItem[];
+                /**
+                 * Find what file are present based on location and name
+                 */
+                const identifyExistingIds = async () => {
+                    const unskippedFiles = filesWithMetadata.filter((file) => file.action !== FileUploadAction.SKIP);
+                    const allLocations = unskippedFiles.map((file) => file.location);
+                    const uniqueLocations = Array.from(new Set(allLocations));
 
-                if (limitToCollectionId) {
-                    const payload: ComplexSearchPayload = {
-                        query: { match: query },
-                        select: "id content.etag"
-                    };
-                    res = (await client.store.collections.searchMembers(limitToCollectionId, payload)).results;
-                } else {
-                    const payload: FindPayload = {
-                        query,
-                        select: "id content.etag"
-                    };
-                    res = await client.store.objects.find(payload);
-                }
-
-                for (const doc of res) {
-                    const file = filesWithMetadata.find((f) => f.hash === doc.content?.etag);
-                    if (file) {
-                        file.existingId = doc.id;
-                        file.action = FileUploadAction.SKIP;
+                    const queries = [];
+                    for (const location of uniqueLocations) {
+                        const namesInLocation = unskippedFiles
+                            .filter((file) => file.location === location)
+                            .map((file) => file.name);
+                        const query: Record<string, unknown> = {
+                            'content.name': { $in: namesInLocation },
+                            location: location || '/',
+                        };
+                        if (limitToCollectionId) {
+                            const res = client.store.collections
+                                .searchMembers(limitToCollectionId, {
+                                    query: {
+                                        match: query,
+                                    },
+                                    select: 'id content.name location', // Only fetch fields needed for comparison
+                                })
+                                .then((response) => response.results);
+                            queries.push(res);
+                        } else {
+                            const res = client.store.objects.find({
+                                query: query,
+                                select: 'id content.name location', // Only fetch fields needed for comparison
+                            });
+                            queries.push(res);
+                        }
                     }
-                }
-            };
 
-            /**
-             * Find what file are present based on location and name
-             */
-            const identifyExistingIds = async () => {
-                const unskippedFiles = filesWithMetadata.filter((file) => file.action !== FileUploadAction.SKIP);
-                const allLocations = unskippedFiles.map((file) => file.location);
-                const uniqueLocations = Array.from(new Set(allLocations));
+                    const results = (await Promise.all(queries)).flat();
+                    console.log(`Found ${results.length} document to update`, results);
 
-                const queries = [];
-                for (const location of uniqueLocations) {
-                    const namesInLocation = unskippedFiles
-                        .filter((file) => file.location === location)
-                        .map((file) => file.name);
-                    const query: Record<string, any> = {
-                        "content.name": { $in: namesInLocation },
-                        location: location || "/"
-                    };
-                    if (limitToCollectionId) {
-                        const res = client.store.collections.searchMembers(limitToCollectionId, {
-                            query: {
-                                match: query,
-                            },
-                            select: "id content.name location" // Only fetch fields needed for comparison
-                        }).then((response) => response.results);
-                        queries.push(res);
-                    } else {
-                        const res = client.store.objects.find({
-                            query: query,
-                            select: "id content.name location" // Only fetch fields needed for comparison
-                        });
-                        queries.push(res);
+                    //update fileWithMetadata
+                    for (const doc of results) {
+                        const file = filesWithMetadata.find(
+                            //name must be the same, and location must match (default is "/")
+                            (f) =>
+                                f.name === doc.content?.name &&
+                                (f.location ? f.location === doc.location : doc.location === '/'),
+                        );
+                        if (file) {
+                            file.existingId = doc.id;
+                            file.action = FileUploadAction.UPDATE;
+                        }
                     }
-                }
-
-                const results = (await Promise.all(queries)).flat();
-                console.log(`Found ${results.length} document to update`, results);
-
-                //update fileWithMetadata
-                for (const doc of results) {
-                    const file = filesWithMetadata.find(
-                        //name must be the same, and location must match (default is "/")
-                        (f) =>
-                            f.name === doc.content?.name &&
-                            (f.location ? f.location === doc.location : doc.location === "/"),
+                    console.log(
+                        `Reconciled ${filesWithMetadata.filter((f) => f.action === FileUploadAction.UPDATE).length}`,
                     );
-                    if (file) {
-                        file.existingId = doc.id;
-                        file.action = FileUploadAction.UPDATE;
+                };
+
+                await identifyExistingHash();
+                await identifyExistingIds();
+
+                //set create flag on remaining files
+                filesWithMetadata.forEach((f) => {
+                    if (!f.action) {
+                        f.action = FileUploadAction.CREATE;
                     }
-                }
-                console.log(
-                    `Reconciled ${filesWithMetadata.filter((f) => f.action === FileUploadAction.UPDATE).length}`,
-                );
-            };
+                });
 
-            await identifyExistingHash();
-            await identifyExistingIds();
+                // Log the results
+                console.log('Document processing check results:', {
+                    totalFiles: files.length,
+                    toCreate: filesWithMetadata.filter((f) => f.action === FileUploadAction.CREATE).length,
+                    toUpdate: filesWithMetadata.filter((f) => f.action === FileUploadAction.UPDATE).length,
+                    toSkip: filesWithMetadata.filter((f) => f.action === FileUploadAction.SKIP).length,
+                });
 
-            //set create flag on remaining files
-            filesWithMetadata.forEach((f) => {
-                if (!f.action) {
-                    f.action = FileUploadAction.CREATE;
-                }
-            });
-
-            // Log the results
-            console.log("Document processing check results:", {
-                totalFiles: files.length,
-                toCreate: filesWithMetadata.filter((f) => f.action === FileUploadAction.CREATE).length,
-                toUpdate: filesWithMetadata.filter((f) => f.action === FileUploadAction.UPDATE).length,
-                toSkip: filesWithMetadata.filter((f) => f.action === FileUploadAction.SKIP).length,
-            });
-
-            return filesWithMetadata;
-        } catch (error: any) {
-            toast({
-                title: t('store.errorInUploadProcessingCheck'),
-                status: "error",
-                description: error.message,
-            });
-            console.log("Error in file upload processing check", error);
-            throw new Error("Error in file upload processing check: " + error.message, { cause: error });
-        }
-    };
+                return filesWithMetadata;
+            } catch (error: unknown) {
+                toast({
+                    title: t('store.errorInUploadProcessingCheck'),
+                    status: 'error',
+                    description: errorMessage(error),
+                });
+                console.log('Error in file upload processing check', error);
+                throw new Error(`Error in file upload processing check: ${errorMessage(error)}`, { cause: error });
+            }
+        },
+        [client, toast],
+    );
 
     return {
         checkDocumentProcessing: prepareFilesForUpload,

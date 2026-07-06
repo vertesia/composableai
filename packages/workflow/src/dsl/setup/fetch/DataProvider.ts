@@ -1,10 +1,10 @@
-import { FindPayload } from "@vertesia/common";
+import type { FindPayload } from '@vertesia/common';
 
 function parseSelector(selector: string) {
     const parts = selector.split(/\s+/);
     const result: Record<string, number> = {};
     for (const part of parts) {
-        if (part.startsWith("-")) {
+        if (part.startsWith('-')) {
             result[part.substring(1)] = 0;
         } else {
             result[part] = 1;
@@ -13,7 +13,7 @@ function parseSelector(selector: string) {
     return result;
 }
 
-function applyProjection(result: Record<string, any>, select: string) {
+function applyProjection(result: Record<string, unknown>, select: string) {
     if (!result) return result;
     let selectorObj: Record<string, number | boolean>;
     if (typeof select === 'string') {
@@ -22,7 +22,7 @@ function applyProjection(result: Record<string, any>, select: string) {
         selectorObj = select;
     }
 
-    const out: Record<string, any> = {};
+    const out: Record<string, unknown> = {};
     for (const key of Object.keys(result)) {
         if (selectorObj[key]) {
             out[key] = result[key];
@@ -32,14 +32,17 @@ function applyProjection(result: Record<string, any>, select: string) {
 }
 
 export abstract class DataProvider {
-    constructor(public name: string, public isProjectionSupported = false) {
-    }
+    constructor(
+        public name: string,
+        public isProjectionSupported = false,
+    ) {}
     async fetch(payload: FindPayload) {
         let results = await this.doFetch(payload);
-        if (payload.select && !this.isProjectionSupported) {
-            results = results.map((result: Record<string, any>) => applyProjection(result, payload.select!));
+        const select = payload.select;
+        if (select && !this.isProjectionSupported) {
+            results = results.map((result: Record<string, unknown>) => applyProjection(result, select));
         }
         return results;
     }
-    abstract doFetch(payload: FindPayload): Promise<Record<string, any>[]>;
+    abstract doFetch(payload: FindPayload): Promise<Record<string, unknown>[]>;
 }

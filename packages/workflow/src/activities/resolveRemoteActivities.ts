@@ -1,16 +1,16 @@
-import { log } from "@temporalio/activity";
-import {
+import { log } from '@temporalio/activity';
+import type { VertesiaClient } from '@vertesia/client';
+import type {
     AppInstallationWithManifest,
     AppPackage,
     DSLActivityExecutionPayload,
     RemoteActivityDefinition,
-} from "@vertesia/common";
-import { VertesiaClient } from "@vertesia/client";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { URLValidationError, safeFetch } from "../security/ssrf.js";
+} from '@vertesia/common';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { safeFetch, URLValidationError } from '../security/ssrf.js';
 
 /** Prefix identifying a remote activity name in DSL workflow steps */
-const REMOTE_ACTIVITY_PREFIX = "app:";
+const REMOTE_ACTIVITY_PREFIX = 'app:';
 
 /**
  * Information about a resolved remote activity.
@@ -25,7 +25,7 @@ export interface RemoteActivityInfo {
     /** The app name */
     app_name: string;
     /** The app installation settings */
-    app_settings?: Record<string, any>;
+    app_settings?: Record<string, unknown>;
     /** The activity definition from the tool server */
     definition: RemoteActivityDefinition;
 }
@@ -36,8 +36,7 @@ export interface RemoteActivityInfo {
  */
 export type RemoteActivityMap = Record<string, RemoteActivityInfo>;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface ResolveRemoteActivitiesParams {}
+export type ResolveRemoteActivitiesParams = Record<string, never>;
 
 /**
  * Resolves remote activities from all installed apps that have the `tools` capability.
@@ -54,10 +53,10 @@ export async function resolveRemoteActivities(
 
     let installations: AppInstallationWithManifest[];
     try {
-        installations = await client.apps.getInstalledApps("tools");
+        installations = await client.apps.getInstalledApps('tools');
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        log.warn("Failed to fetch installed apps for remote activities", { error: message });
+        log.warn('Failed to fetch installed apps for remote activities', { error: message });
         return map;
     }
 
@@ -76,7 +75,7 @@ export async function resolveRemoteActivities(
             for (const activity of pkg.activities) {
                 const collection = activity.collection;
                 if (!collection) {
-                    log.warn("Remote activity missing collection, skipping", {
+                    log.warn('Remote activity missing collection, skipping', {
                         app: manifest.name,
                         activity: activity.name,
                     });
@@ -87,7 +86,7 @@ export async function resolveRemoteActivities(
                 const qualifiedName = `${REMOTE_ACTIVITY_PREFIX}${manifest.name}:${collection}:${activity.name}`;
 
                 if (map[qualifiedName]) {
-                    log.warn("Duplicate remote activity name, skipping", {
+                    log.warn('Duplicate remote activity name, skipping', {
                         qualifiedName,
                         existingApp: map[qualifiedName].app_name,
                         newApp: manifest.name,
@@ -108,13 +107,13 @@ export async function resolveRemoteActivities(
                 };
             }
 
-            log.info("Resolved remote activities from app", {
+            log.info('Resolved remote activities from app', {
                 app: manifest.name,
                 count: pkg.activities.length,
             });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
-            log.warn("Failed to fetch activities from app, skipping", {
+            log.warn('Failed to fetch activities from app, skipping', {
                 app: manifest.name,
                 endpoint: manifest.endpoint,
                 error: message,
@@ -128,7 +127,11 @@ export async function resolveRemoteActivities(
 /**
  * Fetches the activities scope from a tool server package endpoint.
  */
-async function fetchActivitiesPackage(endpoint: string, authToken: string, client: VertesiaClient): Promise<AppPackage> {
+async function fetchActivitiesPackage(
+    endpoint: string,
+    authToken: string,
+    client: VertesiaClient,
+): Promise<AppPackage> {
     const url = new URL(endpoint);
     url.searchParams.set('scope', 'activities');
 
@@ -137,8 +140,8 @@ async function fetchActivitiesPackage(endpoint: string, authToken: string, clien
     const response = await safeFetch(url.toString(), {
         method: 'GET',
         headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
+            Accept: 'application/json',
+            Authorization: `Bearer ${authToken}`,
         },
         signal: AbortSignal.timeout(5000),
     });
@@ -156,13 +159,19 @@ async function fetchActivitiesPackage(endpoint: string, authToken: string, clien
  * Otherwise, use the collection-specific activities endpoint: `/api/activities/{collection}`.
  * Validates the resolved URL to prevent second-hop SSRF from tool server responses.
  */
-async function resolveActivityUrl(endpoint: string, activity: RemoteActivityDefinition, collection: string, client: VertesiaClient): Promise<string> {
+async function resolveActivityUrl(
+    endpoint: string,
+    activity: RemoteActivityDefinition,
+    collection: string,
+    client: VertesiaClient,
+): Promise<string> {
     let resolved: string;
     if (activity.url) {
         // Absolute URLs are used as-is; relative URLs are resolved against the endpoint base
-        resolved = (activity.url.startsWith('http://') || activity.url.startsWith('https://'))
-            ? activity.url
-            : new URL(activity.url, endpoint).toString();
+        resolved =
+            activity.url.startsWith('http://') || activity.url.startsWith('https://')
+                ? activity.url
+                : new URL(activity.url, endpoint).toString();
     } else {
         // Default: POST to the collection-specific activities endpoint
         const base = new URL(endpoint);

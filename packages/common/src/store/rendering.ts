@@ -4,15 +4,15 @@
  * Types for rendering content to various formats (PDF, DOCX, images)
  */
 
-import { ImageRenditionFormat, MarkdownRenditionFormat } from "./store.js";
-import { WorkflowExecutionStatus, WorkflowRunStatus } from "./workflow.js";
+import type { ImageRenditionFormat, MarkdownRenditionFormat } from './store.js';
+import { WorkflowExecutionStatus, type WorkflowRunStatus } from './workflow.js';
 
 // ============================================================================
 // Workflow Vars Types (Discriminated Union)
 // ============================================================================
 
 /** Base vars shared by all rendition types */
-interface BaseRenditionVars {
+interface BaseRenditionVars extends Record<string, unknown> {
     mime_type?: string;
     /** Custom upload path — overrides the default renditions/{etag}/{name} path */
     outputPath?: string;
@@ -84,9 +84,7 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
 export type GenerateRenditionVars = ImageRenditionVars | MarkdownRenditionVars;
 
 /** Type guard for markdown rendition vars */
-export function isMarkdownRenditionVars(
-    vars: GenerateRenditionVars
-): vars is MarkdownRenditionVars {
+export function isMarkdownRenditionVars(vars: GenerateRenditionVars): vars is MarkdownRenditionVars {
     return vars.format === 'pdf' || vars.format === 'docx';
 }
 
@@ -152,6 +150,11 @@ export interface RenderMarkdownStatusResponse extends WorkflowRunStatus {
     error?: string;
 }
 
+export interface RenderMarkdownStatusQuery {
+    workflow_id: string;
+    workflow_run_id: string;
+}
+
 /**
  * Client-side polling options for markdown rendering.
  */
@@ -180,7 +183,7 @@ export interface GenerateRenditionsResult {
  */
 export interface RenderMarkdownResponse {
     /** Rendering status */
-    status: "success";
+    status: 'success';
     /** Output format */
     format: MarkdownRenditionFormat;
     /** Download URL for the rendered document */
@@ -235,9 +238,11 @@ export interface RenderSlidesDeckResult {
 }
 
 export function isWorkflowTerminalStatus(status: WorkflowExecutionStatus): boolean {
-    return status === WorkflowExecutionStatus.COMPLETED
-        || status === WorkflowExecutionStatus.FAILED
-        || status === WorkflowExecutionStatus.CANCELED
-        || status === WorkflowExecutionStatus.TERMINATED
-        || status === WorkflowExecutionStatus.TIMED_OUT;
+    return (
+        status === WorkflowExecutionStatus.COMPLETED ||
+        status === WorkflowExecutionStatus.FAILED ||
+        status === WorkflowExecutionStatus.CANCELED ||
+        status === WorkflowExecutionStatus.TERMINATED ||
+        status === WorkflowExecutionStatus.TIMED_OUT
+    );
 }
