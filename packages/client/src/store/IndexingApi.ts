@@ -298,8 +298,8 @@ export class IndexingApi extends ApiTopic {
     /**
      * POST to a zeno-bulk endpoint. Resolves the path against the zeno-bulk base URL.
      */
-    private zenoBulkPost<T>(path: string, body: object): Promise<T> {
-        return this.client.post(this.zenoBulkBaseUrl + path, { payload: body });
+    private zenoBulkPost<T>(path: string, body: object, timeoutMs?: number | false | null): Promise<T> {
+        return this.client.post(this.zenoBulkBaseUrl + path, { payload: body, timeoutMs });
     }
 
     /**
@@ -325,7 +325,7 @@ export class IndexingApi extends ApiTopic {
      * The Go service reads from MongoDB and writes to ES directly.
      */
     indexShard(params: IndexShardParams): Promise<IndexShardResult> {
-        return this.zenoBulkPost('/reindex/shard', { params } satisfies IndexShardRequest);
+        return this.zenoBulkPost('/reindex/shard', { params } satisfies IndexShardRequest, false);
     }
 
     /**
@@ -383,7 +383,7 @@ export class IndexingApi extends ApiTopic {
         } satisfies ReindexViaBulkRequest;
 
         if (!onEvent) {
-            return this.client.post(bulkUrl, { payload: { params } });
+            return this.client.post(bulkUrl, { payload: { params }, timeoutMs: false });
         }
 
         // SSE mode: stream progress events from zeno-bulk
@@ -394,6 +394,7 @@ export class IndexingApi extends ApiTopic {
             bulkUrl,
             {
                 payload: { params },
+                timeoutMs: false,
             },
             (event) => {
                 onEvent(event);
