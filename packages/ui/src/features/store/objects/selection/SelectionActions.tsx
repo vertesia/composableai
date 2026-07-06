@@ -16,13 +16,17 @@ interface SelectionActionsProps {
     type?: ContentObjectTypeItem;
     allowMutations?: boolean;
     allowDelete?: boolean;
+    /**
+     * Opt-in: shows the "Start Workflow" action. Defaults to `false` so it never leaks to read-only
+     * surfaces — callers must pass a permission-gated value (e.g. `canRunWorkflow(perms)`).
+     */
     allowWorkflowRun?: boolean;
 }
 export function SelectionActions({
     type,
     allowMutations = true,
     allowDelete = true,
-    allowWorkflowRun = true,
+    allowWorkflowRun = false,
 }: SelectionActionsProps) {
     const selection = useDocumentSelection();
     const size = selection.size();
