@@ -1,6 +1,6 @@
 {
     "name": "@koa-stack/router",
-    "version": "0.24.0",
+    "version": "0.26.0-dev",
     "description": "A powerfull koa router using typescript decorations",
     "type": "module",
     "scripts": {
@@ -20,6 +20,11 @@
     ],
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "libraries/koa-stack/router"
+    },
     "dependencies": {
         "koa": "^3.2.1",
         "koa-compose": "^4.1.0",

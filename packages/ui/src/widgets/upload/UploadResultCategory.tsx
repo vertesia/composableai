@@ -70,9 +70,8 @@ export function UploadResultCategory({
                 <div id={panelId} className="p-3 border-t border-color-border max-h-48 overflow-y-auto">
                     {items.length > 0 ? (
                         <ul className="space-y-1">
-                            {items.map((item, index) => (
-                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                <li key={index} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
+                            {items.map((item) => (
+                                <li key={item} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
                                     {item}
                                 </li>
                             ))}

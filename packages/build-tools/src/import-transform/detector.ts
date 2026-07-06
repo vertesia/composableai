@@ -33,7 +33,7 @@ export function detectQueryImports(content: string, transformers: TransformerRul
     QUERY_STRING_LITERAL.lastIndex = 0;
 
     let match: RegExpExecArray | null;
-    // biome-ignore lint/suspicious/noAssignInExpressions: standard regex.exec loop
+    // biome-ignore lint/suspicious/noAssignInExpressions: regex .exec() loop
     while ((match = QUERY_STRING_LITERAL.exec(content)) !== null) {
         const quote = match[1] as "'" | '"' | '`';
         const specifier = match[2];

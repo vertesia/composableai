@@ -9,12 +9,16 @@ import {
     type ComputeObjectFacetPayload,
     type ContentObject,
     ContentObjectApiHeaders,
+    type ContentObjectExportArtifactFile,
+    type ContentObjectExportResult,
+    type ContentObjectExportStatusResponse,
     type ContentObjectItem,
     type ContentObjectProcessingPriority,
     type ContentObjectTextResponse,
     type ContentSource,
     type CreateContentObjectPayload,
     canGenerateRendition,
+    type DeleteContentObjectExportResponse,
     type DeleteContentObjectResult,
     type Embedding,
     type ExportPropertiesPayload,
@@ -25,12 +29,23 @@ import {
     type GetRenditionParams,
     type GetRenditionResponse,
     type GetUploadUrlPayload,
+    type ListContentObjectExportsResponse,
     type ListWorkflowRunsResponse,
     type ObjectSearchPayload,
     type ObjectSearchQuery,
     type ObjectSearchResponse,
     type SetObjectEmbeddingsResponse,
+    type StartContentObjectExportRequest,
+    type StartContentObjectExportResponse,
     type SupportedEmbeddingTypes,
+    type ZenoBulkContentObjectExportComposeRequest,
+    type ZenoBulkContentObjectExportPlanRequest,
+    type ZenoBulkContentObjectExportPlanResponse,
+    type ZenoBulkContentObjectExportRequest,
+    type ZenoBulkContentObjectExportShardRequest,
+    type ZenoBulkContentObjectExportShardResult,
+    type ZenoBulkContentObjectExportSplitShardRequest,
+    type ZenoBulkContentObjectExportSplitShardResponse,
 } from '@vertesia/common';
 
 export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
@@ -104,6 +119,101 @@ export class ObjectsApi extends ApiTopic {
         return this.post('/facets', {
             payload: query,
         });
+    }
+
+    startExport(payload: StartContentObjectExportRequest = {}): Promise<StartContentObjectExportResponse> {
+        return this.post('/export/bulk', { payload });
+    }
+
+    listExports(): Promise<ListContentObjectExportsResponse> {
+        return this.get('/export/bulk/artifacts');
+    }
+
+    deleteExport(exportId: string): Promise<DeleteContentObjectExportResponse> {
+        return this.del(`/export/bulk/artifacts/${encodeURIComponent(exportId)}`);
+    }
+
+    getExportStatus(workflowId: string, runId: string): Promise<ContentObjectExportStatusResponse> {
+        return this.get(`/export/bulk/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}`);
+    }
+
+    getExportDownloadUrl(exportId: string, role: ContentObjectExportArtifactFile['role']): Promise<GetFileUrlResponse> {
+        return this.get(`/export/bulk/artifacts/${encodeURIComponent(exportId)}/${role}/download-url`);
+    }
+
+    async downloadExportFile(
+        exportId: string,
+        role: ContentObjectExportArtifactFile['role'],
+    ): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
+        const { url } = await this.getExportDownloadUrl(exportId, role);
+        const res = await fetchSignedUrl(url, {
+            method: 'GET',
+        }).then((res: Response) => {
+            if (!res.ok) {
+                throw new Error(`Failed to download export file: ${res.status} ${res.statusText}`);
+            }
+            return res;
+        });
+
+        if (!res.body) {
+            throw new Error('No response body received when downloading export file');
+        }
+        return res.body as ReadableStream<Uint8Array<ArrayBuffer>>;
+    }
+
+    exportToBucketViaBulk(
+        payload: ZenoBulkContentObjectExportRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ContentObjectExportResult> {
+        return this.zenoBulkPost('/export', payload, timeoutMs);
+    }
+
+    planContentObjectExportViaBulk(
+        payload: ZenoBulkContentObjectExportPlanRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportPlanResponse> {
+        return this.zenoBulkPost('/export/plan', payload, timeoutMs);
+    }
+
+    exportContentObjectShardViaBulk(
+        payload: ZenoBulkContentObjectExportShardRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportShardResult> {
+        return this.zenoBulkPost('/export/shard', payload, timeoutMs);
+    }
+
+    splitContentObjectExportShardViaBulk(
+        payload: ZenoBulkContentObjectExportSplitShardRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportSplitShardResponse> {
+        return this.zenoBulkPost('/export/shard/split', payload, timeoutMs);
+    }
+
+    composeContentObjectExportViaBulk(
+        payload: ZenoBulkContentObjectExportComposeRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ContentObjectExportResult> {
+        return this.zenoBulkPost('/export/compose', payload, timeoutMs);
+    }
+
+    /**
+     * Get the zeno-bulk base URL.
+     * Dev branches: store URL contains "zeno-server" -> replace with "zeno-bulk".
+     * Production/preview: same domain, LB routes /export to zeno-bulk.
+     */
+    private get zenoBulkBaseUrl(): string {
+        const storeBaseUrl = this.client.baseUrl;
+        if (storeBaseUrl.includes('localhost:') || storeBaseUrl.includes('127.0.0.1:')) {
+            return 'https://zeno-bulk-dev-main.api.dev1.vertesia.io';
+        }
+        if (storeBaseUrl.includes('zeno-server')) {
+            return storeBaseUrl.replace(/zeno-server/, 'zeno-bulk');
+        }
+        return storeBaseUrl;
+    }
+
+    private zenoBulkPost<T>(path: string, body: object, timeoutMs?: number | false | null): Promise<T> {
+        return this.client.post(this.zenoBulkBaseUrl + path, { payload: body, timeoutMs });
     }
 
     listFolders(_path: string = '/') {

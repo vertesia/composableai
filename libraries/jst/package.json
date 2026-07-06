@@ -25,7 +25,7 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "build": "tsc -p tsconfig.json && pnpm exec rollup -c",
+        "build": "tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "typecheck": "tsc --noEmit",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
@@ -34,22 +34,19 @@
         "handlebars": ">=4.7.9"
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^29.0.3",
-        "@rollup/plugin-node-resolve": "^16.0.3",
-        "@rollup/plugin-terser": "^1.0.0",
         "@types/estree": "^1.0.9",
         "@types/papaparse": "^5.5.2",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.62.2",
+        "rolldown": "catalog:",
         "typescript": "^6.0.3",
         "vitest": "^4.1.9"
     },
     "dependencies": {
-        "@types/node": "^24.13.2",
+        "@types/node": "catalog:",
         "acorn": "8.17.0",
         "acorn-walk": "8.3.5",
         "dayjs": "^1.11.21",
-        "papaparse": "^5.5.3"
+        "papaparse": "^5.5.4"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",

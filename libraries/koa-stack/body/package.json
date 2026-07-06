@@ -1,6 +1,6 @@
 {
     "name": "@koa-stack/body",
-    "version": "0.24.0",
+    "version": "0.26.0-dev",
     "description": "Expose the request body as a promise in koa Context.body",
     "type": "module",
     "scripts": {
@@ -20,6 +20,11 @@
     ],
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "libraries/koa-stack/body"
+    },
     "dependencies": {
         "formidable": "^3.5.4",
         "inflation": "^2.1.0",

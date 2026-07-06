@@ -182,8 +182,7 @@ export function TableRenderer({ columns, rows }: TableRendererProps): ReactEleme
                 </thead>
                 <tbody>
                     {rows.map((row, rowIndex) => (
-                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                        <tr key={rowIndex}>
+                        <tr key={`row-${rowIndex}`}>
                             {columns.map((col) => {
                                 const value = row[col.key];
                                 const formatted = formatCellValue(value, col);

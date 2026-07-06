@@ -13,18 +13,15 @@
     "scripts": {
         "lint": "biome lint src",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rollup -c",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^29.0.3",
-        "@rollup/plugin-node-resolve": "^16.0.3",
-        "@rollup/plugin-terser": "^1.0.0",
-        "@types/node": "^24.13.2",
+        "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.62.2",
+        "rolldown": "catalog:",
         "typescript": "^6.0.3",
         "vitest": "^4.1.9"
     },

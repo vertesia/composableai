@@ -1,6 +1,6 @@
 {
     "name": "@koa-stack/server",
-    "version": "0.24.0",
+    "version": "0.26.0-dev",
     "description": " A web server based on koa with advanced routing, lazy body and flexbile error handling",
     "type": "module",
     "scripts": {
@@ -20,6 +20,11 @@
     ],
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "libraries/koa-stack/server"
+    },
     "dependencies": {
         "@koa-stack/body": "workspace:*",
         "@koa-stack/router": "workspace:*",

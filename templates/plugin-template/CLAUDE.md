@@ -31,7 +31,7 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 
 ```bash
 pnpm build                 # Full build (server + UI), lint runs as prebuild
-pnpm build:server          # Rollup: tool server only → lib/
+pnpm build:server          # Rolldown: tool server only → lib/
 pnpm build:ui:lib          # Vite: plugin library → dist/lib/plugin.js
 pnpm build:ui:app          # Vite: standalone app → dist/ui/
 
@@ -43,10 +43,10 @@ pnpm start                 # Preview production build (build:server + vite previ
 
 | Component   | Bundler | Entry                       | tsconfig                    | Output                |
 |-------------|---------|-----------------------------|-----------------------------|-----------------------|
-| Tool Server | Rollup  | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js`            |
+| Tool Server | Rolldown | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js`            |
 | UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js`  |
 | UI App      | Vite    | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/ui/`            |
-| Widgets     | Rollup  | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |
+| Widgets     | Rolldown | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |
 
 ## Key Files
 
@@ -100,7 +100,7 @@ Rules of thumb:
 
 Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
 
-- **Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
+- **Import hooks are server-build only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
 - **Must register in `config.ts`**: a collection that isn't wired into `config.ts` (or its per-type index) won't be served.
 - **`Input.onChange` takes the value directly** (`onChange={setValue}`), not a React event — `Textarea` uses standard events.
 

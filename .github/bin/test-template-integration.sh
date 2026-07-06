@@ -82,10 +82,14 @@ packages:
   '@vertesia/*':
     access: $all
     publish: $all
+  # Local-only (no npmjs proxy): we publish the vendored @llumiverse/common from
+  # the submodule, and it is the only @llumiverse package the templates need.
+  # Without a proxy, verdaccio never consults npm for this scope, so re-publishing
+  # a version that already exists upstream (a pinned submodule snapshot) succeeds
+  # instead of failing with a 409 conflict.
   '@llumiverse/*':
     access: $all
     publish: $all
-    proxy: npmjs
   '@dglabs/*':
     access: $all
     publish: $all
@@ -134,7 +138,17 @@ publish_to_verdaccio() {
     pkg_name=$(npm pkg get name | tr -d '"')
     pkg_version=$(npm pkg get version | tr -d '"')
     echo "  Publishing ${pkg_name}@${pkg_version}..."
-    pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" > /dev/null 2>&1
+    # @vertesia/* and @llumiverse/* are local-only scopes in the verdaccio config
+    # (no npmjs proxy), so publishing always targets local storage and never
+    # conflicts with an already-published upstream version. Surface the real
+    # error on failure instead of discarding it.
+    local output
+    if ! output=$(pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1); then
+      echo "ERROR: failed to publish ${pkg_name}@${pkg_version} to verdaccio:" >&2
+      printf '%s\n' "$output" >&2
+      cd "${SCRIPT_DIR}/../.."
+      return 1
+    fi
     count=$((count + 1))
     cd "${SCRIPT_DIR}/../.."
   done < <(workspace_package_dirs)
