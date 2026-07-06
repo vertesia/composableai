@@ -24,7 +24,7 @@ export interface User {
     clearance?: number;
     /** Compartments the user belongs to — restricts access to documents in matching compartments */
     compartments?: string[];
-    /** Free-form annotations/labels associated with the user */
+    /** Free-form user metadata - restricted to internal use */
     annotations?: string[];
 }
 
