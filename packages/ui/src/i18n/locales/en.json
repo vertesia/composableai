@@ -428,6 +428,7 @@
   "store.actions.deleteTypeConfirm_other": "Delete {{count}} selected types? They will be permanently removed. This action cannot be undone.",
   "store.actions.deleting": "Deleting...",
   "store.actions.selectedCount": "{{n}} selected",
+  "store.actions.affectedItems": "Affected items:",
   "store.actions.clearSelection": "Clear selection",
   "store.actions.selectAllTypes": "Select all types",
   "store.actions.selectType": "Select type {{name}}",

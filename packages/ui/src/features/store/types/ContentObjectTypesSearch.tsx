@@ -43,6 +43,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     const selectedCount = selectedIds.length;
     const allVisibleSelected = !!objects && objects.length > 0 && objects.every((o) => selectedIds.includes(o.id));
+    const selectedTypes = objects?.filter((o) => selectedIds.includes(o.id)) ?? [];
 
     const toggleOne = (id: string, checked: boolean) => {
         setSelectedIds((cur) => (checked ? (cur.includes(id) ? cur : [...cur, id]) : cur.filter((v) => v !== id)));
@@ -231,7 +232,23 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                     <ConfirmModal
                         isOpen={showBulkDelete}
                         title={t('store.actions.deleteType', { count: selectedCount })}
-                        content={t('store.actions.deleteTypeConfirm', { count: selectedCount })}
+                        content={
+                            <div>
+                                <p>{t('store.actions.deleteTypeConfirm', { count: selectedCount })}</p>
+                                {selectedTypes.length > 0 && (
+                                    <>
+                                        <div className="mt-2">{t('store.actions.affectedItems')}</div>
+                                        <ul className="mt-1 max-h-40 overflow-y-auto rounded-md border p-2 text-sm">
+                                            {selectedTypes.map((o) => (
+                                                <li key={o.id} className="truncate py-0.5">
+                                                    {o.name || o.id}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </>
+                                )}
+                            </div>
+                        }
                         onConfirm={handleBulkDelete}
                         onCancel={() => setShowBulkDelete(false)}
                         confirmationValue="delete"
