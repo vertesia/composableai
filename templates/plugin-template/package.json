@@ -70,7 +70,7 @@
         "@vitejs/plugin-basic-ssl": "^2.3.0",
         "@vitejs/plugin-react": "^6.0.2",
         "concurrently": "^10.0.3",
-        "globals": "^17.6.0",
+        "globals": "^17.7.0",
         "react": "catalog:",
         "react-dom": "catalog:",
         "tailwindcss": "^4.3.1",
@@ -80,7 +80,7 @@
         "vite-plugin-serve-static": "^2.2.0"
     },
     "dependencies": {
-        "@hono/node-server": "^2.0.5",
+        "@hono/node-server": "^2.0.6",
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
@@ -88,7 +88,7 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
-        "hono": "^4.12.25",
-        "lucide-react": "^1.21.0"
+        "hono": "^4.12.27",
+        "lucide-react": "^1.22.0"
     }
 }

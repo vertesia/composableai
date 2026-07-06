@@ -255,7 +255,7 @@ export class DataApi extends ApiTopic {
      *
      * @example
      * ```typescript
-     * const job = await client.data.import(storeId, {
+     * const job = await client.data.importData(storeId, {
      *   mode: 'append',
      *   message: 'Monthly data import',
      *   tables: {
@@ -272,7 +272,7 @@ export class DataApi extends ApiTopic {
      * });
      * ```
      */
-    import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
+    importData(id: string, payload: ImportDataPayload): Promise<ImportJob> {
         return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
     }
 

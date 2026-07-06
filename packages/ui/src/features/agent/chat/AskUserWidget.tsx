@@ -104,6 +104,8 @@ const VARIANT_ICONS = {
     success: CheckCircle,
 };
 
+const SCROLLABLE_PROMPT_CLASS = 'max-h-80 overflow-y-auto overscroll-contain pe-2';
+
 /**
  * AskUserWidget - A styled component for displaying agent prompts/questions to users
  *
@@ -197,10 +199,14 @@ export function AskUserWidget({
         if (answered) {
             return (
                 <div className={cn('my-1.5 font-sans', className)}>
-                    {compactQuestion}
-                    {description && (
-                        <p className={cn('mt-1 text-xs leading-5 text-muted', descriptionClassName)}>{description}</p>
-                    )}
+                    <div className={SCROLLABLE_PROMPT_CLASS}>
+                        {compactQuestion}
+                        {description && (
+                            <p className={cn('mt-1 text-xs leading-5 text-muted', descriptionClassName)}>
+                                {description}
+                            </p>
+                        )}
+                    </div>
                 </div>
             );
         }
@@ -214,12 +220,14 @@ export function AskUserWidget({
                                 <div className={cn('mt-1 flex-shrink-0 text-attention', iconClassName)}>{iconNode}</div>
                             )}
                             <div className="min-w-0 flex-1">
-                                {compactQuestion}
-                                {description && (
-                                    <p className={cn('mt-1 text-xs leading-5 text-muted', descriptionClassName)}>
-                                        {description}
-                                    </p>
-                                )}
+                                <div className={SCROLLABLE_PROMPT_CLASS}>
+                                    {compactQuestion}
+                                    {description && (
+                                        <p className={cn('mt-1 text-xs leading-5 text-muted', descriptionClassName)}>
+                                            {description}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -355,19 +363,21 @@ export function AskUserWidget({
                                 {icon || <DefaultIcon className="size-5" />}
                             </div>
                         )}
-                        <div className="flex-1 min-w-0">
-                            <div
-                                className={`prose prose-sm dark:prose-invert max-w-none text-gray-900 dark:text-gray-100 ${questionClassName || ''}`}
-                            >
-                                <MarkdownRenderer>{question}</MarkdownRenderer>
-                            </div>
-                            {description && (
-                                <p
-                                    className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${descriptionClassName || ''}`}
+                        <div className="min-w-0 flex-1">
+                            <div className={SCROLLABLE_PROMPT_CLASS}>
+                                <div
+                                    className={`agent-ask-question prose prose-sm dark:prose-invert max-w-none text-gray-900 dark:text-gray-100 ${questionClassName || ''}`}
                                 >
-                                    {description}
-                                </p>
-                            )}
+                                    <MarkdownRenderer>{question}</MarkdownRenderer>
+                                </div>
+                                {description && (
+                                    <p
+                                        className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${descriptionClassName || ''}`}
+                                    >
+                                        {description}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -38,9 +38,9 @@ export abstract class DataProvider {
     ) {}
     async fetch(payload: FindPayload) {
         let results = await this.doFetch(payload);
-        if (payload.select && !this.isProjectionSupported) {
-            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-            results = results.map((result: Record<string, unknown>) => applyProjection(result, payload.select!));
+        const select = payload.select;
+        if (select && !this.isProjectionSupported) {
+            results = results.map((result: Record<string, unknown>) => applyProjection(result, select));
         }
         return results;
     }

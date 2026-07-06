@@ -1,5 +1,5 @@
 /**
- * Rollup Configuration for building tools as es bundles for import() usage
+ * Rolldown Configuration for building tools as es bundles for import() usage
  *
  * Not used for now.
  *
@@ -10,10 +10,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import commonjs from '@rollup/plugin-commonjs';
-import json from '@rollup/plugin-json';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
-import terser from '@rollup/plugin-terser';
+import { defineConfig } from 'rolldown';
 
 const libToolCollectionsDir = './lib/tools';
 const outputDir = './dist/libs';
@@ -34,25 +31,19 @@ const entries = fs.existsSync(libToolCollectionsDir)
 // Create a bundle configuration for each tool collection
 const browserBundles = entries.map((name) => ({
     input: path.join(libToolCollectionsDir, name, 'index.js'),
+    platform: 'browser',
+    resolve: {
+        mainFields: ['browser', 'module', 'main'],
+        conditionNames: ['browser', 'import', 'default'],
+    },
     output: {
         file: path.join(outputDir, `tool-server-${name}.js`),
         format: 'es',
         sourcemap: true,
-        inlineDynamicImports: true,
+        codeSplitting: false,
+        minify: true,
     },
-    plugins: [
-        nodeResolve({
-            browser: true,
-            preferBuiltins: false,
-        }),
-        json(),
-        commonjs(),
-        terser({
-            compress: {
-                drop_console: false,
-            },
-        }),
-    ],
+    plugins: [],
 }));
 
-export default browserBundles;
+export default defineConfig(browserBundles);

@@ -58,8 +58,7 @@ export class ManagedSchema implements SchemaLoader {
     }
 
     get children() {
-        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-        return this.root.children!;
+        return this.root.children ?? [];
     }
 
     reload() {

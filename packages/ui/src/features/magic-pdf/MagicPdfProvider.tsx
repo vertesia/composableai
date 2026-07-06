@@ -176,10 +176,10 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
 
         // Find the actual end by looking for the next delimiter or end of content
         const nextDelimiterMatch = content.slice(startIndex).match(/<!--\s*\{\s*"page"\s*:\s*\d+\s*\}\s*-->/);
-        const actualEndIndex = nextDelimiterMatch
-            ? // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-              startIndex + nextDelimiterMatch.index!
-            : content.length;
+        const actualEndIndex =
+            nextDelimiterMatch && nextDelimiterMatch.index !== undefined
+                ? startIndex + nextDelimiterMatch.index
+                : content.length;
 
         let pageContent = content.slice(startIndex, actualEndIndex).trim();
 
