@@ -130,7 +130,7 @@ Supported input formats include all formats supported by Pandoc: `docx`, `html`,
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 24.x
 - MuTool (for PDF conversion)
 - Pandoc (for document conversion)
 
