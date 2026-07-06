@@ -19,9 +19,8 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                     if (match) {
                         const level = match[1].length;
                         while (stack.length > 0 && stack[stack.length - 1].level >= level) {
-                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                            const top = stack.pop()!;
-                            if (lineNumber - 1 > top.line) {
+                            const top = stack.pop();
+                            if (top && lineNumber - 1 > top.line) {
                                 ranges.push({ start: top.line, end: lineNumber - 1 });
                             }
                         }
@@ -30,9 +29,8 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                 }
                 const lastLine = lines.length;
                 while (stack.length > 0) {
-                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                    const top = stack.pop()!;
-                    if (lastLine > top.line) {
+                    const top = stack.pop();
+                    if (top && lastLine > top.line) {
                         ranges.push({ start: top.line, end: lastLine });
                     }
                 }
@@ -98,14 +96,13 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                                 braceStack.push(lineNumber);
                             }
                             if (ch === '}' && braceStack.length > 0) {
-                                // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                const start = braceStack.pop()!;
+                                const start = braceStack.pop();
                                 // If there is non-whitespace content after `}` on this line
                                 // (e.g. "} else {"), end the fold at the previous line so
                                 // the continuation is not hidden inside the fold.
                                 const restOfLine = line.slice(j + 1).trimStart();
                                 const endLine = restOfLine.length > 0 ? lineNumber - 1 : lineNumber;
-                                if (endLine > start) braceRanges.push({ start, end: endLine });
+                                if (start !== undefined && endLine > start) braceRanges.push({ start, end: endLine });
                             }
                         }
 
@@ -118,9 +115,8 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                                     headingStack.length > 0 &&
                                     headingStack[headingStack.length - 1].level >= level
                                 ) {
-                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                    const top = headingStack.pop()!;
-                                    if (lineNumber - 1 > top.line) {
+                                    const top = headingStack.pop();
+                                    if (top && lineNumber - 1 > top.line) {
                                         headingRanges.push({ start: top.line, end: lineNumber - 1 });
                                     }
                                 }
@@ -129,9 +125,8 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                             // Template just closed — seal all open heading sections here
                             if (!inTemplate) {
                                 while (headingStack.length > 0) {
-                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                    const top = headingStack.pop()!;
-                                    if (lineNumber > top.line) {
+                                    const top = headingStack.pop();
+                                    if (top && lineNumber > top.line) {
                                         headingRanges.push({ start: top.line, end: lineNumber });
                                     }
                                 }
