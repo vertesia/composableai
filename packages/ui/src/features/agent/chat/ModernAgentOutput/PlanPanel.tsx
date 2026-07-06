@@ -20,16 +20,16 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
             {/* Plan Steps */}
             {plan.plan && plan.plan.length > 0 ? (
                 <div className="space-y-1.5">
-                    {plan.plan.map((task, index) => {
+                    {plan.plan.map((task) => {
                         // Extract task info
                         const taskId = task.id.toString();
                         const taskGoal = task.goal;
 
                         // Determine task status - use task.status if available or lookup from workstream
                         let status: 'pending' | 'in_progress' | 'completed' | 'skipped' = task.status || 'pending';
-                        if (workstreamStatus.has(taskId)) {
-                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                            status = workstreamStatus.get(taskId)!;
+                        const wsStatus = workstreamStatus.get(taskId);
+                        if (wsStatus !== undefined) {
+                            status = wsStatus;
                         }
 
                         // Determine status icon and style
@@ -45,7 +45,7 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                         }
 
                         return (
-                            <div key={`plan-step-${index}`} className="flex items-start">
+                            <div key={taskId} className="flex items-start">
                                 <div className={`me-1.5 mt-0.5 ${statusColor}`}>
                                     <StatusIcon className="h-3.5 w-3.5" />
                                 </div>

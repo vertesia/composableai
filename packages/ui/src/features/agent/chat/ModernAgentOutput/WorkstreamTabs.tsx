@@ -74,8 +74,7 @@ export default function WorkstreamTabs({
                 >
                     {/* Shorten long names for better UI */}
                     {name.length > 20 ? `${name.substring(0, 18)}...` : name}
-                    {/* biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here */}
-                    {count?.has(id) && count.get(id)! > 0 && (
+                    {(count?.get(id) ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                             <span
                                 className={cn(
@@ -83,7 +82,7 @@ export default function WorkstreamTabs({
                                     activeWorkstream === id ? 'bg-info text-info' : 'bg-muted text-muted',
                                 )}
                             >
-                                {count.get(id)}
+                                {count?.get(id)}
                             </span>
                             {/* Show completion status indicator if we have it and it's not 'all' */}
                             {completionStatus &&

@@ -116,9 +116,9 @@ export interface PopupProps extends Omit<DOMPopupProps, 'anchor' | 'root'> {
     root?: React.RefObject<HTMLElement | null | undefined>;
 }
 export function Popup({ anchor, root, children, ...others }: PopupProps) {
-    return anchor.current && (!root || root.current) ? (
-        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-        <DOMPopup anchor={anchor.current!} root={root?.current || undefined} {...others}>
+    const anchorEl = anchor.current;
+    return anchorEl && (!root || root.current) ? (
+        <DOMPopup anchor={anchorEl} root={root?.current || undefined} {...others}>
             {children}
         </DOMPopup>
     ) : null;
