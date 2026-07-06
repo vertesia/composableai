@@ -359,6 +359,10 @@ function MessageItemComponent({
     // Check if message has exportable content (markdown text)
     const hasExportableContent = typeof messageContent === 'string' && messageContent.trim().length > 0;
 
+    // UX config for REQUEST_INPUT messages (narrowed const so it stays typed inside the JSX closures below)
+    const askUserUx =
+        message.type === AgentMessageType.REQUEST_INPUT ? (message.details as AskUserMessageDetails)?.ux : undefined;
+
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(
         () => ({
@@ -639,36 +643,32 @@ function MessageItemComponent({
                     )}
                 >
                     {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
-                    {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux
-                        ? (() => {
-                              // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                              const uxConfig = (message.details as AskUserMessageDetails).ux!;
-                              return (
-                                  <AskUserWidget
-                                      question={typeof messageContent === 'string' ? messageContent : ''}
-                                      options={uxConfig.options}
-                                      variant={uxConfig.variant}
-                                      multiSelect={uxConfig.multiSelect}
-                                      onSelect={(optionId) => onSendMessage?.(optionId)}
-                                      onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
-                                      allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
-                                      placeholder={uxConfig.free_response?.placeholder}
-                                      submitLabel={uxConfig.free_response?.submit_label}
-                                      onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
-                                      hideBorder
-                                      compact
-                                      answered={requestInputAnswered}
-                                  />
-                              );
-                          })()
-                        : visibleMessageContent && (
-                              <div
-                                  className="message-content break-words w-full"
-                                  style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-                              >
-                                  {renderContent(processedContent || visibleMessageContent)}
-                              </div>
-                          )}
+                    {askUserUx ? (
+                        <AskUserWidget
+                            question={typeof messageContent === 'string' ? messageContent : ''}
+                            options={askUserUx.options}
+                            variant={askUserUx.variant}
+                            multiSelect={askUserUx.multiSelect}
+                            onSelect={(optionId) => onSendMessage?.(optionId)}
+                            onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                            allowFreeResponse={!askUserUx.options?.length || !!askUserUx.free_response}
+                            placeholder={askUserUx.free_response?.placeholder}
+                            submitLabel={askUserUx.free_response?.submit_label}
+                            onSubmit={(value) => onSendMessage?.(value, askUserUx.free_response?.metadata)}
+                            hideBorder
+                            compact
+                            answered={requestInputAnswered}
+                        />
+                    ) : (
+                        visibleMessageContent && (
+                            <div
+                                className="message-content break-words w-full"
+                                style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                            >
+                                {renderContent(processedContent || visibleMessageContent)}
+                            </div>
+                        )
+                    )}
 
                     {messageAttachments.length > 0 && (
                         <AttachmentPreviewList
