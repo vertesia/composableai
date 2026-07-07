@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
 import type {
     BucketReadAccessStatusResponse,
     BulkUploadUrlsPayload,
@@ -20,6 +20,12 @@ import { fetchSignedUrl } from './signed-url.js';
 
 export const MEMORIES_PREFIX = 'memories';
 export const ARTIFACTS_PREFIX = 'agents';
+
+const FILE_SIGNING_RETRY_POLICY: IRequestRetryPolicy = {
+    attempts: 3,
+    methods: ['POST'],
+    statuses: [502, 503, 504],
+};
 
 export function getMemoryFilePath(name: string) {
     const nameWithExt = name.endsWith('.tar.gz') ? name : `${name}.tar.gz`;
@@ -95,6 +101,7 @@ export class FilesApi extends ApiTopic {
     getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {
         return this.post('/upload-url', {
             payload,
+            retryPolicy: FILE_SIGNING_RETRY_POLICY,
         });
     }
 
