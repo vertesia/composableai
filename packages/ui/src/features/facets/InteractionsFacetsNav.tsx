@@ -14,6 +14,15 @@ interface InteractionsFacetsNavProps {
     facets: ComputedFacetResponse;
     search: SearchInterface;
     env?: string | null;
+    /**
+     * Optional controlled filter state. When provided, the parent owns the filter list (and is
+     * responsible for translating it into the search query via {@link useInteractionsFilterHandler}).
+     * This lets other surfaces — e.g. per-row "quick filter" buttons in the table — add filters that
+     * show up in the filter bar. When omitted, the component manages its own filter state internally.
+     */
+    filters?: BaseFilter[];
+    setFilters?: React.Dispatch<React.SetStateAction<BaseFilter[]>>;
+    filterGroups?: FilterGroup[];
 }
 
 // Hook to create filter groups for interactions
@@ -84,14 +93,30 @@ export function useInteractionsFilterHandler(search: SearchInterface) {
 }
 
 // Component for interactions filtering
-export function InteractionsFacetsNav({ facets, search }: InteractionsFacetsNavProps) {
-    const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const filterGroups = useInteractionsFilterGroups(facets);
+export function InteractionsFacetsNav({
+    facets,
+    search,
+    filters: controlledFilters,
+    setFilters: controlledSetFilters,
+    filterGroups: controlledFilterGroups,
+}: InteractionsFacetsNavProps) {
+    const [internalFilters, setInternalFilters] = useState<BaseFilter[]>([]);
+    const internalFilterGroups = useInteractionsFilterGroups(facets);
     const handleFilterLogic = useInteractionsFilterHandler(search);
 
+    // Controlled when the parent supplies both the filter list and its setter; otherwise self-managed.
+    const isControlled = controlledFilters !== undefined && controlledSetFilters !== undefined;
+    const filters = isControlled ? controlledFilters : internalFilters;
+    const filterGroups = controlledFilterGroups ?? internalFilterGroups;
+
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-        const newFilters = typeof value === 'function' ? value(filters) : value;
-        setFilters(newFilters);
+        if (isControlled) {
+            // The parent's setter is expected to also run the filter→query translation.
+            controlledSetFilters(value);
+            return;
+        }
+        const newFilters = typeof value === 'function' ? value(internalFilters) : value;
+        setInternalFilters(newFilters);
         handleFilterLogic(newFilters);
     };
 

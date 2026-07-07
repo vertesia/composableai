@@ -34,7 +34,7 @@ pnpm check                 # Lint, typecheck, and app quality checks
 pnpm build                 # Full service build with lint
 pnpm build:app             # Vite: standalone app publish build -> dist/app/
 pnpm build:service         # Vite app + plugin lib + tool server package build
-pnpm build:server          # Rollup: tool server only → lib/
+pnpm build:server          # Server build only → lib/
 
 pnpm dev                   # Vite dev server with API middleware (https://localhost:5173)
 pnpm start                 # Preview production build (build:service + vite preview)
@@ -44,10 +44,10 @@ pnpm start                 # Preview production build (build:service + vite prev
 
 | Component   | Bundler | Entry                       | tsconfig                    | Output                |
 |-------------|---------|-----------------------------|-----------------------------|-----------------------|
-| Tool Server | Rollup  | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js`            |
+| Tool Server | Rolldown | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js`            |
 | UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js`  |
 | UI App      | Vite    | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/app/`           |
-| Widgets     | Rollup  | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |
+| Widgets     | Rolldown | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |
 
 ## Key Files
 
@@ -154,7 +154,7 @@ A launched script keeps seeding a dev-time concern, idempotent, and decoupled fr
 
 Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
 
-- **Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
+- **Import hooks are server-build only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
 - **Must register in `config.ts`**: a collection that isn't wired into `config.ts` (or its per-type index) won't be served — and is silently dropped from the published package at publish.
 - **`Input.onChange` takes the value directly** (`onChange={setValue}`), not a React event — `Textarea` uses standard events.
 
