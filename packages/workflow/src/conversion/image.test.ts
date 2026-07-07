@@ -120,8 +120,9 @@ describe('ImageMagick image resizing', () => {
     test('should apply EXIF orientation before resizing and stripping metadata', async () => {
         const max_hw = 100;
         const format = 'jpeg';
-        const inputImagePath = path.join(__dirname, '../../fixtures', 'exif-orientation-righttop.jpg');
+        const inputImagePath = path.join(__dirname, '../../fixtures', 'synthetic-exif-righttop.jpg');
 
+        // Generated from synthetic pixels with only EXIF Orientation=6 added.
         const { stdout: sourceStdout } = await execAsync(`identify -format "%w %h %[orientation]" "${inputImagePath}"`);
         const [sourceWidth, sourceHeight, sourceOrientation] = sourceStdout.trim().split(' ');
         expect(parseInt(sourceWidth, 10)).to.equal(120);
