@@ -50,6 +50,76 @@ describe('useFileProcessing', () => {
         expect(result.current.processingFiles.has('file-1')).toBe(false);
     });
 
+    it('clears files on send without signaling FileRemoved and suppresses the server echo', async () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const serverFileUpdates = new Map([['file-1', createReadyFile('file-1')]]);
+        const { result, rerender } = renderHook(
+            ({ updates }) => useFileProcessing(client, 'agent-run-1', updates, toast),
+            {
+                initialProps: { updates: serverFileUpdates },
+            },
+        );
+
+        expect(result.current.processingFiles.has('file-1')).toBe(true);
+
+        act(() => {
+            result.current.clearProcessingFiles();
+        });
+
+        // The agent already received the file via FileUploaded, so sending the message
+        // consumes it rather than retracting it — no FileRemoved signal.
+        expect(client.agents.sendSignal).not.toHaveBeenCalled();
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+
+        // A subsequent server echo for the same file must not re-add the chip.
+        rerender({ updates: new Map([['file-1', createReadyFile('file-1')]]) });
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+    });
+
+    it('preserves local artifact_path/reference when a server update omits them', async () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const { result, rerender } = renderHook(
+            ({ updates }) => useFileProcessing(client, 'agent-run-1', updates, toast),
+            {
+                initialProps: { updates: new Map<string, ConversationFile>() },
+            },
+        );
+
+        const file = new File(['pdf'], 'report.pdf', { type: 'application/pdf' });
+        await act(async () => {
+            await result.current.handleFileUpload([file]);
+        });
+
+        const [fileId, local] = Array.from(result.current.processingFiles.entries())[0];
+        expect(local.artifact_path).toBe('files/report.pdf');
+        expect(local.reference).toBe('artifact:files/report.pdf');
+
+        // Server echoes READY but drops artifact_path/reference — the merge must backfill
+        // them from the local optimistic entry so the sent-message embed still resolves.
+        rerender({
+            updates: new Map<string, ConversationFile>([
+                [
+                    fileId,
+                    {
+                        id: fileId,
+                        name: 'report.pdf',
+                        content_type: 'application/pdf',
+                        size: 0,
+                        status: FileProcessingStatus.READY,
+                        started_at: 1_000,
+                    },
+                ],
+            ]),
+        });
+
+        const merged = result.current.processingFiles.get(fileId);
+        expect(merged?.status).toBe(FileProcessingStatus.READY);
+        expect(merged?.artifact_path).toBe('files/report.pdf');
+        expect(merged?.reference).toBe('artifact:files/report.pdf');
+    });
+
     it('does not signal an upload that was removed before upload completion', async () => {
         const client = createClient();
         const uploadArtifact = vi.mocked(client.agents.uploadArtifact);
