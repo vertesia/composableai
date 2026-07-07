@@ -13,6 +13,7 @@ import {
 import { z } from 'zod';
 import {
     AgentSearchScope,
+    ExecutionMode,
     ExecutionRunStatus,
     InteractionStatus,
     ModelSource,
@@ -37,6 +38,11 @@ import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } fr
 export const SortOrderSchema = z.enum(['asc', 'desc']).meta({ id: 'SortOrder' });
 
 export const ExecutionRunStatusSchema = z.enum(ExecutionRunStatus).meta({ id: 'ExecutionRunStatus' });
+
+export const ExecutionModeSchema = z.enum(ExecutionMode).meta({
+    id: 'ExecutionMode',
+    description: 'Explicit provider batch routing mode for an interaction execution.',
+});
 
 export const FacetSpecSchema = z
     .strictObject({
@@ -1361,6 +1367,8 @@ export const ExecutionRunSchema: z.ZodType = z
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
         status: ExecutionRunStatusSchema,
+        execution_mode: ExecutionModeSchema.optional(),
+        batch_id: z.string().optional(),
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
@@ -1419,6 +1427,8 @@ export const InteractionExecutionResultSchema = z
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
         status: ExecutionRunStatusSchema,
+        execution_mode: ExecutionModeSchema.optional(),
+        batch_id: z.string().optional(),
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
@@ -1528,6 +1538,8 @@ export const ExecutionRunRefSchema = z
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
         status: ExecutionRunStatusSchema,
+        execution_mode: ExecutionModeSchema.optional(),
+        batch_id: z.string().optional(),
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
@@ -1887,6 +1899,10 @@ export const NamedInteractionExecutionPayloadSchema = z
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
         }).optional(),
+        execution_mode: ExecutionModeSchema.meta({
+            description:
+                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
+        }).optional(),
         interaction: z.string().meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
@@ -1932,6 +1948,10 @@ export const InteractionExecutionPayloadSchema = z
         asyncCompletion: AsyncCompletionOptionsSchema.meta({
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
+        }).optional(),
+        execution_mode: ExecutionModeSchema.meta({
+            description:
+                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
         }).optional(),
     })
     .meta({ id: 'InteractionExecutionPayload' });
@@ -2231,6 +2251,10 @@ export const RunCreatePayloadSchema = z
         asyncCompletion: AsyncCompletionOptionsSchema.meta({
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
+        }).optional(),
+        execution_mode: ExecutionModeSchema.meta({
+            description:
+                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
         }).optional(),
         interaction: z.string().meta({
             description:

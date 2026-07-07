@@ -457,6 +457,7 @@ import {
     EmailChannelSchema,
     ExecuteInteractionByEndpointHeadersSchema,
     ExecuteInteractionByEndpointQuerySchema,
+    ExecutionModeSchema,
     ExecutionResponseSchema,
     ExecutionRunDocRefSchema,
     ExecutionRunInteractionSchema,
@@ -1134,6 +1135,7 @@ const AGENT_CONVERSATION_SCHEMAS = {
 
 const EXECUTION_RUN_SCHEMAS = {
     // A run: what was executed, by whom, and how it ended.
+    ExecutionMode: ExecutionModeSchema,
     ExecutionRunStatus: ExecutionRunStatusSchema,
     RunSourceTypes: RunSourceTypesSchema,
     RunSource: RunSourceSchema,
