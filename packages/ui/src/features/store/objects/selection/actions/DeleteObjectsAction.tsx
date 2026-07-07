@@ -1,12 +1,11 @@
-import { useToast } from '@vertesia/ui/core';
+import { ConfirmModal, useToast } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useDocumentSearch } from '../../search/DocumentSearchContext';
-import { useObjectsActionContext } from '../ObjectsActionHooks';
+import { useObjectsActionCallback, useObjectsActionContext } from '../ObjectsActionHooks';
 import type { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
-import ConfirmAction from './ConfirmAction';
 
 export function DeleteObjectsActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {
     const { t } = useUITranslation();
@@ -17,7 +16,20 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
     const search = useDocumentSearch();
     const navigate = useNavigate();
 
-    const callback = useCallback(() => {
+    const [showConfirm, setShowConfirm] = useState(false);
+
+    const count = objectIds?.length ?? 0;
+    const type = ctx.params?.type?.name ?? 'object';
+
+    // Register the action trigger; opening the confirm modal is the action "callback".
+    const openConfirm = useCallback(() => {
+        setShowConfirm(true);
+        return Promise.resolve(true);
+    }, []);
+    useObjectsActionCallback(action.id, openConfirm);
+
+    const handleDelete = useCallback(() => {
+        setShowConfirm(false);
         if (!objectIds?.length) {
             toast({
                 status: 'error',
@@ -81,9 +93,30 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
     ]);
 
     return (
-        <ConfirmAction action={action} callback={callback}>
+        <>
             {children}
-        </ConfirmAction>
+            <ConfirmModal
+                isOpen={showConfirm}
+                title={count === 1 ? `Delete ${type}` : `Delete ${type}s`}
+                content={
+                    <div>
+                        <p>
+                            Delete {count} selected {type}
+                            {count === 1 ? '' : 's'}? {count === 1 ? `This ${type}` : `These ${type}s`} will be
+                            permanently removed.
+                        </p>
+                        <p>
+                            <span className="text-destructive">This action cannot be undone.</span>
+                        </p>
+                    </div>
+                }
+                onConfirm={handleDelete}
+                onCancel={() => setShowConfirm(false)}
+                confirmationValue="delete"
+                confirmationLabel='Type "delete" to confirm'
+                confirmationPlaceholder="delete"
+            />
+        </>
     );
 }
 

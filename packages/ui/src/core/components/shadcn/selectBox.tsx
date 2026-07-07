@@ -11,6 +11,12 @@ import { VTooltip } from './tooltip';
 export interface SelectBoxBaseProps<T> {
     options: T[] | undefined;
     optionLabel?: (option: T) => React.ReactNode;
+    /**
+     * Optional grouping. Returns the group heading for an option; options that return the same
+     * heading are rendered together beneath it. Groups appear in order of first occurrence in
+     * `options`, so the caller controls group order by ordering the options accordingly.
+     */
+    groupBy?: (option: T) => string;
     onBlur?: () => void;
     onKeyDown?: (e: React.KeyboardEvent, isOpen: boolean) => void;
     label?: string;
@@ -62,6 +68,7 @@ type SelectBoxProps<T> = SelectBoxSingleProps<T> | SelectBoxMultipleProps<T>;
 export function SelectBox<T = unknown>({
     options,
     optionLabel,
+    groupBy,
     value,
     onChange,
     addNew,
@@ -230,6 +237,52 @@ export function SelectBox<T = unknown>({
         );
     };
 
+    const renderOption = (opt: T, key: React.Key) => {
+        const isSelected = multiple
+            ? isOptionSelected(opt, Array.isArray(value) ? value : [])
+            : value != null
+              ? isOptionsEqual(value as T, opt)
+              : false;
+
+        return (
+            <CommandItem key={`option-${key}`} onSelect={() => _onClick(opt)} className="w-full">
+                {multiple || inline ? (
+                    <div className="w-full flex justify-between items-center cursor-pointer">
+                        <div className="w-full truncate text-start">
+                            {optionLabel ? optionLabel(opt) : (opt as string)}
+                        </div>
+                        {isSelected && <Check className="size-4" />}
+                    </div>
+                ) : (
+                    <PopoverClose className="w-full flex justify-between items-center">
+                        <div className="w-full truncate text-start">
+                            {optionLabel ? optionLabel(opt) : (opt as string)}
+                        </div>
+                        {isSelected && <Check className="size-4" />}
+                    </PopoverClose>
+                )}
+            </CommandItem>
+        );
+    };
+
+    // Group filtered options by `groupBy`, preserving first-occurrence order of groups.
+    const groupedOptions = (() => {
+        if (!groupBy) return null;
+        const groups: { key: string; items: T[] }[] = [];
+        const byKey = new Map<string, T[]>();
+        for (const opt of filteredOptions) {
+            const key = groupBy(opt);
+            let bucket = byKey.get(key);
+            if (!bucket) {
+                bucket = [];
+                byKey.set(key, bucket);
+                groups.push({ key, items: bucket });
+            }
+            bucket.push(opt);
+        }
+        return groups;
+    })();
+
     // Render the options list content
     const renderOptionsContent = () => (
         <>
@@ -255,35 +308,19 @@ export function SelectBox<T = unknown>({
                     }}
                 >
                     <CommandEmpty>No result found.</CommandEmpty>
-                    <CommandGroup>
-                        {filteredOptions?.map((opt, index) => {
-                            const isSelected = multiple
-                                ? isOptionSelected(opt, Array.isArray(value) ? value : [])
-                                : value != null
-                                  ? isOptionsEqual(value as T, opt)
-                                  : false;
-
-                            return (
-                                <CommandItem key={`option-${index}`} onSelect={() => _onClick(opt)} className="w-full">
-                                    {multiple || inline ? (
-                                        <div className="w-full flex justify-between items-center cursor-pointer">
-                                            <div className="w-full truncate text-start">
-                                                {optionLabel ? optionLabel(opt) : (opt as string)}
-                                            </div>
-                                            {isSelected && <Check className="size-4" />}
-                                        </div>
-                                    ) : (
-                                        <PopoverClose className="w-full flex justify-between items-center">
-                                            <div className="w-full truncate text-start">
-                                                {optionLabel ? optionLabel(opt) : (opt as string)}
-                                            </div>
-                                            {isSelected && <Check className="size-4" />}
-                                        </PopoverClose>
-                                    )}
-                                </CommandItem>
-                            );
-                        })}
-                    </CommandGroup>
+                    {groupedOptions ? (
+                        groupedOptions.map((group) => (
+                            <CommandGroup
+                                key={group.key}
+                                heading={group.key}
+                                className="[&_[cmdk-group-heading]]:text-muted [&_[cmdk-group-heading]]:border-b [&_[cmdk-group-heading]]:border-border [&_[cmdk-group-heading]]:ml-[-0.5rem] [&_[cmdk-group-heading]]:text-xs"
+                            >
+                                {group.items.map((opt, index) => renderOption(opt, `${group.key}-${index}`))}
+                            </CommandGroup>
+                        ))
+                    ) : (
+                        <CommandGroup>{filteredOptions?.map((opt, index) => renderOption(opt, index))}</CommandGroup>
+                    )}
                 </CommandList>
             </Command>
             {addNew && (
