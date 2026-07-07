@@ -84,6 +84,9 @@ export async function imageResizer(
         // Add input after JPEG shrink-on-load optimization so ImageMagick can apply it while decoding.
         args.push(inputPath);
 
+        // Apply EXIF orientation to pixels before stripping metadata or resizing.
+        args.push('-auto-orient');
+
         // Remove metadata
         args.push('-strip');
 
