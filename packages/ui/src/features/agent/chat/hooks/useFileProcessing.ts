@@ -104,11 +104,17 @@ export function useFileProcessing(
         });
         serverFileUpdates.forEach((file, id) => {
             if (!removedFileIds.has(id)) {
-                const localPreviewUrl = (localFiles.get(id) as LocalConversationFile | undefined)?.preview_url;
-                merged.set(
-                    id,
-                    localPreviewUrl ? ({ ...file, preview_url: localPreviewUrl } as LocalConversationFile) : file,
-                );
+                // Server updates are authoritative for status, but may omit fields the local
+                // optimistic entry already knows: preview_url is never sent by the server, and
+                // artifact_path/reference can be absent on some updates. Backfill them from local
+                // so the sent-message embed and thumbnail resolution keep working.
+                const local = localFiles.get(id) as LocalConversationFile | undefined;
+                merged.set(id, {
+                    ...file,
+                    artifact_path: file.artifact_path ?? local?.artifact_path,
+                    reference: file.reference ?? local?.reference,
+                    ...(local?.preview_url ? { preview_url: local.preview_url } : {}),
+                } as LocalConversationFile);
             }
         });
         return merged;
