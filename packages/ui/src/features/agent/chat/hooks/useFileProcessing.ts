@@ -8,6 +8,7 @@ export interface UseFileProcessingResult {
     hasProcessingFiles: boolean;
     handleFileUpload: (files: File[]) => Promise<void>;
     removeProcessingFile: (fileId: string) => Promise<void>;
+    clearProcessingFiles: () => void;
 }
 
 type ToastFn = (opts: {
@@ -58,6 +59,12 @@ export function useFileProcessing(
     const removedFileIdsRef = useRef<Set<string>>(new Set());
     const previewUrlsRef = useRef<Map<string, string>>(new Map());
     const previousAgentRunId = useRef(agentRunId);
+    // Kept current so clearProcessingFiles() can read the latest tracked ids
+    // imperatively without being re-created on every render.
+    const localFilesRef = useRef(localFiles);
+    localFilesRef.current = localFiles;
+    const serverFileUpdatesRef = useRef(serverFileUpdates);
+    serverFileUpdatesRef.current = serverFileUpdates;
 
     const revokePreviewUrl = useCallback((fileId: string) => {
         const previewUrl = previewUrlsRef.current.get(fileId);
@@ -224,5 +231,23 @@ export function useFileProcessing(
         [agentRunId, client, revokePreviewUrl, t, toast],
     );
 
-    return { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile };
+    // Clears the composer's uploaded-file chips after a message is sent. Unlike
+    // removeProcessingFile, this does NOT signal FileRemoved — the agent already
+    // received these files via FileUploaded, so the message consumes them rather
+    // than retracting them. The ids are added to removedFileIds so the server echo
+    // in the merge above cannot re-add a chip once the message has been sent.
+    const clearProcessingFiles = useCallback(() => {
+        previewUrlsRef.current.forEach(revokePreviewUrlValue);
+        previewUrlsRef.current.clear();
+        setRemovedFileIds((prev) => {
+            const next = new Set(prev);
+            for (const id of serverFileUpdatesRef.current.keys()) next.add(id);
+            for (const id of localFilesRef.current.keys()) next.add(id);
+            removedFileIdsRef.current = next;
+            return next;
+        });
+        setLocalFiles(new Map());
+    }, []);
+
+    return { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles };
 }

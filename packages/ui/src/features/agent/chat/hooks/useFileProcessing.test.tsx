@@ -50,6 +50,33 @@ describe('useFileProcessing', () => {
         expect(result.current.processingFiles.has('file-1')).toBe(false);
     });
 
+    it('clears files on send without signaling FileRemoved and suppresses the server echo', async () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const serverFileUpdates = new Map([['file-1', createReadyFile('file-1')]]);
+        const { result, rerender } = renderHook(
+            ({ updates }) => useFileProcessing(client, 'agent-run-1', updates, toast),
+            {
+                initialProps: { updates: serverFileUpdates },
+            },
+        );
+
+        expect(result.current.processingFiles.has('file-1')).toBe(true);
+
+        act(() => {
+            result.current.clearProcessingFiles();
+        });
+
+        // The agent already received the file via FileUploaded, so sending the message
+        // consumes it rather than retracting it — no FileRemoved signal.
+        expect(client.agents.sendSignal).not.toHaveBeenCalled();
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+
+        // A subsequent server echo for the same file must not re-add the chip.
+        rerender({ updates: new Map([['file-1', createReadyFile('file-1')]]) });
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+    });
+
     it('does not signal an upload that was removed before upload completion', async () => {
         const client = createClient();
         const uploadArtifact = vi.mocked(client.agents.uploadArtifact);
