@@ -112,7 +112,7 @@ export default defineConfig({
 ## Requirements
 
 - Vite 4.2.0 or higher
-- Node.js 18+
+- Node.js 24.x
 
 ## License
 
