@@ -175,6 +175,16 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                     max_retries: 1,
                     on_fail: 'flag',
                 },
+                grounding: {
+                    enabled: true,
+                    interaction: 'sys:ExtractInformationGrounded',
+                    max_pages: 20,
+                    force_ocr: false,
+                    use_vision: true,
+                    window_pages: 8,
+                    update_properties: true,
+                    hardness_threshold: 0.5,
+                },
             },
             rendering_template:
                 '# Invoice {{properties.invoice_number}}\n\n' +
@@ -420,6 +430,7 @@ function IntakeSummary({ policy }: { policy: ContentTypeIntakePolicy }) {
         ['Method', policy.text_conversion?.method ?? 'inherit'],
         ['Source', policy.extraction?.source ?? 'inherit'],
         ['Extraction', enabledLabel(policy.extraction?.enabled)],
+        ['Grounding', enabledLabel(policy.extraction?.grounding?.enabled)],
         ['Default View', policy.default_view ?? 'inherit'],
         ['TOC', enabledLabel(policy.generate_toc)],
         ['Template', policy.rendering_template ? 'set' : 'inherit'],
@@ -450,6 +461,10 @@ function IntakeHelp() {
                 <HelpItem
                     label="extraction.source"
                     text="auto chooses text or vision. text is text only. vision is image/PDF evidence. mixed sends both."
+                />
+                <HelpItem
+                    label="extraction.grounding"
+                    text="PDF block-level citations and annotated proof output for property extraction."
                 />
                 <HelpItem
                     label="rendering_template"
