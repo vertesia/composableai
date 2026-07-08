@@ -44,7 +44,7 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
         "esbuild": "^0.28.1",
-        "js-yaml": "^5.1.0",
+        "js-yaml": "^5.2.0",
         "zod": "^4.4.3"
     },
     "peerDependencies": {
