@@ -91,6 +91,10 @@ export function computeExtractionFingerprint(input: {
     /** Scoped vision evidence refs: a different page/profile selection must invalidate the fingerprint.
      *  Undefined (legacy callers) keeps previously stored hashes valid. */
     evidence?: string[];
+    /** The object's text etag: text can change under the same content etag (re-render,
+     *  re-conversion, manual edit) and text-consuming extractions must invalidate.
+     *  Undefined (vision-only callers) keeps previously stored hashes valid. */
+    text_etag?: string | null;
 }): string {
     return md5(
         JSON.stringify({
@@ -101,6 +105,7 @@ export function computeExtractionFingerprint(input: {
             interactionName: input.interactionName,
             object_schema: input.object_schema,
             ...(input.evidence ? { evidence: input.evidence } : {}),
+            ...(input.text_etag !== undefined ? { text_etag: input.text_etag } : {}),
         }),
     );
 }
@@ -167,6 +172,8 @@ export async function generateDocumentProperties(
         interactionName,
         object_schema: type.object_schema,
         evidence: evidenceImages?.map((image) => image.source ?? image.name ?? ''),
+        // text may change under the same content etag; only vision-only extraction ignores it
+        text_etag: source === 'vision' ? undefined : (doc.text_etag ?? null),
     });
 
     if (params.skip_if_fresh && !payload.vars?.forceGeneration) {

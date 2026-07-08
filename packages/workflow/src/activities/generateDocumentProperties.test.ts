@@ -436,6 +436,9 @@ describe('generateDocumentProperties', () => {
             instructions: undefined,
             interactionName: 'sys:ExtractInformation',
             object_schema: DEFAULT_OBJECT_SCHEMA,
+            // the mocked document carries text_etag 'source-etag'; text-consuming
+            // extraction fingerprints include it (text can change under one content etag)
+            text_etag: 'source-etag',
         });
 
         function freshSetupOptions(overrides: Parameters<typeof mockSetup>[0] = {}) {
