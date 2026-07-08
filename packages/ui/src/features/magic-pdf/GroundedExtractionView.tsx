@@ -529,6 +529,7 @@ function ArrayTable({
     selectedPath?: string;
     onSelect: (path: string) => void;
 }) {
+    const { t } = useUITranslation();
     const columns = useMemo(() => {
         const keys = new Set<string>();
         for (const item of items) {
@@ -575,6 +576,16 @@ function ArrayTable({
                                                 )}
                                             >
                                                 {formatValue(item[col])}
+                                                {citation &&
+                                                    typeof citation.confidence === 'number' &&
+                                                    citation.confidence < 1 && (
+                                                        <span
+                                                            className="ms-1 text-[10px] text-muted"
+                                                            title={t('grounded.confidenceHint')}
+                                                        >
+                                                            {Math.round(citation.confidence * 100)}%
+                                                        </span>
+                                                    )}
                                             </button>
                                         </td>
                                     );
