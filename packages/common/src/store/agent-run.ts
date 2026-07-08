@@ -20,11 +20,8 @@ import type {
     InteractionRef,
     RunSource,
 } from '../interaction.js';
-<<<<<<< HEAD
 import type { EventRef } from '../platform-event.js';
-=======
 import type { ResourceRef } from '../refs.js';
->>>>>>> 43b6a39d (Feat: add env ref to agents (#1678))
 import type { AgentEvent } from '../workflow-analytics.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
