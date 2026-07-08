@@ -289,6 +289,9 @@ function PageWithOverlay({
                                         : 'border-attention/80 hover:bg-attention/20',
                             )}
                             style={{
+                                // inline position: the app's button base styles override the
+                                // `absolute` utility class with position: relative
+                                position: 'absolute',
                                 left: `${(box.x / dims.width) * 100}%`,
                                 top: `${(box.y / dims.height) * 100}%`,
                                 width: `${(box.w / dims.width) * 100}%`,
@@ -361,11 +364,18 @@ function DataNode({
                             />
                         );
                     }
+                    // Arrays of objects render as a table with its own labeled header
+                    const rendersOwnLabel =
+                        Array.isArray(child) &&
+                        child.length > 0 &&
+                        child.every((item) => item !== null && typeof item === 'object');
                     return (
                         <div key={childPath} className="pt-1">
-                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                {key}
-                            </div>
+                            {!rendersOwnLabel && (
+                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                    {key}
+                                </div>
+                            )}
                             <DataNode
                                 value={child}
                                 path={childPath}
