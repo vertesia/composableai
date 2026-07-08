@@ -79,6 +79,41 @@ export function useGroundedExtractionAvailable(objectId: string): boolean {
     return available;
 }
 
+export interface GroundedSummary {
+    confidence?: number;
+    verified: number;
+    total: number;
+}
+
+/** Lightweight summary of the object's grounded extraction, or null when none exists */
+export function useGroundedSummary(objectId: string): GroundedSummary | null {
+    const { client } = useUserSession();
+    const [summary, setSummary] = useState<GroundedSummary | null>(null);
+    useEffect(() => {
+        let cancelled = false;
+        setSummary(null);
+        client.files
+            .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/grounded-extraction.json`)
+            .then((r) => fetch(r.url))
+            .then((res) => (res.ok ? res.json() : null))
+            .then((file: GroundedExtractionFile | null) => {
+                if (cancelled || !file?.citations) return;
+                setSummary({
+                    confidence: file.confidence,
+                    verified: file.citations.filter((c) => c.verified).length,
+                    total: file.citations.length,
+                });
+            })
+            .catch(() => {
+                // no grounded extraction for this object
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [client, objectId]);
+    return summary;
+}
+
 /**
  * Embeddable grounded-extraction review panel (fills its container): extracted
  * properties on one side, source pages with citation boxes on the other.
