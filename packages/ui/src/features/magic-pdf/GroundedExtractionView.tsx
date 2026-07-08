@@ -12,7 +12,7 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { CheckCircle2, ChevronLeft, ChevronRight, Eye, X } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Eye, FileDown, FileJson2, FileText, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
@@ -189,6 +189,7 @@ function GroundedExtractionViewImpl({
     onClose?: () => void;
 }) {
     const { t } = useUITranslation();
+    const { client } = useUserSession();
     const pageNumbers = useMemo(
         () =>
             Object.keys(extraction.pages)
@@ -196,6 +197,15 @@ function GroundedExtractionViewImpl({
                 .sort((a, b) => a - b),
         [extraction.pages],
     );
+
+    const downloadArtifact = (path: string) => {
+        client.files
+            .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/${path}`)
+            .then((r) => window.open(r.url, '_blank'))
+            .catch(() => {
+                // artifact absent for this document
+            });
+    };
     const [page, setPage] = useState(pageNumbers[0] ?? 1);
     const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
 
@@ -283,6 +293,33 @@ function GroundedExtractionViewImpl({
                                 total: extraction.citations.length,
                             })}
                         </Badge>
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            aria-label={t('grounded.downloadCitations')}
+                            title={t('grounded.downloadCitations')}
+                            onClick={() => downloadArtifact('grounded-extraction.json')}
+                        >
+                            <FileJson2 className="size-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            aria-label={t('grounded.downloadBlocks')}
+                            title={t('grounded.downloadBlocks')}
+                            onClick={() => downloadArtifact(`pages/page-${page}.json`)}
+                        >
+                            <FileText className="size-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            aria-label={t('grounded.downloadAnnotated')}
+                            title={t('grounded.downloadAnnotated')}
+                            onClick={() => downloadArtifact('grounded-annotated.pdf')}
+                        >
+                            <FileDown className="size-4" />
+                        </Button>
                         {!!onClose && (
                             <Button variant="ghost" size="xs" onClick={onClose} aria-label={t('pdf.close')}>
                                 <X className="size-4" />
