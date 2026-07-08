@@ -303,7 +303,7 @@ function GroundedExtractionViewImpl({
                                 title={t('grounded.confidenceHint')}
                             >
                                 {t('grounded.confidence', {
-                                    percent: Math.round(extraction.confidence * 100),
+                                    percent: Math.floor(extraction.confidence * 100),
                                 })}
                             </Badge>
                         )}
@@ -662,7 +662,7 @@ function ArrayTable({
                                                         )}
                                                         title={t('grounded.confidenceHint')}
                                                     >
-                                                        {Math.round(citation.confidence * 100)}%
+                                                        {Math.floor(citation.confidence * 100)}%
                                                     </span>
                                                 )}
                                             </button>
@@ -714,7 +714,7 @@ function LeafRow({
                     className={cn('text-xs shrink-0', scoreColor(citation.confidence))}
                     title={t('grounded.confidenceHint')}
                 >
-                    {Math.round(citation.confidence * 100)}%
+                    {Math.floor(citation.confidence * 100)}%
                 </span>
             )}
             {citation &&

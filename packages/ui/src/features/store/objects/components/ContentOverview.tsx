@@ -307,7 +307,7 @@ function PropertiesPanel({
                                 title={t('grounded.confidenceHint')}
                             >
                                 {t('grounded.confidence', {
-                                    percent: Math.round(groundedSummary.confidence * 100),
+                                    percent: Math.floor(groundedSummary.confidence * 100),
                                 })}
                             </Badge>
                         )}
