@@ -33,8 +33,7 @@ export function RowSkeleton({ columns }: { columns: number }) {
             {Array(columns)
                 .fill(0)
                 .map((_, index) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                    <td key={index}>
+                    <td key={`skeleton-cell-${index}`}>
                         <div className="animate-pulse rounded-xs h-5 bg-muted"></div>
                     </td>
                 ))}

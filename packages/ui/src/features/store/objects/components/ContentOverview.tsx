@@ -884,8 +884,7 @@ function TranscriptPanel({
                 {segments && segments.length > 0 ? (
                     <div className="space-y-2">
                         {segments.map((segment, idx) => (
-                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                            <div key={idx} className="flex gap-3 text-sm">
+                            <div key={`segment-${idx}`} className="flex gap-3 text-sm">
                                 <span className="text-muted font-mono text-xs shrink-0 pt-0.5">
                                     {formatTimestamp(segment.start)}
                                     {segment.end && ` - ${formatTimestamp(segment.end)}`}

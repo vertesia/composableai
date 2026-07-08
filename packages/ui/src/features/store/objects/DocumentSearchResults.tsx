@@ -58,10 +58,13 @@ interface DocumentSearchResultsWithDropZoneProps {
      * @returns
      */
     onUploadDone?: (objectIds: string[]) => Promise<void>;
+    /** Extra actions rendered in the results toolbar (e.g. selection actions). */
+    toolbarActions?: React.ReactNode;
 }
 export function DocumentSearchResultsWithDropZone({
     onUploadDone = async () => {},
     layout,
+    toolbarActions,
 }: DocumentSearchResultsWithDropZoneProps) {
     const search = useDocumentSearch();
     const toast = useToast();
@@ -111,7 +114,7 @@ export function DocumentSearchResultsWithDropZone({
         [search, uploadHandler],
     );
 
-    return <DocumentSearchResults layout={layout} onUpload={wrappedUploadHandler} />;
+    return <DocumentSearchResults layout={layout} onUpload={wrappedUploadHandler} toolbarActions={toolbarActions} />;
 }
 
 interface DocumentSearchResultsProps {
@@ -119,12 +122,15 @@ interface DocumentSearchResultsProps {
     allowFilter?: boolean;
     allowSearch?: boolean;
     onUpload?: (files: File[], type: string | null, collectionId?: string) => Promise<unknown>; // if defined, accept drag drop to upload
+    /** Extra actions rendered in the results toolbar (e.g. selection actions). */
+    toolbarActions?: React.ReactNode;
 }
 export function DocumentSearchResults({
     layout,
     onUpload,
     allowFilter = true,
     allowSearch = true,
+    toolbarActions,
 }: DocumentSearchResultsProps) {
     // Get the search context to access collectionId
     const { t } = useUITranslation();
@@ -346,6 +352,7 @@ export function DocumentSearchResults({
                 handleVectorSearch={handleVectorSearch}
                 handleRefetch={handleRefetch}
                 setIsGridView={setIsGridView}
+                toolbarActions={toolbarActions}
             />
             <div className="flex flex-col w-full flex-1 min-h-0 border rounded-md mb-2">
                 <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
@@ -388,6 +395,7 @@ interface ToolsbarProps {
     handleVectorSearch: (query?: ComplexSearchQuery) => void;
     handleRefetch: () => void;
     setIsGridView: React.Dispatch<React.SetStateAction<boolean>>;
+    toolbarActions?: React.ReactNode;
 }
 function Toolsbar(props: ToolsbarProps) {
     const { t } = useUITranslation();
@@ -402,6 +410,7 @@ function Toolsbar(props: ToolsbarProps) {
         handleVectorSearch,
         handleRefetch,
         setIsGridView,
+        toolbarActions,
     } = props;
 
     return (
@@ -442,6 +451,7 @@ function Toolsbar(props: ToolsbarProps) {
                 </div>
             )}
             <div className="flex gap-1 items-center">
+                {toolbarActions}
                 <VTooltip description={t('store.refresh')} asChild size="xs" placement="top">
                     <Button variant="outline" onClick={handleRefetch} aria-label={t('store.refresh')}>
                         <RefreshCw size={16} />
