@@ -115,10 +115,19 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                     hardness_threshold: 0.5,
                     review: {
                         enabled: true,
-                        // any model works here: sonnet reads handwriting best,
-                        // gemini pro is a cheaper same-family alternative
+                        // flash-high-thinking matches sonnet on correction
+                        // quality at ~15% of the cost; sonnet/gemini-pro are
+                        // stronger options for the hardest handwriting
                         config: {
-                            model: 'anthropic.claude-sonnet-4-6',
+                            model: 'publishers/google/models/gemini-3.5-flash',
+                            model_options: {
+                                _option_id: 'vertexai-gemini',
+                                thinking_level: 'HIGH',
+                                max_tokens: 32000,
+                                temperature: 0,
+                            } as unknown as NonNullable<
+                                import('@vertesia/common').InteractionExecutionConfiguration['model_options']
+                            >,
                         },
                         coverage_threshold: 0.2,
                     },
