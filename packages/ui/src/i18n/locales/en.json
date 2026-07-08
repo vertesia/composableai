@@ -263,6 +263,8 @@
     "filter.selectRange": "Select range",
     "filter.to": "To:",
     "form.filter": "Filter...",
+    "grounded.confidence": "{{percent}}% confidence",
+    "grounded.confidenceHint": "Provenance confidence: 100% means every value was verified verbatim against the digital text layer; OCR-verified, re-anchored and image-read values score lower",
     "grounded.conflicts": "{{count}} value(s) differed between extraction windows — earliest kept",
     "grounded.failedToLoad": "Failed to load the grounded extraction",
     "grounded.nextPage": "Next page",

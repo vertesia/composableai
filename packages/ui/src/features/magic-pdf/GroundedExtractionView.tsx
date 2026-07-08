@@ -32,6 +32,9 @@ interface GroundedCitation {
     source_text?: string;
     value?: string;
     boxes: GroundedBox[];
+    misaligned?: boolean;
+    snapped?: boolean;
+    confidence?: number;
 }
 
 interface GroundedExtractionFile {
@@ -43,6 +46,8 @@ interface GroundedExtractionFile {
     pages: Record<string, { width: number; height: number }>;
     data: Record<string, unknown>;
     citations: GroundedCitation[];
+    /** Mean provenance confidence in [0,1]; 1.0 = verified against a digital text layer */
+    confidence?: number;
     conflicts?: { path: string; kept: unknown; dropped: unknown }[];
 }
 
@@ -51,12 +56,35 @@ interface GroundedExtractionViewProps {
     onClose?: () => void;
 }
 
+/** True when a grounded extraction result exists for the object */
+export function useGroundedExtractionAvailable(objectId: string): boolean {
+    const { client } = useUserSession();
+    const [available, setAvailable] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        setAvailable(false);
+        client.files
+            .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/grounded-extraction.json`)
+            .then((r) => fetch(r.url, { method: 'HEAD' }))
+            .then((res) => {
+                if (!cancelled) setAvailable(res.ok);
+            })
+            .catch(() => {
+                // no grounded extraction for this object
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [client, objectId]);
+    return available;
+}
+
 /**
- * Side-by-side review of a grounded extraction: the extracted properties on
- * the right, the source pages on the left with the citation bounding boxes
- * overlaid. Clicking a property highlights where in the document it was read.
+ * Embeddable grounded-extraction review panel (fills its container): extracted
+ * properties on one side, source pages with citation boxes on the other.
+ * Clicking a property highlights where in the document it was read.
  */
-export function GroundedExtractionView({ objectId, onClose }: GroundedExtractionViewProps) {
+export function GroundedExtractionPanel({ objectId, onClose }: GroundedExtractionViewProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
 
@@ -77,7 +105,7 @@ export function GroundedExtractionView({ objectId, onClose }: GroundedExtraction
 
     if (error) {
         return (
-            <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+            <div className="flex h-full items-center justify-center">
                 <div className="flex flex-col items-center gap-4 p-8 max-w-md">
                     <ErrorBox title={t('grounded.failedToLoad')}>{errorMessage(error)}</ErrorBox>
                     {onClose && (
@@ -92,15 +120,26 @@ export function GroundedExtractionView({ objectId, onClose }: GroundedExtraction
 
     if (isLoading || !extraction) {
         return (
-            <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+            <div className="flex h-full items-center justify-center">
                 <Spinner size="lg" />
             </div>
         );
     }
 
     return (
-        <div className="fixed inset-0 bg-background z-50">
+        <div className="relative h-full">
             <GroundedExtractionViewImpl extraction={extraction} objectId={objectId} onClose={onClose} />
+        </div>
+    );
+}
+
+/**
+ * Full-screen route wrapper around GroundedExtractionPanel.
+ */
+export function GroundedExtractionView({ objectId, onClose }: GroundedExtractionViewProps) {
+    return (
+        <div className="fixed inset-0 bg-background z-50">
+            <GroundedExtractionPanel objectId={objectId} onClose={onClose} />
         </div>
     );
 }
@@ -191,6 +230,16 @@ function GroundedExtractionViewImpl({
                 <div className="flex h-9 items-center justify-between shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
+                        {typeof extraction.confidence === 'number' && (
+                            <Badge
+                                variant={extraction.confidence >= 0.95 ? 'success' : 'attention'}
+                                title={t('grounded.confidenceHint')}
+                            >
+                                {t('grounded.confidence', {
+                                    percent: Math.round(extraction.confidence * 100),
+                                })}
+                            </Badge>
+                        )}
                         <Badge variant={verifiedCount === extraction.citations.length ? 'success' : 'attention'}>
                             {t('grounded.verifiedOf', {
                                 verified: verifiedCount,
@@ -280,6 +329,7 @@ function PageWithOverlay({
                             onClick={() => onSelectPath(citation.path)}
                             className={cn(
                                 'absolute cursor-pointer border rounded-[1px] transition-colors',
+                                citation.misaligned && 'border-dashed',
                                 isSelected
                                     ? 'border-2 border-destructive bg-destructive/20 z-10'
                                     : selectedPath
@@ -495,6 +545,9 @@ function LeafRow({
         >
             <span className="text-muted-foreground min-w-28 shrink-0">{label}</span>
             <span className="flex-1 wrap-break-word">{formatValue(value)}</span>
+            {citation && typeof citation.confidence === 'number' && (
+                <span className="text-xs text-muted shrink-0">{Math.round(citation.confidence * 100)}%</span>
+            )}
             {citation &&
                 (citation.verified ? (
                     <CheckCircle2 aria-label={t('grounded.verified')} className="size-3.5 shrink-0 text-success" />

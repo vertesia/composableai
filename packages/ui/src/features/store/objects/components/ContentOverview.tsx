@@ -30,6 +30,7 @@ import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
 import { memo, type RefObject, useEffect, useRef, useState } from 'react';
 import { MagicPdfView } from '../../../magic-pdf';
+import { GroundedExtractionPanel, useGroundedExtractionAvailable } from '../../../magic-pdf/GroundedExtractionView.js';
 import { AudioPanel, ImagePanel, VideoPanel } from '../../../media-viewer';
 import { SimplePdfViewer } from '../../../pdf-viewer';
 import { SecureButton } from '../../../permissions/SecureButton.js';
@@ -161,6 +162,7 @@ enum PanelView {
     Audio = 'audio',
     Pdf = 'pdf',
     Transcript = 'transcript',
+    Grounded = 'grounded',
 }
 
 interface ContentOverviewProps {
@@ -394,6 +396,7 @@ function DataPanelContent({
         return PanelView.Text;
     };
 
+    const groundedAvailable = useGroundedExtractionAvailable(object.id);
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
     const [hasVisitedPdfPanel, setHasVisitedPdfPanel] = useState(currentPanel === PanelView.Pdf);
 
@@ -545,6 +548,16 @@ function DataPanelContent({
                                 {officePdfConverting ? <Spinner size="sm" /> : 'PDF'}
                             </Button>
                         )}
+                        {groundedAvailable && (
+                            <Button
+                                variant={currentPanel === PanelView.Grounded ? 'primary' : 'ghost'}
+                                size="sm"
+                                alt={t('grounded.title')}
+                                onClick={() => setCurrentPanel(PanelView.Grounded)}
+                            >
+                                Grounded
+                            </Button>
+                        )}
                     </div>
                     <PdfActions object={object} />
                 </div>
@@ -564,6 +577,11 @@ function DataPanelContent({
                     <OfficePdfActions object={object} pdfRendition={pdfRendition} officePdfUrl={officePdfUrl} />
                 )}
             </div>
+            {currentPanel === PanelView.Grounded && (
+                <div className={getPanelVisibility(true)}>
+                    <GroundedExtractionPanel objectId={object.id} />
+                </div>
+            )}
             {currentPanel === PanelView.Image && (
                 <div className={getPanelVisibility(true)}>
                     <ImagePanel object={object} />
