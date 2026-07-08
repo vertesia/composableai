@@ -122,7 +122,7 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                             model: 'publishers/google/models/gemini-3.5-flash',
                             model_options: {
                                 _option_id: 'vertexai-gemini',
-                                thinking_level: 'HIGH',
+                                thinking_level: 'MEDIUM',
                                 max_tokens: 32000,
                                 temperature: 0,
                             } as unknown as NonNullable<
