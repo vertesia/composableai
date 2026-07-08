@@ -53,6 +53,7 @@ describe('ResizablePanel size coercion', () => {
             </ResizablePanelGroup>,
         );
 
+        expect(mocks.panelProps).toHaveBeenCalledTimes(1);
         expect(forwardedPanelProps()).toMatchObject({
             defaultSize: '300px',
             minSize: '10rem',
@@ -67,6 +68,7 @@ describe('ResizablePanel size coercion', () => {
             </ResizablePanelGroup>,
         );
 
+        expect(mocks.panelProps).toHaveBeenCalledTimes(1);
         const props = forwardedPanelProps();
         expect(props.defaultSize).toBeUndefined();
         expect(props.minSize).toBeUndefined();
