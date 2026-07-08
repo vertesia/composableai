@@ -306,7 +306,7 @@ function GroundedExtractionViewImpl({
                                         ? 'attention'
                                         : extraction.hardness.score >= 0.2
                                           ? 'info'
-                                          : 'muted'
+                                          : 'secondary'
                                 }
                                 title={t('grounded.hardnessHint')}
                             >
