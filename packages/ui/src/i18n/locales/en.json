@@ -269,6 +269,7 @@
     "grounded.downloadAnnotated": "Download the annotated PDF",
     "grounded.downloadBlocks": "Download this page’s text blocks and OCR confidences (JSON)",
     "grounded.downloadCitations": "Download citations (JSON)",
+    "grounded.downloadOcr": "Download this page's raw OCR words (TSV, with per-word confidence)",
     "grounded.failedToLoad": "Failed to load the grounded extraction",
     "grounded.fullyVerified": "Verified in document",
     "grounded.nextPage": "Next page",

@@ -12,7 +12,7 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { CheckCircle2, ChevronLeft, ChevronRight, Eye, FileDown, FileJson2, FileText, X } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Eye, FileDown, FileJson2, FileText, ScanText, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
@@ -308,6 +308,15 @@ function GroundedExtractionViewImpl({
                             onClick={() => downloadArtifact(`pages/page-${page}.json`)}
                         >
                             <FileText className="size-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            aria-label={t('grounded.downloadOcr')}
+                            title={t('grounded.downloadOcr')}
+                            onClick={() => downloadArtifact(`pages/page-${page}-ocr.tsv`)}
+                        >
+                            <ScanText className="size-4" />
                         </Button>
                         <Button
                             variant="ghost"
