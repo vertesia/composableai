@@ -49,6 +49,8 @@ interface GroundedExtractionFile {
     citations: GroundedCitation[];
     /** Mean provenance confidence in [0,1]; 1.0 = verified against a digital text layer */
     confidence?: number;
+    /** Content hardness: 0 = clean digital text, 1 = unreadable */
+    hardness?: { score: number; escalated?: boolean };
     conflicts?: { path: string; kept: unknown; dropped: unknown }[];
 }
 
@@ -297,6 +299,23 @@ function GroundedExtractionViewImpl({
                 <div className="flex h-9 items-center justify-between shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
+                        {typeof extraction.hardness?.score === 'number' && (
+                            <Badge
+                                variant={
+                                    extraction.hardness.score >= 0.5
+                                        ? 'attention'
+                                        : extraction.hardness.score >= 0.2
+                                          ? 'info'
+                                          : 'muted'
+                                }
+                                title={t('grounded.hardnessHint')}
+                            >
+                                {t('grounded.hardness', {
+                                    percent: Math.round(extraction.hardness.score * 100),
+                                })}
+                                {extraction.hardness.escalated ? ' ↑' : ''}
+                            </Badge>
+                        )}
                         {typeof extraction.confidence === 'number' && (
                             <Badge
                                 variant={extraction.confidence >= 0.95 ? 'success' : 'attention'}

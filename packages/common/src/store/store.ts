@@ -866,6 +866,11 @@ export interface ContentTypeExtractionGroundingReviewPolicy {
     config?: InteractionExecutionConfiguration;
     /** Hardness score at or above which review runs. Defaults to hardness_threshold. */
     threshold?: number;
+    /**
+     * Review also runs when any page's citation coverage falls below this
+     * floor (evidence of missed content). Default 0.2.
+     */
+    coverage_threshold?: number;
     /** Run review regardless of hardness. */
     force?: boolean;
     /** Apply accepted corrections back to properties. Default true. */
@@ -893,6 +898,13 @@ export interface ContentTypeExtractionGroundingPolicy {
     hard_config?: InteractionExecutionConfiguration;
     /** Hardness score at or above which hard_config is used. Default 0.5. */
     hardness_threshold?: number;
+    /**
+     * Minimum citations-per-leaf-value ratio; completions below it retry with
+     * escalation. Default 0.3.
+     */
+    min_citation_density?: number;
+    /** Re-run OCR instead of restoring durable OCR artifacts (stale pipeline output). */
+    refresh_ocr?: boolean;
     /** Optional post-extraction review pass. */
     review?: ContentTypeExtractionGroundingReviewPolicy;
 }

@@ -115,9 +115,12 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                     hardness_threshold: 0.5,
                     review: {
                         enabled: true,
+                        // any model works here: sonnet reads handwriting best,
+                        // gemini pro is a cheaper same-family alternative
                         config: {
                             model: 'anthropic.claude-sonnet-4-6',
                         },
+                        coverage_threshold: 0.2,
                     },
                 },
             },

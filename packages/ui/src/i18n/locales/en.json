@@ -279,6 +279,8 @@
     "grounded.downloadOcr": "Download this page's raw OCR words (TSV, with per-word confidence)",
     "grounded.failedToLoad": "Failed to load the grounded extraction",
     "grounded.fullyVerified": "Verified in document",
+    "grounded.hardness": "Complexity {{percent}}%",
+    "grounded.hardnessHint": "How hard the document is to read: 0% clean digital text, 100% unreadable. Scans and handwriting raise it; ↑ means the extraction escalated to the stronger model.",
     "grounded.nextPage": "Next page",
     "grounded.notFound": "No grounded extraction found for this document",
     "grounded.pageAlt": "Page {{page}}",
