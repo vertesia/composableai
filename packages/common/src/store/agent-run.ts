@@ -21,6 +21,7 @@ import type {
     RunSource,
 } from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
+import type { ResourceRef } from '../refs.js';
 import type { AgentEvent } from '../workflow-analytics.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
@@ -241,6 +242,13 @@ export interface AgentRun<TData = Record<string, unknown>, TProperties = Record<
     interaction_name?: string;
 
     interactionRef: InteractionRef;
+
+    /**
+     * Resolved environment reference (name resolved from `config.environment` id).
+     * Populated by the list endpoint; may be absent on other endpoints or when the id
+     * cannot be resolved, in which case consumers should fall back to `config.environment`.
+     */
+    environmentRef?: ResourceRef;
 
     // --- Lifecycle ---
 
