@@ -34,6 +34,7 @@ interface GroundedCitation {
     boxes: GroundedBox[];
     misaligned?: boolean;
     snapped?: boolean;
+    reviewed?: boolean;
     confidence?: number;
 }
 
