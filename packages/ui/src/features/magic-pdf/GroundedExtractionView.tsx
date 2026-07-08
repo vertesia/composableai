@@ -208,6 +208,27 @@ function GroundedExtractionViewImpl({
     };
     const [page, setPage] = useState(pageNumbers[0] ?? 1);
     const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
+    const [showBreakdown, setShowBreakdown] = useState(false);
+
+    const breakdown = useMemo(() => {
+        const groups = { digital: 0, ocr: 0, reviewerConfirmed: 0, snapped: 0, imageRead: 0 };
+        const unverified: GroundedCitation[] = [];
+        for (const c of extraction.citations) {
+            if (!c.verified) {
+                groups.imageRead++;
+                unverified.push(c);
+            } else if (c.snapped) {
+                groups.snapped++;
+            } else if (c.reviewed && (c.confidence ?? 0) >= 0.99 && (c.confidence ?? 0) < 1) {
+                groups.reviewerConfirmed++;
+            } else if ((c.confidence ?? 0) >= 1) {
+                groups.digital++;
+            } else {
+                groups.ocr++;
+            }
+        }
+        return { groups, unverified };
+    }, [extraction.citations]);
 
     const citationsByPath = useMemo(() => {
         const map = new Map<string, GroundedCitation[]>();
@@ -285,12 +306,20 @@ function GroundedExtractionViewImpl({
                                 })}
                             </Badge>
                         )}
-                        <Badge variant={verifiedCount === extraction.citations.length ? 'success' : 'attention'}>
-                            {t('grounded.verifiedOf', {
-                                verified: verifiedCount,
-                                total: extraction.citations.length,
-                            })}
-                        </Badge>
+                        <button
+                            type="button"
+                            className="cursor-pointer"
+                            onClick={() => setShowBreakdown((v) => !v)}
+                            aria-expanded={showBreakdown}
+                            aria-label={t('grounded.breakdownTitle')}
+                        >
+                            <Badge variant={verifiedCount === extraction.citations.length ? 'success' : 'attention'}>
+                                {t('grounded.verifiedOf', {
+                                    verified: verifiedCount,
+                                    total: extraction.citations.length,
+                                })}
+                            </Badge>
+                        </button>
                         <Button
                             variant="ghost"
                             size="xs"
@@ -334,6 +363,47 @@ function GroundedExtractionViewImpl({
                         )}
                     </div>
                 </div>
+                {showBreakdown && (
+                    <div className="shrink-0 border-b border-border bg-background px-3 py-2 text-sm max-h-72 overflow-auto">
+                        <div className="font-medium mb-1">{t('grounded.breakdownTitle')}</div>
+                        <div className="grid grid-cols-2 gap-x-4 text-xs">
+                            <span>{t('grounded.breakdownDigital')}</span>
+                            <span className="text-end text-success">{breakdown.groups.digital}</span>
+                            <span>{t('grounded.breakdownOcr')}</span>
+                            <span className="text-end text-success">{breakdown.groups.ocr}</span>
+                            <span>{t('grounded.breakdownReviewer')}</span>
+                            <span className="text-end text-success">{breakdown.groups.reviewerConfirmed}</span>
+                            <span>{t('grounded.breakdownSnapped')}</span>
+                            <span className="text-end text-attention">{breakdown.groups.snapped}</span>
+                            <span>{t('grounded.breakdownImageRead')}</span>
+                            <span className="text-end text-attention">{breakdown.groups.imageRead}</span>
+                        </div>
+                        {breakdown.unverified.length > 0 && (
+                            <div className="mt-2">
+                                <div className="text-xs font-medium text-muted-foreground mb-1">
+                                    {t('grounded.breakdownUnverifiedList')}
+                                </div>
+                                <ul className="space-y-0.5">
+                                    {breakdown.unverified.map((c) => (
+                                        <li key={c.path}>
+                                            <button
+                                                type="button"
+                                                className="w-full text-start text-xs rounded px-1 py-0.5 hover:bg-muted cursor-pointer"
+                                                onClick={() => {
+                                                    selectPath(c.path);
+                                                    setShowBreakdown(false);
+                                                }}
+                                            >
+                                                <span className="text-muted-foreground">{c.path}</span>{' '}
+                                                <span>{String(c.value ?? '')}</span>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
                 {/* Extracted data */}
                 <div className="flex-1 overflow-auto p-3">
                     <DataNode
