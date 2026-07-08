@@ -662,7 +662,7 @@ function ArrayTable({
                                                         )}
                                                         title={t('grounded.confidenceHint')}
                                                     >
-                                                        {Math.floor(citation.confidence * 100)}%
+                                                        {formatScore(citation.confidence)}
                                                     </span>
                                                 )}
                                             </button>
@@ -714,7 +714,7 @@ function LeafRow({
                     className={cn('text-xs shrink-0', scoreColor(citation.confidence))}
                     title={t('grounded.confidenceHint')}
                 >
-                    {Math.floor(citation.confidence * 100)}%
+                    {formatScore(citation.confidence)}
                 </span>
             )}
             {citation &&
@@ -725,6 +725,15 @@ function LeafRow({
                 ))}
         </button>
     );
+}
+
+/**
+ * Tier scores (1.0, 0.99, 0.5...) are policy values and display as integers;
+ * OCR-measured scores carry real decimals from tesseract and keep two.
+ */
+function formatScore(confidence: number): string {
+    const pct = confidence * 100;
+    return Number.isInteger(pct) ? `${pct}%` : `${(Math.floor(pct * 100) / 100).toFixed(2)}%`;
 }
 
 function scoreColor(confidence: number): string {
