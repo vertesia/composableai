@@ -306,11 +306,9 @@ function PropertiesPanel({
                                 variant={groundedSummary.confidence >= 0.95 ? 'success' : 'attention'}
                                 title={t('grounded.confidenceHint')}
                             >
-                                {groundedSummary.confidence >= 1
-                                    ? t('grounded.fullyVerified')
-                                    : t('grounded.confidence', {
-                                          percent: Math.round(groundedSummary.confidence * 100),
-                                      })}
+                                {t('grounded.confidence', {
+                                    percent: Math.round(groundedSummary.confidence * 100),
+                                })}
                             </Badge>
                         )}
                         <Badge variant={groundedSummary.verified === groundedSummary.total ? 'success' : 'attention'}>

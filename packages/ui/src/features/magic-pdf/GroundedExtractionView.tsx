@@ -280,11 +280,9 @@ function GroundedExtractionViewImpl({
                                 variant={extraction.confidence >= 0.95 ? 'success' : 'attention'}
                                 title={t('grounded.confidenceHint')}
                             >
-                                {extraction.confidence >= 1
-                                    ? t('grounded.fullyVerified')
-                                    : t('grounded.confidence', {
-                                          percent: Math.round(extraction.confidence * 100),
-                                      })}
+                                {t('grounded.confidence', {
+                                    percent: Math.round(extraction.confidence * 100),
+                                })}
                             </Badge>
                         )}
                         <Badge variant={verifiedCount === extraction.citations.length ? 'success' : 'attention'}>
@@ -576,16 +574,17 @@ function ArrayTable({
                                                 )}
                                             >
                                                 {formatValue(item[col])}
-                                                {citation &&
-                                                    typeof citation.confidence === 'number' &&
-                                                    citation.confidence < 1 && (
-                                                        <span
-                                                            className="ms-1 text-[10px] text-muted"
-                                                            title={t('grounded.confidenceHint')}
-                                                        >
-                                                            {Math.round(citation.confidence * 100)}%
-                                                        </span>
-                                                    )}
+                                                {citation && typeof citation.confidence === 'number' && (
+                                                    <span
+                                                        className={cn(
+                                                            'ms-1 text-[10px]',
+                                                            scoreColor(citation.confidence),
+                                                        )}
+                                                        title={t('grounded.confidenceHint')}
+                                                    >
+                                                        {Math.round(citation.confidence * 100)}%
+                                                    </span>
+                                                )}
                                             </button>
                                         </td>
                                     );
@@ -630,8 +629,11 @@ function LeafRow({
         >
             <span className="text-muted-foreground min-w-28 shrink-0">{label}</span>
             <span className="flex-1 wrap-break-word">{formatValue(value)}</span>
-            {citation && typeof citation.confidence === 'number' && citation.confidence < 1 && (
-                <span className="text-xs text-muted shrink-0" title={t('grounded.confidenceHint')}>
+            {citation && typeof citation.confidence === 'number' && (
+                <span
+                    className={cn('text-xs shrink-0', scoreColor(citation.confidence))}
+                    title={t('grounded.confidenceHint')}
+                >
                     {Math.round(citation.confidence * 100)}%
                 </span>
             )}
@@ -643,6 +645,12 @@ function LeafRow({
                 ))}
         </button>
     );
+}
+
+function scoreColor(confidence: number): string {
+    if (confidence >= 0.95) return 'text-success';
+    if (confidence >= 0.7) return 'text-attention';
+    return 'text-destructive';
 }
 
 function formatValue(value: unknown): string {
