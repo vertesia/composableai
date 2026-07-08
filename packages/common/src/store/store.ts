@@ -1,5 +1,6 @@
 import type { JSONSchemaType } from 'ajv';
 import type { ComputedFacetResponse } from '../facets.js';
+import type { InteractionExecutionConfiguration } from '../interaction.js';
 import type { JSONObject } from '../json.js';
 import type { SearchPayload } from '../payload.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
@@ -858,6 +859,44 @@ export interface IntakeVisionProfileSettings {
     color_mode: 'grayscale' | 'auto';
 }
 
+export interface ContentTypeGroundedExtractionReviewPolicy {
+    /** Set false to disable an inherited grounded review pass for this type. */
+    enabled?: boolean;
+    /** Model execution configuration for the review interaction. */
+    config?: InteractionExecutionConfiguration;
+    /** Hardness score at or above which review runs. Defaults to hardness_threshold. */
+    threshold?: number;
+    /** Run review regardless of hardness. */
+    force?: boolean;
+    /** Apply accepted corrections back to properties. Default true. */
+    apply?: boolean;
+}
+
+export interface ContentTypeGroundedExtractionPolicy {
+    /** Enable PDF block-grounded extraction for this type. */
+    enabled?: boolean;
+    /** Grounded extraction interaction. Defaults to the system grounded extractor. */
+    interaction?: string;
+    /** Maximum pages to process. */
+    max_pages?: number;
+    /** Run OCR on every page even when a text layer exists. */
+    force_ocr?: boolean;
+    /** Attach instrumented page images to the grounded extraction prompt. */
+    use_vision?: boolean;
+    /** Maximum pages per grounded extraction call before windowing. */
+    window_pages?: number;
+    /** Update object properties with grounded extraction data. Default true. */
+    update_properties?: boolean;
+    /** Model execution configuration for the main grounded extraction interaction. */
+    config?: InteractionExecutionConfiguration;
+    /** Model execution configuration used for hard-to-read content. */
+    hard_config?: InteractionExecutionConfiguration;
+    /** Hardness score at or above which hard_config is used. Default 0.5. */
+    hardness_threshold?: number;
+    /** Optional post-extraction review pass. */
+    review?: ContentTypeGroundedExtractionReviewPolicy;
+}
+
 /**
  * Per-content-type policy for the standard intake workflows.
  */
@@ -932,6 +971,8 @@ export interface ContentTypeIntakePolicy {
             on_fail?: 'flag' | 'block';
         };
     };
+    /** Controls PDF block-grounded extraction with citations and annotated proof output. */
+    grounded_extraction?: ContentTypeGroundedExtractionPolicy;
     /** Handlebars template used to materialize extracted properties into object text. */
     rendering_template?: string;
     /** Per-type embedding switches. Unspecified values inherit the project policy. */
@@ -958,6 +999,34 @@ const IntakePageRangesSchema = {
         'Static inclusive [start, end] page ranges; negative indexes count from the end ' +
         '([[1,2],[-1,-1]] = first two pages plus the last). Wins over scope when set.',
     nullable: true,
+};
+
+const IntakeExecutionConfigurationSchema = {
+    type: 'object',
+    description: 'Interaction execution configuration such as model, environment, and model options.',
+    nullable: true,
+    required: [],
+    additionalProperties: true,
+    properties: {
+        id: { type: 'string', nullable: true },
+        environment: { type: 'string', nullable: true },
+        model: { type: 'string', nullable: true },
+        do_validate: { type: 'boolean', nullable: true },
+        run_data: { type: 'string', nullable: true },
+        configMode: { type: 'string', nullable: true },
+        model_options: {
+            type: 'object',
+            nullable: true,
+            required: [],
+            additionalProperties: true,
+        },
+        http_timeout: {
+            type: 'object',
+            nullable: true,
+            required: [],
+            additionalProperties: true,
+        },
+    },
 };
 
 /** JSON schema for validating ContentTypeIntakePolicy payloads at API/tool boundaries.
@@ -1193,6 +1262,89 @@ export const ContentTypeIntakePolicySchema = {
                             type: 'string',
                             enum: ['flag', 'block'],
                             description: 'Failure behavior after retries: flag for review or block property write.',
+                            nullable: true,
+                        },
+                    },
+                },
+            },
+        },
+        grounded_extraction: {
+            type: 'object',
+            description:
+                'PDF block-grounded extraction policy. When enabled, standard document intake uses the grounded ' +
+                'child workflow for property extraction and stores citations plus annotated proof output.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                enabled: {
+                    type: 'boolean',
+                    description: 'Enable PDF block-grounded extraction for this type.',
+                    nullable: true,
+                },
+                interaction: {
+                    type: 'string',
+                    description: 'Grounded extraction interaction id. Omit to use the system grounded extractor.',
+                    nullable: true,
+                },
+                max_pages: {
+                    type: 'number',
+                    description: 'Maximum pages to process.',
+                    nullable: true,
+                },
+                force_ocr: {
+                    type: 'boolean',
+                    description: 'Run OCR on every page even when a text layer exists.',
+                    nullable: true,
+                },
+                use_vision: {
+                    type: 'boolean',
+                    description: 'Attach instrumented page images to the grounded extraction prompt.',
+                    nullable: true,
+                },
+                window_pages: {
+                    type: 'number',
+                    description: 'Maximum pages per grounded extraction call before windowing.',
+                    nullable: true,
+                },
+                update_properties: {
+                    type: 'boolean',
+                    description: 'Update object properties with grounded extraction data. Default true.',
+                    nullable: true,
+                },
+                config: IntakeExecutionConfigurationSchema,
+                hard_config: IntakeExecutionConfigurationSchema,
+                hardness_threshold: {
+                    type: 'number',
+                    description: 'Hardness score at or above which hard_config is used. Default 0.5.',
+                    nullable: true,
+                },
+                review: {
+                    type: 'object',
+                    description: 'Optional post-extraction review pass for hard content.',
+                    nullable: true,
+                    required: [],
+                    additionalProperties: false,
+                    properties: {
+                        enabled: {
+                            type: 'boolean',
+                            description: 'Set false to disable an inherited grounded review pass for this type.',
+                            nullable: true,
+                        },
+                        config: IntakeExecutionConfigurationSchema,
+                        threshold: {
+                            type: 'number',
+                            description: 'Hardness score at or above which review runs.',
+                            nullable: true,
+                        },
+                        force: {
+                            type: 'boolean',
+                            description: 'Run review regardless of hardness.',
+                            nullable: true,
+                        },
+                        apply: {
+                            type: 'boolean',
+                            description: 'Apply accepted corrections back to properties. Default true.',
                             nullable: true,
                         },
                     },
