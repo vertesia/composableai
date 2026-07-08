@@ -32,6 +32,7 @@ interface IntakePolicyEditorProps {
 type IntakeExampleKey =
     | 'minimal'
     | 'extraction_only'
+    | 'grounded'
     | 'visual_first'
     | 'structured_spreadsheet'
     | 'media_no_transcript'
@@ -74,6 +75,51 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
             embeddings: {
                 text: true,
                 properties: true,
+            },
+            default_view: 'pdf',
+        },
+    },
+    {
+        key: 'grounded',
+        label: 'Grounded Extraction',
+        description:
+            'Extract with PDF block-level citations, verification scores and an annotated proof document. Escalates hard scans and reviews them with a strong model.',
+        value: {
+            extraction: {
+                enabled: true,
+                grounding: {
+                    enabled: true,
+                    use_vision: true,
+                    config: {
+                        model: 'publishers/google/models/gemini-3.5-flash',
+                        model_options: {
+                            _option_id: 'vertexai-gemini',
+                            max_tokens: 32000,
+                            thinking_level: 'LOW',
+                            temperature: 0,
+                        } as unknown as NonNullable<
+                            import('@vertesia/common').InteractionExecutionConfiguration['model_options']
+                        >,
+                    },
+                    hard_config: {
+                        model: 'publishers/google/models/gemini-3.1-pro-preview',
+                        model_options: {
+                            _option_id: 'vertexai-gemini',
+                            max_tokens: 32000,
+                            thinking_level: 'LOW',
+                            temperature: 0,
+                        } as unknown as NonNullable<
+                            import('@vertesia/common').InteractionExecutionConfiguration['model_options']
+                        >,
+                    },
+                    hardness_threshold: 0.5,
+                    review: {
+                        enabled: true,
+                        config: {
+                            model: 'anthropic.claude-sonnet-4-6',
+                        },
+                    },
+                },
             },
             default_view: 'pdf',
         },
