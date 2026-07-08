@@ -270,9 +270,11 @@ function GroundedExtractionViewImpl({
                                 variant={extraction.confidence >= 0.95 ? 'success' : 'attention'}
                                 title={t('grounded.confidenceHint')}
                             >
-                                {t('grounded.confidence', {
-                                    percent: Math.round(extraction.confidence * 100),
-                                })}
+                                {extraction.confidence >= 1
+                                    ? t('grounded.fullyVerified')
+                                    : t('grounded.confidence', {
+                                          percent: Math.round(extraction.confidence * 100),
+                                      })}
                             </Badge>
                         )}
                         <Badge variant={verifiedCount === extraction.citations.length ? 'success' : 'attention'}>
@@ -580,8 +582,10 @@ function LeafRow({
         >
             <span className="text-muted-foreground min-w-28 shrink-0">{label}</span>
             <span className="flex-1 wrap-break-word">{formatValue(value)}</span>
-            {citation && typeof citation.confidence === 'number' && (
-                <span className="text-xs text-muted shrink-0">{Math.round(citation.confidence * 100)}%</span>
+            {citation && typeof citation.confidence === 'number' && citation.confidence < 1 && (
+                <span className="text-xs text-muted shrink-0" title={t('grounded.confidenceHint')}>
+                    {Math.round(citation.confidence * 100)}%
+                </span>
             )}
             {citation &&
                 (citation.verified ? (
