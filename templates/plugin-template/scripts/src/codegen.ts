@@ -131,12 +131,13 @@ function generateUiModules(projectRoot: string, modules: ResolvedModule[]): void
 
     const fromDir = path.join(projectRoot, 'src/ui');
     const imports: string[] = [];
+    const entryImports: string[] = [];
     const routeVars: string[] = [];
     const providerVars: string[] = [];
 
     const uiEntry = uiEntryModules[0]?.definition.ui?.entry;
     const uiEntryImport = uiEntry ? toImportPath(fromDir, path.join(projectRoot, uiEntry)) : './AppEntry';
-    imports.push(`import { AppEntry } from '${uiEntryImport}';`);
+    entryImports.push(`export { AppEntry } from '${uiEntryImport}';`);
 
     for (const module of modules) {
         if (module.definition.ui?.routes) {
@@ -166,10 +167,11 @@ function generateUiModules(projectRoot: string, modules: ResolvedModule[]): void
     writeFile(
         projectRoot,
         'src/ui/app-ui-modules.tsx',
-        `${imports.join('\n')}\n\nexport { AppEntry };\n\nexport const routes = [${routeVars
+        `${imports.join('\n')}\n\nexport const routes = [${routeVars
             .map((name) => `...${name}`)
             .join(', ')}];\n\n${providers}\n`,
     );
+    writeFile(projectRoot, 'src/ui/app-ui-entry.tsx', `${entryImports.join('\n')}\n`);
 }
 
 function generateServerModules(projectRoot: string, modules: ResolvedModule[]): void {
@@ -186,10 +188,7 @@ function generateServerModules(projectRoot: string, modules: ResolvedModule[]): 
 
         const moduleVar = varName('Resources', module.name);
         imports.push(
-            `import * as ${moduleVar} from '${toImportPath(
-                fromDir,
-                path.join(projectRoot, modulePath, 'index'),
-            )}.js';`,
+            `import * as ${moduleVar} from '${toImportPath(fromDir, path.join(projectRoot, modulePath, 'index'))}.js';`,
         );
 
         for (const resource of SERVER_RESOURCES) {

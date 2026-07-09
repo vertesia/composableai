@@ -22,7 +22,8 @@
         "preview": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
         "start": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
         "start:vercel": "vercel dev",
-        "test": "echo \"(no tests in template scaffold)\""
+        "test": "echo \"(no tests in template scaffold)\"",
+        "test:codegen": "node --test scripts/test/*.test.mjs"
     },
     "vertesia-build": {
         "libDir": "./lib",

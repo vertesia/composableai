@@ -63,3 +63,9 @@ declare module '*?prompt' {
     const prompt: PromptDefinition;
     export default prompt;
 }
+
+// SVG JavaScript shims are generated as JavaScript modules that export SVG strings.
+declare module '*.svg.js' {
+    const content: string;
+    export default content;
+}

@@ -26,6 +26,7 @@
     "noUncheckedSideEffectImports": true
   },
   "include": [
+    "src/imports.d.ts",
     "src/ui",
     "src/modules"
   ]

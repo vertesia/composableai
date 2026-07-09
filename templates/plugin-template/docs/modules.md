@@ -77,13 +77,19 @@ node scripts/dist/codegen.js --context .create-plugin-context.json
 The codegen script:
 
 1. Resolves selected modules and their `requires` dependencies.
-2. Generates `src/ui/app-ui-modules.tsx`.
-3. Generates `src/tool-server/app-server-modules.ts`.
-4. Removes inactive concrete module directories from `src/modules`.
+2. Generates `src/ui/app-ui-entry.tsx`, the top-level `AppEntry` selector.
+3. Generates `src/ui/app-ui-modules.tsx`, the route/provider module aggregator.
+4. Generates `src/tool-server/app-server-modules.ts`, the Vertesia resource aggregator.
+5. Removes inactive concrete module directories from `src/modules`.
 
-Template maintainers can edit `src/ui/app-ui-modules.tsx` and `src/tool-server/app-server-modules.ts`
-directly while developing the template. Before committing, run codegen with the desired module context
-so the checked-in composition matches the default template configuration.
+Template maintainers can edit the generated files directly while developing the template:
+
+- `src/ui/app-ui-entry.tsx`
+- `src/ui/app-ui-modules.tsx`
+- `src/tool-server/app-server-modules.ts`
+
+Before committing, run codegen with the desired module context so the checked-in composition matches
+the default template configuration.
 
 The generated app removes `scripts/` after scaffold, so lifecycle code does not become part of user
 projects.

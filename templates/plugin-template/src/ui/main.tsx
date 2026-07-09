@@ -4,7 +4,7 @@ import './i18n'; // register plugin-specific translations
 import './index.css';
 // initialize dev environment
 import './env';
-import { AppEntry } from './app-ui-modules';
+import { AppEntry } from './app-ui-entry';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
