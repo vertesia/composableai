@@ -54,6 +54,31 @@ describe('MessageInput', () => {
         expect(onFilesSelected).toHaveBeenCalledWith([file]);
     });
 
+    it('does not send or clear the text when Enter is pressed while files are still processing', () => {
+        const onSend = vi.fn();
+        renderWithProviders(<MessageInput onSend={onSend} onFilesSelected={vi.fn()} hasProcessingFiles />);
+
+        const textbox = screen.getByRole('textbox') as HTMLTextAreaElement;
+        fireEvent.change(textbox, { target: { value: 'please analyze this' } });
+        fireEvent.keyDown(textbox, { key: 'Enter' });
+
+        expect(onSend).not.toHaveBeenCalled();
+        // The typed text must be retained so the user doesn't have to re-type it.
+        expect(textbox.value).toBe('please analyze this');
+    });
+
+    it('sends and clears the text on Enter once files have finished processing', () => {
+        const onSend = vi.fn();
+        renderWithProviders(<MessageInput onSend={onSend} onFilesSelected={vi.fn()} />);
+
+        const textbox = screen.getByRole('textbox') as HTMLTextAreaElement;
+        fireEvent.change(textbox, { target: { value: 'please analyze this' } });
+        fireEvent.keyDown(textbox, { key: 'Enter' });
+
+        expect(onSend).toHaveBeenCalledWith('please analyze this');
+        expect(textbox.value).toBe('');
+    });
+
     it('renders attachment actions before the MCP slot', () => {
         renderWithProviders(<MessageInput onSend={vi.fn()} mcpSlot={<button type="button">MCP</button>} isCompleted />);
 
