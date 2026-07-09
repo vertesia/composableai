@@ -9,6 +9,10 @@
       "virtual": true,
       "requires": ["assistant", "examples"]
     },
+    "appgen": {
+      "virtual": true,
+      "requires": ["app-gateway", "agent"]
+    },
     "app": {
       "ui": {
         "routes": "src/modules/app/ui/routes"
@@ -21,6 +25,12 @@
         "provider": "src/modules/assistant/ui"
       }
     },
+    "app-gateway": {
+      "ui": {
+        "entry": "src/modules/app-gateway/ui/AppEntry"
+      }
+    },
+    "agent": {},
     "examples": {
       "resources": "src/modules/examples/resources"
     }

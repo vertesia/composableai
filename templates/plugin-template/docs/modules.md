@@ -12,6 +12,7 @@ The `app` module is always active and does not need to be listed in `requires`.
 ```bash
 create-plugin my-app
 create-plugin my-app --module default
+create-plugin my-app --module appgen
 create-plugin my-app --module assistant,examples
 create-plugin my-app --module assistant --module examples
 ```
@@ -32,7 +33,16 @@ dependencies.
 
 If no active module declares `ui.entry`, generated apps use the built-in Studio shell entry from
 `src/ui/AppEntry.tsx`. A module can declare `ui.entry` only when it needs to replace that bootstrap,
-for example a gateway-app runtime entry.
+for example an app-gateway runtime entry.
+
+The template includes an `app-gateway` module for app-gateway runtimes. It is not part of `default`;
+select it explicitly when the scaffolded app is hosted by the app gateway and needs gateway routes
+and token-backed shell initialization.
+
+The `agent` module preserves agent-facing scaffold helpers under `src/modules/agent/ui`.
+It does not add routes, providers, or resources. The virtual `appgen` module selects both
+`app-gateway` and `agent`; combine it with app-specific modules such as `assistant` or `content-app`
+when creating appgen scaffolds.
 
 UI contributions live under the `ui` key. Vertesia resource contributions live under `resources`:
 

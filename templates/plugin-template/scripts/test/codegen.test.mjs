@@ -20,23 +20,54 @@ function copyTemplateInputs(targetRoot) {
     fs.cpSync(path.join(templateRoot, 'src/modules'), path.join(targetRoot, 'src/modules'), { recursive: true });
 }
 
+function runCodegen(tmpRoot, modules) {
+    const contextPath = path.join(tmpRoot, '.create-plugin-context.json');
+    fs.writeFileSync(contextPath, `${JSON.stringify({ modules }, null, 2)}\n`);
+
+    execFileSync(process.execPath, [codegenScript, '--context', contextPath], {
+        cwd: tmpRoot,
+        stdio: 'pipe',
+    });
+}
+
 test('default module codegen matches checked-in generated files', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
         copyTemplateInputs(tmpRoot);
-        const contextPath = path.join(tmpRoot, '.create-plugin-context.json');
-        fs.writeFileSync(contextPath, `${JSON.stringify({ modules: ['default'] }, null, 2)}\n`);
-
-        execFileSync(process.execPath, [codegenScript, '--context', contextPath], {
-            cwd: tmpRoot,
-            stdio: 'pipe',
-        });
+        runCodegen(tmpRoot, ['default']);
 
         for (const file of generatedFiles) {
             const expected = fs.readFileSync(path.join(templateRoot, file), 'utf8');
             const actual = fs.readFileSync(path.join(tmpRoot, file), 'utf8');
             assert.equal(actual, expected, `${file} should match default codegen output`);
         }
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('app-gateway module selects app-gateway entry and cleans inactive modules', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['appgen', 'assistant']);
+
+        const uiEntry = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-entry.tsx'), 'utf8');
+        const uiModules = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-modules.tsx'), 'utf8');
+        const serverModules = fs.readFileSync(path.join(tmpRoot, 'src/tool-server/app-server-modules.ts'), 'utf8');
+
+        assert.equal(uiEntry, "export { AppEntry } from '../modules/app-gateway/ui/AppEntry';\n");
+        assert.match(uiModules, /modules\/app\/ui\/routes/);
+        assert.match(uiModules, /modules\/assistant\/ui\/routes/);
+        assert.doesNotMatch(uiModules, /modules\/examples/);
+        assert.match(serverModules, /modules\/app\/resources\/index\.js/);
+        assert.doesNotMatch(serverModules, /modules\/examples/);
+
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/agent')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app-gateway')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

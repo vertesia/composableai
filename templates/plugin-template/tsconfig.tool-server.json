@@ -31,7 +31,7 @@
     "include": [
         "src/imports.d.ts",
         "src/tool-server/**/*",
-        "src/modules/**/*"
+        "src/modules/**/resources/**/*"
     ],
     "exclude": [
         "node_modules",
