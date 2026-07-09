@@ -28,11 +28,11 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui/widgets';
-import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
+import { AlertTriangle, Copy, Download, FileSearch, ScanSearch, SquarePen } from 'lucide-react';
 import { memo, type RefObject, useEffect, useRef, useState } from 'react';
 import { MagicPdfView } from '../../../magic-pdf';
 import {
-    GroundedExtractionPanel,
+    GroundedExtractionView,
     useGroundedExtractionAvailable,
     useGroundedSummary,
 } from '../../../magic-pdf/GroundedExtractionView.js';
@@ -167,7 +167,6 @@ enum PanelView {
     Audio = 'audio',
     Pdf = 'pdf',
     Transcript = 'transcript',
-    Grounded = 'grounded',
 }
 
 interface ContentOverviewProps {
@@ -574,18 +573,11 @@ function DataPanelContent({
                                 {officePdfConverting ? <Spinner size="sm" /> : 'PDF'}
                             </Button>
                         )}
-                        {groundedAvailable && (
-                            <Button
-                                variant={currentPanel === PanelView.Grounded ? 'primary' : 'ghost'}
-                                size="sm"
-                                alt={t('grounded.title')}
-                                onClick={() => setCurrentPanel(PanelView.Grounded)}
-                            >
-                                Grounded
-                            </Button>
-                        )}
                     </div>
-                    <PdfActions object={object} />
+                    <div className="flex items-center gap-1">
+                        <PdfActions object={object} />
+                        <GroundedActions objectId={object.id} available={groundedAvailable} />
+                    </div>
                 </div>
                 {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && (
                     <TextActions
@@ -603,11 +595,6 @@ function DataPanelContent({
                     <OfficePdfActions object={object} pdfRendition={pdfRendition} officePdfUrl={officePdfUrl} />
                 )}
             </div>
-            {currentPanel === PanelView.Grounded && (
-                <div className={getPanelVisibility(true)}>
-                    <GroundedExtractionPanel objectId={object.id} />
-                </div>
-            )}
             {currentPanel === PanelView.Image && (
                 <div className={getPanelVisibility(true)}>
                     <ImagePanel object={object} />
@@ -964,6 +951,32 @@ function PdfActions({ object }: { object: ContentObject }) {
             {isPdfPreviewOpen && (
                 <Portal>
                     <MagicPdfView objectId={object.id} onClose={() => setPdfPreviewOpen(false)} />
+                </Portal>
+            )}
+        </>
+    );
+}
+
+function GroundedActions({ objectId, available }: { objectId: string; available: boolean }) {
+    const { t } = useUITranslation();
+    const [isGroundedOpen, setGroundedOpen] = useState(false);
+
+    if (!available) return null;
+
+    return (
+        <>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setGroundedOpen(true)}
+                title={t('grounded.title')}
+                aria-label={t('grounded.title')}
+            >
+                <ScanSearch className="size-4" />
+            </Button>
+            {isGroundedOpen && (
+                <Portal>
+                    <GroundedExtractionView objectId={objectId} onClose={() => setGroundedOpen(false)} />
                 </Portal>
             )}
         </>
