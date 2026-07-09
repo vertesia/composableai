@@ -3,7 +3,7 @@
     "version": "1.3.0",
     "description": "A unified template for building custom UI plugins and tool servers for Vertesia",
     "type": "module",
-    "main": "lib/server.js",
+    "main": "lib/tool-server/server.js",
     "files": [
         "dist",
         "lib"
@@ -26,7 +26,7 @@
     },
     "vertesia-build": {
         "libDir": "./lib",
-        "srcDir": "./src/tool-server",
+        "srcDir": "./src",
         "transformers": [
             "skill",
             "skills",

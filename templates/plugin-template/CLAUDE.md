@@ -43,7 +43,7 @@ pnpm start                 # Preview production build (build:server + vite previ
 
 | Component   | Bundler | Entry                       | tsconfig                    | Output                |
 |-------------|---------|-----------------------------|-----------------------------|-----------------------|
-| Tool Server | Rolldown | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js`            |
+| Tool Server | Rolldown | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/tool-server/*.js` |
 | UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js`  |
 | UI App      | Vite    | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/ui/`            |
 | Widgets     | Rolldown | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |

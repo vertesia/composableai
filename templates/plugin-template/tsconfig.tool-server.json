@@ -13,7 +13,7 @@
         "allowJs": true,
         "checkJs": false,
         "outDir": "./lib",
-        "rootDir": "./src/tool-server",
+        "rootDir": "./src",
         "removeComments": true,
         "sourceMap": true,
         "declaration": true,
@@ -29,7 +29,8 @@
         ]
     },
     "include": [
-        "src/tool-server/**/*"
+        "src/tool-server/**/*",
+        "src/modules/**/*"
     ],
     "exclude": [
         "node_modules",

@@ -69,6 +69,21 @@ export interface TemplateConfig {
      * Used for additional setup commands, etc.
      */
     postInstall?: PostInstallConfig;
+
+    /**
+     * Optional template lifecycle hooks.
+     *
+     * Lifecycle scripts are executed from the generated project root after template
+     * variables are applied and before template cleanup runs.
+     */
+    lifecycle?: TemplateLifecycleConfig;
+}
+
+export interface TemplateLifecycleConfig {
+    /**
+     * Relative path to a Node.js script that performs template-specific code generation.
+     */
+    codegen?: string;
 }
 
 /**

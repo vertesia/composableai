@@ -1,6 +1,30 @@
 {
   "version": "1.0",
   "description": "A template for building custom UI plugins for Vertesia",
+  "lifecycle": {
+    "codegen": "scripts/dist/codegen.js"
+  },
+  "modules": {
+    "default": {
+      "virtual": true,
+      "requires": ["assistant", "examples"]
+    },
+    "app": {
+      "ui": {
+        "routes": "src/modules/app/ui/routes"
+      },
+      "resources": "src/modules/app/resources"
+    },
+    "assistant": {
+      "ui": {
+        "routes": "src/modules/assistant/ui/routes",
+        "provider": "src/modules/assistant/ui"
+      }
+    },
+    "examples": {
+      "resources": "src/modules/examples/resources"
+    }
+  },
   "prompts": [
     {
       "type": "text",
@@ -104,6 +128,8 @@
     ".env.app.template": ".env.app"
   },
   "removeAfterInstall": [
-    "template.config.json"
+    "template.config.json",
+    "docs",
+    "scripts"
   ]
 }

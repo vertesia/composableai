@@ -41,8 +41,9 @@ create-tool-server my-project
 2. **Reads** `template.config.json` from the template to determine configuration
 3. **Prompts** the user for values (project name, description, etc.)
 4. **Replaces** variables in specified files (e.g., `{{PROJECT_NAME}}` → `my-project`)
-5. **Cleans up** meta files (`.git`, `template.config.json`, etc.)
-6. **Installs** dependencies using the configured package manager
+5. **Runs** template lifecycle codegen when configured
+6. **Cleans up** meta files (`.git`, `template.config.json`, etc.)
+7. **Installs** dependencies using the configured package manager
 
 ## Configuration
 
@@ -56,6 +57,32 @@ export const config = {
   // ... more options
 }
 ```
+
+### Template modules
+
+Templates may expose named modules. Modules are template-defined feature groups, and a template may declare a lifecycle codegen script to wire the selected modules into the generated project.
+
+```bash
+create-plugin my-app --module default
+create-plugin my-app --module studio-plugin,assistant
+create-plugin my-app --module studio-plugin --module assistant
+```
+
+If no `--module` flag is provided, create-plugin selects the conventional `default` module.
+
+When `template.config.json` contains:
+
+```json
+{
+  "lifecycle": {
+    "codegen": "scripts/dist/codegen.js"
+  }
+}
+```
+
+create-plugin writes a scaffold context JSON file and runs the script from the generated project root.
+The template owns the codegen behavior; create-plugin only passes selected module names, prompt
+answers, package-manager metadata, and template metadata.
 
 ### Key Configuration Options
 

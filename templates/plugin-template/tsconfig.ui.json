@@ -26,6 +26,7 @@
     "noUncheckedSideEffectImports": true
   },
   "include": [
-    "src/ui"
+    "src/ui",
+    "src/modules"
   ]
 }

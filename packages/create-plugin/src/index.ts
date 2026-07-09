@@ -13,6 +13,7 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { config, validation } from './configuration.js';
 import { downloadTemplate } from './download-template.js';
+import { appendModuleOption, parseModuleOption, runTemplateCodegen, type ScaffoldContext } from './modules.js';
 import { installDependencies, selectPackageManager } from './package-manager.js';
 import { runPostInstallHooks, runPreInstallHooks } from './post-install.js';
 import {
@@ -40,6 +41,12 @@ async function main() {
         .option('--dev', 'Use workspace dependencies (development mode)', false)
         .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
         .option(
+            '--module <name>',
+            'Template module to enable. Can be repeated or comma-separated; defaults to the template module named "default".',
+            appendModuleOption,
+            [],
+        )
+        .option(
             '--package-manager <manager>',
             'Package manager to use: pnpm or npm (overrides template default and interactive selection)',
         )
@@ -61,9 +68,19 @@ Documentation: ${config.docsUrl}
         yes: boolean;
         dev: boolean;
         localTemplates?: string;
+        module: string[];
         packageManager?: string;
     }>();
-    const { branch, template, yes: nonInteractive, dev, localTemplates, packageManager: packageManagerOverride } = opts;
+    const {
+        branch,
+        template,
+        yes: nonInteractive,
+        dev,
+        localTemplates,
+        module: moduleOptions,
+        packageManager: packageManagerOverride,
+    } = opts;
+    const selectedModules = parseModuleOption(moduleOptions);
 
     // Prompt for project name if not provided as CLI argument
     if (!projectName) {
@@ -144,10 +161,24 @@ Documentation: ${config.docsUrl}
         // Step 8: Rename files (e.g., .env.template -> .env)
         renameFiles(projectName, templateConfig);
 
-        // Step 9: Remove meta files
+        // Step 9: Run template-specific code generation
+        const scaffoldContext: ScaffoldContext = {
+            projectName,
+            projectPath: fs.realpathSync(projectName),
+            modules: selectedModules.length > 0 ? selectedModules : ['default'],
+            answers,
+            packageManager,
+            template: {
+                name: selectedTemplate.name,
+                repository: selectedTemplate.repository,
+            },
+        };
+        runTemplateCodegen(projectName, templateConfig, scaffoldContext);
+
+        // Step 10: Remove meta files
         removeMetaFiles(projectName, templateConfig);
 
-        // Step 9: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
+        // Step 11: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
         let skipDependencyInstall = false;
         if (templateConfig.preInstall) {
             const preInstallSuccess = await runPreInstallHooks(
@@ -165,17 +196,17 @@ Documentation: ${config.docsUrl}
             }
         }
 
-        // Step 10: Install dependencies
+        // Step 12: Install dependencies
         if (!skipDependencyInstall) {
             await installDependencies(projectName, packageManager);
         }
 
-        // Step 11: Run post-install hooks (if any)
+        // Step 13: Run post-install hooks (if any)
         if (!skipDependencyInstall && templateConfig.postInstall) {
             await runPostInstallHooks(projectName, templateConfig.postInstall, packageManager, nonInteractive);
         }
 
-        // Step 12: Success!
+        // Step 14: Success!
         showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
     } catch (error) {
         console.log(
