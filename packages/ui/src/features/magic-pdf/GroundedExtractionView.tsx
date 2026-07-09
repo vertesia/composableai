@@ -24,6 +24,16 @@ interface GroundedBox {
     h: number;
 }
 
+/**
+ * Citation paths sometimes carry a leading "data." or "$." (the extraction
+ * schema nests the object under "data", and some models echo it). The server
+ * strips it for value resolution; the UI must match on the same normalized form
+ * so per-field scores, checkmarks and click-to-locate work for both variants.
+ */
+function normalizeCitationPath(path: string): string {
+    return path.replace(/^\$\.?/, '').replace(/^data\./, '');
+}
+
 interface GroundedCitation {
     path: string;
     page: number;
@@ -236,9 +246,10 @@ function GroundedExtractionViewImpl({
     const citationsByPath = useMemo(() => {
         const map = new Map<string, GroundedCitation[]>();
         for (const citation of extraction.citations) {
-            const list = map.get(citation.path) ?? [];
+            const key = normalizeCitationPath(citation.path);
+            const list = map.get(key) ?? [];
             list.push(citation);
-            map.set(citation.path, list);
+            map.set(key, list);
         }
         return map;
     }, [extraction.citations]);
@@ -247,7 +258,7 @@ function GroundedExtractionViewImpl({
 
     const selectPath = (path: string) => {
         setSelectedPath(path);
-        const citation = citationsByPath.get(path)?.[0];
+        const citation = citationsByPath.get(normalizeCitationPath(path))?.[0];
         if (citation) {
             setPage(citation.page);
         }
@@ -490,14 +501,16 @@ function PageWithOverlay({
             <img src={imageUrl} alt={t('grounded.pageAlt', { page })} className="w-full select-none" />
             {citations.flatMap((citation) =>
                 citation.boxes.map((box, i) => {
-                    const isSelected = selectedPath === citation.path;
+                    const isSelected =
+                        selectedPath !== undefined &&
+                        normalizeCitationPath(selectedPath) === normalizeCitationPath(citation.path);
                     return (
                         <button
                             key={`${citation.path}-${i}`}
                             type="button"
                             aria-label={citation.path}
                             title={`${citation.path}${citation.source_text ? `\n${citation.source_text}` : ''}`}
-                            onClick={() => onSelectPath(citation.path)}
+                            onClick={() => onSelectPath(normalizeCitationPath(citation.path))}
                             className={cn(
                                 'absolute cursor-pointer border rounded-[1px] transition-colors',
                                 citation.misaligned && 'border-dashed',
