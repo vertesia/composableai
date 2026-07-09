@@ -13,7 +13,7 @@
         "ci:test": "pnpm exec turbo run typecheck:test test --filter='./packages/*' --filter='./llumiverse/*' --filter='./templates/*'",
         "ci:typecheck:test": "pnpm exec turbo run typecheck:test --filter='./packages/*' --filter='./llumiverse/*' --filter='./templates/*'",
         "clean": "rimraf ./node_modules && pnpm -r clean",
-        "clean:outputs": "pnpm -r exec rm -rf ./lib ./dist ./.next ./tsconfig.tsbuildinfo ./.tsbuildinfo",
+        "clean:outputs": "pnpm -r exec rimraf ./lib ./dist ./.next ./tsconfig.tsbuildinfo ./.tsbuildinfo",
         "format": "pnpm exec biome format --write .",
         "format:check": "pnpm exec biome format .",
         "lint": "pnpm exec biome lint",
