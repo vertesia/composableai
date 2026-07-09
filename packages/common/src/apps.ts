@@ -32,21 +32,6 @@ export interface AppUINavItem {
     preferredSection?: (typeof PREFERRED_SECTIONS)[number];
 }
 
-/**
- * Metadata a UI plugin module exports next to its inline `css` export, describing the
- * payload that build produced. Emitted automatically by the plugin-builder; plugins
- * built without it can hand-write the export.
- */
-export interface AppCssMeta {
-    /**
-     * The isolation modes this build's payloads support. The manifest picks the mode
-     * (`AppUIConfig.isolation`); this lists the modes the build can honor. 'css' means
-     * the inline css export keeps its cascade layers and omits the preflight, so a host
-     * can inject it into its own document as is.
-     */
-    supports?: ('shadow' | 'css')[];
-}
-
 export interface AppUIConfig {
     /**
      * The source URL of the app. The src can be a template which contain
@@ -62,9 +47,8 @@ export interface AppUIConfig {
      */
     isolation?: 'shadow' | 'css';
     /**
-     * When true the host renders a legacy build's css in compatibility mode: it rebuilds
-     * the payload from the plugin stylesheet at load time when the inline css export
-     * cannot be trusted. Defaults to false: the plugin css installs exactly as declared.
+     * When true the host modifies the app's css at load time to attempt to fix broken
+     * or missing styles. Only takes effect in css isolation mode. Defaults to false.
      */
     legacy_css_compat?: boolean;
     /**
