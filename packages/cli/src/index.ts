@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { registerAgentsCommand } from './agents/index.js';
 import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
+import { registerBatchCommand } from './batch/index.js';
 import { registerDataCommand } from './data/index.js';
 import { registerEnvsCommand } from './envs/index.js';
 import { registerEventsCommand } from './events/index.js';
@@ -179,6 +180,7 @@ program
 registerAppsCommand(program);
 registerAgentsCommand(program);
 registerArtifactsCommand(program);
+registerBatchCommand(program);
 registerDataCommand(program);
 registerEventsCommand(program);
 registerExportCommand(program);
