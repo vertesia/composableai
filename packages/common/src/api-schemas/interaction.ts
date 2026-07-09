@@ -15,6 +15,7 @@ import {
     AgentSearchScope,
     ExecutionMode,
     ExecutionRunStatus,
+    InferenceBatchStatus,
     InteractionStatus,
     ModelSource,
     RunSourceTypes,
@@ -43,6 +44,42 @@ export const ExecutionModeSchema = z.enum(ExecutionMode).meta({
     id: 'ExecutionMode',
     description: 'Explicit provider batch routing mode for an interaction execution.',
 });
+
+export const InferenceBatchStatusSchema = z.enum(InferenceBatchStatus).meta({ id: 'InferenceBatchStatus' });
+
+export const InferenceBatchSchema = z
+    .strictObject({
+        id: z.string(),
+        provider_job_id: z.string().optional(),
+        environment: z.string(),
+        model: z.string(),
+        region: z.string().optional(),
+        status: InferenceBatchStatusSchema,
+        run_count: z.number().int(),
+        completed_count: z.number().int().optional(),
+        submitted_at: z.string().meta({ format: 'date-time' }).optional(),
+        completed_at: z.string().meta({ format: 'date-time' }).optional(),
+        output_uri: z.string().optional(),
+        error: z.string().optional(),
+        created_at: z.string().meta({ format: 'date-time' }),
+        updated_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'InferenceBatch', description: 'A submitted provider inference batch.' });
+
+export const InferenceBatchArraySchema = z.array(InferenceBatchSchema).meta({ id: 'InferenceBatchArray' });
+
+export const BatchPoolInfoSchema = z
+    .strictObject({
+        environment: z.string(),
+        model: z.string(),
+        size: z.number().int(),
+        oldest_age_ms: z.number().int(),
+        batch_only: z.number().int(),
+        batch_preferred: z.number().int(),
+    })
+    .meta({ id: 'BatchPoolInfo', description: 'A pending provider batch pool grouped by environment and model.' });
+
+export const BatchPoolInfoArraySchema = z.array(BatchPoolInfoSchema).meta({ id: 'BatchPoolInfoArray' });
 
 export const FacetSpecSchema = z
     .strictObject({

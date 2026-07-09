@@ -19,6 +19,7 @@ import type {
     AsyncExecutionPayloadSchema,
     AsyncExecutionResultSchema,
     AsyncInteractionExecutionPayloadSchema,
+    BatchPoolInfoSchema,
     CachePolicySchema,
     CatalogInteractionRefSchema,
     ConversationStripOptionsSchema,
@@ -51,6 +52,7 @@ import type {
     InteractionTagsSchema,
     InteractionUpdatePayloadSchema,
     InteractionVisibilitySchema,
+    InferenceBatchSchema,
     NamedInteractionExecutionPayloadSchema,
     PromptImprovementResponseSchema,
     PromptModalitiesSchema,
@@ -298,6 +300,19 @@ export enum ExecutionMode {
     batch_preferred = 'batch_preferred',
     batch_only = 'batch_only',
 }
+
+/** Status of a submitted provider inference batch. */
+export enum InferenceBatchStatus {
+    queued = 'queued',
+    running = 'running',
+    succeeded = 'succeeded',
+    failed = 'failed',
+    cancelled = 'cancelled',
+}
+
+export type InferenceBatch = z.infer<typeof InferenceBatchSchema>;
+
+export type BatchPoolInfo = z.infer<typeof BatchPoolInfoSchema>;
 /**
  * Schema can be stored or specified as a reference to an external schema.
  * We only support "store:" references for now
