@@ -35,6 +35,8 @@ export interface ErrorInfo {
     message?: string;
     details?: string;
     error?: string;
+    /** Machine-readable business error code, when the source error exposes one. */
+    code?: string;
     //[key: string]: any;
 }
 
@@ -63,6 +65,7 @@ function json(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
             status: info.status,
             message: info.message,
             details: info.details,
+            code: info.code,
         });
     }
     return content;
@@ -155,6 +158,7 @@ function handleResponse(ctx: Context, err: ErrorObject, opts: ErrorHandlerOpts =
     };
     if (err.expose && err.message) info.message = err.message;
     if (err.expose && err.details) info.details = err.details;
+    if (err.expose && err.code) info.code = err.code;
 
     if (opts.updateErrorInfo) {
         opts.updateErrorInfo(ctx, err, info);

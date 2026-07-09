@@ -49,6 +49,23 @@ export interface UserRef {
 
 export const UserRefPopulate = 'id name email picture';
 
+/**
+ * Annotation marker (stored in {@link User.annotations}) that grants a user access to
+ * non-production environments (`preview`, `preprod`). See
+ * `docs/restrict-access-to-non-production-envs.md`.
+ */
+export const EARLY_ACCESS_ANNOTATION = 'early-access';
+
+/** Email domain identifying internal Vertesia employees. */
+export const VERTESIA_EMPLOYEE_EMAIL_DOMAIN = '@vertesiahq.com';
+
+/**
+ * Business error code returned by the STS (token server) when a user is denied access to a
+ * restricted (`preview`/`preprod`) environment because they lack the {@link EARLY_ACCESS_ANNOTATION}
+ * annotation. The UI keys its dedicated rejection screen off this code.
+ */
+export const RESTRICTED_ENVIRONMENT_ERROR_CODE = 'restricted_environment';
+
 export enum Datacenters {
     aws = 'aws',
     gcp = 'gcp',
