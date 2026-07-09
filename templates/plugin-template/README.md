@@ -388,6 +388,15 @@ Key files:
 
 The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it maps existing UI routes (from `routes.tsx`) as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
 
+### CSS isolation
+
+The scaffold prompt sets `uiConfig.isolation` in `src/tool-server/config.ts`. Once the app manifest declares a `ui` block, the manifest's `isolation` is what the host reads — `uiConfig` only serves it while the manifest has none (or under a dev endpoint override). To switch modes later, change the manifest.
+
+- `shadow` — the host loads `plugin.css` into a shadow root; full style isolation.
+- `css` — the host injects your styles (minus the Tailwind preflight) into its page; lighter, but styles can conflict.
+
+The build always emits both payloads, so the mode is purely a rendering choice — there is nothing else to configure. Plugins built before this contract may render degraded in css mode; the host logs a `[plugin-css]` console warning when that happens. The durable fix is rebuilding with the current builder; for a build you cannot rebuild, set `legacy_css_compat: true` on the app manifest and the host rebuilds the styles at load time.
+
 ## Accessibility
 
 The scaffolded plugin targets a **WCAG 2.1 AA baseline** out of the box. The `biome.json.template` inherits the `a11y` rule group (`useButtonType`, `useAltText`, `useSemanticElements`, `useHtmlLang`, etc.) at `error` so violations break `{{PM_RUN}} build` before they ship. A few conventions to keep:
@@ -454,6 +463,8 @@ vertesia apps update <appId> --manifest '{
   }
 }'
 ```
+
+Once the manifest declares `ui`, its `isolation` is authoritative — `uiConfig.isolation` in `src/tool-server/config.ts` only applies while the manifest has no `ui` block, so keep the two in sync. The build supports either mode, so this value only controls how the host renders the plugin (see [CSS isolation](#css-isolation)).
 
 ### Node.js (Cloud Run, Railway, Docker)
 
