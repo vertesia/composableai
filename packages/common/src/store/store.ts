@@ -888,6 +888,23 @@ export interface ContentTypeExtractionGroundingPolicy {
     force_ocr?: boolean;
     /** Attach instrumented page images to the grounded extraction prompt. */
     use_vision?: boolean;
+    /**
+     * Drop block bounding boxes from the extraction prompt. Only sound with
+     * use_vision (layout comes from the image).
+     */
+    omit_block_boxes?: boolean;
+    /** Overlay a labeled 0-100 grid on vision images for accurate bbox localization. */
+    vision_grid?: boolean;
+    /**
+     * Enable the vision-grid localization fallback for unverified values on hard
+     * pages. Opt-in only; requires locate_config.
+     */
+    vision_locate?: boolean;
+    /**
+     * Dedicated model config for vision-grid localization (must be vision-capable).
+     * No fallback to the main extraction config.
+     */
+    locate_config?: InteractionExecutionConfiguration;
     /** Maximum pages per grounded extraction call before windowing. */
     window_pages?: number;
     /** Update object properties with grounded extraction data. Default true. */
@@ -1076,10 +1093,32 @@ const ContentTypeExtractionGroundingPolicySchema = {
             description: 'Attach instrumented page images to the grounded extraction prompt.',
             nullable: true,
         },
+        omit_block_boxes: {
+            type: 'boolean',
+            description: 'Drop block bounding boxes from the extraction prompt (only sound with use_vision).',
+            nullable: true,
+        },
+        vision_grid: {
+            type: 'boolean',
+            description: 'Overlay a labeled 0-100 grid on vision images for bbox localization.',
+            nullable: true,
+        },
+        vision_locate: {
+            type: 'boolean',
+            description:
+                'Enable vision-grid localization for unverified values on hard pages. Opt-in only (must be true); requires locate_config. Default off.',
+            nullable: true,
+        },
+        locate_config: {
+            ...IntakeExecutionConfigurationSchema,
+            description:
+                'Dedicated vision model for localization (model, environment, model_options). Required when vision_locate is true; does not fall back to config.',
+        },
         window_pages: {
             type: 'integer',
             minimum: 1,
-            description: 'Maximum pages per grounded extraction call before windowing.',
+            description:
+                'Maximum pages per extraction call before sequential window completion (later windows append to prior). Default 6.',
             nullable: true,
         },
         update_properties: {
@@ -1094,6 +1133,19 @@ const ContentTypeExtractionGroundingPolicySchema = {
             minimum: 0,
             maximum: 1,
             description: 'Hardness score at or above which hard_config is used. Default 0.5.',
+            nullable: true,
+        },
+        min_citation_density: {
+            type: 'number',
+            minimum: 0,
+            maximum: 1,
+            description:
+                'Minimum citations-per-leaf-value ratio; completions below it retry with escalation. Default 0.3.',
+            nullable: true,
+        },
+        refresh_ocr: {
+            type: 'boolean',
+            description: 'Re-run OCR instead of restoring durable OCR artifacts (stale pipeline output).',
             nullable: true,
         },
         review: {
@@ -1114,6 +1166,14 @@ const ContentTypeExtractionGroundingPolicySchema = {
                     minimum: 0,
                     maximum: 1,
                     description: 'Hardness score at or above which review runs.',
+                    nullable: true,
+                },
+                coverage_threshold: {
+                    type: 'number',
+                    minimum: 0,
+                    maximum: 1,
+                    description:
+                        "Review also runs when any page's citation coverage falls below this floor. Default 0.2.",
                     nullable: true,
                 },
                 force: {
