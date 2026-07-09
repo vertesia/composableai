@@ -37,6 +37,7 @@ export * from './rate-limiter.js';
 export * from './refs.js';
 export * from './roles/types.js';
 export * from './runs.js';
+export * from './schema-for-extraction.js';
 export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';

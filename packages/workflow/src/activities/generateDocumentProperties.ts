@@ -5,8 +5,10 @@ import {
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
     type JSONObject,
+    mergePreservingNonExtractable,
     PDF_RENDITION_NAME,
     type Rendition,
+    schemaForExtraction,
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { md5 } from '../utils/blobs.js';
@@ -235,6 +237,9 @@ export async function generateDocumentProperties(
         human_context: project?.configuration?.human_context ?? undefined,
     };
 
+    // Strip properties marked x-extract:false so constrained decoding cannot invent them.
+    const extractionSchema = schemaForExtraction(type.object_schema);
+
     log.info(
         `Extracting information from object ${objectId} with type ${type.name}`,
         payload.debug_mode ? { params } : undefined,
@@ -248,7 +253,7 @@ export async function generateDocumentProperties(
             {
                 ...params,
                 include_previous_error: true,
-                result_schema: type.object_schema,
+                result_schema: extractionSchema,
                 validate_result: type.strict_mode,
             },
             promptData,
@@ -281,10 +286,16 @@ export async function generateDocumentProperties(
     }
 
     log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
+    const extracted = infoRes.result.object<JSONObject>() ?? {};
+    const existing =
+        doc.properties && typeof doc.properties === 'object' && !Array.isArray(doc.properties)
+            ? (doc.properties as Record<string, unknown>)
+            : {};
+    const properties = mergePreservingNonExtractable(existing, extracted, type.object_schema) as JSONObject;
     await client.objects.update(
         doc.id,
         {
-            properties: infoRes.result.object<JSONObject>(),
+            properties,
             generation_run_info: {
                 id: infoRes.id,
                 date: new Date().toISOString(),

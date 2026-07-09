@@ -767,5 +767,9 @@
     "user.user": "User",
     "user.userId": "User ID",
     "widgets.schema.editDescription": "Edit description",
+    "widgets.schema.propertyColumn": "Property",
+    "widgets.schema.extractFromDocument": "Extract",
+    "widgets.schema.extractFromDocumentHint": "When off, extraction models skip this field (stores x-extract: false). Use for match scores, ERP ids, or fields filled outside extraction.",
+    "widgets.schema.noExtract": "no extract",
     "widgets.schema.invalidPropertyDeclaration": "Invalid property declaration"
 }
