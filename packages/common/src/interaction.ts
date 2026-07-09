@@ -415,6 +415,53 @@ export enum ExecutionMode {
     batch_only = 'batch_only',
 }
 
+/** Status of a submitted provider inference batch. */
+export enum InferenceBatchStatus {
+    queued = 'queued',
+    running = 'running',
+    succeeded = 'succeeded',
+    failed = 'failed',
+    cancelled = 'cancelled',
+}
+
+/**
+ * A submitted provider inference batch — one document per batch job the accumulator
+ * dispatches. The member runs link back via their `batch_id`; membership is resolved
+ * by querying runs (the batch doc stays small). This is what the "Batches" view reads.
+ */
+export interface InferenceBatch {
+    id: string;
+    /** provider/llumiverse job handle, used to poll status and fetch results */
+    provider_job_id?: string;
+    environment: string;
+    model: string;
+    region?: string;
+    status: InferenceBatchStatus;
+    /** number of runs submitted in this batch */
+    run_count: number;
+    /** number of runs completed so far (from results) */
+    completed_count?: number;
+    submitted_at?: string;
+    completed_at?: string;
+    /** gs://… or s3://… location of the batch output, when available */
+    output_uri?: string;
+    error?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+/** A pending accumulator pool: `created` batch-eligible runs grouped by (environment, model). */
+export interface BatchPoolInfo {
+    environment: string;
+    model: string;
+    /** total parked `created` batch runs */
+    size: number;
+    /** age of the oldest parked run (ms) */
+    oldest_age_ms: number;
+    batch_only: number;
+    batch_preferred: number;
+}
+
 export enum RunDataStorageLevel {
     STANDARD = 'STANDARD',
     RESTRICTED = 'RESTRICTED',
