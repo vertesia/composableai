@@ -83,7 +83,7 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
         key: 'grounded',
         label: 'Grounded Extraction',
         description:
-            'Extract with PDF block-level citations, verification scores and an annotated proof document. Escalates hard scans, reviews them, and optionally vision-locates unverified values.',
+            'Extract with PDF block-level citations, verification scores and an annotated proof document. Escalates and reviews hard scans.',
         value: {
             extraction: {
                 enabled: true,
@@ -115,21 +115,6 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                         >,
                     },
                     hardness_threshold: 0.5,
-                    // Opt-in: boxes for values OCR could not verify on hard pages.
-                    // Requires a dedicated vision-capable locate_config (no fallback to config).
-                    vision_locate: true,
-                    vision_grid: true,
-                    locate_config: {
-                        model: 'publishers/google/models/gemini-3.5-flash',
-                        model_options: {
-                            _option_id: 'vertexai-gemini',
-                            max_tokens: 16000,
-                            thinking_level: 'LOW',
-                            temperature: 0,
-                        } as unknown as NonNullable<
-                            import('@vertesia/common').InteractionExecutionConfiguration['model_options']
-                        >,
-                    },
                     min_citation_density: 0.3,
                     window_pages: 6,
                     review: {
@@ -265,11 +250,6 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                         model: 'publishers/google/models/gemini-3.1-pro-preview',
                     },
                     hardness_threshold: 0.5,
-                    vision_grid: true,
-                    vision_locate: true,
-                    locate_config: {
-                        model: 'publishers/google/models/gemini-3.5-flash',
-                    },
                     window_pages: 6,
                     update_properties: true,
                     min_citation_density: 0.3,
@@ -331,8 +311,7 @@ export function IntakePolicyEditor({
         };
         const jsonDefaults = namespace.languages?.json?.jsonDefaults ?? namespace.json?.jsonDefaults;
         // ContentTypeIntakePolicySchema (from @vertesia/common) drives autocomplete,
-        // hover docs, and validation — including extraction.grounding.vision_locate /
-        // locate_config / vision_grid. Clone so Monaco cannot mutate the shared export.
+        // hover docs, and validation. Clone so Monaco cannot mutate the shared export.
         const schema = structuredClone(ContentTypeIntakePolicySchema) as typeof ContentTypeIntakePolicySchema;
         jsonDefaults?.setDiagnosticsOptions({
             validate: true,
@@ -533,7 +512,6 @@ function IntakeSummary({ policy }: { policy: ContentTypeIntakePolicy }) {
         ['Source', policy.extraction?.source ?? 'inherit'],
         ['Extraction', enabledLabel(policy.extraction?.enabled)],
         ['Grounding', enabledLabel(grounding?.enabled)],
-        ['Vision locate', enabledLabel(grounding?.vision_locate)],
         ['Default View', policy.default_view ?? 'inherit'],
         ['TOC', enabledLabel(policy.generate_toc)],
         ['Template', policy.rendering_template ? 'set' : 'inherit'],
@@ -568,14 +546,6 @@ function IntakeHelp() {
                 <HelpItem
                     label="extraction.grounding"
                     text="PDF block-level citations and annotated proof for property extraction. Set enabled=true and a config model."
-                />
-                <HelpItem
-                    label="extraction.grounding.vision_locate"
-                    text="Opt-in: locate unverified hard-page values on a vision grid. Requires locate_config (dedicated vision model)."
-                />
-                <HelpItem
-                    label="extraction.grounding.locate_config"
-                    text="Vision model for localization only. No fallback to grounding.config."
                 />
                 <HelpItem
                     label="extraction.grounding.review"

@@ -893,18 +893,6 @@ export interface ContentTypeExtractionGroundingPolicy {
      * use_vision (layout comes from the image).
      */
     omit_block_boxes?: boolean;
-    /** Overlay a labeled 0-100 grid on vision images for accurate bbox localization. */
-    vision_grid?: boolean;
-    /**
-     * Enable the vision-grid localization fallback for unverified values on hard
-     * pages. Opt-in only; requires locate_config.
-     */
-    vision_locate?: boolean;
-    /**
-     * Dedicated model config for vision-grid localization (must be vision-capable).
-     * No fallback to the main extraction config.
-     */
-    locate_config?: InteractionExecutionConfiguration;
     /** Maximum pages per grounded extraction call before windowing. */
     window_pages?: number;
     /** Update object properties with grounded extraction data. Default true. */
@@ -1097,22 +1085,6 @@ const ContentTypeExtractionGroundingPolicySchema = {
             type: 'boolean',
             description: 'Drop block bounding boxes from the extraction prompt (only sound with use_vision).',
             nullable: true,
-        },
-        vision_grid: {
-            type: 'boolean',
-            description: 'Overlay a labeled 0-100 grid on vision images for bbox localization.',
-            nullable: true,
-        },
-        vision_locate: {
-            type: 'boolean',
-            description:
-                'Enable vision-grid localization for unverified values on hard pages. Opt-in only (must be true); requires locate_config. Default off.',
-            nullable: true,
-        },
-        locate_config: {
-            ...IntakeExecutionConfigurationSchema,
-            description:
-                'Dedicated vision model for localization (model, environment, model_options). Required when vision_locate is true; does not fall back to config.',
         },
         window_pages: {
             type: 'integer',

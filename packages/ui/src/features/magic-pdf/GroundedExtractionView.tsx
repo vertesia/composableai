@@ -62,6 +62,18 @@ interface GroundedExtractionFile {
     /** Content hardness: 0 = clean digital text, 1 = unreadable */
     hardness?: { score: number; escalated?: boolean };
     conflicts?: { path: string; kept: unknown; dropped: unknown }[];
+    /** Doc-level trust verdict: whether the content can be used without a human check */
+    verdict?: 'good_to_go' | 'needs_review';
+    /** One-sentence rationale for `verdict` */
+    verdict_reason?: string;
+    /** Post-extraction review result, when a review ran */
+    review?: {
+        assessment: 'complete' | 'issues_found';
+        summary?: string;
+        corrections_applied?: number;
+        verdict?: 'good_to_go' | 'needs_review';
+        verdict_reason?: string;
+    };
 }
 
 interface GroundedExtractionViewProps {
@@ -96,6 +108,8 @@ export interface GroundedSummary {
     confidence?: number;
     verified: number;
     total: number;
+    verdict?: 'good_to_go' | 'needs_review';
+    verdict_reason?: string;
 }
 
 /** Lightweight summary of the object's grounded extraction, or null when none exists */
@@ -115,6 +129,8 @@ export function useGroundedSummary(objectId: string): GroundedSummary | null {
                     confidence: file.confidence,
                     verified: file.citations.filter((c) => c.verified).length,
                     total: file.citations.length,
+                    verdict: file.verdict,
+                    verdict_reason: file.verdict_reason,
                 });
             })
             .catch(() => {
@@ -227,20 +243,35 @@ function GroundedExtractionViewImpl({
         const groups = { digital: 0, ocr: 0, reviewerConfirmed: 0, snapped: 0, imageRead: 0 };
         const unverified: GroundedCitation[] = [];
         for (const c of extraction.citations) {
-            if (!c.verified) {
+            if (c.verified) {
+                // Programmatic verification: the value matched the extracted text
+                // (digital text layer verbatim, or the OCR text).
+                if (c.snapped) groups.snapped++;
+                else if ((c.confidence ?? 0) >= 1) groups.digital++;
+                else groups.ocr++;
+            } else if (c.reviewed) {
+                // Model verification: the reviewer read the page image and confirmed
+                // the value. This is a strong signal — and the ONLY one available for
+                // scanned/handwritten content, where there is no text layer to match.
+                groups.reviewerConfirmed++;
+            } else {
+                // Read from the image but neither text-matched nor reviewer-confirmed.
                 groups.imageRead++;
                 unverified.push(c);
-            } else if (c.snapped) {
-                groups.snapped++;
-            } else if (c.reviewed && (c.confidence ?? 0) >= 0.99 && (c.confidence ?? 0) < 1) {
-                groups.reviewerConfirmed++;
-            } else if ((c.confidence ?? 0) >= 1) {
-                groups.digital++;
-            } else {
-                groups.ocr++;
             }
         }
-        return { groups, unverified };
+        // Two kinds of verification, both trustworthy:
+        //  - digitally verified: matched the document's text (digital layer or OCR)
+        //  - model verified: the reviewer confirmed it against the page image
+        const digitallyVerified = groups.digital + groups.ocr + groups.snapped;
+        const modelVerified = groups.reviewerConfirmed;
+        return {
+            groups,
+            unverified,
+            digitallyVerified,
+            modelVerified,
+            totalVerified: digitallyVerified + modelVerified,
+        };
     }, [extraction.citations]);
 
     const citationsByPath = useMemo(() => {
@@ -254,7 +285,7 @@ function GroundedExtractionViewImpl({
         return map;
     }, [extraction.citations]);
 
-    const verifiedCount = extraction.citations.filter((c) => c.verified).length;
+    const totalCitations = extraction.citations.length;
 
     const selectPath = (path: string) => {
         setSelectedPath(path);
@@ -310,6 +341,20 @@ function GroundedExtractionViewImpl({
                 <div className="flex h-9 items-center justify-between shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
+                        {extraction.verdict && (
+                            <Badge
+                                variant={extraction.verdict === 'good_to_go' ? 'success' : 'attention'}
+                                title={
+                                    extraction.verdict_reason ??
+                                    extraction.review?.verdict_reason ??
+                                    t('grounded.verdictHint')
+                                }
+                            >
+                                {extraction.verdict === 'good_to_go'
+                                    ? t('grounded.verdictGoodToGo')
+                                    : t('grounded.verdictNeedsReview')}
+                            </Badge>
+                        )}
                         {typeof extraction.hardness?.score === 'number' && (
                             <Badge
                                 variant={
@@ -339,17 +384,32 @@ function GroundedExtractionViewImpl({
                         )}
                         <button
                             type="button"
-                            className="cursor-pointer"
+                            className="flex cursor-pointer items-center gap-1"
                             onClick={() => setShowBreakdown((v) => !v)}
                             aria-expanded={showBreakdown}
                             aria-label={t('grounded.breakdownTitle')}
                         >
-                            <Badge variant={verifiedCount === extraction.citations.length ? 'success' : 'attention'}>
-                                {t('grounded.verifiedOf', {
-                                    verified: verifiedCount,
-                                    total: extraction.citations.length,
-                                })}
-                            </Badge>
+                            {breakdown.digitallyVerified > 0 && (
+                                <Badge variant="success" title={t('grounded.digitalVerifiedHint')}>
+                                    {t('grounded.digitalVerifiedOf', {
+                                        count: breakdown.digitallyVerified,
+                                        total: totalCitations,
+                                    })}
+                                </Badge>
+                            )}
+                            {breakdown.modelVerified > 0 && (
+                                <Badge variant="success" title={t('grounded.modelVerifiedHint')}>
+                                    {t('grounded.modelVerifiedOf', {
+                                        count: breakdown.modelVerified,
+                                        total: totalCitations,
+                                    })}
+                                </Badge>
+                            )}
+                            {breakdown.groups.imageRead > 0 && (
+                                <Badge variant="attention" title={t('grounded.unverifiedHint')}>
+                                    {t('grounded.unverifiedCount', { count: breakdown.groups.imageRead })}
+                                </Badge>
+                            )}
                         </button>
                         <Button
                             variant="ghost"
@@ -398,17 +458,39 @@ function GroundedExtractionViewImpl({
                     <div className="shrink-0 border-b border-border bg-background px-3 py-2 text-sm max-h-72 overflow-auto">
                         <div className="font-medium mb-1">{t('grounded.breakdownTitle')}</div>
                         <div className="grid grid-cols-2 gap-x-4 text-xs">
-                            <span>{t('grounded.breakdownDigital')}</span>
+                            <span className="col-span-2 mt-1 font-medium text-success">
+                                {t('grounded.digitalVerifiedOf', {
+                                    count: breakdown.digitallyVerified,
+                                    total: totalCitations,
+                                })}
+                            </span>
+                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownDigital')}</span>
                             <span className="text-end text-success">{breakdown.groups.digital}</span>
-                            <span>{t('grounded.breakdownOcr')}</span>
+                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownOcr')}</span>
                             <span className="text-end text-success">{breakdown.groups.ocr}</span>
-                            <span>{t('grounded.breakdownReviewer')}</span>
+                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownSnapped')}</span>
+                            <span className="text-end text-success">{breakdown.groups.snapped}</span>
+                            <span className="col-span-2 mt-2 font-medium text-success">
+                                {t('grounded.modelVerifiedOf', {
+                                    count: breakdown.modelVerified,
+                                    total: totalCitations,
+                                })}
+                            </span>
+                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownReviewer')}</span>
                             <span className="text-end text-success">{breakdown.groups.reviewerConfirmed}</span>
-                            <span>{t('grounded.breakdownSnapped')}</span>
-                            <span className="text-end text-attention">{breakdown.groups.snapped}</span>
-                            <span>{t('grounded.breakdownImageRead')}</span>
-                            <span className="text-end text-attention">{breakdown.groups.imageRead}</span>
+                            {breakdown.groups.imageRead > 0 && (
+                                <>
+                                    <span className="col-span-2 mt-2 font-medium text-attention">
+                                        {t('grounded.unverifiedCount', { count: breakdown.groups.imageRead })}
+                                    </span>
+                                    <span className="ps-2 text-muted-foreground">
+                                        {t('grounded.breakdownImageRead')}
+                                    </span>
+                                    <span className="text-end text-attention">{breakdown.groups.imageRead}</span>
+                                </>
+                            )}
                         </div>
+                        <p className="mt-2 text-xs text-muted-foreground">{t('grounded.breakdownVerificationHelp')}</p>
                         {breakdown.unverified.length > 0 && (
                             <div className="mt-2">
                                 <div className="text-xs font-medium text-muted-foreground mb-1">

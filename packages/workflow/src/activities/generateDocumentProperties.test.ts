@@ -427,6 +427,41 @@ describe('generateDocumentProperties', () => {
         );
     });
 
+    it('clears stale extractable properties omitted by re-extraction while preserving non-extractable fields', async () => {
+        const { update } = await mockSetup({
+            text: 'source text',
+            contentType: 'text/plain',
+            properties: {
+                po_number: 'STALE-HALLUCINATION',
+                total: 10,
+                match_id: 'erp-123',
+            },
+            objectSchema: {
+                type: 'object',
+                properties: {
+                    po_number: { type: 'string' },
+                    total: { type: 'number' },
+                    match_id: { type: 'string', 'x-extract': false },
+                },
+            },
+        });
+        mockExtractionResult({ total: 12 });
+
+        const result: GenerateDocumentPropertiesResult = await testEnv.run(generateDocumentProperties, payload({}));
+
+        expect(result).toEqual({ status: 'completed' });
+        expect(update).toHaveBeenCalledWith(
+            'object-1',
+            expect.objectContaining({
+                properties: {
+                    total: 12,
+                    match_id: 'erp-123',
+                },
+            }),
+            { suppressWorkflows: true },
+        );
+    });
+
     describe('skip_if_fresh freshness guard', () => {
         const CONTENT_ETAG = 'content-etag-1';
         const freshFingerprint = computeExtractionFingerprint({
