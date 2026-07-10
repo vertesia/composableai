@@ -239,7 +239,7 @@
   "auth.restricted.calloutMeta": "联系 Vertesia 获取抢先体验权限",
   "auth.restricted.calloutTitle": "需要抢先体验权限",
   "auth.restricted.eyebrow": "受限站点",
-  "auth.restricted.redirect": "前往主网站",
+  "auth.restricted.redirect": "前往主站点",
   "auth.restricted.title": "访问受限",
   "auth.restricted.useDifferent": "使用其他邮箱",
   "auth.returning.body": "团队项目随时为您准备就绪。继续使用上次的方式,或更换其他方式。",

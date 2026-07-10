@@ -239,7 +239,7 @@
   "auth.restricted.calloutMeta": "Contact Vertesia for early access",
   "auth.restricted.calloutTitle": "Early access required",
   "auth.restricted.eyebrow": "Restricted Site",
-  "auth.restricted.redirect": "Go to the main website",
+  "auth.restricted.redirect": "Go to the main site",
   "auth.restricted.title": "Access restricted",
   "auth.restricted.useDifferent": "Use a different email",
   "auth.returning.body": "Your team's project is ready when you are. Continue with the last method you used, or switch things up.",

@@ -239,7 +239,7 @@
   "auth.restricted.calloutMeta": "얼리 액세스는 Vertesia에 문의하세요",
   "auth.restricted.calloutTitle": "얼리 액세스 필요",
   "auth.restricted.eyebrow": "제한된 사이트",
-  "auth.restricted.redirect": "메인 웹사이트로 이동",
+  "auth.restricted.redirect": "메인 사이트로 이동",
   "auth.restricted.title": "액세스가 제한됨",
   "auth.restricted.useDifferent": "다른 이메일 사용",
   "auth.returning.body": "팀 프로젝트가 준비되어 있습니다. 마지막에 사용한 방법으로 계속하거나 다른 방법을 선택하세요.",
