@@ -1,4 +1,3 @@
-import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ShieldOff } from 'lucide-react';
 import { getProductionAppUrl } from './productionUrl';
@@ -23,7 +22,7 @@ export default function SignInRestrictedEnvStep({ email }: SignInRestrictedEnvSt
                 variant="destructive"
                 eyebrow={t('auth.restricted.eyebrow')}
                 title={t('auth.restricted.title')}
-                body={t('auth.restricted.body', { env: Env.type })}
+                body={t('auth.restricted.body')}
             />
 
             <div className="flex flex-col gap-2">
