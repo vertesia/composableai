@@ -33,7 +33,11 @@ export function appendModuleOption(value: string, previous: string[]): string[] 
     return [...previous, value];
 }
 
-export function runTemplateCodegen(projectName: string, templateConfig: TemplateConfig, context: ScaffoldContext): void {
+export function runTemplateCodegen(
+    projectName: string,
+    templateConfig: TemplateConfig,
+    context: ScaffoldContext,
+): void {
     const codegen = templateConfig.lifecycle?.codegen;
     if (!codegen) return;
 
