@@ -235,6 +235,7 @@
   "auth.providers.bodyConsumer": "Pick from one of the providers below to continue.",
   "auth.providers.eyebrow": "Choose How to Sign In",
   "auth.providers.title": "One more step",
+  "auth.restricted.autoRedirect": "Redirecting to the main site in {{seconds}}s…",
   "auth.restricted.body": "This site is restricted to users with early access to new features and fixes. Please continue to the main site, or contact Vertesia about early access to this site.",
   "auth.restricted.calloutMeta": "Contact Vertesia for early access",
   "auth.restricted.calloutTitle": "Early access required",

@@ -235,6 +235,7 @@
   "auth.providers.bodyConsumer": "Devam etmek için aşağıdaki sağlayıcılardan birini seçin.",
   "auth.providers.eyebrow": "Oturum açma yöntemini seç",
   "auth.providers.title": "Bir adım daha",
+  "auth.restricted.autoRedirect": "{{seconds}} sn içinde ana siteye yönlendiriliyorsunuz…",
   "auth.restricted.body": "Bu site, yeni özelliklere ve düzeltmelere erken erişimi olan kullanıcılarla sınırlıdır. Lütfen ana siteye devam edin veya bu siteye erken erişim hakkında Vertesia ile iletişime geçin.",
   "auth.restricted.calloutMeta": "Erken erişim için Vertesia ile iletişime geçin",
   "auth.restricted.calloutTitle": "Erken erişim gerekli",

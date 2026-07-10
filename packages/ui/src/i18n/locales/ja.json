@@ -235,6 +235,7 @@
   "auth.providers.bodyConsumer": "続行するには、以下のプロバイダーのいずれかを選択してください。",
   "auth.providers.eyebrow": "サインイン方法を選択",
   "auth.providers.title": "あと一歩です",
+  "auth.restricted.autoRedirect": "{{seconds}} 秒後にメインサイトへ移動します…",
   "auth.restricted.body": "このサイトは、新機能や修正への早期アクセス権を持つユーザーに限定されています。メインサイトに進むか、このサイトへの早期アクセスについて Vertesia にお問い合わせください。",
   "auth.restricted.calloutMeta": "早期アクセスについては Vertesia にお問い合わせください",
   "auth.restricted.calloutTitle": "早期アクセスが必要です",

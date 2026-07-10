@@ -235,6 +235,7 @@
   "auth.providers.bodyConsumer": "계속하려면 아래 공급자 중 하나를 선택하세요.",
   "auth.providers.eyebrow": "로그인 방법 선택",
   "auth.providers.title": "한 단계만 더",
+  "auth.restricted.autoRedirect": "{{seconds}}초 후 메인 사이트로 이동합니다…",
   "auth.restricted.body": "이 사이트는 새로운 기능 및 수정 사항에 대한 얼리 액세스 권한이 있는 사용자로 제한됩니다. 메인 사이트로 계속하거나 이 사이트에 대한 얼리 액세스에 관해 Vertesia에 문의하세요.",
   "auth.restricted.calloutMeta": "얼리 액세스는 Vertesia에 문의하세요",
   "auth.restricted.calloutTitle": "얼리 액세스 필요",

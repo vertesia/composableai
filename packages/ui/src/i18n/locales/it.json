@@ -237,6 +237,7 @@
   "auth.providers.bodyConsumer": "Scegli uno dei provider qui sotto per continuare.",
   "auth.providers.eyebrow": "Scegli come accedere",
   "auth.providers.title": "Un altro passaggio",
+  "auth.restricted.autoRedirect": "Reindirizzamento al sito principale tra {{seconds}} s…",
   "auth.restricted.body": "Questo sito è riservato agli utenti con accesso anticipato a nuove funzionalità e correzioni. Continua al sito principale oppure contatta Vertesia per l'accesso anticipato a questo sito.",
   "auth.restricted.calloutMeta": "Contatta Vertesia per l'accesso anticipato",
   "auth.restricted.calloutTitle": "Accesso anticipato richiesto",

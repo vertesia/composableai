@@ -243,6 +243,7 @@
   "auth.providers.bodyConsumer": "اختر أحد المزوّدين أدناه للمتابعة.",
   "auth.providers.eyebrow": "اختر كيفية تسجيل الدخول",
   "auth.providers.title": "خطوة أخرى",
+  "auth.restricted.autoRedirect": "إعادة التوجيه إلى الموقع الرئيسي خلال {{seconds}} ثانية…",
   "auth.restricted.body": "هذا الموقع مقتصر على المستخدمين الذين لديهم وصول مبكر إلى الميزات والإصلاحات الجديدة. يُرجى المتابعة إلى الموقع الرئيسي، أو التواصل مع Vertesia بشأن الوصول المبكر إلى هذا الموقع.",
   "auth.restricted.calloutMeta": "تواصل مع Vertesia للحصول على وصول مبكر",
   "auth.restricted.calloutTitle": "الوصول المبكر مطلوب",

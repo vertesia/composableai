@@ -235,6 +235,7 @@
   "auth.providers.bodyConsumer": "Wähle einen der folgenden Anbieter aus, um fortzufahren.",
   "auth.providers.eyebrow": "Anmeldeart wählen",
   "auth.providers.title": "Noch ein Schritt",
+  "auth.restricted.autoRedirect": "Weiterleitung zur Hauptwebsite in {{seconds}} s…",
   "auth.restricted.body": "Diese Website ist auf Nutzer mit Early Access zu neuen Funktionen und Fixes beschränkt. Bitte fahre zur Hauptwebsite fort oder kontaktiere Vertesia bezüglich Early Access zu dieser Website.",
   "auth.restricted.calloutMeta": "Kontaktiere Vertesia für Early Access",
   "auth.restricted.calloutTitle": "Early Access erforderlich",
