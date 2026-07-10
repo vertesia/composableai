@@ -19,6 +19,7 @@ const generatedHeader =
 
 function copyTemplateInputs(targetRoot) {
     fs.copyFileSync(path.join(templateRoot, 'template.config.json'), path.join(targetRoot, 'template.config.json'));
+    fs.copyFileSync(path.join(templateRoot, 'package.json'), path.join(targetRoot, 'package.json'));
     fs.cpSync(path.join(templateRoot, 'src/modules'), path.join(targetRoot, 'src/modules'), { recursive: true });
 }
 
@@ -69,6 +70,9 @@ test('default module codegen keeps only the app module', () => {
         assert.doesNotMatch(uiModules, /modules\/examples/);
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.doesNotMatch(serverModules, /modules\/examples/);
+        const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
+        assert.equal(packageJson.scripts['codegen:dev'], undefined);
+        assert.equal(packageJson.scripts['test:codegen'], undefined);
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
