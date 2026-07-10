@@ -2464,6 +2464,7 @@ function ModernAgentConversationInner({
             ) : (
                 <AllMessagesMixed
                     messages={displayedMessages}
+                    workstreamSourceMessages={messages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                     isCompleted={displayedIsCompleted}
                     plan={getActivePlan.plan}
