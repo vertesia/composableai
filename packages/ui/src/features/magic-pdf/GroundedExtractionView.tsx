@@ -12,7 +12,18 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { CheckCircle2, ChevronLeft, ChevronRight, Eye, FileDown, FileJson2, FileText, ScanText, X } from 'lucide-react';
+import {
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Eye,
+    FileDown,
+    FileJson2,
+    FileText,
+    ScanText,
+    Sparkles,
+    X,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
@@ -54,7 +65,7 @@ interface GroundedExtractionFile {
     run_id: string;
     model?: string;
     generated_at: string;
-    pages: Record<string, { width: number; height: number }>;
+    pages: Record<string, { width: number; height: number; rotation?: number }>;
     data: Record<string, unknown>;
     citations: GroundedCitation[];
     /** Mean provenance confidence in [0,1]; 1.0 = verified against a digital text layer */
@@ -238,6 +249,7 @@ function GroundedExtractionViewImpl({
     const [page, setPage] = useState(pageNumbers[0] ?? 1);
     const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
     const [showBreakdown, setShowBreakdown] = useState(false);
+    const [showVerdict, setShowVerdict] = useState(false);
 
     const breakdown = useMemo(() => {
         const groups = { digital: 0, ocr: 0, reviewerConfirmed: 0, snapped: 0, imageRead: 0 };
@@ -342,18 +354,19 @@ function GroundedExtractionViewImpl({
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
                         {extraction.verdict && (
-                            <Badge
-                                variant={extraction.verdict === 'good_to_go' ? 'success' : 'attention'}
-                                title={
-                                    extraction.verdict_reason ??
-                                    extraction.review?.verdict_reason ??
-                                    t('grounded.verdictHint')
-                                }
+                            <button
+                                type="button"
+                                className="cursor-pointer"
+                                onClick={() => setShowVerdict((v) => !v)}
+                                aria-expanded={showVerdict}
+                                aria-label={t('grounded.verdictDetails')}
                             >
-                                {extraction.verdict === 'good_to_go'
-                                    ? t('grounded.verdictGoodToGo')
-                                    : t('grounded.verdictNeedsReview')}
-                            </Badge>
+                                <Badge variant={extraction.verdict === 'good_to_go' ? 'success' : 'attention'}>
+                                    {extraction.verdict === 'good_to_go'
+                                        ? t('grounded.verdictGoodToGo')
+                                        : t('grounded.verdictNeedsReview')}
+                                </Badge>
+                            </button>
                         )}
                         {typeof extraction.hardness?.score === 'number' && (
                             <Badge
@@ -454,6 +467,46 @@ function GroundedExtractionViewImpl({
                         )}
                     </div>
                 </div>
+                {showVerdict && extraction.verdict && (
+                    <div className="shrink-0 border-b border-border bg-background px-3 py-2 text-sm">
+                        <div className="flex items-center gap-2">
+                            <span
+                                className={cn(
+                                    'font-medium',
+                                    extraction.verdict === 'good_to_go' ? 'text-success' : 'text-attention',
+                                )}
+                            >
+                                {extraction.verdict === 'good_to_go'
+                                    ? t('grounded.verdictGoodToGo')
+                                    : t('grounded.verdictNeedsReview')}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                                {extraction.review
+                                    ? t('grounded.verdictByReviewer')
+                                    : t('grounded.verdictByConfidence')}
+                            </span>
+                        </div>
+                        {(extraction.verdict_reason ?? extraction.review?.verdict_reason) && (
+                            <p className="mt-1 text-xs">
+                                {extraction.verdict_reason ?? extraction.review?.verdict_reason}
+                            </p>
+                        )}
+                        {extraction.review?.summary && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                <span className="font-medium text-foreground">{t('grounded.reviewSummary')}: </span>
+                                {extraction.review.summary}
+                            </p>
+                        )}
+                        {typeof extraction.review?.corrections_applied === 'number' &&
+                            extraction.review.corrections_applied > 0 && (
+                                <p className="mt-1 text-xs text-info">
+                                    {t('grounded.reviewCorrections', {
+                                        count: extraction.review.corrections_applied,
+                                    })}
+                                </p>
+                            )}
+                    </div>
+                )}
                 {showBreakdown && (
                     <div className="shrink-0 border-b border-border bg-background px-3 py-2 text-sm max-h-72 overflow-auto">
                         <div className="font-medium mb-1">{t('grounded.breakdownTitle')}</div>
@@ -547,7 +600,7 @@ function PageWithOverlay({
 }: {
     objectId: string;
     page: number;
-    dims?: { width: number; height: number };
+    dims?: { width: number; height: number; rotation?: number };
     citations: GroundedCitation[];
     selectedPath?: string;
     onSelectPath: (path: string) => void;
@@ -578,45 +631,81 @@ function PageWithOverlay({
         );
     }
 
+    // Citation boxes live in the page's (possibly OCR-rotated) coordinate space,
+    // which `dims` describes. They overlay directly on a container that is that
+    // same space — so when the page is rotated we rotate the image to fill that
+    // space rather than transforming every box.
+    const boxOverlays = citations.flatMap((citation) =>
+        citation.boxes.map((box, i) => {
+            const isSelected =
+                selectedPath !== undefined &&
+                normalizeCitationPath(selectedPath) === normalizeCitationPath(citation.path);
+            return (
+                <button
+                    key={`${citation.path}-${i}`}
+                    type="button"
+                    aria-label={citation.path}
+                    title={`${citation.path}${citation.source_text ? `\n${citation.source_text}` : ''}`}
+                    onClick={() => onSelectPath(normalizeCitationPath(citation.path))}
+                    className={cn(
+                        'absolute cursor-pointer border rounded-[1px] transition-colors',
+                        citation.misaligned && 'border-dashed',
+                        isSelected
+                            ? 'border-2 border-destructive bg-destructive/20 z-10'
+                            : selectedPath
+                              ? 'border-info/30 hover:border-info'
+                              : citation.verified
+                                ? 'border-success/70 hover:bg-success/20'
+                                : citation.reviewed
+                                  ? 'border-info/70 hover:bg-info/20'
+                                  : 'border-attention/80 hover:bg-attention/20',
+                    )}
+                    style={{
+                        // inline position: the app's button base styles override the
+                        // `absolute` utility class with position: relative
+                        position: 'absolute',
+                        left: `${(box.x / dims.width) * 100}%`,
+                        top: `${(box.y / dims.height) * 100}%`,
+                        width: `${(box.w / dims.width) * 100}%`,
+                        height: `${(box.h / dims.height) * 100}%`,
+                    }}
+                />
+            );
+        }),
+    );
+
+    // The stored page image is in the source orientation; the OCR pass may have
+    // rotated the page to upright to read it, so `rotation` (CW degrees) is how
+    // much the image must turn to match the citation coordinates. A 90/270 turn
+    // also transposes the image box, so it is sized to the container's transpose.
+    const rot = (((dims.rotation ?? 0) % 360) + 360) % 360;
+    if (rot !== 0) {
+        const transpose = rot === 90 || rot === 270;
+        return (
+            <div className="relative w-full" style={{ aspectRatio: `${dims.width} / ${dims.height}` }}>
+                <img
+                    src={imageUrl}
+                    alt={t('grounded.pageAlt', { page })}
+                    className="absolute select-none"
+                    style={{
+                        left: '50%',
+                        top: '50%',
+                        width: `${(transpose ? dims.height / dims.width : 1) * 100}%`,
+                        height: `${(transpose ? dims.width / dims.height : 1) * 100}%`,
+                        maxWidth: 'none',
+                        transform: `translate(-50%, -50%) rotate(${rot}deg)`,
+                        transformOrigin: 'center center',
+                    }}
+                />
+                {boxOverlays}
+            </div>
+        );
+    }
+
     return (
         <div className="relative w-full">
             <img src={imageUrl} alt={t('grounded.pageAlt', { page })} className="w-full select-none" />
-            {citations.flatMap((citation) =>
-                citation.boxes.map((box, i) => {
-                    const isSelected =
-                        selectedPath !== undefined &&
-                        normalizeCitationPath(selectedPath) === normalizeCitationPath(citation.path);
-                    return (
-                        <button
-                            key={`${citation.path}-${i}`}
-                            type="button"
-                            aria-label={citation.path}
-                            title={`${citation.path}${citation.source_text ? `\n${citation.source_text}` : ''}`}
-                            onClick={() => onSelectPath(normalizeCitationPath(citation.path))}
-                            className={cn(
-                                'absolute cursor-pointer border rounded-[1px] transition-colors',
-                                citation.misaligned && 'border-dashed',
-                                isSelected
-                                    ? 'border-2 border-destructive bg-destructive/20 z-10'
-                                    : selectedPath
-                                      ? 'border-info/30 hover:border-info'
-                                      : citation.verified
-                                        ? 'border-success/70 hover:bg-success/20'
-                                        : 'border-attention/80 hover:bg-attention/20',
-                            )}
-                            style={{
-                                // inline position: the app's button base styles override the
-                                // `absolute` utility class with position: relative
-                                position: 'absolute',
-                                left: `${(box.x / dims.width) * 100}%`,
-                                top: `${(box.y / dims.height) * 100}%`,
-                                width: `${(box.w / dims.width) * 100}%`,
-                                height: `${(box.h / dims.height) * 100}%`,
-                            }}
-                        />
-                    );
-                }),
-            )}
+            {boxOverlays}
         </div>
     );
 }
@@ -834,6 +923,8 @@ function LeafRow({
             {citation &&
                 (citation.verified ? (
                     <CheckCircle2 aria-label={t('grounded.verified')} className="size-3.5 shrink-0 text-success" />
+                ) : citation.reviewed ? (
+                    <Sparkles aria-label={t('grounded.aiVerified')} className="size-3.5 shrink-0 text-info" />
                 ) : (
                     <Eye aria-label={t('grounded.readFromImage')} className="size-3.5 shrink-0 text-attention" />
                 ))}
