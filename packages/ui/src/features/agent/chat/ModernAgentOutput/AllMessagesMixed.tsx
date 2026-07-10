@@ -2328,8 +2328,43 @@ class MessageErrorBoundary extends Component<{ children: ReactNode }, { hasError
     }
 }
 
+// Sort chronologically, drop document-panel events + hidden types, and dedupe adjacent
+// identical messages. Shared by the rendered transcript and the workstream tab derivation.
+function sortAndDedupeMessages(messages: AgentMessage[], hiddenMessageTypes?: AgentMessageType[]): AgentMessage[] {
+    const filtered = messages.filter(
+        (message) => !isDocumentPanelEventMessage(message) && !hiddenMessageTypes?.includes(message.type),
+    );
+
+    const sorted = [...filtered].sort((a, b) => {
+        const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+        const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
+        return timeA - timeB;
+    });
+
+    const deduped: AgentMessage[] = [];
+    for (const msg of sorted) {
+        const previous = deduped[deduped.length - 1];
+        if (previous && shouldCollapseAdjacentRenderedMessage(previous, msg)) {
+            continue;
+        }
+
+        if (previous && shouldDedupeAdjacentCompletedToolMessage(previous, msg)) {
+            continue;
+        }
+        deduped.push(msg);
+    }
+    return deduped;
+}
+
 interface AllMessagesMixedProps {
     messages: AgentMessage[];
+    /**
+     * Full, workstream-unfiltered message set used to derive the workstream tab list, per-tab
+     * counts, and completion status. Falls back to `messages` when omitted. The parent filters
+     * `messages` down to the active workstream, so deriving the tab list from `messages` alone
+     * makes the tabs collapse (and vanish once `main` is selected) as you navigate between them.
+     */
+    workstreamSourceMessages?: AgentMessage[];
     bottomRef: React.RefObject<HTMLDivElement>;
     viewMode?: 'stacked' | 'sliding';
     isCompleted?: boolean;
@@ -2397,6 +2432,7 @@ const SCROLL_THROTTLE_MS = 100; // Max 10 scrolls per second
 
 function AllMessagesMixedComponent({
     messages,
+    workstreamSourceMessages,
     bottomRef,
     viewMode = 'stacked',
     isCompleted = false,
@@ -2536,36 +2572,26 @@ function AllMessagesMixedComponent({
 
     // Sort all messages chronologically and dedupe adjacent identical messages
     // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
-    const sortedMessages = React.useMemo(() => {
-        const filtered = messages.filter(
-            (message) => !isDocumentPanelEventMessage(message) && !hiddenMessageTypes?.includes(message.type),
-        );
+    const sortedMessages = React.useMemo(
+        () => sortAndDedupeMessages(messages, hiddenMessageTypes),
+        [messages, hiddenMessageTypes],
+    );
 
-        const sorted = [...filtered].sort((a, b) => {
-            const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
-            const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
-            return timeA - timeB;
-        });
-
-        const deduped: AgentMessage[] = [];
-        for (const msg of sorted) {
-            const previous = deduped[deduped.length - 1];
-            if (previous && shouldCollapseAdjacentRenderedMessage(previous, msg)) {
-                continue;
-            }
-
-            if (previous && shouldDedupeAdjacentCompletedToolMessage(previous, msg)) {
-                continue;
-            }
-            deduped.push(msg);
-        }
-        return deduped;
-    }, [messages, hiddenMessageTypes]);
+    // The workstream tabs are navigation over the WHOLE conversation, so derive them from the
+    // unfiltered source rather than `messages` (which the parent filters to the active workstream).
+    // Falling back to `sortedMessages` keeps callers that don't pass the source working unchanged.
+    const workstreamSourceSorted = React.useMemo(
+        () =>
+            workstreamSourceMessages
+                ? sortAndDedupeMessages(workstreamSourceMessages, hiddenMessageTypes)
+                : sortedMessages,
+        [workstreamSourceMessages, hiddenMessageTypes, sortedMessages],
+    );
 
     const workstreams = React.useMemo(() => {
-        const extractedWorkstreams = extractWorkstreams(sortedMessages);
+        const extractedWorkstreams = extractWorkstreams(workstreamSourceSorted);
 
-        sortedMessages.forEach((message) => {
+        workstreamSourceSorted.forEach((message) => {
             const details = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
             if (!details) return;
             extractedWorkstreams.set(
@@ -2575,7 +2601,7 @@ function AllMessagesMixedComponent({
         });
 
         return extractedWorkstreams;
-    }, [sortedMessages]);
+    }, [workstreamSourceSorted]);
 
     const activeWorkstreamName = React.useMemo(() => {
         if (activeWorkstream === 'all') return undefined;
@@ -2616,17 +2642,17 @@ function AllMessagesMixedComponent({
         }
     }, [activeWorkstream, workstreams, setActiveWorkstream]);
 
-    // Count messages per workstream
+    // Count messages per workstream (from the full source so counts don't shrink to the active tab)
     const workstreamCounts = React.useMemo(() => {
         const counts = new Map<string, number>();
-        counts.set('all', sortedMessages.length);
+        counts.set('all', workstreamSourceSorted.length);
 
         // Count main messages
-        const mainMessages = filterMessagesByWorkstream(sortedMessages, 'main');
+        const mainMessages = filterMessagesByWorkstream(workstreamSourceSorted, 'main');
         counts.set('main', mainMessages.length);
 
         // Count other workstreams
-        sortedMessages.forEach((msg) => {
+        workstreamSourceSorted.forEach((msg) => {
             const workstreamId = getWorkstreamId(msg);
             if (workstreamId !== 'main') {
                 counts.set(workstreamId, (counts.get(workstreamId) || 0) + 1);
@@ -2634,7 +2660,7 @@ function AllMessagesMixedComponent({
         });
 
         return counts;
-    }, [sortedMessages]);
+    }, [workstreamSourceSorted]);
 
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
@@ -2869,7 +2895,7 @@ function AllMessagesMixedComponent({
         // Group messages by workstream
         const workstreamMessages = new Map<string, AgentMessage[]>();
 
-        sortedMessages.forEach((message) => {
+        workstreamSourceSorted.forEach((message) => {
             const workstreamId = getWorkstreamId(message);
             if (!workstreamMessages.has(workstreamId)) {
                 workstreamMessages.set(workstreamId, []);
@@ -2905,7 +2931,7 @@ function AllMessagesMixedComponent({
         }
 
         return statusMap;
-    }, [sortedMessages]);
+    }, [workstreamSourceSorted]);
 
     return (
         <div
