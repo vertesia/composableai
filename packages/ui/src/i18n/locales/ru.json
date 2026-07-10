@@ -245,6 +245,7 @@
   "auth.restricted.eyebrow": "Ограниченная среда",
   "auth.restricted.redirect": "Перейти в основное веб-приложение",
   "auth.restricted.title": "Доступ ограничен",
+  "auth.restricted.useDifferent": "Использовать другой адрес",
   "auth.returning.body": "Проект вашей команды готов. Продолжите с последним использованным способом или смените его.",
   "auth.returning.eyebrow": "Возвращение в Vertesia",
   "auth.returning.notYou": "Это не вы?",

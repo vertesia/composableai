@@ -241,6 +241,7 @@
   "auth.restricted.eyebrow": "Kısıtlı ortam",
   "auth.restricted.redirect": "Ana web uygulamasına yönlendir",
   "auth.restricted.title": "Erişim kısıtlı",
+  "auth.restricted.useDifferent": "Farklı bir e-posta kullan",
   "auth.returning.body": "Ekibinizin projesi siz hazır olduğunuzda hazır. Son kullandığınız yöntemle devam edin veya yöntemi değiştirin.",
   "auth.returning.eyebrow": "Vertesia'ya tekrar hoş geldiniz",
   "auth.returning.notYou": "Siz değil misiniz?",

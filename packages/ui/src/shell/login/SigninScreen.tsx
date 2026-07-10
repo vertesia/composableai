@@ -201,7 +201,12 @@ function SigninScreenImpl({
             />
         );
     } else if (mode === 'restricted') {
-        content = <SignInRestrictedEnvStep email={email || storedSession?.email || undefined} />;
+        content = (
+            <SignInRestrictedEnvStep
+                email={email || storedSession?.email || undefined}
+                onUseDifferentEmail={startOver}
+            />
+        );
     } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
         content = <SignupForm onSignup={onSignup} goBack={startOver} />;
     } else if (mode === 'tenant' && tenant) {

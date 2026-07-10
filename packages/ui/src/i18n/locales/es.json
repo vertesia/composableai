@@ -243,6 +243,7 @@
   "auth.restricted.eyebrow": "Entorno restringido",
   "auth.restricted.redirect": "Redirigir a la aplicación web principal",
   "auth.restricted.title": "Acceso restringido",
+  "auth.restricted.useDifferent": "Usar otro correo",
   "auth.returning.body": "El proyecto de tu equipo está listo cuando tú lo estés. Continúa con el último método que usaste o cambia de opción.",
   "auth.returning.eyebrow": "Bienvenido de nuevo a Vertesia",
   "auth.returning.notYou": "¿No eres tú?",

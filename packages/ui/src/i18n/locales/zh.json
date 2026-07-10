@@ -241,6 +241,7 @@
   "auth.restricted.eyebrow": "受限环境",
   "auth.restricted.redirect": "跳转到主 Web 应用",
   "auth.restricted.title": "访问受限",
+  "auth.restricted.useDifferent": "使用其他邮箱",
   "auth.returning.body": "团队项目随时为您准备就绪。继续使用上次的方式,或更换其他方式。",
   "auth.returning.eyebrow": "回到 Vertesia",
   "auth.returning.notYou": "不是您?",

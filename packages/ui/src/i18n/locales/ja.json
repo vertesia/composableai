@@ -241,6 +241,7 @@
   "auth.restricted.eyebrow": "制限された環境",
   "auth.restricted.redirect": "メインの Web アプリケーションへ移動",
   "auth.restricted.title": "アクセスが制限されています",
+  "auth.restricted.useDifferent": "別のメールアドレスを使う",
   "auth.returning.body": "チームのプロジェクトはいつでも準備万端です。前回使用した方法で続けるか、別の方法に切り替えてください。",
   "auth.returning.eyebrow": "Vertesia へお帰りなさい",
   "auth.returning.notYou": "あなたではありませんか?",

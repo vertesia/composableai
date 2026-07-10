@@ -249,6 +249,7 @@
   "auth.restricted.eyebrow": "بيئة مقيّدة",
   "auth.restricted.redirect": "إعادة التوجيه إلى تطبيق الويب الرئيسي",
   "auth.restricted.title": "الوصول مقيّد",
+  "auth.restricted.useDifferent": "استخدم بريدًا إلكترونيًا آخر",
   "auth.returning.body": "مشروع فريقك جاهز عندما تكون مستعدًا. تابع بالطريقة الأخيرة التي استخدمتها، أو غيّرها.",
   "auth.returning.eyebrow": "العودة إلى Vertesia",
   "auth.returning.notYou": "ليس أنت؟",
