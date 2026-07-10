@@ -6,8 +6,6 @@ import { SignInCallout, SignInStepButton, SignInStepHeader, SignInStepLayout } f
 import { resetSignInState } from './signInUtils';
 
 interface SignInRestrictedEnvStepProps {
-    /** Signed-in email, shown in the callout when known. */
-    email?: string;
     /** Return to the email-entry step to sign in with a different account. */
     onUseDifferentEmail: () => void;
 }
@@ -17,7 +15,7 @@ interface SignInRestrictedEnvStepProps {
  * restricted to early-access users. Offers a redirect to the production web application and a way
  * to sign in with a different account. See docs/restrict-access-to-non-production-envs.md.
  */
-export default function SignInRestrictedEnvStep({ email, onUseDifferentEmail }: SignInRestrictedEnvStepProps) {
+export default function SignInRestrictedEnvStep({ onUseDifferentEmail }: SignInRestrictedEnvStepProps) {
     const { t } = useUITranslation();
 
     // Clear the rejected session (Firebase sign-out + cached login) once the screen is shown, so a
@@ -41,7 +39,7 @@ export default function SignInRestrictedEnvStep({ email, onUseDifferentEmail }: 
                 <SignInCallout
                     icon={ShieldOff}
                     title={t('auth.restricted.calloutTitle')}
-                    meta={email || t('auth.restricted.calloutMeta')}
+                    meta={t('auth.restricted.calloutMeta')}
                 />
                 <SignInStepButton
                     className="w-full"
