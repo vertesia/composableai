@@ -206,7 +206,7 @@ When reusing a standard intake workflow such as `StandardDocumentIntake`, prefer
 1. **`${objectId}` undefined in remote activity params**: Add `import: ['objectId']` to the step
 2. **`Unknown condition: 0` error**: Condition value is a plain string, not an operator object — wrap with `{ $eq: ... }`
 3. **Condition not matching nested fields**: Ensure a prior `getObjectFromStore` step with `output` set to populate the variable
-4. **Activities not found**: Verify the naming convention `app:<plugin-name>:<collection>:<activity>` and that the `ActivityCollection` is registered in `config.ts`
+4. **Activities not found**: Verify the naming convention `app:<plugin-name>:<collection>:<activity>` and that the `ActivityCollection` is exported from `src/modules/app/resources/activities/index.ts`
 5. **App interaction not found from `executeInteraction`**: Use the full app interaction id `app:<plugin-name>:<collection>:<interaction>`, not a bare interaction name
 6. **App child record creation fails with app type not found**: Use the resolved app type code in `client.objects.create`, not `client.types.getTypeByName()` if the type is app-contributed in-code
 7. **Custom CLM/business enrichment races standard intake**: move the custom rule off `create` and trigger on a later `update` condition such as `status=completed`

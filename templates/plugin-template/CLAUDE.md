@@ -52,46 +52,57 @@ pnpm start                 # Preview production build (build:server + vite previ
 
 | File                          | Purpose                                              |
 |-------------------------------|------------------------------------------------------|
-| `src/tool-server/config.ts`   | Registers all collections — add new resources here   |
+| `src/tool-server/config.ts`   | Registers generated module collections               |
 | `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
 | `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
 | `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
-| `src/ui/app/App.tsx`          | App root (NestedRouterProvider)                      |
-| `src/ui/app/routes.tsx`       | Route definitions                                    |
+| `src/ui/shell/App.tsx`        | Shared app runtime (module providers + router)       |
+| `src/modules/app/ui/routes.tsx` | User app route definitions                         |
+| `src/modules/app/resources/`  | User app Vertesia resource definitions               |
 | `src/ui/index.css`            | Tailwind CSS 4 entry with shared styles import       |
 
 ## UI Directory Structure
 
-User application code lives under `src/ui/app/`. Place new files according to the layout below — `app/README.md` has the full convention and the "add a feature" recipe.
+User application code lives under `src/modules/app/`. Place new app pages, features, and resources
+there — `src/modules/app/README.md` has the full convention and the "add a feature" recipe.
 
 ```text
 src/ui/
 ├── main.tsx, plugin.tsx, env.ts, index.css   ← bootstrap / wiring (don't add app code here)
 ├── i18n/
-└── app/                                       ← user application code
-    ├── App.tsx, routes.tsx, constants.ts
-    ├── components/    ← cross-feature shared components (generic primitives)
-    ├── hooks/         ← cross-feature shared hooks
-    ├── layouts/       ← plugin chrome (PluginLayout, PluginSidebar, …)
-    ├── pages/         ← thin route-level wrappers (one file per route)
-    └── features/<name>/
-        ├── components/, hooks/, types.ts, utils.ts
-        ├── <Feature>View.tsx
-        └── index.ts   ← public barrel
+└── shell/                                     ← shared app runtime/chrome
+    ├── App.tsx
+    ├── components/
+    └── layouts/
+
+src/modules/app/                              ← user-owned app module
+├── ui/
+│   ├── routes.tsx
+│   ├── pages/
+│   ├── components/
+│   ├── hooks/
+│   └── features/<name>/
+└── resources/
+    ├── activities/
+    ├── interactions/
+    ├── skills/
+    ├── templates/
+    ├── tools/
+    └── types/
 ```
 
 Rules of thumb:
 
-- A new route → thin component in `app/pages/` that imports its feature.
-- Self-contained business logic → `app/features/<name>/` with its own components/hooks/types.
-- A primitive used by ≥2 features (e.g. a sortable header) → promote to `app/components/`.
-- A hook used by ≥2 features → promote to `app/hooks/`.
+- A new route → thin component in `src/modules/app/ui/pages/` that imports its feature.
+- Self-contained business logic → `src/modules/app/ui/features/<name>/` with its own components/hooks/types.
+- A primitive used by multiple app features → promote to `src/modules/app/ui/components/`.
+- A hook used by multiple app features → promote to `src/modules/app/ui/hooks/`.
 
 ## Plugin-Specific Conventions
 
 - ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
 - Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
-- All collections must be registered in `src/tool-server/config.ts` (or its per-type index files)
+- User collections must be exported from `src/modules/app/resources/<type>/index.ts`
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files
@@ -101,7 +112,7 @@ Rules of thumb:
 Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
 
 - **Import hooks are server-build only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
-- **Must register in `config.ts`**: a collection that isn't wired into `config.ts` (or its per-type index) won't be served.
+- **Must export from module resource indexes**: a collection that isn't added to `src/modules/app/resources/<type>/index.ts` won't be served.
 - **`Input.onChange` takes the value directly** (`onChange={setValue}`), not a React event — `Textarea` uses standard events.
 
 For full UI patterns (tables, filters, sort, security) see `vertesia-ui`; for tool-server scaffolding conventions see `vertesia-tool-server-resource`.

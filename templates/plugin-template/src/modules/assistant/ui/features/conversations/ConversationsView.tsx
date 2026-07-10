@@ -17,7 +17,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import { RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { SortableHead } from '../../../../../ui/app/components/SortableHead';
+import { SortableHead } from '../../../../../ui/shell/components/SortableHead';
 import { useConversationsListState } from './ConversationsListStateContext';
 import { ConversationRow } from './components/ConversationRow';
 import { type FilterableField, type SortField, STATUS_VALUES } from './types';

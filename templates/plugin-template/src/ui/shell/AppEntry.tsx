@@ -1,11 +1,11 @@
 import { AdminApp } from '@vertesia/tools-admin-ui';
 import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
-import { App } from './app/App';
-import { OrgGate } from './app/layouts/OrgGate';
-import { PluginAccessDenied } from './app/layouts/PluginAccessDenied';
-import { PluginLayout } from './app/layouts/PluginLayout';
-import { setUsePluginAssets } from './assets';
+import { setUsePluginAssets } from '../assets';
+import { App } from './App';
+import { OrgGate } from './layouts/OrgGate';
+import { PluginAccessDenied } from './layouts/PluginAccessDenied';
+import { PluginLayout } from './layouts/PluginLayout';
 
 setUsePluginAssets(false);
 

@@ -29,7 +29,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import { SortableHead } from '../../../../../ui/app/components/SortableHead';
+import { SortableHead } from '../../../../../ui/shell/components/SortableHead';
 import { useContentObjectsListState } from './ContentObjectsListStateContext';
 import { ContentObjectRow } from './components/ContentObjectRow';
 import { type ContentObjectRowModel, type FilterableField, type SortField, STATUS_VALUES } from './types';

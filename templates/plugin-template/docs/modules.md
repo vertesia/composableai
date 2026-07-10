@@ -32,7 +32,7 @@ dependencies.
 ```
 
 If no active module declares `ui.entry`, generated apps use the built-in Studio shell entry from
-`src/ui/AppEntry.tsx`. A module can declare `ui.entry` only when it needs to replace that bootstrap,
+`src/ui/shell/AppEntry.tsx`. A module can declare `ui.entry` only when it needs to replace that bootstrap,
 for example an app-gateway runtime entry.
 
 The template includes an `app-gateway` module for app-gateway runtimes. It is not part of `default`;

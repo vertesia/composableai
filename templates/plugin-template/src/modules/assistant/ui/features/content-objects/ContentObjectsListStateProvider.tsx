@@ -3,7 +3,7 @@ import { type Filter, useDebounce, useFetch, useToast } from '@vertesia/ui/core'
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { type Dispatch, type ReactNode, type SetStateAction, useCallback, useMemo, useRef, useState } from 'react';
-import type { SortDir } from '../../../../../ui/app/components/SortableHead';
+import type { SortDir } from '../../../../../ui/shell/components/SortableHead';
 import { ContentObjectsListStateContext, type ContentObjectsListStateValue } from './ContentObjectsListStateContext';
 import { PAGE_SIZE, SORT_FIELD_MAP, type SortField } from './types';
 import { getSelectValues } from './utils';

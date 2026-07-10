@@ -1,7 +1,7 @@
 import type { ContentObjectItem } from '@vertesia/common';
 import type { Filter } from '@vertesia/ui/core';
 import { createContext, type Dispatch, type RefObject, type SetStateAction, useContext } from 'react';
-import type { SortDir } from '../../../../../ui/app/components/SortableHead';
+import type { SortDir } from '../../../../../ui/shell/components/SortableHead';
 import type { SortField } from './types';
 
 export interface ContentObjectsListStateValue {

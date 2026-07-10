@@ -2,11 +2,11 @@ import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
 import { type ReactNode, useEffect } from 'react';
-import { App } from '../../../ui/app/App';
-import { OrgGate } from '../../../ui/app/layouts/OrgGate';
-import { PluginAccessDenied } from '../../../ui/app/layouts/PluginAccessDenied';
-import { PluginLayout } from '../../../ui/app/layouts/PluginLayout';
 import { setUsePluginAssets } from '../../../ui/assets';
+import { App } from '../../../ui/shell/App';
+import { OrgGate } from '../../../ui/shell/layouts/OrgGate';
+import { PluginAccessDenied } from '../../../ui/shell/layouts/PluginAccessDenied';
+import { PluginLayout } from '../../../ui/shell/layouts/PluginLayout';
 
 setUsePluginAssets(false);
 

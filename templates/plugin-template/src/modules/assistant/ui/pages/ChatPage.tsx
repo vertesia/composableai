@@ -4,7 +4,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink, useNavigate, useParams } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { useCallback } from 'react';
-import { ASSISTANT_INTERACTION } from '../../../../ui/app/constants';
+import { ASSISTANT_INTERACTION } from '../../../../ui/shell/constants';
 
 export function ChatPage() {
     const { t } = useUITranslation();

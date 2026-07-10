@@ -79,21 +79,23 @@ plugin-template/
 │   ├── tool-server/
 │   │   ├── server.ts              # Hono server (default export)
 │   │   ├── server-node.ts         # Standalone Node.js HTTP entry
-│   │   ├── config.ts              # Registers all collections
+│   │   ├── config.ts              # Registers generated module collections
 │   │   ├── settings.ts            # Plugin settings JSON Schema
 │   │   ├── ui-nav-items.ts        # Sidebar navigation config
-│   │   ├── tools/                 # Tool collections
-│   │   ├── skills/                # Skill collections
-│   │   ├── interactions/          # Interaction collections
-│   │   ├── types/                 # Content type collections
-│   │   ├── templates/             # Rendering template collections
 │   │   └── mcp/                   # MCP provider definitions
-│   └── ui/
-│       ├── plugin.tsx             # Plugin entry (library build)
-│       ├── main.tsx               # Standalone dev entry
-│       ├── routes.tsx             # Route definitions
-│       ├── pages.tsx              # Page components
-│       └── index.css              # Tailwind CSS 4 entry
+│   ├── ui/
+│   │   ├── plugin.tsx             # Plugin entry (library build)
+│   │   ├── main.tsx               # Standalone dev entry
+│   │   ├── shell/                 # Shared app shell/layout/runtime
+│   │   ├── app-ui-entry.tsx       # Generated AppEntry selector
+│   │   ├── app-ui-modules.tsx     # Generated route/provider aggregator
+│   │   └── index.css              # Tailwind CSS 4 entry
+│   └── modules/
+│       ├── app/                   # User-owned UI and Vertesia resources
+│       │   ├── ui/routes.tsx
+│       │   └── resources/
+│       ├── assistant/             # Optional assistant UI module
+│       └── examples/              # Optional example resource module
 ├── api/
 │   └── index.js                   # Vercel serverless adapter
 ├── vite.config.ts                 # UI + dev server config (uses apiServerPlugin from @vertesia/build-tools/vite)
@@ -122,7 +124,10 @@ Builds the tool server first, then runs `vite preview` which loads the compiled 
 
 ## Creating Resources
 
-Every resource type follows the same pattern: create source files, export from a collection, register the collection in `config.ts`.
+User-owned resources live under `src/modules/app/resources/`. Every resource type follows the same pattern:
+create source files, export from a collection, and add the collection to the matching
+`src/modules/app/resources/<type>/index.ts` array. The generated `src/tool-server/app-server-modules.ts`
+collects active modules, and `src/tool-server/config.ts` imports those generated arrays.
 
 ### Tools
 
@@ -180,7 +185,7 @@ export const MyTool = {
 } satisfies Tool<MyToolParams>;
 ```
 
-**Collection** (`tools/my-collection/index.ts`):
+**Collection** (`src/modules/app/resources/tools/my-collection/index.ts`):
 
 ```typescript
 import { ToolCollection } from "@vertesia/tools-sdk";
@@ -216,7 +221,7 @@ You are an AI assistant specialized in ...
 2. Second instruction
 ```
 
-**Collection** (`skills/my-collection/index.ts`):
+**Collection** (`src/modules/app/resources/skills/my-collection/index.ts`):
 
 ```typescript
 import { SkillCollection } from "@vertesia/tools-sdk";
@@ -274,7 +279,7 @@ export default {
 } satisfies InteractionSpec;
 ```
 
-**Collection** (`interactions/my-collection/index.ts`):
+**Collection** (`src/modules/app/resources/interactions/my-collection/index.ts`):
 
 ```typescript
 import { InteractionCollection } from "@vertesia/tools-sdk";
@@ -330,7 +335,7 @@ type: document
 Generate a report based on the provided data...
 ```
 
-**Collection** (`templates/my-collection/index.ts`):
+**Collection** (`src/modules/app/resources/templates/my-collection/index.ts`):
 
 ```typescript
 import { RenderingTemplateCollection } from "@vertesia/tools-sdk";
@@ -346,29 +351,18 @@ export const MyTemplates = new RenderingTemplateCollection({
 
 ### Registering Collections
 
-All collections must be added to `src/tool-server/config.ts`:
+All user collections must be added to the matching module resource index, for example
+`src/modules/app/resources/tools/index.ts`:
 
 ```typescript
-import { ToolServerConfig } from "@vertesia/tools-sdk";
-// import your collections...
+import { MyTools } from "./my-collection/index.js";
 
-export const ServerConfig = {
-  title: "My Plugin",
-  prefix: "/api",
-  tools,
-  interactions,
-  types,
-  skills,
-  templates,
-  mcpProviders,
-  uiConfig: {
-    /* ... */
-  },
-  settings: settingsSchema,
-} satisfies ToolServerConfig;
+export const tools = [MyTools];
 ```
 
-Each resource type has an index file (`tools/index.ts`, `skills/index.ts`, etc.) that exports an array of collections. Add your collection to the appropriate array.
+Each resource type has an index file under `src/modules/app/resources/` (`tools/index.ts`,
+`skills/index.ts`, etc.) that exports an array of collections. Do not edit
+`src/tool-server/app-server-modules.ts`; it is generated from active template modules.
 
 ## UI Plugin
 
@@ -383,10 +377,12 @@ Key files:
 
 - `src/ui/plugin.tsx` -- library entry point (exports the plugin component)
 - `src/ui/main.tsx` -- standalone entry (wraps in `VertesiaShell` + `AdminApp`)
-- `src/ui/routes.tsx` -- route definitions using `NestedRouterProvider`
+- `src/ui/shell/App.tsx` -- shared shell runtime using `NestedRouterProvider`
+- `src/modules/app/ui/routes.tsx` -- user app route definitions
+- `src/ui/app-ui-entry.tsx` and `src/ui/app-ui-modules.tsx` -- generated module wiring
 - `src/ui/index.css` -- Tailwind CSS 4 with shared styles from `@vertesia/ui`
 
-The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it maps existing UI routes (from `routes.tsx`) as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
+The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it should map routes exposed by active UI modules, commonly `src/modules/app/ui/routes.tsx`, as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
 
 ## Accessibility
 
@@ -519,7 +515,7 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 
 **ESM `.js` extensions required**: All tool server imports must use `.js` extensions (`import { x } from "./foo.js"`). Missing extensions cause "Cannot find module" errors.
 
-**Must register in `config.ts`**: Creating a collection file without adding it to the appropriate index and `config.ts` means it won't be served.
+**Must export from the module resource index**: Creating a collection file without adding it to the appropriate `src/modules/app/resources/<type>/index.ts` array means it won't be served.
 
 **Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` only work in tool server code (compiled by Rollup). They are not available in UI code (compiled by Vite).
 

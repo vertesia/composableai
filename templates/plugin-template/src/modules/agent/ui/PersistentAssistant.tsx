@@ -6,7 +6,7 @@ import { useLocation } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { Bot, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ASSISTANT_INTERACTION } from '../../../ui/app/constants';
+import { ASSISTANT_INTERACTION } from '../../../ui/shell/constants';
 import type { OpenAssistantDetail } from './assistantEvents';
 import { OPEN_ASSISTANT_EVENT } from './assistantEvents';
 
