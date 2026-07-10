@@ -98,7 +98,7 @@ src/tool-server/config.ts
 src/ui/routes.tsx
 src/ui/pages.tsx
 workflow-specs/
-.claude/skills/
+.agents/skills/
 ```
 
 ### Questions to answer
