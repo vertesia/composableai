@@ -89,7 +89,7 @@ Rules of thumb:
 
 ## Plugin-Specific Conventions
 
-- ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
+- ESM with `.js` import extensions in tool-server code: `import { x } from './foo.js'`
 - Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
 - All collections must be registered in `src/tool-server/config.ts` (or its per-type index files)
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>

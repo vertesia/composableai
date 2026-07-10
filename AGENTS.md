@@ -19,13 +19,21 @@ This Git repository is a mono-repository built on top of pnpm.
 
 # Code Style
 
-- TypeScript strict mode with noUnusedLocals/Parameters
+- TypeScript strict mode with `noUnusedLocals`/`noUnusedParameters` enabled
 - ESM modules with node-next resolution
-- Use async/await with proper error handling (no floating promises)
-- Objects: use shorthand notation
-- Unused variables prefix: `_` (e.g., `_unused`)
-- Line length: 120 characters, 4-space indentation, single quotes
+- Async patterns:
+  - Use async/await with proper error handling
+  - No floating promises allowed
+  - Always catch and handle exceptions appropriately
+- Objects: use shorthand notation where applicable
+- Naming conventions:
+  - Unused variables prefix: `_` (e.g., `_unused`)
+  - Line length: 120 characters maximum
+  - Use 4-space indentation
+  - Use single quotes for strings
 - Component patterns: follow existing naming, directory structure and import patterns
-- Always use proper typing - avoid `any` when possible
+- Type safety:
+  - Always use proper typing - avoid `any` when possible
+  - Use TypeScript utility types where appropriate
 - Error handling: use proper error types and propagation, especially with async code
 - Formatting: follows `biome.json` in this repository
