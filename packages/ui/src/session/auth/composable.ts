@@ -182,7 +182,7 @@ export async function fetchComposableToken(
                 .clone()
                 .json()
                 .catch(() => undefined);
-            if (body?.code === RESTRICTED_ENVIRONMENT_ERROR_CODE) {
+            if (body?.errorCode === RESTRICTED_ENVIRONMENT_ERROR_CODE) {
                 Env.logger.warn('403: User lacks early-access for this restricted environment', {
                     vertesia: {
                         account_id: accountId,

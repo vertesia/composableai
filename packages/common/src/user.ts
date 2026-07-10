@@ -56,9 +56,6 @@ export const UserRefPopulate = 'id name email picture';
  */
 export const EARLY_ACCESS_ANNOTATION = 'early-access';
 
-/** Email domain identifying internal Vertesia employees. */
-export const VERTESIA_EMPLOYEE_EMAIL_DOMAIN = '@vertesiahq.com';
-
 /**
  * Business error code returned by the STS (token server) when a user is denied access to a
  * restricted (`preview`/`preprod`) environment because they lack the {@link EARLY_ACCESS_ANNOTATION}

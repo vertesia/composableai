@@ -3,9 +3,10 @@ export class ServerError extends Error {
     details?: string;
     /**
      * Optional machine-readable business error code. When set (and `expose` is true) it is
-     * serialized into the JSON error body so clients can branch on the specific failure.
+     * serialized into the JSON error body (as `errorCode`) so clients can branch on the specific
+     * failure. Distinct from a Node system error code (e.g. `ENOENT`).
      */
-    code?: string;
+    errorCode?: string;
     expose = true; // this will expose the error to the client - see error handling in @koa-stack/server
     constructor(msgOrCode1: string | number, msgOrCode2?: number | string, details?: string) {
         super();

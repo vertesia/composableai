@@ -9,7 +9,10 @@ import statuses from 'statuses';
 export interface ErrorObject extends Error {
     status?: number;
     statusCode?: number;
+    /** Node system error code (e.g. `ENOENT`); used for status mapping, not serialized. */
     code?: string;
+    /** Machine-readable business error code, serialized as `errorCode` when exposed. */
+    errorCode?: string;
     expose?: boolean;
     details?: string;
     ctype?: string;
@@ -36,7 +39,7 @@ export interface ErrorInfo {
     details?: string;
     error?: string;
     /** Machine-readable business error code, when the source error exposes one. */
-    code?: string;
+    errorCode?: string;
     //[key: string]: any;
 }
 
@@ -65,7 +68,7 @@ function json(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
             status: info.status,
             message: info.message,
             details: info.details,
-            code: info.code,
+            errorCode: info.errorCode,
         });
     }
     return content;
@@ -158,7 +161,7 @@ function handleResponse(ctx: Context, err: ErrorObject, opts: ErrorHandlerOpts =
     };
     if (err.expose && err.message) info.message = err.message;
     if (err.expose && err.details) info.details = err.details;
-    if (err.expose && err.code) info.code = err.code;
+    if (err.expose && err.errorCode) info.errorCode = err.errorCode;
 
     if (opts.updateErrorInfo) {
         opts.updateErrorInfo(ctx, err, info);
