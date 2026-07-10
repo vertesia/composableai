@@ -14,6 +14,7 @@ src/modules/app/
 └── resources/
     ├── activities/
     ├── interactions/
+    ├── processes/
     ├── skills/
     ├── templates/
     ├── tools/
@@ -23,6 +24,34 @@ src/modules/app/
 The shared app shell lives under `src/ui/shell`. It owns layout, top-level app routing, and common
 chrome. Keep app-specific pages, feature code, and resource definitions in this module instead of
 adding them to `src/ui/shell`.
+
+## Routes And Module Mounts
+
+The `app` module owns the root route `/`. Use it for the app home, dashboard, or a redirect to the
+module that should open first.
+
+Other UI modules should mount under stable prefixes so they compose without route conflicts. For
+example, the content app module mounts under `/content`, and an assistant/chat module may mount
+under `/chat` or `/assistant`.
+
+To make another module the app home, redirect from the app route instead of importing that module's
+page directly:
+
+```tsx
+import { redirectTo } from '@vertesia/ui/router';
+import { HomeIcon } from 'lucide-react';
+
+export const routes = [
+    {
+        path: '/',
+        label: 'nav.home',
+        icon: HomeIcon,
+        Component: redirectTo('/content'),
+    },
+];
+```
+
+Redirecting keeps the target module's internal navigation consistent with its prefix.
 
 ## Adding A UI Feature
 

@@ -2,14 +2,37 @@ import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
 import { ModeToggle } from '@vertesia/ui/core';
 import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
+import type { Route } from '@vertesia/ui/router';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { Database, HomeIcon, MessageSquare, MessagesSquare, PlusCircle, Settings } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { routes } from '../../app-ui-modules';
 import { ASSISTANT_INTERACTION } from '../constants';
 import { AppSidebarItem } from './AppSidebarItem';
 
 const SIDEBAR_RECENT_LIMIT = 3;
+
+type NavigationRoute = Route & {
+    label?: string;
+    icon?: LucideIcon;
+    hideFromNav?: boolean;
+};
+
+function routeLabel(label: string, t: (key: string) => string): string {
+    return label.includes('.') ? t(label) : label;
+}
+
+function isCurrentPath(path: string, basePath: string, routePath: string): boolean {
+    const fullRoutePath = routePath === '/' ? basePath : `${basePath}${routePath}`;
+    if (routePath === '/') return path === basePath || path === `${basePath}/`;
+    return path === fullRoutePath || path.startsWith(`${fullRoutePath}/`);
+}
+
+function hasNavigationLabel(route: NavigationRoute): route is NavigationRoute & { label: string } {
+    return Boolean(route.label && !route.hideFromNav);
+}
 
 function toWorkflowRun(run: AgentRunResponse): WorkflowRun {
     const isAgentRun = run.run_kind === 'agent';
@@ -53,8 +76,14 @@ export function PluginSidebar() {
     const { isOpen } = useSidebarToggle();
     const { client } = useUserSession();
     const [conversations, setConversations] = useState<WorkflowRun[]>([]);
+    const navigationRoutes = useMemo(() => (routes as NavigationRoute[]).filter(hasNavigationLabel), []);
+    const hasChatRoute = useMemo(() => routes.some((route) => route.path === '/chat/:agentRunId'), []);
 
     useEffect(() => {
+        if (!hasChatRoute) {
+            setConversations([]);
+            return;
+        }
         client.agents
             .list({
                 interaction: ASSISTANT_INTERACTION,
@@ -63,55 +92,26 @@ export function PluginSidebar() {
                 order: 'desc',
             })
             .then((response) => setConversations(response.items.map(toWorkflowRun)));
-    }, [client]);
+    }, [client, hasChatRoute]);
 
     return (
         <div className="flex flex-col h-full gap-2 py-2">
             <div className="flex-1 min-h-0 overflow-y-auto py-2 no-scrollbar">
                 <nav className="flex flex-col gap-2 h-full">
                     <SidebarSection>
-                        <AppSidebarItem
-                            id="menu-home"
-                            current={path === basePath || path === `${basePath}/`}
-                            icon={HomeIcon}
-                            to="/"
-                        >
-                            {t('nav.home')}
-                        </AppSidebarItem>
-                        <AppSidebarItem
-                            id="menu-objects"
-                            current={path === `${basePath}/objects`}
-                            icon={Database}
-                            to="/objects"
-                        >
-                            {t('nav.objects')}
-                        </AppSidebarItem>
-                        <AppSidebarItem
-                            id="menu-conversations"
-                            current={path === `${basePath}/conversations`}
-                            icon={MessagesSquare}
-                            to="/conversations"
-                        >
-                            {t('nav.conversations')}
-                        </AppSidebarItem>
-                        <AppSidebarItem
-                            id="menu-chat"
-                            current={path === `${basePath}/chat`}
-                            icon={PlusCircle}
-                            to="/chat"
-                        >
-                            {t('nav.newChat')}
-                        </AppSidebarItem>
-                        <AppSidebarItem
-                            id="menu-settings"
-                            current={path === `${basePath}/settings`}
-                            icon={Settings}
-                            to="/settings"
-                        >
-                            {t('nav.settings')}
-                        </AppSidebarItem>
+                        {navigationRoutes.map((route) => (
+                            <AppSidebarItem
+                                key={route.path}
+                                id={`menu-${route.path.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'home'}`}
+                                current={isCurrentPath(path, basePath, route.path)}
+                                icon={route.icon}
+                                to={route.path}
+                            >
+                                {routeLabel(route.label, t)}
+                            </AppSidebarItem>
+                        ))}
                     </SidebarSection>
-                    {conversations.length > 0 && (
+                    {hasChatRoute && conversations.length > 0 && (
                         <SidebarSection title={t('nav.recent')}>
                             {conversations.map((conv) => {
                                 const convPath = `${basePath}/chat/${conv.run_id}`;

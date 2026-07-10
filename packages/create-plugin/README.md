@@ -64,8 +64,8 @@ Templates may expose named modules. Modules are template-defined feature groups,
 
 ```bash
 create-plugin my-app --module default
-create-plugin my-app --module studio-plugin,assistant
-create-plugin my-app --module studio-plugin --module assistant
+create-plugin my-app --module assistant,examples
+create-plugin my-app --module assistant --module examples
 ```
 
 If no `--module` flag is provided, create-plugin selects the conventional `default` module.

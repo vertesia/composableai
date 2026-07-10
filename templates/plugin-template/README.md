@@ -379,6 +379,7 @@ Key files:
 - `src/ui/main.tsx` -- standalone entry (wraps in `VertesiaShell` + `AdminApp`)
 - `src/ui/shell/App.tsx` -- shared shell runtime using `NestedRouterProvider`
 - `src/modules/app/ui/routes.tsx` -- user app route definitions
+- `src/modules/content-app/` -- optional content-app module selected with `--module content-app`
 - `src/ui/app-ui-entry.tsx` and `src/ui/app-ui-modules.tsx` -- generated module wiring
 - `src/ui/index.css` -- Tailwind CSS 4 with shared styles from `@vertesia/ui`
 

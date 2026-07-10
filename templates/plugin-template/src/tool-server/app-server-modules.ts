@@ -4,6 +4,7 @@ import * as examplesResources from '../modules/examples/resources/index.js';
 
 export const activities = [...appResources.activities, ...examplesResources.activities];
 export const interactions = [...appResources.interactions, ...examplesResources.interactions];
+export const processes = [...appResources.processes, ...examplesResources.processes];
 export const skills = [...appResources.skills, ...examplesResources.skills];
 export const templates = [...appResources.templates, ...examplesResources.templates];
 export const tools = [...appResources.tools, ...examplesResources.tools];

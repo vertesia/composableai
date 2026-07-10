@@ -32,17 +32,47 @@ function runCodegen(tmpRoot, modules) {
     });
 }
 
-test('default module codegen matches checked-in generated files', () => {
+function writePackageJson(tmpRoot) {
+    fs.writeFileSync(
+        path.join(tmpRoot, 'package.json'),
+        `${JSON.stringify({ name: 'test-plugin', scripts: { build: 'pnpm build' } }, null, 4)}\n`,
+    );
+}
+
+test('dev module codegen matches checked-in generated files', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['dev']);
+
+        for (const file of generatedFiles) {
+            const expected = fs.readFileSync(path.join(templateRoot, file), 'utf8');
+            const actual = fs.readFileSync(path.join(tmpRoot, file), 'utf8');
+            assert.equal(actual, expected, `${file} should match dev codegen output`);
+        }
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('default module codegen keeps only the app module', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
         copyTemplateInputs(tmpRoot);
         runCodegen(tmpRoot, ['default']);
 
-        for (const file of generatedFiles) {
-            const expected = fs.readFileSync(path.join(templateRoot, file), 'utf8');
-            const actual = fs.readFileSync(path.join(tmpRoot, file), 'utf8');
-            assert.equal(actual, expected, `${file} should match default codegen output`);
-        }
+        const uiModules = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-modules.tsx'), 'utf8');
+        const serverModules = fs.readFileSync(path.join(tmpRoot, 'src/tool-server/app-server-modules.ts'), 'utf8');
+
+        assert.match(uiModules, /modules\/app\/ui\/routes/);
+        assert.doesNotMatch(uiModules, /modules\/assistant/);
+        assert.doesNotMatch(uiModules, /modules\/examples/);
+        assert.match(serverModules, /modules\/app\/resources\/index\.js/);
+        assert.doesNotMatch(serverModules, /modules\/examples/);
+
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
@@ -69,6 +99,37 @@ test('app-gateway module selects app-gateway entry and cleans inactive modules',
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/agent')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app-gateway')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('content-app module composes app routes and contributes resources', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        writePackageJson(tmpRoot);
+        runCodegen(tmpRoot, ['content-app']);
+
+        const uiModules = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-modules.tsx'), 'utf8');
+        const serverModules = fs.readFileSync(path.join(tmpRoot, 'src/tool-server/app-server-modules.ts'), 'utf8');
+        const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
+
+        assert.match(uiModules, /modules\/app\/ui\/routes/);
+        assert.match(uiModules, /modules\/content-app\/ui\/routes/);
+        assert.match(serverModules, /modules\/app\/resources\/index\.js/);
+        assert.match(serverModules, /modules\/content-app\/resources\/index\.js/);
+        assert.match(serverModules, /export const processes = \[/);
+        assert.equal(packageJson.scripts['seed:content'], 'node src/modules/content-app/scripts/seed-content-app.mjs');
+        assert.equal(
+            packageJson.scripts['exercise:content'],
+            'node src/modules/content-app/scripts/exercise-content-app.mjs',
+        );
+
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/content-app')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });

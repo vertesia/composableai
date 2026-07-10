@@ -117,6 +117,7 @@ Key entry points:
 - `src/ui/main.tsx` — Standalone dev entry (VertesiaShell + AdminApp at `/`, plugin at `/app/`)
 - `src/ui/shell/App.tsx` — Shared shell runtime wrapping module providers and routes
 - `src/modules/app/ui/routes.tsx` — User app route definitions
+- `src/modules/content-app/` — Optional content-app module selected with `--module content-app`
 - `src/ui/app-ui-entry.tsx` and `src/ui/app-ui-modules.tsx` — Generated module wiring
 - `src/ui/assets.ts` — `useAsset(path)` for URLs relative to the plugin bundle
 

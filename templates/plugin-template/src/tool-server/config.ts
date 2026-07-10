@@ -1,5 +1,5 @@
 import type { ToolServerConfig } from '@vertesia/tools-sdk';
-import { activities, interactions, skills, templates, tools, types } from './app-server-modules.js';
+import { activities, interactions, processes, skills, templates, tools, types } from './app-server-modules.js';
 import { mcpProviders } from './mcp/index.js';
 import settingsSchema from './settings.js';
 import uiNavItems from './ui-nav-items.js';
@@ -13,6 +13,7 @@ export const ServerConfig = {
     activities,
     interactions,
     types,
+    processes,
     skills,
     templates,
     mcpProviders,
