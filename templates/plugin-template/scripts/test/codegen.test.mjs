@@ -73,6 +73,8 @@ test('default module codegen keeps only the app module', () => {
         const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
         assert.equal(packageJson.scripts['codegen:dev'], undefined);
         assert.equal(packageJson.scripts['test:codegen'], undefined);
+        assert.equal(packageJson.scripts['seed:content'], undefined);
+        assert.equal(packageJson.scripts['exercise:content'], undefined);
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);

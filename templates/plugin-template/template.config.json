@@ -11,7 +11,7 @@
     },
     "dev": {
       "virtual": true,
-      "requires": ["assistant", "examples"]
+      "requires": ["assistant", "examples", "content-app"]
     },
     "appgen": {
       "virtual": true,

@@ -120,18 +120,20 @@ function generateUiModules(projectRoot, modules) {
         .join(', ')}];\n\n${providers}\n`);
     writeFile(projectRoot, 'src/ui/app-ui-entry.tsx', `${GENERATED_FILE_HEADER}${entryImports.join('\n')}\n`);
 }
-function applyPackageScripts(projectRoot, modules) {
-    const scripts = Object.assign({}, ...modules.map((module) => module.definition.packageScripts ?? {}));
-    if (Object.keys(scripts).length === 0)
-        return;
+function syncPackageScripts(projectRoot, config, modules) {
     const packageJsonPath = path.join(projectRoot, 'package.json');
-    if (!fs.existsSync(packageJsonPath)) {
-        throw new Error('Cannot apply module package scripts: package.json not found');
-    }
+    if (!fs.existsSync(packageJsonPath))
+        return;
     const packageJson = readJson(packageJsonPath);
+    const moduleScriptNames = new Set(Object.values(config.modules ?? {}).flatMap((module) => Object.keys(module.packageScripts ?? {})));
+    const activeScripts = Object.assign({}, ...modules.map((module) => module.definition.packageScripts ?? {}));
+    const scripts = { ...packageJson.scripts };
+    for (const scriptName of moduleScriptNames) {
+        delete scripts[scriptName];
+    }
     packageJson.scripts = {
-        ...packageJson.scripts,
         ...scripts,
+        ...activeScripts,
     };
     fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
 }
@@ -202,7 +204,7 @@ function main() {
     const shouldCleanup = context.cleanup !== false;
     generateUiModules(projectRoot, modules);
     generateServerModules(projectRoot, modules);
-    applyPackageScripts(projectRoot, modules);
+    syncPackageScripts(projectRoot, config, modules);
     if (shouldCleanup) {
         cleanupPackageScripts(projectRoot);
         cleanupInactiveModules(projectRoot, modules);

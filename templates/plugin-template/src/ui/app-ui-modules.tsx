@@ -2,7 +2,8 @@
 import { routes as appRoutes } from '../modules/app/ui/routes';
 import { AppProviders as AssistantProviders } from '../modules/assistant/ui';
 import { routes as assistantRoutes } from '../modules/assistant/ui/routes';
+import { routes as contentAppRoutes } from '../modules/content-app/ui/routes';
 
-export const routes = [...appRoutes, ...assistantRoutes];
+export const routes = [...appRoutes, ...assistantRoutes, ...contentAppRoutes];
 
 export const providers = [AssistantProviders];
