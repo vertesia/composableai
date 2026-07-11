@@ -116,7 +116,7 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                     },
                     hardness_threshold: 0.5,
                     min_citation_density: 0.3,
-                    window_pages: 6,
+                    window_pages: 3,
                     review: {
                         enabled: true,
                         // Flash + MEDIUM thinking: strong review quality at flash cost.
@@ -250,7 +250,7 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                         model: 'publishers/google/models/gemini-3.1-pro-preview',
                     },
                     hardness_threshold: 0.5,
-                    window_pages: 6,
+                    window_pages: 3,
                     update_properties: true,
                     min_citation_density: 0.3,
                     refresh_ocr: false,
