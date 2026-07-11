@@ -602,6 +602,9 @@ export interface GroundedMetadata {
     verified_citations?: number;
     reviewed_at?: string;
     generated_at?: string;
+    /** Source PDF content etag used by the grounded extraction. */
+    source_content_etag?: string | null;
+    /** @deprecated Grounded source identity is tracked by source_content_etag. */
     source_text_etag?: string | null;
     [key: string]: unknown;
 }
@@ -894,8 +897,6 @@ export interface ContentTypeExtractionGroundingReviewPolicy {
     coverage_threshold?: number;
     /** Run review regardless of hardness. */
     force?: boolean;
-    /** Apply accepted corrections back to properties. Default true. */
-    apply?: boolean;
 }
 
 export interface ContentTypeExtractionGroundingPolicy {
@@ -1111,7 +1112,7 @@ const ContentTypeExtractionGroundingPolicySchema = {
             type: 'integer',
             minimum: 1,
             description:
-                'Maximum pages per extraction call before sequential window completion (later windows append to prior). Default 6.',
+                'Maximum pages per extraction call before sequential window completion (later windows append to prior). Default 3.',
             nullable: true,
         },
         update_properties: {
@@ -1172,11 +1173,6 @@ const ContentTypeExtractionGroundingPolicySchema = {
                 force: {
                     type: 'boolean',
                     description: 'Run review regardless of hardness.',
-                    nullable: true,
-                },
-                apply: {
-                    type: 'boolean',
-                    description: 'Apply accepted corrections back to properties. Default true.',
                     nullable: true,
                 },
             },

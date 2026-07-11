@@ -10,6 +10,14 @@ import type { WorkflowRunStatus } from './workflow.js';
 export type GroundedExtractionVerdict = 'good_to_go' | 'needs_review';
 
 /**
+ * Canonical workflow id for object-scoped grounded extraction. Every entry point
+ * must use this id so Temporal prevents overlapping extraction runs per object.
+ */
+export function getGroundedExtractionWorkflowId(accountId: string, objectId: string): string {
+    return `${accountId.slice(0, 6)}:workflow_execution_request:${objectId}:grounded`;
+}
+
+/**
  * Request body to start a grounded extraction on a content object. All fields are
  * optional: with none set, the object's own content-type schema drives the
  * extraction with default models and settings.
@@ -17,7 +25,7 @@ export type GroundedExtractionVerdict = 'good_to_go' | 'needs_review';
 export interface GroundedExtractionRequest {
     /** JSON schema describing the data to extract. Takes precedence over type_ref. */
     schema?: Record<string, unknown>;
-    /** Content type id or name whose object_schema drives the extraction. */
+    /** Content type id or catalog ref whose object_schema drives the extraction. */
     type_ref?: string;
     /** Interaction to use. Defaults to sys:ExtractInformationGrounded. */
     interaction_name?: string;
@@ -47,8 +55,6 @@ export interface GroundedExtractionRequest {
     coverage_review_threshold?: number;
     /** Run the review regardless of hardness. */
     force_review?: boolean;
-    /** Apply the review corrections to the extracted data. Default: true. */
-    review_apply?: boolean;
 }
 
 /**

@@ -1,10 +1,13 @@
 import type { Command } from 'commander';
 import {
+    cancelWorkflowRun,
     createOrUpdateWorkflowDefinition,
     deleteWorkflowDefinition,
     executeWorkflowByName,
     getWorkflowDefinition,
     listWorkflowsDefinition,
+    signalWorkflowRun,
+    terminateWorkflowRun,
     transpileWorkflow,
 } from './commands.js';
 import { streamRun } from './streams.js';
@@ -38,6 +41,24 @@ export function registerWorkflowsCommand(program: Command) {
         .option('--since <timestamp>', 'Stream only messages after this timestamp')
         .option('-i, --interactive', 'Enable interactive mode to send messages to the workflow', false)
         .action((workflowId, runId, options) => streamRun(workflowId, runId, program, options));
+
+    workflows
+        .command('terminate <workflowId> <runId>')
+        .description('Terminate a running workflow (forceful; no cleanup handlers run)')
+        .option('-r, --reason [reason]', 'Optional reason recorded on the termination')
+        .action((workflowId, runId, options) => terminateWorkflowRun(program, workflowId, runId, options));
+
+    workflows
+        .command('cancel <workflowId> <runId>')
+        .description('Cancel a running workflow (graceful; cancellation handlers run)')
+        .option('-r, --reason [reason]', 'Optional reason recorded on the cancellation')
+        .action((workflowId, runId, options) => cancelWorkflowRun(program, workflowId, runId, options));
+
+    workflows
+        .command('signal <workflowId> <runId> <signal>')
+        .description('Send a named signal to a running workflow')
+        .option('-d, --data [json]', 'Optional JSON payload to send with the signal')
+        .action((workflowId, runId, signal, options) => signalWorkflowRun(program, workflowId, runId, signal, options));
 
     definitions
         .command('transpile <files...>')
