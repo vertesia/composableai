@@ -99,7 +99,7 @@ src/modules/app/ui/pages/
 src/tool-server/config.ts
 src/tool-server/app-server-modules.ts
 workflow-specs/
-.claude/skills/
+.agents/skills/
 ```
 
 ### Questions to answer
