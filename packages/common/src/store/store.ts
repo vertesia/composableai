@@ -581,8 +581,29 @@ export interface DocumentMetadata extends ContentMetadata {
         image_count?: number;
         zone_count?: number;
         needs_ocr_count?: number;
+        /** Fingerprint of source+policy used for custom conversion, to skip re-converting unchanged docs. */
+        conversion_fingerprint?: string;
     };
+    /**
+     * Grounded-extraction trust signal + key data. Written by the grounded pipeline
+     * (verdict, confidence, citation counts, review status, source etag, ...) and
+     * queryable for list/filter. Open-ended so more grounded key-data can be stored
+     * without a type change.
+     */
+    grounded?: GroundedMetadata;
     sections?: TextSection[]; // List of sections with descriptions and line indexes
+}
+
+/** Grounded-extraction summary stored on document metadata. Additional keys allowed. */
+export interface GroundedMetadata {
+    verdict?: string;
+    confidence?: number;
+    citation_count?: number;
+    verified_citations?: number;
+    reviewed_at?: string;
+    generated_at?: string;
+    source_text_etag?: string | null;
+    [key: string]: unknown;
 }
 
 export interface Transcript {
