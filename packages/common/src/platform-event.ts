@@ -84,9 +84,9 @@ export type WorkflowLifecycleAction = 'workflow_completed' | 'workflow_failed';
 /**
  * Resource flavor of a workflow lifecycle event, derived from the Temporal workflow type:
  * ExecuteConversationWorkflow -> agent_run, ExecuteProcessWorkflow -> process_run,
- * anything else -> workflow_run.
+ * document-scoped workflows may use content_object, and anything else -> workflow_run.
  */
-export type WorkflowLifecycleResourceType = 'workflow_run' | 'agent_run' | 'process_run';
+export type WorkflowLifecycleResourceType = 'workflow_run' | 'agent_run' | 'process_run' | 'content_object';
 
 /**
  * Body of POST /internal/events/publish (zeno-server, workload-identity gated). Sent by Temporal
@@ -98,6 +98,8 @@ export interface PublishWorkflowLifecycleEventRequest {
     project_id: string;
     action: WorkflowLifecycleAction;
     resource_type: WorkflowLifecycleResourceType;
+    /** Domain resource the workflow acted on. Defaults to workflow_id for workflow-scoped events. */
+    resource_id?: string;
     workflow_id: string;
     workflow_run_id: string;
     workflow_type: string;
