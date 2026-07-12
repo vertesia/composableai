@@ -37,6 +37,19 @@ export interface GroundedExtractionRequest {
     refresh_ocr?: boolean;
     /** Attach page images to the extraction prompt so hard pages can be read visually. */
     use_vision?: boolean;
+    /**
+     * A1 locate-grid cell size in PDF points for vision pages (drives both the drawn
+     * grid and cell→box resolution). Smaller = finer grid / more cells (10 ≈ half the
+     * default). Default: 20.
+     */
+    grid_cell_pt?: number;
+    /**
+     * How to read pages that have no digital text layer (scans / image-only pages).
+     * 'vision' (default): read them off the page image with the extraction model,
+     * skipping OCR entirely. 'ocr': legacy path — OCR those pages and block-ground on
+     * the (lossy) OCR text. Set to 'ocr' to revert to the pre-vision behavior.
+     */
+    raster_mode?: 'vision' | 'ocr';
     /** Maximum pages per extraction call; larger documents are split into sequential windows. */
     window_pages?: number;
     /** Update the object's properties with the extracted data. Default: true. */

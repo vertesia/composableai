@@ -911,6 +911,18 @@ export interface ContentTypeExtractionGroundingPolicy {
     /** Attach instrumented page images to the grounded extraction prompt. */
     use_vision?: boolean;
     /**
+     * How to read pages with no digital text layer (scans / image-only pages).
+     * 'vision' (default): read them off the page image and skip OCR. 'ocr': legacy
+     * path — OCR those pages and block-ground on the (lossy) OCR text.
+     */
+    raster_mode?: 'vision' | 'ocr';
+    /**
+     * A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid
+     * (more cells, tighter boxes) but can trip weaker models into over-reading;
+     * tune per the model in `config`. Default 20.
+     */
+    grid_cell_pt?: number;
+    /**
      * Drop block bounding boxes from the extraction prompt. Only sound with
      * use_vision (layout comes from the image).
      */
@@ -1101,6 +1113,20 @@ const ContentTypeExtractionGroundingPolicySchema = {
         use_vision: {
             type: 'boolean',
             description: 'Attach instrumented page images to the grounded extraction prompt.',
+            nullable: true,
+        },
+        raster_mode: {
+            type: 'string',
+            enum: ['vision', 'ocr'],
+            description:
+                "How to read pages with no digital text layer (scans). 'vision' (default) reads off the page image and skips OCR; 'ocr' is the legacy OCR-then-block-ground path.",
+            nullable: true,
+        },
+        grid_cell_pt: {
+            type: 'number',
+            minimum: 1,
+            description:
+                'A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid; tune per the model in config. Default 20.',
             nullable: true,
         },
         omit_block_boxes: {

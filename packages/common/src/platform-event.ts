@@ -3,6 +3,7 @@ import type { ConversationVisibility, InteractionExecutionConfiguration } from '
 import type { SystemRoles } from './project.js';
 import type {
     AgentRunStatus,
+    GroundedVerificationBreakdown,
     JsonLogicRule,
     ProcessDefinitionBody,
     ProcessRunType,
@@ -81,6 +82,38 @@ export interface PlatformEvent extends EventRef {
  */
 export type WorkflowLifecycleAction = 'workflow_completed' | 'workflow_failed';
 
+export interface DocumentProcessingModelUsage {
+    role: 'extraction' | 'review';
+    run_id: string;
+    model?: string;
+    environment_id?: string;
+    provider?: string;
+}
+
+/** Compact, content-free operational summary emitted after grounded IDP completes. */
+export interface DocumentProcessedEventData {
+    schema_version: 1;
+    pipeline: 'grounded_extraction';
+    object_id: string;
+    page_count: number;
+    ocr_page_count: number;
+    vision_page_count: number;
+    property_count: number;
+    citation_count: number;
+    verification: GroundedVerificationBreakdown;
+    result_path: string;
+    confidence?: number;
+    coverage_min?: number;
+    hardness?: number;
+    escalated?: boolean;
+    reviewed?: boolean;
+    review_issue_count?: number;
+    verdict?: 'good_to_go' | 'needs_review';
+    verdict_reason?: string;
+    models_used?: DocumentProcessingModelUsage[];
+    review_agent_run_id?: string;
+}
+
 /**
  * Resource flavor of a workflow lifecycle event, derived from the Temporal workflow type:
  * ExecuteConversationWorkflow -> agent_run, ExecuteProcessWorkflow -> process_run,
@@ -112,6 +145,8 @@ export interface PublishWorkflowLifecycleEventRequest {
     error?: string;
     /** EventRef of the event that started the workflow (payload.vars.event_ref), if any. */
     caused_by?: EventRef;
+    /** Optional IDP outcome published as a separate, subscribable content event. */
+    document_processed?: DocumentProcessedEventData;
 }
 
 /**
