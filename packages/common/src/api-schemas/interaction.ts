@@ -81,6 +81,32 @@ export const BatchPoolInfoSchema = z
 
 export const BatchPoolInfoArraySchema = z.array(BatchPoolInfoSchema).meta({ id: 'BatchPoolInfoArray' });
 
+export const ListInferenceBatchesQuerySchema = z
+    .strictObject({ status: InferenceBatchStatusSchema.optional() })
+    .meta({ id: 'ListInferenceBatchesQuery' });
+
+export const BatchReconcileRequestSchema = z
+    .strictObject({
+        account_id: z.string(),
+        project_id: z.string(),
+        max_pools: z.number().int().min(1).max(100).optional(),
+        max_batches: z.number().int().min(1).max(100).optional(),
+    })
+    .meta({ id: 'BatchReconcileRequest' });
+
+export const BatchReconcileResponseSchema = z
+    .strictObject({
+        dispatched: z.number().int(),
+        synchronous: z.number().int(),
+        polled: z.number().int(),
+        completed: z.number().int(),
+        failed: z.number().int(),
+        errors: z.number().int(),
+        has_more_work: z.boolean(),
+        next_poll_after_ms: z.number().int().optional(),
+    })
+    .meta({ id: 'BatchReconcileResponse' });
+
 export const FacetSpecSchema = z
     .strictObject({
         name: z.string(),

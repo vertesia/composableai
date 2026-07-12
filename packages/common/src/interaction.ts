@@ -19,6 +19,8 @@ import type {
     AsyncExecutionPayloadSchema,
     AsyncExecutionResultSchema,
     AsyncInteractionExecutionPayloadSchema,
+    BatchReconcileRequestSchema,
+    BatchReconcileResponseSchema,
     BatchPoolInfoSchema,
     CachePolicySchema,
     CatalogInteractionRefSchema,
@@ -53,6 +55,7 @@ import type {
     InteractionUpdatePayloadSchema,
     InteractionVisibilitySchema,
     InferenceBatchSchema,
+    ListInferenceBatchesQuerySchema,
     NamedInteractionExecutionPayloadSchema,
     PromptImprovementResponseSchema,
     PromptModalitiesSchema,
@@ -312,7 +315,34 @@ export enum InferenceBatchStatus {
 
 export type InferenceBatch = z.infer<typeof InferenceBatchSchema>;
 
+export type ListInferenceBatchesQuery = z.infer<typeof ListInferenceBatchesQuerySchema>;
+
 export type BatchPoolInfo = z.infer<typeof BatchPoolInfoSchema>;
+
+export type BatchReconcilerWakeReason = 'startup' | 'run_parked' | 'scheduled';
+
+/** A tenant whose batch accumulator should be reconciled. */
+export interface BatchReconcilerTenant {
+    account_id: string;
+    project_id: string;
+}
+
+/** Durable wake-up sent to the singleton reconciler. */
+export interface BatchReconcilerWake extends Partial<BatchReconcilerTenant> {
+    reason: BatchReconcilerWakeReason;
+}
+
+/** Initial/continuation state for the singleton reconciler workflow. */
+export interface BatchReconcilerWorkflowInput {
+    studio_url: string;
+    studio_audience?: string;
+    pending?: Array<BatchReconcilerTenant & { due_at: number }>;
+    cycles?: number;
+}
+
+export type BatchReconcileRequest = z.infer<typeof BatchReconcileRequestSchema>;
+
+export type BatchReconcileResponse = z.infer<typeof BatchReconcileResponseSchema>;
 /**
  * Schema can be stored or specified as a reference to an external schema.
  * We only support "store:" references for now
