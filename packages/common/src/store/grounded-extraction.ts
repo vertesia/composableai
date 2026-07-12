@@ -66,7 +66,7 @@ export interface GroundedExtractionRequest {
     review_threshold?: number;
     /** Review triggers when any page's citation coverage falls below this floor. Default: 0.2. */
     coverage_review_threshold?: number;
-    /** Run the review regardless of hardness. */
+    /** Run the model review even when every citation was digitally verified. Requires review_config. */
     force_review?: boolean;
 }
 
