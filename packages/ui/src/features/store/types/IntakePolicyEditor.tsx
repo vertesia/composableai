@@ -7,15 +7,21 @@ import {
     MenuGroup,
     MenuItem,
     Panel,
+    Tabs,
+    TabsBar,
+    TabsPanel,
     useTheme,
     useToast,
 } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { type EditorApi, type Monaco, MonacoEditor } from '@vertesia/ui/widgets';
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
+import type { TFunction } from 'i18next';
 import { Braces, CheckCircle2, FileText, RotateCcw, Save, WandSparkles } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import { IntakePolicyForm, type IntakePolicyFormSection } from './IntakePolicyForm.js';
 
 interface IntakePolicyEditorProps {
     /** Content type whose intake policy is edited; omit when editing a standalone policy. */
@@ -40,16 +46,12 @@ type IntakeExampleKey =
 
 interface IntakeExample {
     key: IntakeExampleKey;
-    label: string;
-    description: string;
     value: ContentTypeIntakePolicy;
 }
 
 const INTAKE_EXAMPLES: IntakeExample[] = [
     {
         key: 'minimal',
-        label: 'Minimal',
-        description: 'Use project defaults and add only type-selection guidance.',
         value: {
             identification: {
                 guidance: 'Documents that match this content type.',
@@ -59,8 +61,6 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
     },
     {
         key: 'extraction_only',
-        label: 'Extraction Only',
-        description: 'Extract properties visually, render a compact text summary, and keep the source view.',
         value: {
             text_conversion: {
                 enabled: false,
@@ -81,9 +81,6 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
     },
     {
         key: 'grounded',
-        label: 'Grounded Extraction',
-        description:
-            'Extract with PDF block-level citations, verification scores and an annotated proof document. Escalates and reviews hard scans.',
         value: {
             extraction: {
                 enabled: true,
@@ -140,8 +137,6 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
     },
     {
         key: 'visual_first',
-        label: 'Visual First',
-        description: 'Use visual evidence for PDFs, scans, PowerPoint files, diagrams, and layout-heavy content.',
         value: {
             identification: {
                 guidance: 'Presentation decks or visual reports with slides, charts, diagrams, tables, or callouts.',
@@ -161,8 +156,6 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
     },
     {
         key: 'structured_spreadsheet',
-        label: 'Spreadsheet Text',
-        description: 'Use structured worksheet text for Excel/CSV files.',
         value: {
             text_conversion: {
                 enabled: true,
@@ -179,8 +172,6 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
     },
     {
         key: 'media_no_transcript',
-        label: 'Media, No Transcript',
-        description: 'Disable transcription/conversion while preserving property extraction settings.',
         value: {
             text_conversion: {
                 enabled: false,
@@ -195,8 +186,6 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
     },
     {
         key: 'full_reference',
-        label: 'Full Reference',
-        description: 'Every available option with representative values. Trim to what your type needs.',
         value: {
             mode: 'programmatic',
             identification: {
@@ -289,6 +278,7 @@ export function IntakePolicyEditor({
     readonly = false,
 }: IntakePolicyEditorProps) {
     const { store } = useUserSession();
+    const { t } = useUITranslation();
     const toast = useToast();
     const { theme } = useTheme();
     const editorRef = useRef<EditorApi | undefined>(undefined);
@@ -299,9 +289,13 @@ export function IntakePolicyEditor({
     const [editorValue, setEditorValue] = useState(() => stringifyPolicy(initialPolicy));
     const [savedValue, setSavedValue] = useState(() => stringifyPolicy(initialPolicy));
     const [validationMessage, setValidationMessage] = useState<string | undefined>(undefined);
+    const [activeTab, setActiveTab] = useState<IntakePolicyFormSection | 'json'>('overview');
 
     const isDirty = editorValue !== savedValue;
-    const currentPolicy = useMemo(() => parsePolicyOrUndefined(editorValue), [editorValue]);
+    const currentPolicy = useMemo(() => {
+        const result = parseAndValidatePolicy(editorValue, validatePolicy);
+        return result.ok ? result.policy : undefined;
+    }, [editorValue, validatePolicy]);
     const summaryPolicy = currentPolicy ?? initialPolicy ?? EMPTY_POLICY;
 
     const beforeMount = (monaco: Monaco) => {
@@ -327,7 +321,7 @@ export function IntakePolicyEditor({
     };
 
     const validateCurrentEditorValue = () => {
-        const value = editorRef.current?.getValue() ?? editorValue;
+        const value = activeTab === 'json' ? (editorRef.current?.getValue() ?? editorValue) : editorValue;
         const result = parseAndValidatePolicy(value, validatePolicy);
         if (!result.ok) {
             setValidationMessage(result.message);
@@ -362,15 +356,15 @@ export function IntakePolicyEditor({
                 onIntakeUpdate?.(saved ?? policy);
                 toast({
                     status: 'success',
-                    title: 'Intake policy updated',
-                    description: 'The type intake policy has been saved.',
+                    title: t('intakePolicy.toast.updated'),
+                    description: t('intakePolicy.toast.saved'),
                     duration: 2000,
                 });
             })
             .catch((err: unknown) => {
                 toast({
                     status: 'error',
-                    title: 'Failed to update intake policy',
+                    title: t('intakePolicy.toast.updateFailed'),
                     description: errorMessage(err),
                     duration: 5000,
                 });
@@ -381,11 +375,13 @@ export function IntakePolicyEditor({
     };
 
     const onValidate = () => {
-        const policy = validateCurrentEditorValue();
+        const value = activeTab === 'json' ? (editorRef.current?.getValue() ?? editorValue) : editorValue;
+        const result = parseAndValidatePolicy(value, validatePolicy);
+        setValidationMessage(result.ok ? undefined : result.message);
         toast({
-            status: policy ? 'success' : 'error',
-            title: policy ? 'Valid intake policy' : 'Invalid intake policy',
-            description: policy ? 'The JSON is valid and matches the intake policy schema.' : validationMessage,
+            status: result.ok ? 'success' : 'error',
+            title: result.ok ? t('intakePolicy.toast.valid') : t('intakePolicy.toast.invalid'),
+            description: result.ok ? t('intakePolicy.toast.schemaValid') : result.message,
             duration: 3000,
         });
     };
@@ -411,12 +407,28 @@ export function IntakePolicyEditor({
         setEditorValue(value);
         editorRef.current?.setValue(value);
         setValidationMessage(undefined);
+        setActiveTab('overview');
+    };
+
+    const onFormChange = (policy: ContentTypeIntakePolicy) => {
+        setEditorValue(stringifyPolicy(policy));
+        setValidationMessage(undefined);
+    };
+
+    const onTabChange = (tab: string) => {
+        const nextTab = tab as IntakePolicyFormSection | 'json';
+        if (nextTab !== 'json' && !currentPolicy) {
+            setValidationMessage(t('intakePolicy.error.fixJsonBeforeForm'));
+            setActiveTab('json');
+            return;
+        }
+        setActiveTab(nextTab);
     };
 
     const title = (
         <div className="flex items-center gap-2">
-            <div className="text-base font-semibold">Intake Policy</div>
-            {isDirty && <Badge variant="attention">Unsaved</Badge>}
+            <div className="text-base font-semibold">{t('intakePolicy.title')}</div>
+            {isDirty && <Badge variant="attention">{t('intakePolicy.status.unsaved')}</Badge>}
         </div>
     );
 
@@ -427,62 +439,119 @@ export function IntakePolicyEditor({
                 trigger={
                     <Button variant="outline" size="sm">
                         <WandSparkles className="size-4" />
-                        Examples
+                        {t('intakePolicy.action.examples')}
                     </Button>
                 }
             >
-                <MenuGroup label="Insert example">
+                <MenuGroup label={t('intakePolicy.action.insertExample')}>
                     {INTAKE_EXAMPLES.map((example) => (
                         <MenuItem key={example.key} onClick={() => insertExample(example)}>
                             <FileText className="size-4" />
                             <div className="flex flex-col">
-                                <span>{example.label}</span>
-                                <span className="text-xs text-muted">{example.description}</span>
+                                <span>{t(`intakePolicy.example.${example.key}.label`)}</span>
+                                <span className="text-xs text-muted">
+                                    {t(`intakePolicy.example.${example.key}.description`)}
+                                </span>
                             </div>
                         </MenuItem>
                     ))}
                 </MenuGroup>
             </Dropdown>
-            <Button variant="outline" size="sm" onClick={onFormat}>
-                <Braces className="size-4" />
-                Format
-            </Button>
-            <Button variant="outline" size="sm" onClick={onValidate}>
-                <CheckCircle2 className="size-4" />
-                Validate
-            </Button>
+            {activeTab === 'json' && (
+                <>
+                    <Button variant="outline" size="sm" onClick={onFormat}>
+                        <Braces className="size-4" />
+                        {t('intakePolicy.action.format')}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={onValidate}>
+                        <CheckCircle2 className="size-4" />
+                        {t('intakePolicy.action.validate')}
+                    </Button>
+                </>
+            )}
             <Button variant="outline" size="sm" onClick={onRevert} disabled={!isDirty}>
                 <RotateCcw className="size-4" />
-                Revert
+                {t('intakePolicy.action.revert')}
             </Button>
             <Button isLoading={isUpdating} size="sm" onClick={onSave} disabled={!isDirty}>
                 <Save className="size-4" />
-                Save
+                {t('intakePolicy.action.save')}
             </Button>
         </>
     ) : undefined;
 
     return (
         <Panel title={title} className="bg-background! h-full" action={action}>
-            <div className="flex h-full min-h-0 gap-4">
-                <div className="flex min-w-0 flex-1 flex-col gap-3">
-                    <IntakeSummary policy={summaryPolicy} />
-                    {validationMessage && (
-                        <div className="rounded-sm border border-destructive bg-mixer-destructive/10 px-3 py-2 text-sm text-destructive">
-                            {validationMessage}
-                        </div>
-                    )}
-                    <div className="min-h-0 flex-1 overflow-hidden rounded-sm border">
+            <div className="flex h-full min-h-0 flex-col gap-3">
+                <IntakeSummary policy={summaryPolicy} />
+                {validationMessage && (
+                    <div className="rounded-sm border border-destructive bg-mixer-destructive/10 px-3 py-2 text-sm whitespace-pre-line text-destructive">
+                        {validationMessage}
+                    </div>
+                )}
+                <Tabs
+                    tabs={createEditorTabs(t, currentPolicy ?? EMPTY_POLICY, readonly, onFormChange, editorValue, {
+                        editorRef,
+                        beforeMount,
+                        onChange: (value) => {
+                            setEditorValue(value);
+                            setValidationMessage(undefined);
+                        },
+                        theme,
+                    })}
+                    current={activeTab}
+                    onTabChange={onTabChange}
+                    updateHash={false}
+                    responsive
+                    fullHeight
+                    className="px-0"
+                >
+                    <TabsBar sticky />
+                    <TabsPanel className="min-h-0 flex-1 overflow-auto pt-1" />
+                </Tabs>
+            </div>
+        </Panel>
+    );
+}
+
+function createEditorTabs(
+    t: TFunction,
+    policy: ContentTypeIntakePolicy,
+    readonly: boolean,
+    onChange: (policy: ContentTypeIntakePolicy) => void,
+    editorValue: string,
+    json: {
+        editorRef: { current: EditorApi | undefined };
+        beforeMount: (monaco: Monaco) => void;
+        onChange: (value: string) => void;
+        theme: string;
+    },
+) {
+    const formTab = (name: IntakePolicyFormSection, label: string) => ({
+        name,
+        label,
+        content: <IntakePolicyForm policy={policy} section={name} onChange={onChange} readonly={readonly} />,
+    });
+
+    return [
+        formTab('overview', t('intakePolicy.tab.overview')),
+        formTab('conversion', t('intakePolicy.tab.conversion')),
+        formTab('extraction', t('intakePolicy.tab.extraction')),
+        formTab('grounding', t('intakePolicy.tab.grounding')),
+        formTab('output', t('intakePolicy.tab.output')),
+        {
+            name: 'json',
+            label: t('intakePolicy.tab.json'),
+            content: (
+                <div className="flex h-full min-h-[36rem] gap-4 py-3">
+                    <div className="min-w-0 flex-1 overflow-hidden rounded-sm border">
                         <MonacoEditor
                             value={editorValue}
                             language="json"
-                            editorRef={editorRef}
-                            beforeMount={beforeMount}
-                            onChange={(update) => {
-                                setEditorValue(update.state.doc.toString());
-                                setValidationMessage(undefined);
-                            }}
-                            theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                            editorRef={json.editorRef}
+                            beforeMount={json.beforeMount}
+                            onChange={(update) => json.onChange(update.state.doc.toString())}
+                            theme={json.theme === 'dark' ? 'vs-dark' : 'vs'}
                             options={{
                                 readOnly: readonly,
                                 minimap: { enabled: false },
@@ -496,25 +565,29 @@ export function IntakePolicyEditor({
                             }}
                         />
                     </div>
+                    <IntakeHelp />
                 </div>
-                <IntakeHelp />
-            </div>
-        </Panel>
-    );
+            ),
+        },
+    ];
 }
 
 function IntakeSummary({ policy }: { policy: ContentTypeIntakePolicy }) {
+    const { t } = useUITranslation();
     const grounding = policy.extraction?.grounding;
     const values = [
-        ['Mode', policy.mode ?? 'inherit'],
-        ['Conversion', enabledLabel(policy.text_conversion?.enabled)],
-        ['Method', policy.text_conversion?.method ?? 'inherit'],
-        ['Source', policy.extraction?.source ?? 'inherit'],
-        ['Extraction', enabledLabel(policy.extraction?.enabled)],
-        ['Grounding', enabledLabel(grounding?.enabled)],
-        ['Default View', policy.default_view ?? 'inherit'],
-        ['TOC', enabledLabel(policy.generate_toc)],
-        ['Template', policy.rendering_template ? 'set' : 'inherit'],
+        [t('intakePolicy.summary.mode'), optionLabel(t, policy.mode)],
+        [t('intakePolicy.summary.conversion'), enabledLabel(t, policy.text_conversion?.enabled)],
+        [t('intakePolicy.summary.method'), optionLabel(t, policy.text_conversion?.method)],
+        [t('intakePolicy.summary.source'), optionLabel(t, policy.extraction?.source)],
+        [t('intakePolicy.summary.extraction'), enabledLabel(t, policy.extraction?.enabled)],
+        [t('intakePolicy.summary.grounding'), enabledLabel(t, grounding?.enabled)],
+        [t('intakePolicy.summary.defaultView'), optionLabel(t, policy.default_view)],
+        [t('intakePolicy.summary.toc'), enabledLabel(t, policy.generate_toc)],
+        [
+            t('intakePolicy.summary.template'),
+            policy.rendering_template ? t('intakePolicy.option.set') : t('intakePolicy.option.inherit'),
+        ],
     ];
 
     return (
@@ -530,33 +603,19 @@ function IntakeSummary({ policy }: { policy: ContentTypeIntakePolicy }) {
 }
 
 function IntakeHelp() {
+    const { t } = useUITranslation();
     return (
         <aside className="hidden w-80 shrink-0 overflow-y-auto rounded-sm border bg-mixer-muted/20 p-3 text-sm lg:block">
-            <div className="mb-3 font-semibold">Field Guide</div>
+            <div className="mb-3 font-semibold">{t('intakePolicy.help.title')}</div>
             <div className="space-y-3 text-muted">
-                <HelpItem label="identification" text="Guidance for automatic type selection before extraction." />
-                <HelpItem
-                    label="text_conversion"
-                    text="Controls markdown/text generation. Set enabled=false for extraction-only types."
-                />
-                <HelpItem
-                    label="extraction.source"
-                    text="auto chooses text or vision. text is text only. vision is image/PDF evidence. mixed sends both."
-                />
-                <HelpItem
-                    label="extraction.grounding"
-                    text="PDF block-level citations and annotated proof for property extraction. Set enabled=true and a config model."
-                />
-                <HelpItem
-                    label="extraction.grounding.review"
-                    text="Optional strong-model review on hard or low-coverage pages. coverage_threshold triggers review on missed content."
-                />
-                <HelpItem
-                    label="rendering_template"
-                    text="Handlebars template used to materialize extracted properties into object text."
-                />
-                <HelpItem label="embeddings" text="Optional per-type text/image/properties embedding switches." />
-                <HelpItem label="default_view" text="Preferred first view for objects of this type." />
+                <HelpItem label="identification" text={t('intakePolicy.help.identification')} />
+                <HelpItem label="text_conversion" text={t('intakePolicy.help.textConversion')} />
+                <HelpItem label="extraction.source" text={t('intakePolicy.help.extractionSource')} />
+                <HelpItem label="extraction.grounding" text={t('intakePolicy.help.grounding')} />
+                <HelpItem label="extraction.grounding.review" text={t('intakePolicy.help.review')} />
+                <HelpItem label="rendering_template" text={t('intakePolicy.help.renderingTemplate')} />
+                <HelpItem label="embeddings" text={t('intakePolicy.help.embeddings')} />
+                <HelpItem label="default_view" text={t('intakePolicy.help.defaultView')} />
             </div>
         </aside>
     );
@@ -571,22 +630,18 @@ function HelpItem({ label, text }: { label: string; text: string }) {
     );
 }
 
-function enabledLabel(value: boolean | undefined) {
-    if (value === true) return 'enabled';
-    if (value === false) return 'disabled';
-    return 'inherit';
+function enabledLabel(t: TFunction, value: boolean | undefined) {
+    if (value === true) return t('intakePolicy.option.enabled');
+    if (value === false) return t('intakePolicy.option.disabled');
+    return t('intakePolicy.option.inherit');
+}
+
+function optionLabel(t: TFunction, value: string | undefined) {
+    return value ? t(`intakePolicy.option.${value}`) : t('intakePolicy.option.inherit');
 }
 
 function stringifyPolicy(policy: ContentTypeIntakePolicy | undefined) {
     return JSON.stringify(policy ?? EMPTY_POLICY, null, 2);
-}
-
-function parsePolicyOrUndefined(content: string) {
-    try {
-        return JSON.parse(content) as ContentTypeIntakePolicy;
-    } catch {
-        return undefined;
-    }
 }
 
 function createPolicyValidator() {
