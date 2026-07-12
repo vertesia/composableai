@@ -6,6 +6,7 @@ export * from './client.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';
 export * from './InteractionOutput.js';
+export { default as InternalBatchesApi } from './InternalBatchesApi.js';
 export { default as InternalSecretsApi } from './InternalSecretsApi.js';
 export { default as OAuthClientsApi } from './OAuthClientsApi.js';
 export { default as OAuthGrantsApi } from './OAuthGrantsApi.js';

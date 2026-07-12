@@ -450,6 +450,10 @@ export interface InferenceBatch {
     updated_at: string;
 }
 
+export interface ListInferenceBatchesQuery {
+    status?: InferenceBatchStatus;
+}
+
 /** A pending accumulator pool: `created` batch-eligible runs grouped by (environment, model). */
 export interface BatchPoolInfo {
     environment: string;
@@ -460,6 +464,45 @@ export interface BatchPoolInfo {
     oldest_age_ms: number;
     batch_only: number;
     batch_preferred: number;
+}
+
+export type BatchReconcilerWakeReason = 'startup' | 'run_parked' | 'scheduled';
+
+/** A tenant whose batch accumulator should be reconciled. */
+export interface BatchReconcilerTenant {
+    account_id: string;
+    project_id: string;
+}
+
+/** Durable wake-up sent to the singleton reconciler. */
+export interface BatchReconcilerWake extends Partial<BatchReconcilerTenant> {
+    reason: BatchReconcilerWakeReason;
+}
+
+/** Initial/continuation state for the singleton reconciler workflow. */
+export interface BatchReconcilerWorkflowInput {
+    studio_url: string;
+    studio_audience?: string;
+    pending?: Array<BatchReconcilerTenant & { due_at: number }>;
+    cycles?: number;
+}
+
+/** Request accepted by the Google-authenticated Studio internal endpoint. */
+export interface BatchReconcileRequest extends BatchReconcilerTenant {
+    max_pools?: number;
+    max_batches?: number;
+}
+
+/** Bounded work summary returned to the Temporal activity. */
+export interface BatchReconcileResponse {
+    dispatched: number;
+    synchronous: number;
+    polled: number;
+    completed: number;
+    failed: number;
+    errors: number;
+    has_more_work: boolean;
+    next_poll_after_ms?: number;
 }
 
 export enum RunDataStorageLevel {

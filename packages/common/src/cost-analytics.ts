@@ -122,6 +122,8 @@ export interface ModelPricing {
     model: string;
     provider?: string;
     provider_account_id?: string;
+    /** Inference delivery class this price applies to. Legacy rows default to `standard`. */
+    pricing_mode?: 'standard' | 'batch';
     input_price_per_m_tokens: number;
     cached_input_price_per_m_tokens?: number;
     cache_write_input_price_per_m_tokens?: number;
@@ -133,6 +135,8 @@ export interface ModelPriceComparison {
     model: string;
     provider?: string;
     provider_account_id?: string;
+    /** Inference delivery class this price applies to. Legacy rows default to `standard`. */
+    pricing_mode?: 'standard' | 'batch';
     list_price_date?: string;
     effective_from?: string;
     effective_to?: string;
