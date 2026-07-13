@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/studio-utils",
-    "version": "1.5.0-dev.20260713.113008Z",
+    "version": "1.5.0-dev",
     "type": "module",
     "description": "Shared utilities for Vertesia studio: prompt template rendering, schema-based mock data generation, prompt and interaction validation helpers.",
     "main": "./lib/index.js",
