@@ -52,6 +52,15 @@ export interface GroundedExtractionRequest {
     raster_mode?: 'vision' | 'ocr';
     /** Maximum pages per extraction call; larger documents are split into sequential windows. */
     window_pages?: number;
+    /**
+     * Extract with an autonomous agent (views the whole document at once) instead of
+     * the deterministic windowed pipeline. Sidesteps window-boundary splits on long
+     * documents. The workflow stages the artifacts into an agent space, runs a
+     * conversation agent that writes the extraction, then folds it back.
+     */
+    agentic_extraction?: boolean;
+    /** Agent interaction for agentic_extraction. Defaults to sys:GeneralAgent. */
+    extract_agent?: string;
     /** Update the object's properties with the extracted data. Default: true. */
     update_properties?: boolean;
     /** LLM execution configuration (model, environment, ...) for the main pass. */
