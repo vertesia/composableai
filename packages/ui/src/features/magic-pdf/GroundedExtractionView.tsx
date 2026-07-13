@@ -385,16 +385,30 @@ function GroundedExtractionViewImpl({
                                 {extraction.hardness.escalated ? ' ↑' : ''}
                             </Badge>
                         )}
-                        {typeof extraction.confidence === 'number' && (
-                            <Badge
-                                variant={extraction.confidence >= 0.95 ? 'success' : 'attention'}
-                                title={t('grounded.confidenceHint')}
-                            >
-                                {t('grounded.confidence', {
-                                    percent: Math.floor(extraction.confidence * 100),
-                                })}
-                            </Badge>
-                        )}
+                        {extraction.citations.length > 0 &&
+                            (() => {
+                                // Real verification: fraction of values actually confirmed —
+                                // digitally (verbatim/OCR match) OR by the reviewer against the
+                                // image. NOT mean confidence, which scores image-read values high
+                                // even when nothing was verified (e.g. 98% "confidence" on 2/64).
+                                const verifiedPct = Math.round(
+                                    (100 * breakdown.totalVerified) / extraction.citations.length,
+                                );
+                                return (
+                                    <Badge
+                                        variant={
+                                            verifiedPct >= 95
+                                                ? 'success'
+                                                : verifiedPct >= 50
+                                                  ? 'attention'
+                                                  : 'destructive'
+                                        }
+                                        title={t('grounded.confidenceHint')}
+                                    >
+                                        {t('grounded.confidence', { percent: verifiedPct })}
+                                    </Badge>
+                                );
+                            })()}
                         <button
                             type="button"
                             className="flex cursor-pointer items-center gap-1"
