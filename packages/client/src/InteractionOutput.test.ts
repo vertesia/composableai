@@ -29,6 +29,21 @@ describe('InteractionOutput', () => {
         });
     });
 
+    describe('thought accessors', () => {
+        it('keeps thoughts separate from normal answer text', () => {
+            const output = InteractionOutput.from([
+                { type: 'thoughts', value: 'First reason' },
+                { type: 'thoughts', value: 'Second reason' },
+                { type: 'text', value: 'Answer' },
+            ]);
+
+            expect(output.hasThoughts()).toBe(true);
+            expect(output.thoughts(' | ')).toBe('First reason | Second reason');
+            expect(output.thoughtParts()).toEqual(['First reason', 'Second reason']);
+            expect(output.text()).toBe('Answer');
+        });
+    });
+
     describe('object accessors', () => {
         it('should return first JSON object', () => {
             const output = InteractionOutput.from<{ name: string; age: number }>(sampleResults);

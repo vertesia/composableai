@@ -112,6 +112,10 @@ export class InteractionOutput<T = unknown> {
         return this.results.some((r) => r.type === 'text');
     }
 
+    hasThoughts() {
+        return this.results.some((r) => r.type === 'thoughts');
+    }
+
     hasImage() {
         return this.results.some((r) => r.type === 'image');
     }
@@ -132,6 +136,18 @@ export class InteractionOutput<T = unknown> {
      */
     texts(): string[] {
         return this.results.filter((r) => r.type === 'text').map((r) => r.value);
+    }
+
+    /** Get visible reasoning without mixing it into the assistant answer. */
+    thoughts(delimiter = '\n'): string {
+        return this.results
+            .filter((r) => r.type === 'thoughts')
+            .map((r) => r.value)
+            .join(delimiter);
+    }
+
+    thoughtParts(): string[] {
+        return this.results.filter((r) => r.type === 'thoughts').map((r) => r.value);
     }
 
     /**
