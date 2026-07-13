@@ -919,7 +919,7 @@ export interface ContentTypeExtractionGroundingPolicy {
     /**
      * A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid
      * (more cells, tighter boxes) but can trip weaker models into over-reading;
-     * tune per the model in `config`. Default 20.
+     * tune per the model in `config`. Default 15.
      */
     grid_cell_pt?: number;
     /**
@@ -1126,7 +1126,7 @@ const ContentTypeExtractionGroundingPolicySchema = {
             type: 'number',
             minimum: 1,
             description:
-                'A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid; tune per the model in config. Default 20.',
+                'A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid; tune per the model in config. Default 14.',
             nullable: true,
         },
         omit_block_boxes: {

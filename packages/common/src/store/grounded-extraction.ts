@@ -35,12 +35,11 @@ export interface GroundedExtractionRequest {
     force_ocr?: boolean;
     /** Re-run OCR on pages that need it instead of restoring the stored OCR result. */
     refresh_ocr?: boolean;
-    /** Attach page images to the extraction prompt so hard pages can be read visually. */
+    /** Attach clean page images for layout/semantic context; direct-vision pages also receive checkerboards. */
     use_vision?: boolean;
     /**
      * A1 locate-grid cell size in PDF points for vision pages (drives both the drawn
-     * grid and cell→box resolution). Smaller = finer grid / more cells (10 ≈ half the
-     * default). Default: 20.
+     * grid and cell→box resolution). Smaller = finer grid / more cells. Default: 14.
      */
     grid_cell_pt?: number;
     /**

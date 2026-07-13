@@ -272,6 +272,7 @@
     "grounded.breakdownTitle": "Verification breakdown",
     "grounded.breakdownUnverifiedList": "Unverified values — click to locate",
     "grounded.breakdownVerificationHelp": "Two kinds of verification, both trustworthy. Digitally verified means the value matched the document's text (digital layer or OCR). AI verified means the reviewer read the page image and confirmed it — the right signal for scans and handwriting, where there is no text layer to match, so a scanned document showing 0 digitally verified is normal.",
+    "grounded.checkerboard": "Checkerboard",
     "grounded.confidence": "Verification {{percent}}%",
     "grounded.confidenceHint": "Share of extracted values that were confirmed — matched verbatim against the document text (digital layer or OCR) or confirmed by the reviewer against the page image. Values read off the image but neither text-matched nor reviewer-confirmed are not counted.",
     "grounded.digitalVerifiedHint": "Digitally verified: matched verbatim against the document's text (digital text layer or OCR). Not possible for scanned or handwritten content, where there is no reliable text layer.",

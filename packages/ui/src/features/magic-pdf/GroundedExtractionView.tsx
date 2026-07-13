@@ -9,6 +9,7 @@ import {
     ResizablePanelGroup,
     Spinner,
     useFetch,
+    VTooltip,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -20,7 +21,8 @@ import {
     FileDown,
     FileJson2,
     FileText,
-    ScanText,
+    Grid3X3,
+    Image as ImageIcon,
     Sparkles,
     X,
 } from 'lucide-react';
@@ -49,6 +51,7 @@ interface GroundedCitation {
     path: string;
     page: number;
     block_ids: number[];
+    cells?: { start: string; end: string };
     verified: boolean;
     source_text?: string;
     value?: string;
@@ -91,6 +94,8 @@ interface GroundedExtractionViewProps {
     objectId: string;
     onClose?: () => void;
 }
+
+type PageImageMode = 'original' | 'grid';
 
 /** True when a grounded extraction result exists for the object */
 export function useGroundedExtractionAvailable(objectId: string): boolean {
@@ -250,6 +255,7 @@ function GroundedExtractionViewImpl({
     const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
     const [showBreakdown, setShowBreakdown] = useState(false);
     const [showVerdict, setShowVerdict] = useState(false);
+    const [pageImageMode, setPageImageMode] = useState<PageImageMode>('original');
 
     const breakdown = useMemo(() => {
         const groups = { digital: 0, ocr: 0, reviewerConfirmed: 0, snapped: 0, imageRead: 0 };
@@ -308,33 +314,81 @@ function GroundedExtractionViewImpl({
     };
 
     const pageIndex = pageNumbers.indexOf(page);
+    const selectedCitation = selectedPath
+        ? citationsByPath.get(normalizeCitationPath(selectedPath))?.find((citation) => citation.page === page)
+        : undefined;
+    const selectedCellRange = selectedCitation?.cells
+        ? selectedCitation.cells.start === selectedCitation.cells.end
+            ? selectedCitation.cells.start
+            : `${selectedCitation.cells.start}:${selectedCitation.cells.end}`
+        : undefined;
 
     return (
         <ResizablePanelGroup direction="horizontal" className="absolute inset-0">
             <ResizablePanel defaultSize={55} minSize={25} className="flex flex-col bg-muted">
                 {/* Page navigation */}
-                <div className="flex h-9 items-center justify-center gap-2 shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
-                    <Button
-                        variant="ghost"
-                        size="xs"
-                        aria-label={t('grounded.previousPage')}
-                        disabled={pageIndex <= 0}
-                        onClick={() => setPage(pageNumbers[pageIndex - 1])}
-                    >
-                        <ChevronLeft className="size-4" />
-                    </Button>
-                    <span className="text-xs text-muted-foreground">
-                        {t('pdf.pageOf', { pageNumber: page, totalPages: pageNumbers.length })}
-                    </span>
-                    <Button
-                        variant="ghost"
-                        size="xs"
-                        aria-label={t('grounded.nextPage')}
-                        disabled={pageIndex >= pageNumbers.length - 1}
-                        onClick={() => setPage(pageNumbers[pageIndex + 1])}
-                    >
-                        <ChevronRight className="size-4" />
-                    </Button>
+                <div className="relative flex h-9 shrink-0 items-center justify-center bg-sidebar px-2 border-b border-sidebar-border">
+                    {selectedCellRange && (
+                        <Badge
+                            variant="secondary"
+                            className="absolute start-2 max-w-32 truncate font-mono text-[11px]"
+                            title={selectedCellRange}
+                        >
+                            {selectedCellRange}
+                        </Badge>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            aria-label={t('grounded.previousPage')}
+                            disabled={pageIndex <= 0}
+                            onClick={() => setPage(pageNumbers[pageIndex - 1])}
+                        >
+                            <ChevronLeft className="size-4" />
+                        </Button>
+                        <span className="text-xs text-muted-foreground">
+                            {t('pdf.pageOf', { pageNumber: page, totalPages: pageNumbers.length })}
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            aria-label={t('grounded.nextPage')}
+                            disabled={pageIndex >= pageNumbers.length - 1}
+                            onClick={() => setPage(pageNumbers[pageIndex + 1])}
+                        >
+                            <ChevronRight className="size-4" />
+                        </Button>
+                    </div>
+                    <fieldset className="absolute end-2 flex items-center gap-0.5 rounded border-0 bg-muted p-0.5">
+                        <legend className="sr-only">{t('grounded.checkerboard')}</legend>
+                        <VTooltip description={t('pdf.originalImages')} placement="bottom" size="xs" asChild>
+                            <Button
+                                variant={pageImageMode === 'original' ? 'outline' : 'ghost'}
+                                size="xs"
+                                aria-label={t('pdf.originalImages')}
+                                aria-pressed={pageImageMode === 'original'}
+                                className="h-6 gap-1 px-1.5"
+                                onClick={() => setPageImageMode('original')}
+                            >
+                                <ImageIcon className="size-3.5" />
+                                <span className="hidden sm:inline">{t('pdf.page')}</span>
+                            </Button>
+                        </VTooltip>
+                        <VTooltip description={t('grounded.checkerboard')} placement="bottom" size="xs" asChild>
+                            <Button
+                                variant={pageImageMode === 'grid' ? 'outline' : 'ghost'}
+                                size="xs"
+                                aria-label={t('grounded.checkerboard')}
+                                aria-pressed={pageImageMode === 'grid'}
+                                className="h-6 gap-1 px-1.5"
+                                onClick={() => setPageImageMode('grid')}
+                            >
+                                <Grid3X3 className="size-3.5" />
+                                <span className="hidden sm:inline">{t('grounded.checkerboard')}</span>
+                            </Button>
+                        </VTooltip>
+                    </fieldset>
                 </div>
                 <div className="flex-1 overflow-auto p-2">
                     <PageWithOverlay
@@ -344,6 +398,7 @@ function GroundedExtractionViewImpl({
                         citations={extraction.citations.filter((c) => c.page === page)}
                         selectedPath={selectedPath}
                         onSelectPath={setSelectedPath}
+                        imageMode={pageImageMode}
                     />
                 </div>
             </ResizablePanel>
@@ -455,15 +510,6 @@ function GroundedExtractionViewImpl({
                             onClick={() => downloadArtifact(`pages/page-${page}.json`)}
                         >
                             <FileText className="size-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="xs"
-                            aria-label={t('grounded.downloadOcr')}
-                            title={t('grounded.downloadOcr')}
-                            onClick={() => downloadArtifact(`pages/page-${page}-ocr.tsv`)}
-                        >
-                            <ScanText className="size-4" />
                         </Button>
                         <Button
                             variant="ghost"
@@ -611,6 +657,7 @@ function PageWithOverlay({
     citations,
     selectedPath,
     onSelectPath,
+    imageMode,
 }: {
     objectId: string;
     page: number;
@@ -618,6 +665,7 @@ function PageWithOverlay({
     citations: GroundedCitation[];
     selectedPath?: string;
     onSelectPath: (path: string) => void;
+    imageMode: PageImageMode;
 }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -627,7 +675,7 @@ function PageWithOverlay({
         let cancelled = false;
         setImageUrl(undefined);
         client.files
-            .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/pages/page-${page}.original.jpg`)
+            .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/pages/page-${page}.${imageMode}.jpg`)
             .then((r) => {
                 if (!cancelled) setImageUrl(r.url);
             })
@@ -635,7 +683,7 @@ function PageWithOverlay({
         return () => {
             cancelled = true;
         };
-    }, [client, objectId, page]);
+    }, [client, imageMode, objectId, page]);
 
     if (!imageUrl || !dims) {
         return (
@@ -654,12 +702,17 @@ function PageWithOverlay({
             const isSelected =
                 selectedPath !== undefined &&
                 normalizeCitationPath(selectedPath) === normalizeCitationPath(citation.path);
+            const cellRange = citation.cells
+                ? citation.cells.start === citation.cells.end
+                    ? citation.cells.start
+                    : `${citation.cells.start}:${citation.cells.end}`
+                : undefined;
             return (
                 <button
                     key={`${citation.path}-${i}`}
                     type="button"
                     aria-label={citation.path}
-                    title={`${citation.path}${citation.source_text ? `\n${citation.source_text}` : ''}`}
+                    title={`${citation.path}${cellRange ? `\n${cellRange}` : ''}${citation.source_text ? `\n${citation.source_text}` : ''}`}
                     onClick={() => onSelectPath(normalizeCitationPath(citation.path))}
                     className={cn(
                         'absolute cursor-pointer border rounded-[1px] transition-colors',
