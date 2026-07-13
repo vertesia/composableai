@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/json",
-    "version": "1.5.0-dev.20260713.113008Z",
+    "version": "1.5.0-dev.20260713.151751Z",
     "description": "JSON utlities",
     "type": "module",
     "main": "./lib/index.js",
