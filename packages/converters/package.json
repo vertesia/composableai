@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/converters",
-    "version": "1.5.0-dev",
+    "version": "1.5.0-dev.20260713.113008Z",
     "description": "Image and content converters",
     "type": "module",
     "main": "./lib/index.js",
