@@ -320,8 +320,18 @@ export async function getComposableToken(
     const selectedProject =
         projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined;
 
-    //token is still valid for more than 5 minutes
-    if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > Date.now() / 1000 + 300) {
+    const cachedTokenMatchesScope =
+        (!selectedAccount || AUTH_TOKEN?.account?.id === selectedAccount) &&
+        (!selectedProject || AUTH_TOKEN?.project?.id === selectedProject);
+
+    // Token is still valid for more than 5 minutes and belongs to the requested scope.
+    if (
+        !forceRefresh &&
+        AUTH_TOKEN_RAW &&
+        AUTH_TOKEN &&
+        cachedTokenMatchesScope &&
+        AUTH_TOKEN.exp > Date.now() / 1000 + 300
+    ) {
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
