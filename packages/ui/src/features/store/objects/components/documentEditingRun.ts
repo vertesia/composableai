@@ -76,6 +76,8 @@ export function isDocumentEditingRun(
     startedBy: string,
 ): boolean {
     if (run.interaction !== DOCUMENT_EDITING_INTERACTION || run.started_by !== startedBy) return false;
+    // A cancelled run was explicitly terminated by the user; never resume it as the editing session.
+    if (run.status === 'cancelled') return false;
 
     const tags = run.tags ?? [];
     if (!tags.includes(DOCUMENT_EDITING_TAG)) return false;

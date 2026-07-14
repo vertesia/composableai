@@ -71,6 +71,13 @@ describe('document editing run identity', () => {
 
         expect(isDocumentEditingRun(run, 'document-2', 'document-root', startedBy)).toBe(true);
     });
+
+    it('never resumes a run the user terminated', () => {
+        const identity = createDocumentEditingRunIdentity('document-2', 'document-root');
+        const run = createRun({ ...identity, status: 'cancelled' });
+
+        expect(isDocumentEditingRun(run, 'document-2', 'document-root', startedBy)).toBe(false);
+    });
 });
 
 describe('findDocumentEditingRun', () => {

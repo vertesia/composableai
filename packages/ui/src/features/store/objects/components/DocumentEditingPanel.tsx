@@ -1,8 +1,8 @@
 import { AgentMessageType, type ContentObject, type CreateAgentRunPayload } from '@vertesia/common';
-import { Button, Center, Spinner, useToast } from '@vertesia/ui/core';
+import { Button, Center, Spinner, useToast, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { X } from 'lucide-react';
+import { RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ModernAgentConversation,
@@ -39,6 +39,10 @@ const DOCUMENT_EDITING_TOOLS = [
     'learn_code_execution',
 ];
 
+function shortenRunId(id: string): string {
+    return id.length > 12 ? `${id.slice(0, 4)}…${id.slice(-4)}` : id;
+}
+
 function createDocumentEditingPrompt(object: ContentObject, userPrompt: string): string {
     const documentName = object.name || object.content?.name || 'Document';
     return [
@@ -46,6 +50,8 @@ function createDocumentEditingPrompt(object: ContentObject, userPrompt: string):
         `Document: [${documentName}](store:${object.id})`,
         '',
         'Treat direct user edits as authoritative. For comments and rewrite requests, preserve unrelated content.',
+        'Attachments may contain review comments. Treat them as a batch of requested edits against the latest',
+        'document content, preserve unrelated content, and report any comment whose target cannot be found.',
         'Before modifying the document, load the document-management or content-authoring skill as appropriate.',
         'Use the document artifact workflow and update_document to save changes with revision and concurrency checks.',
         'Create a document revision only on your first save in this conversation (create_revision: true); for every',
@@ -66,6 +72,7 @@ export function DocumentEditingPanel({
     const toast = useToast();
     const [agentRunId, setAgentRunId] = useState<string | undefined>();
     const [isStarting, setIsStarting] = useState(false);
+    const [isTerminating, setIsTerminating] = useState(false);
     const [isResolvingRun, setIsResolvingRun] = useState(true);
     const [isLoadingConfiguration, setIsLoadingConfiguration] = useState(true);
     const [executionConfiguration, setExecutionConfiguration] = useState<DocumentEditingConfiguration>({});
@@ -160,6 +167,34 @@ export function DocumentEditingPanel({
         setExecutionConfiguration(value);
     }, []);
 
+    const handleCopyRunId = useCallback(() => {
+        if (!agentRunId) return;
+        navigator.clipboard
+            .writeText(agentRunId)
+            .then(() => {
+                toast({ status: 'success', title: t('agent.runIdCopied'), duration: 2000 });
+            })
+            .catch((err: unknown) => {
+                console.warn('Failed to copy the agent run id', err);
+            });
+    }, [agentRunId, t, toast]);
+
+    const handleStartNewSession = useCallback(async () => {
+        if (!agentRunId || isTerminating) return;
+        setIsTerminating(true);
+        try {
+            await client.agents.terminate(agentRunId, 'cancel');
+            toast({ status: 'success', title: t('agent.workflowCancelled'), duration: 2000 });
+        } catch (err: unknown) {
+            // The run may already be finished; detach anyway so the user can start fresh.
+            console.warn('Failed to terminate the document editing run', err);
+        } finally {
+            setIsTerminating(false);
+        }
+        seenUpdatesRef.current.clear();
+        setAgentRunId(undefined);
+    }, [agentRunId, client, isTerminating, t, toast]);
+
     const startWorkflow = useCallback(
         async (initialMessage?: string, options?: StartWorkflowOptions) => {
             if (!project || isResolvingRun || isStarting || isLoadingConfiguration) return undefined;
@@ -229,6 +264,33 @@ export function DocumentEditingPanel({
             <div className="flex h-10 shrink-0 items-center justify-between border-b border-mixer-muted/20 px-2">
                 <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t('agent.documentEditing')}</span>
                 <div className="flex shrink-0 items-center gap-1">
+                    {agentRunId ? (
+                        <>
+                            <VTooltip description={agentRunId} asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-1.5 font-mono text-[11px] text-muted"
+                                    onClick={handleCopyRunId}
+                                    aria-label={t('agent.copyRunId')}
+                                >
+                                    {shortenRunId(agentRunId)}
+                                </Button>
+                            </VTooltip>
+                            <VTooltip description={t('agent.startNewConversation')} asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => void handleStartNewSession()}
+                                    disabled={isTerminating}
+                                    aria-label={t('agent.startNewConversation')}
+                                >
+                                    <RotateCcw className="size-4" />
+                                </Button>
+                            </VTooltip>
+                        </>
+                    ) : null}
                     <DocumentEditingConfigurationSelector
                         value={executionConfiguration}
                         onChange={handleConfigurationChange}
@@ -281,7 +343,6 @@ export function DocumentEditingPanel({
                         initialToolApprovalMode="full_control"
                         hideObjectLinking
                         hideHeader
-                        hideFileUpload
                         showRightPanel={false}
                         fullWidth
                         interactive

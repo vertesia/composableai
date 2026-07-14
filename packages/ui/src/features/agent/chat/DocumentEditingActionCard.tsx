@@ -1,7 +1,13 @@
 import { cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import type { MarkdownBlockType, MarkdownEditingAction, MarkdownEditingResource } from '@vertesia/ui/widgets';
+import {
+    diffWordSegments,
+    type MarkdownBlockType,
+    type MarkdownEditingAction,
+    type MarkdownEditingResource,
+} from '@vertesia/ui/widgets';
 import { ChevronDown, ChevronRight, CircleCheck, FilePenLine, MessageSquareText, PencilLine } from 'lucide-react';
+import { useMemo } from 'react';
 
 const BLOCK_TYPES = new Set<MarkdownBlockType>([
     'heading',
@@ -95,7 +101,7 @@ function resourceLabel(resource: MarkdownEditingResource): string {
     return resource.path;
 }
 
-function SourcePreview({ children, className }: { children: string; className?: string }) {
+function SourcePreview({ children, className }: { children: React.ReactNode; className?: string }) {
     return (
         <pre
             className={cn(
@@ -106,6 +112,34 @@ function SourcePreview({ children, className }: { children: string; className?: 
         >
             {children}
         </pre>
+    );
+}
+
+function ChangeDiff({ before, after }: { before: string; after: string }) {
+    const segments = useMemo(() => diffWordSegments(before, after), [before, after]);
+    return (
+        <SourcePreview className="max-h-48">
+            {segments.map((segment, index) => {
+                if (segment.type === 'removed') {
+                    return (
+                        <del
+                            key={index}
+                            className="rounded-xs bg-mixer-destructive/15 text-destructive line-through decoration-destructive/50"
+                        >
+                            {segment.text}
+                        </del>
+                    );
+                }
+                if (segment.type === 'added') {
+                    return (
+                        <ins key={index} className="rounded-xs bg-mixer-success/15 text-success no-underline">
+                            {segment.text}
+                        </ins>
+                    );
+                }
+                return <span key={index}>{segment.text}</span>;
+            })}
+        </SourcePreview>
     );
 }
 
@@ -155,24 +189,10 @@ export function DocumentEditingActionCard({ action }: { action: MarkdownEditingA
                 {isComment ? (
                     <p className="m-0 whitespace-pre-wrap text-sm leading-5 text-foreground">{action.comment}</p>
                 ) : (
-                    <div className="space-y-2">
-                        <div>
-                            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted">
-                                {t('agent.documentEditCardBefore')}
-                            </div>
-                            <SourcePreview className="border-mixer-destructive/20 bg-mixer-destructive/5">
-                                {action.user_change?.before ?? action.anchor.exact_text}
-                            </SourcePreview>
-                        </div>
-                        <div>
-                            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted">
-                                {t('agent.documentEditCardAfter')}
-                            </div>
-                            <SourcePreview className="border-mixer-success/25 bg-mixer-success/5">
-                                {action.user_change?.after ?? ''}
-                            </SourcePreview>
-                        </div>
-                    </div>
+                    <ChangeDiff
+                        before={action.user_change?.before ?? action.anchor.exact_text}
+                        after={action.user_change?.after ?? ''}
+                    />
                 )}
 
                 {isComment ? (

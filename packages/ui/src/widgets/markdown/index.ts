@@ -44,6 +44,7 @@ export { MarkdownImage, type MarkdownImageProps } from './MarkdownImage';
 export { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 export { MarkdownRenderer, type MarkdownRendererProps } from './MarkdownRenderer';
 export { MermaidDiagram } from './MermaidDiagram';
+export { diffWordSegments, type TextDiffSegment } from './textDiff';
 export {
     type ArtifactContentState,
     type UseArtifactContentOptions,

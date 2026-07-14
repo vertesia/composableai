@@ -71,6 +71,35 @@ describe('DocumentEditingActionCard', () => {
         expect(screen.getByText('Launch plan')).not.toBeNull();
     });
 
+    it('highlights the change as an inline diff', () => {
+        const parsed = parseMarkdownEditingAction({
+            operation_id: 'operation-3',
+            resource: { kind: 'store_document', document_id: 'document-1', name: 'Launch plan' },
+            action: 'edit',
+            anchor: {
+                block_id: 'paragraph:30:40',
+                block_type: 'paragraph',
+                exact_text: 'Keep the tone light.',
+            },
+            user_change: {
+                before: 'Keep the tone light.',
+                after: 'Keep the tone light. Session edit A.',
+            },
+        });
+        if (!parsed) throw new Error('Expected a valid editing action');
+
+        const { container } = render(
+            <I18nProvider lng="en">
+                <DocumentEditingActionCard action={parsed} />
+            </I18nProvider>,
+        );
+
+        const inserted = container.querySelector('ins');
+        expect(inserted?.textContent).toBe(' Session edit A.');
+        expect(container.querySelector('del')).toBeNull();
+        expect(screen.getByText('Keep the tone light.')).not.toBeNull();
+    });
+
     it('rejects malformed editing metadata', () => {
         expect(parseMarkdownEditingAction({ action: 'comment' })).toBeUndefined();
     });
