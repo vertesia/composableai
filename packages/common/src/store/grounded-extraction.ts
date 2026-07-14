@@ -76,6 +76,29 @@ export interface GroundedExtractionRequest {
     coverage_review_threshold?: number;
     /** Run the model review even when every citation was digitally verified. Requires review_config. */
     force_review?: boolean;
+    /**
+     * Free-text operator guidance folded into the extraction prompt to steer a
+     * (re-)extraction, e.g. "part numbers are in the third column; some line items
+     * wrap onto the next row".
+     */
+    operator_instructions?: string;
+    /** Interactive assistant only: the operator's opening message for the assistant conversation. */
+    user_prompt?: string;
+}
+
+/**
+ * Response from starting the interactive grounded extraction assistant. The agent
+ * run + conversation workflow are launched server-side (recordRun -> stage the
+ * document into the agent space -> launch the interactive conversation); the
+ * client renders the conversation with `agent_run_id`.
+ */
+export interface GroundedAssistantResponse {
+    /** The AgentRun id to stream/render the conversation. */
+    agent_run_id: string;
+    /** The conversation workflow id backing the run. */
+    workflow_id: string;
+    /** The object the assistant is scoped to. */
+    object_id: string;
 }
 
 /**
