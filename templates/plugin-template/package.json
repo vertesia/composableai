@@ -1,9 +1,9 @@
 {
     "name": "plugin-template",
-    "version": "1.3.0",
+    "version": "1.5.0-dev.20260714.072725Z",
     "description": "A unified template for building custom UI plugins and tool servers for Vertesia",
     "type": "module",
-    "main": "lib/server.js",
+    "main": "lib/tool-server/server.js",
     "files": [
         "dist",
         "lib"
@@ -22,11 +22,15 @@
         "preview": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
         "start": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
         "start:vercel": "vercel dev",
-        "test": "echo \"(no tests in template scaffold)\""
+        "test": "echo \"(no tests in template scaffold)\"",
+        "codegen:dev": "node scripts/dist/codegen.js --context scripts/dev-codegen-context.json",
+        "test:codegen": "node --test scripts/test/*.test.mjs",
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
     },
     "vertesia-build": {
         "libDir": "./lib",
-        "srcDir": "./src/tool-server",
+        "srcDir": "./src",
         "transformers": [
             "skill",
             "skills",
