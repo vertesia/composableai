@@ -788,5 +788,9 @@
   "agent.documentEditingSelectModel": "Выберите модель",
   "agent.editedSelectionMessage": "Выбранный элемент {{blockType}} изменён",
   "agent.environment": "Среда",
-  "agent.model": "Модель"
+  "agent.model": "Модель",
+  "agent.saveToDocument": "Сохранить в документ",
+  "agent.workingCopy": "Рабочая копия",
+  "agent.originalDocument": "Исходный документ",
+  "agent.reviewChanges": "Просмотреть изменения"
 }

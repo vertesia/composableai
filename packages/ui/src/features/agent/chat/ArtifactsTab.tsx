@@ -1,7 +1,7 @@
-import { Button, Center, ErrorBox, Input, useToast } from '@vertesia/ui/core';
+import { Button, Center, ErrorBox, Input } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { CollaborativeMarkdownRenderer, type MarkdownEditingAction, useArtifactContent } from '@vertesia/ui/widgets';
+import { ArtifactEditingSurface, type MarkdownEditingAction } from '@vertesia/ui/widgets';
 import {
     ArrowLeftIcon,
     ChevronDownIcon,
@@ -178,19 +178,9 @@ interface ArtifactMarkdownEditorProps {
 
 function ArtifactMarkdownEditor({ runId, path, onBack, onDownload, onSendMessage }: ArtifactMarkdownEditorProps) {
     const { t } = useUITranslation();
-    const toast = useToast();
-    const { rawContent, data, isLoading, error, etag, retry } = useArtifactContent<string>({
-        runId,
-        path,
-        parseJson: false,
-    });
-    const content = rawContent ?? (typeof data === 'string' ? data : '');
 
     const handleAction = (action: MarkdownEditingAction) => {
-        if (!onSendMessage) {
-            toast({ status: 'warning', title: t('agent.artifactEditingUnavailable'), duration: 3000 });
-            return;
-        }
+        if (!onSendMessage) return;
         const blockType = action.anchor.block_type.replaceAll('_', ' ');
         const displayMessage = action.comment?.trim() || t('agent.editedSelectionMessage', { blockType });
         onSendMessage(displayMessage, { editing_action: action });
@@ -223,29 +213,13 @@ function ArtifactMarkdownEditor({ runId, path, onBack, onDownload, onSendMessage
                     <DownloadIcon className="size-4" />
                 </Button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-                {isLoading ? (
-                    <Center className="h-full min-h-[200px]">
-                        <Loader2Icon className="size-5 animate-spin text-info" />
-                    </Center>
-                ) : error ? (
-                    <ErrorBox title={t('agent.failedToLoadArtifact')} action={retry} actionLabel={t('agent.retry')}>
-                        {error}
-                    </ErrorBox>
-                ) : (
-                    <div className="vprose prose-sm max-w-none">
-                        <CollaborativeMarkdownRenderer
-                            artifactRunId={runId}
-                            resource={{ kind: 'agent_artifact', run_id: runId, path }}
-                            baseVersion={etag}
-                            readOnly={!onSendMessage}
-                            onAction={handleAction}
-                        >
-                            {content}
-                        </CollaborativeMarkdownRenderer>
-                    </div>
-                )}
-            </div>
+            <ArtifactEditingSurface
+                runId={runId}
+                path={path}
+                readOnly={!onSendMessage}
+                onAction={handleAction}
+                className="relative min-h-0 flex-1 overflow-y-auto px-4 py-3"
+            />
         </div>
     );
 }

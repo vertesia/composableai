@@ -808,5 +808,9 @@
   "agent.documentEditingSelectModel": "اختر نموذجًا",
   "agent.editedSelectionMessage": "تم تحرير {{blockType}} المحدد",
   "agent.environment": "البيئة",
-  "agent.model": "النموذج"
+  "agent.model": "النموذج",
+  "agent.saveToDocument": "حفظ في المستند",
+  "agent.workingCopy": "نسخة العمل",
+  "agent.originalDocument": "المستند الأصلي",
+  "agent.reviewChanges": "مراجعة التغييرات"
 }

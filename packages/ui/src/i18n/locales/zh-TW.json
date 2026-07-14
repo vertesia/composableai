@@ -768,5 +768,9 @@
   "agent.documentEditingSelectModel": "選擇模型",
   "agent.editedSelectionMessage": "已編輯所選 {{blockType}}",
   "agent.environment": "環境",
-  "agent.model": "模型"
+  "agent.model": "模型",
+  "agent.saveToDocument": "儲存至文件",
+  "agent.workingCopy": "工作副本",
+  "agent.originalDocument": "原始文件",
+  "agent.reviewChanges": "檢視變更"
 }

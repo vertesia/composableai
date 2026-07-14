@@ -785,5 +785,9 @@
   "agent.documentEditingSelectModel": "Select a model",
   "agent.environment": "Environment",
   "agent.model": "Model",
+  "agent.saveToDocument": "Save to document",
+  "agent.workingCopy": "Working copy",
+  "agent.originalDocument": "Original document",
+  "agent.reviewChanges": "Review changes",
   "test.emptyTranslationFallback": "test.emptyTranslationFallback"
 }

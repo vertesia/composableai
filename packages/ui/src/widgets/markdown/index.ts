@@ -4,6 +4,12 @@ export {
     type ExpandRenderType,
 } from './ArtifactContentRenderer';
 export {
+    ArtifactEditingSurface,
+    type ArtifactEditingSurfaceProps,
+    applyArtifactRefreshChanges,
+    isArtifactRefreshEvent,
+} from './ArtifactEditingSurface';
+export {
     type CodeBlockHandlerContext,
     CodeBlockHandlerProvider,
     useCodeBlockContext,

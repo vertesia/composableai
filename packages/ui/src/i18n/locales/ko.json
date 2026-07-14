@@ -768,5 +768,9 @@
   "agent.documentEditingSelectModel": "모델 선택",
   "agent.editedSelectionMessage": "선택한 {{blockType}} 편집됨",
   "agent.environment": "환경",
-  "agent.model": "모델"
+  "agent.model": "모델",
+  "agent.saveToDocument": "문서에 저장",
+  "agent.workingCopy": "작업 사본",
+  "agent.originalDocument": "원본 문서",
+  "agent.reviewChanges": "변경 사항 검토"
 }

@@ -169,6 +169,9 @@ export interface ConversationState {
      */
     skill_instructions_delivered?: string[];
 
+    /** Stable ids of initialization tool calls completed before the first model turn. */
+    initialization_call_ids?: string[];
+
     /**
      * Denylist of MCP tool-collection ids deactivated for this conversation.
      * `undefined`/empty means all installed/connected MCP collections are active.

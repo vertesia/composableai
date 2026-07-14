@@ -778,5 +778,9 @@
   "agent.documentEditingSelectModel": "Seleccionar un modelo",
   "agent.editedSelectionMessage": "Se editó el elemento {{blockType}} seleccionado",
   "agent.environment": "Entorno",
-  "agent.model": "Modelo"
+  "agent.model": "Modelo",
+  "agent.saveToDocument": "Guardar en el documento",
+  "agent.workingCopy": "Copia de trabajo",
+  "agent.originalDocument": "Documento original",
+  "agent.reviewChanges": "Revisar cambios"
 }

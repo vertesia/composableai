@@ -13,7 +13,6 @@ import {
 import {
     Button,
     Dropdown,
-    errorMessage,
     MenuItem,
     Portal,
     ResizableHandle,
@@ -26,15 +25,7 @@ import {
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import {
-    applyMarkdownEditingChange,
-    CollaborativeMarkdownRenderer,
-    JSONDisplay,
-    type MarkdownEditingAction,
-    MarkdownRenderer,
-    Progress,
-    XMLViewer,
-} from '@vertesia/ui/widgets';
+import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui/widgets';
 import { AlertTriangle, Bot, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { SendAgentMessageFn } from '../../../agent/chat/ModernAgentConversation.js';
@@ -76,12 +67,6 @@ interface TextPanelProps {
     text: string | undefined;
     isTextCropped: boolean;
     textContainerRef: RefObject<HTMLDivElement | null>;
-    collaboration?: {
-        baseVersion?: string;
-        highlightChangesFrom?: string;
-        highlightVersion?: number;
-        onAction: (action: MarkdownEditingAction) => void;
-    };
 }
 
 interface OfficePdfPreviewPanelProps {
@@ -215,22 +200,15 @@ export function ContentOverview({
     const sourceObjectIdRef = useRef(object.id);
     const editingScopeKeyRef = useRef(editingScopeKey);
 
-    // True once a direct edit has created the session's working revision; later
-    // direct edits in the same editing session update that revision in place so a
-    // session produces one revision, not one per edit.
-    const editSessionVersionedRef = useRef(false);
-
     useEffect(() => {
         if (editingScopeKeyRef.current === editingScopeKey) return;
         editingScopeKeyRef.current = editingScopeKey;
-        editSessionVersionedRef.current = false;
         setIsCollaborating(editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false);
     }, [editingScopeKey]);
 
     const toggleCollaboration = useCallback(() => {
         setIsCollaborating((current) => {
             const next = !current;
-            if (next) editSessionVersionedRef.current = false;
             if (editingScopeKey) setDocumentEditingScopeOpen(editingScopeKey, next);
             return next;
         });
@@ -301,40 +279,39 @@ export function ContentOverview({
     };
 
     return (
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel defaultSize={67} className="min-w-[100px]">
-                <DataPanel
-                    object={activeObject}
-                    loadText={loadText ?? false}
-                    handleCopyContent={handleCopyContent}
-                    refetch={refetch}
-                    canCollaborate={canCollaborate}
-                    isCollaborating={isCollaborating}
-                    onToggleCollaborate={toggleCollaboration}
-                    sendMessageRef={sendMessageRef}
-                    onDirectEditApplied={(updatedDocumentId) => void handleDocumentUpdated(updatedDocumentId)}
-                    editSessionVersionedRef={editSessionVersionedRef}
-                />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={33} className="min-w-[100px]">
-                {isCollaborating ? (
-                    <DocumentEditingPanel
+        <>
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+                <ResizablePanel defaultSize={67} className="min-w-[100px]">
+                    <DataPanel
                         object={activeObject}
-                        onClose={closeCollaboration}
-                        onDocumentUpdated={(updatedDocumentId) => void handleDocumentUpdated(updatedDocumentId)}
-                        sendMessageRef={sendMessageRef}
+                        loadText={loadText ?? false}
+                        handleCopyContent={handleCopyContent}
+                        refetch={refetch}
+                        canCollaborate={canCollaborate}
+                        isCollaborating={isCollaborating}
+                        onToggleCollaborate={toggleCollaboration}
                     />
-                ) : (
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={33} className="min-w-[100px]">
                     <PropertiesPanel
                         object={activeObject}
                         refetch={refetch ?? (() => Promise.resolve())}
                         handleCopyContent={handleCopyContent}
                         canEditProperties={canEditProperties}
                     />
-                )}
-            </ResizablePanel>
-        </ResizablePanelGroup>
+                </ResizablePanel>
+            </ResizablePanelGroup>
+            {isCollaborating ? (
+                <DocumentEditingPanel
+                    object={activeObject}
+                    initialContent={activeObject.text ?? ''}
+                    onClose={closeCollaboration}
+                    onDocumentUpdated={(updatedDocumentId) => void handleDocumentUpdated(updatedDocumentId)}
+                    sendMessageRef={sendMessageRef}
+                />
+            ) : null}
+        </>
     );
 }
 
@@ -439,9 +416,6 @@ function DataPanel({
     canCollaborate,
     isCollaborating,
     onToggleCollaborate,
-    sendMessageRef,
-    onDirectEditApplied,
-    editSessionVersionedRef,
 }: {
     object: ContentObject;
     loadText: boolean;
@@ -450,13 +424,8 @@ function DataPanel({
     canCollaborate: boolean;
     isCollaborating: boolean;
     onToggleCollaborate: () => void;
-    sendMessageRef: React.MutableRefObject<SendAgentMessageFn | null>;
-    onDirectEditApplied: (updatedDocumentId: string) => void;
-    editSessionVersionedRef: React.MutableRefObject<boolean>;
 }) {
     const { t } = useUITranslation();
-    const toast = useToast();
-    const { store } = useUserSession();
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
     const isAudio = object?.metadata?.type === ContentNature.Audio;
@@ -506,142 +475,8 @@ function DataPanel({
         displayText,
         isLoading: isLoadingText,
         isCropped: isTextCropped,
-        changeHighlight,
         loadText: reloadText,
     } = useObjectText(object.id, object.text, loadText, object.revision?.root || object.id);
-
-    // Direct edits commit to the document immediately with optimistic concurrency;
-    // the conversation is only notified afterwards so the model never re-applies them.
-    const applyDirectEdit = useCallback(
-        async (action: MarkdownEditingAction) => {
-            // Revisions can only be created from the head; if the view shows an older
-            // revision, rebase the edit onto the head content first.
-            let target = { id: object.id, etag: object.content?.etag, text: fullText };
-            try {
-                if (object.revision && !object.revision.head) {
-                    const revisions = await store.objects.getRevisions(object.id);
-                    const headId = revisions.find((revision) => revision.revision?.head)?.id;
-                    if (headId && headId !== object.id) {
-                        const [headObject, headText] = await Promise.all([
-                            store.objects.retrieve(headId),
-                            store.objects.getObjectText(headId),
-                        ]);
-                        target = { id: headObject.id, etag: headObject.content?.etag, text: headText.text };
-                    }
-                }
-            } catch (err: unknown) {
-                console.warn('Failed to resolve the head revision, applying to the current view', err);
-            }
-
-            const nextText = target.text != null ? applyMarkdownEditingChange(target.text, action) : undefined;
-            if (nextText === undefined) {
-                toast({
-                    status: 'error',
-                    title: t('agent.documentEditApplyFailed'),
-                    description: t('agent.documentEditApplyFailedDescription'),
-                    duration: 5000,
-                });
-                // The head moved and the selection no longer matches: refresh the view
-                // to the head so the user can redo the edit on current content.
-                if (target.id !== object.id) onDirectEditApplied(target.id);
-                return;
-            }
-
-            // Never turn a missing version into an unconditional write. Reloading the
-            // document gives the user a fresh canonical ETag before they retry.
-            if (!target.etag) {
-                toast({
-                    status: 'error',
-                    title: t('agent.documentEditApplyFailed'),
-                    description: t('store.textConflict'),
-                    duration: 5000,
-                });
-                onDirectEditApplied(target.id);
-                return;
-            }
-
-            const contentType = object.content?.type || 'text/markdown';
-            const fileName = object.content?.name || 'content.md';
-            try {
-                const file = new File([new Blob([nextText], { type: contentType })], fileName, {
-                    type: contentType,
-                });
-                // First direct edit of the session snapshots the pre-session state as a
-                // revision; later edits keep updating the session's working revision.
-                const createRevision = !editSessionVersionedRef.current;
-                const response = await store.objects.update(
-                    target.id,
-                    { content: file },
-                    { createRevision, ifMatch: target.etag },
-                );
-                editSessionVersionedRef.current = true;
-                onDirectEditApplied(response.id);
-                toast({ status: 'success', title: t('agent.documentEditApplied'), duration: 2000 });
-
-                const sendMessage = sendMessageRef.current;
-                if (sendMessage) {
-                    const appliedAction: MarkdownEditingAction = {
-                        ...action,
-                        applied: true,
-                        updated_document_id: response.id,
-                    };
-                    const blockType = action.anchor.block_type.replaceAll('_', ' ');
-                    sendMessage(t('agent.editedSelectionMessage', { blockType }), {
-                        editing_action: appliedAction,
-                    });
-                }
-            } catch (error: unknown) {
-                const status =
-                    typeof error === 'object' && error !== null && 'status' in error ? error.status : undefined;
-                const message = errorMessage(error, t('store.errorSavingTextDefault'));
-                const is412 = status === 412 || message.includes('412');
-                toast({
-                    status: 'error',
-                    title: t('store.errorSavingText'),
-                    description: is412 ? t('store.textConflict') : message,
-                    duration: 5000,
-                });
-                if (is412) reloadText();
-            }
-        },
-        [
-            editSessionVersionedRef,
-            fullText,
-            object.content?.etag,
-            object.content?.name,
-            object.content?.type,
-            object.id,
-            object.revision,
-            onDirectEditApplied,
-            reloadText,
-            sendMessageRef,
-            store.objects,
-            t,
-            toast,
-        ],
-    );
-
-    const handleCollaborationAction = useCallback(
-        (action: MarkdownEditingAction) => {
-            if (action.action === 'edit') {
-                void applyDirectEdit(action);
-                return;
-            }
-            const sendMessage = sendMessageRef.current;
-            if (!sendMessage) {
-                toast({
-                    status: 'warning',
-                    title: t('agent.startDocumentEditingConversationFirst'),
-                    duration: 3000,
-                });
-                return;
-            }
-            const blockType = action.anchor.block_type.replaceAll('_', ' ');
-            const displayMessage = action.comment?.trim() || t('agent.editedSelectionMessage', { blockType });
-            sendMessage(displayMessage, { editing_action: action });
-        },
-        [applyDirectEdit, sendMessageRef, t, toast],
-    );
 
     // Only poll while the active panel can actually surface processing progress.
     const shouldPollProgress =
@@ -843,16 +678,6 @@ function DataPanel({
                             text={displayText}
                             isTextCropped={isTextCropped}
                             textContainerRef={textContainerRef}
-                            collaboration={
-                                isCollaborating
-                                    ? {
-                                          baseVersion: object.content?.etag ?? object.text_etag,
-                                          highlightChangesFrom: changeHighlight?.previousText,
-                                          highlightVersion: changeHighlight?.version,
-                                          onAction: handleCollaborationAction,
-                                      }
-                                    : undefined
-                            }
                         />
                     </div>
                 )}
@@ -1050,7 +875,7 @@ function TextActions({
     );
 }
 
-const TextPanel = memo(({ object, text, isTextCropped, textContainerRef, collaboration }: TextPanelProps) => {
+const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextPanelProps) => {
     const { t } = useUITranslation();
     const content = object.content;
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
@@ -1082,24 +907,7 @@ const TextPanel = memo(({ object, text, isTextCropped, textContainerRef, collabo
                     </div>
                 ) : shouldRenderAsMarkdown ? (
                     <div className="vprose prose-sm p-1">
-                        {collaboration ? (
-                            <CollaborativeMarkdownRenderer
-                                resource={{
-                                    kind: 'store_document',
-                                    document_id: object.id,
-                                    name: object.name,
-                                }}
-                                baseVersion={collaboration.baseVersion}
-                                highlightChangesFrom={collaboration.highlightChangesFrom}
-                                highlightVersion={collaboration.highlightVersion}
-                                components={createMarkdownComponents()}
-                                onAction={collaboration.onAction}
-                            >
-                                {text}
-                            </CollaborativeMarkdownRenderer>
-                        ) : (
-                            <MarkdownRenderer components={createMarkdownComponents()}>{text}</MarkdownRenderer>
-                        )}
+                        <MarkdownRenderer components={createMarkdownComponents()}>{text}</MarkdownRenderer>
                     </div>
                 ) : (
                     <pre className="text-wrap bg-muted text-muted p-2">{text}</pre>

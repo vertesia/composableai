@@ -768,5 +768,9 @@
   "agent.documentEditingSelectModel": "Model seçin",
   "agent.editedSelectionMessage": "Seçili {{blockType}} düzenlendi",
   "agent.environment": "Ortam",
-  "agent.model": "Model"
+  "agent.model": "Model",
+  "agent.saveToDocument": "Belgeye kaydet",
+  "agent.workingCopy": "Çalışma kopyası",
+  "agent.originalDocument": "Orijinal belge",
+  "agent.reviewChanges": "Değişiklikleri gözden geçir"
 }
