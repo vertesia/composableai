@@ -1,11 +1,12 @@
-import { Badge, cn } from '@vertesia/ui/core';
+import { cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import type { MarkdownBlockType, MarkdownEditingAction, MarkdownEditingResource } from '@vertesia/ui/widgets';
-import { FilePenLine, MessageSquareText, PencilLine } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleCheck, FilePenLine, MessageSquareText, PencilLine } from 'lucide-react';
 
 const BLOCK_TYPES = new Set<MarkdownBlockType>([
     'heading',
     'paragraph',
+    'list',
     'list_item',
     'blockquote',
     'code_block',
@@ -67,6 +68,7 @@ export function parseMarkdownEditingAction(value: unknown): MarkdownEditingActio
     if (actionType === 'comment' && !comment) return undefined;
     if (actionType === 'edit' && (!before || !after)) return undefined;
 
+    const updatedDocumentId = readString(action, 'updated_document_id');
     return {
         operation_id: operationId,
         resource,
@@ -79,11 +81,17 @@ export function parseMarkdownEditingAction(value: unknown): MarkdownEditingActio
         },
         ...(comment ? { comment } : {}),
         ...(before && after ? { user_change: { before, after } } : {}),
+        ...(action?.applied === true ? { applied: true } : {}),
+        ...(updatedDocumentId ? { updated_document_id: updatedDocumentId } : {}),
     };
 }
 
+function shortenId(id: string): string {
+    return id.length > 12 ? `${id.slice(0, 4)}…${id.slice(-4)}` : id;
+}
+
 function resourceLabel(resource: MarkdownEditingResource): string {
-    if (resource.kind === 'store_document') return resource.name || `store:${resource.document_id}`;
+    if (resource.kind === 'store_document') return resource.name || shortenId(resource.document_id);
     return resource.path;
 }
 
@@ -104,31 +112,43 @@ function SourcePreview({ children, className }: { children: string; className?: 
 export function DocumentEditingActionCard({ action }: { action: MarkdownEditingAction }) {
     const { t } = useUITranslation();
     const isComment = action.action === 'comment';
+    const isApplied = action.applied === true;
     const blockType = action.anchor.block_type.replaceAll('_', ' ');
-    const Icon = isComment ? MessageSquareText : PencilLine;
+    const Icon = isComment ? MessageSquareText : isApplied ? CircleCheck : PencilLine;
 
     return (
         <section
             aria-label={t('agent.documentEditCardTitle')}
-            className="w-full min-w-0 overflow-hidden rounded-xl border border-mixer-info/25 bg-mixer-info/5 text-start shadow-sm"
+            className={cn(
+                'w-full min-w-0 overflow-hidden rounded-lg border text-start shadow-sm',
+                isApplied ? 'border-mixer-success/25 bg-mixer-success/5' : 'border-mixer-info/20 bg-mixer-info/5',
+            )}
             data-document-edit-action={action.action}
         >
-            <div className="flex items-center gap-2 border-b border-mixer-info/15 px-3 py-2">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-mixer-info/15 text-info">
+            <div className="flex items-center gap-2 px-3 pb-1 pt-2.5">
+                <span
+                    className={cn(
+                        'flex size-7 shrink-0 items-center justify-center rounded-full',
+                        isApplied ? 'bg-mixer-success/15 text-success' : 'bg-mixer-info/15 text-info',
+                    )}
+                >
                     <Icon className="size-3.5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
                     <div className="text-xs font-semibold text-foreground">
-                        {isComment ? t('agent.documentEditCardComment') : t('agent.documentEditCardDirectEdit')}
+                        {isComment
+                            ? t('agent.documentEditCardComment')
+                            : isApplied
+                              ? t('agent.documentEditCardApplied')
+                              : t('agent.documentEditCardDirectEdit')}
                     </div>
                     <div className="flex min-w-0 items-center gap-1 text-[11px] text-muted">
                         <FilePenLine className="size-3 shrink-0" aria-hidden="true" />
+                        <span className="shrink-0 capitalize">{blockType}</span>
+                        <span aria-hidden="true">·</span>
                         <span className="truncate">{resourceLabel(action.resource)}</span>
                     </div>
                 </div>
-                <Badge variant="outline" className="shrink-0 capitalize">
-                    {blockType}
-                </Badge>
             </div>
 
             <div className="space-y-2.5 px-3 py-3">
@@ -156,13 +176,23 @@ export function DocumentEditingActionCard({ action }: { action: MarkdownEditingA
                 )}
 
                 {isComment ? (
-                    <details className="group rounded-md border border-mixer-muted/20 bg-background/35 px-2.5 py-2">
-                        <summary className="cursor-pointer select-none text-xs font-medium text-muted hover:text-foreground">
+                    <details className="group">
+                        <summary
+                            className={cn(
+                                'flex cursor-pointer select-none list-none items-center gap-1 rounded text-xs',
+                                'font-medium text-muted transition-colors hover:text-foreground',
+                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mixer-info/40',
+                                '[&::-webkit-details-marker]:hidden',
+                            )}
+                        >
+                            <ChevronRight
+                                className="cn-rtl-flip size-3.5 shrink-0 group-open:hidden"
+                                aria-hidden="true"
+                            />
+                            <ChevronDown className="hidden size-3.5 shrink-0 group-open:block" aria-hidden="true" />
                             {t('agent.documentEditCardSelectedContent')}
                         </summary>
-                        <SourcePreview className="mt-2 border-0 bg-background/70">
-                            {action.anchor.exact_text}
-                        </SourcePreview>
+                        <SourcePreview className="mt-1.5">{action.anchor.exact_text}</SourcePreview>
                     </details>
                 ) : null}
             </div>

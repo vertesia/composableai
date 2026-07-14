@@ -38,6 +38,39 @@ describe('DocumentEditingActionCard', () => {
         expect(screen.queryByText('operation-1')).toBeNull();
     });
 
+    it('renders an applied edit as a saved notification', () => {
+        const parsed = parseMarkdownEditingAction({
+            operation_id: 'operation-2',
+            resource: { kind: 'store_document', document_id: 'document-1', name: 'Launch plan' },
+            action: 'edit',
+            anchor: {
+                block_id: 'list:10:24',
+                block_type: 'list',
+                exact_text: '- Preserve unrelated sections.',
+            },
+            user_change: {
+                before: '- Preserve unrelated sections.',
+                after: '- Preserve unrelated sections.\n- And be fun',
+            },
+            applied: true,
+            updated_document_id: 'document-2',
+        });
+        expect(parsed).toBeDefined();
+        if (!parsed) throw new Error('Expected a valid editing action');
+        expect(parsed.applied).toBe(true);
+        expect(parsed.updated_document_id).toBe('document-2');
+
+        render(
+            <I18nProvider lng="en">
+                <DocumentEditingActionCard action={parsed} />
+            </I18nProvider>,
+        );
+
+        expect(screen.getByText('Edit applied')).not.toBeNull();
+        expect(screen.getByText('list')).not.toBeNull();
+        expect(screen.getByText('Launch plan')).not.toBeNull();
+    });
+
     it('rejects malformed editing metadata', () => {
         expect(parseMarkdownEditingAction({ action: 'comment' })).toBeUndefined();
     });

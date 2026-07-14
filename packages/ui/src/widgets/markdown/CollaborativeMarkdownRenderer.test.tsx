@@ -5,6 +5,7 @@ import type { Element } from 'hast';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../i18n/index.js';
 import {
+    applyMarkdownEditingChange,
     CollaborativeMarkdownRenderer,
     createMarkdownBlockAnchor,
     formatMarkdownEditingAction,
@@ -251,5 +252,95 @@ describe('collaborative Markdown actions', () => {
 
         expect(screen.queryByRole('button', { name: 'Comment on selection' })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Edit selection' })).toBeNull();
+    });
+
+    it('selects a list as one group instead of individual bullets', async () => {
+        const onAction = vi.fn();
+        const markdown = '- First bullet\n- Second bullet';
+        render(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'store_document', document_id: 'document-1' }}
+                    onAction={onAction}
+                >
+                    {markdown}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        // One control set for the whole list, none per bullet.
+        expect(screen.getAllByRole('button', { name: 'Comment on selection' })).toHaveLength(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Edit selection' }));
+        fireEvent.change(screen.getByRole('textbox'), {
+            target: { value: '- First bullet\n- Second bullet\n- Third bullet' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+        await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));
+        expect(onAction).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: 'edit',
+                anchor: expect.objectContaining({
+                    block_type: 'list',
+                    exact_text: '- First bullet\n- Second bullet',
+                }),
+                user_change: {
+                    before: '- First bullet\n- Second bullet',
+                    after: '- First bullet\n- Second bullet\n- Third bullet',
+                },
+            }),
+        );
+    });
+
+    it('applies an anchored edit to the markdown source', () => {
+        const markdown = '# Title\n\n- First bullet\n- Second bullet\n\nTail paragraph.';
+        const start = markdown.indexOf('- First');
+        const end = markdown.indexOf('\n\nTail');
+        const action: MarkdownEditingAction = {
+            operation_id: 'operation-1',
+            resource: { kind: 'store_document', document_id: 'document-1' },
+            action: 'edit',
+            anchor: {
+                block_id: `list:${start}:${end}`,
+                block_type: 'list',
+                source_range: { start, end },
+                exact_text: markdown.slice(start, end),
+            },
+            user_change: {
+                before: markdown.slice(start, end),
+                after: '- First bullet\n- Second bullet\n- Third bullet',
+            },
+        };
+
+        expect(applyMarkdownEditingChange(markdown, action)).toBe(
+            '# Title\n\n- First bullet\n- Second bullet\n- Third bullet\n\nTail paragraph.',
+        );
+    });
+
+    it('recovers a shifted anchor through its prefix context and rejects ambiguity', () => {
+        const shifted: MarkdownEditingAction = {
+            operation_id: 'operation-2',
+            resource: { kind: 'store_document', document_id: 'document-1' },
+            action: 'edit',
+            anchor: {
+                block_id: 'paragraph:0:0',
+                block_type: 'paragraph',
+                source_range: { start: 0, end: 6 },
+                exact_text: 'Target',
+                prefix: 'Intro.\n\n',
+            },
+            user_change: { before: 'Target', after: 'Changed' },
+        };
+
+        // The range no longer matches, but the prefix disambiguates the occurrence.
+        expect(applyMarkdownEditingChange('Header.\n\nIntro.\n\nTarget', shifted)).toBe('Header.\n\nIntro.\n\nChanged');
+        // Range mismatch, two occurrences, and no usable prefix: refuse to guess.
+        expect(
+            applyMarkdownEditingChange('Intro.\n\nTarget\n\nTarget', {
+                ...shifted,
+                anchor: { ...shifted.anchor, prefix: undefined },
+            }),
+        ).toBeUndefined();
     });
 });

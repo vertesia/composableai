@@ -21,6 +21,7 @@ export {
     useCodeBlockRendererRegistry,
 } from './CodeBlockRendering';
 export {
+    applyMarkdownEditingChange,
     CollaborativeMarkdownRenderer,
     type CollaborativeMarkdownRendererProps,
     createMarkdownBlockAnchor,

@@ -48,6 +48,8 @@ function createDocumentEditingPrompt(object: ContentObject, userPrompt: string):
         'Treat direct user edits as authoritative. For comments and rewrite requests, preserve unrelated content.',
         'Before modifying the document, load the document-management or content-authoring skill as appropriate.',
         'Use the document artifact workflow and update_document to save changes with revision and concurrency checks.',
+        'Create a document revision only on your first save in this conversation (create_revision: true); for every',
+        'later save pass create_revision: false so the whole session stays on one working revision.',
         '',
         `User request: ${userPrompt}`,
     ].join('\n');
@@ -276,7 +278,7 @@ export function DocumentEditingPanel({
                         initialMessage={t('agent.documentEditingWelcome')}
                         startButtonText={isStarting ? t('agent.startingAgent') : t('agent.startAgent')}
                         placeholder={t('agent.documentEditingPlaceholder')}
-                        initialToolApprovalMode="ask"
+                        initialToolApprovalMode="full_control"
                         hideObjectLinking
                         hideHeader
                         hideFileUpload

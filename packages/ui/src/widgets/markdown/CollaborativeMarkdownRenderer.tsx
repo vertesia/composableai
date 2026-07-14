@@ -18,7 +18,18 @@ export type MarkdownEditingResource =
           path: string;
       };
 
-export type MarkdownBlockType = 'heading' | 'paragraph' | 'list_item' | 'blockquote' | 'code_block' | 'table';
+export type MarkdownBlockType =
+    | 'heading'
+    | 'paragraph'
+    | 'list'
+    /** Legacy anchors from before lists became the selectable unit. */
+    | 'list_item'
+    | 'blockquote'
+    | 'code_block'
+    | 'table';
+
+/** Container blocks whose inner blocks must not offer their own selection controls. */
+const CONTAINER_BLOCK_TYPES = new Set<MarkdownBlockType>(['list', 'blockquote', 'table']);
 
 export interface MarkdownBlockAnchor {
     block_id: string;
@@ -46,6 +57,10 @@ export interface MarkdownEditingAction {
         before: string;
         after: string;
     };
+    /** True when the client already committed this change to the resource. */
+    applied?: boolean;
+    /** Revision/document id produced by an applied change. */
+    updated_document_id?: string;
 }
 
 export interface CollaborativeMarkdownRendererProps extends Omit<MarkdownRendererProps, 'children' | 'components'> {
@@ -88,6 +103,9 @@ interface CollaborativeMarkdownContextValue {
 }
 
 const CollaborativeMarkdownContext = createContext<CollaborativeMarkdownContextValue | null>(null);
+
+/** True inside a selectable container block (list, blockquote, table). */
+const NestedMarkdownBlockContext = createContext(false);
 
 const CONTEXT_LENGTH = 80;
 const ATX_HEADING = /^ {0,3}(#{1,6})[\t ]+(.+?)[\t ]*#*[\t ]*$/;
@@ -211,9 +229,58 @@ function markdownFence(...values: string[]): string {
     return '`'.repeat(Math.max(3, longestRun + 1));
 }
 
+/**
+ * Apply a user edit to the markdown source. Returns the updated markdown, or
+ * undefined when the anchored content cannot be located unambiguously.
+ */
+export function applyMarkdownEditingChange(markdown: string, action: MarkdownEditingAction): string | undefined {
+    const change = action.user_change;
+    if (!change) return undefined;
+    const { before, after } = change;
+
+    const range = action.anchor.source_range;
+    if (range && markdown.slice(range.start, range.end) === before) {
+        return markdown.slice(0, range.start) + after + markdown.slice(range.end);
+    }
+
+    const prefix = action.anchor.prefix;
+    if (prefix) {
+        const anchored = markdown.indexOf(prefix + before);
+        if (anchored >= 0 && markdown.indexOf(prefix + before, anchored + 1) < 0) {
+            const start = anchored + prefix.length;
+            return markdown.slice(0, start) + after + markdown.slice(start + before.length);
+        }
+    }
+
+    const first = markdown.indexOf(before);
+    if (first < 0 || markdown.indexOf(before, first + 1) >= 0) return undefined;
+    return markdown.slice(0, first) + after + markdown.slice(first + before.length);
+}
+
 export function formatMarkdownEditingAction(action: MarkdownEditingAction): string {
     const reference = resourceReference(action.resource);
     const location = action.anchor.block_type.replace('_', ' ');
+
+    if (action.action === 'edit' && action.user_change && action.applied) {
+        const fence = markdownFence(action.user_change.before, action.user_change.after);
+        return [
+            `I already edited the ${location} in ${reference} myself and the change is saved` +
+                `${action.updated_document_id ? ` as revision ${action.updated_document_id}` : ''}.`,
+            `Operation: ${action.operation_id}`,
+            'This is a notification only. Do not apply this change again and do not modify the document in ' +
+                'response; acknowledge briefly and use the latest content going forward.',
+            '',
+            'Before:',
+            `${fence}markdown`,
+            action.user_change.before,
+            fence,
+            '',
+            'After:',
+            `${fence}markdown`,
+            action.user_change.after,
+            fence,
+        ].join('\n');
+    }
 
     if (action.action === 'edit' && action.user_change) {
         const fence = markdownFence(action.user_change.before, action.user_change.after);
@@ -312,6 +379,15 @@ function createBlockComponent(
         const { t } = useUITranslation();
         const { markdown, readOnly, activeEditing, highlightChangesFrom, flashChangedBlocks, beginEditing } =
             useCollaborativeMarkdownContext();
+        const isNested = useContext(NestedMarkdownBlockContext);
+        const rendered = ExistingComponent
+            ? React.createElement(ExistingComponent, { node, ...props }, blockChildren)
+            : React.createElement(tag, props, blockChildren);
+
+        // Blocks inside a selectable container (a bullet's paragraph, a nested list, a
+        // quoted paragraph) are edited through their container, not individually.
+        if (isNested) return rendered;
+
         const anchor = createMarkdownBlockLocator(markdown, node, blockType);
         const isAnchorable = !readOnly && Boolean(anchor.source_range && anchor.exact_text);
         const isSelected = activeEditing?.anchor.block_id === anchor.block_id;
@@ -322,7 +398,7 @@ function createBlockComponent(
             !highlightChangesFrom?.includes(anchor.exact_text);
         const containerClassName = cn(
             'group/collab relative rounded-md border transition-colors duration-700',
-            tag === 'li' ? 'px-2' : '-mx-2 px-2',
+            '-mx-2 px-2',
             isSelected
                 ? 'border-info bg-mixer-info/5'
                 : isAnchorable
@@ -373,28 +449,15 @@ function createBlockComponent(
             </>
         ) : null;
 
-        if (tag === 'li') {
-            const ListItem = ExistingComponent ?? 'li';
-            return (
-                <ListItem
-                    {...(ExistingComponent ? { node } : {})}
-                    {...props}
-                    className={cn(props.className, containerClassName)}
-                    data-collaborative-block={anchor.block_id}
-                >
-                    {blockChildren}
-                    {controls}
-                </ListItem>
-            );
-        }
-
-        const rendered = ExistingComponent
-            ? React.createElement(ExistingComponent, { node, ...props }, blockChildren)
-            : React.createElement(tag, props, blockChildren);
+        const content = CONTAINER_BLOCK_TYPES.has(blockType) ? (
+            <NestedMarkdownBlockContext.Provider value={true}>{rendered}</NestedMarkdownBlockContext.Provider>
+        ) : (
+            rendered
+        );
 
         return (
             <div className={containerClassName} data-collaborative-block={anchor.block_id}>
-                {rendered}
+                {content}
                 {controls}
             </div>
         );
@@ -449,7 +512,8 @@ export function CollaborativeMarkdownRenderer({
             h4: createBlockComponent('h4', 'heading', components?.h4 as React.ElementType | undefined),
             h5: createBlockComponent('h5', 'heading', components?.h5 as React.ElementType | undefined),
             h6: createBlockComponent('h6', 'heading', components?.h6 as React.ElementType | undefined),
-            li: createBlockComponent('li', 'list_item', components?.li as React.ElementType | undefined),
+            ul: createBlockComponent('ul', 'list', components?.ul as React.ElementType | undefined),
+            ol: createBlockComponent('ol', 'list', components?.ol as React.ElementType | undefined),
             blockquote: createBlockComponent(
                 'blockquote',
                 'blockquote',
