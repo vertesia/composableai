@@ -18,6 +18,8 @@ import { installDependencies, selectPackageManager } from './package-manager.js'
 import { runPostInstallHooks, runPreInstallHooks } from './post-install.js';
 import {
     adjustPackageJson,
+    applyDevModeAnswers,
+    applyDevModePackageManagerConfig,
     handleConditionalRemoves,
     removeMetaFiles,
     renameFiles,
@@ -147,6 +149,10 @@ Documentation: ${config.docsUrl}
         answers.PM_RUN = `${packageManager} run`;
         answers.PM_VERSION = execSync(`${packageManager} --version`, { encoding: 'utf8' }).trim();
 
+        if (dev) {
+            applyDevModeAnswers(templateConfig, answers);
+        }
+
         // Step 5: Replace variables in files
         replaceVariables(projectName, templateConfig, answers);
 
@@ -160,6 +166,9 @@ Documentation: ${config.docsUrl}
 
         // Step 8: Rename files (e.g., .env.template -> .env)
         renameFiles(projectName, templateConfig);
+
+        // Step 8b: Apply package-manager configuration that depends on renamed files.
+        applyDevModePackageManagerConfig(projectName, templateConfig, dev, packageManager);
 
         // Step 9: Run template-specific code generation
         const scaffoldContext: ScaffoldContext = {
