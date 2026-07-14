@@ -758,5 +758,21 @@
   "agent.editSelectionPlaceholder": "Edita el Markdown seleccionado...",
   "agent.editWithAI": "Editar con IA",
   "agent.failedToLoadArtifact": "No se pudo cargar el artefacto",
-  "agent.startDocumentEditingConversationFirst": "Inicia la conversación de edición del documento antes de enviar una sección"
+  "agent.startDocumentEditingConversationFirst": "Inicia la conversación de edición del documento antes de enviar una sección",
+  "agent.documentEditCardAfter": "Después",
+  "agent.documentEditCardBefore": "Antes",
+  "agent.documentEditCardComment": "Comentario sobre el documento",
+  "agent.documentEditCardDirectEdit": "Edición directa del documento",
+  "agent.documentEditCardSelectedContent": "Contenido seleccionado",
+  "agent.documentEditCardTitle": "Solicitud de edición del documento",
+  "agent.documentEditingConfiguration": "Entorno y modelo",
+  "agent.documentEditingConfigurationDescription": "Usa de forma predeterminada el modelo configurado para los agentes de este proyecto.",
+  "agent.documentEditingConfigurationLocked": "Esta configuración pertenece a la conversación asociada. Inicia una conversación nueva para cambiarla.",
+  "agent.documentEditingDraftPreserved": "Se conservó tu borrador",
+  "agent.documentEditingDraftPreservedDescription": "El documento cambió mientras editabas. Copia o adapta este borrador antes de descartarlo.",
+  "agent.documentEditingSelectEnvironment": "Seleccionar un entorno",
+  "agent.documentEditingSelectModel": "Seleccionar un modelo",
+  "agent.editedSelectionMessage": "Se editó el elemento {{blockType}} seleccionado",
+  "agent.environment": "Entorno",
+  "agent.model": "Modelo"
 }

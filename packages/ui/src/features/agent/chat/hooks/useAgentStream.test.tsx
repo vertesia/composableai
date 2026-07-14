@@ -186,6 +186,37 @@ describe('useAgentStream', () => {
         expect(streamMessages).toHaveBeenCalledTimes(1);
     });
 
+    it('does not forward replayed history deliveries to onMessage', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const historical = createMessage(AgentMessageType.UPDATE, 1_000, 'historical update');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([historical]);
+            // Mirror completed-run behavior where archived events can be replayed
+            // immediately, before React has rendered the history state update.
+            onMessage?.(historical);
+            onMessage?.(createMessage(AgentMessageType.UPDATE, 900, 'older replay'));
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const onMessage = vi.fn();
+        renderHook(() => useAgentStream(client, 'agent-run-1', onMessage));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        expect(onMessage).not.toHaveBeenCalled();
+
+        act(() => deliver?.(createMessage(AgentMessageType.UPDATE, 1_100, 'live update')));
+        expect(onMessage).toHaveBeenCalledTimes(1);
+    });
+
     it('marks initial history as errored when the history fetch fails', async () => {
         const streamMessages = vi.fn<
             (

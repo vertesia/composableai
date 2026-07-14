@@ -788,5 +788,21 @@
   "agent.editSelectionPlaceholder": "حرر Markdown المحدد...",
   "agent.editWithAI": "التحرير بالذكاء الاصطناعي",
   "agent.failedToLoadArtifact": "تعذر تحميل العنصر",
-  "agent.startDocumentEditingConversationFirst": "ابدأ محادثة تحرير المستند قبل إرسال قسم"
+  "agent.startDocumentEditingConversationFirst": "ابدأ محادثة تحرير المستند قبل إرسال قسم",
+  "agent.documentEditCardAfter": "بعد",
+  "agent.documentEditCardBefore": "قبل",
+  "agent.documentEditCardComment": "تعليق على المستند",
+  "agent.documentEditCardDirectEdit": "تحرير مباشر للمستند",
+  "agent.documentEditCardSelectedContent": "المحتوى المحدد",
+  "agent.documentEditCardTitle": "طلب تحرير المستند",
+  "agent.documentEditingConfiguration": "البيئة والنموذج",
+  "agent.documentEditingConfigurationDescription": "يستخدم افتراضيًا النموذج المُعدّ للوكلاء في هذا المشروع.",
+  "agent.documentEditingConfigurationLocked": "ينتمي هذا الإعداد إلى المحادثة المرتبطة. ابدأ محادثة جديدة لتغييره.",
+  "agent.documentEditingDraftPreserved": "تم الاحتفاظ بمسودتك",
+  "agent.documentEditingDraftPreservedDescription": "تغيّر المستند أثناء التحرير. انسخ هذه المسودة أو عدّلها قبل إغلاقها.",
+  "agent.documentEditingSelectEnvironment": "اختر بيئة",
+  "agent.documentEditingSelectModel": "اختر نموذجًا",
+  "agent.editedSelectionMessage": "تم تحرير {{blockType}} المحدد",
+  "agent.environment": "البيئة",
+  "agent.model": "النموذج"
 }

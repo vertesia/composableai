@@ -355,7 +355,12 @@ export function useAgentStream(
                 agentRunId,
                 (message) => {
                     if (abortController.signal.aborted) return;
-                    onMessageRef.current?.(message);
+                    // Completed and idle runs replay their archived history through the live
+                    // stream. Only forward genuinely new deliveries so onMessage consumers
+                    // never treat replayed events as fresh ones.
+                    if (!message.timestamp || message.timestamp > lastDeliveredTsRef.current) {
+                        onMessageRef.current?.(message);
+                    }
 
                     debugAgentChat('stream message', {
                         agentRunId,
@@ -461,6 +466,14 @@ export function useAgentStream(
                     onHistoryLoaded: (historical) => {
                         if (abortController.signal.aborted) return;
                         const timelineMessages = historical.filter(shouldStoreTimelineMessage);
+                        // Advance the watermark synchronously before React processes the
+                        // history state update. Some completed streams replay history via
+                        // the live callback immediately after onHistoryLoaded returns.
+                        for (const message of historical) {
+                            if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
+                                lastDeliveredTsRef.current = message.timestamp;
+                            }
+                        }
                         debugAgentChat('history loaded', {
                             agentRunId,
                             count: historical.length,
@@ -472,12 +485,7 @@ export function useAgentStream(
                         setInitialHistoryStatus(historical.length > 0 ? 'has_messages' : 'empty');
                         if (timelineMessages.length > 0) {
                             setMessages((prev) =>
-                                timelineMessages.reduce((next, message) => {
-                                    if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
-                                        lastDeliveredTsRef.current = message.timestamp;
-                                    }
-                                    return insertTimelineMessage(next, message);
-                                }, prev),
+                                timelineMessages.reduce((next, message) => insertTimelineMessage(next, message), prev),
                             );
                         }
                     },

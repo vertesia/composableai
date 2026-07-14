@@ -23,10 +23,11 @@ describe('DocumentEditingActionCard', () => {
     it('parses and renders a compact comment card', () => {
         const parsed = parseMarkdownEditingAction(action);
         expect(parsed).toBeDefined();
+        if (!parsed) throw new Error('Expected a valid editing action');
 
         render(
             <I18nProvider lng="en">
-                <DocumentEditingActionCard action={parsed!} />
+                <DocumentEditingActionCard action={parsed} />
             </I18nProvider>,
         );
 

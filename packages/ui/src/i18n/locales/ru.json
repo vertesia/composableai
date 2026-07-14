@@ -768,5 +768,21 @@
   "agent.editSelectionPlaceholder": "Измените выбранный Markdown...",
   "agent.editWithAI": "Редактировать с помощью ИИ",
   "agent.failedToLoadArtifact": "Не удалось загрузить артефакт",
-  "agent.startDocumentEditingConversationFirst": "Начните разговор о редактировании документа перед отправкой раздела"
+  "agent.startDocumentEditingConversationFirst": "Начните разговор о редактировании документа перед отправкой раздела",
+  "agent.documentEditCardAfter": "После",
+  "agent.documentEditCardBefore": "До",
+  "agent.documentEditCardComment": "Комментарий к документу",
+  "agent.documentEditCardDirectEdit": "Прямое редактирование документа",
+  "agent.documentEditCardSelectedContent": "Выбранное содержимое",
+  "agent.documentEditCardTitle": "Запрос на редактирование документа",
+  "agent.documentEditingConfiguration": "Среда и модель",
+  "agent.documentEditingConfigurationDescription": "По умолчанию используется модель, настроенная для агентов в этом проекте.",
+  "agent.documentEditingConfigurationLocked": "Эта конфигурация относится к подключённому диалогу. Чтобы изменить её, начните новый диалог.",
+  "agent.documentEditingDraftPreserved": "Ваш черновик сохранён",
+  "agent.documentEditingDraftPreservedDescription": "Документ изменился во время редактирования. Скопируйте или скорректируйте этот черновик перед закрытием.",
+  "agent.documentEditingSelectEnvironment": "Выберите среду",
+  "agent.documentEditingSelectModel": "Выберите модель",
+  "agent.editedSelectionMessage": "Выбранный элемент {{blockType}} изменён",
+  "agent.environment": "Среда",
+  "agent.model": "Модель"
 }

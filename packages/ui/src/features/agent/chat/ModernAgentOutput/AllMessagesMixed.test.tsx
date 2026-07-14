@@ -116,6 +116,33 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByLabelText('Message consumed')).not.toBeNull();
     });
 
+    it('renders structured document editing input as a compact card', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1_000,
+                type: AgentMessageType.QUESTION,
+                message: 'Add one concrete example.',
+                details: {
+                    editing_action: {
+                        operation_id: 'operation-1',
+                        resource: { kind: 'store_document', document_id: 'document-1', name: 'Launch plan' },
+                        action: 'comment',
+                        anchor: {
+                            block_id: 'list_item:10:24',
+                            block_type: 'list_item',
+                            exact_text: '- Preserve unrelated sections.',
+                        },
+                        comment: 'Add one concrete example.',
+                    },
+                },
+            }),
+        ]);
+
+        expect(screen.getByRole('region', { name: 'Document edit request' })).not.toBeNull();
+        expect(screen.getByText('Add one concrete example.')).not.toBeNull();
+        expect(screen.queryByText('operation-1')).toBeNull();
+    });
+
     it('renders delivery status on user messages in stacked view', () => {
         renderStacked([
             makeMessage({

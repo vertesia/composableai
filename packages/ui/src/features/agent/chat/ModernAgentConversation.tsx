@@ -571,7 +571,7 @@ export interface ModernAgentConversationProps {
     fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
     /** Ref populated with the internal message sender for document or artifact collaboration controls. */
     sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
-    /** Called for each historical or live message delivered by the conversation stream. */
+    /** Called for each live message delivered after the conversation stream connects. */
     onMessage?: (message: AgentMessage) => void;
     /** Called when processingFiles state changes (for external progress display) */
     onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;

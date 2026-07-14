@@ -2,9 +2,12 @@ import type { AgentRun } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
 import {
     createDocumentEditingRunIdentity,
+    createDocumentEditingScopeKey,
     findDocumentEditingRun,
     getDocumentTextActionAccess,
     isDocumentEditingRun,
+    isDocumentEditingScopeOpen,
+    setDocumentEditingScopeOpen,
 } from './documentEditingRun.js';
 
 const startedBy = 'user:user-1';
@@ -26,6 +29,16 @@ function createRun(overrides: Partial<AgentRun> = {}): AgentRun {
 }
 
 describe('document editing run identity', () => {
+    it('keeps the editing panel open across document component remounts', () => {
+        const scopeKey = createDocumentEditingScopeKey('project-1', 'document-root');
+
+        setDocumentEditingScopeOpen(scopeKey, true);
+        expect(isDocumentEditingScopeOpen(scopeKey)).toBe(true);
+
+        setDocumentEditingScopeOpen(scopeKey, false);
+        expect(isDocumentEditingScopeOpen(scopeKey)).toBe(false);
+    });
+
     it('keeps collaboration access independent from direct editing access', () => {
         expect(getDocumentTextActionAccess(false, true)).toEqual({
             canEdit: false,

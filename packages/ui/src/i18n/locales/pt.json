@@ -758,5 +758,21 @@
   "agent.editSelectionPlaceholder": "Edite o Markdown selecionado...",
   "agent.editWithAI": "Editar com IA",
   "agent.failedToLoadArtifact": "Falha ao carregar o artefato",
-  "agent.startDocumentEditingConversationFirst": "Inicie a conversa de edição do documento antes de enviar uma seção"
+  "agent.startDocumentEditingConversationFirst": "Inicie a conversa de edição do documento antes de enviar uma seção",
+  "agent.documentEditCardAfter": "Depois",
+  "agent.documentEditCardBefore": "Antes",
+  "agent.documentEditCardComment": "Comentário no documento",
+  "agent.documentEditCardDirectEdit": "Edição direta do documento",
+  "agent.documentEditCardSelectedContent": "Conteúdo selecionado",
+  "agent.documentEditCardTitle": "Solicitação de edição do documento",
+  "agent.documentEditingConfiguration": "Ambiente e modelo",
+  "agent.documentEditingConfigurationDescription": "Usa por padrão o modelo configurado para os agentes deste projeto.",
+  "agent.documentEditingConfigurationLocked": "Esta configuração pertence à conversa associada. Inicie uma nova conversa para alterá-la.",
+  "agent.documentEditingDraftPreserved": "Seu rascunho foi preservado",
+  "agent.documentEditingDraftPreservedDescription": "O documento mudou enquanto você editava. Copie ou adapte este rascunho antes de descartá-lo.",
+  "agent.documentEditingSelectEnvironment": "Selecionar um ambiente",
+  "agent.documentEditingSelectModel": "Selecionar um modelo",
+  "agent.editedSelectionMessage": "Elemento {{blockType}} selecionado editado",
+  "agent.environment": "Ambiente",
+  "agent.model": "Modelo"
 }

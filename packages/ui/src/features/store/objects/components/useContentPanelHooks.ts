@@ -6,7 +6,7 @@ import {
 } from '@vertesia/common';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -14,7 +14,7 @@ const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
 /**
  * Hook for managing object text loading and cropping.
  */
-export function useObjectText(objectId: string, initialText?: string, loadOnMount = false) {
+export function useObjectText(objectId: string, initialText?: string, loadOnMount = false, changeGroupId = objectId) {
     const { store } = useUserSession();
 
     const [fullText, setFullText] = useState<string | undefined>(initialText);
@@ -26,56 +26,81 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
     });
     const [isLoading, setIsLoading] = useState(false);
     const [isCropped, setIsCropped] = useState(() => !!initialText && initialText.length > MAX_TEXT_DISPLAY_SIZE);
+    const [changeHighlight, setChangeHighlight] = useState<{ previousText: string; version: number }>();
+    const fullTextRef = useRef(initialText);
+    const objectIdRef = useRef(objectId);
+    const changeGroupIdRef = useRef(changeGroupId);
+    const suppressNextHighlightRef = useRef(false);
+
+    const applyText = useCallback((nextText: string | undefined, shouldHighlight = true) => {
+        const previousText = fullTextRef.current;
+        if (shouldHighlight && previousText && nextText && previousText !== nextText) {
+            setChangeHighlight((current) => ({
+                previousText,
+                version: (current?.version ?? 0) + 1,
+            }));
+        } else if (!shouldHighlight) {
+            setChangeHighlight(undefined);
+        }
+
+        fullTextRef.current = nextText;
+        setFullText(nextText);
+        if (nextText && nextText.length > MAX_TEXT_DISPLAY_SIZE) {
+            setDisplayText(nextText.substring(0, MAX_TEXT_DISPLAY_SIZE));
+            setIsCropped(true);
+        } else {
+            setDisplayText(nextText);
+            setIsCropped(false);
+        }
+    }, []);
 
     const loadText = useCallback(() => {
+        const requestedObjectId = objectId;
+        const requestedChangeGroupId = changeGroupId;
         setIsLoading(true);
         store.objects
             .getObjectText(objectId)
             .then((res) => {
-                setFullText(res.text);
-                if (res.text && res.text.length > MAX_TEXT_DISPLAY_SIZE) {
-                    setDisplayText(res.text.substring(0, MAX_TEXT_DISPLAY_SIZE));
-                    setIsCropped(true);
-                } else {
-                    setDisplayText(res.text);
-                    setIsCropped(false);
-                }
+                if (objectIdRef.current !== requestedObjectId) return;
+                const shouldHighlight =
+                    changeGroupIdRef.current === requestedChangeGroupId && !suppressNextHighlightRef.current;
+                applyText(res.text, shouldHighlight);
+                suppressNextHighlightRef.current = false;
             })
             .catch((err) => {
                 console.error('Failed to load text', err);
-                setFullText(undefined);
-                setDisplayText(undefined);
-                setIsCropped(false);
             })
             .finally(() => {
-                setIsLoading(false);
+                if (objectIdRef.current === requestedObjectId) setIsLoading(false);
             });
-    }, [objectId, store]);
+    }, [applyText, changeGroupId, objectId, store]);
 
     // Reset state when objectId changes
-    useEffect(() => {
-        // Reset to initial text for new object
-        if (initialText && initialText.length > MAX_TEXT_DISPLAY_SIZE) {
-            setFullText(initialText);
-            setDisplayText(initialText.substring(0, MAX_TEXT_DISPLAY_SIZE));
-            setIsCropped(true);
-        } else {
-            setFullText(initialText);
-            setDisplayText(initialText);
-            setIsCropped(false);
+    useLayoutEffect(() => {
+        const objectChanged = objectIdRef.current !== objectId;
+        const changeGroupChanged = changeGroupIdRef.current !== changeGroupId;
+        objectIdRef.current = objectId;
+        changeGroupIdRef.current = changeGroupId;
+        if (changeGroupChanged) suppressNextHighlightRef.current = true;
+
+        // Keep the previous revision mounted until the next revision's text is ready.
+        if (initialText !== undefined) {
+            applyText(initialText, !changeGroupChanged);
+            suppressNextHighlightRef.current = false;
         }
 
         // Load text if requested
-        if (loadOnMount && !initialText) {
+        if (loadOnMount && initialText === undefined && (objectChanged || fullTextRef.current === undefined)) {
             loadText();
         }
-    }, [initialText, loadOnMount, loadText]);
+    }, [applyText, changeGroupId, initialText, loadOnMount, loadText, objectId]);
 
     return {
         fullText,
         displayText,
         isLoading,
         isCropped,
+        changeHighlight,
         loadText,
     };
 }

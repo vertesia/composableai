@@ -10,6 +10,11 @@ import {
     type StartWorkflowOptions,
 } from '../../../agent/chat/ModernAgentConversation.js';
 import {
+    type DocumentEditingConfiguration,
+    DocumentEditingConfigurationSelector,
+    getDocumentEditingProjectDefault,
+} from './DocumentEditingConfigurationSelector.js';
+import {
     createDocumentEditingRunIdentity,
     type DocumentEditingRunProperties,
     findDocumentEditingRun,
@@ -60,9 +65,60 @@ export function DocumentEditingPanel({
     const [agentRunId, setAgentRunId] = useState<string | undefined>();
     const [isStarting, setIsStarting] = useState(false);
     const [isResolvingRun, setIsResolvingRun] = useState(true);
+    const [isLoadingConfiguration, setIsLoadingConfiguration] = useState(true);
+    const [executionConfiguration, setExecutionConfiguration] = useState<DocumentEditingConfiguration>({});
+    const configurationSourceRef = useRef<'none' | 'project' | 'run' | 'user'>('none');
     const seenUpdatesRef = useRef(new Set<string>());
     const documentRootId = object.revision?.root || object.id;
     const startedBy = user?.sub ? `user:${user.sub}` : undefined;
+    const editingScopeKey = `${project?.id ?? 'no-project'}:${documentRootId}`;
+    const editingScopeRef = useRef(editingScopeKey);
+    const lookupIdentityRef = useRef({ documentId: object.id, documentRootId });
+    if (lookupIdentityRef.current.documentRootId !== documentRootId) {
+        lookupIdentityRef.current = { documentId: object.id, documentRootId };
+    }
+
+    useEffect(() => {
+        if (editingScopeRef.current === editingScopeKey) return;
+        editingScopeRef.current = editingScopeKey;
+        configurationSourceRef.current = 'none';
+        setExecutionConfiguration({});
+        seenUpdatesRef.current.clear();
+    }, [editingScopeKey]);
+
+    useEffect(() => {
+        if (!project) {
+            setIsLoadingConfiguration(false);
+            return;
+        }
+
+        let cancelled = false;
+        const requestScopeKey = editingScopeKey;
+        setIsLoadingConfiguration(true);
+        void client.projects
+            .retrieve(project.id)
+            .then((fullProject) => {
+                if (
+                    cancelled ||
+                    editingScopeRef.current !== requestScopeKey ||
+                    configurationSourceRef.current !== 'none'
+                ) {
+                    return;
+                }
+                configurationSourceRef.current = 'project';
+                setExecutionConfiguration(getDocumentEditingProjectDefault(fullProject));
+            })
+            .catch((err: unknown) => {
+                console.warn('Failed to load the default document editing model', err);
+            })
+            .finally(() => {
+                if (!cancelled) setIsLoadingConfiguration(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [client, editingScopeKey, project]);
 
     useEffect(() => {
         setAgentRunId(undefined);
@@ -73,9 +129,17 @@ export function DocumentEditingPanel({
 
         let cancelled = false;
         setIsResolvingRun(true);
-        void findDocumentEditingRun(client.agents, object.id, documentRootId, startedBy)
+        void findDocumentEditingRun(client.agents, lookupIdentityRef.current.documentId, documentRootId, startedBy)
             .then((run) => {
-                if (!cancelled && run) setAgentRunId(run.id);
+                if (cancelled || !run) return;
+                setAgentRunId(run.id);
+                if (run.config?.environment && run.config.model) {
+                    configurationSourceRef.current = 'run';
+                    setExecutionConfiguration({
+                        environment: run.config.environment,
+                        model: run.config.model,
+                    });
+                }
             })
             .catch((err: unknown) => {
                 console.warn('Failed to look up an existing document editing run', err);
@@ -87,17 +151,19 @@ export function DocumentEditingPanel({
         return () => {
             cancelled = true;
         };
-    }, [client.agents, documentRootId, object.id, startedBy]);
+    }, [client, documentRootId, startedBy]);
+
+    const handleConfigurationChange = useCallback((value: DocumentEditingConfiguration) => {
+        configurationSourceRef.current = 'user';
+        setExecutionConfiguration(value);
+    }, []);
 
     const startWorkflow = useCallback(
         async (initialMessage?: string, options?: StartWorkflowOptions) => {
-            if (!project || isResolvingRun || isStarting) return undefined;
+            if (!project || isResolvingRun || isStarting || isLoadingConfiguration) return undefined;
             setIsStarting(true);
             try {
-                const fullProject = await client.projects.retrieve(project.id);
-                const defaults =
-                    fullProject.configuration?.defaults?.system?.agent ?? fullProject.configuration?.defaults?.base;
-                if (!defaults?.environment || !defaults.model) {
+                if (!executionConfiguration.environment || !executionConfiguration.model) {
                     toast({
                         status: 'error',
                         title: t('agent.documentEditingDefaultsRequired'),
@@ -118,8 +184,8 @@ export function DocumentEditingPanel({
                     tool_names: DOCUMENT_EDITING_TOOLS,
                     data: { user_prompt: prompt },
                     config: {
-                        environment: defaults.environment,
-                        model: defaults.model,
+                        environment: executionConfiguration.environment,
+                        model: executionConfiguration.model,
                     },
                     started_by: startedBy,
                     tags: identity.tags,
@@ -141,22 +207,42 @@ export function DocumentEditingPanel({
                 setIsStarting(false);
             }
         },
-        [client, documentRootId, isResolvingRun, isStarting, object, project, startedBy, t, toast],
+        [
+            client,
+            documentRootId,
+            executionConfiguration,
+            isLoadingConfiguration,
+            isResolvingRun,
+            isStarting,
+            object,
+            project,
+            startedBy,
+            t,
+            toast,
+        ],
     );
 
     return (
         <div className="flex h-full min-h-0 flex-col border-s border-mixer-muted/20">
             <div className="flex h-10 shrink-0 items-center justify-between border-b border-mixer-muted/20 px-2">
-                <span className="truncate text-sm font-semibold">{t('agent.documentEditing')}</span>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={onClose}
-                    aria-label={t('agent.close')}
-                >
-                    <X className="size-4" />
-                </Button>
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t('agent.documentEditing')}</span>
+                <div className="flex shrink-0 items-center gap-1">
+                    <DocumentEditingConfigurationSelector
+                        value={executionConfiguration}
+                        onChange={handleConfigurationChange}
+                        disabled={Boolean(agentRunId) || isStarting || isResolvingRun}
+                        isLoading={isLoadingConfiguration}
+                    />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={onClose}
+                        aria-label={t('agent.close')}
+                    >
+                        <X className="size-4" />
+                    </Button>
+                </div>
             </div>
             <div className="min-h-0 flex-1">
                 {isResolvingRun ? (

@@ -133,6 +133,74 @@ describe('collaborative Markdown actions', () => {
         );
     });
 
+    it('briefly highlights blocks that changed between document revisions', async () => {
+        const onAction = vi.fn();
+        const { rerender } = render(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'store_document', document_id: 'document-1' }}
+                    onAction={onAction}
+                >
+                    {'Original paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        rerender(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'store_document', document_id: 'document-2' }}
+                    highlightChangesFrom="Original paragraph."
+                    highlightVersion={1}
+                    onAction={onAction}
+                >
+                    {'Updated paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Updated paragraph.').parentElement?.className).toContain('bg-mixer-success/15');
+        });
+    });
+
+    it('preserves a typed draft when a document refresh invalidates its block anchor', async () => {
+        const onAction = vi.fn();
+        const { rerender } = render(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'store_document', document_id: 'document-1' }}
+                    onAction={onAction}
+                >
+                    {'Original paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        const selectedBlock = screen.getByText('Original paragraph.').parentElement;
+        if (!selectedBlock) throw new Error('Expected a collaborative block parent');
+        fireEvent.click(within(selectedBlock).getByRole('button', { name: 'Comment on selection' }));
+        fireEvent.change(within(selectedBlock).getByRole('textbox'), {
+            target: { value: 'Keep this draft recoverable.' },
+        });
+
+        rerender(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'store_document', document_id: 'document-2' }}
+                    onAction={onAction}
+                >
+                    {'Inserted paragraph.\n\nOriginal paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Your draft was preserved')).not.toBeNull();
+            expect(screen.getByDisplayValue('Keep this draft recoverable.')).not.toBeNull();
+        });
+    });
+
     it('keeps source anchors aligned when normal rendering would rewrite earlier Markdown', async () => {
         const onAction = vi.fn();
         render(

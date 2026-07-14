@@ -2,7 +2,7 @@ import { Button, cn, Textarea, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import type { Element } from 'hast';
 import { MessageSquare, Pencil, Send, X } from 'lucide-react';
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Components } from 'react-markdown';
 import { MarkdownRenderer, type MarkdownRendererProps } from './MarkdownRenderer';
 
@@ -54,6 +54,8 @@ export interface CollaborativeMarkdownRendererProps extends Omit<MarkdownRendere
     baseVersion?: string;
     components?: Components;
     readOnly?: boolean;
+    highlightChangesFrom?: string;
+    highlightVersion?: number;
     onAction: (action: MarkdownEditingAction) => void | Promise<void>;
 }
 
@@ -64,19 +66,25 @@ interface MarkdownBlockProps extends React.HTMLAttributes<HTMLElement> {
 
 type EditingMode = 'comment' | 'edit';
 
+interface ActiveEditing {
+    anchor: MarkdownBlockAnchor;
+    mode: EditingMode;
+}
+
+interface OrphanedDraft extends ActiveEditing {
+    draft: string;
+}
+
 interface CollaborativeMarkdownContextValue {
     markdown: string;
-    resource: MarkdownEditingResource;
-    baseVersion?: string;
     readOnly: boolean;
-    selectedBlockId: string | null;
-    editingMode: EditingMode | null;
-    draft: string;
-    isSubmitting: boolean;
+    activeEditing?: ActiveEditing;
+    highlightChangesFrom?: string;
+    flashChangedBlocks: boolean;
     beginEditing: (anchor: MarkdownBlockAnchor, mode: EditingMode) => void;
     cancelEditing: () => void;
-    setDraft: (draft: string) => void;
-    submit: (anchor: MarkdownBlockAnchor) => Promise<void>;
+    updateDraft: (draft: string) => void;
+    submit: (anchor: MarkdownBlockAnchor, mode: EditingMode, draft: string) => Promise<void>;
 }
 
 const CollaborativeMarkdownContext = createContext<CollaborativeMarkdownContextValue | null>(null);
@@ -92,7 +100,7 @@ function createOperationId(): string {
     return `edit-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function createMarkdownBlockAnchor(
+function createMarkdownBlockLocator(
     markdown: string,
     node: Element | undefined,
     blockType: MarkdownBlockType,
@@ -101,21 +109,37 @@ export function createMarkdownBlockAnchor(
     const end = node?.position?.end.offset;
     const hasRange = typeof start === 'number' && typeof end === 'number' && start >= 0 && end >= start;
     const exactText = hasRange ? markdown.slice(start, end) : '';
-    const headingPath = hasRange ? getHeadingPath(markdown, start) : [];
-    const occurrenceIndex = hasRange ? getOccurrenceIndex(markdown, exactText, start, headingPath) : undefined;
 
     return {
         block_id: hasRange ? `${blockType}:${start}:${end}` : `${blockType}:${createOperationId()}`,
         block_type: blockType,
-        ...(headingPath.length > 0 ? { heading_path: headingPath } : {}),
         ...(hasRange ? { source_range: { start, end } } : {}),
         exact_text: exactText,
         ...(hasRange && start > 0 ? { prefix: markdown.slice(Math.max(0, start - CONTEXT_LENGTH), start) } : {}),
         ...(hasRange && end < markdown.length
             ? { suffix: markdown.slice(end, Math.min(markdown.length, end + CONTEXT_LENGTH)) }
             : {}),
-        ...(typeof occurrenceIndex === 'number' ? { occurrence_index: occurrenceIndex } : {}),
     };
+}
+
+function enrichMarkdownBlockAnchor(markdown: string, anchor: MarkdownBlockAnchor): MarkdownBlockAnchor {
+    const start = anchor.source_range?.start;
+    if (typeof start !== 'number') return anchor;
+    const headingPath = getHeadingPath(markdown, start);
+    const occurrenceIndex = getOccurrenceIndex(markdown, anchor.exact_text, start, headingPath);
+    return {
+        ...anchor,
+        ...(headingPath.length > 0 ? { heading_path: headingPath } : {}),
+        occurrence_index: occurrenceIndex,
+    };
+}
+
+export function createMarkdownBlockAnchor(
+    markdown: string,
+    node: Element | undefined,
+    blockType: MarkdownBlockType,
+): MarkdownBlockAnchor {
+    return enrichMarkdownBlockAnchor(markdown, createMarkdownBlockLocator(markdown, node, blockType));
 }
 
 function getHeadingPath(markdown: string, offset: number): string[] {
@@ -233,6 +257,52 @@ function useCollaborativeMarkdownContext(): CollaborativeMarkdownContextValue {
     return context;
 }
 
+function CollaborativeBlockEditor({ anchor, mode }: ActiveEditing) {
+    const { t } = useUITranslation();
+    const { cancelEditing, submit, updateDraft } = useCollaborativeMarkdownContext();
+    const [draft, setDraft] = useState(mode === 'edit' ? anchor.exact_text : '');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const changeDraft = (nextDraft: string) => {
+        setDraft(nextDraft);
+        updateDraft(nextDraft);
+    };
+
+    const submitDraft = async () => {
+        if (!draft.trim() || isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            await submit(anchor, mode, mode === 'comment' ? draft.trim() : draft);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="mb-2 space-y-2 rounded-md border border-mixer-info/30 bg-background p-2 shadow-sm">
+            <Textarea
+                value={draft}
+                onChange={(event) => changeDraft(event.target.value)}
+                placeholder={
+                    mode === 'comment' ? t('agent.commentOnSelectionPlaceholder') : t('agent.editSelectionPlaceholder')
+                }
+                rows={mode === 'edit' ? 6 : 3}
+                autoFocus
+            />
+            <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={cancelEditing} disabled={isSubmitting}>
+                    <X className="me-1 size-4" />
+                    {t('store.cancelEdit')}
+                </Button>
+                <Button size="sm" onClick={() => void submitDraft()} disabled={!draft.trim() || isSubmitting}>
+                    <Send className="me-1 size-4" />
+                    {t('agent.send')}
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 function createBlockComponent(
     tag: keyof React.JSX.IntrinsicElements,
     blockType: MarkdownBlockType,
@@ -240,29 +310,25 @@ function createBlockComponent(
 ) {
     return function CollaborativeBlock({ node, children: blockChildren, ...props }: MarkdownBlockProps) {
         const { t } = useUITranslation();
-        const {
-            markdown,
-            readOnly,
-            selectedBlockId,
-            editingMode,
-            draft,
-            isSubmitting,
-            beginEditing,
-            cancelEditing,
-            setDraft,
-            submit,
-        } = useCollaborativeMarkdownContext();
-        const anchor = createMarkdownBlockAnchor(markdown, node, blockType);
+        const { markdown, readOnly, activeEditing, highlightChangesFrom, flashChangedBlocks, beginEditing } =
+            useCollaborativeMarkdownContext();
+        const anchor = createMarkdownBlockLocator(markdown, node, blockType);
         const isAnchorable = !readOnly && Boolean(anchor.source_range && anchor.exact_text);
-        const isSelected = selectedBlockId === anchor.block_id;
+        const isSelected = activeEditing?.anchor.block_id === anchor.block_id;
+        const isChanged =
+            flashChangedBlocks &&
+            Boolean(anchor.exact_text) &&
+            Boolean(highlightChangesFrom) &&
+            !highlightChangesFrom?.includes(anchor.exact_text);
         const containerClassName = cn(
-            'group/collab relative rounded-md border transition-colors',
+            'group/collab relative rounded-md border transition-colors duration-700',
             tag === 'li' ? 'px-2' : '-mx-2 px-2',
             isSelected
                 ? 'border-info bg-mixer-info/5'
                 : isAnchorable
                   ? 'border-transparent hover:border-mixer-info/30 hover:bg-mixer-muted/10'
                   : 'border-transparent',
+            isChanged && 'border-mixer-success/50 bg-mixer-success/15 ring-1 ring-mixer-success/20',
         );
         const controls = isAnchorable ? (
             <>
@@ -297,35 +363,13 @@ function createBlockComponent(
                         </Button>
                     </VTooltip>
                 </div>
-                {isSelected && editingMode && (
-                    <div className="mb-2 space-y-2 rounded-md border border-mixer-info/30 bg-background p-2 shadow-sm">
-                        <Textarea
-                            value={draft}
-                            onChange={(event) => setDraft(event.target.value)}
-                            placeholder={
-                                editingMode === 'comment'
-                                    ? t('agent.commentOnSelectionPlaceholder')
-                                    : t('agent.editSelectionPlaceholder')
-                            }
-                            rows={editingMode === 'edit' ? 6 : 3}
-                            autoFocus
-                        />
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={cancelEditing} disabled={isSubmitting}>
-                                <X className="me-1 size-4" />
-                                {t('store.cancelEdit')}
-                            </Button>
-                            <Button
-                                size="sm"
-                                onClick={() => void submit(anchor)}
-                                disabled={!draft.trim() || isSubmitting}
-                            >
-                                <Send className="me-1 size-4" />
-                                {t('agent.send')}
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                {isSelected && activeEditing ? (
+                    <CollaborativeBlockEditor
+                        key={`${activeEditing.anchor.block_id}:${activeEditing.mode}`}
+                        anchor={activeEditing.anchor}
+                        mode={activeEditing.mode}
+                    />
+                ) : null}
             </>
         ) : null;
 
@@ -363,14 +407,37 @@ export function CollaborativeMarkdownRenderer({
     baseVersion,
     components,
     readOnly = false,
+    highlightChangesFrom,
+    highlightVersion = 0,
     onAction,
     className,
     ...markdownProps
 }: CollaborativeMarkdownRendererProps) {
-    const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-    const [editingMode, setEditingMode] = useState<EditingMode | null>(null);
-    const [draft, setDraft] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { t } = useUITranslation();
+    const [activeEditing, setActiveEditing] = useState<ActiveEditing>();
+    const [orphanedDraft, setOrphanedDraft] = useState<OrphanedDraft>();
+    const [flashChangedBlocks, setFlashChangedBlocks] = useState(false);
+    const draftRef = useRef('');
+
+    useEffect(() => {
+        if (!highlightChangesFrom || highlightVersion <= 0) return;
+        setFlashChangedBlocks(true);
+        const timeoutId = window.setTimeout(() => setFlashChangedBlocks(false), 1800);
+        return () => window.clearTimeout(timeoutId);
+    }, [highlightChangesFrom, highlightVersion]);
+
+    useEffect(() => {
+        const range = activeEditing?.anchor.source_range;
+        if (!activeEditing || !range) return;
+        if (markdown.slice(range.start, range.end) === activeEditing.anchor.exact_text) return;
+
+        const draft = draftRef.current;
+        const initialDraft = activeEditing.mode === 'edit' ? activeEditing.anchor.exact_text : '';
+        if (draft.trim() && draft !== initialDraft) {
+            setOrphanedDraft({ ...activeEditing, draft });
+        }
+        setActiveEditing(undefined);
+    }, [activeEditing, markdown]);
 
     const collaborativeComponents = useMemo<Components>(() => {
         return {
@@ -393,52 +460,104 @@ export function CollaborativeMarkdownRenderer({
         };
     }, [components]);
 
-    const contextValue: CollaborativeMarkdownContextValue = {
-        markdown,
-        resource,
-        baseVersion,
-        readOnly,
-        selectedBlockId,
-        editingMode,
-        draft,
-        isSubmitting,
-        beginEditing: (anchor, mode) => {
-            setSelectedBlockId(anchor.block_id);
-            setEditingMode(mode);
-            setDraft(mode === 'edit' ? anchor.exact_text : '');
+    const beginEditing = useCallback(
+        (anchor: MarkdownBlockAnchor, mode: EditingMode) => {
+            const enrichedAnchor = enrichMarkdownBlockAnchor(markdown, anchor);
+            draftRef.current = mode === 'edit' ? enrichedAnchor.exact_text : '';
+            setActiveEditing({ anchor: enrichedAnchor, mode });
         },
-        cancelEditing: () => {
-            setEditingMode(null);
-            setDraft('');
-        },
-        setDraft,
-        submit: async (anchor) => {
-            const trimmedDraft = draft.trim();
-            if (!editingMode || !trimmedDraft || isSubmitting) return;
+        [markdown],
+    );
+
+    const cancelEditing = useCallback(() => {
+        draftRef.current = '';
+        setActiveEditing(undefined);
+    }, []);
+
+    const updateDraft = useCallback((draft: string) => {
+        draftRef.current = draft;
+    }, []);
+
+    const submit = useCallback(
+        async (anchor: MarkdownBlockAnchor, mode: EditingMode, draft: string) => {
             const action: MarkdownEditingAction = {
                 operation_id: createOperationId(),
                 resource,
                 base_version: baseVersion,
-                action: editingMode,
+                action: mode,
                 anchor,
-                ...(editingMode === 'comment'
-                    ? { comment: trimmedDraft }
+                ...(mode === 'comment'
+                    ? { comment: draft }
                     : { user_change: { before: anchor.exact_text, after: draft } }),
             };
 
-            setIsSubmitting(true);
-            try {
-                await onAction(action);
-                setEditingMode(null);
-                setDraft('');
-            } finally {
-                setIsSubmitting(false);
-            }
+            await onAction(action);
+            draftRef.current = '';
+            setActiveEditing(undefined);
         },
-    };
+        [baseVersion, onAction, resource],
+    );
+
+    const contextValue = useMemo<CollaborativeMarkdownContextValue>(
+        () => ({
+            markdown,
+            readOnly,
+            activeEditing,
+            highlightChangesFrom,
+            flashChangedBlocks,
+            beginEditing,
+            cancelEditing,
+            updateDraft,
+            submit,
+        }),
+        [
+            activeEditing,
+            beginEditing,
+            cancelEditing,
+            flashChangedBlocks,
+            highlightChangesFrom,
+            markdown,
+            readOnly,
+            submit,
+            updateDraft,
+        ],
+    );
 
     return (
         <CollaborativeMarkdownContext.Provider value={contextValue}>
+            {orphanedDraft ? (
+                <div className="not-prose mb-3 rounded-md border border-mixer-attention/35 bg-mixer-attention/10 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <div className="text-sm font-semibold text-foreground">
+                                {t('agent.documentEditingDraftPreserved')}
+                            </div>
+                            <div className="mt-0.5 text-xs leading-4 text-muted">
+                                {t('agent.documentEditingDraftPreservedDescription')}
+                            </div>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 shrink-0 p-0"
+                            onClick={() => setOrphanedDraft(undefined)}
+                            aria-label={t('agent.close')}
+                        >
+                            <X className="size-4" />
+                        </Button>
+                    </div>
+                    <Textarea
+                        className="mt-2"
+                        value={orphanedDraft.draft}
+                        onChange={(event) =>
+                            setOrphanedDraft((current) =>
+                                current ? { ...current, draft: event.target.value } : current,
+                            )
+                        }
+                        rows={4}
+                    />
+                </div>
+            ) : null}
             <MarkdownRenderer
                 {...markdownProps}
                 className={className}

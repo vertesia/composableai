@@ -748,5 +748,21 @@
   "agent.editSelectionPlaceholder": "選択した Markdown を編集...",
   "agent.editWithAI": "AI で編集",
   "agent.failedToLoadArtifact": "アーティファクトを読み込めませんでした",
-  "agent.startDocumentEditingConversationFirst": "セクションを送信する前に、ドキュメント編集の会話を開始してください"
+  "agent.startDocumentEditingConversationFirst": "セクションを送信する前に、ドキュメント編集の会話を開始してください",
+  "agent.documentEditCardAfter": "変更後",
+  "agent.documentEditCardBefore": "変更前",
+  "agent.documentEditCardComment": "ドキュメントへのコメント",
+  "agent.documentEditCardDirectEdit": "ドキュメントの直接編集",
+  "agent.documentEditCardSelectedContent": "選択した内容",
+  "agent.documentEditCardTitle": "ドキュメント編集リクエスト",
+  "agent.documentEditingConfiguration": "環境とモデル",
+  "agent.documentEditingConfigurationDescription": "このプロジェクトでエージェント用に設定されたモデルを既定で使用します。",
+  "agent.documentEditingConfigurationLocked": "この設定は接続中の会話に属します。変更するには新しい会話を開始してください。",
+  "agent.documentEditingDraftPreserved": "下書きを保存しました",
+  "agent.documentEditingDraftPreservedDescription": "編集中にドキュメントが変更されました。閉じる前に、この下書きをコピーまたは調整してください。",
+  "agent.documentEditingSelectEnvironment": "環境を選択",
+  "agent.documentEditingSelectModel": "モデルを選択",
+  "agent.editedSelectionMessage": "選択した {{blockType}} を編集しました",
+  "agent.environment": "環境",
+  "agent.model": "モデル"
 }

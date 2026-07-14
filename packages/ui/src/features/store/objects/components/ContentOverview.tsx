@@ -42,7 +42,12 @@ import { SimplePdfViewer } from '../../../pdf-viewer';
 import { SecureButton } from '../../../permissions/SecureButton.js';
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from '../../../utils/index.js';
 import { DocumentEditingPanel } from './DocumentEditingPanel.js';
-import { getDocumentTextActionAccess } from './documentEditingRun.js';
+import {
+    createDocumentEditingScopeKey,
+    getDocumentTextActionAccess,
+    isDocumentEditingScopeOpen,
+    setDocumentEditingScopeOpen,
+} from './documentEditingRun.js';
 import { PropertiesEditorModal } from './PropertiesEditorModal';
 import { TextEditorPanel } from './TextEditorPanel.js';
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from './useContentPanelHooks.js';
@@ -71,6 +76,8 @@ interface TextPanelProps {
     textContainerRef: RefObject<HTMLDivElement | null>;
     collaboration?: {
         baseVersion?: string;
+        highlightChangesFrom?: string;
+        highlightVersion?: number;
         onAction: (action: MarkdownEditingAction) => void;
     };
 }
@@ -194,37 +201,60 @@ export function ContentOverview({
 }: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
-    const { store } = useUserSession();
+    const { project, store } = useUserSession();
+    const documentRootId = object.revision?.root || object.id;
+    const editingScopeKey = project?.id ? createDocumentEditingScopeKey(project.id, documentRootId) : undefined;
     const [activeObject, setActiveObject] = useState(object);
-    const [isCollaborating, setIsCollaborating] = useState(false);
-    const [collaborationRefreshKey, setCollaborationRefreshKey] = useState(0);
+    const [isCollaborating, setIsCollaborating] = useState(() =>
+        editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false,
+    );
     const sendMessageRef = useRef<SendAgentMessageFn | null>(null);
     const latestDocumentIdRef = useRef(object.id);
     const sourceObjectIdRef = useRef(object.id);
+    const editingScopeKeyRef = useRef(editingScopeKey);
+
+    useEffect(() => {
+        if (editingScopeKeyRef.current === editingScopeKey) return;
+        editingScopeKeyRef.current = editingScopeKey;
+        setIsCollaborating(editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false);
+    }, [editingScopeKey]);
+
+    const toggleCollaboration = useCallback(() => {
+        setIsCollaborating((current) => {
+            const next = !current;
+            if (editingScopeKey) setDocumentEditingScopeOpen(editingScopeKey, next);
+            return next;
+        });
+    }, [editingScopeKey]);
+
+    const closeCollaboration = useCallback(() => {
+        if (editingScopeKey) setDocumentEditingScopeOpen(editingScopeKey, false);
+        setIsCollaborating(false);
+    }, [editingScopeKey]);
 
     useEffect(() => {
         const sourceObjectChanged = sourceObjectIdRef.current !== object.id;
         sourceObjectIdRef.current = object.id;
-        if (sourceObjectChanged || activeObject.id === object.id) {
+        setActiveObject((current) => {
+            if (!sourceObjectChanged && current.id !== object.id) return current;
             latestDocumentIdRef.current = object.id;
-            setActiveObject(object);
-        }
-    }, [activeObject.id, object]);
+            return current.id === object.id && current.text && !object.text
+                ? { ...object, text: current.text }
+                : object;
+        });
+    }, [object]);
 
     const handleDocumentUpdated = useCallback(
         async (updatedDocumentId: string) => {
             latestDocumentIdRef.current = updatedDocumentId;
-            setCollaborationRefreshKey((key) => key + 1);
-
-            if (updatedDocumentId === activeObject.id) {
-                await refetch?.();
-                return;
-            }
 
             try {
-                const updatedObject = await store.objects.retrieve(updatedDocumentId, '+embeddings');
+                const [updatedObject, updatedText] = await Promise.all([
+                    store.objects.retrieve(updatedDocumentId),
+                    store.objects.getObjectText(updatedDocumentId),
+                ]);
                 if (latestDocumentIdRef.current === updatedDocumentId) {
-                    setActiveObject(updatedObject);
+                    setActiveObject({ ...updatedObject, text: updatedText.text });
                 }
             } catch (err: unknown) {
                 console.error('Failed to load the updated document revision', err);
@@ -236,7 +266,7 @@ export function ContentOverview({
                 });
             }
         },
-        [activeObject.id, refetch, store.objects, t, toast],
+        [store.objects, t, toast],
     );
 
     const handleCopyContent = async (content: string, type: 'text' | 'properties') => {
@@ -271,9 +301,8 @@ export function ContentOverview({
                     refetch={refetch}
                     canCollaborate={canCollaborate}
                     isCollaborating={isCollaborating}
-                    onToggleCollaborate={() => setIsCollaborating((current) => !current)}
+                    onToggleCollaborate={toggleCollaboration}
                     sendMessageRef={sendMessageRef}
-                    collaborationRefreshKey={collaborationRefreshKey}
                 />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -281,7 +310,7 @@ export function ContentOverview({
                 {isCollaborating ? (
                     <DocumentEditingPanel
                         object={activeObject}
-                        onClose={() => setIsCollaborating(false)}
+                        onClose={closeCollaboration}
                         onDocumentUpdated={(updatedDocumentId) => void handleDocumentUpdated(updatedDocumentId)}
                         sendMessageRef={sendMessageRef}
                     />
@@ -400,7 +429,6 @@ function DataPanel({
     isCollaborating,
     onToggleCollaborate,
     sendMessageRef,
-    collaborationRefreshKey,
 }: {
     object: ContentObject;
     loadText: boolean;
@@ -410,7 +438,6 @@ function DataPanel({
     isCollaborating: boolean;
     onToggleCollaborate: () => void;
     sendMessageRef: React.MutableRefObject<SendAgentMessageFn | null>;
-    collaborationRefreshKey: number;
 }) {
     const { t } = useUITranslation();
     const toast = useToast();
@@ -463,12 +490,9 @@ function DataPanel({
         displayText,
         isLoading: isLoadingText,
         isCropped: isTextCropped,
+        changeHighlight,
         loadText: reloadText,
-    } = useObjectText(object.id, object.text, loadText);
-
-    useEffect(() => {
-        if (collaborationRefreshKey > 0) reloadText();
-    }, [collaborationRefreshKey, reloadText]);
+    } = useObjectText(object.id, object.text, loadText, object.revision?.root || object.id);
 
     const handleCollaborationAction = useCallback(
         (action: MarkdownEditingAction) => {
@@ -671,31 +695,36 @@ function DataPanel({
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
                 </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && isLoadingText && (
+            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && isLoadingText && !displayText && (
                 <div className={getPanelVisibility(true)}>
                     <div className="flex justify-center items-center flex-1">
                         <Spinner size="lg" />
                     </div>
                 </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && !isLoadingText && (
-                <div className={getPanelVisibility(true)}>
-                    <TextPanel
-                        object={object}
-                        text={displayText}
-                        isTextCropped={isTextCropped}
-                        textContainerRef={textContainerRef}
-                        collaboration={
-                            isCollaborating
-                                ? {
-                                      baseVersion: object.content?.etag ?? object.text_etag,
-                                      onAction: handleCollaborationAction,
-                                  }
-                                : undefined
-                        }
-                    />
-                </div>
-            )}
+            {currentPanel === PanelView.Text &&
+                !showProcessingPanel &&
+                !isEditing &&
+                (!isLoadingText || displayText) && (
+                    <div className={getPanelVisibility(true)}>
+                        <TextPanel
+                            object={object}
+                            text={displayText}
+                            isTextCropped={isTextCropped}
+                            textContainerRef={textContainerRef}
+                            collaboration={
+                                isCollaborating
+                                    ? {
+                                          baseVersion: object.content?.etag ?? object.text_etag,
+                                          highlightChangesFrom: changeHighlight?.previousText,
+                                          highlightVersion: changeHighlight?.version,
+                                          onAction: handleCollaborationAction,
+                                      }
+                                    : undefined
+                            }
+                        />
+                    </div>
+                )}
             {isEditing && currentPanel === PanelView.Text && fullText != null && (
                 <TextEditorPanel
                     object={object}
@@ -930,6 +959,8 @@ const TextPanel = memo(({ object, text, isTextCropped, textContainerRef, collabo
                                     name: object.name,
                                 }}
                                 baseVersion={collaboration.baseVersion}
+                                highlightChangesFrom={collaboration.highlightChangesFrom}
+                                highlightVersion={collaboration.highlightVersion}
                                 components={createMarkdownComponents()}
                                 onAction={collaboration.onAction}
                             >

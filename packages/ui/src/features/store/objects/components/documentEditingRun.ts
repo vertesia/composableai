@@ -5,6 +5,7 @@ const DOCUMENT_EDITING_TAG = 'document-editing';
 const DOCUMENT_ROOT_TAG_PREFIX = 'document-root:';
 const LEGACY_DOCUMENT_TAG_PREFIX = 'document:';
 const DOCUMENT_EDITING_INTERACTION = 'sys:GeneralAgent';
+const openDocumentEditingScopes = new Set<string>();
 
 export type DocumentEditingRunProperties = {
     resource_kind: 'store_document';
@@ -18,6 +19,22 @@ export interface DocumentEditingRunIdentity {
 }
 
 type DocumentEditingRunApi = Pick<AgentsApi, 'list' | 'retrieve' | 'search'>;
+
+export function createDocumentEditingScopeKey(projectId: string, documentRootId: string): string {
+    return `${projectId}:${documentRootId}`;
+}
+
+export function isDocumentEditingScopeOpen(scopeKey: string): boolean {
+    return openDocumentEditingScopes.has(scopeKey);
+}
+
+export function setDocumentEditingScopeOpen(scopeKey: string, isOpen: boolean): void {
+    if (isOpen) {
+        openDocumentEditingScopes.add(scopeKey);
+    } else {
+        openDocumentEditingScopes.delete(scopeKey);
+    }
+}
 
 function getRecord(value: unknown): Record<string, unknown> | undefined {
     return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
@@ -64,11 +81,10 @@ export function isDocumentEditingRun(
     if (!tags.includes(DOCUMENT_EDITING_TAG)) return false;
 
     const properties = getRecord(run.properties);
-    const matchesStableIdentity =
-        tags.includes(documentRootTag(documentRootId)) &&
-        properties?.resource_kind === 'store_document' &&
-        properties.document_root_id === documentRootId;
-    if (matchesStableIdentity) return true;
+    const hasStableRootTag = tags.includes(documentRootTag(documentRootId));
+    if (hasStableRootTag) {
+        return properties?.resource_kind === 'store_document' && properties.document_root_id === documentRootId;
+    }
 
     // Runs created before stable root properties were added only carry a document tag.
     return tags.includes(legacyDocumentTag(documentRootId)) || tags.includes(legacyDocumentTag(documentId));

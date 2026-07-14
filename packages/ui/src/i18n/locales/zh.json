@@ -748,5 +748,21 @@
   "agent.editSelectionPlaceholder": "编辑所选 Markdown...",
   "agent.editWithAI": "使用 AI 编辑",
   "agent.failedToLoadArtifact": "无法加载工件",
-  "agent.startDocumentEditingConversationFirst": "请先启动文档编辑对话，再发送所选部分"
+  "agent.startDocumentEditingConversationFirst": "请先启动文档编辑对话，再发送所选部分",
+  "agent.documentEditCardAfter": "修改后",
+  "agent.documentEditCardBefore": "修改前",
+  "agent.documentEditCardComment": "文档评论",
+  "agent.documentEditCardDirectEdit": "直接编辑文档",
+  "agent.documentEditCardSelectedContent": "所选内容",
+  "agent.documentEditCardTitle": "文档编辑请求",
+  "agent.documentEditingConfiguration": "环境和模型",
+  "agent.documentEditingConfigurationDescription": "默认使用此项目为智能体配置的模型。",
+  "agent.documentEditingConfigurationLocked": "此配置属于已关联的对话。请开始新对话以更改配置。",
+  "agent.documentEditingDraftPreserved": "您的草稿已保留",
+  "agent.documentEditingDraftPreservedDescription": "您编辑时文档已发生更改。关闭前请复制或调整此草稿。",
+  "agent.documentEditingSelectEnvironment": "选择环境",
+  "agent.documentEditingSelectModel": "选择模型",
+  "agent.editedSelectionMessage": "已编辑所选 {{blockType}}",
+  "agent.environment": "环境",
+  "agent.model": "模型"
 }

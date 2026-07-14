@@ -748,5 +748,21 @@
   "agent.editSelectionPlaceholder": "編輯所選 Markdown...",
   "agent.editWithAI": "使用 AI 編輯",
   "agent.failedToLoadArtifact": "無法載入成品",
-  "agent.startDocumentEditingConversationFirst": "請先啟動文件編輯對話，再傳送所選段落"
+  "agent.startDocumentEditingConversationFirst": "請先啟動文件編輯對話，再傳送所選段落",
+  "agent.documentEditCardAfter": "修改後",
+  "agent.documentEditCardBefore": "修改前",
+  "agent.documentEditCardComment": "文件留言",
+  "agent.documentEditCardDirectEdit": "直接編輯文件",
+  "agent.documentEditCardSelectedContent": "所選內容",
+  "agent.documentEditCardTitle": "文件編輯要求",
+  "agent.documentEditingConfiguration": "環境和模型",
+  "agent.documentEditingConfigurationDescription": "預設使用此專案為代理程式設定的模型。",
+  "agent.documentEditingConfigurationLocked": "此設定屬於已連結的對話。請開始新對話以變更設定。",
+  "agent.documentEditingDraftPreserved": "您的草稿已保留",
+  "agent.documentEditingDraftPreservedDescription": "您編輯時文件已變更。關閉前請複製或調整此草稿。",
+  "agent.documentEditingSelectEnvironment": "選擇環境",
+  "agent.documentEditingSelectModel": "選擇模型",
+  "agent.editedSelectionMessage": "已編輯所選 {{blockType}}",
+  "agent.environment": "環境",
+  "agent.model": "模型"
 }

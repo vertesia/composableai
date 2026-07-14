@@ -748,5 +748,21 @@
   "agent.editSelectionPlaceholder": "Ausgewähltes Markdown bearbeiten...",
   "agent.editWithAI": "Mit KI bearbeiten",
   "agent.failedToLoadArtifact": "Artefakt konnte nicht geladen werden",
-  "agent.startDocumentEditingConversationFirst": "Starten Sie die Unterhaltung zur Dokumentbearbeitung, bevor Sie einen Abschnitt senden"
+  "agent.startDocumentEditingConversationFirst": "Starten Sie die Unterhaltung zur Dokumentbearbeitung, bevor Sie einen Abschnitt senden",
+  "agent.documentEditCardAfter": "Nachher",
+  "agent.documentEditCardBefore": "Vorher",
+  "agent.documentEditCardComment": "Kommentar zum Dokument",
+  "agent.documentEditCardDirectEdit": "Direkte Dokumentbearbeitung",
+  "agent.documentEditCardSelectedContent": "Ausgewählter Inhalt",
+  "agent.documentEditCardTitle": "Anfrage zur Dokumentbearbeitung",
+  "agent.documentEditingConfiguration": "Umgebung und Modell",
+  "agent.documentEditingConfigurationDescription": "Standardmäßig wird das für Agenten in diesem Projekt konfigurierte Modell verwendet.",
+  "agent.documentEditingConfigurationLocked": "Diese Konfiguration gehört zur verknüpften Unterhaltung. Starten Sie eine neue Unterhaltung, um sie zu ändern.",
+  "agent.documentEditingDraftPreserved": "Ihr Entwurf wurde beibehalten",
+  "agent.documentEditingDraftPreservedDescription": "Das Dokument wurde während der Bearbeitung geändert. Kopieren oder überarbeiten Sie diesen Entwurf, bevor Sie ihn schließen.",
+  "agent.documentEditingSelectEnvironment": "Umgebung auswählen",
+  "agent.documentEditingSelectModel": "Modell auswählen",
+  "agent.editedSelectionMessage": "Ausgewähltes Element {{blockType}} bearbeitet",
+  "agent.environment": "Umgebung",
+  "agent.model": "Modell"
 }

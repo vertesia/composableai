@@ -748,5 +748,21 @@
   "agent.editSelectionPlaceholder": "Seçili Markdown’ı düzenleyin...",
   "agent.editWithAI": "Yapay zekâ ile düzenle",
   "agent.failedToLoadArtifact": "Yapıt yüklenemedi",
-  "agent.startDocumentEditingConversationFirst": "Bir bölüm göndermeden önce belge düzenleme konuşmasını başlatın"
+  "agent.startDocumentEditingConversationFirst": "Bir bölüm göndermeden önce belge düzenleme konuşmasını başlatın",
+  "agent.documentEditCardAfter": "Sonra",
+  "agent.documentEditCardBefore": "Önce",
+  "agent.documentEditCardComment": "Belge yorumu",
+  "agent.documentEditCardDirectEdit": "Doğrudan belge düzenlemesi",
+  "agent.documentEditCardSelectedContent": "Seçili içerik",
+  "agent.documentEditCardTitle": "Belge düzenleme isteği",
+  "agent.documentEditingConfiguration": "Ortam ve model",
+  "agent.documentEditingConfigurationDescription": "Varsayılan olarak bu projedeki aracılar için yapılandırılmış modeli kullanır.",
+  "agent.documentEditingConfigurationLocked": "Bu yapılandırma bağlı görüşmeye aittir. Değiştirmek için yeni bir görüşme başlatın.",
+  "agent.documentEditingDraftPreserved": "Taslağınız korundu",
+  "agent.documentEditingDraftPreservedDescription": "Siz düzenlerken belge değişti. Kapatmadan önce bu taslağı kopyalayın veya uyarlayın.",
+  "agent.documentEditingSelectEnvironment": "Ortam seçin",
+  "agent.documentEditingSelectModel": "Model seçin",
+  "agent.editedSelectionMessage": "Seçili {{blockType}} düzenlendi",
+  "agent.environment": "Ortam",
+  "agent.model": "Model"
 }

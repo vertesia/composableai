@@ -771,5 +771,15 @@
   "agent.editSelectionPlaceholder": "Edit the selected Markdown...",
   "agent.editWithAI": "Edit with AI",
   "agent.failedToLoadArtifact": "Failed to load artifact",
-  "agent.startDocumentEditingConversationFirst": "Start the document editing conversation before sending a section"
+  "agent.startDocumentEditingConversationFirst": "Start the document editing conversation before sending a section",
+  "agent.documentEditingConfiguration": "Environment and model",
+  "agent.documentEditingConfigurationDescription": "Defaults to the model configured for agents in this project.",
+  "agent.documentEditingConfigurationLocked": "This configuration belongs to the attached conversation. Start a new conversation to change it.",
+  "agent.documentEditingDraftPreserved": "Your draft was preserved",
+  "agent.documentEditingDraftPreservedDescription": "The document changed while you were editing. Copy or adapt this draft before dismissing it.",
+  "agent.documentEditingSelectEnvironment": "Select an environment",
+  "agent.documentEditingSelectModel": "Select a model",
+  "agent.environment": "Environment",
+  "agent.model": "Model",
+  "test.emptyTranslationFallback": "test.emptyTranslationFallback"
 }

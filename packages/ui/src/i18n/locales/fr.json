@@ -758,5 +758,21 @@
   "agent.editSelectionPlaceholder": "Modifiez le Markdown sélectionné...",
   "agent.editWithAI": "Modifier avec l’IA",
   "agent.failedToLoadArtifact": "Impossible de charger l’artefact",
-  "agent.startDocumentEditingConversationFirst": "Démarrez la conversation de modification du document avant d’envoyer une section"
+  "agent.startDocumentEditingConversationFirst": "Démarrez la conversation de modification du document avant d’envoyer une section",
+  "agent.documentEditCardAfter": "Après",
+  "agent.documentEditCardBefore": "Avant",
+  "agent.documentEditCardComment": "Commentaire sur le document",
+  "agent.documentEditCardDirectEdit": "Modification directe du document",
+  "agent.documentEditCardSelectedContent": "Contenu sélectionné",
+  "agent.documentEditCardTitle": "Demande de modification du document",
+  "agent.documentEditingConfiguration": "Environnement et modèle",
+  "agent.documentEditingConfigurationDescription": "Utilise par défaut le modèle configuré pour les agents de ce projet.",
+  "agent.documentEditingConfigurationLocked": "Cette configuration appartient à la conversation associée. Démarrez une nouvelle conversation pour la modifier.",
+  "agent.documentEditingDraftPreserved": "Votre brouillon a été conservé",
+  "agent.documentEditingDraftPreservedDescription": "Le document a changé pendant votre modification. Copiez ou adaptez ce brouillon avant de le fermer.",
+  "agent.documentEditingSelectEnvironment": "Sélectionner un environnement",
+  "agent.documentEditingSelectModel": "Sélectionner un modèle",
+  "agent.editedSelectionMessage": "Élément {{blockType}} sélectionné modifié",
+  "agent.environment": "Environnement",
+  "agent.model": "Modèle"
 }
