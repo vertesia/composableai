@@ -25,14 +25,24 @@ import {
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui/widgets';
-import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
-import { memo, type RefObject, useEffect, useRef, useState } from 'react';
+import {
+    CollaborativeMarkdownRenderer,
+    JSONDisplay,
+    type MarkdownEditingAction,
+    MarkdownRenderer,
+    Progress,
+    XMLViewer,
+} from '@vertesia/ui/widgets';
+import { AlertTriangle, Bot, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
+import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import type { SendAgentMessageFn } from '../../../agent/chat/ModernAgentConversation.js';
 import { MagicPdfView } from '../../../magic-pdf';
 import { AudioPanel, ImagePanel, VideoPanel } from '../../../media-viewer';
 import { SimplePdfViewer } from '../../../pdf-viewer';
 import { SecureButton } from '../../../permissions/SecureButton.js';
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from '../../../utils/index.js';
+import { DocumentEditingPanel } from './DocumentEditingPanel.js';
+import { getDocumentTextActionAccess } from './documentEditingRun.js';
 import { PropertiesEditorModal } from './PropertiesEditorModal';
 import { TextEditorPanel } from './TextEditorPanel.js';
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from './useContentPanelHooks.js';
@@ -49,6 +59,9 @@ interface TextActionsProps {
     isEditing?: boolean;
     onToggleEdit?: () => void;
     canEdit?: boolean;
+    isCollaborating?: boolean;
+    onToggleCollaborate?: () => void;
+    canCollaborate?: boolean;
 }
 
 interface TextPanelProps {
@@ -56,6 +69,10 @@ interface TextPanelProps {
     text: string | undefined;
     isTextCropped: boolean;
     textContainerRef: RefObject<HTMLDivElement | null>;
+    collaboration?: {
+        baseVersion?: string;
+        onAction: (action: MarkdownEditingAction) => void;
+    };
 }
 
 interface OfficePdfPreviewPanelProps {
@@ -166,10 +183,61 @@ interface ContentOverviewProps {
     loadText?: boolean;
     refetch?: () => Promise<unknown>;
     canEditProperties?: boolean;
+    canCollaborate?: boolean;
 }
-export function ContentOverview({ object, loadText, refetch, canEditProperties = true }: ContentOverviewProps) {
+export function ContentOverview({
+    object,
+    loadText,
+    refetch,
+    canEditProperties = true,
+    canCollaborate = false,
+}: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
+    const { store } = useUserSession();
+    const [activeObject, setActiveObject] = useState(object);
+    const [isCollaborating, setIsCollaborating] = useState(false);
+    const [collaborationRefreshKey, setCollaborationRefreshKey] = useState(0);
+    const sendMessageRef = useRef<SendAgentMessageFn | null>(null);
+    const latestDocumentIdRef = useRef(object.id);
+    const sourceObjectIdRef = useRef(object.id);
+
+    useEffect(() => {
+        const sourceObjectChanged = sourceObjectIdRef.current !== object.id;
+        sourceObjectIdRef.current = object.id;
+        if (sourceObjectChanged || activeObject.id === object.id) {
+            latestDocumentIdRef.current = object.id;
+            setActiveObject(object);
+        }
+    }, [activeObject.id, object]);
+
+    const handleDocumentUpdated = useCallback(
+        async (updatedDocumentId: string) => {
+            latestDocumentIdRef.current = updatedDocumentId;
+            setCollaborationRefreshKey((key) => key + 1);
+
+            if (updatedDocumentId === activeObject.id) {
+                await refetch?.();
+                return;
+            }
+
+            try {
+                const updatedObject = await store.objects.retrieve(updatedDocumentId, '+embeddings');
+                if (latestDocumentIdRef.current === updatedDocumentId) {
+                    setActiveObject(updatedObject);
+                }
+            } catch (err: unknown) {
+                console.error('Failed to load the updated document revision', err);
+                toast({
+                    status: 'error',
+                    title: t('agent.failedToLoadDocument'),
+                    description: err instanceof Error ? err.message : undefined,
+                    duration: 5000,
+                });
+            }
+        },
+        [activeObject.id, refetch, store.objects, t, toast],
+    );
 
     const handleCopyContent = async (content: string, type: 'text' | 'properties') => {
         try {
@@ -197,20 +265,34 @@ export function ContentOverview({ object, loadText, refetch, canEditProperties =
         <ResizablePanelGroup direction="horizontal" className="h-full">
             <ResizablePanel defaultSize={67} className="min-w-[100px]">
                 <DataPanel
-                    object={object}
+                    object={activeObject}
                     loadText={loadText ?? false}
                     handleCopyContent={handleCopyContent}
                     refetch={refetch}
+                    canCollaborate={canCollaborate}
+                    isCollaborating={isCollaborating}
+                    onToggleCollaborate={() => setIsCollaborating((current) => !current)}
+                    sendMessageRef={sendMessageRef}
+                    collaborationRefreshKey={collaborationRefreshKey}
                 />
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={33} className="min-w-[100px]">
-                <PropertiesPanel
-                    object={object}
-                    refetch={refetch ?? (() => Promise.resolve())}
-                    handleCopyContent={handleCopyContent}
-                    canEditProperties={canEditProperties}
-                />
+                {isCollaborating ? (
+                    <DocumentEditingPanel
+                        object={activeObject}
+                        onClose={() => setIsCollaborating(false)}
+                        onDocumentUpdated={(updatedDocumentId) => void handleDocumentUpdated(updatedDocumentId)}
+                        sendMessageRef={sendMessageRef}
+                    />
+                ) : (
+                    <PropertiesPanel
+                        object={activeObject}
+                        refetch={refetch ?? (() => Promise.resolve())}
+                        handleCopyContent={handleCopyContent}
+                        canEditProperties={canEditProperties}
+                    />
+                )}
             </ResizablePanel>
         </ResizablePanelGroup>
     );
@@ -314,13 +396,24 @@ function DataPanel({
     loadText,
     handleCopyContent,
     refetch,
+    canCollaborate,
+    isCollaborating,
+    onToggleCollaborate,
+    sendMessageRef,
+    collaborationRefreshKey,
 }: {
     object: ContentObject;
     loadText: boolean;
     handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
     refetch?: () => Promise<unknown>;
+    canCollaborate: boolean;
+    isCollaborating: boolean;
+    onToggleCollaborate: () => void;
+    sendMessageRef: React.MutableRefObject<SendAgentMessageFn | null>;
+    collaborationRefreshKey: number;
 }) {
     const { t } = useUITranslation();
+    const toast = useToast();
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
     const isAudio = object?.metadata?.type === ContentNature.Audio;
@@ -362,6 +455,7 @@ function DataPanel({
             object.content.type === 'application/json' ||
             object.content.type === 'application/xml')
     );
+    const textActionAccess = getDocumentTextActionAccess(canEdit, canCollaborate);
 
     // Use custom hooks for text loading, PDF processing, and Office conversion
     const {
@@ -371,6 +465,28 @@ function DataPanel({
         isCropped: isTextCropped,
         loadText: reloadText,
     } = useObjectText(object.id, object.text, loadText);
+
+    useEffect(() => {
+        if (collaborationRefreshKey > 0) reloadText();
+    }, [collaborationRefreshKey, reloadText]);
+
+    const handleCollaborationAction = useCallback(
+        (action: MarkdownEditingAction) => {
+            const sendMessage = sendMessageRef.current;
+            if (!sendMessage) {
+                toast({
+                    status: 'warning',
+                    title: t('agent.startDocumentEditingConversationFirst'),
+                    duration: 3000,
+                });
+                return;
+            }
+            const blockType = action.anchor.block_type.replaceAll('_', ' ');
+            const displayMessage = action.comment?.trim() || t('agent.editedSelectionMessage', { blockType });
+            sendMessage(displayMessage, { editing_action: action });
+        },
+        [sendMessageRef, t, toast],
+    );
 
     // Only poll while the active panel can actually surface processing progress.
     const shouldPollProgress =
@@ -504,7 +620,10 @@ function DataPanel({
                         textContainerRef={textContainerRef}
                         isEditing={isEditing}
                         onToggleEdit={() => setIsEditing(true)}
-                        canEdit={canEdit}
+                        canEdit={textActionAccess.canEdit}
+                        isCollaborating={isCollaborating}
+                        onToggleCollaborate={onToggleCollaborate}
+                        canCollaborate={textActionAccess.canCollaborate}
                     />
                 )}
                 {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (pdfRendition || officePdfUrl) && (
@@ -566,6 +685,14 @@ function DataPanel({
                         text={displayText}
                         isTextCropped={isTextCropped}
                         textContainerRef={textContainerRef}
+                        collaboration={
+                            isCollaborating
+                                ? {
+                                      baseVersion: object.content?.etag ?? object.text_etag,
+                                      onAction: handleCollaborationAction,
+                                  }
+                                : undefined
+                        }
                     />
                 </div>
             )}
@@ -585,7 +712,17 @@ function DataPanel({
     );
 }
 
-function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, canEdit }: TextActionsProps) {
+function TextActions({
+    object,
+    text,
+    fullText,
+    handleCopyContent,
+    onToggleEdit,
+    canEdit,
+    isCollaborating,
+    onToggleCollaborate,
+    canCollaborate,
+}: TextActionsProps) {
     const { client, project } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
@@ -684,6 +821,18 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                                 <SquarePen className="size-4" />
                             </SecureButton>
                         )}
+                        {canCollaborate && onToggleCollaborate && isMarkdown && (
+                            <Button
+                                variant={isCollaborating ? 'primary' : 'ghost'}
+                                size="sm"
+                                onClick={onToggleCollaborate}
+                                title={t('agent.editWithAI')}
+                                aria-label={t('agent.editWithAI')}
+                                className="flex items-center gap-2"
+                            >
+                                <Bot className="size-4" />
+                            </Button>
+                        )}
                     </>
                 )}
                 {isDownloading ? (
@@ -741,7 +890,7 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
     );
 }
 
-const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextPanelProps) => {
+const TextPanel = memo(({ object, text, isTextCropped, textContainerRef, collaboration }: TextPanelProps) => {
     const { t } = useUITranslation();
     const content = object.content;
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
@@ -773,7 +922,22 @@ const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextP
                     </div>
                 ) : shouldRenderAsMarkdown ? (
                     <div className="vprose prose-sm p-1">
-                        <MarkdownRenderer components={createMarkdownComponents()}>{text}</MarkdownRenderer>
+                        {collaboration ? (
+                            <CollaborativeMarkdownRenderer
+                                resource={{
+                                    kind: 'store_document',
+                                    document_id: object.id,
+                                    name: object.name,
+                                }}
+                                baseVersion={collaboration.baseVersion}
+                                components={createMarkdownComponents()}
+                                onAction={collaboration.onAction}
+                            >
+                                {text}
+                            </CollaborativeMarkdownRenderer>
+                        ) : (
+                            <MarkdownRenderer components={createMarkdownComponents()}>{text}</MarkdownRenderer>
+                        )}
                     </div>
                 ) : (
                     <pre className="text-wrap bg-muted text-muted p-2">{text}</pre>

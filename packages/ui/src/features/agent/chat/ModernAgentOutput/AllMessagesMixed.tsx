@@ -29,6 +29,7 @@ import {
 import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
+import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
     formatWorkstreamName,
@@ -660,6 +661,13 @@ function SummaryMessage({
         () => (message.type === AgentMessageType.QUESTION ? parseUserMessageAttachments(content) : null),
         [content, message.type],
     );
+    const editingAction = useMemo(
+        () =>
+            message.type === AgentMessageType.QUESTION
+                ? parseMarkdownEditingAction(message.details?.editing_action)
+                : undefined,
+        [message.details, message.type],
+    );
 
     const markdownComponents = useMemo(
         () => ({
@@ -745,8 +753,11 @@ function SummaryMessage({
                         workstreamId={workstreamId}
                         artifactRunId={runId}
                         markdownComponents={markdownComponents}
+                        className={
+                            editingAction ? 'w-[min(34rem,92%)] max-w-[92%] bg-transparent p-0 shadow-none' : undefined
+                        }
                     >
-                        {questionBody}
+                        {editingAction ? <DocumentEditingActionCard action={editingAction} /> : questionBody}
                     </SummaryUserBubble>
                 )}
             </>

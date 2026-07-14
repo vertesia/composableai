@@ -733,5 +733,20 @@
   "user.user": "사용자",
   "user.userId": "사용자 ID",
   "widgets.schema.editDescription": "설명 편집",
-  "widgets.schema.invalidPropertyDeclaration": "유효하지 않은 속성 선언"
+  "widgets.schema.invalidPropertyDeclaration": "유효하지 않은 속성 선언",
+  "agent.artifactEditingUnavailable": "이 대화에서는 아티팩트를 편집할 수 없습니다",
+  "agent.backToArtifacts": "아티팩트로 돌아가기",
+  "agent.commentOnSelection": "선택 영역에 댓글 달기",
+  "agent.commentOnSelectionPlaceholder": "에이전트가 이 섹션을 어떻게 개선해야 하는지 설명하세요...",
+  "agent.documentEditing": "문서 편집",
+  "agent.documentEditingDefaultsRequired": "문서 편집을 시작하기 전에 기본 에이전트 환경과 모델을 구성하세요",
+  "agent.documentEditingInitialRequest": "이 문서를 개선하도록 도와주세요",
+  "agent.documentEditingPlaceholder": "변경 사항을 설명하거나 문서 섹션을 선택하세요...",
+  "agent.documentEditingStartFailed": "문서 편집을 시작하지 못했습니다",
+  "agent.documentEditingWelcome": "대화를 시작하여 이 문서를 공동 편집하세요. 문서의 섹션을 선택해 댓글을 달거나 편집할 수도 있습니다.",
+  "agent.editSelection": "선택 영역 편집",
+  "agent.editSelectionPlaceholder": "선택한 Markdown 편집...",
+  "agent.editWithAI": "AI로 편집",
+  "agent.failedToLoadArtifact": "아티팩트를 불러오지 못했습니다",
+  "agent.startDocumentEditingConversationFirst": "섹션을 보내기 전에 문서 편집 대화를 시작하세요"
 }

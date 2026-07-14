@@ -733,5 +733,20 @@
   "user.user": "Benutzer",
   "user.userId": "Benutzer-ID",
   "widgets.schema.editDescription": "Beschreibung bearbeiten",
-  "widgets.schema.invalidPropertyDeclaration": "Ungültige Eigenschaftsdeklaration"
+  "widgets.schema.invalidPropertyDeclaration": "Ungültige Eigenschaftsdeklaration",
+  "agent.artifactEditingUnavailable": "Die Bearbeitung von Artefakten ist in dieser Unterhaltung nicht verfügbar",
+  "agent.backToArtifacts": "Zurück zu Artefakten",
+  "agent.commentOnSelection": "Auswahl kommentieren",
+  "agent.commentOnSelectionPlaceholder": "Beschreiben Sie, wie der Agent diesen Abschnitt verbessern soll...",
+  "agent.documentEditing": "Dokumentbearbeitung",
+  "agent.documentEditingDefaultsRequired": "Konfigurieren Sie eine Standard-Agentenumgebung und ein Standardmodell, bevor Sie die Dokumentbearbeitung starten",
+  "agent.documentEditingInitialRequest": "Hilf mir, dieses Dokument zu verbessern",
+  "agent.documentEditingPlaceholder": "Beschreiben Sie eine Änderung oder wählen Sie einen Dokumentabschnitt aus...",
+  "agent.documentEditingStartFailed": "Dokumentbearbeitung konnte nicht gestartet werden",
+  "agent.documentEditingWelcome": "Starten Sie eine Unterhaltung, um dieses Dokument gemeinsam zu bearbeiten. Sie können auch einen Abschnitt auswählen und kommentieren oder bearbeiten.",
+  "agent.editSelection": "Auswahl bearbeiten",
+  "agent.editSelectionPlaceholder": "Ausgewähltes Markdown bearbeiten...",
+  "agent.editWithAI": "Mit KI bearbeiten",
+  "agent.failedToLoadArtifact": "Artefakt konnte nicht geladen werden",
+  "agent.startDocumentEditingConversationFirst": "Starten Sie die Unterhaltung zur Dokumentbearbeitung, bevor Sie einen Abschnitt senden"
 }

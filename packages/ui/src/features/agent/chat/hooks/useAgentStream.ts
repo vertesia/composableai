@@ -98,6 +98,10 @@ function isTimelineStateMessage(message: AgentMessage): boolean {
 function shouldStoreTimelineMessage(message: AgentMessage): boolean {
     if (message.type === AgentMessageType.STREAMING_CHUNK) return false;
 
+    // Structured resource events must survive replay even if a producer accidentally
+    // omits the human-readable display message.
+    if (message.type === AgentMessageType.UPDATE && typeof message.details?.event_class === 'string') return true;
+
     if (message.type === AgentMessageType.SYSTEM) {
         const details = message.details as FileProcessingDetails | undefined;
         if (details?.system_type === 'file_processing' && details.files) return false;
@@ -210,13 +214,19 @@ function getStreamingReplacementKeys(message: AgentMessage): string[] {
  * File-processing SYSTEM messages are passed through to the messages array
  * (Option A from the plan) so downstream hooks can react to them.
  */
-export function useAgentStream(client: VertesiaClient, agentRunId: string): UseAgentStreamResult {
+export function useAgentStream(
+    client: VertesiaClient,
+    agentRunId: string,
+    onMessage?: (message: AgentMessage) => void,
+): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const [initialHistoryStatus, setInitialHistoryStatus] =
         useState<UseAgentStreamResult['initialHistoryStatus']>('loading');
     const [agentRunStatus, setAgentRunStatus] = useState<string | null>(null);
     const [workflowRunId, setWorkflowRunId] = useState<string | null>(null);
+    const onMessageRef = useRef(onMessage);
+    onMessageRef.current = onMessage;
 
     // Server-side file processing status updates
     const [serverFileUpdates, setServerFileUpdates] = useState<Map<string, ConversationFile>>(new Map());
@@ -345,6 +355,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                 agentRunId,
                 (message) => {
                     if (abortController.signal.aborted) return;
+                    onMessageRef.current?.(message);
 
                     debugAgentChat('stream message', {
                         agentRunId,

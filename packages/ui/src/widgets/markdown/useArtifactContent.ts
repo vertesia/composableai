@@ -1,5 +1,5 @@
 /**
- * useArtifactContent - Hook to fetch artifact content from GCS
+ * useArtifactContent - Hook to fetch artifact content from blob storage
  *
  * Used by expand:* code blocks to fetch and render artifact content inline.
  */
@@ -19,6 +19,8 @@ export interface ArtifactContentState<T = unknown> {
     error: string | undefined;
     /** Detected content type */
     contentType: 'json' | 'text' | 'binary' | undefined;
+    /** Storage ETag when exposed by the signed artifact response. */
+    etag: string | undefined;
     /** Retry the fetch */
     retry: () => void;
 }
@@ -59,8 +61,8 @@ function detectContentType(path: string): 'json' | 'text' | 'binary' {
 }
 
 /**
- * Hook to fetch artifact content from GCS.
- * Handles caching, loading states, and error handling.
+ * Hook to fetch artifact content from blob storage.
+ * Handles signed-URL caching, loading states, and error handling.
  *
  * @example
  * ```tsx
@@ -90,6 +92,7 @@ export function useArtifactContent<T = unknown>({
         isLoading: boolean;
         error: string | undefined;
         contentType: 'json' | 'text' | 'binary' | undefined;
+        etag?: string;
     }>({
         data: undefined,
         rawContent: undefined,
@@ -156,6 +159,7 @@ export function useArtifactContent<T = unknown>({
                     isLoading: false,
                     error: undefined,
                     contentType,
+                    etag: response.headers.get('etag')?.replace(/^"(.*)"$/, '$1'),
                 });
                 return;
             }
@@ -181,6 +185,7 @@ export function useArtifactContent<T = unknown>({
                 isLoading: false,
                 error: undefined,
                 contentType,
+                etag: response.headers.get('etag')?.replace(/^"(.*)"$/, '$1'),
             });
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to fetch artifact';
@@ -216,6 +221,7 @@ export function useArtifactContent<T = unknown>({
         isLoading: state.isLoading,
         error: state.error,
         contentType: state.contentType,
+        etag: state.etag,
         retry,
     };
 }

@@ -97,6 +97,8 @@ export type StartWorkflowFn = (
     options?: StartWorkflowOptions,
 ) => Promise<{ agent_run_id: string } | undefined>;
 
+export type SendAgentMessageFn = (message: string, inputMetadata?: Record<string, unknown>) => void;
+
 const EMPTY_STREAMING_MESSAGES = new Map<string, never>();
 
 function getTimestampMs(timestamp: number | string | undefined): number {
@@ -567,6 +569,10 @@ export interface ModernAgentConversationProps {
 
     /** Ref populated with the internal file upload handler for external triggering */
     fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
+    /** Ref populated with the internal message sender for document or artifact collaboration controls. */
+    sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
+    /** Called for each historical or live message delivered by the conversation stream. */
+    onMessage?: (message: AgentMessage) => void;
     /** Called when processingFiles state changes (for external progress display) */
     onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
     /** Processing files to display in the right panel Uploads tab */
@@ -1276,6 +1282,8 @@ function ModernAgentConversationInner({
     fusionData,
     // External file upload API
     fileUploadRef,
+    sendMessageRef,
+    onMessage,
     onProcessingFilesChange,
     processingFiles: processingFilesProp,
     // External plan panel API
@@ -1336,7 +1344,7 @@ function ModernAgentConversationInner({
         agentRunStatus,
         workflowRunId,
         serverFileUpdates,
-    } = useAgentStream(client, agentRunId);
+    } = useAgentStream(client, agentRunId, onMessage);
 
     const {
         plans,
@@ -1976,7 +1984,12 @@ function ModernAgentConversationInner({
                 type: AgentMessageType.QUESTION,
                 message: messageContent,
                 workstream_id: 'main',
-                details: { _optimistic: true, _messageId: messageId, _deliveryStatus: 'sending' },
+                details: {
+                    _optimistic: true,
+                    _messageId: messageId,
+                    _deliveryStatus: 'sending',
+                    ...(inputMetadata?.editing_action ? { editing_action: inputMetadata.editing_action } : {}),
+                },
             };
 
             addOptimisticMessage(optimisticMessage);
@@ -2046,6 +2059,13 @@ function ModernAgentConversationInner({
             waitForPendingToolApprovalModeChange,
         ],
     );
+
+    useEffect(() => {
+        if (sendMessageRef) sendMessageRef.current = handleSendMessage;
+        return () => {
+            if (sendMessageRef?.current === handleSendMessage) sendMessageRef.current = null;
+        };
+    }, [handleSendMessage, sendMessageRef]);
 
     // After the user connects an MCP server requested via request_mcp_connection, flag the
     // conversation for tool re-discovery and resume it with a confirmation message so the agent
@@ -2716,6 +2736,9 @@ function ModernAgentConversationInner({
                                     // Artifacts
                                     showArtifacts={showArtifacts}
                                     artifactRefreshKey={artifactRefreshKey}
+                                    onSendMessage={
+                                        !isWorkflowTerminal || canContinueConversation ? handleSendMessage : undefined
+                                    }
                                     // Messages (for workstreams tab context)
                                     messages={messages}
                                     // Payload content

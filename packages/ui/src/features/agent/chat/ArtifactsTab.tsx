@@ -1,9 +1,12 @@
-import { Button, Center, ErrorBox, Input } from '@vertesia/ui/core';
+import { Button, Center, ErrorBox, Input, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { CollaborativeMarkdownRenderer, type MarkdownEditingAction, useArtifactContent } from '@vertesia/ui/widgets';
 import {
+    ArrowLeftIcon,
     ChevronDownIcon,
     ChevronRightIcon,
+    DownloadIcon,
     FileIcon,
     FolderIcon,
     FolderOpenIcon,
@@ -22,6 +25,7 @@ interface TreeNodeProps {
     node: ArtifactTreeNode;
     depth: number;
     runId: string;
+    onOpen: (relativePath: string) => void;
     onDownload: (relativePath: string) => void;
     downloadingPath: string | null;
     forceExpanded?: boolean;
@@ -31,7 +35,8 @@ function formatDirectoryLabel(name: string): string {
     return name.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpanded = false }: TreeNodeProps) {
+function TreeNode({ node, depth, runId, onOpen, onDownload, downloadingPath, forceExpanded = false }: TreeNodeProps) {
+    const { t } = useUITranslation();
     const [expanded, setExpanded] = useState(false);
     const isExpanded = forceExpanded || expanded;
 
@@ -66,6 +71,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
                             node={child}
                             depth={depth + 1}
                             runId={runId}
+                            onOpen={onOpen}
                             onDownload={onDownload}
                             downloadingPath={downloadingPath}
                             forceExpanded={forceExpanded}
@@ -78,22 +84,32 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
     const isDownloading = downloadingPath === node.path;
 
     return (
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-1">
             <Button
                 variant="unstyled"
-                className="flex w-full max-w-full items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
+                className="flex min-w-0 flex-1 items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
                 style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
-                onClick={() => onDownload(node.path)}
-                disabled={isDownloading}
+                onClick={() => onOpen(node.path)}
                 title={node.path}
             >
-                {isDownloading ? (
-                    <Loader2Icon className="size-3.5 shrink-0 animate-spin text-info" />
-                ) : (
-                    <span className="size-3.5 shrink-0" />
-                )}
+                <span className="size-3.5 shrink-0" />
                 <FileIcon className="size-4 shrink-0 text-muted" />
                 <span className="min-w-0 truncate">{node.name}</span>
+            </Button>
+            <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 shrink-0 p-0"
+                onClick={() => onDownload(node.path)}
+                disabled={isDownloading}
+                aria-label={t('agent.download')}
+                title={t('agent.download')}
+            >
+                {isDownloading ? (
+                    <Loader2Icon className="size-3.5 animate-spin text-info" />
+                ) : (
+                    <DownloadIcon className="size-3.5" />
+                )}
             </Button>
         </div>
     );
@@ -149,6 +165,89 @@ function downloadUrl(url: string, filename: string) {
 interface ArtifactsTabProps {
     runId?: string;
     refreshKey?: number;
+    onSendMessage?: (message: string, inputMetadata?: Record<string, unknown>) => void;
+}
+
+interface ArtifactMarkdownEditorProps {
+    runId: string;
+    path: string;
+    onBack: () => void;
+    onDownload: (path: string) => void;
+    onSendMessage?: (message: string, inputMetadata?: Record<string, unknown>) => void;
+}
+
+function ArtifactMarkdownEditor({ runId, path, onBack, onDownload, onSendMessage }: ArtifactMarkdownEditorProps) {
+    const { t } = useUITranslation();
+    const toast = useToast();
+    const { rawContent, data, isLoading, error, etag, retry } = useArtifactContent<string>({
+        runId,
+        path,
+        parseJson: false,
+    });
+    const content = rawContent ?? (typeof data === 'string' ? data : '');
+
+    const handleAction = (action: MarkdownEditingAction) => {
+        if (!onSendMessage) {
+            toast({ status: 'warning', title: t('agent.artifactEditingUnavailable'), duration: 3000 });
+            return;
+        }
+        const blockType = action.anchor.block_type.replaceAll('_', ' ');
+        const displayMessage = action.comment?.trim() || t('agent.editedSelectionMessage', { blockType });
+        onSendMessage(displayMessage, { editing_action: action });
+    };
+
+    return (
+        <div className="flex h-full min-h-0 flex-col">
+            <div className="flex shrink-0 items-center gap-1 border-b border-mixer-muted/20 px-2 py-1">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={onBack}
+                    aria-label={t('agent.backToArtifacts')}
+                    title={t('agent.backToArtifacts')}
+                >
+                    <ArrowLeftIcon className="size-4 cn-rtl-flip" />
+                </Button>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium" title={path}>
+                    {path.split('/').pop()}
+                </span>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => onDownload(path)}
+                    aria-label={t('agent.download')}
+                    title={t('agent.download')}
+                >
+                    <DownloadIcon className="size-4" />
+                </Button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                {isLoading ? (
+                    <Center className="h-full min-h-[200px]">
+                        <Loader2Icon className="size-5 animate-spin text-info" />
+                    </Center>
+                ) : error ? (
+                    <ErrorBox title={t('agent.failedToLoadArtifact')} action={retry} actionLabel={t('agent.retry')}>
+                        {error}
+                    </ErrorBox>
+                ) : (
+                    <div className="vprose prose-sm max-w-none">
+                        <CollaborativeMarkdownRenderer
+                            artifactRunId={runId}
+                            resource={{ kind: 'agent_artifact', run_id: runId, path }}
+                            baseVersion={etag}
+                            readOnly={!onSendMessage}
+                            onAction={handleAction}
+                        >
+                            {content}
+                        </CollaborativeMarkdownRenderer>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
 
 function ArtifactEmptyState({
@@ -169,12 +268,13 @@ function ArtifactEmptyState({
     );
 }
 
-function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
+function ArtifactsTabComponent({ runId, refreshKey = 0, onSendMessage }: ArtifactsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const { tree, flatFiles, isLoading, error, refresh } = useArtifacts(client, runId, refreshKey);
     const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
     const [filterValue, setFilterValue] = useState('');
+    const [selectedPath, setSelectedPath] = useState<string | null>(null);
     const normalizedFilterValue = filterValue.trim();
     const filteredTree = useMemo(() => filterArtifactTree(tree, normalizedFilterValue), [tree, normalizedFilterValue]);
     const visibleFileCount = useMemo(() => countTreeFiles(filteredTree), [filteredTree]);
@@ -194,6 +294,17 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
             }
         },
         [client, runId],
+    );
+
+    const handleOpen = useCallback(
+        (relativePath: string) => {
+            if (/\.md$/i.test(relativePath)) {
+                setSelectedPath(relativePath);
+                return;
+            }
+            void handleDownload(relativePath);
+        },
+        [handleDownload],
     );
 
     if (!runId) {
@@ -244,6 +355,19 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
         );
     }
 
+    if (selectedPath) {
+        return (
+            <ArtifactMarkdownEditor
+                key={`${selectedPath}:${refreshKey}`}
+                runId={runId}
+                path={selectedPath}
+                onBack={() => setSelectedPath(null)}
+                onDownload={(path) => void handleDownload(path)}
+                onSendMessage={onSendMessage}
+            />
+        );
+    }
+
     return (
         <div className="flex flex-col h-full">
             {/* Top bar */}
@@ -283,6 +407,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                                 node={node}
                                 depth={0}
                                 runId={runId}
+                                onOpen={handleOpen}
                                 onDownload={handleDownload}
                                 downloadingPath={downloadingPath}
                                 forceExpanded={!!normalizedFilterValue}

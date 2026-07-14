@@ -1,5 +1,6 @@
 export * from './ContentDispositionButton';
 export * from './ContentOverview';
+export * from './DocumentEditingPanel';
 export * from './DocumentIcon';
 export * from './DocumentInput';
 export * from './PropertiesEditorModal';

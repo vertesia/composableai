@@ -29,6 +29,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
+import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
@@ -303,6 +304,13 @@ function MessageItemComponent({
 
     const visibleMessageContent = parsedUserAttachments?.body ?? messageContent;
     const messageAttachments = parsedUserAttachments?.attachments ?? [];
+    const editingAction = useMemo(
+        () =>
+            message.type === AgentMessageType.QUESTION
+                ? parseMarkdownEditingAction(message.details?.editing_action)
+                : undefined,
+        [message.details, message.type],
+    );
 
     // PERFORMANCE: Memoize processed content - expensive regex operations only run when messageContent changes
     const processedContent = useMemo(() => {
@@ -659,6 +667,8 @@ function MessageItemComponent({
                             compact
                             answered={requestInputAnswered}
                         />
+                    ) : editingAction ? (
+                        <DocumentEditingActionCard action={editingAction} />
                     ) : (
                         visibleMessageContent && (
                             <div

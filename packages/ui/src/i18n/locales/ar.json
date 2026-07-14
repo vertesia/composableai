@@ -773,5 +773,20 @@
   "user.user": "مستخدم",
   "user.userId": "معرف المستخدم",
   "widgets.schema.editDescription": "تحرير الوصف",
-  "widgets.schema.invalidPropertyDeclaration": "إعلان خاصية غير صالح"
+  "widgets.schema.invalidPropertyDeclaration": "إعلان خاصية غير صالح",
+  "agent.artifactEditingUnavailable": "تحرير العناصر غير متاح في هذه المحادثة",
+  "agent.backToArtifacts": "العودة إلى العناصر",
+  "agent.commentOnSelection": "التعليق على التحديد",
+  "agent.commentOnSelectionPlaceholder": "صِف كيف ينبغي للوكيل تحسين هذا القسم...",
+  "agent.documentEditing": "تحرير المستند",
+  "agent.documentEditingDefaultsRequired": "قم بإعداد بيئة ونموذج افتراضيين للوكيل قبل بدء تحرير المستند",
+  "agent.documentEditingInitialRequest": "ساعدني في تحسين هذا المستند",
+  "agent.documentEditingPlaceholder": "صِف تغييرًا أو حدد قسمًا من المستند...",
+  "agent.documentEditingStartFailed": "تعذر بدء تحرير المستند",
+  "agent.documentEditingWelcome": "ابدأ محادثة لتحرير هذا المستند بشكل تعاوني. يمكنك أيضًا تحديد أي قسم للتعليق عليه أو تحريره.",
+  "agent.editSelection": "تحرير التحديد",
+  "agent.editSelectionPlaceholder": "حرر Markdown المحدد...",
+  "agent.editWithAI": "التحرير بالذكاء الاصطناعي",
+  "agent.failedToLoadArtifact": "تعذر تحميل العنصر",
+  "agent.startDocumentEditingConversationFirst": "ابدأ محادثة تحرير المستند قبل إرسال قسم"
 }

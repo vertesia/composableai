@@ -743,5 +743,20 @@
   "user.user": "Usuario",
   "user.userId": "ID de usuario",
   "widgets.schema.editDescription": "Editar descripción",
-  "widgets.schema.invalidPropertyDeclaration": "Declaración de propiedad inválida"
+  "widgets.schema.invalidPropertyDeclaration": "Declaración de propiedad inválida",
+  "agent.artifactEditingUnavailable": "La edición de artefactos no está disponible en esta conversación",
+  "agent.backToArtifacts": "Volver a los artefactos",
+  "agent.commentOnSelection": "Comentar la selección",
+  "agent.commentOnSelectionPlaceholder": "Describe cómo debería mejorar el agente esta sección...",
+  "agent.documentEditing": "Edición de documentos",
+  "agent.documentEditingDefaultsRequired": "Configura un entorno y un modelo de agente predeterminados antes de iniciar la edición del documento",
+  "agent.documentEditingInitialRequest": "Ayúdame a mejorar este documento",
+  "agent.documentEditingPlaceholder": "Describe un cambio o selecciona una sección del documento...",
+  "agent.documentEditingStartFailed": "No se pudo iniciar la edición del documento",
+  "agent.documentEditingWelcome": "Inicia una conversación para editar este documento de forma colaborativa. También puedes seleccionar cualquier sección para comentarla o editarla.",
+  "agent.editSelection": "Editar la selección",
+  "agent.editSelectionPlaceholder": "Edita el Markdown seleccionado...",
+  "agent.editWithAI": "Editar con IA",
+  "agent.failedToLoadArtifact": "No se pudo cargar el artefacto",
+  "agent.startDocumentEditingConversationFirst": "Inicia la conversación de edición del documento antes de enviar una sección"
 }

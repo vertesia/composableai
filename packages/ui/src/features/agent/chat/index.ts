@@ -31,6 +31,7 @@ export * from './JumpingDots';
 export {
     ModernAgentConversation,
     type ModernAgentConversationProps,
+    type SendAgentMessageFn,
     type StartWorkflowFn,
     type StartWorkflowOptions,
 } from './ModernAgentConversation';

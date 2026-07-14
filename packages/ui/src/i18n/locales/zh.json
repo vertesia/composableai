@@ -733,5 +733,20 @@
   "user.user": "用户",
   "user.userId": "用户ID",
   "widgets.schema.editDescription": "编辑描述",
-  "widgets.schema.invalidPropertyDeclaration": "无效的属性声明"
+  "widgets.schema.invalidPropertyDeclaration": "无效的属性声明",
+  "agent.artifactEditingUnavailable": "此对话中无法编辑工件",
+  "agent.backToArtifacts": "返回工件",
+  "agent.commentOnSelection": "评论所选内容",
+  "agent.commentOnSelectionPlaceholder": "说明智能体应如何改进此部分...",
+  "agent.documentEditing": "文档编辑",
+  "agent.documentEditingDefaultsRequired": "开始文档编辑前，请先配置默认的智能体环境和模型",
+  "agent.documentEditingInitialRequest": "帮我改进此文档",
+  "agent.documentEditingPlaceholder": "描述更改或选择文档部分...",
+  "agent.documentEditingStartFailed": "无法启动文档编辑",
+  "agent.documentEditingWelcome": "开始对话以协作编辑此文档。您也可以选择文档中的任意部分进行评论或编辑。",
+  "agent.editSelection": "编辑所选内容",
+  "agent.editSelectionPlaceholder": "编辑所选 Markdown...",
+  "agent.editWithAI": "使用 AI 编辑",
+  "agent.failedToLoadArtifact": "无法加载工件",
+  "agent.startDocumentEditingConversationFirst": "请先启动文档编辑对话，再发送所选部分"
 }

@@ -733,5 +733,20 @@
   "user.user": "使用者",
   "user.userId": "使用者ID",
   "widgets.schema.editDescription": "編輯描述",
-  "widgets.schema.invalidPropertyDeclaration": "無效的屬性宣告"
+  "widgets.schema.invalidPropertyDeclaration": "無效的屬性宣告",
+  "agent.artifactEditingUnavailable": "此對話中無法編輯成品",
+  "agent.backToArtifacts": "返回成品",
+  "agent.commentOnSelection": "評論所選內容",
+  "agent.commentOnSelectionPlaceholder": "說明代理應如何改進此部分...",
+  "agent.documentEditing": "文件編輯",
+  "agent.documentEditingDefaultsRequired": "開始文件編輯前，請先設定預設的代理環境和模型",
+  "agent.documentEditingInitialRequest": "幫我改進此文件",
+  "agent.documentEditingPlaceholder": "描述變更或選取文件段落...",
+  "agent.documentEditingStartFailed": "無法啟動文件編輯",
+  "agent.documentEditingWelcome": "開始對話以協作編輯此文件。您也可以選取文件中的任何段落進行評論或編輯。",
+  "agent.editSelection": "編輯所選內容",
+  "agent.editSelectionPlaceholder": "編輯所選 Markdown...",
+  "agent.editWithAI": "使用 AI 編輯",
+  "agent.failedToLoadArtifact": "無法載入成品",
+  "agent.startDocumentEditingConversationFirst": "請先啟動文件編輯對話，再傳送所選段落"
 }

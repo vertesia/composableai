@@ -80,6 +80,11 @@ export interface MarkdownRendererProps {
     onProposalSelect?: (optionId: string) => void;
     /** Callback when user submits free-form response to proposal */
     onProposalSubmit?: (response: string) => void;
+    /**
+     * Keep parser source positions aligned with `children` by skipping source-changing
+     * normalization. Editing surfaces use this when node offsets are part of an anchor.
+     */
+    preserveSourcePositions?: boolean;
 }
 
 // Create default handlers once, outside component
@@ -98,11 +103,15 @@ export function MarkdownRenderer({
     imageClassName,
     onProposalSelect,
     onProposalSubmit,
+    preserveSourcePositions = false,
 }: MarkdownRendererProps) {
     const codeBlockRegistry = useCodeBlockRendererRegistry();
     const normalizedMarkdown = React.useMemo(
-        () => normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
-        [children],
+        () =>
+            preserveSourcePositions
+                ? children
+                : normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
+        [children, preserveSourcePositions],
     );
 
     // Remark plugins (markdown parsing)

@@ -733,5 +733,20 @@
   "user.user": "Kullanıcı",
   "user.userId": "Kullanıcı ID",
   "widgets.schema.editDescription": "Açıklamayı düzenle",
-  "widgets.schema.invalidPropertyDeclaration": "Geçersiz özellik bildirimi"
+  "widgets.schema.invalidPropertyDeclaration": "Geçersiz özellik bildirimi",
+  "agent.artifactEditingUnavailable": "Bu konuşmada yapıt düzenleme kullanılamıyor",
+  "agent.backToArtifacts": "Yapıtlara dön",
+  "agent.commentOnSelection": "Seçime yorum ekle",
+  "agent.commentOnSelectionPlaceholder": "Aracının bu bölümü nasıl geliştirmesi gerektiğini açıklayın...",
+  "agent.documentEditing": "Belge düzenleme",
+  "agent.documentEditingDefaultsRequired": "Belge düzenlemeyi başlatmadan önce varsayılan bir aracı ortamı ve modeli yapılandırın",
+  "agent.documentEditingInitialRequest": "Bu belgeyi geliştirmeme yardım et",
+  "agent.documentEditingPlaceholder": "Bir değişiklik açıklayın veya belge bölümü seçin...",
+  "agent.documentEditingStartFailed": "Belge düzenleme başlatılamadı",
+  "agent.documentEditingWelcome": "Bu belgeyi birlikte düzenlemek için bir konuşma başlatın. Ayrıca herhangi bir bölümü seçip yorumlayabilir veya düzenleyebilirsiniz.",
+  "agent.editSelection": "Seçimi düzenle",
+  "agent.editSelectionPlaceholder": "Seçili Markdown’ı düzenleyin...",
+  "agent.editWithAI": "Yapay zekâ ile düzenle",
+  "agent.failedToLoadArtifact": "Yapıt yüklenemedi",
+  "agent.startDocumentEditingConversationFirst": "Bir bölüm göndermeden önce belge düzenleme konuşmasını başlatın"
 }

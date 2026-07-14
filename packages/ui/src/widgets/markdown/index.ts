@@ -21,6 +21,16 @@ export {
     useCodeBlockRendererRegistry,
 } from './CodeBlockRendering';
 export {
+    CollaborativeMarkdownRenderer,
+    type CollaborativeMarkdownRendererProps,
+    createMarkdownBlockAnchor,
+    formatMarkdownEditingAction,
+    type MarkdownBlockAnchor,
+    type MarkdownBlockType,
+    type MarkdownEditingAction,
+    type MarkdownEditingResource,
+} from './CollaborativeMarkdownRenderer';
+export {
     ChartCodeBlockHandler,
     createDefaultCodeBlockHandlers,
     ExpandCodeBlockHandler,

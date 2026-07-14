@@ -753,5 +753,20 @@
   "user.user": "Пользователь",
   "user.userId": "ID пользователя",
   "widgets.schema.editDescription": "Редактировать описание",
-  "widgets.schema.invalidPropertyDeclaration": "Недопустимое объявление свойства"
+  "widgets.schema.invalidPropertyDeclaration": "Недопустимое объявление свойства",
+  "agent.artifactEditingUnavailable": "Редактирование артефактов недоступно в этом разговоре",
+  "agent.backToArtifacts": "Назад к артефактам",
+  "agent.commentOnSelection": "Прокомментировать выделение",
+  "agent.commentOnSelectionPlaceholder": "Опишите, как агент должен улучшить этот раздел...",
+  "agent.documentEditing": "Редактирование документа",
+  "agent.documentEditingDefaultsRequired": "Настройте среду и модель агента по умолчанию перед началом редактирования документа",
+  "agent.documentEditingInitialRequest": "Помоги мне улучшить этот документ",
+  "agent.documentEditingPlaceholder": "Опишите изменение или выберите раздел документа...",
+  "agent.documentEditingStartFailed": "Не удалось начать редактирование документа",
+  "agent.documentEditingWelcome": "Начните разговор для совместного редактирования документа. Вы также можете выбрать любой раздел, чтобы прокомментировать или изменить его.",
+  "agent.editSelection": "Редактировать выделение",
+  "agent.editSelectionPlaceholder": "Измените выбранный Markdown...",
+  "agent.editWithAI": "Редактировать с помощью ИИ",
+  "agent.failedToLoadArtifact": "Не удалось загрузить артефакт",
+  "agent.startDocumentEditingConversationFirst": "Начните разговор о редактировании документа перед отправкой раздела"
 }
