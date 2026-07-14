@@ -1181,6 +1181,8 @@ export interface InteractionExecutionConfiguration {
     run_data?: RunDataStorageLevel;
     configMode?: ConfigModes;
     model_options?: ModelOptions;
+    /** Stable provider-side routing key for automatic prompt caching. */
+    prompt_cache_key?: string;
     /** Per-run HTTP timeouts for upstream LLM-provider calls. */
     http_timeout?: HttpTimeoutOptions;
 }
