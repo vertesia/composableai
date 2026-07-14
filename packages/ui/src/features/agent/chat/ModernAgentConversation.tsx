@@ -1583,7 +1583,11 @@ function ModernAgentConversationInner({
         () => getPendingRequestInputMessage(displayedMessages),
         [displayedMessages],
     );
-    const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
+    // A terminal run silently drops user input unless it can be continued (see the guard in
+    // handleSendMessage), so never surface an actionable question overlay in that state —
+    // the terminal status box renders instead.
+    const shouldShowRequestInputOverlay =
+        Boolean(pendingRequestInputMessage) && !isFailed && (!isWorkflowTerminal || canContinueConversation);
     const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
     const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);

@@ -1339,6 +1339,54 @@ describe('ModernAgentConversation send handling', () => {
         );
     });
 
+    it('hides a stale request overlay when a terminal run cannot continue', () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+                    details: {
+                        ux: {
+                            options: [
+                                { id: 'red', label: 'Red' },
+                                { id: 'blue', label: 'Blue' },
+                            ],
+                        },
+                    },
+                },
+            ],
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation();
+
+        expect(screen.queryByText('What is your favorite color?')).toBeNull();
+        expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
+    });
+
+    it('keeps a pending request overlay when a terminal run can restart', () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+                    details: {
+                        ux: {
+                            options: [
+                                { id: 'red', label: 'Red' },
+                                { id: 'blue', label: 'Blue' },
+                            ],
+                        },
+                    },
+                },
+            ],
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({ onRestart: vi.fn() });
+
+        expect(screen.getByText('What is your favorite color?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Blue/ })).not.toBeNull();
+    });
+
     it('passes commented approval denial metadata through the request overlay signal', async () => {
         mockStreamState({
             messages: [

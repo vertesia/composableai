@@ -318,6 +318,7 @@ export function DocumentEditingPanel({
                         agentRunId={agentRunId}
                         startWorkflow={startWorkflow}
                         resetWorkflow={() => setAgentRunId(undefined)}
+                        onRestart={(run) => setAgentRunId(run.id)}
                         sendMessageRef={sendMessageRef}
                         onMessage={(message) => {
                             if (message.type !== AgentMessageType.UPDATE) return;
