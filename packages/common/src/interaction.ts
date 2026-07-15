@@ -765,6 +765,14 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     initial_tool_calls?: InitialToolCall[];
 
     /**
+     * Hard denylist of tool names for this conversation. Excluded tools are never
+     * exposed to the model and are refused at execution time, even when a skill or
+     * tool refresh would otherwise unlock them. Takes precedence over tool_names,
+     * initial_skills, and skill-based tool activation.
+     */
+    excluded_tools?: string[];
+
+    /**
      * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
      */
     max_iterations?: number;

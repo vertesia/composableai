@@ -180,6 +180,9 @@ export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Rec
     /** Ordered, bounded hydration/read calls executed before the first model turn. */
     initial_tool_calls?: InitialToolCall[];
 
+    /** Hard denylist of tool names: never exposed to the model, refused at execution time. */
+    excluded_tools?: string[];
+
     /** Scoped collection (if any) */
     collection_id?: string;
 

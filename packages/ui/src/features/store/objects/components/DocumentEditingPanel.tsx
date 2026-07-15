@@ -20,7 +20,7 @@ import {
     isArtifactRefreshEvent,
     type MarkdownEditingAction,
 } from '@vertesia/ui/widgets';
-import { Check, FileText, GitCompareArrows, RefreshCw, RotateCcw, Save, X } from 'lucide-react';
+import { Check, FileText, GitCompareArrows, ListChecks, RefreshCw, RotateCcw, Save, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ModernAgentConversation,
@@ -67,6 +67,25 @@ const DOCUMENT_EDITING_TOOLS = [
     'update_plan',
     'end_conversation',
     'learn_artifact_operations',
+    // Read access to canonical revisions: reconcile-after-conflict and change
+    // summaries fetch other revisions into reference artifacts for comparison.
+    'fetch_document',
+];
+
+// Editing sessions mutate only the working-copy artifact; the canonical document is
+// published exclusively through Save to document. These tools stay unavailable even
+// if a skill or tool refresh would otherwise unlock them.
+const DOCUMENT_EDITING_EXCLUDED_TOOLS = [
+    'update_document',
+    'update_document_properties',
+    'create_document',
+    'set_document_type',
+    'merge_documents',
+    'import_file',
+    'create_or_update_object_type',
+    'disable_type',
+    'execute_shell',
+    'batch_execute',
 ];
 
 function shortenRunId(id: string): string {
@@ -101,6 +120,34 @@ function createDocumentEditingPrompt(
         'the artifact back to the canonical document with the Save to document button, which enforces the base ETag.',
         '',
         `User request: ${userPrompt}`,
+    ].join('\n');
+}
+
+/** Chat prompt asking the agent to merge external canonical changes into the working copy. */
+export function createDocumentReconcilePrompt(
+    documentRootId: string,
+    headDocumentId: string,
+    draftPath: string,
+): string {
+    return [
+        'The canonical document was updated outside this session, so publishing the working copy was rejected.',
+        `1) Fetch the latest canonical revision ${headDocumentId} with fetch_document into 'drafts/${documentRootId}.theirs.md'.`,
+        `2) Compare it with the working copy '${draftPath}' and merge the external changes into the working copy with edit_artifact, preserving this session's edits.`,
+        '3) Reply with a short list of what was merged, plus any conflicting passages and how you resolved them, so I can review before saving again.',
+    ].join('\n');
+}
+
+/** Chat prompt asking the agent for a changelog of the working copy vs the session baseline. */
+export function createDocumentChangeSummaryPrompt(
+    documentRootId: string,
+    originalDocumentId: string,
+    draftPath: string,
+): string {
+    return [
+        `Summarize the changes in the working copy '${draftPath}' relative to the original document revision ${originalDocumentId}.`,
+        `If you no longer have the original content, fetch it with fetch_document into 'drafts/${documentRootId}.base.md'.`,
+        'Do not modify the working copy.',
+        'Reply with a concise changelog: grouped bullets, most important first, suitable for a revision note.',
     ].join('\n');
 }
 
@@ -192,6 +239,7 @@ export function DocumentEditingWorkspace({
     const [originalContent, setOriginalContent] = useState(initialContent);
     const [savedContent, setSavedContent] = useState(initialContent);
     const [workspaceView, setWorkspaceView] = useState<'document' | 'diff'>('document');
+    const [saveConflict, setSaveConflict] = useState<{ headId: string } | undefined>();
     const [targetDocumentId, setTargetDocumentId] = useState(object.id);
     const [targetEtag, setTargetEtag] = useState(object.content?.etag);
     const [executionConfiguration, setExecutionConfiguration] = useState<DocumentEditingConfiguration>({});
@@ -394,6 +442,7 @@ export function DocumentEditingWorkspace({
                     interactive: true,
                     tool_approval_mode: options?.tool_approval_mode,
                     tool_names: DOCUMENT_EDITING_TOOLS,
+                    excluded_tools: DOCUMENT_EDITING_EXCLUDED_TOOLS,
                     initial_skills: ['artifact_operations'],
                     initial_tool_calls: [
                         {
@@ -490,10 +539,31 @@ export function DocumentEditingWorkspace({
             setTargetDocumentId(response.id);
             setTargetEtag(response.content?.etag);
             setSavedContent(artifactContent);
+            setSaveConflict(undefined);
             onDocumentUpdated?.(response.id);
             toast({ status: 'success', title: t('store.textSaved'), duration: 2500 });
         } catch (error: unknown) {
-            const isConflict = getErrorStatus(error) === 412;
+            // Two conflict shapes: an in-place edit of the target revision fails the
+            // If-Match precondition (412), while a new external revision moves the head
+            // and the save is rejected as not-head (400). Both mean the canonical
+            // document changed since this session's baseline.
+            const status = getErrorStatus(error);
+            let isConflict = status === 412;
+            if (status === 412 || status === 400) {
+                try {
+                    const target = await resolveDocumentEditingTarget(store.objects, targetDocumentId);
+                    if (target.id !== targetDocumentId || status === 412) {
+                        isConflict = true;
+                        // Re-point the save target at the new head so the user can choose
+                        // to overwrite it, and offer an agent-assisted merge instead.
+                        setTargetDocumentId(target.id);
+                        setTargetEtag(target.etag);
+                        setSaveConflict({ headId: target.id });
+                    }
+                } catch (resolveError: unknown) {
+                    console.warn('Failed to resolve the new head after a save conflict', resolveError);
+                }
+            }
             toast({
                 status: 'error',
                 title: t('store.errorSavingText'),
@@ -521,6 +591,26 @@ export function DocumentEditingWorkspace({
         targetResolutionFailed,
         toast,
     ]);
+
+    const handleReconcile = useCallback(() => {
+        const sendMessage = messageRef.current;
+        if (!sendMessage || !saveConflict) {
+            toast({ status: 'warning', title: t('agent.artifactEditingUnavailable'), duration: 3000 });
+            return;
+        }
+        sendMessage(createDocumentReconcilePrompt(documentRootId, saveConflict.headId, draftPath));
+        setSaveConflict(undefined);
+        setWorkspaceView('document');
+    }, [documentRootId, draftPath, messageRef, saveConflict, t, toast]);
+
+    const handleSummarizeChanges = useCallback(() => {
+        const sendMessage = messageRef.current;
+        if (!sendMessage) {
+            toast({ status: 'warning', title: t('agent.artifactEditingUnavailable'), duration: 3000 });
+            return;
+        }
+        sendMessage(createDocumentChangeSummaryPrompt(documentRootId, originalDocumentRef.current.id, draftPath));
+    }, [documentRootId, draftPath, messageRef, t, toast]);
 
     return (
         <div className="flex h-full min-h-0 flex-col">
@@ -588,6 +678,24 @@ export function DocumentEditingWorkspace({
                     ) : null}
                 </div>
             </div>
+            {saveConflict ? (
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-mixer-attention/30 bg-mixer-attention/10 px-4 py-2 text-sm">
+                    <span className="min-w-0 truncate text-attention">{t('agent.saveConflictNotice')}</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={handleReconcile}>
+                            {t('agent.askAgentToReconcile')}
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSaveConflict(undefined)}
+                            aria-label={t('agent.close')}
+                        >
+                            <X className="size-4" />
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
             <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
                 <ResizablePanel defaultSize={65} minSize={35} className="min-w-0 bg-background">
                     <div className="flex h-full min-h-0 flex-col">
@@ -644,6 +752,18 @@ export function DocumentEditingWorkspace({
                                         {t('agent.reviewChanges')}
                                     </Button>
                                 </div>
+                                {workspaceView === 'diff' ? (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 gap-1.5"
+                                        onClick={handleSummarizeChanges}
+                                        disabled={!artifactLoaded || artifactContent === originalContent}
+                                    >
+                                        <ListChecks className="size-3.5" />
+                                        {t('agent.summarizeChanges')}
+                                    </Button>
+                                ) : null}
                             </div>
                         </div>
                         <div className="min-h-0 flex-1">
