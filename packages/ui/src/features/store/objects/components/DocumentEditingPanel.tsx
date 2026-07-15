@@ -2,6 +2,7 @@ import type { ContentObject, CreateAgentRunPayload } from '@vertesia/common';
 import {
     Button,
     Center,
+    ConfirmModal,
     errorMessage,
     Modal,
     ResizableHandle,
@@ -36,6 +37,7 @@ import {
     type DocumentEditingRunProperties,
     findDocumentEditingRun,
 } from './documentEditingRun.js';
+import { resolveDocumentEditingTarget } from './documentEditingTarget.js';
 
 interface DocumentEditingPanelProps {
     object: ContentObject;
@@ -43,6 +45,19 @@ interface DocumentEditingPanelProps {
     onClose: () => void;
     onDocumentUpdated: (updatedDocumentId: string) => void;
     sendMessageRef: React.MutableRefObject<SendAgentMessageFn | null>;
+}
+
+export interface DocumentEditingWorkspaceProps {
+    /** Document to edit (any revision); the workspace resolves and targets the head revision. */
+    object: ContentObject;
+    /** Known document text shown while the working copy hydrates. */
+    initialContent?: string;
+    /** Called with the id of each revision created by Save to document. */
+    onDocumentUpdated?: (updatedDocumentId: string) => void;
+    /** When provided, a close button is rendered in the workspace header. */
+    onClose?: () => void;
+    /** Optional external handle to send chat messages programmatically. */
+    sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
 }
 
 const DOCUMENT_EDITING_TOOLS = [
@@ -141,20 +156,31 @@ function DocumentWorkingCopyDiff({ original, workingCopy }: { original: string; 
     );
 }
 
-export function DocumentEditingPanel({
+/**
+ * Full document editing workspace: working copy surface plus the editing conversation.
+ * Standalone so host applications can embed it in their own layout; DocumentEditingPanel
+ * wraps it in a full-screen modal for the Studio object page.
+ */
+export function DocumentEditingWorkspace({
     object,
-    initialContent,
-    onClose,
+    initialContent = '',
     onDocumentUpdated,
+    onClose,
     sendMessageRef,
-}: DocumentEditingPanelProps) {
+}: DocumentEditingWorkspaceProps) {
     const { client, project, store, user } = useUserSession();
     const { t } = useUITranslation();
     const toast = useToast();
+    const internalSendMessageRef = useRef<SendAgentMessageFn | null>(null);
+    const messageRef = sendMessageRef ?? internalSendMessageRef;
     const [agentRunId, setAgentRunId] = useState<string | undefined>();
     const [isStarting, setIsStarting] = useState(false);
     const [isTerminating, setIsTerminating] = useState(false);
     const [isResolvingRun, setIsResolvingRun] = useState(true);
+    const [isResolvingTarget, setIsResolvingTarget] = useState(true);
+    const [targetResolutionFailed, setTargetResolutionFailed] = useState(false);
+    const [targetResolutionAttempt, setTargetResolutionAttempt] = useState(0);
+    const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
     const [isLoadingConfiguration, setIsLoadingConfiguration] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [artifactRefresh, setArtifactRefresh] = useState<{
@@ -205,25 +231,42 @@ export function DocumentEditingPanel({
     useEffect(() => {
         let cancelled = false;
         const requestScopeKey = editingScopeKey;
-        const originalDocumentId = originalDocumentRef.current.id;
+        const requestedDocumentId = originalDocumentRef.current.id;
+        setIsResolvingTarget(true);
+        setTargetResolutionFailed(false);
 
-        void store.objects
-            .getObjectText(originalDocumentId)
-            .then((response) => {
+        // Commit the target id, ETag, and text only after all reads succeed. A failed
+        // head lookup must never turn a historical revision into an editable fallback.
+        void resolveDocumentEditingTarget(store.objects, requestedDocumentId)
+            .then((target) => {
                 if (cancelled || originalDocumentRef.current.editingScopeKey !== requestScopeKey) return;
-                if (typeof response.text !== 'string') return;
-                const content = response.text;
-                setOriginalContent(content);
-                setSavedContent(content);
+
+                originalDocumentRef.current = { editingScopeKey: requestScopeKey, id: target.id };
+                lookupIdentityRef.current = { documentId: target.id, documentRootId };
+                setTargetDocumentId(target.id);
+                setTargetEtag(target.etag);
+                setOriginalContent(target.content);
+                setSavedContent(target.content);
             })
             .catch((error: unknown) => {
-                console.warn('Failed to load the original document for editing review', error);
+                console.warn('Failed to resolve the document editing target', {
+                    error,
+                    attempt: targetResolutionAttempt,
+                });
+                if (!cancelled && originalDocumentRef.current.editingScopeKey === requestScopeKey) {
+                    setTargetResolutionFailed(true);
+                }
+            })
+            .finally(() => {
+                if (!cancelled && originalDocumentRef.current.editingScopeKey === requestScopeKey) {
+                    setIsResolvingTarget(false);
+                }
             });
 
         return () => {
             cancelled = true;
         };
-    }, [editingScopeKey, store.objects]);
+    }, [documentRootId, editingScopeKey, store.objects, targetResolutionAttempt]);
 
     useEffect(() => {
         if (!project) {
@@ -321,7 +364,16 @@ export function DocumentEditingPanel({
 
     const startWorkflow = useCallback(
         async (initialMessage?: string, options?: StartWorkflowOptions) => {
-            if (!project || isResolvingRun || isStarting || isLoadingConfiguration) return undefined;
+            if (
+                !project ||
+                isResolvingRun ||
+                isResolvingTarget ||
+                targetResolutionFailed ||
+                isStarting ||
+                isLoadingConfiguration
+            ) {
+                return undefined;
+            }
             setIsStarting(true);
             try {
                 if (!executionConfiguration.environment || !executionConfiguration.model) {
@@ -387,6 +439,7 @@ export function DocumentEditingPanel({
             executionConfiguration,
             isLoadingConfiguration,
             isResolvingRun,
+            isResolvingTarget,
             isStarting,
             object,
             project,
@@ -394,6 +447,7 @@ export function DocumentEditingPanel({
             t,
             targetDocumentId,
             targetEtag,
+            targetResolutionFailed,
             toast,
         ],
     );
@@ -405,7 +459,7 @@ export function DocumentEditingPanel({
 
     const handleArtifactAction = useCallback(
         (action: MarkdownEditingAction) => {
-            const sendMessage = sendMessageRef.current;
+            const sendMessage = messageRef.current;
             if (!sendMessage) {
                 toast({ status: 'warning', title: t('agent.artifactEditingUnavailable'), duration: 3000 });
                 return;
@@ -414,11 +468,13 @@ export function DocumentEditingPanel({
             const displayMessage = action.comment?.trim() || t('agent.editedSelectionMessage', { blockType });
             sendMessage(displayMessage, { editing_action: action });
         },
-        [sendMessageRef, t, toast],
+        [messageRef, t, toast],
     );
 
     const handleSave = useCallback(async () => {
-        if (!artifactLoaded || !targetEtag || !isDirty || isSaving) return;
+        if (!artifactLoaded || !targetEtag || !isDirty || isSaving || isResolvingTarget || targetResolutionFailed) {
+            return;
+        }
         setIsSaving(true);
         try {
             const contentType = object.content?.type || 'text/markdown';
@@ -434,7 +490,7 @@ export function DocumentEditingPanel({
             setTargetDocumentId(response.id);
             setTargetEtag(response.content?.etag);
             setSavedContent(artifactContent);
-            onDocumentUpdated(response.id);
+            onDocumentUpdated?.(response.id);
             toast({ status: 'success', title: t('store.textSaved'), duration: 2500 });
         } catch (error: unknown) {
             const isConflict = getErrorStatus(error) === 412;
@@ -453,6 +509,7 @@ export function DocumentEditingPanel({
         artifactContent,
         artifactLoaded,
         isDirty,
+        isResolvingTarget,
         isSaving,
         object.content?.name,
         object.content?.type,
@@ -461,9 +518,222 @@ export function DocumentEditingPanel({
         t,
         targetDocumentId,
         targetEtag,
+        targetResolutionFailed,
         toast,
     ]);
 
+    return (
+        <div className="flex h-full min-h-0 flex-col">
+            <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-mixer-muted/20 px-4">
+                <div className="min-w-0">
+                    <div className="truncate font-semibold">{object.name || object.content?.name}</div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted">
+                        {isDirty ? t('store.unsavedChanges') : t('store.textSaved')}
+                        {!isDirty && artifactLoaded ? <Check className="size-3 text-success" /> : null}
+                    </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                    {agentRunId ? (
+                        <>
+                            <VTooltip description={agentRunId} asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="font-mono text-[11px] text-muted"
+                                    onClick={handleCopyRunId}
+                                    aria-label={t('agent.copyRunId')}
+                                >
+                                    {shortenRunId(agentRunId)}
+                                </Button>
+                            </VTooltip>
+                            <VTooltip description={t('agent.startNewConversation')} asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        if (isDirty) {
+                                            setShowNewSessionConfirm(true);
+                                        } else {
+                                            void handleStartNewSession();
+                                        }
+                                    }}
+                                    disabled={isTerminating}
+                                    aria-label={t('agent.startNewConversation')}
+                                >
+                                    <RotateCcw className="size-4" />
+                                </Button>
+                            </VTooltip>
+                        </>
+                    ) : null}
+                    <DocumentEditingConfigurationSelector
+                        value={executionConfiguration}
+                        onChange={handleConfigurationChange}
+                        disabled={Boolean(agentRunId) || isStarting || isResolvingRun}
+                        isLoading={isLoadingConfiguration}
+                    />
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        className="min-w-40 gap-2"
+                        onClick={() => void handleSave()}
+                        disabled={!isDirty || !targetEtag || isSaving || isResolvingTarget || targetResolutionFailed}
+                    >
+                        {isSaving ? <Spinner size="sm" /> : <Save className="size-4" />}
+                        {t('agent.saveToDocument')}
+                    </Button>
+                    {onClose ? (
+                        <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('agent.close')}>
+                            <X className="size-4" />
+                        </Button>
+                    ) : null}
+                </div>
+            </div>
+            <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
+                <ResizablePanel defaultSize={65} minSize={35} className="min-w-0 bg-background">
+                    <div className="flex h-full min-h-0 flex-col">
+                        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-mixer-muted/20 bg-muted/10 px-4 py-2">
+                            <div className="flex min-w-0 items-center gap-5 text-xs">
+                                <div className="min-w-0">
+                                    <div className="font-medium text-foreground">{t('agent.workingCopy')}</div>
+                                    <div className="truncate font-mono text-muted" title={draftPath}>
+                                        {draftPath}
+                                    </div>
+                                </div>
+                                <div className="hidden min-w-0 border-s border-mixer-muted/25 ps-5 md:block">
+                                    <div className="font-medium text-foreground">{t('agent.originalDocument')}</div>
+                                    <div
+                                        className="truncate font-mono text-muted"
+                                        title={originalDocumentRef.current.id}
+                                    >
+                                        {shortenRunId(originalDocumentRef.current.id)}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                                <VTooltip description={t('agent.refresh')} asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 gap-1.5"
+                                        onClick={() => setArtifactRefresh((current) => ({ key: current.key + 1 }))}
+                                        disabled={!agentRunId}
+                                        aria-label={t('agent.refresh')}
+                                    >
+                                        <RefreshCw className="size-3.5" />
+                                        {t('agent.refresh')}
+                                    </Button>
+                                </VTooltip>
+                                <div className="flex items-center rounded-md border border-mixer-muted/25 bg-background p-0.5">
+                                    <Button
+                                        variant={workspaceView === 'document' ? 'secondary' : 'ghost'}
+                                        size="sm"
+                                        className="h-7 gap-1.5"
+                                        onClick={() => setWorkspaceView('document')}
+                                    >
+                                        <FileText className="size-3.5" />
+                                        {t('agent.document')}
+                                    </Button>
+                                    <Button
+                                        variant={workspaceView === 'diff' ? 'secondary' : 'ghost'}
+                                        size="sm"
+                                        className="h-7 gap-1.5"
+                                        onClick={() => setWorkspaceView('diff')}
+                                        disabled={!artifactLoaded || artifactContent === originalContent}
+                                    >
+                                        <GitCompareArrows className="size-3.5" />
+                                        {t('agent.reviewChanges')}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="min-h-0 flex-1">
+                            {workspaceView === 'diff' ? (
+                                <DocumentWorkingCopyDiff original={originalContent} workingCopy={artifactContent} />
+                            ) : (
+                                <ArtifactEditingSurface
+                                    runId={agentRunId}
+                                    path={draftPath}
+                                    initialContent={savedContent}
+                                    refreshKey={artifactRefresh.key}
+                                    refreshDetails={artifactRefresh.details}
+                                    onContentChange={handleArtifactContentChange}
+                                    onAction={handleArtifactAction}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={35} minSize={25} className="min-w-[320px]">
+                    {isResolvingRun || isResolvingTarget ? (
+                        <Center className="h-full">
+                            <Spinner size="lg" />
+                        </Center>
+                    ) : targetResolutionFailed ? (
+                        <Center className="h-full flex-col gap-3 px-6 text-center">
+                            <div className="text-sm text-muted">{t('agent.failedToLoadDocument')}</div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setTargetResolutionAttempt((attempt) => attempt + 1)}
+                            >
+                                {t('agent.retry')}
+                            </Button>
+                        </Center>
+                    ) : (
+                        <ModernAgentConversation
+                            agentRunId={agentRunId}
+                            startWorkflow={startWorkflow}
+                            resetWorkflow={() => setAgentRunId(undefined)}
+                            onRestart={(run) => setAgentRunId(run.id)}
+                            sendMessageRef={messageRef}
+                            onMessage={(message) => {
+                                const details = message.details as Record<string, unknown> | undefined;
+                                if (!isArtifactRefreshEvent(details, draftPath)) return;
+                                const updateKey = `${message.timestamp}:${details?.path}:${details?.generation ?? ''}`;
+                                if (seenUpdatesRef.current.has(updateKey)) return;
+                                seenUpdatesRef.current.add(updateKey);
+                                setArtifactRefresh((current) => ({
+                                    key: current.key + 1,
+                                    details,
+                                }));
+                            }}
+                            title={t('agent.documentEditing')}
+                            initialMessage={t('agent.documentEditingWelcome')}
+                            startButtonText={isStarting ? t('agent.startingAgent') : t('agent.startAgent')}
+                            placeholder={t('agent.documentEditingPlaceholder')}
+                            initialToolApprovalMode="full_control"
+                            hideObjectLinking
+                            hideHeader
+                            showRightPanel={false}
+                            fullWidth
+                            interactive
+                        />
+                    )}
+                </ResizablePanel>
+            </ResizablePanelGroup>
+            <ConfirmModal
+                isOpen={showNewSessionConfirm}
+                title={t('agent.newSessionDiscardTitle')}
+                content={t('agent.newSessionDiscardDescription')}
+                onConfirm={() => {
+                    setShowNewSessionConfirm(false);
+                    void handleStartNewSession();
+                }}
+                onCancel={() => setShowNewSessionConfirm(false)}
+            />
+        </div>
+    );
+}
+
+export function DocumentEditingPanel({
+    object,
+    initialContent,
+    onClose,
+    onDocumentUpdated,
+    sendMessageRef,
+}: DocumentEditingPanelProps) {
+    const { t } = useUITranslation();
     return (
         <Modal
             isOpen
@@ -474,177 +744,13 @@ export function DocumentEditingPanel({
             className="gap-0 overflow-hidden p-0"
             description={t('agent.documentEditingWelcome')}
         >
-            <div className="flex h-full min-h-0 flex-col">
-                <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-mixer-muted/20 px-4">
-                    <div className="min-w-0">
-                        <div className="truncate font-semibold">{object.name || object.content?.name}</div>
-                        <div className="flex items-center gap-1.5 text-xs text-muted">
-                            {isDirty ? t('store.unsavedChanges') : t('store.textSaved')}
-                            {!isDirty && artifactLoaded ? <Check className="size-3 text-success" /> : null}
-                        </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                        {agentRunId ? (
-                            <>
-                                <VTooltip description={agentRunId} asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="font-mono text-[11px] text-muted"
-                                        onClick={handleCopyRunId}
-                                        aria-label={t('agent.copyRunId')}
-                                    >
-                                        {shortenRunId(agentRunId)}
-                                    </Button>
-                                </VTooltip>
-                                <VTooltip description={t('agent.startNewConversation')} asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => void handleStartNewSession()}
-                                        disabled={isTerminating}
-                                        aria-label={t('agent.startNewConversation')}
-                                    >
-                                        <RotateCcw className="size-4" />
-                                    </Button>
-                                </VTooltip>
-                            </>
-                        ) : null}
-                        <DocumentEditingConfigurationSelector
-                            value={executionConfiguration}
-                            onChange={handleConfigurationChange}
-                            disabled={Boolean(agentRunId) || isStarting || isResolvingRun}
-                            isLoading={isLoadingConfiguration}
-                        />
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            className="min-w-40 gap-2"
-                            onClick={() => void handleSave()}
-                            disabled={!isDirty || !targetEtag || isSaving}
-                        >
-                            {isSaving ? <Spinner size="sm" /> : <Save className="size-4" />}
-                            {t('agent.saveToDocument')}
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('agent.close')}>
-                            <X className="size-4" />
-                        </Button>
-                    </div>
-                </div>
-                <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
-                    <ResizablePanel defaultSize={65} minSize={35} className="min-w-0 bg-background">
-                        <div className="flex h-full min-h-0 flex-col">
-                            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-mixer-muted/20 bg-muted/10 px-4 py-2">
-                                <div className="flex min-w-0 items-center gap-5 text-xs">
-                                    <div className="min-w-0">
-                                        <div className="font-medium text-foreground">{t('agent.workingCopy')}</div>
-                                        <div className="truncate font-mono text-muted" title={draftPath}>
-                                            {draftPath}
-                                        </div>
-                                    </div>
-                                    <div className="hidden min-w-0 border-s border-mixer-muted/25 ps-5 md:block">
-                                        <div className="font-medium text-foreground">{t('agent.originalDocument')}</div>
-                                        <div
-                                            className="truncate font-mono text-muted"
-                                            title={originalDocumentRef.current.id}
-                                        >
-                                            {shortenRunId(originalDocumentRef.current.id)}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex shrink-0 items-center gap-2">
-                                    <VTooltip description={t('agent.refresh')} asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-8 gap-1.5"
-                                            onClick={() => setArtifactRefresh((current) => ({ key: current.key + 1 }))}
-                                            disabled={!agentRunId}
-                                            aria-label={t('agent.refresh')}
-                                        >
-                                            <RefreshCw className="size-3.5" />
-                                            {t('agent.refresh')}
-                                        </Button>
-                                    </VTooltip>
-                                    <div className="flex items-center rounded-md border border-mixer-muted/25 bg-background p-0.5">
-                                        <Button
-                                            variant={workspaceView === 'document' ? 'secondary' : 'ghost'}
-                                            size="sm"
-                                            className="h-7 gap-1.5"
-                                            onClick={() => setWorkspaceView('document')}
-                                        >
-                                            <FileText className="size-3.5" />
-                                            {t('agent.document')}
-                                        </Button>
-                                        <Button
-                                            variant={workspaceView === 'diff' ? 'secondary' : 'ghost'}
-                                            size="sm"
-                                            className="h-7 gap-1.5"
-                                            onClick={() => setWorkspaceView('diff')}
-                                            disabled={!artifactLoaded || artifactContent === originalContent}
-                                        >
-                                            <GitCompareArrows className="size-3.5" />
-                                            {t('agent.reviewChanges')}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="min-h-0 flex-1">
-                                {workspaceView === 'diff' ? (
-                                    <DocumentWorkingCopyDiff original={originalContent} workingCopy={artifactContent} />
-                                ) : (
-                                    <ArtifactEditingSurface
-                                        runId={agentRunId}
-                                        path={draftPath}
-                                        initialContent={initialContent}
-                                        refreshKey={artifactRefresh.key}
-                                        refreshDetails={artifactRefresh.details}
-                                        onContentChange={handleArtifactContentChange}
-                                        onAction={handleArtifactAction}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </ResizablePanel>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={35} minSize={25} className="min-w-[320px]">
-                        {isResolvingRun ? (
-                            <Center className="h-full">
-                                <Spinner size="lg" />
-                            </Center>
-                        ) : (
-                            <ModernAgentConversation
-                                agentRunId={agentRunId}
-                                startWorkflow={startWorkflow}
-                                resetWorkflow={() => setAgentRunId(undefined)}
-                                onRestart={(run) => setAgentRunId(run.id)}
-                                sendMessageRef={sendMessageRef}
-                                onMessage={(message) => {
-                                    const details = message.details as Record<string, unknown> | undefined;
-                                    if (!isArtifactRefreshEvent(details, draftPath)) return;
-                                    const updateKey = `${message.timestamp}:${details?.path}:${details?.generation ?? ''}`;
-                                    if (seenUpdatesRef.current.has(updateKey)) return;
-                                    seenUpdatesRef.current.add(updateKey);
-                                    setArtifactRefresh((current) => ({
-                                        key: current.key + 1,
-                                        details,
-                                    }));
-                                }}
-                                title={t('agent.documentEditing')}
-                                initialMessage={t('agent.documentEditingWelcome')}
-                                startButtonText={isStarting ? t('agent.startingAgent') : t('agent.startAgent')}
-                                placeholder={t('agent.documentEditingPlaceholder')}
-                                initialToolApprovalMode="full_control"
-                                hideObjectLinking
-                                hideHeader
-                                showRightPanel={false}
-                                fullWidth
-                                interactive
-                            />
-                        )}
-                    </ResizablePanel>
-                </ResizablePanelGroup>
-            </div>
+            <DocumentEditingWorkspace
+                object={object}
+                initialContent={initialContent}
+                onClose={onClose}
+                onDocumentUpdated={onDocumentUpdated}
+                sendMessageRef={sendMessageRef}
+            />
         </Modal>
     );
 }

@@ -780,6 +780,8 @@
   "agent.environment": "Ambiente",
   "agent.model": "Modello",
   "agent.saveToDocument": "Salva nel documento",
+  "agent.newSessionDiscardTitle": "Eliminare le modifiche non salvate?",
+  "agent.newSessionDiscardDescription": "L'avvio di una nuova sessione ripristina la copia di lavoro all'ultimo documento salvato. Le modifiche non salvate andranno perse.",
   "agent.workingCopy": "Copia di lavoro",
   "agent.originalDocument": "Documento originale",
   "agent.reviewChanges": "Rivedi modifiche"

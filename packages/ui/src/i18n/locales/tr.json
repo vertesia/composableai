@@ -770,6 +770,8 @@
   "agent.environment": "Ortam",
   "agent.model": "Model",
   "agent.saveToDocument": "Belgeye kaydet",
+  "agent.newSessionDiscardTitle": "Kaydedilmemiş değişiklikler silinsin mi?",
+  "agent.newSessionDiscardDescription": "Yeni bir oturum başlatmak, çalışma kopyasını son kaydedilen belgeye sıfırlar. Kaydedilmemiş değişiklikleriniz kaybolacak.",
   "agent.workingCopy": "Çalışma kopyası",
   "agent.originalDocument": "Orijinal belge",
   "agent.reviewChanges": "Değişiklikleri gözden geçir"

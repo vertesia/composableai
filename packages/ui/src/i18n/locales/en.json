@@ -786,6 +786,8 @@
   "agent.environment": "Environment",
   "agent.model": "Model",
   "agent.saveToDocument": "Save to document",
+  "agent.newSessionDiscardTitle": "Discard unsaved changes?",
+  "agent.newSessionDiscardDescription": "Starting a new session resets the working copy to the last saved document. Your unsaved changes will be lost.",
   "agent.workingCopy": "Working copy",
   "agent.originalDocument": "Original document",
   "agent.reviewChanges": "Review changes",

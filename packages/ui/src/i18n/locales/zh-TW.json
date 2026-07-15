@@ -770,6 +770,8 @@
   "agent.environment": "環境",
   "agent.model": "模型",
   "agent.saveToDocument": "儲存至文件",
+  "agent.newSessionDiscardTitle": "捨棄未儲存的變更?",
+  "agent.newSessionDiscardDescription": "開始新工作階段會將工作副本重設為上次儲存的文件。未儲存的變更將會遺失。",
   "agent.workingCopy": "工作副本",
   "agent.originalDocument": "原始文件",
   "agent.reviewChanges": "檢視變更"

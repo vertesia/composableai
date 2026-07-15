@@ -770,6 +770,8 @@
   "agent.environment": "Umgebung",
   "agent.model": "Modell",
   "agent.saveToDocument": "Im Dokument speichern",
+  "agent.newSessionDiscardTitle": "Nicht gespeicherte Änderungen verwerfen?",
+  "agent.newSessionDiscardDescription": "Beim Starten einer neuen Sitzung wird die Arbeitskopie auf das zuletzt gespeicherte Dokument zurückgesetzt. Ihre nicht gespeicherten Änderungen gehen verloren.",
   "agent.workingCopy": "Arbeitskopie",
   "agent.originalDocument": "Originaldokument",
   "agent.reviewChanges": "Änderungen prüfen"

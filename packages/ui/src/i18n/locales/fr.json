@@ -780,6 +780,8 @@
   "agent.environment": "Environnement",
   "agent.model": "Modèle",
   "agent.saveToDocument": "Enregistrer dans le document",
+  "agent.newSessionDiscardTitle": "Abandonner les modifications non enregistrées ?",
+  "agent.newSessionDiscardDescription": "Démarrer une nouvelle session réinitialise la copie de travail au dernier document enregistré. Vos modifications non enregistrées seront perdues.",
   "agent.workingCopy": "Copie de travail",
   "agent.originalDocument": "Document d’origine",
   "agent.reviewChanges": "Examiner les modifications"

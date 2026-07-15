@@ -810,6 +810,8 @@
   "agent.environment": "البيئة",
   "agent.model": "النموذج",
   "agent.saveToDocument": "حفظ في المستند",
+  "agent.newSessionDiscardTitle": "هل تريد تجاهل التغييرات غير المحفوظة؟",
+  "agent.newSessionDiscardDescription": "يؤدي بدء جلسة جديدة إلى إعادة تعيين نسخة العمل إلى آخر مستند محفوظ. ستفقد التغييرات غير المحفوظة.",
   "agent.workingCopy": "نسخة العمل",
   "agent.originalDocument": "المستند الأصلي",
   "agent.reviewChanges": "مراجعة التغييرات"

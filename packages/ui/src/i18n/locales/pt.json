@@ -780,6 +780,8 @@
   "agent.environment": "Ambiente",
   "agent.model": "Modelo",
   "agent.saveToDocument": "Salvar no documento",
+  "agent.newSessionDiscardTitle": "Descartar alterações não salvas?",
+  "agent.newSessionDiscardDescription": "Iniciar uma nova sessão redefine a cópia de trabalho para o último documento salvo. Suas alterações não salvas serão perdidas.",
   "agent.workingCopy": "Cópia de trabalho",
   "agent.originalDocument": "Documento original",
   "agent.reviewChanges": "Revisar alterações"

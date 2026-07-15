@@ -988,6 +988,13 @@ function StartWorkflowView({
                     status: 'success',
                     duration: 3000,
                 });
+            } else {
+                // startWorkflow declined to start (it surfaced its own error or a
+                // validation failure) — drop the optimistic first message so the
+                // conversation doesn't stay in the preparing state forever. The
+                // composed text is kept in the input for a retry.
+                setPendingStartMessage(null);
+                setPendingStartTimestamp(null);
             }
         } catch (err: unknown) {
             setPendingStartMessage(null);
