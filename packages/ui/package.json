@@ -58,7 +58,6 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/fusion-ux": "workspace:*",
         "@vertesia/json": "workspace:*",
-        "@vertesia/rich-text": "workspace:*",
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
         "aria-hidden": "^1.2.6",

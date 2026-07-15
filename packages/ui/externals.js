@@ -67,7 +67,6 @@ export const EXTERNALS = [
     '@vertesia/common',
     '@vertesia/fusion-ux',
     '@vertesia/json',
-    '@vertesia/rich-text',
     'ajv',
     'ajv-formats',
     'dayjs',

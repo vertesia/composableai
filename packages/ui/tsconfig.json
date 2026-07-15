@@ -12,7 +12,6 @@
     "references": [
         { "path": "../common" },
         { "path": "../client" },
-        { "path": "../json" },
-        { "path": "../rich-text" }
+        { "path": "../json" }
     ]
 }
