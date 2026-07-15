@@ -32,7 +32,7 @@
         }
     },
     "devDependencies": {
-        "@hono/node-server": "^2.0.6",
+        "@hono/node-server": "^2.0.8",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
@@ -44,11 +44,11 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
         "esbuild": "^0.28.1",
-        "js-yaml": "^5.2.0",
+        "js-yaml": "^5.2.1",
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "@hono/node-server": "^2.0.6",
+        "@hono/node-server": "^2.0.8",
         "vite": "^8.1.0"
     },
     "peerDependenciesMeta": {
