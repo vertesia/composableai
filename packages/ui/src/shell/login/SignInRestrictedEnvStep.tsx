@@ -15,7 +15,7 @@ interface SignInRestrictedEnvStepProps {
 const AUTO_REDIRECT_SECONDS = 15;
 
 /**
- * Shown when the STS rejects sign-in because the current environment (preview/preprod) is
+ * Shown when the STS rejects sign-in because the current environment (any non-production tier) is
  * restricted to early-access users. Offers a redirect to the production web application — in the
  * user's own region — and a way to sign in with a different account. If the user takes no action, it
  * redirects automatically after {@link AUTO_REDIRECT_SECONDS}. See
