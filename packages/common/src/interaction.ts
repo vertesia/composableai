@@ -1183,6 +1183,8 @@ export interface InteractionExecutionConfiguration {
     model_options?: ModelOptions;
     /** Stable provider-side routing key for automatic prompt caching. */
     prompt_cache_key?: string;
+    /** Put the result schema after the cached prefix; Vertesia still validates the returned JSON against it. */
+    prompt_cache_schema_suffix?: boolean;
     /** Per-run HTTP timeouts for upstream LLM-provider calls. */
     http_timeout?: HttpTimeoutOptions;
 }
