@@ -12,6 +12,11 @@ describe('getProductionAppUrl', () => {
         expect(getProductionAppUrl('us')).toBe('https://cloud.vertesia.io/');
     });
 
+    it('sends a dev region to the production region it mirrors, not the dev host', () => {
+        // dev1 mirrors us1: a rejected user must land on production, never back on cloud.dev1.
+        expect(getProductionAppUrl('dev1')).toBe('https://cloud.us1.vertesia.io/');
+    });
+
     it('falls back to the canonical production site when the region is unknown', () => {
         expect(getProductionAppUrl(undefined)).toBe('https://cloud.vertesia.io/');
         expect(getProductionAppUrl('')).toBe('https://cloud.vertesia.io/');
