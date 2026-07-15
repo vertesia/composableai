@@ -248,13 +248,13 @@ cat "${TEST_PROJECT_DIR}/package.json"
 
 build_project
 
-# Full scaffold (examples overlaid onto src via --full) built with npm.
+# Dev scaffold (module-selected examples and UI modules) built with npm.
 echo ""
-echo "--- Mode: full (--full scaffold, npm) ---"
+echo "--- Mode: dev (--module dev scaffold, npm) ---"
 TEST_PROJECT_DIR_NPM=""
-EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS} --full" bootstrap_template "integration-test-plugin-npm" npm
+EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS} --module dev" bootstrap_template "integration-test-plugin-npm" npm
 TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
 build_project_npm
 
 echo ""
-echo "Template integration test passed (minimal + full)!"
+echo "Template integration test passed (minimal + dev)!"

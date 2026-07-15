@@ -2,9 +2,9 @@
 /**
  * Run tsc --noEmit on each project that actually has inputs.
  *
- * The widgets project (tsconfig.widgets.json) only globs `*.tsx` files under
- * `src/tool-server/skills/`. If a plugin removes all example skills (or never
- * ships a widget), `tsc --build` errors with TS18003 ("No inputs were found").
+ * The widgets project (tsconfig.widgets.json) only globs skill widget `*.tsx`
+ * files. If a plugin removes all example skills (or never ships a widget),
+ * `tsc --build` errors with TS18003 ("No inputs were found").
  *
  * This script auto-detects widgets and only runs the widgets typecheck when
  * at least one .tsx file is present, so build checks stay green for both
@@ -34,12 +34,19 @@ function hasFileMatching(dir, predicate) {
 
 const projects = ['tsconfig.ui.json', 'tsconfig.tool-server.json', 'tsconfig.node.json'];
 
-const widgetsRoot = join(cwd, 'src', 'tool-server', 'skills');
-const hasWidgets = hasFileMatching(widgetsRoot, (name) => name.endsWith('.tsx'));
+const legacyWidgetsRoot = join(cwd, 'src', 'tool-server', 'skills');
+const modulesRoot = join(cwd, 'src', 'modules');
+const hasWidgets =
+    hasFileMatching(legacyWidgetsRoot, (name) => name.endsWith('.tsx')) ||
+    hasFileMatching(
+        modulesRoot,
+        (name, full) =>
+            name.endsWith('.tsx') && relative(cwd, full).replaceAll('\\', '/').includes('/resources/skills/'),
+    );
 if (hasWidgets) {
     projects.push('tsconfig.widgets.json');
 } else {
-    console.log('[typecheck] no widget .tsx found under src/tool-server/skills/, skipping tsconfig.widgets.json');
+    console.log('[typecheck] no skill widget .tsx found, skipping tsconfig.widgets.json');
 }
 
 for (const project of projects) {

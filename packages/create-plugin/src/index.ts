@@ -13,10 +13,13 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { config, validation } from './configuration.js';
 import { downloadTemplate } from './download-template.js';
+import { appendModuleOption, parseModuleOption, runTemplateCodegen, type ScaffoldContext } from './modules.js';
 import { installDependencies, selectPackageManager } from './package-manager.js';
 import { runPostInstallHooks, runPreInstallHooks } from './post-install.js';
 import {
     adjustPackageJson,
+    applyDevModeAnswers,
+    applyDevModePackageManagerConfig,
     handleConditionalRemoves,
     removeMetaFiles,
     renameFiles,
@@ -41,14 +44,10 @@ async function main() {
         .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
         .option('--skip-install', 'Skip dependency installation after copying and configuring the template', false)
         .option(
-            '--full',
-            'Start from the full scaffold (overlay examples/ onto src/) instead of the minimal one',
-            false,
-        )
-        .option(
-            '--content-app',
-            'Start from the opinionated content app scaffold with types, interactions, process, UI, and exercise scripts',
-            false,
+            '--module <name>',
+            'Template module to enable. Can be repeated or comma-separated; defaults to the template module named "default".',
+            appendModuleOption,
+            [],
         )
         .option(
             '--package-manager <manager>',
@@ -73,8 +72,7 @@ Documentation: ${config.docsUrl}
         dev: boolean;
         localTemplates?: string;
         skipInstall: boolean;
-        full: boolean;
-        contentApp: boolean;
+        module: string[];
         packageManager?: string;
     }>();
     const {
@@ -84,10 +82,10 @@ Documentation: ${config.docsUrl}
         dev,
         localTemplates,
         skipInstall,
-        full,
-        contentApp,
+        module: moduleOptions,
         packageManager: packageManagerOverride,
     } = opts;
+    const selectedModules = parseModuleOption(moduleOptions);
 
     // Prompt for project name if not provided as CLI argument
     if (!projectName) {
@@ -101,7 +99,7 @@ Documentation: ${config.docsUrl}
             },
             {
                 onCancel: () => {
-                    console.log(chalk.red('\nInstallation cancelled.\n'));
+                    console.log(chalk.red('\n❌ Installation cancelled.\n'));
                     process.exit(1);
                 },
             },
@@ -111,18 +109,18 @@ Documentation: ${config.docsUrl}
 
     // Validate project name
     if (!validation.projectNamePattern.test(projectName)) {
-        console.log(chalk.red(`${validation.projectNameError}\n`));
+        console.log(chalk.red(`❌ ${validation.projectNameError}\n`));
         process.exit(1);
     }
 
     if (validation.reservedNames.includes(projectName)) {
-        console.log(chalk.red(`"${projectName}" is a reserved name. Please choose a different name.\n`));
+        console.log(chalk.red(`❌ "${projectName}" is a reserved name. Please choose a different name.\n`));
         process.exit(1);
     }
 
     // Check if directory already exists
     if (fs.existsSync(projectName)) {
-        console.log(chalk.red(`Directory "${projectName}" already exists.\n`));
+        console.log(chalk.red(`❌ Directory "${projectName}" already exists.\n`));
         process.exit(1);
     }
 
@@ -132,7 +130,7 @@ Documentation: ${config.docsUrl}
 
         // Show the selected template name with branch if specified
         const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
-        console.log(`${chalk.blue.bold(`\nCreate ${selectedTemplate.name}`) + branchInfo}\n`);
+        console.log(`${chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo}\n`);
 
         // Step 2: Download template from GitHub (or copy from local path)
         await downloadTemplate(projectName, selectedTemplate.repository, localTemplates);
@@ -154,6 +152,10 @@ Documentation: ${config.docsUrl}
         answers.PM_RUN = `${packageManager} run`;
         answers.PM_VERSION = execSync(`${packageManager} --version`, { encoding: 'utf8' }).trim();
 
+        if (dev) {
+            applyDevModeAnswers(templateConfig, answers);
+        }
+
         // Step 5: Replace variables in files
         replaceVariables(projectName, templateConfig, answers);
 
@@ -168,37 +170,27 @@ Documentation: ${config.docsUrl}
         // Step 8: Rename files (e.g., .env.template -> .env)
         renameFiles(projectName, templateConfig);
 
-        // Step 9: Remove meta files
+        // Step 8b: Apply package-manager configuration that depends on renamed files.
+        applyDevModePackageManagerConfig(projectName, templateConfig, dev, packageManager);
+
+        // Step 9: Run template-specific code generation
+        const scaffoldContext: ScaffoldContext = {
+            projectName,
+            projectPath: fs.realpathSync(projectName),
+            modules: selectedModules.length > 0 ? selectedModules : ['default'],
+            answers,
+            packageManager,
+            template: {
+                name: selectedTemplate.name,
+                repository: selectedTemplate.repository,
+            },
+        };
+        runTemplateCodegen(projectName, templateConfig, scaffoldContext);
+
+        // Step 10: Remove meta files
         removeMetaFiles(projectName, templateConfig);
 
-        // Step 9b: Full scaffold — overlay examples/ onto src/ (opt-in via --full).
-        // The default scaffold is intentionally minimal; --full installs the working
-        // example features and populated tool-server collections.
-        const applyExamplesScript = `${projectName}/scripts/apply-examples.mjs`;
-        if (full) {
-            if (fs.existsSync(applyExamplesScript)) {
-                console.log(chalk.blue('Applying full scaffold (examples)...\n'));
-                execSync('node scripts/apply-examples.mjs', { cwd: projectName, stdio: 'inherit' });
-            } else {
-                console.log(chalk.yellow('--full requested but scripts/apply-examples.mjs is missing; skipping.\n'));
-            }
-        }
-
-        // Step 9c: Content app scaffold — overlay an opinionated app-owned content
-        // model, interactions, process, UI routes, and setup/exercise scripts.
-        const applyContentAppScript = `${projectName}/scripts/apply-content-app.mjs`;
-        if (contentApp) {
-            if (fs.existsSync(applyContentAppScript)) {
-                console.log(chalk.blue('Applying content app scaffold...\n'));
-                execSync('node scripts/apply-content-app.mjs', { cwd: projectName, stdio: 'inherit' });
-            } else {
-                console.log(
-                    chalk.yellow('--content-app requested but scripts/apply-content-app.mjs is missing; skipping.\n'),
-                );
-            }
-        }
-
-        // Step 10: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
+        // Step 11: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
         let skipDependencyInstall = false;
         if (templateConfig.preInstall) {
             const preInstallSuccess = await runPreInstallHooks(
@@ -208,7 +200,7 @@ Documentation: ${config.docsUrl}
                 nonInteractive,
             );
             if (!preInstallSuccess) {
-                console.log(chalk.yellow('Pre-install hooks failed. Skipping dependency installation.\n'));
+                console.log(chalk.yellow('⚠️  Pre-install hooks failed. Skipping dependency installation.\n'));
                 console.log(chalk.gray('You can install dependencies manually after resolving the issue:\n'));
                 console.log(chalk.gray(`  cd ${projectName}`));
                 console.log(chalk.gray(`  ${packageManager} install\n`));
@@ -216,7 +208,7 @@ Documentation: ${config.docsUrl}
             }
         }
 
-        // Step 10: Install dependencies
+        // Step 12: Install dependencies
         if (skipInstall) {
             console.log(chalk.yellow('Skipping dependency installation (--skip-install).\n'));
             console.log(chalk.gray('You can install dependencies manually when needed:\n'));
@@ -229,15 +221,17 @@ Documentation: ${config.docsUrl}
             await installDependencies(projectName, packageManager);
         }
 
-        // Step 11: Run post-install hooks (if any)
+        // Step 13: Run post-install hooks (if any)
         if (!skipDependencyInstall && templateConfig.postInstall) {
             await runPostInstallHooks(projectName, templateConfig.postInstall, packageManager, nonInteractive);
         }
 
-        // Step 12: Success!
-        showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository, contentApp);
+        // Step 14: Success!
+        showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
     } catch (error) {
-        console.log(chalk.red(`\nInstallation failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`));
+        console.log(
+            chalk.red(`\n❌ Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`),
+        );
 
         process.exit(1);
     }
@@ -246,21 +240,11 @@ Documentation: ${config.docsUrl}
 /**
  * Show success message
  */
-function showSuccess(
-    projectName: string,
-    packageManager: string,
-    templateName: string,
-    repository: string,
-    contentApp: boolean,
-): void {
-    console.log(chalk.green.bold('Project created successfully!\n'));
+function showSuccess(projectName: string, packageManager: string, templateName: string, repository: string): void {
+    console.log(chalk.green.bold('✅ Project created successfully!\n'));
     console.log(chalk.gray('Next steps:\n'));
     console.log(chalk.cyan(`  cd ${projectName}`));
     console.log(chalk.cyan(`  ${packageManager} run dev`));
-    if (contentApp) {
-        console.log(chalk.cyan(`  VERTESIA_TOKEN="$(vertesia auth token)" ${packageManager} run seed:content`));
-        console.log(chalk.cyan(`  VERTESIA_TOKEN="$(vertesia auth token)" ${packageManager} run exercise:content`));
-    }
     console.log();
     console.log(chalk.gray(`Documentation: ${config.docsUrl}`));
     console.log(chalk.gray(`Template: ${templateName}`));
@@ -269,6 +253,6 @@ function showSuccess(
 
 // Run the installer
 main().catch((error) => {
-    console.error(chalk.red(`\nFatal error: ${error.message}\n`));
+    console.error(chalk.red(`\n❌ Fatal error: ${error.message}\n`));
     process.exit(1);
 });

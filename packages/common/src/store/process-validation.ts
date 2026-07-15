@@ -113,6 +113,24 @@ function validateNodeDefinition(
             errors.push(`human_task node "${nodeId}" task title is missing`);
         } else if (!Array.isArray(node.task.fields)) {
             errors.push(`human_task node "${nodeId}" task fields must be an array`);
+        } else {
+            const allowedTypes = ['string', 'number', 'boolean', 'select', 'text'];
+            (node.task.fields as unknown[]).forEach((field, i) => {
+                const path = `human_task node "${nodeId}" task.fields[${i}]`;
+                if (!isRecord(field)) {
+                    errors.push(`${path} must be an object`);
+                    return;
+                }
+                if (typeof field.name !== 'string' || field.name.length === 0) {
+                    errors.push(`${path}.name must be a non-empty string (not "id")`);
+                }
+                if (typeof field.type !== 'string' || !allowedTypes.includes(field.type)) {
+                    errors.push(`${path}.type must be one of ${allowedTypes.join(', ')}`);
+                }
+                if (field.type === 'select' && !(Array.isArray(field.options) && field.options.length > 0)) {
+                    errors.push(`${path} of type "select" requires a non-empty options[] array`);
+                }
+            });
         }
     }
     if (node.type === 'tool') {

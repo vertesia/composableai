@@ -109,15 +109,15 @@ echo "--- Mode: minimal (default scaffold, pnpm) ---"
 bootstrap_template "smoke-test-plugin"
 build_project
 
-# Full scaffold (examples overlaid onto src via --full) built with npm.
-# Covers both the alternate package manager and the full example surface so the
-# examples can't silently rot.
+# Dev scaffold (module-selected examples and UI modules) built with npm.
+# Covers both the alternate package manager and the dev module surface so the
+# modules can't silently rot.
 echo ""
-echo "--- Mode: full (--full scaffold, npm) ---"
+echo "--- Mode: dev (--module dev scaffold, npm) ---"
 TEST_PROJECT_DIR_NPM=""
-EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS:-} --full" bootstrap_template "smoke-test-plugin-npm" npm
+EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS:-} --module dev" bootstrap_template "smoke-test-plugin-npm" npm
 TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
 build_project_npm
 
 echo ""
-echo "Template smoke test passed (minimal + full)!"
+echo "Template smoke test passed (minimal + dev)!"

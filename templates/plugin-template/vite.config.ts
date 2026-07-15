@@ -207,6 +207,8 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
     // unknowable at build time. The app-gateway injects a matching `<base href="<mount>/">` into the
     // served index.html, so relative asset refs resolve under whatever mount the app is served at
     // (published, version-pinned, or live preview). Dev still serves at `/`.
+    // TODO(appgen): verify this does not break regular non-appgen/Vercel app builds. If it does,
+    // keep `./` only for appgen builds and restore `/app/` for the default plugin template build.
     const base = command === 'build' ? './' : '/';
     const isVercelBuild = command === 'build' && process.env.VERCEL === '1';
 
@@ -239,10 +241,6 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         // for authentication with Firebase
         server: {
             hmr: process.env.APPGEN_DISABLE_HMR === '1' ? false : undefined,
-            // Bind IPv4 loopback so Vite detects an existing 127.0.0.1 listener and falls through.
-            host: '127.0.0.1',
-            port: 5173,
-            strictPort: false,
             proxy: {
                 '/__/auth': {
                     target: 'https://dengenlabs.firebaseapp.com',

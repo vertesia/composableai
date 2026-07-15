@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/build-tools",
-    "version": "1.5.0-dev",
+    "version": "1.5.0-dev.20260714.072725Z",
     "description": "Build tools for Vertesia projects - import transformers (skill / template / prompt / raw), esbuild widget bundler, vertesia-build CLI, and a Vite dev plugin",
     "type": "module",
     "main": "./lib/index.js",
@@ -32,7 +32,7 @@
         }
     },
     "devDependencies": {
-        "@hono/node-server": "^2.0.6",
+        "@hono/node-server": "^2.0.8",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
@@ -50,11 +50,11 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
         "esbuild": "^0.28.1",
-        "js-yaml": "^5.1.0",
+        "js-yaml": "^5.2.1",
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "@hono/node-server": "^2.0.6",
+        "@hono/node-server": "^2.0.8",
         "vite": "^8.1.0"
     },
     "peerDependenciesMeta": {

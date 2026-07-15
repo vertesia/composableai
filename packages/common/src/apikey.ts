@@ -136,7 +136,7 @@ export interface AuthTokenPayload {
 
     /**
      * API endpoints information to be used with this token.
-     * Either a n API domain like 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io' | 'local'
+     * Either an API domain like 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api.us1.vertesia.io' | 'local'
      * or explicit studio, store, and token URLs.
      */
     endpoints?:

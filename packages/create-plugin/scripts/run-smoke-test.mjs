@@ -33,6 +33,7 @@ try {
             '--local-templates',
             localTemplates,
             '--skip-install',
+            '--dev',
         ],
         { cwd: tmpRoot, stdio: 'inherit' },
     );

@@ -41,11 +41,17 @@ export interface AppUIConfig {
      */
     src: string;
     /**
-     * The isolation strategy. If not specified it defaults to shadow
+     * The isolation strategy. If not specified it defaults to shadow.
      * - shadow - use Shadow DOM to fully isolate the plugin from the host.
-     * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
+     * - css - inject the plugin's styles (minus the preflight) into the host document;
+     *   lighter but styles may conflict with the host.
      */
     isolation?: 'shadow' | 'css';
+    /**
+     * When true the host modifies the app's css at load time to attempt to fix broken
+     * or missing styles. Only takes effect in css isolation mode. Defaults to false.
+     */
+    css_rebuild?: boolean;
     /**
      * Navigation items for the app's sidebar UI.
      * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).

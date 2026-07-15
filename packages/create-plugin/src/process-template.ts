@@ -231,6 +231,61 @@ export function replaceVariables(
     console.log();
 }
 
+export function applyDevModeAnswers(templateConfig: TemplateConfig, answers: Record<string, unknown>): void {
+    if (!templateConfig.devMode?.answers) return;
+
+    Object.assign(answers, templateConfig.devMode.answers);
+}
+
+function appendUniqueYamlListSection(content: string, sectionName: string, values: string[]): string {
+    if (values.length === 0) return content;
+
+    const existing = new Set<string>();
+    const lines = content.split(/\r?\n/);
+    let inSection = false;
+
+    for (const line of lines) {
+        if (line.trim() === `${sectionName}:`) {
+            inSection = true;
+            continue;
+        }
+        if (inSection && line.length > 0 && !line.startsWith(' ') && !line.startsWith('\t')) {
+            inSection = false;
+        }
+        if (inSection) {
+            const match = line.match(/^\s*-\s+['"]?(.+?)['"]?\s*$/);
+            if (match) existing.add(match[1]);
+        }
+    }
+
+    const missing = values.filter((value) => !existing.has(value));
+    if (missing.length === 0) return content;
+
+    const suffix = content.endsWith('\n') ? '' : '\n';
+    return `${content}${suffix}${sectionName}:\n${missing.map((value) => `  - '${value}'`).join('\n')}\n`;
+}
+
+export function applyDevModePackageManagerConfig(
+    projectName: string,
+    templateConfig: TemplateConfig,
+    isDev: boolean,
+    packageManager: string,
+): void {
+    if (!isDev || packageManager !== 'pnpm') return;
+
+    const exclusions = templateConfig.devMode?.pnpmWorkspace?.minimumReleaseAgeExclude ?? [];
+    if (exclusions.length === 0) return;
+
+    const workspacePath = path.join(projectName, 'pnpm-workspace.yaml');
+    if (!fs.existsSync(workspacePath)) return;
+
+    const current = fs.readFileSync(workspacePath, 'utf8');
+    const next = appendUniqueYamlListSection(current, 'minimumReleaseAgeExclude', exclusions);
+    if (next !== current) {
+        fs.writeFileSync(workspacePath, next);
+    }
+}
+
 /**
  * Adjust package.json after variable replacement
  * 1. Sets the package name to PROJECT_NAME

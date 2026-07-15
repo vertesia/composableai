@@ -374,14 +374,13 @@ export const MyTemplates = new RenderingTemplateCollection({
 ### Adding a collection to its type's index
 
 ```typescript
-// src/tool-server/tools/index.ts
-import { ExampleTools } from "./examples/index.js";
+// src/modules/app/resources/tools/index.ts
 import { MyTools } from "./my-collection/index.js";
 
-export const tools = [ExampleTools, MyTools];
+export const tools = [MyTools];
 ```
 
-`config.ts` already imports from these per-type index files, so no further wiring is needed once the new collection is in the array.
+`src/tool-server/app-server-modules.ts` is generated from active modules and `config.ts` imports from it, so no further server wiring is needed once the new collection is in the module resource array.
 
 ### `icon.svg.ts`
 

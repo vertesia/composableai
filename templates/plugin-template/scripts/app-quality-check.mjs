@@ -77,23 +77,37 @@ function hasAppNavigation(text) {
     return /<NavLink\b|<SidebarItem\b|<aside\b|<nav\b|useNavigate\s*\(/.test(text);
 }
 
-function namesFromFiles(files, baseDir) {
+function directFiles(files, baseDir, extensions) {
+    return files
+        .map((file) => rel(file))
+        .filter((file) => file.startsWith(baseDir))
+        .filter((file) => extensions.some((extension) => file.endsWith(extension)))
+        .sort();
+}
+
+function resourcePathPattern(resourceName) {
+    return new RegExp(`^(?:src/tool-server/${resourceName}|src/modules/[^/]+/resources/${resourceName})/(.+)$`);
+}
+
+function namesFromResourceFiles(files, resourceName) {
+    const pattern = resourcePathPattern(resourceName);
     return [
         ...new Set(
             files
                 .map((file) => rel(file))
-                .filter((file) => file.startsWith(baseDir))
-                .map((file) => file.slice(baseDir.length))
-                .map((file) => file.split('/')[0])
+                .map((file) => file.match(pattern)?.[1])
+                .filter(Boolean)
+                .map((path) => path.split('/')[0])
                 .filter((name) => name && name !== 'index.ts' && name !== 'index.tsx'),
         ),
     ].sort();
 }
 
-function directFiles(files, baseDir, extensions) {
+function directResourceFiles(files, resourceName, extensions) {
+    const pattern = resourcePathPattern(resourceName);
     return files
         .map((file) => rel(file))
-        .filter((file) => file.startsWith(baseDir))
+        .filter((file) => pattern.test(file))
         .filter((file) => extensions.some((extension) => file.endsWith(extension)))
         .sort();
 }
@@ -118,26 +132,36 @@ const scriptFiles = (await walk(path.join(cwd, 'scripts'))).filter(isSourceFile)
 const allFiles = [...sourceFiles, ...scriptFiles];
 report.scanned_files = allFiles.length;
 
-const uiFiles = allFiles.filter((file) => rel(file).startsWith('src/ui/'));
-const appUiFiles = allFiles.filter((file) => rel(file).startsWith('src/ui/app/'));
+const shellUiFiles = allFiles.filter((file) => rel(file).startsWith('src/ui/'));
+const moduleUiFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/ui\//.test(rel(file)));
+const uiFiles = [...shellUiFiles, ...moduleUiFiles];
+const appUiFiles = moduleUiFiles;
 const toolServerFiles = allFiles.filter((file) => rel(file).startsWith('src/tool-server/'));
+const moduleResourceFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/resources\//.test(rel(file)));
+const serverResourceFiles = [...toolServerFiles, ...moduleResourceFiles];
 const packageWriterFiles = scriptFiles.filter((file) => rel(file) === 'scripts/write-app-package.mjs');
-const interactionFiles = toolServerFiles.filter((file) => rel(file).includes('/interactions/'));
-const processFiles = toolServerFiles.filter((file) => rel(file).includes('/processes/'));
+const interactionFiles = serverResourceFiles.filter((file) => rel(file).includes('/interactions/'));
+const processFiles = serverResourceFiles.filter((file) => rel(file).includes('/processes/'));
 const packageJsonPath = path.join(cwd, 'package.json');
 
 report.artifacts = {
-    types: namesFromFiles(toolServerFiles, 'src/tool-server/types/'),
-    interactions: namesFromFiles(toolServerFiles, 'src/tool-server/interactions/'),
-    prompts: directFiles(toolServerFiles, 'src/tool-server/interactions/', ['.hbs']),
-    processes: directFiles(toolServerFiles, 'src/tool-server/processes/', ['.yaml', '.yml', '.ts']),
-    dashboards: directFiles(toolServerFiles, 'src/tool-server/dashboards/', ['.ts', '.tsx']),
-    templates: namesFromFiles(toolServerFiles, 'src/tool-server/templates/'),
-    tools: namesFromFiles(toolServerFiles, 'src/tool-server/tools/'),
-    skills: namesFromFiles(toolServerFiles, 'src/tool-server/skills/'),
-    activities: namesFromFiles(toolServerFiles, 'src/tool-server/activities/'),
-    widgets: directFiles(sourceFiles, 'src/widgets/', ['.ts', '.tsx']),
-    ui_routes: directFiles(sourceFiles, 'src/ui/app/', ['.ts', '.tsx']),
+    types: namesFromResourceFiles(serverResourceFiles, 'types'),
+    interactions: namesFromResourceFiles(serverResourceFiles, 'interactions'),
+    prompts: directResourceFiles(serverResourceFiles, 'interactions', ['.hbs']),
+    processes: directResourceFiles(serverResourceFiles, 'processes', ['.yaml', '.yml', '.ts']),
+    dashboards: directResourceFiles(serverResourceFiles, 'dashboards', ['.ts', '.tsx']),
+    templates: namesFromResourceFiles(serverResourceFiles, 'templates'),
+    tools: namesFromResourceFiles(serverResourceFiles, 'tools'),
+    skills: namesFromResourceFiles(serverResourceFiles, 'skills'),
+    activities: namesFromResourceFiles(serverResourceFiles, 'activities'),
+    widgets: [
+        ...directFiles(sourceFiles, 'src/widgets/', ['.ts', '.tsx']),
+        ...directResourceFiles(serverResourceFiles, 'skills', ['.tsx']),
+    ],
+    ui_routes: moduleUiFiles
+        .map((file) => rel(file))
+        .filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'))
+        .sort(),
     seed_scripts: scriptFiles
         .map((file) => rel(file))
         .filter((file) => file.startsWith('scripts/') && /seed/i.test(file))
@@ -157,7 +181,7 @@ const packageName = typeof packageJson?.name === 'string' ? packageJson.name : u
 const isPluginTemplatePackage = packageName === 'plugin-template';
 // The smoke/integration tests bootstrap this exact template under throwaway
 // package names — both package managers (with an optional `-npm` infix) across
-// the smoke and integration scripts. The `--full` leg ships the examples on
+// the smoke and integration scripts. The `--module dev` leg ships examples on
 // purpose, so recognize every test-bootstrap name and keep the examples there
 // instead of failing the example-artifact gate.
 const isPluginTemplateSmokePackage = /^(integration|smoke)-test-plugin(-npm)?-\d+$/.test(packageName ?? '');
@@ -208,7 +232,7 @@ if (!isTemplateScaffoldPackage) {
             'errors',
             'no-template-example-artifacts',
             `Generated business apps must remove template example artifacts: ${[...new Set(templateExamples)].join(', ')}.`,
-            path.join(cwd, 'src/tool-server'),
+            path.join(cwd, 'src/modules'),
         );
     }
 }
@@ -233,7 +257,7 @@ for (const file of uiFiles) {
         add(
             'errors',
             'no-admin-shell-leakage',
-            'Normal app UI must render src/ui/app, not an internal vendor admin shell.',
+            'Normal app UI must render module UI, not an internal vendor admin shell.',
             file,
         );
     }
@@ -371,7 +395,7 @@ for (const file of interactionFiles) {
     }
 }
 
-for (const file of toolServerFiles.filter((item) => item.endsWith('.hbs'))) {
+for (const file of serverResourceFiles.filter((item) => item.endsWith('.hbs'))) {
     const text = await readFile(file, 'utf8');
     const looksLikeSystemPrompt = /role:\s*system|PromptRole\.system|You are\b/i.test(text);
     if (looksLikeSystemPrompt && !text.includes('{{_now}}')) {
@@ -391,7 +415,7 @@ if (hasProcessTs && !hasProcessYaml) {
         'warnings',
         'prefer-process-yaml',
         'Prefer YAML/YML source definitions for non-trivial app-owned processes and register the parsed definition.',
-        path.join(cwd, 'src/tool-server/processes'),
+        path.join(cwd, 'src/modules'),
     );
 }
 

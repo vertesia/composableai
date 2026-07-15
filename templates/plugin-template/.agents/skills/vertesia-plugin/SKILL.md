@@ -7,7 +7,7 @@ description: Reference for plugin architecture, dual build system, import hooks,
 
 This project is a Vertesia plugin with a dual architecture: a **tool server** (Hono backend) and a **UI plugin** (React frontend), built and deployed as a single unit.
 
-The `src/tool-server/tools/examples/`, `src/tool-server/skills/examples/`, `src/tool-server/interactions/examples/`, `src/tool-server/types/examples/`, and `src/tool-server/templates/examples/` directories contain starter code demonstrating each resource type. Use them as reference, then replace with your own implementations.
+User-owned app code lives in `src/modules/app`. Add UI under `src/modules/app/ui` and tool-server resources under `src/modules/app/resources`. The optional `src/modules/examples/resources` module contains starter code demonstrating each resource type. Use it as reference, then put your own implementation in the app module.
 
 For extended documentation see `README-tools.md` (tool server), `README-ui.md` (UI plugin), and `TESTING-tools.md` (testing guide) at the project root.
 
@@ -20,52 +20,41 @@ src/
   tool-server/           # Backend (Hono) - compiled by Rollup
     server.ts            # Hono server entry (createToolServer from @vertesia/tools-sdk)
     server-node.ts       # Node.js HTTP adapter for local dev
-    config.ts            # Server configuration - registers all collections here
+    config.ts            # Server configuration - imports generated module collections
+    app-server-modules.ts # Generated resource aggregator
     settings.ts          # JSON Schema for plugin settings
-    tools/               # Tool collections
-      <collection>/
-        index.ts         # Exports ToolCollection with tool list
-        <tool-name>/
-          index.ts       # Tool definition (satisfies Tool<ParamsT>)
-          schema.ts      # Input JSON Schema + TypeScript params interface
-          <impl>.ts      # Implementation logic
-    skills/              # Skill collections
-      <collection>/
-        index.ts         # Exports SkillCollection (uses ?skills auto-discovery)
-        <skill-name>/
-          SKILL.md       # Skill definition (YAML frontmatter + markdown body)
-          properties.ts  # Optional: runtime properties (isEnabled function)
-          *.tsx           # Optional: widgets (compiled to dist/widgets/)
-          *.py, *.js      # Optional: scripts (copied to dist/scripts/)
-    interactions/        # Interaction collections
-      <collection>/
-        index.ts         # Exports InteractionCollection
-        <interaction-name>/
-          index.ts       # InteractionSpec with prompts array
-          prompt.hbs     # Handlebars prompt template (imported with ?prompt)
-          prompt_schema.ts
-          result_schema.ts
-    types/               # Content type collections
-      <collection>/
-        index.ts         # Exports ContentTypesCollection
-        <type-name>.ts   # InCodeTypeSpec with object_schema + table_layout
-    templates/           # Template collections (for document/presentation generation)
-      <collection>/
-        index.ts         # Exports RenderingTemplateCollection (uses ?templates auto-discovery)
-        <template-name>/
-          TEMPLATE.md    # Template definition (YAML frontmatter + markdown body)
-          *.svg, *.latex, *.png  # Asset files (auto-discovered, copied to dist/templates/)
     mcp/                 # MCP provider integrations
       index.ts           # Exports MCPProviderConfig[]
   ui/                    # Frontend (React) - compiled by Vite
     plugin.tsx           # Library entry - default export component for Vertesia host
     main.tsx             # Standalone app entry for dev mode
-    app.tsx              # Main App component
-    routes.tsx           # Route definitions (NestedRouterProvider)
-    pages.tsx            # Page components
+    app-ui-entry.tsx     # Generated AppEntry selector
+    app-ui-modules.tsx   # Generated route/provider aggregator
+    shell/               # Shared runtime shell/chrome, not app business logic
+      App.tsx            # Wraps module providers and NestedRouterProvider
+      AppEntry.tsx       # Default Studio shell entry
+      layouts/           # Shared app layout primitives
+      components/        # Shared shell primitives
     env.ts               # Environment config (VITE_APP_NAME)
     assets.ts            # Asset URL resolution (plugin mode vs dev mode)
     index.css            # Tailwind CSS 4 with @source directives
+  modules/
+    app/                 # User-owned app module; always active
+      ui/
+        routes.tsx       # User app route definitions
+        pages/           # Route-level user pages
+        features/        # User feature folders
+      resources/
+        tools/           # Tool collections
+        skills/          # Skill collections
+        interactions/    # Interaction collections
+        types/           # Content type collections
+        templates/       # Rendering template collections
+        activities/      # Remote activity collections
+    assistant/           # Optional assistant UI module
+    examples/            # Optional example resource module
+    app-gateway/         # Optional app-gateway runtime entry
+    agent/               # Optional agent-facing helper components
 api/
   index.js               # Vercel serverless adapter (forwards to Hono fetch)
 dist/                    # Build outputs
@@ -115,7 +104,18 @@ These Rollup import transformations only work in `src/tool-server/` code:
 
 To create tools, skills, interactions, content types, or templates, use the **vertesia-tool-server-resource** skill. It provides step-by-step scaffolding with full code examples.
 
-Each resource follows the same pattern: create files → export from collection → register in `config.ts`.
+Each user resource follows the same pattern: create files under `src/modules/app/resources/<type>/<collection>/`, export from the collection, then add the collection to `src/modules/app/resources/<type>/index.ts`. `src/tool-server/config.ts` imports the generated `app-server-modules.ts` arrays.
+
+## App Identity And Portable IDs
+
+Keep the app name aligned across `package.json` `name`, `VITE_APP_NAME`, the app manifest name, and all
+`app:<name>:` ids. Do not hardcode a second app name in resource references.
+
+- Content type refs are `app:<app-name>:<type-name>`; the type collection name is not part of the public id.
+- Interactions and activities are `app:<app-name>:<collection>:<name>`.
+- Prefer `main` as the default interaction/activity collection name.
+- Do not resolve app-owned types to project-local ObjectIds; pass the in-code app type string directly to `client.objects.create`.
+- If the app registers backend resources, publish as `service`; `static` ships only UI assets.
 
 ## UI Plugin
 
@@ -123,10 +123,17 @@ For UI component APIs, routing, layout, styling, and agent conversation patterns
 
 When the task includes UI work, do not stop at "it renders". The UI pass should start with a `@vertesia/ui` component inventory and end with a conformance check for duplicated primitives such as raw tables, native selects, local page headers, and inline styles.
 
+Generated apps should feel like compact Vertesia Studio product surfaces: use light operational layouts, semantic
+tokens, tables/queues/detail pages, restrained typography, and small brand accents. Avoid dark-first, neon, oversized
+hero, or presentation-style layouts unless the user explicitly asks for them.
+
 Key entry points:
 - `src/ui/plugin.tsx` — Library entry for Vertesia host (exports default component receiving `{ slot }`)
 - `src/ui/main.tsx` — Standalone dev entry (VertesiaShell + AdminApp at `/`, plugin at `/app/`)
-- `src/ui/routes.tsx` — Route definitions
+- `src/ui/shell/App.tsx` — Shared shell runtime wrapping module providers and routes
+- `src/modules/app/ui/routes.tsx` — User app route definitions
+- `src/modules/content-app/` — Optional content-app module selected with `--module content-app`
+- `src/ui/app-ui-entry.tsx` and `src/ui/app-ui-modules.tsx` — Generated module wiring
 - `src/ui/assets.ts` — `useAsset(path)` for URLs relative to the plugin bundle
 
 ## Authentication
@@ -176,5 +183,5 @@ Do not keep spawning new local ports and quick tunnels after an auth failure. Th
 - ESM with `.js` import extensions: `import { x } from "./foo.js"`
 - Type-safe definitions with inference: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`
 - Icons are SVG strings exported as default from `.ts` files
-- All collections must be registered in `src/tool-server/config.ts`
+- User collections must be exported from `src/modules/app/resources/<type>/index.ts`; do not hand-edit generated `src/tool-server/app-server-modules.ts`
 - Skills use YAML frontmatter in `SKILL.md`; templates in `TEMPLATE.md`; prompts in `.hbs`/`.jst`/`.md` with `?prompt`

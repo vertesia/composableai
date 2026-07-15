@@ -49,7 +49,8 @@ Prefer realistic generated content uploaded to Vertesia over hardcoded UI mock d
 When seeding app-defined content:
 
 - Use query/search names such as `clm_contract` for filters and object searches.
-- For object creation, pass the in-code app type **string** directly — `app:<app-name>:clm:ClmContract` — to `client.objects.create({ type, ... })`. Do NOT resolve it to a project-local ObjectId (no `types.list`/`getTypeByName` → id); the in-code string is what makes the app portable.
+- For object creation, pass the in-code app type string directly, such as `app:<app-name>:clm_contract`.
+- Do not resolve app-owned types to project-local ObjectIds with `types.list()` or `getTypeByName()`; the app type string is portable.
 - If UI actions create child records, use the same explicit app type codes there too.
 - If agent runs or workflow `executeInteraction` calls target app interactions, use the full app interaction id such as `app:<app-name>:clm:ExtractContractMetadata`.
 
@@ -61,7 +62,7 @@ If the CLI says the type does not exist:
 
 1. verify the app package exposes the type
 2. verify the project app-type APIs list and retrieve it
-3. test direct object creation with the resolved app type code
+3. test direct object creation with the app type string
 4. use a repo-local uploader script or direct API if the project accepts the type but the CLI still rejects it
 
 Do not assume CLI rejection means the app type is missing from the project.
@@ -89,7 +90,7 @@ vertesia content list /demo
 Use `scripts/generate_markdown_seed.py` to generate reusable Markdown seed data:
 
 ```bash
-python3 .claude/skills/vertesia-demo-content/scripts/generate_markdown_seed.py \
+python3 .agents/skills/vertesia-demo-content/scripts/generate_markdown_seed.py \
   --out /tmp/vertesia-demo \
   --domain generic \
   --count 3
