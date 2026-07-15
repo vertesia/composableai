@@ -150,6 +150,7 @@
   "files": [
     "vite.config.ts",
     "index.html",
+    "src/constants.ts",
     "src/tool-server/config.ts",
     "src/modules/content-app/resources/processes/review-workflow.ts",
     "src/ui/env.ts",
