@@ -120,6 +120,14 @@ function isCodeFile(file) {
     return /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(file);
 }
 
+function isTemplateShellEntry(file) {
+    return rel(file) === 'src/ui/shell/AppEntry.tsx';
+}
+
+function isExampleModuleFile(file) {
+    return rel(file).startsWith('src/modules/examples/');
+}
+
 function hasDetachedVertesiaClientMethod(text) {
     const apiTopics = '(objects|agents|interactions|files|types|apps|store|data|prompts|skills|collections|runs)';
     const detachedAssignment = new RegExp(`\\bconst\\s+\\w+\\s*=\\s*client\\.${apiTopics}\\??\\.\\w+\\s*;`);
@@ -253,7 +261,10 @@ for (const file of allFiles.filter(isCodeFile)) {
 for (const file of uiFiles) {
     const text = await readFile(file, 'utf8');
 
-    if (!allowAdminShell && includesAny(text, blockedAdminShellTokens)) {
+    // TODO(appgen): Once appgen-specific package scripts live in the appgen/app-gateway
+    // module, run this check only against generated app UI. The template shell intentionally
+    // keeps AdminApp as the Studio fallback while module UI is mounted under /app.
+    if (!allowAdminShell && !isTemplateShellEntry(file) && includesAny(text, blockedAdminShellTokens)) {
         add(
             'errors',
             'no-admin-shell-leakage',
@@ -372,7 +383,12 @@ for (const file of packageWriterFiles) {
 for (const file of interactionFiles) {
     const text = await readFile(file, 'utf8');
 
-    if (/TemplateType\.(jst|text)|content_type\s*:\s*["'](?:jst|text)["']/.test(text)) {
+    // TODO(appgen): Once this script validates generated app output instead of the template
+    // source tree, remove this examples-module exemption. Example interactions are maintained
+    // as teaching fixtures and are not app-owned production prompts.
+    const isExampleInteraction = isExampleModuleFile(file);
+
+    if (!isExampleInteraction && /TemplateType\.(jst|text)|content_type\s*:\s*["'](?:jst|text)["']/.test(text)) {
         add(
             'errors',
             'hbs-prompts-required',
@@ -381,7 +397,7 @@ for (const file of interactionFiles) {
         );
     }
 
-    if (/prompts\s*:\s*\[/.test(text) && !/\.hbs\?prompt/.test(text)) {
+    if (!isExampleInteraction && /prompts\s*:\s*\[/.test(text) && !/\.hbs\?prompt/.test(text)) {
         add(
             'warnings',
             'prefer-hbs-prompt-files',
@@ -390,7 +406,11 @@ for (const file of interactionFiles) {
         );
     }
 
-    if (/PromptRole\.system|role\s*:\s*["']system["']/.test(text) && !text.includes('{{_now}}')) {
+    if (
+        !isExampleInteraction &&
+        /PromptRole\.system|role\s*:\s*["']system["']/.test(text) &&
+        !text.includes('{{_now}}')
+    ) {
         add('warnings', 'system-prompt-now', "Agent/system prompts should include Today's date is {{_now}}.", file);
     }
 }
