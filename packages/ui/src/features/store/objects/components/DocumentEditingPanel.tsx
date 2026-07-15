@@ -32,6 +32,7 @@ import {
     DocumentEditingConfigurationSelector,
     getDocumentEditingProjectDefault,
 } from './DocumentEditingConfigurationSelector.js';
+import { persistRunLocalArtifactRefs } from './documentArtifactRefs.js';
 import {
     createDocumentEditingRunIdentity,
     type DocumentEditingRunProperties,
@@ -118,6 +119,12 @@ function createDocumentEditingPrompt(
         '',
         'Do not call update_document, create_document, or write_artifact for this working copy. The user publishes',
         'the artifact back to the canonical document with the Save to document button, which enforces the base ETag.',
+        '',
+        'Images: never inline image data as base64 data URIs — it bloats the document and cannot be reliably edited.',
+        "Keep existing image references (e.g. 'artifact:documents/…' URLs) exactly as they are: they point to durable",
+        "storage that outlives this session. Files already in this run's artifact space may be referenced with",
+        "run-local links like 'artifact:files/photo.png' — publishing copies them into durable storage and rewrites",
+        'the links automatically.',
         '',
         `User request: ${userPrompt}`,
     ].join('\n');
@@ -245,6 +252,7 @@ export function DocumentEditingWorkspace({
     const [executionConfiguration, setExecutionConfiguration] = useState<DocumentEditingConfiguration>({});
     const configurationSourceRef = useRef<'none' | 'project' | 'run' | 'user'>('none');
     const seenUpdatesRef = useRef(new Set<string>());
+    const artifactGenerationRef = useRef<string | undefined>(undefined);
     const documentRootId = object.revision?.root || object.id;
     const draftPath = useMemo(() => getDocumentDraftPath(documentRootId), [documentRootId]);
     const startedBy = user?.sub ? `user:${user.sub}` : undefined;
@@ -501,7 +509,8 @@ export function DocumentEditingWorkspace({
         ],
     );
 
-    const handleArtifactContentChange = useCallback((content: string) => {
+    const handleArtifactContentChange = useCallback((content: string, generation?: string) => {
+        artifactGenerationRef.current = generation;
         setArtifactContent(content);
         setArtifactLoaded(true);
     }, []);
@@ -526,9 +535,24 @@ export function DocumentEditingWorkspace({
         }
         setIsSaving(true);
         try {
+            // Persist run-local artifact references (session-generated charts, files)
+            // into durable documents/ storage and rewrite the links before publishing —
+            // the same pass create_document applies. Run artifact storage does not
+            // outlive the session, so the canonical document must never depend on it.
+            let contentToSave = artifactContent;
+            if (agentRunId) {
+                const persistence = await persistRunLocalArtifactRefs(
+                    client.files,
+                    contentToSave,
+                    agentRunId,
+                    crypto.randomUUID(),
+                );
+                contentToSave = persistence.content;
+            }
+
             const contentType = object.content?.type || 'text/markdown';
             const fileName = object.content?.name || 'content.md';
-            const file = new File([new Blob([artifactContent], { type: contentType })], fileName, {
+            const file = new File([new Blob([contentToSave], { type: contentType })], fileName, {
                 type: contentType,
             });
             const response = await store.objects.update(
@@ -538,10 +562,25 @@ export function DocumentEditingWorkspace({
             );
             setTargetDocumentId(response.id);
             setTargetEtag(response.content?.etag);
-            setSavedContent(artifactContent);
+            setSavedContent(contentToSave);
             setSaveConflict(undefined);
             onDocumentUpdated?.(response.id);
             toast({ status: 'success', title: t('store.textSaved'), duration: 2500 });
+
+            // Sync the rewritten links back into the working copy so it matches the
+            // published revision. A concurrent agent edit (412) just leaves the copy
+            // dirty, which is accurate — it no longer matches what was published.
+            if (agentRunId && contentToSave !== artifactContent && artifactGenerationRef.current) {
+                try {
+                    await client.agents.updateArtifactContent(agentRunId, draftPath, {
+                        content: contentToSave,
+                        generation: artifactGenerationRef.current,
+                    });
+                    setArtifactRefresh((current) => ({ key: current.key + 1 }));
+                } catch (syncError: unknown) {
+                    console.warn('Failed to sync persisted artifact links into the working copy', syncError);
+                }
+            }
         } catch (error: unknown) {
             // Two conflict shapes: an in-place edit of the target revision fails the
             // If-Match precondition (412), while a new external revision moves the head
@@ -576,8 +615,12 @@ export function DocumentEditingWorkspace({
             setIsSaving(false);
         }
     }, [
+        agentRunId,
         artifactContent,
         artifactLoaded,
+        client.agents,
+        client.files,
+        draftPath,
         isDirty,
         isResolvingTarget,
         isSaving,
@@ -617,12 +660,87 @@ export function DocumentEditingWorkspace({
             <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-mixer-muted/20 px-4">
                 <div className="min-w-0">
                     <div className="truncate font-semibold">{object.name || object.content?.name}</div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted">
-                        {isDirty ? t('store.unsavedChanges') : t('store.textSaved')}
-                        {!isDirty && artifactLoaded ? <Check className="size-3 text-success" /> : null}
+                    <div className="flex items-center gap-2 text-xs text-muted">
+                        <span className="flex shrink-0 items-center gap-1.5">
+                            {isDirty ? (
+                                <span aria-hidden className="size-1.5 rounded-full bg-attention" />
+                            ) : artifactLoaded ? (
+                                <Check className="size-3 text-success" />
+                            ) : null}
+                            {isDirty ? t('store.unsavedChanges') : t('store.textSaved')}
+                        </span>
+                        <span aria-hidden className="text-mixer-muted/60">
+                            ·
+                        </span>
+                        <VTooltip description={`${t('agent.workingCopy')}: ${draftPath}`} asChild>
+                            <span className="min-w-0 truncate font-mono">drafts/{shortenRunId(documentRootId)}.md</span>
+                        </VTooltip>
+                        <span aria-hidden className="text-mixer-muted/60">
+                            ·
+                        </span>
+                        <VTooltip
+                            description={`${t('agent.originalDocument')}: ${originalDocumentRef.current.id}`}
+                            asChild
+                        >
+                            <span className="shrink-0 font-mono">
+                                {t('agent.originalDocument').toLowerCase()}{' '}
+                                {shortenRunId(originalDocumentRef.current.id)}
+                            </span>
+                        </VTooltip>
                     </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="flex items-center rounded-md border border-mixer-muted/25 bg-muted/10 p-0.5">
+                        <Button
+                            variant={workspaceView === 'document' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="h-7 gap-1.5"
+                            onClick={() => setWorkspaceView('document')}
+                        >
+                            <FileText className="size-3.5" />
+                            {t('agent.document')}
+                        </Button>
+                        <Button
+                            variant={workspaceView === 'diff' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="h-7 gap-1.5"
+                            onClick={() => setWorkspaceView('diff')}
+                            disabled={!artifactLoaded || artifactContent === originalContent}
+                        >
+                            <GitCompareArrows className="size-3.5" />
+                            {t('agent.reviewChanges')}
+                        </Button>
+                    </div>
+                    {workspaceView === 'diff' ? (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                            onClick={handleSummarizeChanges}
+                            disabled={!artifactLoaded || artifactContent === originalContent}
+                        >
+                            <ListChecks className="size-3.5" />
+                            {t('agent.summarizeChanges')}
+                        </Button>
+                    ) : null}
+                    <VTooltip description={t('agent.refresh')} asChild>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setArtifactRefresh((current) => ({ key: current.key + 1 }))}
+                            disabled={!agentRunId}
+                            aria-label={t('agent.refresh')}
+                        >
+                            <RefreshCw className="size-4" />
+                        </Button>
+                    </VTooltip>
+                    <div aria-hidden className="mx-1 h-6 w-px bg-mixer-muted/25" />
+                    <DocumentEditingConfigurationSelector
+                        value={executionConfiguration}
+                        onChange={handleConfigurationChange}
+                        disabled={Boolean(agentRunId) || isStarting || isResolvingRun}
+                        isLoading={isLoadingConfiguration}
+                    />
                     {agentRunId ? (
                         <>
                             <VTooltip description={agentRunId} asChild>
@@ -655,16 +773,10 @@ export function DocumentEditingWorkspace({
                             </VTooltip>
                         </>
                     ) : null}
-                    <DocumentEditingConfigurationSelector
-                        value={executionConfiguration}
-                        onChange={handleConfigurationChange}
-                        disabled={Boolean(agentRunId) || isStarting || isResolvingRun}
-                        isLoading={isLoadingConfiguration}
-                    />
+                    <div aria-hidden className="mx-1 h-6 w-px bg-mixer-muted/25" />
                     <Button
                         variant="primary"
-                        size="lg"
-                        className="min-w-40 gap-2"
+                        className="min-w-36 gap-2"
                         onClick={() => void handleSave()}
                         disabled={!isDirty || !targetEtag || isSaving || isResolvingTarget || targetResolutionFailed}
                     >
@@ -699,73 +811,6 @@ export function DocumentEditingWorkspace({
             <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
                 <ResizablePanel defaultSize={65} minSize={35} className="min-w-0 bg-background">
                     <div className="flex h-full min-h-0 flex-col">
-                        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-mixer-muted/20 bg-muted/10 px-4 py-2">
-                            <div className="flex min-w-0 items-center gap-5 text-xs">
-                                <div className="min-w-0">
-                                    <div className="font-medium text-foreground">{t('agent.workingCopy')}</div>
-                                    <div className="truncate font-mono text-muted" title={draftPath}>
-                                        {draftPath}
-                                    </div>
-                                </div>
-                                <div className="hidden min-w-0 border-s border-mixer-muted/25 ps-5 md:block">
-                                    <div className="font-medium text-foreground">{t('agent.originalDocument')}</div>
-                                    <div
-                                        className="truncate font-mono text-muted"
-                                        title={originalDocumentRef.current.id}
-                                    >
-                                        {shortenRunId(originalDocumentRef.current.id)}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                                <VTooltip description={t('agent.refresh')} asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 gap-1.5"
-                                        onClick={() => setArtifactRefresh((current) => ({ key: current.key + 1 }))}
-                                        disabled={!agentRunId}
-                                        aria-label={t('agent.refresh')}
-                                    >
-                                        <RefreshCw className="size-3.5" />
-                                        {t('agent.refresh')}
-                                    </Button>
-                                </VTooltip>
-                                <div className="flex items-center rounded-md border border-mixer-muted/25 bg-background p-0.5">
-                                    <Button
-                                        variant={workspaceView === 'document' ? 'secondary' : 'ghost'}
-                                        size="sm"
-                                        className="h-7 gap-1.5"
-                                        onClick={() => setWorkspaceView('document')}
-                                    >
-                                        <FileText className="size-3.5" />
-                                        {t('agent.document')}
-                                    </Button>
-                                    <Button
-                                        variant={workspaceView === 'diff' ? 'secondary' : 'ghost'}
-                                        size="sm"
-                                        className="h-7 gap-1.5"
-                                        onClick={() => setWorkspaceView('diff')}
-                                        disabled={!artifactLoaded || artifactContent === originalContent}
-                                    >
-                                        <GitCompareArrows className="size-3.5" />
-                                        {t('agent.reviewChanges')}
-                                    </Button>
-                                </div>
-                                {workspaceView === 'diff' ? (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 gap-1.5"
-                                        onClick={handleSummarizeChanges}
-                                        disabled={!artifactLoaded || artifactContent === originalContent}
-                                    >
-                                        <ListChecks className="size-3.5" />
-                                        {t('agent.summarizeChanges')}
-                                    </Button>
-                                ) : null}
-                            </div>
-                        </div>
                         <div className="min-h-0 flex-1">
                             {workspaceView === 'diff' ? (
                                 <DocumentWorkingCopyDiff original={originalContent} workingCopy={artifactContent} />

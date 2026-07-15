@@ -33,6 +33,12 @@ function modelLabel(model: ModelOption): string {
     return model.name;
 }
 
+/** Provider model ids can be long resource paths; display only the final segment. */
+function shortModelName(model: string): string {
+    const segment = model.split('/').filter(Boolean).pop();
+    return segment || model;
+}
+
 interface DocumentEditingConfigurationSelectorProps {
     value: DocumentEditingConfiguration;
     onChange: (value: DocumentEditingConfiguration) => void;
@@ -109,7 +115,9 @@ export function DocumentEditingConfigurationSelector({
     const selectedEnvironment = environments.find((environment) => environment.id === value.environment);
     const selectedModel = useMemo<ModelOption | undefined>(() => {
         if (!value.model) return undefined;
-        return models.find((model) => model.id === value.model) ?? { id: value.model, name: value.model };
+        return (
+            models.find((model) => model.id === value.model) ?? { id: value.model, name: shortModelName(value.model) }
+        );
     }, [models, value.model]);
 
     const selectEnvironment = (environment: ExecutionEnvironmentRef) => {
@@ -132,7 +140,7 @@ export function DocumentEditingConfigurationSelector({
         onChange({ environment: value.environment, model: model.id });
     };
 
-    const buttonLabel = value.model || t('agent.documentEditingSelectModel');
+    const buttonLabel = selectedModel?.name || t('agent.documentEditingSelectModel');
 
     return (
         <Popover>
