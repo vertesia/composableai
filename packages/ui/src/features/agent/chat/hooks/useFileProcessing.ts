@@ -51,6 +51,13 @@ export function useFileProcessing(
     agentRunId: string,
     serverFileUpdates: Map<string, ConversationFile>,
     toast: ToastFn,
+    /**
+     * Artifact references (`artifact:...` and bare paths) that already appear in sent user
+     * messages. Files matching these have been delivered to the agent, so they must not resurface
+     * as pending composer attachments after a reload — the durable, server-agnostic counterpart to
+     * the in-session `removedFileIds` suppression.
+     */
+    deliveredArtifactRefs?: Set<string>,
 ): UseFileProcessingResult {
     const t = i18nInstance.getFixedT(null, NAMESPACE);
     // Local optimistic file state (uploads initiated from the UI)
@@ -117,8 +124,21 @@ export function useFileProcessing(
                 } as LocalConversationFile);
             }
         });
+        // Drop files already delivered via a sent message. Unlike removedFileIds (session-only),
+        // this is reconstructed from message history on every mount, so a reload no longer
+        // resurrects an already-sent file as a pending composer chip.
+        if (deliveredArtifactRefs && deliveredArtifactRefs.size > 0) {
+            for (const [id, file] of merged) {
+                if (
+                    (file.reference && deliveredArtifactRefs.has(file.reference)) ||
+                    (file.artifact_path && deliveredArtifactRefs.has(file.artifact_path))
+                ) {
+                    merged.delete(id);
+                }
+            }
+        }
         return merged;
-    }, [localFiles, removedFileIds, serverFileUpdates]);
+    }, [localFiles, removedFileIds, serverFileUpdates, deliveredArtifactRefs]);
 
     const hasProcessingFiles = useMemo(
         () =>
