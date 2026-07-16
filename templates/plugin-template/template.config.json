@@ -2,7 +2,7 @@
   "version": "1.0",
   "description": "A template for building custom UI plugins for Vertesia",
   "lifecycle": {
-    "codegen": "scripts/dist/codegen.js"
+    "codegen": "codegen/dist/codegen.js"
   },
   "devMode": {
     "answers": {
@@ -165,6 +165,7 @@
   },
   "removeAfterInstall": [
     "template.config.json",
-    "docs"
+    "docs",
+    "codegen"
   ]
 }

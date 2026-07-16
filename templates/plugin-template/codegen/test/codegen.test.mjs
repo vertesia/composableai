@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const templateRoot = path.resolve(testDir, '../..');
-const codegenScript = path.join(templateRoot, 'scripts/dist/codegen.js');
+const codegenScript = path.join(templateRoot, 'codegen/dist/codegen.js');
 const generatedFiles = [
     'src/ui/app-ui-entry.tsx',
     'src/ui/app-ui-modules.tsx',

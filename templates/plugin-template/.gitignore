@@ -9,8 +9,8 @@ lerna-debug.log*
 
 node_modules
 dist
-!scripts/dist/
-!scripts/dist/codegen.js
+!codegen/dist/
+!codegen/dist/codegen.js
 dist-ssr
 lib
 *.local

@@ -24,8 +24,8 @@
         "start": "pnpm run preview",
         "start:vercel": "vercel dev",
         "test": "echo \"(no tests in template scaffold)\"",
-        "codegen:dev": "node scripts/dist/codegen.js --context scripts/dev-codegen-context.json",
-        "test:codegen": "node --test scripts/test/*.test.mjs",
+        "codegen:dev": "node codegen/dist/codegen.js --context codegen/dev-codegen-context.json",
+        "test:codegen": "node --test codegen/test/*.test.mjs",
         "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
         "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
     },
