@@ -101,6 +101,9 @@ Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API 
 | `{{PM_RUN}} build:ui`     | `vite build (app + lib)`       | Build both UI targets                                       |
 | `{{PM_RUN}} build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
 | `{{PM_RUN}} build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
+| `{{PM_RUN}} service:build` | `service:build:ui + lib + service:build:server` | Build Vertesia service deployment artifacts |
+| `{{PM_RUN}} service:build:ui` | `vite build --mode app` | Build service UI assets to `dist/app/` |
+| `{{PM_RUN}} service:build:server` | `build-server-esbuild + write-app-package` | Build bundled service runtime and app package metadata |
 | `{{PM_RUN}} start`        | `rollup -c && vite preview`    | Preview production build locally                            |
 | `{{PM_RUN}} start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
 

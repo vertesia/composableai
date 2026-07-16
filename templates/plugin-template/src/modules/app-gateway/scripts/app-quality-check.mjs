@@ -147,7 +147,9 @@ const appUiFiles = moduleUiFiles;
 const toolServerFiles = allFiles.filter((file) => rel(file).startsWith('src/tool-server/'));
 const moduleResourceFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/resources\//.test(rel(file)));
 const serverResourceFiles = [...toolServerFiles, ...moduleResourceFiles];
-const packageWriterFiles = scriptFiles.filter((file) => rel(file) === 'scripts/write-app-package.mjs');
+const packageWriterFiles = scriptFiles.filter(
+    (file) => rel(file) === 'src/modules/app-gateway/scripts/write-app-package.mjs',
+);
 const interactionFiles = serverResourceFiles.filter((file) => rel(file).includes('/interactions/'));
 const processFiles = serverResourceFiles.filter((file) => rel(file).includes('/processes/'));
 const packageJsonPath = path.join(cwd, 'package.json');

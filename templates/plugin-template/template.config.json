@@ -52,6 +52,12 @@
     "app-gateway": {
       "ui": {
         "entry": "src/modules/app-gateway/ui/AppEntry"
+      },
+      "packageScripts": {
+        "service:quality": "node src/modules/app-gateway/scripts/app-quality-check.mjs",
+        "service:build:server": "pnpm run service:quality && node src/modules/app-gateway/scripts/build-server-esbuild.mjs && node src/modules/app-gateway/scripts/write-app-package.mjs",
+        "service:build:ui": "pnpm run typecheck && vite build --mode app --outDir dist/app --emptyOutDir --minify false",
+        "service:build": "pnpm run service:build:ui && vite build --mode lib && pnpm run service:build:server"
       }
     },
     "agent": {},

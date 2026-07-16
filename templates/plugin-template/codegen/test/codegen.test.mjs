@@ -75,6 +75,8 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(packageJson.scripts['test:codegen'], undefined);
         assert.equal(packageJson.scripts['seed:content'], undefined);
         assert.equal(packageJson.scripts['exercise:content'], undefined);
+        assert.equal(packageJson.scripts['service:quality'], undefined);
+        assert.equal(packageJson.scripts['service:build'], undefined);
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
@@ -93,6 +95,7 @@ test('app-gateway module selects app-gateway entry and cleans inactive modules',
         const uiEntry = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-entry.tsx'), 'utf8');
         const uiModules = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-modules.tsx'), 'utf8');
         const serverModules = fs.readFileSync(path.join(tmpRoot, 'src/tool-server/app-server-modules.ts'), 'utf8');
+        const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
 
         assert.equal(uiEntry, `${generatedHeader}export { AppEntry } from '../modules/app-gateway/ui/AppEntry';\n`);
         assert.match(uiModules, /modules\/app\/ui\/routes/);
@@ -100,6 +103,22 @@ test('app-gateway module selects app-gateway entry and cleans inactive modules',
         assert.doesNotMatch(uiModules, /modules\/examples/);
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.doesNotMatch(serverModules, /modules\/examples/);
+        assert.equal(
+            packageJson.scripts['service:quality'],
+            'node src/modules/app-gateway/scripts/app-quality-check.mjs',
+        );
+        assert.equal(
+            packageJson.scripts['service:build:server'],
+            'pnpm run service:quality && node src/modules/app-gateway/scripts/build-server-esbuild.mjs && node src/modules/app-gateway/scripts/write-app-package.mjs',
+        );
+        assert.equal(
+            packageJson.scripts['service:build:ui'],
+            'pnpm run typecheck && vite build --mode app --outDir dist/app --emptyOutDir --minify false',
+        );
+        assert.equal(
+            packageJson.scripts['service:build'],
+            'pnpm run service:build:ui && vite build --mode lib && pnpm run service:build:server',
+        );
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/agent')), true);

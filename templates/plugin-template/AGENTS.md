@@ -34,6 +34,8 @@ pnpm build                 # Full build (server + UI), lint runs as prebuild
 pnpm build:server          # Rolldown: tool server only → lib/
 pnpm build:ui:lib          # Vite: plugin library → dist/lib/plugin.js
 pnpm build:ui:app          # Vite: standalone app → dist/ui/
+pnpm service:build         # Vertesia service build: UI + service runtime + app package metadata
+pnpm service:build:server  # Vertesia service runtime and package metadata only
 
 pnpm dev                   # Vite dev server with API middleware (https://localhost:5173)
 pnpm start                 # Preview production build (build:server + vite preview)
