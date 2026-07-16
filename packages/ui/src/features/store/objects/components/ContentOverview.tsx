@@ -788,41 +788,14 @@ function TextActions({
         <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
             <div className="flex items-center gap-2">
                 {fullText && (
-                    <>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Copy text"
-                            onClick={() => handleCopyContent(fullText, 'text')}
-                        >
-                            <Copy className="size-4" />
-                        </Button>
-                        {canEdit && onToggleEdit && (
-                            <SecureButton
-                                permission={Permission.content_write}
-                                variant="ghost"
-                                size="sm"
-                                onClick={onToggleEdit}
-                                title={t('store.editText')}
-                                aria-label={t('store.editText')}
-                                className="h-8 w-8 p-0"
-                            >
-                                <SquarePen className="size-4" />
-                            </SecureButton>
-                        )}
-                        {canCollaborate && onToggleCollaborate && isMarkdown && (
-                            <Button
-                                variant={isCollaborating ? 'primary' : 'ghost'}
-                                size="sm"
-                                onClick={onToggleCollaborate}
-                                title={t('agent.editWithAI')}
-                                aria-label={t('agent.editWithAI')}
-                                className="h-8 w-8 p-0"
-                            >
-                                <Sparkles className="size-4" />
-                            </Button>
-                        )}
-                    </>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Copy text"
+                        onClick={() => handleCopyContent(fullText, 'text')}
+                    >
+                        <Copy className="size-4" />
+                    </Button>
                 )}
                 {isDownloading ? (
                     <Button
@@ -881,6 +854,35 @@ function TextActions({
                             </>
                         )}
                     </Dropdown>
+                )}
+                {fullText && (
+                    <>
+                        {canEdit && onToggleEdit && (
+                            <SecureButton
+                                permission={Permission.content_write}
+                                variant="ghost"
+                                size="sm"
+                                onClick={onToggleEdit}
+                                title={t('store.editText')}
+                                aria-label={t('store.editText')}
+                                className="h-8 w-8 p-0"
+                            >
+                                <SquarePen className="size-4" />
+                            </SecureButton>
+                        )}
+                        {canCollaborate && onToggleCollaborate && isMarkdown && (
+                            <Button
+                                variant={isCollaborating ? 'primary' : 'ghost'}
+                                size="sm"
+                                onClick={onToggleCollaborate}
+                                title={t('agent.editWithAI')}
+                                aria-label={t('agent.editWithAI')}
+                                className="h-8 w-8 p-0"
+                            >
+                                <Sparkles className="size-4" />
+                            </Button>
+                        )}
+                    </>
                 )}
             </div>
         </div>
