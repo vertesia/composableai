@@ -5,7 +5,11 @@ import { useUserSession } from '@vertesia/ui/session';
 import { XIcon } from 'lucide-react';
 import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
 import { AskUserWidget } from './AskUserWidget';
-import { getRequestInputDisplayText, type RequestInputMessageWithUx } from './ModernAgentOutput/requestInputMessages';
+import {
+    getRequestInputDisplayText,
+    getToolApprovalResponseMetadata,
+    type RequestInputMessageWithUx,
+} from './ModernAgentOutput/requestInputMessages';
 
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
@@ -118,7 +122,7 @@ export function AgentRequestInputOverlay({
                     allowFreeResponse={options.length === 0 || !!freeResponse}
                     placeholder={freeResponse?.placeholder}
                     submitLabel={freeResponse?.submit_label}
-                    onSelect={send}
+                    onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
                     onMultiSelect={(optionIds) => send(optionIds.join(', '))}
                     onSubmit={(value) => send(value, freeResponse?.metadata)}
                     hideBorder
