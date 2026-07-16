@@ -8,6 +8,33 @@ import { registerCustomFoldingProviders } from './foldingProviders.js';
 
 export type Monaco = typeof monaco;
 
+/**
+ * Shared, body-level host for Monaco "overflow widgets" — the suggestion, hover, and
+ * parameter-hint popups. With `fixedOverflowWidgets` enabled these are `position: fixed`; a CSS
+ * `transform` on any ancestor (e.g. a modal centered with `translate(-50%, -50%)`) becomes their
+ * containing block and drags the popups away from the cursor, sometimes off-screen. Hosting them in
+ * an untransformed node appended to `document.body` keeps them anchored to the caret. The node
+ * carries the `monaco-editor` class so Monaco's (global) theme styles apply, and a high z-index so
+ * the popups render above modals/overlays. One shared node is reused by every editor instance.
+ */
+let overflowWidgetsNode: HTMLElement | undefined;
+function getOverflowWidgetsNode(): HTMLElement | undefined {
+    if (typeof document === 'undefined') return undefined;
+    if (!overflowWidgetsNode) {
+        const node = document.createElement('div');
+        node.className = 'monaco-editor';
+        // `absolute` + z-index establishes a stacking context above modals without creating a
+        // containing block for the fixed-positioned popups (only transform/filter/etc. would).
+        node.style.position = 'absolute';
+        node.style.top = '0';
+        node.style.left = '0';
+        node.style.zIndex = '10000';
+        document.body.appendChild(node);
+        overflowWidgetsNode = node;
+    }
+    return overflowWidgetsNode;
+}
+
 export interface IEditorApi {
     getValue(): string;
     setValue(value?: string): void;
@@ -226,6 +253,8 @@ export function MonacoEditor({
         tabSize: 2,
         insertSpaces: true,
         fixedOverflowWidgets: true, // Hover/diagnostic popovers float outside the editor bounds
+        // Host the fixed popups in a body-level node so a modal's CSS transform doesn't offset them.
+        overflowWidgetsDomNode: getOverflowWidgetsNode(),
         glyphMargin: true, // Enable better error reporting
         renderValidationDecorations: 'on', // Show error squiggles
         renderLineHighlight: 'line', // Highlight entire line for errors

@@ -1,6 +1,64 @@
 {
   "version": "1.0",
   "description": "A template for building custom UI plugins for Vertesia",
+  "lifecycle": {
+    "codegen": "codegen/dist/codegen.js"
+  },
+  "devMode": {
+    "answers": {
+      "STUDIO_URL": "https://studio-server-dev-main.api.dev1.vertesia.io",
+      "ZENO_URL": "https://zeno-server-dev-main.api.dev1.vertesia.io",
+      "STS_URL": "https://sts.dev1.vertesia.io"
+    },
+    "pnpmWorkspace": {
+      "minimumReleaseAgeExclude": ["@vertesia/*", "@llumiverse/*"]
+    }
+  },
+  "modules": {
+    "default": {
+      "virtual": true,
+      "requires": []
+    },
+    "dev": {
+      "virtual": true,
+      "requires": ["assistant", "examples", "content-app"]
+    },
+    "appgen": {
+      "virtual": true,
+      "requires": ["app-gateway", "agent"]
+    },
+    "app": {
+      "ui": {
+        "routes": "src/modules/app/ui/routes"
+      },
+      "resources": "src/modules/app/resources"
+    },
+    "assistant": {
+      "ui": {
+        "routes": "src/modules/assistant/ui/routes",
+        "provider": "src/modules/assistant/ui"
+      }
+    },
+    "content-app": {
+      "ui": {
+        "routes": "src/modules/content-app/ui/routes"
+      },
+      "resources": "src/modules/content-app/resources",
+      "packageScripts": {
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
+      }
+    },
+    "app-gateway": {
+      "ui": {
+        "entry": "src/modules/app-gateway/ui/AppEntry"
+      }
+    },
+    "agent": {},
+    "examples": {
+      "resources": "src/modules/examples/resources"
+    }
+  },
   "prompts": [
     {
       "type": "text",
@@ -93,6 +151,7 @@
     "vite.config.ts",
     "index.html",
     "src/tool-server/config.ts",
+    "src/modules/content-app/resources/processes/review-workflow.ts",
     "src/ui/env.ts",
     "src/ui/plugin.tsx",
     ".env.app.template",
@@ -104,6 +163,8 @@
     ".env.app.template": ".env.app"
   },
   "removeAfterInstall": [
-    "template.config.json"
+    "template.config.json",
+    "docs",
+    "codegen"
   ]
 }

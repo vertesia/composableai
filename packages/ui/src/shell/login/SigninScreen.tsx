@@ -2,11 +2,12 @@ import type { SignupData, SignupPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { RegionTag } from '@vertesia/ui/layout';
-import { UserNotFoundError, useUserSession, useUXTracking } from '@vertesia/ui/session';
+import { RestrictedEnvironmentError, UserNotFoundError, useUserSession, useUXTracking } from '@vertesia/ui/session';
 import { useCallback, useEffect, useState } from 'react';
 import SignInAuthPending from './SignInAuthPending';
 import SignInEmailStep, { type TenantInfo } from './SignInEmailStep';
 import SignInProvidersStep from './SignInProvidersStep';
+import SignInRestrictedEnvStep from './SignInRestrictedEnvStep';
 import SignInReturningStep from './SignInReturningStep';
 import SignInTenantBlockedStep from './SignInTenantBlockedStep';
 import SignInTenantStep from './SignInTenantStep';
@@ -64,7 +65,7 @@ function matchesPathPrefix(pathname: string, prefix?: string | string[]) {
     });
 }
 
-type Mode = 'email' | 'providers' | 'tenant' | 'blocked' | 'returning' | 'pending' | 'signup';
+type Mode = 'email' | 'providers' | 'tenant' | 'blocked' | 'returning' | 'pending' | 'signup' | 'restricted';
 
 function SigninScreenImpl({
     isNested = false,
@@ -97,6 +98,8 @@ function SigninScreenImpl({
         if (!authError) return;
         if (authError instanceof UserNotFoundError) {
             setMode('signup');
+        } else if (authError instanceof RestrictedEnvironmentError) {
+            setMode('restricted');
         } else if (isInviteRequiredError(authError)) {
             const pending = readPendingSignin();
             if (pending) setEmail(pending.email);
@@ -179,7 +182,10 @@ function SigninScreenImpl({
     };
 
     const shouldHideTransientAuthError =
-        suppressAuthError && authError !== undefined && !(authError instanceof UserNotFoundError);
+        suppressAuthError &&
+        authError !== undefined &&
+        !(authError instanceof UserNotFoundError) &&
+        !(authError instanceof RestrictedEnvironmentError);
 
     if (isLoading || user || shouldHideTransientAuthError) return null;
 
@@ -194,6 +200,8 @@ function SigninScreenImpl({
                 onBack={startOver}
             />
         );
+    } else if (mode === 'restricted') {
+        content = <SignInRestrictedEnvStep onUseDifferentEmail={startOver} />;
     } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
         content = <SignupForm onSignup={onSignup} goBack={startOver} />;
     } else if (mode === 'tenant' && tenant) {
@@ -231,20 +239,25 @@ function SigninScreenImpl({
 
                     {content}
 
-                    {authError && !(authError instanceof UserNotFoundError) && !isInviteRequiredError(authError) && (
-                        <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
-                            <div>
-                                {t('auth.signInError')}
-                                <br />
-                                {t('auth.signInErrorContact')}
-                                <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
-                                    support@vertesiahq.com
-                                </a>
-                                {t('auth.signInErrorPersists')}
-                                <pre className="mt-2 text-xs">{t('auth.error', { message: authError.message })}</pre>
+                    {authError &&
+                        !(authError instanceof UserNotFoundError) &&
+                        !(authError instanceof RestrictedEnvironmentError) &&
+                        !isInviteRequiredError(authError) && (
+                            <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
+                                <div>
+                                    {t('auth.signInError')}
+                                    <br />
+                                    {t('auth.signInErrorContact')}
+                                    <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
+                                        support@vertesiahq.com
+                                    </a>
+                                    {t('auth.signInErrorPersists')}
+                                    <pre className="mt-2 text-xs">
+                                        {t('auth.error', { message: authError.message })}
+                                    </pre>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
                     <div className="flex items-center gap-5 mt-10 text-xs text-muted-foreground">
                         <a href="https://vertesiahq.com/privacy" className="hover:text-foreground transition">

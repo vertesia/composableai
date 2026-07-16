@@ -89,7 +89,7 @@ vertesia content list /demo
 Use `scripts/generate_markdown_seed.py` to generate reusable Markdown seed data:
 
 ```bash
-python3 .claude/skills/vertesia-demo-content/scripts/generate_markdown_seed.py \
+python3 .agents/skills/vertesia-demo-content/scripts/generate_markdown_seed.py \
   --out /tmp/vertesia-demo \
   --domain generic \
   --count 3

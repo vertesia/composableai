@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-admin-ui",
-    "version": "1.5.0-dev",
+    "version": "1.5.0-dev.20260714.072725Z",
     "description": "Shared admin UI for Vertesia tool servers",
     "type": "module",
     "license": "Apache-2.0",
@@ -27,21 +27,21 @@
         "react-dom": "^19.2.7"
     },
     "devDependencies": {
-        "@tailwindcss/vite": "^4.3.1",
+        "@tailwindcss/vite": "^4.3.2",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "@vitejs/plugin-react": "^6.0.3",
         "react": "catalog:",
         "react-dom": "catalog:",
-        "tailwindcss": "^4.3.1",
+        "tailwindcss": "^4.3.2",
         "typescript": "^6.0.3",
         "vite": "catalog:"
     },
     "dependencies": {
         "@vertesia/common": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "lucide-react": "^1.22.0"
+        "lucide-react": "^1.23.0"
     },
     "repository": {
         "type": "git",

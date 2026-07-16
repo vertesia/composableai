@@ -1,7 +1,7 @@
 /**
  * Handle client caching and refresh of auth token
  */
-import type { AuthTokenPayload } from '@vertesia/common';
+import { type AuthTokenPayload, RESTRICTED_ENVIRONMENT_ERROR_CODE } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
@@ -174,6 +174,26 @@ export async function fetchComposableToken(
         }
 
         if (stsRes.status === 403) {
+            // Distinguish the "restricted environment" rejection (preview/preprod gated to
+            // early-access users) from the account-access 403 handled below. The STS tags it
+            // with a machine-readable business error code. Peek a clone so the body stays
+            // readable for the fall-through path.
+            const body = await stsRes
+                .clone()
+                .json()
+                .catch(() => undefined);
+            if (body?.errorCode === RESTRICTED_ENVIRONMENT_ERROR_CODE) {
+                Env.logger.warn('403: User lacks early-access for this restricted environment', {
+                    vertesia: {
+                        account_id: accountId,
+                        project_id: projectId,
+                    },
+                });
+                throw new RestrictedEnvironmentError(
+                    body.message ?? "You don't have sufficient permission to visit unstable environments",
+                );
+            }
+
             // User doesn't have access to the requested account/project, or has no accounts
             // This can happen with:
             // 1. Stale localStorage from previous user
@@ -233,8 +253,13 @@ export async function fetchComposableToken(
         Env.logger.info('Successfully got token from STS');
         return token;
     } catch (error) {
-        if (error instanceof UserNotFoundError || error instanceof STSError) {
-            throw error; // Re-throw UserNotFoundError and STSError to be handled separately in the caller
+        if (
+            error instanceof UserNotFoundError ||
+            error instanceof STSError ||
+            error instanceof RestrictedEnvironmentError
+        ) {
+            // Re-throw typed auth errors to be handled separately in the caller
+            throw error;
         }
 
         // Clear any stale account/project from localStorage on error
@@ -354,5 +379,18 @@ export class STSError extends Error {
         super(message);
         this.name = 'STSError';
         this.stsURL = stsURL;
+    }
+}
+
+/**
+ * Thrown when the STS rejects sign-in because the current environment (preview/preprod) is
+ * restricted to early-access users and this user lacks the `early-access` annotation. The
+ * sign-in screen renders a dedicated "restricted environment" step for this error.
+ * See docs/restrict-access-to-non-production-envs.md.
+ */
+export class RestrictedEnvironmentError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'RestrictedEnvironmentError';
     }
 }

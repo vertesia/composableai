@@ -69,6 +69,40 @@ export interface TemplateConfig {
      * Used for additional setup commands, etc.
      */
     postInstall?: PostInstallConfig;
+
+    /**
+     * Optional template lifecycle hooks.
+     *
+     * Lifecycle scripts are executed from the generated project root after template
+     * variables are applied and before template cleanup runs.
+     */
+    lifecycle?: TemplateLifecycleConfig;
+
+    /**
+     * Optional configuration applied only when create-plugin is run with --dev.
+     */
+    devMode?: TemplateDevModeConfig;
+}
+
+export interface TemplateDevModeConfig {
+    /**
+     * Answer values to override after prompts and derived variables are resolved.
+     */
+    answers?: Record<string, unknown>;
+
+    /**
+     * pnpm workspace settings to apply when the generated project uses pnpm.
+     */
+    pnpmWorkspace?: {
+        minimumReleaseAgeExclude?: string[];
+    };
+}
+
+export interface TemplateLifecycleConfig {
+    /**
+     * Relative path to a Node.js script that performs template-specific code generation.
+     */
+    codegen?: string;
 }
 
 /**
