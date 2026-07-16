@@ -53,7 +53,7 @@ function renderSurface(props?: {
 
 describe('ArtifactEditingSurface', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
         mocks.getArtifactContent.mockResolvedValue({
             path: 'drafts/document.md',
             content: 'Original paragraph.',
@@ -215,6 +215,182 @@ describe('ArtifactEditingSurface', () => {
             },
             { timeout: 2500 },
         );
+    });
+
+    it('rebases focused full-document edits over a non-overlapping agent change after 412', async () => {
+        const user = userEvent.setup();
+        const baseContent = 'First paragraph.\n\nSecond paragraph.';
+        const remoteContent = 'First paragraph updated remotely.\n\nSecond paragraph.';
+        mocks.getArtifactContent
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: baseContent,
+                generation: 'generation-1',
+            })
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: remoteContent,
+                generation: 'generation-agent',
+            })
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: remoteContent,
+                generation: 'generation-agent',
+            });
+        mocks.updateArtifactContent
+            .mockRejectedValueOnce({ status: 412 })
+            .mockResolvedValueOnce({ path: 'drafts/document.md', generation: 'generation-merged' });
+
+        const view = renderSurface({ viewMode: 'document' });
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        await user.click(editor);
+
+        view.rerender(
+            <I18nProvider lng="en">
+                <ArtifactEditingSurface runId="run-1" path="drafts/document.md" refreshKey={1} viewMode="document" />
+            </I18nProvider>,
+        );
+        await waitFor(() => expect(mocks.getArtifactContent).toHaveBeenCalledTimes(2));
+
+        editor.focus();
+        const secondParagraphText = editor.querySelectorAll('p')[1]?.firstChild;
+        if (!secondParagraphText) {
+            throw new Error('Expected the second paragraph to have a text node');
+        }
+        const range = document.createRange();
+        range.setStart(secondParagraphText, secondParagraphText.textContent?.length ?? 0);
+        range.collapse(true);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        await user.type(editor, ' local edit', { skipClick: true });
+
+        await waitFor(
+            () => {
+                expect(mocks.updateArtifactContent).toHaveBeenNthCalledWith(2, 'run-1', 'drafts/document.md', {
+                    content: expect.stringMatching(/updated remotely[\s\S]*Second paragraph\. local edit/),
+                    generation: 'generation-agent',
+                });
+            },
+            { timeout: 2500 },
+        );
+        expect(screen.queryByRole('alert')).toBeNull();
+        expect(editor.textContent).toContain('First paragraph updated remotely.');
+    });
+
+    it('preserves overlapping full-document edits behind a conflict banner after 412', async () => {
+        const user = userEvent.setup();
+        mocks.getArtifactContent
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: 'Original paragraph.',
+                generation: 'generation-1',
+            })
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: 'Remote paragraph.',
+                generation: 'generation-agent',
+            });
+        mocks.updateArtifactContent.mockRejectedValueOnce({ status: 412 });
+        renderSurface({ viewMode: 'document' });
+
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        await user.click(editor);
+        await user.type(editor, ' local edit');
+
+        expect((await screen.findByRole('alert')).textContent).toContain('Working copy changed elsewhere');
+        expect(screen.getByRole('button', { name: 'Try merge again' })).not.toBeNull();
+        expect(editor.textContent).toContain('local edit');
+        expect(screen.queryByText('Saved to working copy')).toBeNull();
+        expect(mocks.updateArtifactContent).toHaveBeenCalledTimes(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Try merge again' }));
+        await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+        expect(mocks.updateArtifactContent).toHaveBeenNthCalledWith(2, 'run-1', 'drafts/document.md', {
+            content: expect.stringContaining('local edit'),
+            generation: 'generation-1',
+        });
+    });
+
+    it('rebases a component edit and reports it as applied after 412', async () => {
+        const user = userEvent.setup();
+        const onAction = vi.fn();
+        const baseContent = 'First paragraph.\n\nSecond paragraph.';
+        const remoteContent = 'First paragraph updated remotely.\n\nSecond paragraph.';
+        mocks.getArtifactContent
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: baseContent,
+                generation: 'generation-1',
+            })
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: remoteContent,
+                generation: 'generation-agent',
+            });
+        mocks.updateArtifactContent
+            .mockRejectedValueOnce({ status: 412 })
+            .mockResolvedValueOnce({ path: 'drafts/document.md', generation: 'generation-merged' });
+        renderSurface({ onAction });
+
+        await screen.findByText('Second paragraph.');
+        const editButtons = screen.getAllByRole('button', { name: 'Edit selection' });
+        fireEvent.click(editButtons[editButtons.length - 1]);
+        const editor = await screen.findByRole('textbox');
+        await user.click(editor);
+        await user.clear(editor);
+        await user.type(editor, 'Second paragraph edited locally.');
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+        await waitFor(() => {
+            expect(mocks.updateArtifactContent).toHaveBeenNthCalledWith(2, 'run-1', 'drafts/document.md', {
+                content: 'First paragraph updated remotely.\n\nSecond paragraph edited locally.',
+                generation: 'generation-agent',
+            });
+        });
+        expect(await screen.findByText('First paragraph updated remotely.')).not.toBeNull();
+        expect(await screen.findByText('Second paragraph edited locally.')).not.toBeNull();
+        expect(onAction).toHaveBeenCalledWith(
+            expect.objectContaining({ applied: true, base_version: 'generation-merged' }),
+        );
+    });
+
+    it('retains a conflicted component action and notifies the agent after retry succeeds', async () => {
+        const user = userEvent.setup();
+        const onAction = vi.fn();
+        mocks.getArtifactContent
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: 'Original paragraph.',
+                generation: 'generation-1',
+            })
+            .mockResolvedValueOnce({
+                path: 'drafts/document.md',
+                content: 'Remote paragraph.',
+                generation: 'generation-agent',
+            });
+        mocks.updateArtifactContent.mockRejectedValueOnce({ status: 412 });
+        renderSurface({ onAction });
+
+        await screen.findByText('Original paragraph.');
+        fireEvent.click(screen.getByRole('button', { name: 'Edit selection' }));
+        const editor = await screen.findByRole('textbox');
+        await user.click(editor);
+        await user.clear(editor);
+        await user.type(editor, 'Local paragraph.');
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+        await screen.findByRole('alert');
+        expect(onAction).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: 'Try merge again' }));
+
+        await waitFor(() => {
+            expect(onAction).toHaveBeenCalledWith(
+                expect.objectContaining({ applied: true, base_version: 'generation-2' }),
+            );
+        });
+        expect(await screen.findByText('Local paragraph.')).not.toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
     });
 });
 

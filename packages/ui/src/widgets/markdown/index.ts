@@ -54,7 +54,9 @@ export { MermaidDiagram } from './MermaidDiagram';
 export {
     createUnifiedLineDiff,
     diffWordSegments,
+    rebaseTextChanges,
     type TextDiffSegment,
+    type TextRebaseResult,
     type UnifiedLineDiffOptions,
 } from './textDiff';
 export {

@@ -1,4 +1,4 @@
-import { Button, Center, cn, errorMessage, Spinner, useToast, VTooltip } from '@vertesia/ui/core';
+import { Button, Center, cn, errorMessage, MessageBox, Spinner, useToast, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Check, GitCommitHorizontal } from 'lucide-react';
@@ -8,7 +8,7 @@ import {
     CollaborativeMarkdownRenderer,
     type MarkdownEditingAction,
 } from './CollaborativeMarkdownRenderer.js';
-import { diffWordSegments } from './textDiff.js';
+import { diffWordSegments, rebaseTextChanges } from './textDiff.js';
 
 const HYDRATION_RETRY_DELAY_MS = 500;
 const HYDRATION_RETRY_LIMIT = 60;
@@ -109,6 +109,21 @@ export interface ArtifactEditingSurfaceDocumentEdit {
     current: string;
 }
 
+interface ArtifactDocumentConflict {
+    baseContent: string;
+    localContent: string;
+    remoteContent?: string;
+    remoteGeneration?: string;
+    pendingAction?: MarkdownEditingAction;
+}
+
+interface MarkdownDocumentEditorHandle {
+    getMarkdown(): string;
+    commands: {
+        setContent(content: string, options: { contentType: 'markdown'; emitUpdate: boolean }): boolean;
+    };
+}
+
 export interface ArtifactEditingSurfaceProps {
     runId?: string;
     path: string;
@@ -196,6 +211,8 @@ export function ArtifactEditingSurface({
     const [isSavingDocument, setIsSavingDocument] = useState(false);
     const [isDocumentSavePending, setIsDocumentSavePending] = useState(false);
     const [loadError, setLoadError] = useState<string | undefined>();
+    const [documentConflict, setDocumentConflict] = useState<ArtifactDocumentConflict>();
+    const [isResolvingConflict, setIsResolvingConflict] = useState(false);
     const contentRef = useRef(content);
     const generationRef = useRef(generation);
     const loadRequestRef = useRef(0);
@@ -204,8 +221,10 @@ export function ArtifactEditingSurface({
     const documentSaveInFlightRef = useRef(false);
     const documentSavePromiseRef = useRef<Promise<boolean> | undefined>(undefined);
     const documentEditorFocusedRef = useRef(false);
-    const documentEditorRef = useRef<{ getMarkdown: () => string } | null>(null);
+    const documentEditorRef = useRef<MarkdownDocumentEditorHandle | null>(null);
     const documentBaseGenerationRef = useRef<string | undefined>(generation);
+    const documentBaseContentRef = useRef(initialContent);
+    const documentConflictRef = useRef<ArtifactDocumentConflict | undefined>(undefined);
     // Working-copy content the agent is known to have seen: hydration and its own
     // edits (loadContent) plus explicit hand-offs (flushDocumentChanges). Direct user
     // edits are diffed against this baseline when they are sent to the agent.
@@ -216,6 +235,11 @@ export function ArtifactEditingSurface({
         [baselineContent, content],
     );
     const documentLineCount = useMemo(() => content.split('\n').length, [content]);
+
+    const updateDocumentConflict = useCallback((conflict: ArtifactDocumentConflict | undefined) => {
+        documentConflictRef.current = conflict;
+        setDocumentConflict(conflict);
+    }, []);
 
     useEffect(() => {
         contentRef.current = content;
@@ -252,6 +276,7 @@ export function ArtifactEditingSurface({
                         !documentSaveInFlightRef.current
                     ) {
                         documentBaseGenerationRef.current = response.generation;
+                        documentBaseContentRef.current = response.content;
                     }
                     setContent(response.content);
                     setGeneration(response.generation);
@@ -284,11 +309,15 @@ export function ArtifactEditingSurface({
         generationRef.current = undefined;
         agentKnownContentRef.current = initialContent;
         documentBaseGenerationRef.current = undefined;
+        documentBaseContentRef.current = initialContent;
+        documentConflictRef.current = undefined;
         documentEditorFocusedRef.current = false;
         setContent(initialContent);
         setGeneration(undefined);
         setHighlightChangesFrom(undefined);
         setLoadError(undefined);
+        setDocumentConflict(undefined);
+        setIsResolvingConflict(false);
         setIsDocumentSavePending(false);
         setIsLoading(Boolean(runId));
         if (runId) void loadContent(true);
@@ -299,6 +328,7 @@ export function ArtifactEditingSurface({
 
     useEffect(() => {
         if (!runId || refreshKey <= 0) return;
+        if (documentConflictRef.current) return;
 
         const previousContent = contentRef.current;
         const changedContent = applyArtifactRefreshChanges(previousContent, refreshDetails);
@@ -315,10 +345,126 @@ export function ArtifactEditingSurface({
         void loadContent(false);
     }, [loadContent, onContentChange, refreshDetails, refreshKey, runId]);
 
+    const applyResolvedDocumentContent = useCallback(
+        (nextContent: string, nextGeneration: string) => {
+            const previousContent = contentRef.current;
+            contentRef.current = nextContent;
+            generationRef.current = nextGeneration;
+            documentBaseContentRef.current = nextContent;
+            documentBaseGenerationRef.current = nextGeneration;
+            pendingDocumentContentRef.current = undefined;
+            updateDocumentConflict(undefined);
+            if (documentEditorRef.current?.getMarkdown() !== nextContent) {
+                documentEditorRef.current?.commands.setContent(nextContent, {
+                    contentType: 'markdown',
+                    emitUpdate: false,
+                });
+            }
+            if (previousContent !== nextContent) {
+                setHighlightChangesFrom(previousContent);
+                setHighlightVersion((value) => value + 1);
+            }
+            setContent(nextContent);
+            setGeneration(nextGeneration);
+            setIsDocumentSavePending(false);
+            onContentChange?.(nextContent, nextGeneration);
+        },
+        [onContentChange, updateDocumentConflict],
+    );
+
+    const reconcileDocumentConflict = useCallback(
+        async (
+            baseContent: string,
+            localContent: string,
+            pendingAction?: MarkdownEditingAction,
+        ): Promise<false | { content: string; generation: string }> => {
+            if (!runId) return false;
+
+            // Preserve the unsaved side immediately. No reload path may replace it
+            // until a merge succeeds or the user explicitly leaves the editor.
+            contentRef.current = localContent;
+            pendingDocumentContentRef.current = undefined;
+            setContent(localContent);
+            setIsDocumentSavePending(false);
+            setIsResolvingConflict(true);
+
+            let remoteContent: string | undefined;
+            let remoteGeneration: string | undefined;
+            try {
+                const remote = await client.agents.getArtifactContent(runId, path);
+                remoteContent = remote.content;
+                remoteGeneration = remote.generation;
+                agentKnownContentRef.current = remote.content;
+
+                const rebased = rebaseTextChanges(baseContent, localContent, remote.content);
+                if (rebased.status === 'conflict') {
+                    updateDocumentConflict({
+                        baseContent,
+                        localContent,
+                        remoteContent: remote.content,
+                        remoteGeneration: remote.generation,
+                        pendingAction,
+                    });
+                    return false;
+                }
+
+                let nextGeneration = remote.generation;
+                if (rebased.content !== remote.content) {
+                    try {
+                        const response = await client.agents.updateArtifactContent(runId, path, {
+                            content: rebased.content,
+                            generation: remote.generation,
+                        });
+                        nextGeneration = response.generation;
+                    } catch (error: unknown) {
+                        if (getErrorStatus(error) === 412) {
+                            updateDocumentConflict({
+                                baseContent: remote.content,
+                                localContent: rebased.content,
+                                remoteContent: remote.content,
+                                remoteGeneration: remote.generation,
+                                pendingAction,
+                            });
+                            return false;
+                        }
+                        throw error;
+                    }
+                }
+
+                applyResolvedDocumentContent(rebased.content, nextGeneration);
+                toast({ status: 'success', title: t('agent.artifactConflictRebased'), duration: 3000 });
+                return { content: rebased.content, generation: nextGeneration };
+            } catch (error: unknown) {
+                updateDocumentConflict({
+                    baseContent,
+                    localContent,
+                    remoteContent,
+                    remoteGeneration,
+                    pendingAction,
+                });
+                toast({
+                    status: 'error',
+                    title: t('agent.artifactConflictTitle'),
+                    description: errorMessage(error, t('agent.failedToLoadArtifact')),
+                    duration: 5000,
+                });
+                return false;
+            } finally {
+                setIsResolvingConflict(false);
+            }
+        },
+        [applyResolvedDocumentContent, client.agents, path, runId, t, toast, updateDocumentConflict],
+    );
+
     const handleAction = useCallback(
         async (action: MarkdownEditingAction) => {
             if (action.action === 'comment') {
                 await onAction?.(action);
+                return;
+            }
+
+            if (documentConflictRef.current) {
+                toast({ status: 'warning', title: t('agent.artifactConflictTitle'), duration: 3000 });
                 return;
             }
 
@@ -346,26 +492,34 @@ export function ArtifactEditingSurface({
                 });
                 contentRef.current = nextContent;
                 generationRef.current = response.generation;
+                documentBaseContentRef.current = nextContent;
+                documentBaseGenerationRef.current = response.generation;
                 setHighlightChangesFrom(previousContent);
                 setHighlightVersion((value) => value + 1);
                 setContent(nextContent);
                 setGeneration(response.generation);
                 onContentChange?.(nextContent, response.generation);
                 await onAction?.({ ...action, applied: true, base_version: response.generation });
+                agentKnownContentRef.current = nextContent;
             } catch (error: unknown) {
                 const isConflict = getErrorStatus(error) === 412;
+                if (isConflict) {
+                    const resolved = await reconcileDocumentConflict(previousContent, nextContent, action);
+                    if (resolved) {
+                        await onAction?.({ ...action, applied: true, base_version: resolved.generation });
+                        agentKnownContentRef.current = resolved.content;
+                    }
+                    return;
+                }
                 toast({
                     status: 'error',
                     title: t('agent.documentEditApplyFailed'),
-                    description: isConflict
-                        ? t('store.textConflict')
-                        : errorMessage(error, t('store.errorSavingTextDefault')),
+                    description: errorMessage(error, t('store.errorSavingTextDefault')),
                     duration: 5000,
                 });
-                if (isConflict) await loadContent(false);
             }
         },
-        [client, loadContent, onAction, onContentChange, path, runId, t, toast],
+        [client, onAction, onContentChange, path, reconcileDocumentConflict, runId, t, toast],
     );
 
     const persistPendingDocumentContent = useCallback((): Promise<boolean> => {
@@ -390,6 +544,7 @@ export function ArtifactEditingSurface({
                     });
                     generationRef.current = response.generation;
                     documentBaseGenerationRef.current = response.generation;
+                    documentBaseContentRef.current = nextContent;
                     setGeneration(response.generation);
                     onContentChange?.(contentRef.current, response.generation);
                 }
@@ -397,15 +552,19 @@ export function ArtifactEditingSurface({
                 return true;
             } catch (error: unknown) {
                 const isConflict = getErrorStatus(error) === 412;
+                if (isConflict) {
+                    const resolved = await reconcileDocumentConflict(
+                        documentBaseContentRef.current,
+                        contentRef.current,
+                    );
+                    return Boolean(resolved);
+                }
                 toast({
                     status: 'error',
                     title: t('agent.documentEditApplyFailed'),
-                    description: isConflict
-                        ? t('store.textConflict')
-                        : errorMessage(error, t('store.errorSavingTextDefault')),
+                    description: errorMessage(error, t('store.errorSavingTextDefault')),
                     duration: 5000,
                 });
-                if (isConflict) await loadContent(false);
                 return false;
             } finally {
                 documentSaveInFlightRef.current = false;
@@ -418,7 +577,7 @@ export function ArtifactEditingSurface({
             if (documentSavePromiseRef.current === savePromise) documentSavePromiseRef.current = undefined;
         });
         return savePromise;
-    }, [client.agents, loadContent, onContentChange, path, runId, t, toast]);
+    }, [client.agents, onContentChange, path, reconcileDocumentConflict, runId, t, toast]);
 
     const flushDocumentChanges = useCallback(async (): Promise<false | ArtifactEditingSurfaceDocumentEdit> => {
         if (documentSaveTimeoutRef.current !== undefined) {
@@ -434,6 +593,12 @@ export function ArtifactEditingSurface({
             pendingDocumentContentRef.current = latestEditorContent;
         }
 
+        const activeConflict = documentConflictRef.current;
+        if (activeConflict) {
+            const resolved = await reconcileDocumentConflict(activeConflict.baseContent, contentRef.current);
+            if (!resolved) return false;
+        }
+
         while (pendingDocumentContentRef.current !== undefined || documentSavePromiseRef.current) {
             const saved = await persistPendingDocumentContent();
             if (!saved) return false;
@@ -443,7 +608,7 @@ export function ArtifactEditingSurface({
         const previous = agentKnownContentRef.current;
         agentKnownContentRef.current = contentRef.current;
         return { previous, current: contentRef.current };
-    }, [onContentChange, persistPendingDocumentContent, runId]);
+    }, [onContentChange, persistPendingDocumentContent, reconcileDocumentConflict, runId]);
 
     useEffect(() => {
         if (!flushChangesRef) return;
@@ -458,9 +623,17 @@ export function ArtifactEditingSurface({
             if (nextContent === contentRef.current) return;
             contentRef.current = nextContent;
             setContent(nextContent);
-            setIsDocumentSavePending(true);
             onDocumentEdit?.();
             onContentChange?.(nextContent, generationRef.current);
+
+            const activeConflict = documentConflictRef.current;
+            if (activeConflict) {
+                updateDocumentConflict({ ...activeConflict, localContent: nextContent });
+                setIsDocumentSavePending(false);
+                return;
+            }
+
+            setIsDocumentSavePending(true);
             pendingDocumentContentRef.current = nextContent;
             if (documentSaveTimeoutRef.current !== undefined) clearTimeout(documentSaveTimeoutRef.current);
             documentSaveTimeoutRef.current = setTimeout(() => {
@@ -468,17 +641,37 @@ export function ArtifactEditingSurface({
                 void persistPendingDocumentContent();
             }, DOCUMENT_SAVE_DEBOUNCE_MS);
         },
-        [onContentChange, onDocumentEdit, persistPendingDocumentContent],
+        [onContentChange, onDocumentEdit, persistPendingDocumentContent, updateDocumentConflict],
     );
 
     const handleDocumentFocusChange = useCallback((focused: boolean) => {
         documentEditorFocusedRef.current = focused;
         if (focused) {
             documentBaseGenerationRef.current = generationRef.current;
+            documentBaseContentRef.current = contentRef.current;
         } else if (pendingDocumentContentRef.current === undefined && !documentSaveInFlightRef.current) {
             documentBaseGenerationRef.current = generationRef.current;
+            documentBaseContentRef.current = contentRef.current;
         }
     }, []);
+
+    const retryDocumentConflict = useCallback(async () => {
+        const activeConflict = documentConflictRef.current;
+        if (!activeConflict || isResolvingConflict) return;
+        const resolved = await reconcileDocumentConflict(
+            activeConflict.baseContent,
+            contentRef.current,
+            activeConflict.pendingAction,
+        );
+        if (resolved && activeConflict.pendingAction) {
+            await onAction?.({
+                ...activeConflict.pendingAction,
+                applied: true,
+                base_version: resolved.generation,
+            });
+            agentKnownContentRef.current = resolved.content;
+        }
+    }, [isResolvingConflict, onAction, reconcileDocumentConflict]);
 
     const navigateToChangedLine = useCallback(
         (line: number) => {
@@ -504,6 +697,26 @@ export function ArtifactEditingSurface({
 
     return (
         <div className={className ?? 'relative h-full min-h-0 overflow-y-auto px-4 py-3'}>
+            {documentConflict ? (
+                <div className="absolute inset-x-4 top-3 z-30" role="alert">
+                    <MessageBox status="warning" title={t('agent.artifactConflictTitle')} className="shadow-lg">
+                        <div className="space-y-3">
+                            <p>{t('agent.artifactConflictDescription')}</p>
+                            <div className="flex justify-end">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={isResolvingConflict}
+                                    onClick={() => void retryDocumentConflict()}
+                                >
+                                    {isResolvingConflict ? <Spinner size="sm" /> : null}
+                                    {t('agent.artifactConflictRetry')}
+                                </Button>
+                            </div>
+                        </div>
+                    </MessageBox>
+                </div>
+            ) : null}
             {isLoading && !content ? (
                 <Center className="h-full min-h-[200px]">
                     <Spinner size="lg" />
@@ -532,7 +745,7 @@ export function ArtifactEditingSurface({
                             externalValueSync="when-blurred"
                             onFocusChange={handleDocumentFocusChange}
                             onEditor={(editor) => {
-                                documentEditorRef.current = editor as unknown as { getMarkdown: () => string } | null;
+                                documentEditorRef.current = editor as unknown as MarkdownDocumentEditorHandle | null;
                             }}
                             contentClassName="pe-5"
                         />
@@ -541,7 +754,7 @@ export function ArtifactEditingSurface({
                             totalLines={documentLineCount}
                             onNavigate={navigateToChangedLine}
                         />
-                        {generation || isSavingDocument || isDocumentSavePending ? (
+                        {!documentConflict && (generation || isSavingDocument || isDocumentSavePending) ? (
                             <div
                                 className={cn(
                                     'pointer-events-none absolute bottom-3 end-6 flex items-center gap-1.5 rounded-full',
@@ -567,7 +780,7 @@ export function ArtifactEditingSurface({
                         artifactRunId={runId}
                         resource={{ kind: 'agent_artifact', run_id: runId ?? 'pending', path }}
                         baseVersion={generation}
-                        readOnly={readOnly || !runId}
+                        readOnly={readOnly || !runId || Boolean(documentConflict)}
                         highlightChangesFrom={highlightChangesFrom}
                         highlightVersion={highlightVersion}
                         onAction={handleAction}

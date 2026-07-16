@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createUnifiedLineDiff, diffWordSegments, type TextDiffSegment } from './textDiff.js';
+import { createUnifiedLineDiff, diffWordSegments, rebaseTextChanges, type TextDiffSegment } from './textDiff.js';
 
 function joinByTypes(segments: TextDiffSegment[], types: TextDiffSegment['type'][]): string {
     return segments
@@ -86,5 +86,41 @@ describe('createUnifiedLineDiff', () => {
     it('returns undefined when the diff exceeds maxChars', () => {
         const after = BEFORE.replace('First paragraph.', 'Rewritten paragraph.');
         expect(createUnifiedLineDiff(BEFORE, after, { maxChars: 10 })).toBeUndefined();
+    });
+});
+
+describe('rebaseTextChanges', () => {
+    const BASE = ['# Brief', '', 'Overview.', '', '## Goals', '- First', '- Second', '', 'Closing.'].join('\n');
+
+    it('combines non-overlapping local and remote changes', () => {
+        const local = BASE.replace('- Second', '- Second (local)');
+        const remote = BASE.replace('Overview.', 'Overview updated remotely.');
+
+        expect(rebaseTextChanges(BASE, local, remote)).toEqual({
+            status: 'rebased',
+            content: remote.replace('- Second', '- Second (local)'),
+        });
+    });
+
+    it('returns the local version unchanged when the remote content did not change', () => {
+        const local = BASE.replace('Closing.', 'Local closing.');
+        expect(rebaseTextChanges(BASE, local, BASE)).toEqual({ status: 'rebased', content: local });
+    });
+
+    it('deduplicates an identical concurrent edit', () => {
+        const changed = BASE.replace('- First', '- First (shared)');
+        expect(rebaseTextChanges(BASE, changed, changed)).toEqual({ status: 'rebased', content: changed });
+    });
+
+    it('reports overlapping replacements as a conflict and preserves the local version', () => {
+        const local = BASE.replace('Overview.', 'Local overview.');
+        const remote = BASE.replace('Overview.', 'Remote overview.');
+        expect(rebaseTextChanges(BASE, local, remote)).toEqual({ status: 'conflict', content: local });
+    });
+
+    it('treats competing insertions at the same base position as a conflict', () => {
+        const local = BASE.replace('## Goals', 'Local note.\n\n## Goals');
+        const remote = BASE.replace('## Goals', 'Remote note.\n\n## Goals');
+        expect(rebaseTextChanges(BASE, local, remote)).toEqual({ status: 'conflict', content: local });
     });
 });

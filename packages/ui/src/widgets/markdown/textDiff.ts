@@ -156,6 +156,99 @@ function lcsLineOps(before: string[], after: string[]): LineOp[] {
     return [...ops, ...tail];
 }
 
+interface LineChange {
+    /** Inclusive start and exclusive end in base-document line coordinates. */
+    start: number;
+    end: number;
+    replacement: string[];
+}
+
+export type TextRebaseResult = { status: 'rebased'; content: string } | { status: 'conflict'; content: string };
+
+function lineChanges(base: string[], changed: string[]): LineChange[] {
+    const changes: LineChange[] = [];
+    const ops = lcsLineOps(base, changed);
+    let baseIndex = 0;
+    let index = 0;
+    while (index < ops.length) {
+        if (ops[index].type === 'equal') {
+            baseIndex++;
+            index++;
+            continue;
+        }
+
+        const start = baseIndex;
+        const replacement: string[] = [];
+        while (index < ops.length && ops[index].type !== 'equal') {
+            const op = ops[index++];
+            if (op.type === 'removed') baseIndex++;
+            if (op.type === 'added') replacement.push(op.line);
+        }
+        changes.push({ start, end: baseIndex, replacement });
+    }
+    return changes;
+}
+
+function sameLineChange(left: LineChange, right: LineChange): boolean {
+    return (
+        left.start === right.start &&
+        left.end === right.end &&
+        left.replacement.length === right.replacement.length &&
+        left.replacement.every((line, index) => line === right.replacement[index])
+    );
+}
+
+function lineChangesOverlap(left: LineChange, right: LineChange): boolean {
+    const leftInsertion = left.start === left.end;
+    const rightInsertion = right.start === right.end;
+    if (leftInsertion && rightInsertion) return left.start === right.start;
+    if (leftInsertion) return left.start >= right.start && left.start <= right.end;
+    if (rightInsertion) return right.start >= left.start && right.start <= left.end;
+    return left.start < right.end && right.start < left.end;
+}
+
+/**
+ * Conservatively reapplies local line edits onto a concurrently changed document.
+ * Identical edits are deduplicated. Any overlapping base ranges return a conflict
+ * and preserve `local` unchanged for recovery by the caller.
+ */
+export function rebaseTextChanges(base: string, local: string, remote: string): TextRebaseResult {
+    if (local === remote) return { status: 'rebased', content: local };
+    if (local === base) return { status: 'rebased', content: remote };
+    if (remote === base) return { status: 'rebased', content: local };
+
+    const baseLines = base.split('\n');
+    const localChanges = lineChanges(baseLines, local.split('\n'));
+    const remoteChanges = lineChanges(baseLines, remote.split('\n'));
+    const uniqueLocalChanges: LineChange[] = [];
+
+    for (const localChange of localChanges) {
+        let duplicate = false;
+        for (const remoteChange of remoteChanges) {
+            if (sameLineChange(localChange, remoteChange)) {
+                duplicate = true;
+                break;
+            }
+            if (lineChangesOverlap(localChange, remoteChange)) {
+                return { status: 'conflict', content: local };
+            }
+        }
+        if (!duplicate) uniqueLocalChanges.push(localChange);
+    }
+
+    const combined = [...remoteChanges, ...uniqueLocalChanges].sort(
+        (left, right) => left.start - right.start || left.end - right.end,
+    );
+    const merged: string[] = [];
+    let cursor = 0;
+    for (const change of combined) {
+        merged.push(...baseLines.slice(cursor, change.start), ...change.replacement);
+        cursor = change.end;
+    }
+    merged.push(...baseLines.slice(cursor));
+    return { status: 'rebased', content: merged.join('\n') };
+}
+
 export interface UnifiedLineDiffOptions {
     /** Unchanged lines shown around each change (default 2). */
     context?: number;
