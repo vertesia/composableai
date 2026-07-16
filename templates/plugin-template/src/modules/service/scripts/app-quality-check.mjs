@@ -148,7 +148,7 @@ const toolServerFiles = allFiles.filter((file) => rel(file).startsWith('src/tool
 const moduleResourceFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/resources\//.test(rel(file)));
 const serverResourceFiles = [...toolServerFiles, ...moduleResourceFiles];
 const packageWriterFiles = scriptFiles.filter(
-    (file) => rel(file) === 'src/modules/app-gateway/scripts/write-app-package.mjs',
+    (file) => rel(file) === 'src/modules/service/scripts/write-app-package.mjs',
 );
 const interactionFiles = serverResourceFiles.filter((file) => rel(file).includes('/interactions/'));
 const processFiles = serverResourceFiles.filter((file) => rel(file).includes('/processes/'));
@@ -263,7 +263,7 @@ for (const file of allFiles.filter(isCodeFile)) {
 for (const file of uiFiles) {
     const text = await readFile(file, 'utf8');
 
-    // TODO(appgen): Once appgen-specific package scripts live in the appgen/app-gateway
+    // TODO(appgen): Once appgen-specific package scripts live in the appgen/service
     // module, run this check only against generated app UI. The template shell intentionally
     // keeps AdminApp as the Studio fallback while module UI is mounted under /app.
     if (!allowAdminShell && !isTemplateShellEntry(file) && includesAny(text, blockedAdminShellTokens)) {

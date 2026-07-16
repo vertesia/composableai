@@ -43,15 +43,15 @@ template with the assistant UI and example resources during development. Generat
 
 If no active module declares `ui.entry`, generated apps use the built-in Studio shell entry from
 `src/ui/shell/AppEntry.tsx`. A module can declare `ui.entry` only when it needs to replace that bootstrap,
-for example an app-gateway runtime entry.
+for example a Vertesia service runtime entry.
 
-The template includes an `app-gateway` module for app-gateway runtimes. It is not part of `default`;
+The template includes a `service` module for app-gateway runtimes. It is not part of `default`;
 select it explicitly when the scaffolded app is hosted by the app gateway and needs gateway routes
 and token-backed shell initialization.
 
 The `agent` module preserves agent-facing scaffold helpers under `src/modules/agent/ui`.
 It does not add routes, providers, or resources. The virtual `appgen` module selects both
-`app-gateway` and `agent`; combine it with app-specific modules such as `assistant` or `content-app`
+`service` and `agent`; combine it with app-specific modules such as `assistant` or `content-app`
 when creating appgen scaffolds.
 
 The `content-app` module is an opinionated content-oriented app. It contributes content types,

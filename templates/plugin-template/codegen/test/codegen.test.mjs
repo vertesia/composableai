@@ -86,7 +86,7 @@ test('default module codegen keeps only the app module', () => {
     }
 });
 
-test('app-gateway module selects app-gateway entry and cleans inactive modules', () => {
+test('service module selects service entry and cleans inactive modules', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
         copyTemplateInputs(tmpRoot);
@@ -97,19 +97,16 @@ test('app-gateway module selects app-gateway entry and cleans inactive modules',
         const serverModules = fs.readFileSync(path.join(tmpRoot, 'src/tool-server/app-server-modules.ts'), 'utf8');
         const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
 
-        assert.equal(uiEntry, `${generatedHeader}export { AppEntry } from '../modules/app-gateway/ui/AppEntry';\n`);
+        assert.equal(uiEntry, `${generatedHeader}export { AppEntry } from '../modules/service/ui/AppEntry';\n`);
         assert.match(uiModules, /modules\/app\/ui\/routes/);
         assert.match(uiModules, /modules\/assistant\/ui\/routes/);
         assert.doesNotMatch(uiModules, /modules\/examples/);
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.doesNotMatch(serverModules, /modules\/examples/);
-        assert.equal(
-            packageJson.scripts['service:quality'],
-            'node src/modules/app-gateway/scripts/app-quality-check.mjs',
-        );
+        assert.equal(packageJson.scripts['service:quality'], 'node src/modules/service/scripts/app-quality-check.mjs');
         assert.equal(
             packageJson.scripts['service:build:server'],
-            'pnpm run service:quality && node src/modules/app-gateway/scripts/build-server-esbuild.mjs && node src/modules/app-gateway/scripts/write-app-package.mjs',
+            'pnpm run service:quality && node src/modules/service/scripts/build-server-esbuild.mjs && node src/modules/service/scripts/write-app-package.mjs',
         );
         assert.equal(
             packageJson.scripts['service:build:ui'],
@@ -123,7 +120,7 @@ test('app-gateway module selects app-gateway entry and cleans inactive modules',
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/agent')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), true);
-        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app-gateway')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/service')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
