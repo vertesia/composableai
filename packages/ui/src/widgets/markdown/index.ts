@@ -5,6 +5,7 @@ export {
 } from './ArtifactContentRenderer';
 export {
     ArtifactEditingSurface,
+    type ArtifactEditingSurfaceDocumentEdit,
     type ArtifactEditingSurfaceProps,
     applyArtifactRefreshChanges,
     isArtifactRefreshEvent,

@@ -102,6 +102,13 @@ function MarkdownChangeRuler({
     );
 }
 
+export interface ArtifactEditingSurfaceDocumentEdit {
+    /** Working-copy content the agent last knew (hydration, its own edits, or the last hand-off). */
+    previous: string;
+    /** Persisted working-copy content after the user's direct edits. */
+    current: string;
+}
+
 export interface ArtifactEditingSurfaceProps {
     runId?: string;
     path: string;
@@ -116,8 +123,12 @@ export interface ArtifactEditingSurfaceProps {
     onAction?: (action: MarkdownEditingAction) => void | Promise<void>;
     onContentChange?: (content: string, generation?: string) => void;
     onDocumentEdit?: () => void;
-    /** Imperative flush used before handing direct full-document edits to the agent. */
-    flushChangesRef?: React.MutableRefObject<(() => Promise<boolean>) | null>;
+    /**
+     * Imperative flush used before handing direct full-document edits to the agent.
+     * Resolves false when the flush failed; otherwise returns the delta since the
+     * agent's last known state and advances that baseline to the flushed content.
+     */
+    flushChangesRef?: React.MutableRefObject<(() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null>;
 }
 
 export interface MarkdownChangeRegion {
@@ -195,6 +206,10 @@ export function ArtifactEditingSurface({
     const documentEditorFocusedRef = useRef(false);
     const documentEditorRef = useRef<{ getMarkdown: () => string } | null>(null);
     const documentBaseGenerationRef = useRef<string | undefined>(generation);
+    // Working-copy content the agent is known to have seen: hydration and its own
+    // edits (loadContent) plus explicit hand-offs (flushDocumentChanges). Direct user
+    // edits are diffed against this baseline when they are sent to the agent.
+    const agentKnownContentRef = useRef(initialContent);
     const documentEditorContainerRef = useRef<HTMLDivElement | null>(null);
     const changeRegions = useMemo(
         () => getMarkdownChangeRegions(baselineContent ?? content, content),
@@ -228,6 +243,9 @@ export function ArtifactEditingSurface({
                     }
                     contentRef.current = response.content;
                     generationRef.current = response.generation;
+                    // Server states reached outside the user's typing pipeline come from
+                    // hydration or the agent's own tools, so the agent knows them.
+                    agentKnownContentRef.current = response.content;
                     if (
                         !documentEditorFocusedRef.current &&
                         pendingDocumentContentRef.current === undefined &&
@@ -264,6 +282,7 @@ export function ArtifactEditingSurface({
         loadRequestRef.current++;
         contentRef.current = initialContent;
         generationRef.current = undefined;
+        agentKnownContentRef.current = initialContent;
         documentBaseGenerationRef.current = undefined;
         documentEditorFocusedRef.current = false;
         setContent(initialContent);
@@ -401,7 +420,7 @@ export function ArtifactEditingSurface({
         return savePromise;
     }, [client.agents, loadContent, onContentChange, path, runId, t, toast]);
 
-    const flushDocumentChanges = useCallback(async (): Promise<boolean> => {
+    const flushDocumentChanges = useCallback(async (): Promise<false | ArtifactEditingSurfaceDocumentEdit> => {
         if (documentSaveTimeoutRef.current !== undefined) {
             clearTimeout(documentSaveTimeoutRef.current);
             documentSaveTimeoutRef.current = undefined;
@@ -419,7 +438,11 @@ export function ArtifactEditingSurface({
             const saved = await persistPendingDocumentContent();
             if (!saved) return false;
         }
-        return Boolean(runId && generationRef.current);
+        if (!runId || !generationRef.current) return false;
+
+        const previous = agentKnownContentRef.current;
+        agentKnownContentRef.current = contentRef.current;
+        return { previous, current: contentRef.current };
     }, [onContentChange, persistPendingDocumentContent, runId]);
 
     useEffect(() => {

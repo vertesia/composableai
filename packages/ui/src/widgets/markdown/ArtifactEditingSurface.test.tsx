@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../i18n/index.js';
 import {
     ArtifactEditingSurface,
+    type ArtifactEditingSurfaceDocumentEdit,
     applyArtifactRefreshChanges,
     getMarkdownChangeRegions,
     isArtifactRefreshEvent,
@@ -33,7 +34,7 @@ function renderSurface(props?: {
     viewMode?: 'components' | 'document';
     baselineContent?: string;
     onAction?: (action: MarkdownEditingAction) => void;
-    flushChangesRef?: React.MutableRefObject<(() => Promise<boolean>) | null>;
+    flushChangesRef?: React.MutableRefObject<(() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null>;
 }) {
     return render(
         <I18nProvider lng="en">
@@ -155,7 +156,9 @@ describe('ArtifactEditingSurface', () => {
 
     it('flushes the latest editor transaction before handing changes to the agent', async () => {
         const user = userEvent.setup();
-        const flushChangesRef: React.MutableRefObject<(() => Promise<boolean>) | null> = { current: null };
+        const flushChangesRef: React.MutableRefObject<
+            (() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null
+        > = { current: null };
         renderSurface({ viewMode: 'document', flushChangesRef });
 
         const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
@@ -163,7 +166,12 @@ describe('ArtifactEditingSurface', () => {
         await user.type(editor, ' immediate');
 
         expect(flushChangesRef.current).not.toBeNull();
-        expect(await flushChangesRef.current?.()).toBe(true);
+        // The flush reports the delta since the agent's last known content so the
+        // caller can hand the agent an exact diff of the direct edits.
+        expect(await flushChangesRef.current?.()).toEqual({
+            previous: 'Original paragraph.',
+            current: expect.stringContaining('immediate'),
+        });
         expect(mocks.updateArtifactContent).toHaveBeenCalledWith('run-1', 'drafts/document.md', {
             content: expect.stringContaining('immediate'),
             generation: 'generation-1',

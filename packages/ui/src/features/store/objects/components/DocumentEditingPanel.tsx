@@ -16,6 +16,8 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     ArtifactEditingSurface,
+    type ArtifactEditingSurfaceDocumentEdit,
+    createUnifiedLineDiff,
     diffWordSegments,
     isArtifactRefreshEvent,
     type MarkdownEditingAction,
@@ -155,6 +157,20 @@ export function createDocumentReconcilePrompt(
     ].join('\n');
 }
 
+// Above this size a diff stops being cheaper than re-reading; fall back to the read-the-artifact notice.
+const DIRECT_EDITS_DIFF_MAX_CHARS = 4000;
+
+/** Chat notice handing the agent the exact delta of direct editor edits, already applied to the working copy. */
+export function createDirectEditsAppliedPrompt(draftPath: string, unifiedDiff: string): string {
+    return [
+        `I edited the working copy '${draftPath}' directly in the editor. The changes below are already applied —`,
+        'do not re-apply them. Treat the artifact as the current source of truth.',
+        '```diff',
+        unifiedDiff,
+        '```',
+    ].join('\n');
+}
+
 /** Chat prompt asking the agent for a changelog of the working copy vs the session baseline. */
 export function createDocumentChangeSummaryPrompt(
     documentRootId: string,
@@ -266,7 +282,7 @@ export function DocumentEditingWorkspace({
     const configurationSourceRef = useRef<'none' | 'project' | 'run' | 'user'>('none');
     const seenUpdatesRef = useRef(new Set<string>());
     const artifactGenerationRef = useRef<string | undefined>(undefined);
-    const flushArtifactChangesRef = useRef<(() => Promise<boolean>) | null>(null);
+    const flushArtifactChangesRef = useRef<(() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null>(null);
     const documentRootId = object.revision?.root || object.id;
     const draftPath = useMemo(() => getDocumentDraftPath(documentRootId), [documentRootId]);
     const startedBy = user?.sub ? `user:${user.sub}` : undefined;
@@ -682,7 +698,17 @@ export function DocumentEditingWorkspace({
         try {
             const flushed = await flushArtifactChangesRef.current?.();
             if (!flushed) return;
-            sendMessage(t('agent.directEditsReadyMessage', { path: draftPath }));
+            // Hand the agent the exact delta so it doesn't burn a turn re-reading the
+            // artifact to discover what changed; oversized deltas fall back to that.
+            const diff = createUnifiedLineDiff(flushed.previous, flushed.current, {
+                context: 2,
+                maxChars: DIRECT_EDITS_DIFF_MAX_CHARS,
+            });
+            sendMessage(
+                diff
+                    ? createDirectEditsAppliedPrompt(draftPath, diff)
+                    : t('agent.directEditsReadyMessage', { path: draftPath }),
+            );
             setHasDirectEditorChanges(false);
             toast({ status: 'success', title: t('agent.changesSentToAgent'), duration: 2000 });
         } finally {
