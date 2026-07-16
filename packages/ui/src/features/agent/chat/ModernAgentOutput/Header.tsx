@@ -100,7 +100,9 @@ export default function Header({
     const controls = (
         <div
             className={cn(
-                isCompact ? 'flex flex-col items-center gap-1' : 'flex justify-end items-center gap-2 ms-auto',
+                isCompact
+                    ? 'flex flex-row items-center gap-1 lg:flex-col'
+                    : 'flex justify-end items-center gap-2 ms-auto',
             )}
         >
             {showPlanButton && (
