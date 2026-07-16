@@ -26,7 +26,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui/widgets';
-import { AlertTriangle, Bot, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
+import { AlertTriangle, Copy, Download, FileSearch, Sparkles, SquarePen } from 'lucide-react';
 import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { SendAgentMessageFn } from '../../../agent/chat/ModernAgentConversation.js';
 import { MagicPdfView } from '../../../magic-pdf';
@@ -800,10 +800,9 @@ function TextActions({
                                 onClick={onToggleEdit}
                                 title={t('store.editText')}
                                 aria-label={t('store.editText')}
-                                className="flex items-center gap-2"
+                                className="h-8 w-8 p-0"
                             >
                                 <SquarePen className="size-4" />
-                                <span>{t('store.editText')}</span>
                             </SecureButton>
                         )}
                         {canCollaborate && onToggleCollaborate && isMarkdown && (
@@ -813,15 +812,22 @@ function TextActions({
                                 onClick={onToggleCollaborate}
                                 title={t('agent.editWithAI')}
                                 aria-label={t('agent.editWithAI')}
-                                className="flex items-center gap-2"
+                                className="h-8 w-8 p-0"
                             >
-                                <Bot className="size-4" />
+                                <Sparkles className="size-4" />
                             </Button>
                         )}
                     </>
                 )}
                 {isDownloading ? (
-                    <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" alt="download">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled
+                        className="h-8 w-8 p-0"
+                        title={t('agent.download')}
+                        aria-label={t('agent.download')}
+                    >
                         <Spinner size="sm" />
                     </Button>
                 ) : (
@@ -831,8 +837,9 @@ function TextActions({
                                 variant="ghost"
                                 size="sm"
                                 disabled={!text}
-                                className="flex items-center gap-2"
-                                alt="download"
+                                className="h-8 w-8 p-0"
+                                title={t('agent.download')}
+                                aria-label={t('agent.download')}
                             >
                                 <Download className="size-4" />
                             </Button>
