@@ -117,7 +117,7 @@ During scaffold, `create-plugin` runs the template lifecycle script declared in 
 ```json
 {
   "lifecycle": {
-    "codegen": "scripts/dist/codegen.js"
+    "codegen": "codegen/dist/codegen.js"
   }
 }
 ```
@@ -125,7 +125,7 @@ During scaffold, `create-plugin` runs the template lifecycle script declared in 
 The script runs from the generated package root and receives a JSON context file:
 
 ```bash
-node scripts/dist/codegen.js --context .create-plugin-context.json
+node codegen/dist/codegen.js --context .create-plugin-context.json
 ```
 
 The codegen script:
@@ -146,5 +146,5 @@ Template maintainers can edit the generated files directly while developing the 
 Before committing, run codegen with the `dev` module context so the checked-in composition remains
 useful for template development.
 
-The generated app removes `scripts/` after scaffold, so lifecycle code does not become part of user
+The generated app removes `codegen/` after scaffold, so lifecycle code does not become part of user
 projects.

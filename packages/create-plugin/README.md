@@ -75,7 +75,7 @@ When `template.config.json` contains:
 ```json
 {
   "lifecycle": {
-    "codegen": "scripts/dist/codegen.js"
+    "codegen": "codegen/dist/codegen.js"
   }
 }
 ```
