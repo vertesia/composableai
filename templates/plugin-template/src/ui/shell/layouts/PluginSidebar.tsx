@@ -3,7 +3,7 @@ import { ModeToggle } from '@vertesia/ui/core';
 import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import type { Route } from '@vertesia/ui/router';
-import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
+import { useLocation } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import type { LucideIcon } from 'lucide-react';
 import { MessageSquare } from 'lucide-react';
@@ -68,11 +68,14 @@ function getConversationLabel(
     return t('nav.conversation');
 }
 
-export function PluginSidebar() {
+interface PluginSidebarProps {
+    basePath: string;
+}
+
+export function PluginSidebar({ basePath }: PluginSidebarProps) {
     const { t } = useUITranslation();
     const { formatTime } = useLocaleFormat();
     const path = useLocation().pathname;
-    const basePath = useRouterBasePath();
     const { isOpen } = useSidebarToggle();
     const { client } = useUserSession();
     const [conversations, setConversations] = useState<WorkflowRun[]>([]);
@@ -103,6 +106,7 @@ export function PluginSidebar() {
                             <AppSidebarItem
                                 key={route.path}
                                 id={`menu-${route.path.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'home'}`}
+                                basePath={basePath}
                                 current={isCurrentPath(path, basePath, route.path)}
                                 icon={route.icon}
                                 to={route.path}
@@ -119,6 +123,7 @@ export function PluginSidebar() {
                                 return (
                                     <AppSidebarItem
                                         key={conv.run_id}
+                                        basePath={basePath}
                                         to={`/chat/${conv.run_id}`}
                                         current={path === convPath}
                                         icon={MessageSquare}
