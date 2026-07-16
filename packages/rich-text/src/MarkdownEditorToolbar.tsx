@@ -14,10 +14,23 @@ export interface MarkdownEditorToolbarLabels {
     inlineCode: string;
     bulletList: string;
     orderedList: string;
+    listActions: string;
+    indentListItem: string;
+    outdentListItem: string;
     blockquote: string;
     codeBlock: string;
     horizontalRule: string;
     table: string;
+    tableActions: string;
+    tableRows: string;
+    tableColumns: string;
+    addRowAbove: string;
+    addRowBelow: string;
+    deleteRow: string;
+    addColumnLeft: string;
+    addColumnRight: string;
+    deleteColumn: string;
+    deleteTable: string;
     undo: string;
     redo: string;
 }
@@ -34,13 +47,72 @@ const DEFAULT_LABELS: MarkdownEditorToolbarLabels = {
     inlineCode: 'Inline code',
     bulletList: 'Bullet list',
     orderedList: 'Numbered list',
+    listActions: 'List actions',
+    indentListItem: 'Increase indent',
+    outdentListItem: 'Decrease indent',
     blockquote: 'Blockquote',
     codeBlock: 'Code block',
     horizontalRule: 'Horizontal rule',
     table: 'Insert table',
+    tableActions: 'Table actions',
+    tableRows: 'Rows',
+    tableColumns: 'Columns',
+    addRowAbove: 'Add row above',
+    addRowBelow: 'Add row below',
+    deleteRow: 'Delete row',
+    addColumnLeft: 'Add column left',
+    addColumnRight: 'Add column right',
+    deleteColumn: 'Delete column',
+    deleteTable: 'Delete table',
     undo: 'Undo',
     redo: 'Redo',
 };
+
+type TableAction =
+    | 'add-row-above'
+    | 'add-row-below'
+    | 'delete-row'
+    | 'add-column-left'
+    | 'add-column-right'
+    | 'delete-column'
+    | 'delete-table';
+
+type ListAction = 'indent-list-item' | 'outdent-list-item';
+
+function runListAction(editor: Editor, action: ListAction): void {
+    const chain = editor.chain().focus();
+    if (action === 'indent-list-item') {
+        chain.sinkListItem('listItem').run();
+        return;
+    }
+    chain.liftListItem('listItem').run();
+}
+
+function runTableAction(editor: Editor, action: TableAction): void {
+    const chain = editor.chain().focus();
+    switch (action) {
+        case 'add-row-above':
+            chain.addRowBefore().run();
+            return;
+        case 'add-row-below':
+            chain.addRowAfter().run();
+            return;
+        case 'delete-row':
+            chain.deleteRow().run();
+            return;
+        case 'add-column-left':
+            chain.addColumnBefore().run();
+            return;
+        case 'add-column-right':
+            chain.addColumnAfter().run();
+            return;
+        case 'delete-column':
+            chain.deleteColumn().run();
+            return;
+        case 'delete-table':
+            chain.deleteTable().run();
+    }
+}
 
 export interface MarkdownEditorToolbarProps {
     editor: Editor | null;
@@ -95,8 +167,11 @@ export function MarkdownEditorToolbar({
                     code: false,
                     bulletList: false,
                     orderedList: false,
+                    canIndentListItem: false,
+                    canOutdentListItem: false,
                     blockquote: false,
                     codeBlock: false,
+                    table: false,
                     canUndo: false,
                     canRedo: false,
                 };
@@ -115,8 +190,11 @@ export function MarkdownEditorToolbar({
                 code: currentEditor.isActive('code'),
                 bulletList: currentEditor.isActive('bulletList'),
                 orderedList: currentEditor.isActive('orderedList'),
+                canIndentListItem: currentEditor.can().sinkListItem('listItem'),
+                canOutdentListItem: currentEditor.can().liftListItem('listItem'),
                 blockquote: currentEditor.isActive('blockquote'),
                 codeBlock: currentEditor.isActive('codeBlock'),
+                table: currentEditor.isActive('table'),
                 canUndo: currentEditor.can().chain().focus().undo().run(),
                 canRedo: currentEditor.can().chain().focus().redo().run(),
             };
@@ -193,6 +271,25 @@ export function MarkdownEditorToolbar({
             >
                 1. List
             </ToolbarButton>
+            {state.bulletList || state.orderedList ? (
+                <select
+                    className="vertesia-rich-text-toolbar-select vertesia-rich-text-list-actions"
+                    aria-label={labels.listActions}
+                    value=""
+                    onChange={(event) => {
+                        const action = event.target.value as ListAction | '';
+                        if (action) runListAction(editor, action);
+                    }}
+                >
+                    <option value="">{labels.listActions}</option>
+                    <option value="indent-list-item" disabled={!state.canIndentListItem}>
+                        {labels.indentListItem}
+                    </option>
+                    <option value="outdent-list-item" disabled={!state.canOutdentListItem}>
+                        {labels.outdentListItem}
+                    </option>
+                </select>
+            ) : null}
             <ToolbarButton
                 label={labels.blockquote}
                 active={state.blockquote}
@@ -217,6 +314,7 @@ export function MarkdownEditorToolbar({
                     </ToolbarButton>
                     <ToolbarButton
                         label={labels.table}
+                        disabled={state.table}
                         onClick={() =>
                             editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
                         }
@@ -224,6 +322,32 @@ export function MarkdownEditorToolbar({
                         Table
                     </ToolbarButton>
                 </>
+            ) : null}
+            {state.table ? (
+                <select
+                    className="vertesia-rich-text-toolbar-select vertesia-rich-text-table-actions"
+                    aria-label={labels.tableActions}
+                    value=""
+                    onChange={(event) => {
+                        const action = event.target.value as TableAction | '';
+                        if (action) runTableAction(editor, action);
+                    }}
+                >
+                    <option value="">{labels.tableActions}</option>
+                    <optgroup label={labels.tableRows}>
+                        <option value="add-row-above">{labels.addRowAbove}</option>
+                        <option value="add-row-below">{labels.addRowBelow}</option>
+                        <option value="delete-row">{labels.deleteRow}</option>
+                    </optgroup>
+                    <optgroup label={labels.tableColumns}>
+                        <option value="add-column-left">{labels.addColumnLeft}</option>
+                        <option value="add-column-right">{labels.addColumnRight}</option>
+                        <option value="delete-column">{labels.deleteColumn}</option>
+                    </optgroup>
+                    <optgroup label={labels.tableActions}>
+                        <option value="delete-table">{labels.deleteTable}</option>
+                    </optgroup>
+                </select>
             ) : null}
             <span className="vertesia-rich-text-toolbar-spacer" />
             <ToolbarButton
