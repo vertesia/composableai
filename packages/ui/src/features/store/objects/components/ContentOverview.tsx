@@ -458,9 +458,7 @@ function DataPanel({
     // Text editing state
     const [isEditing, setIsEditing] = useState(false);
     const canEdit = !!(
-        object.content?.source &&
         object.content?.type &&
-        !isCreatedOrProcessing &&
         !object.is_locked &&
         object.user_permissions?.can_write !== false &&
         (object.content.type.startsWith('text/') ||
@@ -801,9 +799,11 @@ function TextActions({
                                 size="sm"
                                 onClick={onToggleEdit}
                                 title={t('store.editText')}
+                                aria-label={t('store.editText')}
                                 className="flex items-center gap-2"
                             >
                                 <SquarePen className="size-4" />
+                                <span>{t('store.editText')}</span>
                             </SecureButton>
                         )}
                         {canCollaborate && onToggleCollaborate && isMarkdown && (

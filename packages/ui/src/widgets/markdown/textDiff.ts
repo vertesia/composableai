@@ -94,3 +94,139 @@ export function diffWordSegments(before: string, after: string): TextDiffSegment
     pushSegment(segments, 'equal', beforeTokens.slice(beforeEnd).join(''));
     return segments;
 }
+
+interface LineOp {
+    type: 'equal' | 'removed' | 'added';
+    line: string;
+}
+
+function lcsLineOps(before: string[], after: string[]): LineOp[] {
+    const ops: LineOp[] = [];
+
+    let start = 0;
+    while (start < before.length && start < after.length && before[start] === after[start]) {
+        ops.push({ type: 'equal', line: before[start] });
+        start++;
+    }
+    let beforeEnd = before.length;
+    let afterEnd = after.length;
+    const tail: LineOp[] = [];
+    while (beforeEnd > start && afterEnd > start && before[beforeEnd - 1] === after[afterEnd - 1]) {
+        beforeEnd--;
+        afterEnd--;
+        tail.unshift({ type: 'equal', line: before[beforeEnd] });
+    }
+
+    const beforeMiddle = before.slice(start, beforeEnd);
+    const afterMiddle = after.slice(start, afterEnd);
+    if (beforeMiddle.length * afterMiddle.length > MAX_LCS_TOKENS * MAX_LCS_TOKENS) {
+        for (const line of beforeMiddle) ops.push({ type: 'removed', line });
+        for (const line of afterMiddle) ops.push({ type: 'added', line });
+        return [...ops, ...tail];
+    }
+
+    const rows = beforeMiddle.length + 1;
+    const cols = afterMiddle.length + 1;
+    const lengths = new Uint32Array(rows * cols);
+    for (let i = beforeMiddle.length - 1; i >= 0; i--) {
+        for (let j = afterMiddle.length - 1; j >= 0; j--) {
+            lengths[i * cols + j] =
+                beforeMiddle[i] === afterMiddle[j]
+                    ? lengths[(i + 1) * cols + j + 1] + 1
+                    : Math.max(lengths[(i + 1) * cols + j], lengths[i * cols + j + 1]);
+        }
+    }
+    let i = 0;
+    let j = 0;
+    while (i < beforeMiddle.length && j < afterMiddle.length) {
+        if (beforeMiddle[i] === afterMiddle[j]) {
+            ops.push({ type: 'equal', line: beforeMiddle[i] });
+            i++;
+            j++;
+        } else if (lengths[(i + 1) * cols + j] >= lengths[i * cols + j + 1]) {
+            ops.push({ type: 'removed', line: beforeMiddle[i] });
+            i++;
+        } else {
+            ops.push({ type: 'added', line: afterMiddle[j] });
+            j++;
+        }
+    }
+    while (i < beforeMiddle.length) ops.push({ type: 'removed', line: beforeMiddle[i++] });
+    while (j < afterMiddle.length) ops.push({ type: 'added', line: afterMiddle[j++] });
+    return [...ops, ...tail];
+}
+
+export interface UnifiedLineDiffOptions {
+    /** Unchanged lines shown around each change (default 2). */
+    context?: number;
+    /** When set, returns undefined if the formatted diff would exceed this length. */
+    maxChars?: number;
+}
+
+/**
+ * Line-level unified diff (`@@ -a,b +c,d @@` hunks with `-`/`+`/space prefixes)
+ * of two texts. Returns undefined when the texts are identical, or when the
+ * formatted diff exceeds `maxChars` — callers fall back to a non-diff summary.
+ */
+export function createUnifiedLineDiff(
+    before: string,
+    after: string,
+    options: UnifiedLineDiffOptions = {},
+): string | undefined {
+    if (before === after) return undefined;
+    const context = options.context ?? 2;
+
+    const ops = lcsLineOps(before.split('\n'), after.split('\n'));
+
+    // Group changed ops into hunks, merging hunks whose context would overlap.
+    const changed: Array<{ start: number; end: number }> = [];
+    for (let index = 0; index < ops.length; index++) {
+        if (ops[index].type === 'equal') continue;
+        const previous = changed[changed.length - 1];
+        if (previous && index - previous.end <= context * 2) {
+            previous.end = index + 1;
+        } else {
+            changed.push({ start: index, end: index + 1 });
+        }
+    }
+    if (changed.length === 0) return undefined;
+
+    const lines: string[] = [];
+    let beforeLine = 1;
+    let afterLine = 1;
+    let cursor = 0;
+    for (const hunk of changed) {
+        const start = Math.max(hunk.start - context, cursor === 0 ? 0 : cursor);
+        for (; cursor < start; cursor++) {
+            if (ops[cursor].type !== 'added') beforeLine++;
+            if (ops[cursor].type !== 'removed') afterLine++;
+        }
+        const end = Math.min(hunk.end + context, ops.length);
+        let beforeCount = 0;
+        let afterCount = 0;
+        const body: string[] = [];
+        for (let index = start; index < end; index++) {
+            const op = ops[index];
+            if (op.type === 'equal') {
+                body.push(` ${op.line}`);
+                beforeCount++;
+                afterCount++;
+            } else if (op.type === 'removed') {
+                body.push(`-${op.line}`);
+                beforeCount++;
+            } else {
+                body.push(`+${op.line}`);
+                afterCount++;
+            }
+        }
+        lines.push(`@@ -${beforeLine},${beforeCount} +${afterLine},${afterCount} @@`, ...body);
+        for (; cursor < end; cursor++) {
+            if (ops[cursor].type !== 'added') beforeLine++;
+            if (ops[cursor].type !== 'removed') afterLine++;
+        }
+    }
+
+    const formatted = lines.join('\n');
+    if (options.maxChars !== undefined && formatted.length > options.maxChars) return undefined;
+    return formatted;
+}

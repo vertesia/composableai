@@ -58,6 +58,7 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/fusion-ux": "workspace:*",
         "@vertesia/json": "workspace:*",
+        "@vertesia/rich-text": "workspace:*",
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
         "aria-hidden": "^1.2.6",
@@ -161,6 +162,10 @@
         "./widgets": {
             "types": "./lib/widgets/index.d.ts",
             "default": "./lib/widgets/index.js"
+        },
+        "./rich-text": {
+            "types": "./lib/rich-text/index.d.ts",
+            "default": "./lib/rich-text/index.js"
         },
         "./code": {
             "types": "./lib/code/index.d.ts",

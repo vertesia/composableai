@@ -72,3 +72,28 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
     (globalThis as unknown as { ResizeObserver: typeof ResizeObserverPolyfill }).ResizeObserver =
         ResizeObserverPolyfill;
 }
+
+// Chart and Mermaid modules probe canvas support during import. jsdom's default
+// implementation only logs a noisy "not implemented" error, so return the same
+// unsupported value without polluting otherwise successful UI test output.
+if (typeof HTMLCanvasElement !== 'undefined') {
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+        configurable: true,
+        value: () => null,
+    });
+}
+
+// ProseMirror asks the browser for caret geometry during pointer/keyboard input.
+// jsdom has no layout engine, so provide stable empty geometry for interaction tests.
+if (typeof document !== 'undefined' && typeof document.elementFromPoint !== 'function') {
+    document.elementFromPoint = () => document.querySelector('.ProseMirror') ?? document.body;
+}
+if (typeof Range !== 'undefined') {
+    const emptyRect = () => new DOMRect(0, 0, 0, 0);
+    if (typeof Range.prototype.getBoundingClientRect !== 'function') {
+        Range.prototype.getBoundingClientRect = emptyRect;
+    }
+    if (typeof Range.prototype.getClientRects !== 'function') {
+        Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+    }
+}

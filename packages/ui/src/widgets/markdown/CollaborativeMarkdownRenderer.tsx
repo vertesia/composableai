@@ -1,8 +1,41 @@
-import { Button, cn, Textarea, VTooltip } from '@vertesia/ui/core';
+import {
+    Button,
+    cn,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    Textarea,
+    VTooltip,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import type { Element } from 'hast';
-import { MessageSquare, Pencil, Send, X } from 'lucide-react';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    BarChart3,
+    Code2,
+    Heading2,
+    Link,
+    List,
+    MessageSquare,
+    Pencil,
+    Pilcrow,
+    Plus,
+    Quote,
+    Send,
+    Table2,
+    X,
+} from 'lucide-react';
+import React, {
+    createContext,
+    lazy,
+    Suspense,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { Components } from 'react-markdown';
 import { MarkdownRenderer, type MarkdownRendererProps } from './MarkdownRenderer';
 
@@ -79,11 +112,12 @@ interface MarkdownBlockProps extends React.HTMLAttributes<HTMLElement> {
     children?: React.ReactNode;
 }
 
-type EditingMode = 'comment' | 'edit';
+type EditingMode = 'comment' | 'edit' | 'insert';
 
 interface ActiveEditing {
     anchor: MarkdownBlockAnchor;
     mode: EditingMode;
+    initialDraft?: string;
 }
 
 interface OrphanedDraft extends ActiveEditing {
@@ -92,11 +126,12 @@ interface OrphanedDraft extends ActiveEditing {
 
 interface CollaborativeMarkdownContextValue {
     markdown: string;
+    artifactRunId?: string;
     readOnly: boolean;
     activeEditing?: ActiveEditing;
     highlightChangesFrom?: string;
     flashChangedBlocks: boolean;
-    beginEditing: (anchor: MarkdownBlockAnchor, mode: EditingMode) => void;
+    beginEditing: (anchor: MarkdownBlockAnchor, mode: EditingMode, initialDraft?: string) => void;
     cancelEditing: () => void;
     updateDraft: (draft: string) => void;
     submit: (anchor: MarkdownBlockAnchor, mode: EditingMode, draft: string) => Promise<void>;
@@ -106,6 +141,10 @@ const CollaborativeMarkdownContext = createContext<CollaborativeMarkdownContextV
 
 /** True inside a selectable container block (list, blockquote, table). */
 const NestedMarkdownBlockContext = createContext(false);
+
+const MarkdownComponentEditor = lazy(() =>
+    import('@vertesia/ui/rich-text').then((module) => ({ default: module.VertesiaMarkdownComponentEditor })),
+);
 
 const CONTEXT_LENGTH = 80;
 const ATX_HEADING = /^ {0,3}(#{1,6})[\t ]+(.+?)[\t ]*#*[\t ]*$/;
@@ -324,10 +363,12 @@ function useCollaborativeMarkdownContext(): CollaborativeMarkdownContextValue {
     return context;
 }
 
-function CollaborativeBlockEditor({ anchor, mode }: ActiveEditing) {
+function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing) {
     const { t } = useUITranslation();
-    const { cancelEditing, submit, updateDraft } = useCollaborativeMarkdownContext();
-    const [draft, setDraft] = useState(mode === 'edit' ? anchor.exact_text : '');
+    const { artifactRunId, cancelEditing, submit, updateDraft } = useCollaborativeMarkdownContext();
+    const [draft, setDraft] = useState(
+        mode === 'edit' ? anchor.exact_text : mode === 'insert' ? (initialDraft ?? '') : '',
+    );
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const changeDraft = (nextDraft: string) => {
@@ -347,15 +388,35 @@ function CollaborativeBlockEditor({ anchor, mode }: ActiveEditing) {
 
     return (
         <div className="mb-2 space-y-2 rounded-md border border-mixer-info/30 bg-background p-2 shadow-sm">
-            <Textarea
-                value={draft}
-                onChange={(event) => changeDraft(event.target.value)}
-                placeholder={
-                    mode === 'comment' ? t('agent.commentOnSelectionPlaceholder') : t('agent.editSelectionPlaceholder')
-                }
-                rows={mode === 'edit' ? 6 : 3}
-                autoFocus
-            />
+            {mode === 'edit' || mode === 'insert' ? (
+                <Suspense
+                    fallback={
+                        <Textarea
+                            value={draft}
+                            onChange={(event) => changeDraft(event.target.value)}
+                            placeholder={t('agent.editSelectionPlaceholder')}
+                            rows={6}
+                            autoFocus
+                        />
+                    }
+                >
+                    <MarkdownComponentEditor
+                        value={draft}
+                        onChange={changeDraft}
+                        artifactRunId={artifactRunId}
+                        externalValueSync="manual"
+                        autoFocus
+                    />
+                </Suspense>
+            ) : (
+                <Textarea
+                    value={draft}
+                    onChange={(event) => changeDraft(event.target.value)}
+                    placeholder={t('agent.commentOnSelectionPlaceholder')}
+                    rows={3}
+                    autoFocus
+                />
+            )}
             <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={cancelEditing} disabled={isSubmitting}>
                     <X className="me-1 size-4" />
@@ -438,12 +499,83 @@ function createBlockComponent(
                             <Pencil className="size-4" />
                         </Button>
                     </VTooltip>
+                    <DropdownMenu>
+                        <VTooltip description={t('agent.insertComponent')} asChild>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0"
+                                    aria-label={t('agent.insertComponent')}
+                                >
+                                    <Plus className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                        </VTooltip>
+                        <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuItem onClick={() => beginEditing(anchor, 'insert', t('richText.paragraph'))}>
+                                <Pilcrow />
+                                {t('richText.paragraph')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => beginEditing(anchor, 'insert', `## ${t('richText.heading2')}`)}
+                            >
+                                <Heading2 />
+                                {t('richText.heading2')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => beginEditing(anchor, 'insert', `- ${t('richText.bulletList')}`)}
+                            >
+                                <List />
+                                {t('richText.bulletList')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => beginEditing(anchor, 'insert', `> ${t('richText.blockquote')}`)}
+                            >
+                                <Quote />
+                                {t('richText.blockquote')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => beginEditing(anchor, 'insert', '```\nCode\n```')}>
+                                <Code2 />
+                                {t('richText.codeBlock')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    beginEditing(anchor, 'insert', '| Column | Value |\n| --- | --- |\n| A | 1 |')
+                                }
+                            >
+                                <Table2 />
+                                {t('richText.table')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    beginEditing(anchor, 'insert', `[${t('agent.insertLink')}](https://example.com)`)
+                                }
+                            >
+                                <Link />
+                                {t('agent.insertLink')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    beginEditing(
+                                        anchor,
+                                        'insert',
+                                        '```chart\n{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"values":[{"category":"A","value":1}]},"mark":"bar","encoding":{"x":{"field":"category","type":"nominal"},"y":{"field":"value","type":"quantitative"}}}\n```',
+                                    )
+                                }
+                            >
+                                <BarChart3 />
+                                {t('agent.insertChart')}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
                 {isSelected && activeEditing ? (
                     <CollaborativeBlockEditor
-                        key={`${activeEditing.anchor.block_id}:${activeEditing.mode}`}
+                        key={`${activeEditing.anchor.block_id}:${activeEditing.mode}:${activeEditing.initialDraft ?? ''}`}
                         anchor={activeEditing.anchor}
                         mode={activeEditing.mode}
+                        initialDraft={activeEditing.initialDraft}
                     />
                 ) : null}
             </>
@@ -468,6 +600,7 @@ export function CollaborativeMarkdownRenderer({
     children: markdown,
     resource,
     baseVersion,
+    artifactRunId,
     components,
     readOnly = false,
     highlightChangesFrom,
@@ -495,7 +628,12 @@ export function CollaborativeMarkdownRenderer({
         if (markdown.slice(range.start, range.end) === activeEditing.anchor.exact_text) return;
 
         const draft = draftRef.current;
-        const initialDraft = activeEditing.mode === 'edit' ? activeEditing.anchor.exact_text : '';
+        const initialDraft =
+            activeEditing.mode === 'edit'
+                ? activeEditing.anchor.exact_text
+                : activeEditing.mode === 'insert'
+                  ? (activeEditing.initialDraft ?? '')
+                  : '';
         if (draft.trim() && draft !== initialDraft) {
             setOrphanedDraft({ ...activeEditing, draft });
         }
@@ -525,10 +663,10 @@ export function CollaborativeMarkdownRenderer({
     }, [components]);
 
     const beginEditing = useCallback(
-        (anchor: MarkdownBlockAnchor, mode: EditingMode) => {
+        (anchor: MarkdownBlockAnchor, mode: EditingMode, initialDraft?: string) => {
             const enrichedAnchor = enrichMarkdownBlockAnchor(markdown, anchor);
-            draftRef.current = mode === 'edit' ? enrichedAnchor.exact_text : '';
-            setActiveEditing({ anchor: enrichedAnchor, mode });
+            draftRef.current = mode === 'edit' ? enrichedAnchor.exact_text : (initialDraft ?? '');
+            setActiveEditing({ anchor: enrichedAnchor, mode, initialDraft });
         },
         [markdown],
     );
@@ -544,15 +682,14 @@ export function CollaborativeMarkdownRenderer({
 
     const submit = useCallback(
         async (anchor: MarkdownBlockAnchor, mode: EditingMode, draft: string) => {
+            const after = mode === 'insert' ? `${anchor.exact_text.replace(/\s+$/, '')}\n\n${draft.trim()}` : draft;
             const action: MarkdownEditingAction = {
                 operation_id: createOperationId(),
                 resource,
                 base_version: baseVersion,
-                action: mode,
+                action: mode === 'insert' ? 'edit' : mode,
                 anchor,
-                ...(mode === 'comment'
-                    ? { comment: draft }
-                    : { user_change: { before: anchor.exact_text, after: draft } }),
+                ...(mode === 'comment' ? { comment: draft } : { user_change: { before: anchor.exact_text, after } }),
             };
 
             await onAction(action);
@@ -565,6 +702,7 @@ export function CollaborativeMarkdownRenderer({
     const contextValue = useMemo<CollaborativeMarkdownContextValue>(
         () => ({
             markdown,
+            artifactRunId,
             readOnly,
             activeEditing,
             highlightChangesFrom,
@@ -576,6 +714,7 @@ export function CollaborativeMarkdownRenderer({
         }),
         [
             activeEditing,
+            artifactRunId,
             beginEditing,
             cancelEditing,
             flashChangedBlocks,
@@ -624,6 +763,7 @@ export function CollaborativeMarkdownRenderer({
             ) : null}
             <MarkdownRenderer
                 {...markdownProps}
+                artifactRunId={artifactRunId}
                 className={className}
                 components={collaborativeComponents}
                 preserveSourcePositions

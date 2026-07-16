@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffWordSegments, type TextDiffSegment } from './textDiff.js';
+import { createUnifiedLineDiff, diffWordSegments, type TextDiffSegment } from './textDiff.js';
 
 function joinByTypes(segments: TextDiffSegment[], types: TextDiffSegment['type'][]): string {
     return segments
@@ -53,5 +53,38 @@ describe('diffWordSegments', () => {
         expect(diffWordSegments('', 'added')).toEqual([{ type: 'added', text: 'added' }]);
         expect(diffWordSegments('removed', '')).toEqual([{ type: 'removed', text: 'removed' }]);
         expect(diffWordSegments('', '')).toEqual([]);
+    });
+});
+
+describe('createUnifiedLineDiff', () => {
+    const BEFORE = ['# Title', '', 'First paragraph.', '', '- one', '- two', '- three', '', 'Closing line.'].join('\n');
+
+    it('returns undefined for identical texts', () => {
+        expect(createUnifiedLineDiff(BEFORE, BEFORE)).toBeUndefined();
+    });
+
+    it('produces a hunk with context and correct markers for a line change', () => {
+        const after = BEFORE.replace('- two', '- two (updated)');
+        const diff = createUnifiedLineDiff(BEFORE, after, { context: 1 });
+        expect(diff).toBe(['@@ -5,3 +5,3 @@', ' - one', '-- two', '+- two (updated)', ' - three'].join('\n'));
+    });
+
+    it('merges nearby changes into one hunk and separates distant ones', () => {
+        const after = BEFORE.replace('# Title', '# New Title').replace('Closing line.', 'Closing line!');
+        const diff = createUnifiedLineDiff(BEFORE, after, { context: 1 });
+        const headers = diff?.split('\n').filter((line) => line.startsWith('@@'));
+        expect(headers).toHaveLength(2);
+    });
+
+    it('handles pure insertions and deletions', () => {
+        const inserted = createUnifiedLineDiff('a\nb', 'a\nnew\nb', { context: 0 });
+        expect(inserted).toBe('@@ -2,0 +2,1 @@\n+new');
+        const deleted = createUnifiedLineDiff('a\nold\nb', 'a\nb', { context: 0 });
+        expect(deleted).toBe('@@ -2,1 +2,0 @@\n-old');
+    });
+
+    it('returns undefined when the diff exceeds maxChars', () => {
+        const after = BEFORE.replace('First paragraph.', 'Rewritten paragraph.');
+        expect(createUnifiedLineDiff(BEFORE, after, { maxChars: 10 })).toBeUndefined();
     });
 });

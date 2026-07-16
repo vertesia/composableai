@@ -20,7 +20,18 @@ import {
     isArtifactRefreshEvent,
     type MarkdownEditingAction,
 } from '@vertesia/ui/widgets';
-import { Check, FileText, GitCompareArrows, ListChecks, RefreshCw, RotateCcw, Save, X } from 'lucide-react';
+import {
+    Check,
+    FilePenLine,
+    FileText,
+    GitCompareArrows,
+    ListChecks,
+    RefreshCw,
+    RotateCcw,
+    Save,
+    Send,
+    X,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ModernAgentConversation,
@@ -237,6 +248,8 @@ export function DocumentEditingWorkspace({
     const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
     const [isLoadingConfiguration, setIsLoadingConfiguration] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSendingChanges, setIsSendingChanges] = useState(false);
+    const [hasDirectEditorChanges, setHasDirectEditorChanges] = useState(false);
     const [artifactRefresh, setArtifactRefresh] = useState<{
         key: number;
         details?: Record<string, unknown>;
@@ -245,7 +258,7 @@ export function DocumentEditingWorkspace({
     const [artifactLoaded, setArtifactLoaded] = useState(false);
     const [originalContent, setOriginalContent] = useState(initialContent);
     const [savedContent, setSavedContent] = useState(initialContent);
-    const [workspaceView, setWorkspaceView] = useState<'document' | 'diff'>('document');
+    const [workspaceView, setWorkspaceView] = useState<'document' | 'editor' | 'diff'>('document');
     const [saveConflict, setSaveConflict] = useState<{ headId: string } | undefined>();
     const [targetDocumentId, setTargetDocumentId] = useState(object.id);
     const [targetEtag, setTargetEtag] = useState(object.content?.etag);
@@ -253,6 +266,7 @@ export function DocumentEditingWorkspace({
     const configurationSourceRef = useRef<'none' | 'project' | 'run' | 'user'>('none');
     const seenUpdatesRef = useRef(new Set<string>());
     const artifactGenerationRef = useRef<string | undefined>(undefined);
+    const flushArtifactChangesRef = useRef<(() => Promise<boolean>) | null>(null);
     const documentRootId = object.revision?.root || object.id;
     const draftPath = useMemo(() => getDocumentDraftPath(documentRootId), [documentRootId]);
     const startedBy = user?.sub ? `user:${user.sub}` : undefined;
@@ -279,6 +293,7 @@ export function DocumentEditingWorkspace({
         setOriginalContent(initialContent);
         setSavedContent(initialContent);
         setArtifactLoaded(false);
+        setHasDirectEditorChanges(false);
         setWorkspaceView('document');
         setTargetDocumentId(object.id);
         setTargetEtag(object.content?.etag);
@@ -416,6 +431,7 @@ export function DocumentEditingWorkspace({
         setAgentRunId(undefined);
         setArtifactLoaded(false);
         setArtifactContent(savedContent);
+        setHasDirectEditorChanges(false);
     }, [agentRunId, client.agents, isTerminating, savedContent, t, toast]);
 
     const startWorkflow = useCallback(
@@ -655,6 +671,25 @@ export function DocumentEditingWorkspace({
         sendMessage(createDocumentChangeSummaryPrompt(documentRootId, originalDocumentRef.current.id, draftPath));
     }, [documentRootId, draftPath, messageRef, t, toast]);
 
+    const handleSendChangesToAgent = useCallback(async () => {
+        const sendMessage = messageRef.current;
+        if (!sendMessage || !agentRunId || isSendingChanges) {
+            toast({ status: 'warning', title: t('agent.artifactEditingUnavailable'), duration: 3000 });
+            return;
+        }
+
+        setIsSendingChanges(true);
+        try {
+            const flushed = await flushArtifactChangesRef.current?.();
+            if (!flushed) return;
+            sendMessage(t('agent.directEditsReadyMessage', { path: draftPath }));
+            setHasDirectEditorChanges(false);
+            toast({ status: 'success', title: t('agent.changesSentToAgent'), duration: 2000 });
+        } finally {
+            setIsSendingChanges(false);
+        }
+    }, [agentRunId, draftPath, isSendingChanges, messageRef, t, toast]);
+
     return (
         <div className="flex h-full min-h-0 flex-col">
             <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-mixer-muted/20 px-4">
@@ -701,6 +736,15 @@ export function DocumentEditingWorkspace({
                             {t('agent.document')}
                         </Button>
                         <Button
+                            variant={workspaceView === 'editor' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="h-7 gap-1.5"
+                            onClick={() => setWorkspaceView('editor')}
+                        >
+                            <FilePenLine className="size-3.5" />
+                            {t('agent.fullEditor')}
+                        </Button>
+                        <Button
                             variant={workspaceView === 'diff' ? 'secondary' : 'ghost'}
                             size="sm"
                             className="h-7 gap-1.5"
@@ -721,6 +765,18 @@ export function DocumentEditingWorkspace({
                         >
                             <ListChecks className="size-3.5" />
                             {t('agent.summarizeChanges')}
+                        </Button>
+                    ) : null}
+                    {workspaceView === 'editor' ? (
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                            onClick={() => void handleSendChangesToAgent()}
+                            disabled={!agentRunId || !isDirty || !hasDirectEditorChanges || isSendingChanges}
+                        >
+                            {isSendingChanges ? <Spinner size="sm" /> : <Send className="size-3.5" />}
+                            {t('agent.sendChangesToAgent')}
                         </Button>
                     ) : null}
                     <VTooltip description={t('agent.refresh')} asChild>
@@ -818,11 +874,15 @@ export function DocumentEditingWorkspace({
                                 <ArtifactEditingSurface
                                     runId={agentRunId}
                                     path={draftPath}
+                                    viewMode={workspaceView === 'editor' ? 'document' : 'components'}
+                                    baselineContent={originalContent}
                                     initialContent={savedContent}
                                     refreshKey={artifactRefresh.key}
                                     refreshDetails={artifactRefresh.details}
                                     onContentChange={handleArtifactContentChange}
                                     onAction={handleArtifactAction}
+                                    onDocumentEdit={() => setHasDirectEditorChanges(true)}
+                                    flushChangesRef={flushArtifactChangesRef}
                                 />
                             )}
                         </div>

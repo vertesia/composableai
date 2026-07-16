@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { Element } from 'hast';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../i18n/index.js';
@@ -288,6 +289,75 @@ describe('collaborative Markdown actions', () => {
                 user_change: {
                     before: '- First bullet\n- Second bullet',
                     after: '- First bullet\n- Second bullet\n- Third bullet',
+                },
+            }),
+        );
+    });
+
+    it('uses the rich component editor for a selected block', async () => {
+        const user = userEvent.setup();
+        const onAction = vi.fn();
+        render(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'store_document', document_id: 'document-1' }}
+                    onAction={onAction}
+                >
+                    {'Original paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Edit selection' }));
+        expect(await screen.findByRole('toolbar', { name: 'Markdown formatting' })).not.toBeNull();
+        const editor = screen.getByRole('textbox');
+        await user.click(editor);
+        await user.keyboard('{Control>}a{/Control}');
+        await user.type(editor, 'Revised paragraph.');
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+        await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));
+        expect(onAction).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: 'edit',
+                user_change: {
+                    before: 'Original paragraph.',
+                    after: expect.stringContaining('Revised paragraph.'),
+                },
+            }),
+        );
+    });
+
+    it('inserts a new component after a selected block as an already-applicable edit', async () => {
+        const user = userEvent.setup();
+        const onAction = vi.fn();
+        render(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'agent_artifact', run_id: 'run-1', path: 'draft.md' }}
+                    onAction={onAction}
+                >
+                    {'Original paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Insert component after this block' }));
+        await user.click(await screen.findByRole('menuitem', { name: 'Paragraph' }));
+
+        const editor = await screen.findByRole('textbox');
+        await user.click(editor);
+        await user.keyboard('{Control>}a{/Control}');
+        await user.type(editor, 'Inserted paragraph.');
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+        await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));
+        expect(onAction).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: 'edit',
+                user_change: {
+                    before: 'Original paragraph.',
+                    after: expect.stringMatching(/^Original paragraph\.\n\n.*Inserted paragraph\.$/),
                 },
             }),
         );
