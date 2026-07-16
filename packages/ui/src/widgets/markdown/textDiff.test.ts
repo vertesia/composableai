@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createUnifiedLineDiff, diffWordSegments, rebaseTextChanges, type TextDiffSegment } from './textDiff.js';
+import {
+    createUnifiedLineDiff,
+    diffTextSegments,
+    diffWordSegments,
+    getTextLineChangeRegions,
+    rebaseTextChanges,
+    type TextDiffSegment,
+} from './textDiff.js';
 
 function joinByTypes(segments: TextDiffSegment[], types: TextDiffSegment['type'][]): string {
     return segments
@@ -53,6 +60,29 @@ describe('diffWordSegments', () => {
         expect(diffWordSegments('', 'added')).toEqual([{ type: 'added', text: 'added' }]);
         expect(diffWordSegments('removed', '')).toEqual([{ type: 'removed', text: 'removed' }]);
         expect(diffWordSegments('', '')).toEqual([]);
+    });
+});
+
+describe('diffTextSegments', () => {
+    it('keeps unchanged lines aligned across a document-scale changed middle', () => {
+        const preserved = Array.from({ length: 220 }, (_, index) => `Preserved line ${index}.`).join('\n');
+        const before = `# Release notes\nOpening before.\n${preserved}\nClosing before.`;
+        const after = `# Release notes\nOpening after.\n${preserved}\nClosing after.`;
+
+        const segments = diffTextSegments(before, after);
+
+        expect(joinByTypes(segments, ['equal', 'removed'])).toBe(before);
+        expect(joinByTypes(segments, ['equal', 'added'])).toBe(after);
+        expect(
+            segments.some((segment) => segment.type === 'equal' && segment.text.includes('Preserved line 100.')),
+        ).toBe(true);
+    });
+
+    it('returns distinct line regions separated by unchanged content', () => {
+        expect(getTextLineChangeRegions('One\nTwo\nThree', 'One\nChanged\nThree\nFour')).toEqual([
+            { startLine: 1, endLine: 1 },
+            { startLine: 3, endLine: 3 },
+        ]);
     });
 });
 

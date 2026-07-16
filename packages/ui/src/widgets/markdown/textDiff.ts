@@ -156,6 +156,80 @@ function lcsLineOps(before: string[], after: string[]): LineOp[] {
     return [...ops, ...tail];
 }
 
+function splitLinesWithEndings(text: string): string[] {
+    return text.match(/[^\n]*\n|[^\n]+$/g) ?? [];
+}
+
+/**
+ * Document-scale text diff. Exact lines are aligned first, then word-level
+ * highlighting is applied only inside each changed line hunk. This avoids the
+ * word diff's bounded-LCS fallback turning a large document middle into one
+ * wholesale removal and addition.
+ */
+export function diffTextSegments(before: string, after: string): TextDiffSegment[] {
+    if (!before.includes('\n') && !after.includes('\n')) return diffWordSegments(before, after);
+    if (before === after) return before ? [{ type: 'equal', text: before }] : [];
+
+    const segments: TextDiffSegment[] = [];
+    const ops = lcsLineOps(splitLinesWithEndings(before), splitLinesWithEndings(after));
+    let index = 0;
+    while (index < ops.length) {
+        const op = ops[index];
+        if (op.type === 'equal') {
+            pushSegment(segments, 'equal', op.line);
+            index++;
+            continue;
+        }
+
+        let removed = '';
+        let added = '';
+        while (index < ops.length && ops[index].type !== 'equal') {
+            const changed = ops[index++];
+            if (changed.type === 'removed') removed += changed.line;
+            if (changed.type === 'added') added += changed.line;
+        }
+        for (const segment of diffWordSegments(removed, added)) {
+            pushSegment(segments, segment.type, segment.text);
+        }
+    }
+    return segments;
+}
+
+export interface TextLineChangeRegion {
+    /** Zero-based line in the current document where the change starts. */
+    startLine: number;
+    /** Inclusive zero-based line in the current document where the change ends. */
+    endLine: number;
+}
+
+/** Returns distinct current-document line hunks for a change minimap. */
+export function getTextLineChangeRegions(before: string, after: string): TextLineChangeRegion[] {
+    if (before === after) return [];
+
+    const regions: TextLineChangeRegion[] = [];
+    const ops = lcsLineOps(before.split('\n'), after.split('\n'));
+    let currentLine = 0;
+    let startLine: number | undefined;
+
+    const closeRegion = () => {
+        if (startLine === undefined) return;
+        regions.push({ startLine, endLine: Math.max(startLine, currentLine - 1) });
+        startLine = undefined;
+    };
+
+    for (const op of ops) {
+        if (op.type === 'equal') {
+            closeRegion();
+            currentLine++;
+            continue;
+        }
+        startLine ??= currentLine;
+        if (op.type === 'added') currentLine++;
+    }
+    closeRegion();
+    return regions;
+}
+
 interface LineChange {
     /** Inclusive start and exclusive end in base-document line coordinates. */
     start: number;

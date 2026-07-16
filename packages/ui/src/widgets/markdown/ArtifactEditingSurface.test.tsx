@@ -395,9 +395,10 @@ describe('ArtifactEditingSurface', () => {
 });
 
 describe('getMarkdownChangeRegions', () => {
-    it('maps additions and removals onto merged current-document line regions', () => {
+    it('maps additions and removals onto distinct current-document line regions', () => {
         expect(getMarkdownChangeRegions('One\nTwo\nThree', 'One\nChanged\nThree\nFour')).toEqual([
-            { startLine: 1, endLine: 3 },
+            { startLine: 1, endLine: 1 },
+            { startLine: 3, endLine: 3 },
         ]);
     });
 

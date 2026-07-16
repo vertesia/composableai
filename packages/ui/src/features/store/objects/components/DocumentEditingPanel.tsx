@@ -18,7 +18,7 @@ import {
     ArtifactEditingSurface,
     type ArtifactEditingSurfaceDocumentEdit,
     createUnifiedLineDiff,
-    diffWordSegments,
+    diffTextSegments,
     isArtifactRefreshEvent,
     type MarkdownEditingAction,
 } from '@vertesia/ui/widgets';
@@ -52,12 +52,13 @@ import {
     findDocumentEditingRun,
 } from './documentEditingRun.js';
 import { resolveDocumentEditingTarget } from './documentEditingTarget.js';
+import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
 
 interface DocumentEditingPanelProps {
     object: ContentObject;
     initialContent: string;
     onClose: () => void;
-    onDocumentUpdated: (updatedDocumentId: string) => void;
+    onDocumentUpdated: (updatedDocumentId: string, createdVersion: boolean) => void;
     sendMessageRef: React.MutableRefObject<SendAgentMessageFn | null>;
 }
 
@@ -66,8 +67,8 @@ export interface DocumentEditingWorkspaceProps {
     object: ContentObject;
     /** Known document text shown while the working copy hydrates. */
     initialContent?: string;
-    /** Called with the id of each revision created by Save to document. */
-    onDocumentUpdated?: (updatedDocumentId: string) => void;
+    /** Called after publishing, including whether the save created a new revision. */
+    onDocumentUpdated?: (updatedDocumentId: string, createdVersion: boolean) => void;
     /** When provided, a close button is rendered in the workspace header. */
     onClose?: () => void;
     /** Optional external handle to send chat messages programmatically. */
@@ -191,7 +192,7 @@ function getErrorStatus(error: unknown): number | undefined {
 }
 
 function DocumentWorkingCopyDiff({ original, workingCopy }: { original: string; workingCopy: string }) {
-    const segments = useMemo(() => diffWordSegments(original, workingCopy), [original, workingCopy]);
+    const segments = useMemo(() => diffTextSegments(original, workingCopy), [original, workingCopy]);
     const counts = useMemo(
         () => ({
             added: segments.reduce((total, segment) => total + (segment.type === 'added' ? segment.text.length : 0), 0),
@@ -264,6 +265,7 @@ export function DocumentEditingWorkspace({
     const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
     const [isLoadingConfiguration, setIsLoadingConfiguration] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
     const [isSendingChanges, setIsSendingChanges] = useState(false);
     const [hasDirectEditorChanges, setHasDirectEditorChanges] = useState(false);
     const [artifactRefresh, setArtifactRefresh] = useState<{
@@ -561,111 +563,115 @@ export function DocumentEditingWorkspace({
         [messageRef, t, toast],
     );
 
-    const handleSave = useCallback(async () => {
-        if (!artifactLoaded || !targetEtag || !isDirty || isSaving || isResolvingTarget || targetResolutionFailed) {
-            return;
-        }
-        setIsSaving(true);
-        try {
-            // Persist run-local artifact references (session-generated charts, files)
-            // into durable documents/ storage and rewrite the links before publishing —
-            // the same pass create_document applies. Run artifact storage does not
-            // outlive the session, so the canonical document must never depend on it.
-            let contentToSave = artifactContent;
-            if (agentRunId) {
-                const persistence = await persistRunLocalArtifactRefs(
-                    client.files,
-                    contentToSave,
-                    agentRunId,
-                    crypto.randomUUID(),
+    const handleSave = useCallback(
+        async (createVersion: boolean, versionLabel?: string) => {
+            if (!artifactLoaded || !targetEtag || !isDirty || isSaving || isResolvingTarget || targetResolutionFailed) {
+                return;
+            }
+            setIsSaving(true);
+            try {
+                // Persist run-local artifact references (session-generated charts, files)
+                // into durable documents/ storage and rewrite the links before publishing —
+                // the same pass create_document applies. Run artifact storage does not
+                // outlive the session, so the canonical document must never depend on it.
+                let contentToSave = artifactContent;
+                if (agentRunId) {
+                    const persistence = await persistRunLocalArtifactRefs(
+                        client.files,
+                        contentToSave,
+                        agentRunId,
+                        crypto.randomUUID(),
+                    );
+                    contentToSave = persistence.content;
+                }
+
+                const contentType = object.content?.type || 'text/markdown';
+                const fileName = object.content?.name || 'content.md';
+                const file = new File([new Blob([contentToSave], { type: contentType })], fileName, {
+                    type: contentType,
+                });
+                const response = await store.objects.update(
+                    targetDocumentId,
+                    { content: file },
+                    { createRevision: createVersion, revisionLabel: versionLabel, ifMatch: targetEtag },
                 );
-                contentToSave = persistence.content;
-            }
+                setTargetDocumentId(response.id);
+                setTargetEtag(response.content?.etag);
+                setSavedContent(contentToSave);
+                setSaveConflict(undefined);
+                setShowSaveConfirmation(false);
+                onDocumentUpdated?.(response.id, createVersion);
+                toast({ status: 'success', title: t('store.textSaved'), duration: 2500 });
 
-            const contentType = object.content?.type || 'text/markdown';
-            const fileName = object.content?.name || 'content.md';
-            const file = new File([new Blob([contentToSave], { type: contentType })], fileName, {
-                type: contentType,
-            });
-            const response = await store.objects.update(
-                targetDocumentId,
-                { content: file },
-                { createRevision: true, ifMatch: targetEtag },
-            );
-            setTargetDocumentId(response.id);
-            setTargetEtag(response.content?.etag);
-            setSavedContent(contentToSave);
-            setSaveConflict(undefined);
-            onDocumentUpdated?.(response.id);
-            toast({ status: 'success', title: t('store.textSaved'), duration: 2500 });
-
-            // Sync the rewritten links back into the working copy so it matches the
-            // published revision. A concurrent agent edit (412) just leaves the copy
-            // dirty, which is accurate — it no longer matches what was published.
-            if (agentRunId && contentToSave !== artifactContent && artifactGenerationRef.current) {
-                try {
-                    await client.agents.updateArtifactContent(agentRunId, draftPath, {
-                        content: contentToSave,
-                        generation: artifactGenerationRef.current,
-                    });
-                    setArtifactRefresh((current) => ({ key: current.key + 1 }));
-                } catch (syncError: unknown) {
-                    console.warn('Failed to sync persisted artifact links into the working copy', syncError);
-                }
-            }
-        } catch (error: unknown) {
-            // Two conflict shapes: an in-place edit of the target revision fails the
-            // If-Match precondition (412), while a new external revision moves the head
-            // and the save is rejected as not-head (400). Both mean the canonical
-            // document changed since this session's baseline.
-            const status = getErrorStatus(error);
-            let isConflict = status === 412;
-            if (status === 412 || status === 400) {
-                try {
-                    const target = await resolveDocumentEditingTarget(store.objects, targetDocumentId);
-                    if (target.id !== targetDocumentId || status === 412) {
-                        isConflict = true;
-                        // Re-point the save target at the new head so the user can choose
-                        // to overwrite it, and offer an agent-assisted merge instead.
-                        setTargetDocumentId(target.id);
-                        setTargetEtag(target.etag);
-                        setSaveConflict({ headId: target.id });
+                // Sync the rewritten links back into the working copy so it matches the
+                // published revision. A concurrent agent edit (412) just leaves the copy
+                // dirty, which is accurate — it no longer matches what was published.
+                if (agentRunId && contentToSave !== artifactContent && artifactGenerationRef.current) {
+                    try {
+                        await client.agents.updateArtifactContent(agentRunId, draftPath, {
+                            content: contentToSave,
+                            generation: artifactGenerationRef.current,
+                        });
+                        setArtifactRefresh((current) => ({ key: current.key + 1 }));
+                    } catch (syncError: unknown) {
+                        console.warn('Failed to sync persisted artifact links into the working copy', syncError);
                     }
-                } catch (resolveError: unknown) {
-                    console.warn('Failed to resolve the new head after a save conflict', resolveError);
                 }
+            } catch (error: unknown) {
+                // Two conflict shapes: an in-place edit of the target revision fails the
+                // If-Match precondition (412), while a new external revision moves the head
+                // and the save is rejected as not-head (400). Both mean the canonical
+                // document changed since this session's baseline.
+                const status = getErrorStatus(error);
+                let isConflict = status === 412;
+                if (status === 412 || status === 400) {
+                    try {
+                        const target = await resolveDocumentEditingTarget(store.objects, targetDocumentId);
+                        if (target.id !== targetDocumentId || status === 412) {
+                            isConflict = true;
+                            // Re-point the save target at the new head so the user can choose
+                            // to overwrite it, and offer an agent-assisted merge instead.
+                            setTargetDocumentId(target.id);
+                            setTargetEtag(target.etag);
+                            setSaveConflict({ headId: target.id });
+                        }
+                    } catch (resolveError: unknown) {
+                        console.warn('Failed to resolve the new head after a save conflict', resolveError);
+                    }
+                }
+                toast({
+                    status: 'error',
+                    title: t('store.errorSavingText'),
+                    description: isConflict
+                        ? t('store.textConflict')
+                        : errorMessage(error, t('store.errorSavingTextDefault')),
+                    duration: 5000,
+                });
+            } finally {
+                setIsSaving(false);
             }
-            toast({
-                status: 'error',
-                title: t('store.errorSavingText'),
-                description: isConflict
-                    ? t('store.textConflict')
-                    : errorMessage(error, t('store.errorSavingTextDefault')),
-                duration: 5000,
-            });
-        } finally {
-            setIsSaving(false);
-        }
-    }, [
-        agentRunId,
-        artifactContent,
-        artifactLoaded,
-        client.agents,
-        client.files,
-        draftPath,
-        isDirty,
-        isResolvingTarget,
-        isSaving,
-        object.content?.name,
-        object.content?.type,
-        onDocumentUpdated,
-        store.objects,
-        t,
-        targetDocumentId,
-        targetEtag,
-        targetResolutionFailed,
-        toast,
-    ]);
+        },
+        [
+            agentRunId,
+            artifactContent,
+            artifactLoaded,
+            client.agents,
+            client.files,
+            draftPath,
+            isDirty,
+            isResolvingTarget,
+            isSaving,
+            object.content?.name,
+            object.content?.type,
+            onDocumentUpdated,
+            store.objects,
+            t,
+            targetDocumentId,
+            targetEtag,
+            targetResolutionFailed,
+            toast,
+        ],
+    );
 
     const handleReconcile = useCallback(() => {
         const sendMessage = messageRef.current;
@@ -859,7 +865,7 @@ export function DocumentEditingWorkspace({
                     <Button
                         variant="primary"
                         className="min-w-36 gap-2"
-                        onClick={() => void handleSave()}
+                        onClick={() => setShowSaveConfirmation(true)}
                         disabled={!isDirty || !targetEtag || isSaving || isResolvingTarget || targetResolutionFailed}
                     >
                         {isSaving ? <Spinner size="sm" /> : <Save className="size-4" />}
@@ -972,6 +978,12 @@ export function DocumentEditingWorkspace({
                     void handleStartNewSession();
                 }}
                 onCancel={() => setShowNewSessionConfirm(false)}
+            />
+            <SaveVersionConfirmModal
+                isOpen={showSaveConfirmation}
+                onClose={() => setShowSaveConfirmation(false)}
+                onConfirm={handleSave}
+                isLoading={isSaving}
             />
         </div>
     );

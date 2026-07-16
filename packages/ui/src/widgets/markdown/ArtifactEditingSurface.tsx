@@ -8,7 +8,7 @@ import {
     CollaborativeMarkdownRenderer,
     type MarkdownEditingAction,
 } from './CollaborativeMarkdownRenderer.js';
-import { diffWordSegments, rebaseTextChanges } from './textDiff.js';
+import { getTextLineChangeRegions, rebaseTextChanges } from './textDiff.js';
 
 const HYDRATION_RETRY_DELAY_MS = 500;
 const HYDRATION_RETRY_LIMIT = 60;
@@ -151,32 +151,9 @@ export interface MarkdownChangeRegion {
     endLine: number;
 }
 
-/**
- * Maps the existing word diff onto current-document line numbers. Adjacent edits
- * are merged so the editor ruler stays useful instead of becoming a barcode.
- */
+/** Maps structured diff hunks onto current-document line numbers. */
 export function getMarkdownChangeRegions(before: string, after: string): MarkdownChangeRegion[] {
-    if (before === after) return [];
-
-    const regions: MarkdownChangeRegion[] = [];
-    let currentLine = 0;
-    for (const segment of diffWordSegments(before, after)) {
-        const lineCount = segment.text.split('\n').length - 1;
-        if (segment.type !== 'equal') {
-            const region = {
-                startLine: currentLine,
-                endLine: currentLine + (segment.type === 'added' ? lineCount : 0),
-            };
-            const previous = regions.at(-1);
-            if (previous && region.startLine <= previous.endLine + 1) {
-                previous.endLine = Math.max(previous.endLine, region.endLine);
-            } else {
-                regions.push(region);
-            }
-        }
-        if (segment.type !== 'removed') currentLine += lineCount;
-    }
-    return regions;
+    return getTextLineChangeRegions(before, after);
 }
 
 /**
@@ -679,7 +656,7 @@ export function ArtifactEditingSurface({
                 '.vertesia-markdown-document-editor-content',
             );
             if (!scrollContainer) return;
-            const ratio = line / Math.max(1, documentLineCount - 1);
+            const ratio = Math.min(1, line / Math.max(1, documentLineCount - 1));
             scrollContainer.scrollTo({
                 top: ratio * Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight),
                 behavior: 'smooth',

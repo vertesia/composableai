@@ -23,7 +23,7 @@ import {
     useToast,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { NavLink } from '@vertesia/ui/router';
+import { NavLink, useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui/widgets';
 import { AlertTriangle, Copy, Download, FileSearch, Sparkles, SquarePen } from 'lucide-react';
@@ -189,6 +189,7 @@ export function ContentOverview({
     const toast = useToast();
     const { t } = useUITranslation();
     const { project, store } = useUserSession();
+    const navigate = useNavigate();
     const documentRootId = object.revision?.root || object.id;
     const editingScopeKey = project?.id ? createDocumentEditingScopeKey(project.id, documentRootId) : undefined;
     const [activeObject, setActiveObject] = useState(object);
@@ -232,7 +233,7 @@ export function ContentOverview({
     }, [object]);
 
     const handleDocumentUpdated = useCallback(
-        async (updatedDocumentId: string) => {
+        async (updatedDocumentId: string, createdVersion: boolean) => {
             latestDocumentIdRef.current = updatedDocumentId;
 
             try {
@@ -251,9 +252,11 @@ export function ContentOverview({
                     description: err instanceof Error ? err.message : undefined,
                     duration: 5000,
                 });
+            } finally {
+                if (createdVersion) navigate(`/objects/${updatedDocumentId}`);
             }
         },
-        [store.objects, t, toast],
+        [navigate, store.objects, t, toast],
     );
 
     const handleCopyContent = async (content: string, type: 'text' | 'properties') => {
@@ -307,7 +310,9 @@ export function ContentOverview({
                     object={activeObject}
                     initialContent={activeObject.text ?? ''}
                     onClose={closeCollaboration}
-                    onDocumentUpdated={(updatedDocumentId) => void handleDocumentUpdated(updatedDocumentId)}
+                    onDocumentUpdated={(updatedDocumentId, createdVersion) =>
+                        void handleDocumentUpdated(updatedDocumentId, createdVersion)
+                    }
                     sendMessageRef={sendMessageRef}
                 />
             ) : null}

@@ -53,9 +53,12 @@ export { MarkdownRenderer, type MarkdownRendererProps } from './MarkdownRenderer
 export { MermaidDiagram } from './MermaidDiagram';
 export {
     createUnifiedLineDiff,
+    diffTextSegments,
     diffWordSegments,
+    getTextLineChangeRegions,
     rebaseTextChanges,
     type TextDiffSegment,
+    type TextLineChangeRegion,
     type TextRebaseResult,
     type UnifiedLineDiffOptions,
 } from './textDiff';
