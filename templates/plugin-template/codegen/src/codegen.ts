@@ -53,7 +53,7 @@ function readJson<T>(filePath: string): T {
 function parseArgs(argv: string[]): { context: string } {
     const contextIndex = argv.indexOf('--context');
     if (contextIndex < 0 || !argv[contextIndex + 1]) {
-        throw new Error('Usage: node scripts/dist/codegen.js --context <context-json>');
+        throw new Error('Usage: node codegen/dist/codegen.js --context <context-json>');
     }
     return { context: argv[contextIndex + 1] };
 }
