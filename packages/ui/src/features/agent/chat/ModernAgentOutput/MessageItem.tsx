@@ -35,6 +35,7 @@ import { ThinkingMessages } from '../WaitingMessages';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
+import { getToolApprovalResponseMetadata } from './requestInputMessages';
 import { getWorkstreamId } from './utils';
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
@@ -643,6 +644,7 @@ function MessageItemComponent({
                     )}
                 >
                     {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
+<<<<<<< HEAD
                     {askUserUx ? (
                         <AskUserWidget
                             question={typeof messageContent === 'string' ? messageContent : ''}
@@ -669,6 +671,40 @@ function MessageItemComponent({
                             </div>
                         )
                     )}
+=======
+                    {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux
+                        ? (() => {
+                              // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
+                              const uxConfig = (message.details as AskUserMessageDetails).ux!;
+                              return (
+                                  <AskUserWidget
+                                      question={typeof messageContent === 'string' ? messageContent : ''}
+                                      options={uxConfig.options}
+                                      variant={uxConfig.variant}
+                                      multiSelect={uxConfig.multiSelect}
+                                      onSelect={(optionId) =>
+                                          onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                                      }
+                                      onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                      allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                                      placeholder={uxConfig.free_response?.placeholder}
+                                      submitLabel={uxConfig.free_response?.submit_label}
+                                      onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
+                                      hideBorder
+                                      compact
+                                      answered={requestInputAnswered}
+                                  />
+                              );
+                          })()
+                        : visibleMessageContent && (
+                              <div
+                                  className="message-content break-words w-full"
+                                  style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                              >
+                                  {renderContent(processedContent || visibleMessageContent)}
+                              </div>
+                          )}
+>>>>>>> 6fe80980 (fix(ui): send tool-approval decisions as structured metadata (#1740))
 
                     {messageAttachments.length > 0 && (
                         <AttachmentPreviewList
