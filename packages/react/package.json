@@ -1,0 +1,45 @@
+{
+    "name": "@vertesia/react",
+    "version": "1.4.0",
+    "description": "React helpers for Composable AI",
+    "type": "module",
+    "types": "./lib/index.d.ts",
+    "main": "./lib/index.js",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "license": "Apache-2.0",
+    "homepage": "https://docs.vertesiahq.com",
+    "keywords": [
+        "llm",
+        "streaming",
+        "composable",
+        "prompt",
+        "ai",
+        "react"
+    ],
+    "scripts": {
+        "lint": "biome lint src",
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "devDependencies": {
+        "@types/react": "19.2.17",
+        "@vertesia/tsconfig": "workspace:*",
+        "typescript": "^6.0.3"
+    },
+    "peerDependencies": {
+        "react": ">=19.2.7"
+    },
+    "dependencies": {
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/react"
+    }
+}

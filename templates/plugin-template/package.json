@@ -65,19 +65,33 @@
         "@biomejs/biome": "2.5.2",
         "@hono/vite-dev-server": "^0.26.0",
         "@tailwindcss/forms": "^0.5.11",
+<<<<<<< HEAD
         "@tailwindcss/vite": "^4.3.2",
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
+=======
+        "@tailwindcss/vite": "^4.3.1",
+        "@types/node": "^24.13.2",
+        "@types/react": "19.2.17",
+        "@types/react-dom": "19.2.3",
+>>>>>>> 15232c8a (chore: update dependencies for critical audit (#1739))
         "@vertesia/build-tools": "workspace:*",
         "@vertesia/plugin-builder": "workspace:*",
         "@vitejs/plugin-basic-ssl": "^2.3.0",
         "@vitejs/plugin-react": "^6.0.3",
         "concurrently": "^10.0.3",
+<<<<<<< HEAD
         "globals": "^17.7.0",
         "react": "catalog:",
         "react-dom": "catalog:",
         "tailwindcss": "^4.3.2",
+=======
+        "globals": "^17.6.0",
+        "react": "19.2.7",
+        "react-dom": "19.2.7",
+        "tailwindcss": "^4.3.1",
+>>>>>>> 15232c8a (chore: update dependencies for critical audit (#1739))
         "tslib": "^2.8.1",
         "typescript": "^6.0.3",
         "vite": "catalog:",
@@ -92,7 +106,12 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
+<<<<<<< HEAD
         "hono": "^4.12.28",
         "lucide-react": "^1.23.0"
+=======
+        "hono": "^4.12.25",
+        "lucide-react": "^1.21.0"
+>>>>>>> 15232c8a (chore: update dependencies for critical audit (#1739))
     }
 }
