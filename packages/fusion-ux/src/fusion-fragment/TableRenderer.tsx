@@ -181,8 +181,8 @@ export function TableRenderer({ columns, rows }: TableRendererProps): ReactEleme
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((row, rowIndex) => (
-                        <tr key={`row-${rowIndex}`}>
+                    {rows.map((row) => (
+                        <tr key={columns.map((column) => String(row[column.key])).join('\u0000')}>
                             {columns.map((col) => {
                                 const value = row[col.key];
                                 const formatted = formatCellValue(value, col);
