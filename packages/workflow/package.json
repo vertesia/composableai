@@ -22,17 +22,10 @@
     },
     "license": "Apache-2.0",
     "devDependencies": {
-<<<<<<< HEAD
         "@smithy/types": "^4.15.1",
         "@temporalio/proto": "^1.20.2",
         "@temporalio/testing": "^1.20.2",
         "@temporalio/worker": "^1.20.2",
-=======
-        "@smithy/types": "^4.15.0",
-        "@temporalio/proto": "1.18.2",
-        "@temporalio/testing": "1.18.2",
-        "@temporalio/worker": "1.18.2",
->>>>>>> 15232c8a (chore: update dependencies for critical audit (#1739))
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "catalog:",
         "@types/papaparse": "^5.5.2",
@@ -42,28 +35,12 @@
         "vitest": "^4.1.9"
     },
     "dependencies": {
-<<<<<<< HEAD
         "@aws-sdk/client-s3": "^3.1083.0",
         "@aws-sdk/client-textract": "^3.1083.0",
         "@aws-sdk/credential-providers": "^3.1081.0",
         "@llumiverse/common": "workspace:*",
         "@temporalio/activity": "^1.20.2",
         "@temporalio/workflow": "^1.20.2",
-=======
-        "@aws-sdk/client-s3": "^3.1069.0",
-        "@aws-sdk/client-textract": "^3.1069.0",
-        "@aws-sdk/credential-providers": "^3.1069.0",
-        "@llumiverse/common": "workspace:*",
-        "@temporalio/activity": "1.18.2",
-        "@temporalio/workflow": "1.18.2",
->>>>>>> 15232c8a (chore: update dependencies for critical audit (#1739))
-        "@vertesia/api-fetch-client": "workspace:*",
-        "@vertesia/client": "workspace:*",
-        "@vertesia/common": "workspace:*",
-        "fast-deep-equal": "^3.1.3",
-        "jsonwebtoken": "^9.0.3",
-        "mime": "^4.1.0",
-        "ms": "3.0.0-canary.202508261828",
         "node-web-stream-adapters": "^0.2.1",
         "p-limit": "^7.3.0",
         "papaparse": "^5.5.4",
