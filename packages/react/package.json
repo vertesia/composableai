@@ -26,7 +26,7 @@
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
-        "@types/react": "^19.2.17",
+        "@types/react": "19.2.17",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3"
     },
