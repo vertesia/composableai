@@ -365,7 +365,7 @@ function useCollaborativeMarkdownContext(): CollaborativeMarkdownContextValue {
 
 function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing) {
     const { t } = useUITranslation();
-    const { artifactRunId, cancelEditing, submit, updateDraft } = useCollaborativeMarkdownContext();
+    const { artifactRunId, readOnly, cancelEditing, submit, updateDraft } = useCollaborativeMarkdownContext();
     const [draft, setDraft] = useState(
         mode === 'edit' ? anchor.exact_text : mode === 'insert' ? (initialDraft ?? '') : '',
     );
@@ -404,6 +404,7 @@ function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing)
                         value={draft}
                         onChange={changeDraft}
                         artifactRunId={artifactRunId}
+                        editable={!readOnly}
                         externalValueSync="manual"
                         autoFocus
                     />
@@ -415,6 +416,7 @@ function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing)
                     placeholder={t('agent.commentOnSelectionPlaceholder')}
                     rows={3}
                     autoFocus
+                    disabled={readOnly}
                 />
             )}
             <div className="flex justify-end gap-2">
@@ -422,7 +424,11 @@ function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing)
                     <X className="me-1 size-4" />
                     {t('store.cancelEdit')}
                 </Button>
-                <Button size="sm" onClick={() => void submitDraft()} disabled={!draft.trim() || isSubmitting}>
+                <Button
+                    size="sm"
+                    onClick={() => void submitDraft()}
+                    disabled={readOnly || !draft.trim() || isSubmitting}
+                >
                     <Send className="me-1 size-4" />
                     {t('agent.send')}
                 </Button>
@@ -467,11 +473,13 @@ function createBlockComponent(
                   : 'border-transparent',
             isChanged && 'border-mixer-success/50 bg-mixer-success/15 ring-1 ring-mixer-success/20',
         );
-        const controls = isAnchorable ? (
+        const showControls = isAnchorable || isSelected;
+        const controls = showControls ? (
             <>
                 <div
                     className={cn(
                         'absolute end-1 top-1 z-10 flex items-center gap-0.5 rounded-md border bg-background p-0.5 shadow-sm',
+                        !isAnchorable && 'hidden',
                         isSelected
                             ? 'opacity-100'
                             : 'pointer-events-none opacity-0 group-hover/collab:pointer-events-auto group-hover/collab:opacity-100 group-focus-within/collab:pointer-events-auto group-focus-within/collab:opacity-100',
@@ -664,11 +672,12 @@ export function CollaborativeMarkdownRenderer({
 
     const beginEditing = useCallback(
         (anchor: MarkdownBlockAnchor, mode: EditingMode, initialDraft?: string) => {
+            if (readOnly) return;
             const enrichedAnchor = enrichMarkdownBlockAnchor(markdown, anchor);
             draftRef.current = mode === 'edit' ? enrichedAnchor.exact_text : (initialDraft ?? '');
             setActiveEditing({ anchor: enrichedAnchor, mode, initialDraft });
         },
-        [markdown],
+        [markdown, readOnly],
     );
 
     const cancelEditing = useCallback(() => {
@@ -682,6 +691,7 @@ export function CollaborativeMarkdownRenderer({
 
     const submit = useCallback(
         async (anchor: MarkdownBlockAnchor, mode: EditingMode, draft: string) => {
+            if (readOnly) return;
             const after = mode === 'insert' ? `${anchor.exact_text.replace(/\s+$/, '')}\n\n${draft.trim()}` : draft;
             const action: MarkdownEditingAction = {
                 operation_id: createOperationId(),
@@ -696,7 +706,7 @@ export function CollaborativeMarkdownRenderer({
             draftRef.current = '';
             setActiveEditing(undefined);
         },
-        [baseVersion, onAction, resource],
+        [baseVersion, onAction, readOnly, resource],
     );
 
     const contextValue = useMemo<CollaborativeMarkdownContextValue>(

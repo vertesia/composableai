@@ -45,6 +45,7 @@ import {
     DocumentEditingConfigurationSelector,
     getDocumentEditingProjectDefault,
 } from './DocumentEditingConfigurationSelector.js';
+import { DocumentEditingLockBanner } from './DocumentEditingLockBanner.js';
 import { persistRunLocalArtifactRefs } from './documentArtifactRefs.js';
 import {
     createDocumentEditingRunIdentity,
@@ -267,6 +268,8 @@ export function DocumentEditingWorkspace({
     const [isSaving, setIsSaving] = useState(false);
     const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
     const [isSendingChanges, setIsSendingChanges] = useState(false);
+    const [isAgentWorking, setIsAgentWorking] = useState(false);
+    const [isEditingManuallyUnlocked, setIsEditingManuallyUnlocked] = useState(false);
     const [hasDirectEditorChanges, setHasDirectEditorChanges] = useState(false);
     const [artifactRefresh, setArtifactRefresh] = useState<{
         key: number;
@@ -284,6 +287,7 @@ export function DocumentEditingWorkspace({
     const configurationSourceRef = useRef<'none' | 'project' | 'run' | 'user'>('none');
     const seenUpdatesRef = useRef(new Set<string>());
     const artifactGenerationRef = useRef<string | undefined>(undefined);
+    const agentWorkingRef = useRef(false);
     const flushArtifactChangesRef = useRef<(() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null>(null);
     const documentRootId = object.revision?.root || object.id;
     const draftPath = useMemo(() => getDocumentDraftPath(documentRootId), [documentRootId]);
@@ -293,6 +297,7 @@ export function DocumentEditingWorkspace({
     const originalDocumentRef = useRef({ editingScopeKey, id: object.id });
     const lookupIdentityRef = useRef({ documentId: object.id, documentRootId });
     const isDirty = artifactLoaded && artifactContent !== savedContent;
+    const isEditingLocked = isAgentWorking && !isEditingManuallyUnlocked;
 
     if (lookupIdentityRef.current.documentRootId !== documentRootId) {
         lookupIdentityRef.current = { documentId: object.id, documentRootId };
@@ -312,6 +317,9 @@ export function DocumentEditingWorkspace({
         setSavedContent(initialContent);
         setArtifactLoaded(false);
         setHasDirectEditorChanges(false);
+        setIsAgentWorking(false);
+        setIsEditingManuallyUnlocked(false);
+        agentWorkingRef.current = false;
         setWorkspaceView('document');
         setTargetDocumentId(object.id);
         setTargetEtag(object.content?.etag);
@@ -450,6 +458,9 @@ export function DocumentEditingWorkspace({
         setArtifactLoaded(false);
         setArtifactContent(savedContent);
         setHasDirectEditorChanges(false);
+        agentWorkingRef.current = false;
+        setIsAgentWorking(false);
+        setIsEditingManuallyUnlocked(false);
     }, [agentRunId, client.agents, isTerminating, savedContent, t, toast]);
 
     const startWorkflow = useCallback(
@@ -549,6 +560,19 @@ export function DocumentEditingWorkspace({
         setArtifactLoaded(true);
     }, []);
 
+    const handleAgentWorkingChange = useCallback((isWorking: boolean) => {
+        const wasWorking = agentWorkingRef.current;
+        agentWorkingRef.current = isWorking;
+        setIsAgentWorking(isWorking);
+
+        if (!isWorking) {
+            setIsEditingManuallyUnlocked(false);
+            if (wasWorking) {
+                setArtifactRefresh((current) => ({ key: current.key + 1 }));
+            }
+        }
+    }, []);
+
     const handleArtifactAction = useCallback(
         (action: MarkdownEditingAction) => {
             const sendMessage = messageRef.current;
@@ -565,7 +589,15 @@ export function DocumentEditingWorkspace({
 
     const handleSave = useCallback(
         async (createVersion: boolean, versionLabel?: string) => {
-            if (!artifactLoaded || !targetEtag || !isDirty || isSaving || isResolvingTarget || targetResolutionFailed) {
+            if (
+                !artifactLoaded ||
+                !targetEtag ||
+                !isDirty ||
+                isEditingLocked ||
+                isSaving ||
+                isResolvingTarget ||
+                targetResolutionFailed
+            ) {
                 return;
             }
             setIsSaving(true);
@@ -659,6 +691,7 @@ export function DocumentEditingWorkspace({
             client.files,
             draftPath,
             isDirty,
+            isEditingLocked,
             isResolvingTarget,
             isSaving,
             object.content?.name,
@@ -695,7 +728,7 @@ export function DocumentEditingWorkspace({
 
     const handleSendChangesToAgent = useCallback(async () => {
         const sendMessage = messageRef.current;
-        if (!sendMessage || !agentRunId || isSendingChanges) {
+        if (!sendMessage || !agentRunId || isEditingLocked || isSendingChanges) {
             toast({ status: 'warning', title: t('agent.artifactEditingUnavailable'), duration: 3000 });
             return;
         }
@@ -720,7 +753,7 @@ export function DocumentEditingWorkspace({
         } finally {
             setIsSendingChanges(false);
         }
-    }, [agentRunId, draftPath, isSendingChanges, messageRef, t, toast]);
+    }, [agentRunId, draftPath, isEditingLocked, isSendingChanges, messageRef, t, toast]);
 
     return (
         <div className="flex h-full min-h-0 flex-col">
@@ -805,7 +838,13 @@ export function DocumentEditingWorkspace({
                             size="sm"
                             className="h-8 gap-1.5"
                             onClick={() => void handleSendChangesToAgent()}
-                            disabled={!agentRunId || !isDirty || !hasDirectEditorChanges || isSendingChanges}
+                            disabled={
+                                !agentRunId ||
+                                !isDirty ||
+                                !hasDirectEditorChanges ||
+                                isEditingLocked ||
+                                isSendingChanges
+                            }
                         >
                             {isSendingChanges ? <Spinner size="sm" /> : <Send className="size-3.5" />}
                             {t('agent.sendChangesToAgent')}
@@ -866,7 +905,14 @@ export function DocumentEditingWorkspace({
                         variant="primary"
                         className="min-w-36 gap-2"
                         onClick={() => setShowSaveConfirmation(true)}
-                        disabled={!isDirty || !targetEtag || isSaving || isResolvingTarget || targetResolutionFailed}
+                        disabled={
+                            !isDirty ||
+                            !targetEtag ||
+                            isEditingLocked ||
+                            isSaving ||
+                            isResolvingTarget ||
+                            targetResolutionFailed
+                        }
                     >
                         {isSaving ? <Spinner size="sm" /> : <Save className="size-4" />}
                         {t('agent.saveToDocument')}
@@ -896,6 +942,12 @@ export function DocumentEditingWorkspace({
                     </div>
                 </div>
             ) : null}
+            {isAgentWorking ? (
+                <DocumentEditingLockBanner
+                    isLocked={isEditingLocked}
+                    onToggleLock={() => setIsEditingManuallyUnlocked((isUnlocked) => !isUnlocked)}
+                />
+            ) : null}
             <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
                 <ResizablePanel defaultSize={65} minSize={35} className="min-w-0 bg-background">
                     <div className="flex h-full min-h-0 flex-col">
@@ -911,6 +963,7 @@ export function DocumentEditingWorkspace({
                                     initialContent={savedContent}
                                     refreshKey={artifactRefresh.key}
                                     refreshDetails={artifactRefresh.details}
+                                    readOnly={isEditingLocked}
                                     onContentChange={handleArtifactContentChange}
                                     onAction={handleArtifactAction}
                                     onDocumentEdit={() => setHasDirectEditorChanges(true)}
@@ -955,6 +1008,7 @@ export function DocumentEditingWorkspace({
                                     details,
                                 }));
                             }}
+                            onAgentWorkingChange={handleAgentWorkingChange}
                             title={t('agent.documentEditing')}
                             initialMessage={t('agent.documentEditingWelcome')}
                             startButtonText={isStarting ? t('agent.startingAgent') : t('agent.startAgent')}

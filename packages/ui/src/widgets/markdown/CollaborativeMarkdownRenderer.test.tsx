@@ -255,6 +255,41 @@ describe('collaborative Markdown actions', () => {
         expect(screen.queryByRole('button', { name: 'Edit selection' })).toBeNull();
     });
 
+    it('prevents an open component editor from submitting after the surface becomes read-only', () => {
+        const onAction = vi.fn();
+        const view = render(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'agent_artifact', run_id: 'run-1', path: 'draft.md' }}
+                    onAction={onAction}
+                >
+                    {'Editable paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Comment on selection' }));
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Keep this draft.' } });
+
+        view.rerender(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'agent_artifact', run_id: 'run-1', path: 'draft.md' }}
+                    readOnly
+                    onAction={onAction}
+                >
+                    {'Editable paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        expect(screen.getByRole('textbox')).toHaveProperty('disabled', true);
+        const sendButton = screen.getByRole('button', { name: 'Send' });
+        expect(sendButton).toHaveProperty('disabled', true);
+        fireEvent.click(sendButton);
+        expect(onAction).not.toHaveBeenCalled();
+    });
+
     it('selects a list as one group instead of individual bullets', async () => {
         const onAction = vi.fn();
         const markdown = '- First bullet\n- Second bullet';

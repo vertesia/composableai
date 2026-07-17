@@ -573,6 +573,8 @@ export interface ModernAgentConversationProps {
     sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
     /** Called for each live message delivered after the conversation stream connects. */
     onMessage?: (message: AgentMessage) => void;
+    /** Called when the main agent turn starts or reaches an idle/terminal state. */
+    onAgentWorkingChange?: (isWorking: boolean) => void;
     /** Called when processingFiles state changes (for external progress display) */
     onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
     /** Processing files to display in the right panel Uploads tab */
@@ -769,6 +771,7 @@ function StartWorkflowView({
     className,
     allowWorkflowControl,
     initialToolApprovalMode,
+    onAgentWorkingChange,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const canStageFiles = !hideFileUpload;
@@ -790,6 +793,10 @@ function StartWorkflowView({
 
     // Staged files - stored locally until workflow starts
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+
+    useEffect(() => {
+        onAgentWorkingChange?.(isSending);
+    }, [isSending, onAgentWorkingChange]);
 
     // Drag and drop state
     const [isDragOver, setIsDragOver] = useState(false);
@@ -1058,6 +1065,7 @@ function StartWorkflowView({
                     inputClassName,
                     className,
                     allowWorkflowControl,
+                    onAgentWorkingChange,
                 }}
                 agentRunId={startedAgentRunId}
                 title={title}
@@ -1291,6 +1299,7 @@ function ModernAgentConversationInner({
     fileUploadRef,
     sendMessageRef,
     onMessage,
+    onAgentWorkingChange,
     onProcessingFilesChange,
     processingFiles: processingFilesProp,
     // External plan panel API
@@ -1586,6 +1595,10 @@ function ModernAgentConversationInner({
     );
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
+
+    useEffect(() => {
+        onAgentWorkingChange?.(!effectiveIsCompleted);
+    }, [effectiveIsCompleted, onAgentWorkingChange]);
     const pendingRequestInputMessage = useMemo(
         () => getPendingRequestInputMessage(displayedMessages),
         [displayedMessages],

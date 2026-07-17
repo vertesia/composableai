@@ -253,6 +253,40 @@ describe('ModernAgentConversation send handling', () => {
         vi.restoreAllMocks();
     });
 
+    it('reports when the main agent turn starts and returns to idle', async () => {
+        const onAgentWorkingChange = vi.fn();
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.QUESTION, 'make an edit')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        const view = renderConversation({ onAgentWorkingChange });
+
+        await waitFor(() => expect(onAgentWorkingChange).toHaveBeenLastCalledWith(true));
+
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'make an edit'),
+                createMessage(AgentMessageType.IDLE, 'Waiting for your command...'),
+            ],
+            isCompleted: true,
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                title="Agent"
+                hideHeader
+                hideMessageInput
+                showRightPanel={false}
+                onAgentWorkingChange={onAgentWorkingChange}
+            />,
+        );
+
+        await waitFor(() => expect(onAgentWorkingChange).toHaveBeenLastCalledWith(false));
+    });
+
     it('restarts a terminal continuable run before sending the follow-up message', async () => {
         mockStreamState({
             messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
