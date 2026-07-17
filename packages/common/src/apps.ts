@@ -678,6 +678,66 @@ export interface AppBuildProgress {
     updated_at: string;
 }
 
+export type AppScaffoldModule = 'service' | 'assistant' | 'content-app' | 'examples';
+
+export interface StartAppScaffoldRequest {
+    /**
+     * App id / package name to create. It is normalized to the same slug rules
+     * used by @vertesia/create-plugin.
+     */
+    app_id: string;
+    title?: string;
+    description?: string;
+    modules?: AppScaffoldModule[];
+    /**
+     * Start an initial preview build after the source has been pushed.
+     * Defaults to true.
+     */
+    create_version?: boolean;
+}
+
+export interface StartAppScaffoldResponse {
+    workflow_id: string;
+    run_id: string;
+    app_id: string;
+    app_record_id?: string;
+    git_url?: string;
+    create_version: boolean;
+}
+
+export interface AppScaffoldWorkflowInput extends StartAppScaffoldRequest {}
+
+export interface AppScaffoldWorkflowResult {
+    app_id: string;
+    app_record_id?: string;
+    git_url?: string;
+    source_git?: AppVersionGitSource;
+    files?: number;
+    initial_build?: StartAppBuildResponse;
+}
+
+export type AppScaffoldProgressStatus =
+    | 'queued'
+    | 'reserving'
+    | 'scaffolding'
+    | 'pushing'
+    | 'building'
+    | 'completed'
+    | 'failed';
+
+export interface AppScaffoldProgress {
+    status: AppScaffoldProgressStatus;
+    step: string;
+    app_id?: string;
+    app_record_id?: string;
+    git_url?: string;
+    files?: number;
+    initial_build?: StartAppBuildResponse;
+    error?: string;
+    error_details?: string[];
+    updated_at: string;
+}
+
 /**
  * Access control policy for an app installation.
  * Declares which access surfaces are gated by per-user ACEs.

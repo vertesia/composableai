@@ -16,6 +16,7 @@ import type {
     AppRepoFile,
     AppRepoRefs,
     AppRepoTree,
+    AppScaffoldProgress,
     AppToolCollection,
     AppVersionListQuery,
     AppVersionRecord,
@@ -24,6 +25,8 @@ import type {
     RequireAtLeastOne,
     StartAppBuildRequest,
     StartAppBuildResponse,
+    StartAppScaffoldRequest,
+    StartAppScaffoldResponse,
     UpdateAppInstallationToolAllowlistPayload,
     UpsertAppVersionRequest,
     ValidateUrlRequest,
@@ -95,6 +98,14 @@ export default class AppsApi extends ApiTopic {
         return this.get(
             `/${encodeURIComponent(appIdOrRecordId)}/builds/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}/progress`,
         );
+    }
+
+    startScaffold(payload: StartAppScaffoldRequest): Promise<StartAppScaffoldResponse> {
+        return this.post('/scaffolds', { payload });
+    }
+
+    getScaffoldProgress(workflowId: string, runId: string): Promise<AppScaffoldProgress> {
+        return this.get(`/scaffolds/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}/progress`);
     }
 
     /**
