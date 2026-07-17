@@ -1,0 +1,4 @@
+{
+  "modules": ["dev"],
+  "cleanup": false
+}

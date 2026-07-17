@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-sdk",
-    "version": "1.5.0-dev",
+    "version": "1.5.0-dev.20260714.072725Z",
     "description": "Tools SDK - utilities for building remote tools",
     "type": "module",
     "main": "./lib/index.js",
@@ -31,7 +31,7 @@
         "vitest": "^4.1.9"
     },
     "peerDependencies": {
-        "hono": "^4.12.27"
+        "hono": "^4.12.28"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",

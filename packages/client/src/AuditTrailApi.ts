@@ -1,5 +1,10 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
-import type { AuditTrailQuery, AuditTrailResponse } from '@vertesia/common';
+import type {
+    AuditAggregationQuery,
+    AuditAggregationResponse,
+    AuditTrailQuery,
+    AuditTrailResponse,
+} from '@vertesia/common';
 
 export default class AuditTrailApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -23,5 +28,9 @@ export default class AuditTrailApi extends ApiTopic {
         if (query?.offset) params.set('offset', String(query.offset));
         const qs = params.toString();
         return this.get(`/${qs ? `?${qs}` : ''}`);
+    }
+
+    aggregate(query: AuditAggregationQuery): Promise<AuditAggregationResponse> {
+        return this.post('/aggregate', { payload: query });
     }
 }

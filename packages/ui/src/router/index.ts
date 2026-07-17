@@ -5,6 +5,7 @@ export * from './NestedNavigationContext.js';
 export * from './NestedRouterProvider.js';
 export * from './PathMatcher.js';
 export * as Path from './path.js';
+export * from './Redirect.js';
 export * from './RouteComponent.js';
 export * from './Router.js';
 export * from './RouterProvider.js';

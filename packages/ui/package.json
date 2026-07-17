@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/ui",
-    "version": "1.5.0-dev",
+    "version": "1.5.0-dev.20260714.072725Z",
     "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
@@ -120,7 +120,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "axe-core": "^4.12.1",
         "culori": "^4.0.2",
-        "i18next-cli": "^1.64.2",
+        "i18next-cli": "^1.65.0",
         "jsdom": "^29.1.1",
         "rolldown": "catalog:",
         "typescript": "^6.0.3",

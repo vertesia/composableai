@@ -16,8 +16,6 @@ interface MagicPdfContextValue {
     layoutProvider: PageLayoutProvider;
     markdownProvider: PageMarkdownProvider;
     imageProvider: PageImageProvider;
-    xml: string;
-    xmlPages: string[];
     pdfUrl: string;
     pdfUrlLoading: boolean;
 }
@@ -201,54 +199,42 @@ interface MagicPdfProviderProps {
 export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
     const { client } = useUserSession();
     const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
-    const isMarkdownProcessor = (object.metadata as DocumentMetadata)?.content_processor?.type === 'markdown';
 
-    // Create initial context immediately (synchronously) for both processor types
     const [info, setInfo] = useState<MagicPdfContextValue>(() => {
         const markdownProvider = new PageMarkdownProvider(page_count);
-        if (isMarkdownProcessor && object.text) {
+        if (object.text) {
             markdownProvider.initFromContent(object.text);
         }
-        const xml = object.text ? cleanXml(object.text) : '';
         return {
             count: page_count,
             layoutProvider: new PageLayoutProvider(client, object.id, page_count),
             markdownProvider,
             imageProvider: new PageImageProvider(client, object.id, page_count),
-            xml,
-            xmlPages: object.text ? extractXmlPages(xml) : [],
             pdfUrl: '',
             pdfUrlLoading: true,
         };
     });
 
     useEffect(() => {
-        if (isMarkdownProcessor) {
-            // For markdown processor, fetch the PDF URL lazily
-            // Priority: PDF rendition > source (only if source is PDF)
-            const metadata = object.metadata as DocumentMetadata;
-            const pdfRendition = metadata?.renditions?.find((r) => r.name === PDF_RENDITION_NAME);
-            const isPdfSource = object.content?.type === 'application/pdf';
-            const sourceToResolve = pdfRendition?.content?.source || (isPdfSource ? object.content?.source : undefined);
+        const metadata = object.metadata as DocumentMetadata;
+        const pdfRendition = metadata?.renditions?.find((r) => r.name === PDF_RENDITION_NAME);
+        const isPdfSource = object.content?.type === 'application/pdf';
+        const sourceToResolve = pdfRendition?.content?.source || (isPdfSource ? object.content?.source : undefined);
 
-            if (sourceToResolve) {
-                client.store.objects
-                    .getDownloadUrl(sourceToResolve, undefined, 'inline')
-                    .then((response) => {
-                        setInfo((prev) => ({ ...prev, pdfUrl: response.url, pdfUrlLoading: false }));
-                    })
-                    .catch((e) => {
-                        console.warn('Failed to get PDF URL:', e);
-                        setInfo((prev) => ({ ...prev, pdfUrlLoading: false }));
-                    });
-            } else {
-                setInfo((prev) => ({ ...prev, pdfUrlLoading: false }));
-            }
+        if (sourceToResolve) {
+            client.store.objects
+                .getDownloadUrl(sourceToResolve, undefined, 'inline')
+                .then((response) => {
+                    setInfo((prev) => ({ ...prev, pdfUrl: response.url, pdfUrlLoading: false }));
+                })
+                .catch((e) => {
+                    console.warn('Failed to get PDF URL:', e);
+                    setInfo((prev) => ({ ...prev, pdfUrlLoading: false }));
+                });
         } else {
-            // For XML processor, no pre-loading needed - images load on demand
             setInfo((prev) => ({ ...prev, pdfUrlLoading: false }));
         }
-    }, [client, isMarkdownProcessor, object.metadata, object.content?.type, object.content?.source]);
+    }, [client, object.metadata, object.content?.type, object.content?.source]);
 
     return <MagicPdfContext.Provider value={info}>{children}</MagicPdfContext.Provider>;
 }
@@ -263,20 +249,4 @@ export function useMagicPdfContext() {
         throw new Error('useMagicPdfContext must be used within a MagicPdfProvider');
     }
     return context;
-}
-
-function extractXmlPages(xml: string): string[] {
-    // Parse the XML string
-    const doc = new DOMParser().parseFromString(cleanXml(xml), 'text/xml');
-    const pages = doc.getElementsByTagName('page');
-    const serializer = new XMLSerializer();
-    return Array.from(pages).map((p) => serializer.serializeToString(p));
-}
-
-function cleanXml(xml: string) {
-    const cleanedXML = xml
-        // biome-ignore lint/suspicious/noControlCharactersInRegex: deliberately stripping XML-illegal control characters
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-        .replace(/<\?xml.*?\?>/g, '');
-    return cleanedXML;
 }

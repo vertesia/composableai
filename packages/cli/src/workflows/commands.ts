@@ -35,6 +35,52 @@ type TranspileWorkflowOptions = CliOptions<{
     out?: string;
 }>;
 
+type WorkflowActionOptions = CliOptions<{
+    reason?: string;
+}>;
+
+type WorkflowSignalOptions = CliOptions<{
+    data?: string;
+}>;
+
+/** Terminate a running workflow (forceful stop, no cleanup handlers run). */
+export async function terminateWorkflowRun(
+    program: Command,
+    workflowId: string,
+    runId: string,
+    options: WorkflowActionOptions,
+) {
+    const client = await getClient(program);
+    const res = await client.workflows.terminate(workflowId, runId, options.reason);
+    console.log(res.message ?? `Workflow ${runId} terminated`);
+}
+
+/** Request cancellation of a running workflow (graceful; cleanup/cancellation handlers run). */
+export async function cancelWorkflowRun(
+    program: Command,
+    workflowId: string,
+    runId: string,
+    options: WorkflowActionOptions,
+) {
+    const client = await getClient(program);
+    const res = await client.workflows.cancel(workflowId, runId, options.reason);
+    console.log(res.message ?? `Workflow ${runId} cancellation requested`);
+}
+
+/** Send a named signal (with an optional JSON payload) to a running workflow. */
+export async function signalWorkflowRun(
+    program: Command,
+    workflowId: string,
+    runId: string,
+    signal: string,
+    options: WorkflowSignalOptions,
+) {
+    const client = await getClient(program);
+    const payload = options.data ? parseJsonObject(options.data) : undefined;
+    const res = await client.workflows.sendSignal(workflowId, runId, signal, payload);
+    console.log(JSON.stringify(res, null, 2));
+}
+
 export async function executeWorkflowByName(program: Command, workflowName: string, options: WorkflowExecuteOptions) {
     const { objectId, vars, file, stream, interactive, output: outputFile } = options;
     console.debug('Executing interaction in workflow', workflowName, 'with options', options);
