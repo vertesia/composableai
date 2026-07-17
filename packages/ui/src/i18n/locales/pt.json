@@ -840,5 +840,10 @@
   "richText.deleteTable": "Excluir tabela",
   "richText.undo": "Desfazer",
   "richText.redo": "Refazer",
-  "richText.documentEditor": "Editor de documentos Markdown"
+  "richText.documentEditor": "Editor de documentos Markdown",
+  "richText.continueRichText": "Continuar com texto rico",
+  "richText.editMarkdownSource": "Editar código Markdown",
+  "richText.markdownSourceEditor": "Editor de código Markdown",
+  "richText.sourceCompatibilityWarningDescription": "A edição de texto rico normalizará parte da sintaxe Markdown deste documento e poderá reescrever linhas inalteradas. Edite o código Markdown para preservar a formatação exata ou continue com texto rico se a normalização for aceitável.",
+  "richText.sourceCompatibilityWarningTitle": "Parte da formatação Markdown pode mudar"
 }

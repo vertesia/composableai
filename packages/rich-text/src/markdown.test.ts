@@ -1,6 +1,12 @@
 import type { Editor, JSONContent } from '@tiptap/core';
 import { describe, expect, it } from 'vitest';
-import { createMarkdownEditor, isVertesiaWidgetLanguage, parseMarkdown, roundTripMarkdown } from './markdown.js';
+import {
+    createMarkdownEditor,
+    isMarkdownSourcePreserving,
+    isVertesiaWidgetLanguage,
+    parseMarkdown,
+    roundTripMarkdown,
+} from './markdown.js';
 
 const REPRESENTATIVE_DOCUMENT = `# Aurora launch brief
 
@@ -60,6 +66,18 @@ const TASK_LIST_DOCUMENT = `# Release checklist
 - [ ] Publish the migration guide
 - [x] Verify the conformance suite
   - [ ] Run the browser smoke test
+`;
+
+const FRONTMATTER_DOCUMENT = `---
+title: Aurora launch brief
+tags:
+  - launch
+  - aurora
+---
+
+# Overview
+
+Keep the frontmatter exact.
 `;
 
 function collectNodes(content: JSONContent, type: string): JSONContent[] {
@@ -226,6 +244,47 @@ After.
         expect(taskLists[0]?.attrs?.raw).toContain('- [ ] Publish the migration guide');
         expect(serialized).toContain('- [x] Verify the conformance suite');
         expect(parseMarkdown(serialized)).toEqual(parsed);
+    });
+
+    it('preserves YAML frontmatter as an exact opaque Markdown node', () => {
+        const parsed = parseMarkdown(FRONTMATTER_DOCUMENT);
+        const frontmatter = collectNodes(parsed, 'opaqueMarkdownBlock').find(
+            (node) => node.attrs?.kind === 'frontmatter',
+        );
+        const serialized = roundTripMarkdown(FRONTMATTER_DOCUMENT);
+
+        expect(frontmatter?.attrs?.raw).toBe(`---
+title: Aurora launch brief
+tags:
+  - launch
+  - aurora
+---`);
+        expect(serialized).toContain(frontmatter?.attrs?.raw);
+        expect(serialized).not.toContain('## title: Aurora launch brief');
+        expect(parseMarkdown(serialized)).toEqual(parsed);
+    });
+
+    it('does not mistake horizontal rules inside a document for frontmatter', () => {
+        const parsed = parseMarkdown(`# Before
+
+---
+
+Content between horizontal rules.
+
+---
+
+# After`);
+        const frontmatter = collectNodes(parsed, 'opaqueMarkdownBlock').filter(
+            (node) => node.attrs?.kind === 'frontmatter',
+        );
+
+        expect(frontmatter).toHaveLength(0);
+        expect(collectNodes(parsed, 'horizontalRule')).toHaveLength(2);
+    });
+
+    it('detects source syntax that rich-text serialization would normalize', () => {
+        expect(isMarkdownSourcePreserving('# Canonical heading')).toBe(true);
+        expect(isMarkdownSourcePreserving('Setext heading\n==============')).toBe(false);
     });
 
     it('registers node and mark views for every important Vertesia widget shape', () => {

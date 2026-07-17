@@ -197,6 +197,7 @@ export function ArtifactEditingSurface({
     const pendingDocumentContentRef = useRef<string | undefined>(undefined);
     const documentSaveInFlightRef = useRef(false);
     const documentSavePromiseRef = useRef<Promise<boolean> | undefined>(undefined);
+    const persistPendingDocumentContentRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
     const documentEditorFocusedRef = useRef(false);
     const documentEditorRef = useRef<MarkdownDocumentEditorHandle | null>(null);
     const documentBaseGenerationRef = useRef<string | undefined>(generation);
@@ -555,6 +556,7 @@ export function ArtifactEditingSurface({
         });
         return savePromise;
     }, [client.agents, onContentChange, path, reconcileDocumentConflict, runId, t, toast]);
+    persistPendingDocumentContentRef.current = persistPendingDocumentContent;
 
     const flushDocumentChanges = useCallback(async (): Promise<false | ArtifactEditingSurfaceDocumentEdit> => {
         if (documentSaveTimeoutRef.current !== undefined) {
@@ -668,6 +670,14 @@ export function ArtifactEditingSurface({
     useEffect(
         () => () => {
             if (documentSaveTimeoutRef.current !== undefined) clearTimeout(documentSaveTimeoutRef.current);
+            const latestEditorContent = documentEditorRef.current?.getMarkdown();
+            if (latestEditorContent !== undefined && latestEditorContent !== contentRef.current) {
+                contentRef.current = latestEditorContent;
+                pendingDocumentContentRef.current = latestEditorContent;
+            }
+            if (pendingDocumentContentRef.current !== undefined) {
+                void persistPendingDocumentContentRef.current();
+            }
         },
         [],
     );

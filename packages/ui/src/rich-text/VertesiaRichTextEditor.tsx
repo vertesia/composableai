@@ -1,4 +1,5 @@
 import {
+    isMarkdownSourcePreserving,
     MarkdownComponentEditor,
     type MarkdownComponentEditorProps,
     MarkdownDocumentEditor,
@@ -12,8 +13,9 @@ import {
     type RichTextOpaqueBlockRendererProps,
     type RichTextRenderers,
 } from '@vertesia/rich-text';
-import { cn } from '@vertesia/ui/core';
+import { Button, cn, Modal, ModalBody, ModalFooter, ModalTitle, Textarea } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { useState } from 'react';
 import { CodeBlockHandlerProvider, useCodeBlockContext } from '../widgets/markdown/CodeBlockContext.js';
 import { useCodeBlockRendererRegistry } from '../widgets/markdown/CodeBlockRendering.js';
 import { createDefaultCodeBlockHandlers, ExpandCodeBlockHandler } from '../widgets/markdown/codeBlockHandlers.js';
@@ -173,21 +175,64 @@ export function VertesiaMarkdownDocumentEditor({
 }: VertesiaMarkdownDocumentEditorProps) {
     const { t } = useUITranslation();
     const labels = useToolbarLabels(toolbarLabels);
+    const [editingMode, setEditingMode] = useState<'choose' | 'rich-text' | 'source'>(() =>
+        isMarkdownSourcePreserving(props.value) ? 'rich-text' : 'choose',
+    );
+    const resolvedEditingMode = editingMode === 'choose' ? 'source' : editingMode;
+
     return (
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
-            <MarkdownDocumentEditor
-                {...props}
-                {...vertesiaRichTextRenderers}
-                ariaLabel={props.ariaLabel ?? t('richText.documentEditor')}
-                className={cn('flex h-full min-h-0 flex-col bg-background', className)}
-                contentClassName={cn('min-h-0 flex-1 overflow-auto', contentClassName)}
-                editorClassName={cn(
-                    'vprose prose-sm mx-auto min-h-full w-full max-w-5xl px-6 py-5 outline-none',
-                    editorClassName,
-                )}
-                toolbarClassName={cn(TOOLBAR_CLASS_NAME, toolbarClassName)}
-                toolbarLabels={labels}
-            />
+            {resolvedEditingMode === 'rich-text' ? (
+                <MarkdownDocumentEditor
+                    {...props}
+                    {...vertesiaRichTextRenderers}
+                    ariaLabel={props.ariaLabel ?? t('richText.documentEditor')}
+                    className={cn('flex h-full min-h-0 flex-col bg-background', className)}
+                    contentClassName={cn('min-h-0 flex-1 overflow-auto', contentClassName)}
+                    editorClassName={cn(
+                        'vprose prose-sm mx-auto min-h-full w-full max-w-5xl px-6 py-5 outline-none',
+                        editorClassName,
+                    )}
+                    toolbarClassName={cn(TOOLBAR_CLASS_NAME, toolbarClassName)}
+                    toolbarLabels={labels}
+                />
+            ) : (
+                <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
+                    <Textarea
+                        value={props.value}
+                        onChange={(event) => props.onChange?.(event.target.value)}
+                        onFocus={() => props.onFocusChange?.(true)}
+                        onBlur={() => props.onFocusChange?.(false)}
+                        disabled={props.editable === false}
+                        aria-label={t('richText.markdownSourceEditor')}
+                        className={cn(
+                            'vertesia-markdown-document-editor-content min-h-0 flex-1 resize-none rounded-none',
+                            'border-0 px-6 py-5 font-mono text-sm leading-6 outline-none focus-visible:ring-0',
+                            contentClassName,
+                            editorClassName,
+                        )}
+                    />
+                </div>
+            )}
+            <Modal
+                isOpen={editingMode === 'choose'}
+                onClose={() => setEditingMode('source')}
+                className="sm:max-w-lg"
+                disableCloseOnClickOutside
+            >
+                <ModalTitle>{t('richText.sourceCompatibilityWarningTitle')}</ModalTitle>
+                <ModalBody>
+                    <p className="text-sm text-muted">{t('richText.sourceCompatibilityWarningDescription')}</p>
+                </ModalBody>
+                <ModalFooter align="right">
+                    <Button variant="outline" onClick={() => setEditingMode('source')}>
+                        {t('richText.editMarkdownSource')}
+                    </Button>
+                    <Button variant="secondary" onClick={() => setEditingMode('rich-text')}>
+                        {t('richText.continueRichText')}
+                    </Button>
+                </ModalFooter>
+            </Modal>
         </CodeBlockHandlerProvider>
     );
 }

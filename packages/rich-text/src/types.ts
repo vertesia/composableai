@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 
-export type OpaqueMarkdownKind = 'directive' | 'display-math' | 'github-alert' | 'task-list';
+export type OpaqueMarkdownKind = 'directive' | 'display-math' | 'frontmatter' | 'github-alert' | 'task-list';
 
 export interface RichTextCodeBlockRendererProps {
     code: string;

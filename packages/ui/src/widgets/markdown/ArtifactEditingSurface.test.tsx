@@ -178,6 +178,30 @@ describe('ArtifactEditingSurface', () => {
         });
     });
 
+    it('flushes a pending debounced document save when the editor unmounts', async () => {
+        mocks.getArtifactContent.mockResolvedValueOnce({
+            path: 'drafts/document.md',
+            content: 'Setext heading\n==============',
+            generation: 'generation-1',
+        });
+        const view = renderSurface({ viewMode: 'document' });
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Edit Markdown source' }));
+        fireEvent.change(screen.getByRole('textbox', { name: 'Markdown source editor' }), {
+            target: { value: 'Updated heading\n===============' },
+        });
+        expect(mocks.updateArtifactContent).not.toHaveBeenCalled();
+
+        view.unmount();
+
+        await waitFor(() => {
+            expect(mocks.updateArtifactContent).toHaveBeenCalledWith('run-1', 'drafts/document.md', {
+                content: 'Updated heading\n===============',
+                generation: 'generation-1',
+            });
+        });
+    });
+
     it('shows a navigable ruler for changes from the original document', async () => {
         renderSurface({ viewMode: 'document', baselineContent: 'Different paragraph.' });
 

@@ -830,5 +830,10 @@
   "richText.deleteTable": "표 삭제",
   "richText.undo": "실행 취소",
   "richText.redo": "다시 실행",
-  "richText.documentEditor": "Markdown 문서 편집기"
+  "richText.documentEditor": "Markdown 문서 편집기",
+  "richText.continueRichText": "리치 텍스트로 계속",
+  "richText.editMarkdownSource": "Markdown 원본 편집",
+  "richText.markdownSourceEditor": "Markdown 원본 편집기",
+  "richText.sourceCompatibilityWarningDescription": "리치 텍스트 편집은 이 문서의 일부 Markdown 구문을 정규화하며 변경하지 않은 줄도 다시 작성할 수 있습니다. 정확한 형식을 유지하려면 Markdown 원본을 편집하고, 정규화를 허용할 수 있다면 리치 텍스트로 계속하세요.",
+  "richText.sourceCompatibilityWarningTitle": "일부 Markdown 형식이 변경될 수 있습니다"
 }

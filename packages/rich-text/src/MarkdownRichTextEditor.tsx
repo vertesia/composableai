@@ -181,9 +181,16 @@ export function MarkdownRichTextEditor({
 
     useEffect(
         () => () => {
-            if (changeTimeoutRef.current !== undefined) clearTimeout(changeTimeoutRef.current);
+            if (changeTimeoutRef.current === undefined) return;
+            clearTimeout(changeTimeoutRef.current);
+            changeTimeoutRef.current = undefined;
+            if (!editor) return;
+
+            const markdown = editor.getMarkdown();
+            lastSerializedMarkdownRef.current = markdown;
+            onChangeRef.current?.(markdown);
         },
-        [],
+        [editor],
     );
 
     return <EditorContent editor={editor} className={className} />;

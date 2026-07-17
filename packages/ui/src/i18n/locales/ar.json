@@ -870,5 +870,10 @@
   "richText.deleteTable": "حذف الجدول",
   "richText.undo": "تراجع",
   "richText.redo": "إعادة",
-  "richText.documentEditor": "محرر مستند Markdown"
+  "richText.documentEditor": "محرر مستند Markdown",
+  "richText.continueRichText": "المتابعة بالنص المنسق",
+  "richText.editMarkdownSource": "تحرير مصدر Markdown",
+  "richText.markdownSourceEditor": "محرر مصدر Markdown",
+  "richText.sourceCompatibilityWarningDescription": "سيؤدي تحرير النص المنسق إلى توحيد بعض صياغات Markdown في هذا المستند، وقد يعيد كتابة أسطر لم تتغير. حرّر مصدر Markdown للحفاظ على التنسيق الدقيق، أو تابع بالنص المنسق إذا كان التوحيد مقبولًا.",
+  "richText.sourceCompatibilityWarningTitle": "قد يتغير بعض تنسيق Markdown"
 }

@@ -1596,10 +1596,11 @@ function ModernAgentConversationInner({
     );
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
+    const isAgentWorking = !effectiveIsCompleted && !isWorkflowTerminal;
 
     useEffect(() => {
-        onAgentWorkingChange?.(!effectiveIsCompleted);
-    }, [effectiveIsCompleted, onAgentWorkingChange]);
+        onAgentWorkingChange?.(isAgentWorking);
+    }, [isAgentWorking, onAgentWorkingChange]);
     const pendingRequestInputMessage = useMemo(
         () => getPendingRequestInputMessage(displayedMessages),
         [displayedMessages],

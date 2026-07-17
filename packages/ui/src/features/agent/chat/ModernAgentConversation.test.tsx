@@ -309,6 +309,19 @@ describe('ModernAgentConversation send handling', () => {
         await waitFor(() => expect(onAgentWorkingChange).toHaveBeenLastCalledWith(false));
     });
 
+    it('reports a failed workflow as idle even when its final stream message is an error', async () => {
+        const onAgentWorkingChange = vi.fn();
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ERROR, 'Agent failed')],
+            isCompleted: false,
+            agentRunStatus: 'FAILED',
+        });
+
+        renderConversation({ onAgentWorkingChange });
+
+        await waitFor(() => expect(onAgentWorkingChange).toHaveBeenLastCalledWith(false));
+    });
+
     it('restarts a terminal continuable run before sending the follow-up message', async () => {
         mockStreamState({
             messages: [createMessage(AgentMessageType.COMPLETE, 'done')],

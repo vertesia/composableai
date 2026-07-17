@@ -707,6 +707,25 @@ export function DocumentEditingWorkspace({
         sendMessage(createDocumentChangeSummaryPrompt(documentRootId, originalDocumentRef.current.id, draftPath));
     }, [documentRootId, draftPath, messageRef, t, toast]);
 
+    const flushFullEditorChanges = useCallback(async (): Promise<boolean> => {
+        if (workspaceView !== 'editor' || !hasDirectEditorChanges) return true;
+        return Boolean(await flushArtifactChangesRef.current?.());
+    }, [hasDirectEditorChanges, workspaceView]);
+
+    const handleWorkspaceViewChange = useCallback(
+        async (nextView: 'document' | 'editor' | 'diff') => {
+            if (nextView === workspaceView) return;
+            if (!(await flushFullEditorChanges())) return;
+            setWorkspaceView(nextView);
+        },
+        [flushFullEditorChanges, workspaceView],
+    );
+
+    const handleCloseWorkspace = useCallback(async () => {
+        if (!(await flushFullEditorChanges())) return;
+        onClose?.();
+    }, [flushFullEditorChanges, onClose]);
+
     const handleSendChangesToAgent = useCallback(async () => {
         const sendMessage = messageRef.current;
         if (!sendMessage || !agentRunId || isEditingLocked || isSendingChanges) {
@@ -776,7 +795,7 @@ export function DocumentEditingWorkspace({
                             variant={workspaceView === 'document' ? 'secondary' : 'ghost'}
                             size="sm"
                             className="h-7 gap-1.5"
-                            onClick={() => setWorkspaceView('document')}
+                            onClick={() => void handleWorkspaceViewChange('document')}
                         >
                             <FileText className="size-3.5" />
                             {t('agent.document')}
@@ -785,7 +804,7 @@ export function DocumentEditingWorkspace({
                             variant={workspaceView === 'editor' ? 'secondary' : 'ghost'}
                             size="sm"
                             className="h-7 gap-1.5"
-                            onClick={() => setWorkspaceView('editor')}
+                            onClick={() => void handleWorkspaceViewChange('editor')}
                         >
                             <FilePenLine className="size-3.5" />
                             {t('agent.fullEditor')}
@@ -794,7 +813,7 @@ export function DocumentEditingWorkspace({
                             variant={workspaceView === 'diff' ? 'secondary' : 'ghost'}
                             size="sm"
                             className="h-7 gap-1.5"
-                            onClick={() => setWorkspaceView('diff')}
+                            onClick={() => void handleWorkspaceViewChange('diff')}
                             disabled={!artifactLoaded || artifactContent === originalContent}
                         >
                             <GitCompareArrows className="size-3.5" />
@@ -899,7 +918,12 @@ export function DocumentEditingWorkspace({
                         {t('agent.saveToDocument')}
                     </Button>
                     {onClose ? (
-                        <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('agent.close')}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => void handleCloseWorkspace()}
+                            aria-label={t('agent.close')}
+                        >
                             <X className="size-4" />
                         </Button>
                     ) : null}

@@ -830,5 +830,10 @@
   "richText.deleteTable": "Tabloyu sil",
   "richText.undo": "Geri al",
   "richText.redo": "Yinele",
-  "richText.documentEditor": "Markdown belge düzenleyici"
+  "richText.documentEditor": "Markdown belge düzenleyici",
+  "richText.continueRichText": "Zengin metinle devam et",
+  "richText.editMarkdownSource": "Markdown kaynağını düzenle",
+  "richText.markdownSourceEditor": "Markdown kaynak düzenleyicisi",
+  "richText.sourceCompatibilityWarningDescription": "Zengin metin düzenleme, bu belgedeki bazı Markdown sözdizimlerini normalleştirir ve değişmeyen satırları yeniden yazabilir. Tam biçimlendirmeyi korumak için Markdown kaynağını düzenleyin veya normalleştirme kabul edilebilirse zengin metinle devam edin.",
+  "richText.sourceCompatibilityWarningTitle": "Bazı Markdown biçimlendirmeleri değişebilir"
 }

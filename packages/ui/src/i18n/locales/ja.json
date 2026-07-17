@@ -830,5 +830,10 @@
   "richText.deleteTable": "表を削除",
   "richText.undo": "元に戻す",
   "richText.redo": "やり直す",
-  "richText.documentEditor": "Markdown ドキュメントエディター"
+  "richText.documentEditor": "Markdown ドキュメントエディター",
+  "richText.continueRichText": "リッチテキストで続行",
+  "richText.editMarkdownSource": "Markdown ソースを編集",
+  "richText.markdownSourceEditor": "Markdown ソースエディター",
+  "richText.sourceCompatibilityWarningDescription": "リッチテキスト編集では、このドキュメントの一部の Markdown 構文が正規化され、変更していない行も書き換えられる場合があります。正確な書式を保持するには Markdown ソースを編集し、正規化を許容できる場合はリッチテキストで続行してください。",
+  "richText.sourceCompatibilityWarningTitle": "一部の Markdown 書式が変更される可能性があります"
 }

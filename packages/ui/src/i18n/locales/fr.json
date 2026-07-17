@@ -840,5 +840,10 @@
   "richText.deleteTable": "Supprimer le tableau",
   "richText.undo": "Annuler",
   "richText.redo": "Rétablir",
-  "richText.documentEditor": "Éditeur de document Markdown"
+  "richText.documentEditor": "Éditeur de document Markdown",
+  "richText.continueRichText": "Continuer avec le texte enrichi",
+  "richText.editMarkdownSource": "Modifier la source Markdown",
+  "richText.markdownSourceEditor": "Éditeur de source Markdown",
+  "richText.sourceCompatibilityWarningDescription": "L’édition en texte enrichi normalisera certaines syntaxes Markdown de ce document et pourra réécrire des lignes inchangées. Modifiez la source Markdown pour conserver sa mise en forme exacte, ou continuez avec le texte enrichi si cette normalisation est acceptable.",
+  "richText.sourceCompatibilityWarningTitle": "Certaines mises en forme Markdown peuvent changer"
 }

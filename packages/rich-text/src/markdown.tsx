@@ -80,6 +80,25 @@ function trimConsumedNewline(raw: string): string {
     return raw.endsWith('\n') ? raw.slice(0, -1) : raw;
 }
 
+function matchFrontmatter(src: string): string | undefined {
+    const opening = /^---[ \t]*(?:\n|$)/.exec(src);
+    if (!opening) return undefined;
+
+    let offset = opening[0].length;
+    let hasContent = false;
+    while (offset < src.length) {
+        const nextLineEnd = src.indexOf('\n', offset);
+        const lineEnd = nextLineEnd === -1 ? src.length : nextLineEnd + 1;
+        const line = src.slice(offset, lineEnd);
+        if (/^---[ \t]*(?:\n|$)/.test(line)) {
+            return hasContent ? src.slice(0, lineEnd) : undefined;
+        }
+        if (!/^[ \t]*(?:\n|$)/.test(line)) hasContent = true;
+        offset = lineEnd;
+    }
+    return undefined;
+}
+
 function matchDirective(src: string): string | undefined {
     const singleLine = /^(?: {0,3})(?:::[A-Za-z][\w-]*[^\n]*:::[ \t]*|::[A-Za-z][\w-]*[^\n]*)(?:\n|$)/.exec(src);
     if (singleLine) return singleLine[0];
@@ -152,7 +171,13 @@ function matchTaskList(src: string): string | undefined {
     return offset > 0 ? src.slice(0, offset) : undefined;
 }
 
-function matchOpaqueMarkdown(src: string): { kind: OpaqueMarkdownKind; raw: string } | undefined {
+function matchOpaqueMarkdown(
+    src: string,
+    atDocumentStart: boolean,
+): { kind: OpaqueMarkdownKind; raw: string } | undefined {
+    const frontmatter = atDocumentStart ? matchFrontmatter(src) : undefined;
+    if (frontmatter) return { kind: 'frontmatter', raw: frontmatter };
+
     const directive = matchDirective(src);
     if (directive) return { kind: 'directive', raw: directive };
 
@@ -343,10 +368,12 @@ function createOpaqueMarkdownExtension(renderer: RichTextRenderers['opaqueBlock'
             name: 'opaqueMarkdownBlock',
             level: 'block',
             start(src) {
-                return src.search(/^ {0,3}(?::::?|\$\$|>[ \t]*\[![A-Z]+\]|[-+*][ \t]+\[[ xX]\][ \t]+)/m);
+                return src.search(
+                    /^ {0,3}(?:---[ \t]*(?:\n|$)|::?::?|\$\$|>[ \t]*\[![A-Z]+\]|[-+*][ \t]+\[[ xX]\][ \t]+)/m,
+                );
             },
-            tokenize(src): MarkdownToken | undefined {
-                const match = matchOpaqueMarkdown(src);
+            tokenize(src, tokens): MarkdownToken | undefined {
+                const match = matchOpaqueMarkdown(src, tokens.length === 0);
                 if (!match) return undefined;
                 return {
                     type: 'opaqueMarkdownBlock',
@@ -400,4 +427,17 @@ export function serializeMarkdown(content: JSONContent, options: VertesiaMarkdow
 
 export function roundTripMarkdown(markdown: string, options: VertesiaMarkdownKitOptions = {}): string {
     return serializeMarkdown(parseMarkdown(markdown, options), options);
+}
+
+/**
+ * Returns whether opening Markdown in the rich-text editor can preserve its
+ * exact source representation. Hosts can use this to warn before entering a
+ * full-document editor that normalizes Markdown syntax.
+ */
+export function isMarkdownSourcePreserving(markdown: string, options: VertesiaMarkdownKitOptions = {}): boolean {
+    try {
+        return roundTripMarkdown(markdown, options) === markdown;
+    } catch {
+        return false;
+    }
 }

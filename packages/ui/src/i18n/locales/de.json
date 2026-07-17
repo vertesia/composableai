@@ -830,5 +830,10 @@
   "richText.deleteTable": "Tabelle löschen",
   "richText.undo": "Rückgängig",
   "richText.redo": "Wiederholen",
-  "richText.documentEditor": "Markdown-Dokumenteditor"
+  "richText.documentEditor": "Markdown-Dokumenteditor",
+  "richText.continueRichText": "Mit Rich-Text fortfahren",
+  "richText.editMarkdownSource": "Markdown-Quelltext bearbeiten",
+  "richText.markdownSourceEditor": "Markdown-Quelltexteditor",
+  "richText.sourceCompatibilityWarningDescription": "Die Rich-Text-Bearbeitung normalisiert Teile der Markdown-Syntax in diesem Dokument und kann unveränderte Zeilen neu schreiben. Bearbeiten Sie den Markdown-Quelltext, um die genaue Formatierung beizubehalten, oder fahren Sie mit Rich-Text fort, wenn die Normalisierung akzeptabel ist.",
+  "richText.sourceCompatibilityWarningTitle": "Einige Markdown-Formatierungen können sich ändern"
 }

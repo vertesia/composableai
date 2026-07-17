@@ -840,5 +840,10 @@
   "richText.deleteTable": "Elimina tabella",
   "richText.undo": "Annulla",
   "richText.redo": "Ripristina",
-  "richText.documentEditor": "Editor di documenti Markdown"
+  "richText.documentEditor": "Editor di documenti Markdown",
+  "richText.continueRichText": "Continua con testo formattato",
+  "richText.editMarkdownSource": "Modifica sorgente Markdown",
+  "richText.markdownSourceEditor": "Editor del sorgente Markdown",
+  "richText.sourceCompatibilityWarningDescription": "La modifica in testo formattato normalizzerà parte della sintassi Markdown di questo documento e potrebbe riscrivere righe invariate. Modifica il sorgente Markdown per conservare la formattazione esatta oppure continua con il testo formattato se la normalizzazione è accettabile.",
+  "richText.sourceCompatibilityWarningTitle": "Parte della formattazione Markdown potrebbe cambiare"
 }

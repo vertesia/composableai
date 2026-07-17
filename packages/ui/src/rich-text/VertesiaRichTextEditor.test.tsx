@@ -91,6 +91,38 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
     });
 
+    it('warns before rich-text editing would normalize Markdown and lets the user preserve source', async () => {
+        const onChange = vi.fn();
+        render(
+            <I18nProvider lng="en">
+                <VertesiaMarkdownDocumentEditor value={'Setext heading\n=============='} onChange={onChange} />
+            </I18nProvider>,
+        );
+
+        expect(await screen.findByRole('heading', { name: 'Some Markdown formatting may change' })).not.toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Edit Markdown source' }));
+
+        const sourceEditor = screen.getByRole('textbox', { name: 'Markdown source editor' });
+        expect((sourceEditor as HTMLTextAreaElement).value).toBe('Setext heading\n==============');
+        fireEvent.change(sourceEditor, { target: { value: 'Updated heading\n===============' } });
+
+        expect(onChange).toHaveBeenLastCalledWith('Updated heading\n===============');
+        expect(screen.queryByRole('toolbar', { name: 'Markdown formatting' })).toBeNull();
+    });
+
+    it('lets the user accept Markdown normalization and continue in rich-text mode', async () => {
+        render(
+            <I18nProvider lng="en">
+                <VertesiaMarkdownDocumentEditor value={'Setext heading\n=============='} />
+            </I18nProvider>,
+        );
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Continue with rich text' }));
+
+        expect(await screen.findByRole('heading', { name: 'Setext heading' })).not.toBeNull();
+        expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
+    });
+
     it('offers contextual row and column actions while editing a table', async () => {
         let editor: Parameters<NonNullable<MarkdownRichTextEditorProps['onEditor']>>[0] = null;
         render(
@@ -104,6 +136,7 @@ describe('VertesiaMarkdownRichTextEditor', () => {
             </I18nProvider>,
         );
 
+        fireEvent.click(await screen.findByRole('button', { name: 'Continue with rich text' }));
         await waitFor(() => expect(editor).not.toBeNull());
         expect(screen.queryByRole('combobox', { name: 'Table actions' })).toBeNull();
 

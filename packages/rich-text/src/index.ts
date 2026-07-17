@@ -19,6 +19,7 @@ export {
     type CreateMarkdownEditorOptions,
     createMarkdownEditor,
     createVertesiaMarkdownExtensions,
+    isMarkdownSourcePreserving,
     isVertesiaWidgetLanguage,
     parseMarkdown,
     roundTripMarkdown,

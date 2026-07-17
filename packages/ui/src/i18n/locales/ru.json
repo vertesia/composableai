@@ -850,5 +850,10 @@
   "richText.deleteTable": "Удалить таблицу",
   "richText.undo": "Отменить",
   "richText.redo": "Повторить",
-  "richText.documentEditor": "Редактор документов Markdown"
+  "richText.documentEditor": "Редактор документов Markdown",
+  "richText.continueRichText": "Продолжить в визуальном редакторе",
+  "richText.editMarkdownSource": "Редактировать исходный Markdown",
+  "richText.markdownSourceEditor": "Редактор исходного Markdown",
+  "richText.sourceCompatibilityWarningDescription": "Визуальное редактирование нормализует часть синтаксиса Markdown в этом документе и может перезаписать неизменённые строки. Чтобы сохранить точное форматирование, редактируйте исходный Markdown, либо продолжите в визуальном редакторе, если нормализация допустима.",
+  "richText.sourceCompatibilityWarningTitle": "Некоторое форматирование Markdown может измениться"
 }

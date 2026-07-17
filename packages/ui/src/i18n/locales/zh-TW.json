@@ -830,5 +830,10 @@
   "richText.deleteTable": "刪除表格",
   "richText.undo": "復原",
   "richText.redo": "重做",
-  "richText.documentEditor": "Markdown 文件編輯器"
+  "richText.documentEditor": "Markdown 文件編輯器",
+  "richText.continueRichText": "繼續使用富文字",
+  "richText.editMarkdownSource": "編輯 Markdown 原始碼",
+  "richText.markdownSourceEditor": "Markdown 原始碼編輯器",
+  "richText.sourceCompatibilityWarningDescription": "富文字編輯會正規化此文件中的部分 Markdown 語法，並可能重寫未變更的行。若要保留精確格式，請編輯 Markdown 原始碼；如果可以接受正規化，也可以繼續使用富文字。",
+  "richText.sourceCompatibilityWarningTitle": "部分 Markdown 格式可能會變更"
 }
