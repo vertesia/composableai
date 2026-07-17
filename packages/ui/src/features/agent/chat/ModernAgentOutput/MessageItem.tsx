@@ -35,6 +35,7 @@ import { ThinkingMessages } from '../WaitingMessages';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
+import { getToolApprovalResponseMetadata } from './requestInputMessages';
 import { getWorkstreamId } from './utils';
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
@@ -649,7 +650,9 @@ function MessageItemComponent({
                                       options={uxConfig.options}
                                       variant={uxConfig.variant}
                                       multiSelect={uxConfig.multiSelect}
-                                      onSelect={(optionId) => onSendMessage?.(optionId)}
+                                      onSelect={(optionId) =>
+                                          onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                                      }
                                       onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
                                       allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
                                       placeholder={uxConfig.free_response?.placeholder}
