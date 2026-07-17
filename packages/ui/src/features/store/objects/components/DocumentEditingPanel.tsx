@@ -48,6 +48,11 @@ import {
 import { DocumentEditingLockBanner } from './DocumentEditingLockBanner.js';
 import { persistRunLocalArtifactRefs } from './documentArtifactRefs.js';
 import {
+    DOCUMENT_EDITING_EXCLUDED_TOOLS,
+    DOCUMENT_EDITING_INITIAL_SKILLS,
+    DOCUMENT_EDITING_TOOLS,
+} from './documentEditingAgentConfig.js';
+import {
     createDocumentEditingRunIdentity,
     type DocumentEditingRunProperties,
     findDocumentEditingRun,
@@ -75,34 +80,6 @@ export interface DocumentEditingWorkspaceProps {
     /** Optional external handle to send chat messages programmatically. */
     sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
 }
-
-const DOCUMENT_EDITING_TOOLS = [
-    'ask_user',
-    'think',
-    'plan',
-    'update_plan',
-    'end_conversation',
-    'learn_artifact_operations',
-    // Read access to canonical revisions: reconcile-after-conflict and change
-    // summaries fetch other revisions into reference artifacts for comparison.
-    'fetch_document',
-];
-
-// Editing sessions mutate only the working-copy artifact; the canonical document is
-// published exclusively through Save to document. These tools stay unavailable even
-// if a skill or tool refresh would otherwise unlock them.
-const DOCUMENT_EDITING_EXCLUDED_TOOLS = [
-    'update_document',
-    'update_document_properties',
-    'create_document',
-    'set_document_type',
-    'merge_documents',
-    'import_file',
-    'create_or_update_object_type',
-    'disable_type',
-    'execute_shell',
-    'batch_execute',
-];
 
 function shortenRunId(id: string): string {
     return id.length > 12 ? `${id.slice(0, 4)}…${id.slice(-4)}` : id;
@@ -134,6 +111,10 @@ function createDocumentEditingPrompt(
         '',
         'Do not call update_document, create_document, or write_artifact for this working copy. The user publishes',
         'the artifact back to the canonical document with the Save to document button, which enforces the base ETag.',
+        '',
+        'You may use execute_shell to regenerate charts, diagrams, and other derived assets. Write generated files',
+        "under '/home/daytona/out/' so they sync back to the run, then reference them from Markdown with a run-local",
+        "link such as 'artifact:out/chart.png'. Saving the document persists and rewrites those links automatically.",
         '',
         'Images: never inline image data as base64 data URIs — it bloats the document and cannot be reliably edited.',
         "Keep existing image references (e.g. 'artifact:documents/…' URLs) exactly as they are: they point to durable",
@@ -496,7 +477,7 @@ export function DocumentEditingWorkspace({
                     tool_approval_mode: options?.tool_approval_mode,
                     tool_names: DOCUMENT_EDITING_TOOLS,
                     excluded_tools: DOCUMENT_EDITING_EXCLUDED_TOOLS,
-                    initial_skills: ['artifact_operations'],
+                    initial_skills: DOCUMENT_EDITING_INITIAL_SKILLS,
                     initial_tool_calls: [
                         {
                             id: 'hydrate-working-copy',
