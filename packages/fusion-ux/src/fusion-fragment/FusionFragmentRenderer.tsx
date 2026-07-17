@@ -76,6 +76,7 @@ function ValidationErrors({ errors }: { errors: ValidationError[] }): ReactEleme
                 Template Validation Failed ({errors.length} error{errors.length > 1 ? 's' : ''})
             </div>
             <ul style={styles.errorList}>
+                {/* TODO: Give ValidationError a stable identifier; identical path/message pairs produce duplicate keys. */}
                 {errors.map((error) => (
                     <li key={`${error.path}:${error.message}`} style={styles.errorItem}>
                         <span>{error.message}</span>
