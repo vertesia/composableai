@@ -47,6 +47,7 @@ export interface ParsedUserAttachments {
 interface AttachmentPreviewListProps {
     items: AttachmentPreviewItem[];
     artifactRunId?: string;
+    onOpenArtifact?: (path: string) => void;
     className?: string;
     align?: 'start' | 'end';
     variant?: 'composer' | 'message';
@@ -103,16 +104,27 @@ function isCollectionHref(href: string | undefined): boolean {
 function AttachmentLink({
     item,
     children,
+    onOpenArtifact,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: {
     item: AttachmentPreviewItem;
     children: React.ReactNode;
+    onOpenArtifact?: (path: string) => void;
     StoreLinkComponent?: AttachmentPreviewListProps['StoreLinkComponent'];
     CollectionLinkComponent?: AttachmentPreviewListProps['CollectionLinkComponent'];
 }) {
     const href = item.href;
     if (!href) return <>{children}</>;
+
+    const artifactPath = getArtifactPath(item);
+    if (artifactPath && /\.md$/i.test(artifactPath) && onOpenArtifact) {
+        return (
+            <button type="button" className="max-w-full text-start" onClick={() => onOpenArtifact(artifactPath)}>
+                {children}
+            </button>
+        );
+    }
 
     if (isStoreObjectHref(href)) {
         const documentId = getStoreObjectId(href);
@@ -158,6 +170,7 @@ function AttachmentPreview({
     artifactRunId,
     variant,
     onRemove,
+    onOpenArtifact,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: {
@@ -165,6 +178,7 @@ function AttachmentPreview({
     artifactRunId?: string;
     variant: 'composer' | 'message';
     onRemove?: (fileId: string) => void;
+    onOpenArtifact?: (path: string) => void;
     StoreLinkComponent?: AttachmentPreviewListProps['StoreLinkComponent'];
     CollectionLinkComponent?: AttachmentPreviewListProps['CollectionLinkComponent'];
 }) {
@@ -338,6 +352,7 @@ function AttachmentPreview({
         <span className="relative inline-flex max-w-full">
             <AttachmentLink
                 item={item}
+                onOpenArtifact={onOpenArtifact}
                 StoreLinkComponent={StoreLinkComponent}
                 CollectionLinkComponent={CollectionLinkComponent}
             >
@@ -355,6 +370,7 @@ export function AttachmentPreviewList({
     align = 'start',
     variant = 'message',
     onRemove,
+    onOpenArtifact,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: AttachmentPreviewListProps) {
@@ -369,6 +385,7 @@ export function AttachmentPreviewList({
                     artifactRunId={artifactRunId}
                     variant={variant}
                     onRemove={onRemove}
+                    onOpenArtifact={onOpenArtifact}
                     StoreLinkComponent={StoreLinkComponent}
                     CollectionLinkComponent={CollectionLinkComponent}
                 />

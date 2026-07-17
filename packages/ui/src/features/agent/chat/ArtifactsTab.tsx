@@ -165,6 +165,9 @@ function downloadUrl(url: string, filename: string) {
 interface ArtifactsTabProps {
     runId?: string;
     refreshKey?: number;
+    refreshDetails?: Record<string, unknown>;
+    selectedPath?: string | null;
+    onSelectedPathChange?: (path: string | null) => void;
     onSendMessage?: (message: string, inputMetadata?: Record<string, unknown>) => void;
 }
 
@@ -173,10 +176,20 @@ interface ArtifactMarkdownEditorProps {
     path: string;
     onBack: () => void;
     onDownload: (path: string) => void;
+    refreshKey?: number;
+    refreshDetails?: Record<string, unknown>;
     onSendMessage?: (message: string, inputMetadata?: Record<string, unknown>) => void;
 }
 
-function ArtifactMarkdownEditor({ runId, path, onBack, onDownload, onSendMessage }: ArtifactMarkdownEditorProps) {
+function ArtifactMarkdownEditor({
+    runId,
+    path,
+    onBack,
+    onDownload,
+    refreshKey,
+    refreshDetails,
+    onSendMessage,
+}: ArtifactMarkdownEditorProps) {
     const { t } = useUITranslation();
 
     const handleAction = (action: MarkdownEditingAction) => {
@@ -216,6 +229,8 @@ function ArtifactMarkdownEditor({ runId, path, onBack, onDownload, onSendMessage
             <ArtifactEditingSurface
                 runId={runId}
                 path={path}
+                refreshKey={refreshKey}
+                refreshDetails={refreshDetails}
                 readOnly={!onSendMessage}
                 onAction={handleAction}
                 className="relative min-h-0 flex-1 overflow-y-auto px-4 py-3"
@@ -242,13 +257,28 @@ function ArtifactEmptyState({
     );
 }
 
-function ArtifactsTabComponent({ runId, refreshKey = 0, onSendMessage }: ArtifactsTabProps) {
+function ArtifactsTabComponent({
+    runId,
+    refreshKey = 0,
+    refreshDetails,
+    selectedPath,
+    onSelectedPathChange,
+    onSendMessage,
+}: ArtifactsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const { tree, flatFiles, isLoading, error, refresh } = useArtifacts(client, runId, refreshKey);
     const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
     const [filterValue, setFilterValue] = useState('');
-    const [selectedPath, setSelectedPath] = useState<string | null>(null);
+    const [internalSelectedPath, setInternalSelectedPath] = useState<string | null>(null);
+    const activeSelectedPath = selectedPath === undefined ? internalSelectedPath : selectedPath;
+    const setSelectedPath = useCallback(
+        (path: string | null) => {
+            if (selectedPath === undefined) setInternalSelectedPath(path);
+            onSelectedPathChange?.(path);
+        },
+        [onSelectedPathChange, selectedPath],
+    );
     const normalizedFilterValue = filterValue.trim();
     const filteredTree = useMemo(() => filterArtifactTree(tree, normalizedFilterValue), [tree, normalizedFilterValue]);
     const visibleFileCount = useMemo(() => countTreeFiles(filteredTree), [filteredTree]);
@@ -278,7 +308,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0, onSendMessage }: Artifac
             }
             void handleDownload(relativePath);
         },
-        [handleDownload],
+        [handleDownload, setSelectedPath],
     );
 
     if (!runId) {
@@ -329,12 +359,13 @@ function ArtifactsTabComponent({ runId, refreshKey = 0, onSendMessage }: Artifac
         );
     }
 
-    if (selectedPath) {
+    if (activeSelectedPath) {
         return (
             <ArtifactMarkdownEditor
-                key={`${selectedPath}:${refreshKey}`}
                 runId={runId}
-                path={selectedPath}
+                path={activeSelectedPath}
+                refreshKey={refreshKey}
+                refreshDetails={refreshDetails}
                 onBack={() => setSelectedPath(null)}
                 onDownload={(path) => void handleDownload(path)}
                 onSendMessage={onSendMessage}

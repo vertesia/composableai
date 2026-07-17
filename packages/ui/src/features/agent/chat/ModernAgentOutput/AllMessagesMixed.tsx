@@ -283,6 +283,7 @@ function getMessageText(message: AgentMessage): string {
 interface SummaryMessageProps {
     message: AgentMessage;
     onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    onOpenArtifact?: (path: string) => void;
     onSelectWorkstream?: (workstreamId: string) => void;
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
@@ -561,6 +562,7 @@ function SummaryUserBubble({
     workstreamId,
     className,
     artifactRunId,
+    onOpenArtifact,
     markdownComponents,
 }: {
     children: React.ReactNode;
@@ -568,6 +570,7 @@ function SummaryUserBubble({
     workstreamId?: string;
     className?: string;
     artifactRunId?: string;
+    onOpenArtifact?: (path: string) => void;
     markdownComponents?: MarkdownRendererProps['components'];
 }) {
     const { t } = useUITranslation();
@@ -607,6 +610,7 @@ function SummaryUserBubble({
                     {shouldRenderMarkdown ? (
                         <MarkdownRenderer
                             artifactRunId={artifactRunId}
+                            onArtifactOpen={onOpenArtifact}
                             components={markdownComponents}
                             className={cn(
                                 'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/90',
@@ -647,6 +651,7 @@ function SummaryUserBubble({
 function SummaryMessage({
     message,
     onSendMessage,
+    onOpenArtifact,
     onSelectWorkstream,
     requestInputAnswered = false,
     StoreLinkComponent,
@@ -740,6 +745,7 @@ function SummaryMessage({
                         <AttachmentPreviewList
                             items={attachments}
                             artifactRunId={runId}
+                            onOpenArtifact={onOpenArtifact}
                             align="end"
                             variant="message"
                             StoreLinkComponent={StoreLinkComponent}
@@ -752,6 +758,7 @@ function SummaryMessage({
                         message={message}
                         workstreamId={workstreamId}
                         artifactRunId={runId}
+                        onOpenArtifact={onOpenArtifact}
                         markdownComponents={markdownComponents}
                         className={
                             editingAction ? 'w-[min(34rem,92%)] max-w-[92%] bg-transparent p-0 shadow-none' : undefined
@@ -807,6 +814,7 @@ function SummaryMessage({
                 >
                     <MarkdownRenderer
                         artifactRunId={runId}
+                        onArtifactOpen={onOpenArtifact}
                         onProposalSelect={(optionId) => onSendMessage?.(optionId)}
                         onProposalSubmit={(text) => onSendMessage?.(text)}
                         components={markdownComponents}
@@ -2390,6 +2398,8 @@ interface AllMessagesMixedProps {
     streamingMessages?: Map<string, StreamingData>; // Real-time streaming chunks
     /** Callback when user sends a message (e.g., from proposal selection) */
     onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    /** Open a Markdown artifact in the surrounding agent panel. */
+    onOpenArtifact?: (path: string) => void;
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
     /** className overrides passed to every MessageItem */
@@ -2449,6 +2459,7 @@ function AllMessagesMixedComponent({
     isCompleted = false,
     streamingMessages = new Map(),
     onSendMessage,
+    onOpenArtifact,
     messageItemClassNames,
     messageStyleOverrides,
     toolCallGroupClassNames,
@@ -3414,6 +3425,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     showPulsatingCircle={isLatestMessage}
                                                     onSendMessage={onSendMessage}
+                                                    onOpenArtifact={onOpenArtifact}
                                                     requestInputAnswered={isRequestInputAnswered(
                                                         message,
                                                         answeredRequestInputKeys,
@@ -3534,6 +3546,7 @@ function AllMessagesMixedComponent({
                                         <SummaryMessage
                                             message={message}
                                             onSendMessage={onSendMessage}
+                                            onOpenArtifact={onOpenArtifact}
                                             onSelectWorkstream={handleSelectWorkstream}
                                             requestInputAnswered={isRequestInputAnswered(
                                                 message,

@@ -30,6 +30,7 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { isArtifactRefreshEvent } from '@vertesia/ui/widgets';
 import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1725,6 +1726,7 @@ function ModernAgentConversationInner({
     const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>(
         conversationContent || conversationTab ? 'conversation' : 'plan',
     );
+    const [selectedArtifactPath, setSelectedArtifactPath] = useState<string | null>(null);
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
 
@@ -1781,6 +1783,16 @@ function ModernAgentConversationInner({
         handleCloseDocPanel();
     }, [setShowSlidingPanel, handleCloseDocPanel]);
 
+    const handleOpenArtifact = useCallback(
+        (path: string) => {
+            if (!/\.md$/i.test(path)) return;
+            setSelectedArtifactPath(path);
+            setRightPanelTab('artifacts');
+            setShowSlidingPanel(true);
+        },
+        [setShowSlidingPanel],
+    );
+
     // Default StoreLinkComponent that opens documents in the panel
     const internalStoreLinkComponent = useCallback(
         ({ href, documentId, children }: { href: string; documentId: string; children: React.ReactNode }) => (
@@ -1831,6 +1843,7 @@ function ModernAgentConversationInner({
 
     useEffect(() => {
         void agentRunId;
+        setSelectedArtifactPath(null);
         workstreamFetchFailedRef.current = false;
         setIsWorkstreamQueryUnavailable(false);
         setQueriedActiveWorkstreams([]);
@@ -2424,6 +2437,21 @@ function ModernAgentConversationInner({
             return false;
         }).length;
     }, [messages]);
+    const selectedArtifactRefresh = useMemo(() => {
+        if (!selectedArtifactPath) return { key: artifactRefreshKey, details: undefined };
+
+        let key = 0;
+        let details: Record<string, unknown> | undefined;
+        for (const message of messages) {
+            const candidate = message.details as Record<string, unknown> | undefined;
+            if (!isArtifactRefreshEvent(candidate, selectedArtifactPath)) continue;
+            key++;
+            details = candidate;
+        }
+        return { key, details };
+    }, [artifactRefreshKey, messages, selectedArtifactPath]);
+    const canCollaborateWithArtifacts =
+        interactive && isPlaybackLive && effectiveWorkflowStatus?.toUpperCase() === 'RUNNING';
 
     // PERFORMANCE: Memoize taskLabels to prevent AllMessagesMixed re-renders
     const taskLabels = useMemo(
@@ -2521,6 +2549,7 @@ function ModernAgentConversationInner({
                     taskLabels={taskLabels}
                     streamingMessages={displayedStreamingMessages}
                     onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                    onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
                     messageItemClassNames={messageItemClassNames}
                     messageStyleOverrides={messageStyleOverrides}
                     toolCallGroupClassNames={toolCallGroupClassNames}
@@ -2759,10 +2788,11 @@ function ModernAgentConversationInner({
                                     processingFiles={processingFilesProp ?? processingFiles}
                                     // Artifacts
                                     showArtifacts={showArtifacts}
-                                    artifactRefreshKey={artifactRefreshKey}
-                                    onSendMessage={
-                                        !isWorkflowTerminal || canContinueConversation ? handleSendMessage : undefined
-                                    }
+                                    artifactRefreshKey={selectedArtifactRefresh.key}
+                                    artifactRefreshDetails={selectedArtifactRefresh.details}
+                                    selectedArtifactPath={selectedArtifactPath}
+                                    onSelectedArtifactPathChange={setSelectedArtifactPath}
+                                    onSendMessage={canCollaborateWithArtifacts ? handleSendMessage : undefined}
                                     // Messages (for workstreams tab context)
                                     messages={messages}
                                     // Payload content

@@ -66,6 +66,8 @@ export interface MarkdownRendererProps {
      * Optional workflow run id used to resolve shorthand artifact paths (e.g. artifact:out/result.csv)
      */
     artifactRunId?: string;
+    /** Open Markdown artifact links in a host-provided viewer instead of downloading them. */
+    onArtifactOpen?: (path: string) => void;
     /** Additional className for the markdown wrapper */
     className?: string;
     /** Additional className for code blocks */
@@ -96,6 +98,7 @@ export function MarkdownRenderer({
     remarkPlugins = [],
     removeComments = true,
     artifactRunId,
+    onArtifactOpen,
     className,
     codeClassName,
     inlineCodeClassName,
@@ -227,6 +230,7 @@ export function MarkdownRenderer({
                     href={href}
                     className={linkClassName}
                     artifactRunId={artifactRunId}
+                    onArtifactOpen={onArtifactOpen}
                     ExistingLink={
                         typeof ExistingLink === 'function'
                             ? (ExistingLink as React.ComponentType<MarkdownLinkProps>)
@@ -281,6 +285,7 @@ export function MarkdownRenderer({
     }, [
         components,
         artifactRunId,
+        onArtifactOpen,
         codeBlockRegistry,
         codeClassName,
         inlineCodeClassName,

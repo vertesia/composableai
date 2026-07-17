@@ -92,6 +92,7 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
         isCompleted,
         bottomRef,
         onSendMessage,
+        onOpenArtifact,
         showInitialRequest,
         renderRequestInputControls,
         activeWorkstream,
@@ -102,6 +103,7 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
         isCompleted?: boolean;
         bottomRef: React.RefObject<HTMLDivElement>;
         onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+        onOpenArtifact?: (path: string) => void;
         showInitialRequest?: boolean;
         renderRequestInputControls?: boolean;
         activeWorkstream?: string;
@@ -112,6 +114,7 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
             streamingMessages,
             isCompleted,
             onSendMessage,
+            onOpenArtifact,
             showInitialRequest,
             renderRequestInputControls,
             activeWorkstream,
@@ -124,6 +127,9 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
                 <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
                     inline send
                 </button>
+                <button type="button" disabled={!onOpenArtifact} onClick={() => onOpenArtifact?.('files/report.md')}>
+                    open artifact
+                </button>
                 <div ref={bottomRef} data-testid="bottom-sentinel" />
             </div>
         );
@@ -131,7 +137,12 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
 }));
 
 vi.mock('./AgentRightPanel.js', () => ({
-    AgentRightPanel: (props: { activeWorkstreams?: Array<{ workstream_id: string; status: string }> }) => {
+    AgentRightPanel: (props: {
+        activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+        onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+        selectedArtifactPath?: string | null;
+        activeTab?: string;
+    }) => {
         mocks.rightPanelProps(props);
         return <div data-testid="agent-right-panel" />;
     },
@@ -209,6 +220,17 @@ function latestAllMessagesMixedProps() {
               showInitialRequest?: boolean;
               activeWorkstream?: string;
               onActiveWorkstreamChange?: (workstreamId: string) => void;
+          }
+        | undefined;
+}
+
+function latestRightPanelProps() {
+    const calls = mocks.rightPanelProps.mock.calls;
+    return calls[calls.length - 1]?.[0] as
+        | {
+              onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+              selectedArtifactPath?: string | null;
+              activeTab?: string;
           }
         | undefined;
 }
@@ -318,6 +340,62 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.reconnect.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
+    });
+
+    it('opens a Markdown artifact in the side panel and allows collaboration for an active run', async () => {
+        mocks.useAgentPlans.mockReturnValue({
+            plans: [],
+            activePlanIndex: 0,
+            setActivePlanIndex: vi.fn(),
+            workstreamStatusMap: new Map(),
+            showInput: true,
+            showSlidingPanel: true,
+            setShowSlidingPanel: vi.fn(),
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.IDLE, 'Waiting for your command...')],
+            isCompleted: true,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ showRightPanel: true, showArtifacts: true, interactive: true });
+
+        fireEvent.click(screen.getByRole('button', { name: 'open artifact' }));
+
+        await waitFor(() => {
+            expect(latestRightPanelProps()).toEqual(
+                expect.objectContaining({
+                    activeTab: 'artifacts',
+                    selectedArtifactPath: 'files/report.md',
+                    onSendMessage: expect.any(Function),
+                }),
+            );
+        });
+    });
+
+    it('keeps artifacts read-only when their originating run is completed', () => {
+        mocks.useAgentPlans.mockReturnValue({
+            plans: [],
+            activePlanIndex: 0,
+            setActivePlanIndex: vi.fn(),
+            workstreamStatusMap: new Map(),
+            showInput: true,
+            showSlidingPanel: true,
+            setShowSlidingPanel: vi.fn(),
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({
+            showRightPanel: true,
+            showArtifacts: true,
+            interactive: true,
+            onRestart: vi.fn(),
+        });
+
+        expect(latestRightPanelProps()?.onSendMessage).toBeUndefined();
     });
 
     it('binds ready uploaded files into the sent message and clears them after send', async () => {
