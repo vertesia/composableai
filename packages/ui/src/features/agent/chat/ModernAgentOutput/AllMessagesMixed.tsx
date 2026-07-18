@@ -50,6 +50,7 @@ import {
     getRequestInputDisplayText,
     getRequestInputMessageKey,
     getResolvedToolApprovalKeys,
+    getToolApprovalResponseMetadata,
     hasRequestInputUx,
     isRequestInputAnswered,
     isToolApprovalAnswerHidden,
@@ -781,7 +782,9 @@ function SummaryMessage({
                     options={uxConfig.options}
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}
-                    onSelect={(optionId) => onSendMessage?.(optionId)}
+                    onSelect={(optionId) =>
+                        onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                    }
                     onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
                     allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
                     placeholder={uxConfig.free_response?.placeholder}
@@ -2259,7 +2262,12 @@ function SummaryActivityRow({
                                                 options={uxConfig.options}
                                                 variant={uxConfig.variant}
                                                 multiSelect={uxConfig.multiSelect}
-                                                onSelect={(optionId) => onSendMessage?.(optionId)}
+                                                onSelect={(optionId) =>
+                                                    onSendMessage?.(
+                                                        optionId,
+                                                        getToolApprovalResponseMetadata(message, optionId),
+                                                    )
+                                                }
                                                 onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
                                                 allowFreeResponse={
                                                     !uxConfig.options?.length || !!uxConfig.free_response

@@ -1573,6 +1573,54 @@ describe('ModernAgentConversation send handling', () => {
         );
     });
 
+    it('passes approval option metadata through the request overlay signal', async () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Write Artifact: quotes.md?'),
+                    details: {
+                        tool_approval: {
+                            tool_name: 'write_artifact',
+                            approval_key: 'write_artifact:name:quotes.md',
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Allow this action for this run' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledTimes(1);
+        });
+        expect(mocks.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({
+                message: 'allow_for_run',
+                metadata: expect.objectContaining({
+                    tool_approval_response: {
+                        decision: 'allow_for_run',
+                        approval_key: 'write_artifact:name:quotes.md',
+                    },
+                    id: expect.any(String),
+                    _messageId: expect.any(String),
+                }),
+            }),
+        );
+    });
+
     it('sends directly without restart while the run is active', async () => {
         mockStreamState({
             messages: [createMessage(AgentMessageType.ANSWER, 'still running')],

@@ -426,7 +426,12 @@ describe('AllMessagesMixed summary view', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /Allow once/ }));
 
-        expect(onSendMessage).toHaveBeenCalledWith('allow_once');
+        expect(onSendMessage).toHaveBeenCalledWith('allow_once', {
+            tool_approval_response: {
+                decision: 'allow_once',
+                approval_key: 'create_document:name:News Headlines Today',
+            },
+        });
     });
 
     it('keeps an approved tool approval continuation in the same active work row', () => {
