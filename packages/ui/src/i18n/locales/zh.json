@@ -733,6 +733,15 @@
   "user.unnamedGroup": "未命名群组",
   "user.user": "用户",
   "user.userId": "用户ID",
+  "view.display": "显示",
+  "view.from": "起始",
+  "view.pagination": "结果页面",
+  "view.ranges": "范围",
+  "view.resultsCount_other": "{{count}} 个结果",
+  "view.searchFields": "搜索字段",
+  "view.sort": "排序",
+  "view.to": "结束",
+  "view.warning": "视图通知",
   "widgets.schema.editDescription": "编辑描述",
   "widgets.schema.invalidPropertyDeclaration": "无效的属性声明"
 }

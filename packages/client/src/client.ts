@@ -28,6 +28,7 @@ import { VERSION, VERSION_HEADER } from './store/version.js';
 import ToolsApi from './ToolsApi.js';
 import TrainingApi from './TrainingApi.js';
 import UsersApi from './UsersApi.js';
+import ViewsApi from './ViewsApi.js';
 
 /**
  * 1 min threshold constant in ms
@@ -411,6 +412,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     apps = new AppsApi(this);
     tools = new ToolsApi(this);
     quota = new QuotaApi(this);
+    views = new ViewsApi(this);
 }
 
 function isApiKey(apiKey: string) {

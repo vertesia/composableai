@@ -733,6 +733,16 @@
   "user.unnamedGroup": "Unbenannte Gruppe",
   "user.user": "Benutzer",
   "user.userId": "Benutzer-ID",
+  "view.display": "Anzeige",
+  "view.from": "Von",
+  "view.pagination": "Ergebnisseiten",
+  "view.ranges": "Bereiche",
+  "view.resultsCount_one": "{{count}} Ergebnis",
+  "view.resultsCount_other": "{{count}} Ergebnisse",
+  "view.searchFields": "Suchfelder",
+  "view.sort": "Sortieren",
+  "view.to": "Bis",
+  "view.warning": "Ansichtshinweis",
   "widgets.schema.editDescription": "Beschreibung bearbeiten",
   "widgets.schema.invalidPropertyDeclaration": "Ungültige Eigenschaftsdeklaration"
 }

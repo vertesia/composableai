@@ -733,6 +733,15 @@
   "user.unnamedGroup": "名前なしグループ",
   "user.user": "ユーザー",
   "user.userId": "ユーザーID",
+  "view.display": "表示",
+  "view.from": "開始",
+  "view.pagination": "結果ページ",
+  "view.ranges": "範囲",
+  "view.resultsCount_other": "{{count}} 件の結果",
+  "view.searchFields": "検索フィールド",
+  "view.sort": "並べ替え",
+  "view.to": "終了",
+  "view.warning": "ビューのお知らせ",
   "widgets.schema.editDescription": "説明を編集",
   "widgets.schema.invalidPropertyDeclaration": "無効なプロパティ宣言"
 }

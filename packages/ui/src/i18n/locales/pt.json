@@ -743,6 +743,17 @@
   "user.unnamedGroup": "Grupo sem nome",
   "user.user": "Usuário",
   "user.userId": "ID do usuário",
+  "view.display": "Exibição",
+  "view.from": "De",
+  "view.pagination": "Páginas de resultados",
+  "view.ranges": "Intervalos",
+  "view.resultsCount_one": "{{count}} resultado",
+  "view.resultsCount_many": "{{count}} resultados",
+  "view.resultsCount_other": "{{count}} resultados",
+  "view.searchFields": "Campos de pesquisa",
+  "view.sort": "Ordenar",
+  "view.to": "Até",
+  "view.warning": "Aviso de visualização",
   "widgets.schema.editDescription": "Editar descrição",
   "widgets.schema.invalidPropertyDeclaration": "Declaração de propriedade inválida"
 }

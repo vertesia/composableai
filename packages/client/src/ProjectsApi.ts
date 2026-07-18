@@ -7,6 +7,7 @@ import type {
     ICreateProjectPayload,
     InCodeProcessDefinition,
     InCodeTypeDefinition,
+    InCodeViewDefinition,
     Project,
     ProjectConfiguration,
     ProjectIntegrationConfigRequest,
@@ -97,6 +98,16 @@ export default class ProjectsApi extends ApiTopic {
 
     getAppProcess(projectId: string, processId: string): Promise<InCodeProcessDefinition> {
         return this.get(`/${projectId}/app-processes/${processId}`);
+    }
+
+    listAppViews(projectId: string, tag?: string): Promise<InCodeViewDefinition[]> {
+        return this.get(`/${projectId}/app-views`, {
+            query: { tag },
+        });
+    }
+
+    getAppView(projectId: string, viewId: string): Promise<InCodeViewDefinition> {
+        return this.get(`/${projectId}/app-views/${viewId}`);
     }
 
     listAppRenderingTemplates(projectId: string, tag?: string): Promise<RenderingTemplateDefinitionRef[]> {
