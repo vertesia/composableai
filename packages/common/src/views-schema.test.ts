@@ -1,9 +1,13 @@
 import Ajv from 'ajv';
 import { describe, expect, it } from 'vitest';
 import type { ViewExperienceConfiguration, ViewNavigationItem } from './views.js';
-import { ViewExperienceConfigurationJsonSchema } from './views-schema.js';
+import {
+    PersistedViewExperienceConfigurationJsonSchema,
+    ViewExperienceConfigurationJsonSchema,
+} from './views-schema.js';
 import {
     parseAppViewExperienceId,
+    validatePersistedViewExperienceConfiguration,
     validateViewExperienceConfiguration,
     validateViewExperienceId,
 } from './views-validation.js';
@@ -133,6 +137,34 @@ describe('View Experience configuration schema', () => {
 
         expect(validate(invalid)).toBe(false);
         expect(validate.errors?.some((error) => error.instancePath.includes('/navigation/0'))).toBe(true);
+    });
+
+    it('requires a description only for persisted View resources', () => {
+        const validatePersisted = new Ajv.default({ allErrors: true, strict: false }).compile(
+            PersistedViewExperienceConfigurationJsonSchema,
+        );
+
+        expect(validatePersisted(documentLibrary())).toBe(false);
+        expect(
+            validatePersisted({
+                ...documentLibrary(),
+                description: 'Browse the project document library by location and business metadata.',
+            }),
+        ).toBe(true);
+        expect(validateViewExperienceConfiguration(documentLibrary())).toEqual([]);
+        expect(validatePersistedViewExperienceConfiguration(documentLibrary())).toContainEqual({
+            path: 'description',
+            message: 'is required and must explain the View purpose',
+        });
+        expect(
+            validatePersistedViewExperienceConfiguration({
+                ...documentLibrary(),
+                description: '   ',
+            }),
+        ).toContainEqual({
+            path: 'description',
+            message: 'is required and must explain the View purpose',
+        });
     });
 });
 

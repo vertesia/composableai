@@ -2,7 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-type ServerResource = 'activities' | 'interactions' | 'processes' | 'skills' | 'templates' | 'tools' | 'types';
+type ServerResource =
+    | 'activities'
+    | 'interactions'
+    | 'processes'
+    | 'skills'
+    | 'templates'
+    | 'tools'
+    | 'types'
+    | 'views';
 
 interface ScaffoldContext {
     modules?: string[];
@@ -39,6 +47,7 @@ const SERVER_RESOURCES: ServerResource[] = [
     'templates',
     'tools',
     'types',
+    'views',
 ];
 const BASE_MODULE = 'app';
 const GENERATED_FILE_HEADER =

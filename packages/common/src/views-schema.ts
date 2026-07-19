@@ -3,9 +3,11 @@ import { VIEW_SEARCH_FIELD_TYPES } from './views.js';
 
 export const VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
     'https://schemas.vertesia.com/view-experience.v1.schema.json';
+export const PERSISTED_VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
+    'https://schemas.vertesia.com/persisted-view-experience.v1.schema.json';
 
 /**
- * Canonical structural schema for persisted View Experience configuration.
+ * Canonical structural schema for reusable inline and app-contributed View configuration.
  *
  * Cross-reference rules such as unique navigation ids and valid default display
  * references are enforced by validateViewExperienceConfiguration().
@@ -686,4 +688,24 @@ export const ViewExperienceConfigurationJsonSchema = {
             additionalProperties: false,
         },
     },
+} satisfies JSONSchema;
+
+/**
+ * Structural schema for project-scoped Views saved through the Views API.
+ *
+ * App-contributed and inline View definitions use the reusable base schema,
+ * while persisted resources additionally document their purpose.
+ */
+export const PersistedViewExperienceConfigurationJsonSchema = {
+    ...ViewExperienceConfigurationJsonSchema,
+    $id: PERSISTED_VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID,
+    title: 'Persisted View Experience',
+    properties: {
+        ...ViewExperienceConfigurationJsonSchema.properties,
+        description: {
+            ...ViewExperienceConfigurationJsonSchema.properties.description,
+            minLength: 1,
+        },
+    },
+    required: ['name', 'description'],
 } satisfies JSONSchema;

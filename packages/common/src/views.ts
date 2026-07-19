@@ -272,7 +272,21 @@ export interface ViewExperienceConfiguration {
     results?: ViewResultsConfiguration;
 }
 
+/**
+ * A View configuration stored as a project resource.
+ *
+ * Persisted Views require documentation because they are reusable, discoverable
+ * resources surfaced in Studio and to Studio Assistant.
+ */
+export interface PersistedViewExperienceConfiguration extends Omit<ViewExperienceConfiguration, 'description'> {
+    description: string;
+}
+
 /** Project a persisted or extended View value back to its reusable configuration fields. */
+export function getViewExperienceConfiguration(
+    value: PersistedViewExperienceConfiguration,
+): PersistedViewExperienceConfiguration;
+export function getViewExperienceConfiguration(value: ViewExperienceConfiguration): ViewExperienceConfiguration;
 export function getViewExperienceConfiguration(value: ViewExperienceConfiguration): ViewExperienceConfiguration {
     return {
         name: value.name,
@@ -298,7 +312,7 @@ export interface InCodeViewDefinition {
     definition: ViewExperienceConfiguration;
 }
 
-export interface ViewExperience extends ViewExperienceConfiguration {
+export interface ViewExperience extends PersistedViewExperienceConfiguration {
     id: string;
     version: ViewExperienceSchemaVersion;
     revision: number;
@@ -308,13 +322,13 @@ export interface ViewExperience extends ViewExperienceConfiguration {
     updated_at: string;
 }
 
-export interface CreateViewExperienceRequest extends ViewExperienceConfiguration {
+export interface CreateViewExperienceRequest extends PersistedViewExperienceConfiguration {
     id: string;
     version?: ViewExperienceSchemaVersion;
 }
 
 /** PUT uses full replacement so omitted optional configuration is removed. */
-export interface UpdateViewExperienceRequest extends ViewExperienceConfiguration {
+export interface UpdateViewExperienceRequest extends PersistedViewExperienceConfiguration {
     version: ViewExperienceSchemaVersion;
     revision: number;
 }
@@ -332,6 +346,16 @@ export interface ExecuteViewRequest {
     sort?: string;
     offset?: number;
     limit?: number;
+}
+
+/**
+ * Execute an unsaved (draft) View configuration without persisting it. Combines
+ * the inline configuration with the same execution inputs as {@link ExecuteViewRequest}
+ * so authors can validate and preview results before calling create/update.
+ */
+export interface PreviewViewExperienceRequest extends ExecuteViewRequest {
+    /** The unsaved View configuration to validate and execute. */
+    configuration: ViewExperienceConfiguration;
 }
 
 export interface ViewExecutionWarning {

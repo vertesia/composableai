@@ -645,3 +645,18 @@ export function validateViewExperienceConfiguration(value: unknown): ViewValidat
     addResultsIssues(issues, configuration.results);
     return issues;
 }
+
+/**
+ * Validate the additional documentation contract for project-scoped persisted
+ * Views without imposing it on inline or app-contributed View definitions.
+ */
+export function validatePersistedViewExperienceConfiguration(value: unknown): ViewValidationIssue[] {
+    const issues = validateViewExperienceConfiguration(value);
+    if (isRecord(value) && (typeof value.description !== 'string' || value.description.trim().length === 0)) {
+        issues.push({
+            path: 'description',
+            message: 'is required and must explain the View purpose',
+        });
+    }
+    return issues;
+}
