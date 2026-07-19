@@ -1,5 +1,6 @@
+import type { ViewExecutionResult } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
-import { canonicalizeViewState, parseViewState, serializeViewState } from './viewState.js';
+import { canonicalizeViewState, parseViewState, resolveViewSort, serializeViewState } from './viewState.js';
 
 describe('View URL state', () => {
     it('parses repeated key terms and navigation values', () => {
@@ -79,5 +80,23 @@ describe('View URL state', () => {
             sort: 'updated',
             offset: 20,
         });
+    });
+
+    it('does not relabel relevance-ranked query results with the browse default sort', () => {
+        const result = {
+            view: 'document-lib',
+            revision: 1,
+            definition: { name: 'Documents' },
+            search: { requested_mode: 'agentic', applied_mode: 'query', warnings: [] },
+            hits: [],
+            total: 0,
+            navigation: {},
+            took: 5,
+        } satisfies ViewExecutionResult;
+
+        expect(resolveViewSort({ query: 'garden hose' }, result, 'recent')).toBeUndefined();
+        expect(resolveViewSort({}, result, 'recent')).toBe('recent');
+        expect(resolveViewSort({ query: 'garden hose', sort: 'recent' }, result, 'recent')).toBe('recent');
+        expect(resolveViewSort({ query: 'orders over 1000' }, { ...result, sort: 'recent' }, 'recent')).toBe('recent');
     });
 });

@@ -113,6 +113,18 @@ export function canonicalizeViewState(request: ExecuteViewRequest, result: ViewE
     };
 }
 
+/**
+ * Resolve the sort the server actually applied. Natural-language queries with
+ * no returned sort use Elasticsearch relevance rather than the browse default.
+ */
+export function resolveViewSort(
+    request: ExecuteViewRequest,
+    result: ViewExecutionResult,
+    defaultSort: string | undefined,
+): string | undefined {
+    return result.sort ?? request.sort ?? (request.query?.trim() ? undefined : defaultSort);
+}
+
 export function replaceViewStateInUrl(request: ExecuteViewRequest): void {
     if (typeof window === 'undefined') return;
     const search = serializeViewState(request, window.location.search);

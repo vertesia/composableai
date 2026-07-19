@@ -18,7 +18,7 @@ import type { ViewExecutor, ViewExperienceRenderers, ViewMediaResolver } from '.
 import { DefaultViewNavigation } from './ViewNavigation.js';
 import { DefaultViewResults } from './ViewResults.js';
 import { DefaultViewSearch } from './ViewSearch.js';
-import { canonicalizeViewState, parseViewState, replaceViewStateInUrl } from './viewState.js';
+import { canonicalizeViewState, parseViewState, replaceViewStateInUrl, resolveViewSort } from './viewState.js';
 
 const FALLBACK_DISPLAY: ViewDisplayConfiguration = {
     id: 'default',
@@ -186,7 +186,9 @@ function ViewExperienceRuntime({
     const effectiveDisplayId = result?.display ?? request.display ?? resultsConfiguration?.default_display;
     const display =
         resultsConfiguration?.displays.find((candidate) => candidate.id === effectiveDisplayId) ?? FALLBACK_DISPLAY;
-    const effectiveSortId = result?.sort ?? request.sort ?? resultsConfiguration?.default_sort;
+    const effectiveSortId = result
+        ? resolveViewSort(request, result, resultsConfiguration?.default_sort)
+        : request.sort;
 
     const applyRequest = (next: ExecuteViewRequest) => {
         void runRequest(next, true);

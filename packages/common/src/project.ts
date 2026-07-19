@@ -396,28 +396,7 @@ export interface ProjectConfiguration {
      * Indexing configuration for this project.
      * Controls whether indexing and querying are enabled at the project level.
      */
-    indexing?: {
-        /**
-         * Enable indexing for content objects in this project.
-         * When enabled, content changes trigger indexing workflows.
-         * Defaults to true - indexing is always on when ES infrastructure is available.
-         */
-        enabled?: boolean;
-
-        /**
-         * Search tier for this project.
-         * standard uses the regional hosted Elasticsearch deployment.
-         * performance uses the regional serverless Elasticsearch project.
-         * Defaults to standard when omitted.
-         */
-        search_tier?: ProjectSearchTier;
-
-        /**
-         * Elasticsearch backend override for this project.
-         * Prefer search_tier for project configuration unless an explicit backend override is needed.
-         */
-        backend?: ElasticsearchBackend;
-    };
+    indexing?: ProjectIndexingConfiguration;
 
     /**
      * Standard content intake behavior.
@@ -445,6 +424,153 @@ export interface ProjectConfiguration {
      * template instead of the built-in Vertesia default template.
      */
     pdf_template_object_id?: string;
+}
+
+/**
+ * Elasticsearch field types that may be explicitly assigned to content-object
+ * properties. Paths are relative to the object's `properties` field.
+ */
+export type ProjectSearchPropertyType = 'keyword' | 'text' | 'boolean' | 'long' | 'double' | 'date';
+
+/**
+ * Explicit search mapping for one content-object property.
+ *
+ * Changing a mapping requires a full reindex. Existing Elasticsearch fields
+ * cannot change type in place.
+ */
+export interface ProjectSearchPropertyMapping {
+    type: ProjectSearchPropertyType;
+
+    /** Elasticsearch date format. Valid only when type is `date`. */
+    format?: string;
+
+    /** Maximum indexed string length. Valid only when type is `keyword`. */
+    ignore_above?: number;
+
+    /**
+     * Skip malformed values instead of rejecting the whole document. Valid only
+     * for long, double, and date mappings.
+     */
+    ignore_malformed?: boolean;
+}
+
+export const PROJECT_SEARCH_PROPERTY_TYPES: readonly ProjectSearchPropertyType[] = [
+    'keyword',
+    'text',
+    'boolean',
+    'long',
+    'double',
+    'date',
+];
+
+const PROJECT_SEARCH_PROPERTY_PATH_PATTERN = /^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$/;
+const MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS = 200;
+const MAX_KEYWORD_IGNORE_ABOVE = 8191;
+
+/**
+ * Validate property mappings at API and index-creation boundaries.
+ *
+ * Returns user-facing issue strings instead of throwing so callers can map the
+ * result to the error type appropriate for their boundary.
+ */
+export function validateProjectSearchPropertyMappings(value: unknown): string[] {
+    if (value === undefined) return [];
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return ['indexing.property_mappings must be an object keyed by property path'];
+    }
+
+    const entries = Object.entries(value as Record<string, unknown>);
+    const issues: string[] = [];
+    if (entries.length > MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS) {
+        issues.push(`indexing.property_mappings must contain at most ${MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS} fields`);
+    }
+
+    const paths = new Set(entries.map(([path]) => path));
+    const supportedTypes = new Set<string>(PROJECT_SEARCH_PROPERTY_TYPES);
+    for (const [path, rawMapping] of entries) {
+        const field = `indexing.property_mappings.${path}`;
+        if (!PROJECT_SEARCH_PROPERTY_PATH_PATTERN.test(path)) {
+            issues.push(`${field} must be a dot-separated path containing only letters, numbers, and underscores`);
+        }
+        const segments = path.split('.');
+        for (let index = 1; index < segments.length; index++) {
+            const parentPath = segments.slice(0, index).join('.');
+            if (paths.has(parentPath)) {
+                issues.push(`${field} conflicts with the mapped parent field "${parentPath}"`);
+                break;
+            }
+        }
+
+        if (!rawMapping || typeof rawMapping !== 'object' || Array.isArray(rawMapping)) {
+            issues.push(`${field} must be an object`);
+            continue;
+        }
+        const mapping = rawMapping as Record<string, unknown>;
+        const extraKeys = Object.keys(mapping).filter(
+            (key) => !['type', 'format', 'ignore_above', 'ignore_malformed'].includes(key),
+        );
+        if (extraKeys.length > 0) {
+            issues.push(`${field} contains unsupported option(s): ${extraKeys.join(', ')}`);
+        }
+        if (typeof mapping.type !== 'string' || !supportedTypes.has(mapping.type)) {
+            issues.push(`${field}.type must be one of: ${PROJECT_SEARCH_PROPERTY_TYPES.join(', ')}`);
+        }
+        if (mapping.format !== undefined && (mapping.type !== 'date' || typeof mapping.format !== 'string')) {
+            issues.push(`${field}.format is supported only for date mappings`);
+        }
+        if (
+            mapping.ignore_above !== undefined &&
+            (mapping.type !== 'keyword' ||
+                !Number.isInteger(mapping.ignore_above) ||
+                (mapping.ignore_above as number) < 1 ||
+                (mapping.ignore_above as number) > MAX_KEYWORD_IGNORE_ABOVE)
+        ) {
+            issues.push(
+                `${field}.ignore_above is supported only for keyword mappings and must be an integer from 1 to ${MAX_KEYWORD_IGNORE_ABOVE}`,
+            );
+        }
+        if (
+            mapping.ignore_malformed !== undefined &&
+            (!['long', 'double', 'date'].includes(String(mapping.type)) ||
+                typeof mapping.ignore_malformed !== 'boolean')
+        ) {
+            issues.push(`${field}.ignore_malformed is supported only for long, double, and date mappings`);
+        }
+    }
+    return issues;
+}
+
+export interface ProjectIndexingConfiguration {
+    /**
+     * Enable indexing for content objects in this project.
+     * When enabled, content changes trigger indexing workflows.
+     * Defaults to true - indexing is always on when ES infrastructure is available.
+     */
+    enabled?: boolean;
+
+    /**
+     * Search tier for this project.
+     * standard uses the regional hosted Elasticsearch deployment.
+     * performance uses the regional serverless Elasticsearch project.
+     * Defaults to standard when omitted.
+     */
+    search_tier?: ProjectSearchTier;
+
+    /**
+     * Elasticsearch backend override for this project.
+     * Prefer search_tier for project configuration unless an explicit backend override is needed.
+     */
+    backend?: ElasticsearchBackend;
+
+    /**
+     * Explicit mappings for selected content-object property paths.
+     *
+     * Keys are dot-separated paths relative to `properties`, for example
+     * `order_total` or `customer.account_number`. Unlisted fields are mapped
+     * dynamically from their JSON values. Changing this value requires a full
+     * reindex.
+     */
+    property_mappings?: Record<string, ProjectSearchPropertyMapping>;
 }
 
 // export interface ProjectConfigurationEmbeddings {
@@ -1002,6 +1128,8 @@ export interface IndexConfiguration {
     };
     /** ISO 639-1 language code for text analysis */
     language?: string;
+    /** Explicit mappings for selected content-object property paths. */
+    property_mappings?: Record<string, ProjectSearchPropertyMapping>;
     field_mappings?: Record<string, unknown>;
     project_embeddings_config?: {
         text?: EmbeddingTypeConfig;

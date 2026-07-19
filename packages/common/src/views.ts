@@ -76,9 +76,30 @@ export interface ViewKeyTermDefinition {
     id: string;
     label: string;
     field?: string;
-    type: 'text' | 'keyword' | 'number' | 'date' | 'boolean';
+    type: ViewSearchFieldType;
     multiple?: boolean;
     operator?: 'match' | 'term' | 'range';
+}
+
+export type ViewSearchFieldType = 'text' | 'keyword' | 'number' | 'date' | 'boolean';
+
+/**
+ * A mapped Elasticsearch field that a View may use for query planning and
+ * deterministic full-text fallback.
+ */
+export interface ViewSearchFieldDefinition {
+    field: string;
+    /** Meaning of the field for query planners, for example "Full OCR text". */
+    description?: string;
+    /** Mapping hint used only when the active index mapping does not expose a type. */
+    type?: ViewSearchFieldType;
+    /**
+     * `full_text` enables scoring text queries, `exact` limits the field to
+     * structured operators, and `auto` derives behavior from the mapped type.
+     */
+    mode?: 'auto' | 'full_text' | 'exact';
+    /** Relative boost when this field participates in multi-field text search. */
+    boost?: number;
 }
 
 export interface AgenticViewSearchAnnotationsConfiguration {
@@ -102,6 +123,7 @@ export interface ViewSearchConfiguration {
     renderer?: string;
     mode?: 'deterministic' | 'agentic';
     placeholder?: string;
+    fields?: ViewSearchFieldDefinition[];
     key_terms?: ViewKeyTermDefinition[];
     agentic?: AgenticViewSearchConfiguration;
 }

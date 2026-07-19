@@ -30,6 +30,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { ChevronDown, ChevronsUpDown, ChevronUp, ExternalLink, FileText, ImageIcon } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import type { ViewMediaResolver, ViewResultsRendererProps } from './types.js';
+import { resolveViewSort } from './viewState.js';
 
 function nestedValue(root: unknown, path: string): unknown {
     if (!path || path === '.') return root;
@@ -585,7 +586,7 @@ export function DefaultViewResults({
                 onOpenHit,
                 resolveMedia,
                 definition.results?.sort_options,
-                result.sort ?? request.sort ?? definition.results?.default_sort,
+                resolveViewSort(request, result, definition.results?.default_sort),
                 onSortChange,
             )}
         </>

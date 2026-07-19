@@ -307,6 +307,38 @@ function addSearchIssues(issues: ViewValidationIssue[], value: unknown): void {
         issues.push({ path: 'search.agentic', message: 'requires search.mode to be agentic' });
     }
 
+    if (value.fields !== undefined) {
+        if (!Array.isArray(value.fields)) {
+            issues.push({ path: 'search.fields', message: 'must be an array' });
+        } else {
+            if (value.fields.length > 50) {
+                issues.push({ path: 'search.fields', message: 'must contain at most 50 fields' });
+            }
+            const fields = new Set<string>();
+            value.fields.forEach((rawField, index) => {
+                const path = `search.fields[${index}]`;
+                if (!isRecord(rawField)) {
+                    issues.push({ path, message: 'must be an object' });
+                    return;
+                }
+                addFieldIssue(issues, rawField.field, `${path}.field`);
+                addStringIssue(issues, rawField.description, `${path}.description`, { maxLength: 500 });
+                addEnumIssue(issues, rawField.type, `${path}.type`, ['text', 'keyword', 'number', 'date', 'boolean']);
+                addEnumIssue(issues, rawField.mode, `${path}.mode`, ['auto', 'full_text', 'exact']);
+                addNumberIssue(issues, rawField.boost, `${path}.boost`, { min: 0.1, max: 20 });
+                if (rawField.mode === 'full_text' && rawField.type !== undefined && rawField.type !== 'text') {
+                    issues.push({ path: `${path}.type`, message: 'must be text when mode is full_text' });
+                }
+                if (typeof rawField.field === 'string') {
+                    if (fields.has(rawField.field)) {
+                        issues.push({ path: `${path}.field`, message: 'must be unique' });
+                    }
+                    fields.add(rawField.field);
+                }
+            });
+        }
+    }
+
     if (value.key_terms !== undefined) {
         if (!Array.isArray(value.key_terms)) {
             issues.push({ path: 'search.key_terms', message: 'must be an array' });

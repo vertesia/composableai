@@ -270,6 +270,39 @@ export const ViewExperienceConfigurationJsonSchema = {
             required: ['id', 'label', 'type'],
             additionalProperties: false,
         },
+        searchField: {
+            type: 'object',
+            description:
+                'A mapped Elasticsearch field available to query planning and deterministic full-text fallback.',
+            properties: {
+                field: { $ref: '#/$defs/fieldName' },
+                description: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 500,
+                    description: 'Semantic meaning of the field for query planners.',
+                },
+                type: {
+                    type: 'string',
+                    enum: ['text', 'keyword', 'number', 'date', 'boolean'],
+                    description: 'Mapping hint used only when the active index does not expose the field type.',
+                },
+                mode: {
+                    type: 'string',
+                    enum: ['auto', 'full_text', 'exact'],
+                    description:
+                        'Whether the field supports scoring text queries, structured exact queries, or mapping-derived behavior.',
+                },
+                boost: {
+                    type: 'number',
+                    minimum: 0.1,
+                    maximum: 20,
+                    description: 'Relative boost when the field participates in multi-field text search.',
+                },
+            },
+            required: ['field'],
+            additionalProperties: false,
+        },
         interactionConfig: {
             type: 'object',
             description:
@@ -368,6 +401,13 @@ export const ViewExperienceConfigurationJsonSchema = {
                 placeholder: {
                     type: 'string',
                     maxLength: 240,
+                },
+                fields: {
+                    type: 'array',
+                    maxItems: 50,
+                    items: { $ref: '#/$defs/searchField' },
+                    description:
+                        'Fields disclosed to query planning. Text-capable entries also define deterministic fallback search.',
                 },
                 key_terms: {
                     type: 'array',

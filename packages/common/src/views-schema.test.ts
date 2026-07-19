@@ -44,6 +44,15 @@ function documentLibrary(): ViewExperienceConfiguration {
         search: {
             mode: 'agentic',
             placeholder: 'Describe what you need',
+            fields: [
+                {
+                    field: 'text',
+                    description: 'Full ingested and OCR document text.',
+                    type: 'text',
+                    mode: 'full_text',
+                    boost: 1.5,
+                },
+            ],
             key_terms: [{ id: 'client', label: 'Client', type: 'keyword' }],
             agentic: {
                 interaction: 'sys:ContentSearchAgent',
@@ -142,5 +151,28 @@ describe('View Experience semantic validation', () => {
             path: 'results.displays[2].id',
             message: 'must be unique',
         });
+    });
+
+    it('rejects duplicate and incompatible search field definitions', () => {
+        const invalid = documentLibrary();
+        if (invalid.search) {
+            invalid.search.fields = [
+                { field: 'properties.total', type: 'number', mode: 'full_text' },
+                { field: 'properties.total', type: 'number' },
+            ];
+        }
+
+        expect(validateViewExperienceConfiguration(invalid)).toEqual(
+            expect.arrayContaining([
+                {
+                    path: 'search.fields[0].type',
+                    message: 'must be text when mode is full_text',
+                },
+                {
+                    path: 'search.fields[1].field',
+                    message: 'must be unique',
+                },
+            ]),
+        );
     });
 });
