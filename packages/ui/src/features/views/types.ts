@@ -1,8 +1,8 @@
 import type {
     ExecuteViewRequest,
     ViewDisplayConfiguration,
+    ViewExecutionDefinition,
     ViewExecutionResult,
-    ViewExperienceConfiguration,
     ViewHit,
     ViewNavigationItem,
     ViewNavigationResult,
@@ -30,7 +30,7 @@ export interface ViewNavigationRendererProps {
 
 export interface ViewResultsRendererProps {
     configuration: ViewDisplayConfiguration;
-    definition: ViewExperienceConfiguration;
+    definition: ViewExecutionDefinition;
     request: ExecuteViewRequest;
     result: ViewExecutionResult;
     isLoading: boolean;

@@ -1,7 +1,7 @@
 import type { ViewNavigationNode } from '@vertesia/common';
 import { Badge, Button, Checkbox, SelectBox } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { X } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { useId } from 'react';
 import type { ViewNavigationRendererProps } from './types.js';
 
@@ -23,10 +23,14 @@ function NodeLabel({ node }: { node: ViewNavigationNode }) {
 export function DefaultViewNavigation({ configuration, result, isLoading, onChange }: ViewNavigationRendererProps) {
     const { t } = useUITranslation();
     const idPrefix = useId();
-    const presentation = configuration.presentation ?? (configuration.source === 'location' ? 'tree' : 'list');
+    const presentation =
+        configuration.presentation ??
+        (configuration.source === 'location' || configuration.source === 'hierarchy' ? 'tree' : 'list');
+    const multiSelect = configuration.source === 'hierarchy' ? false : configuration.multi_select;
+    const breadcrumbs = result.breadcrumbs ?? [];
 
     const toggle = (id: string, selected: boolean) => {
-        onChange(nextSelection(result.selected, id, selected, configuration.multi_select));
+        onChange(nextSelection(result.selected, id, selected, multiSelect));
     };
 
     return (
@@ -50,17 +54,43 @@ export function DefaultViewNavigation({ configuration, result, isLoading, onChan
                 )}
             </div>
 
-            {result.selected.length > 0 && configuration.source === 'location' && (
-                <div className="flex flex-wrap gap-1">
-                    {result.selected.map((value) => (
-                        <Badge key={value} variant="secondary">
-                            {value}
-                        </Badge>
-                    ))}
-                </div>
+            {configuration.source === 'hierarchy' && breadcrumbs.length > 0 && (
+                <nav aria-label={`${configuration.label} path`}>
+                    <ol className="flex flex-wrap items-center gap-1 text-sm">
+                        {breadcrumbs.map((node, index) => (
+                            <li key={node.id} className="flex items-center gap-1">
+                                {index > 0 && <ChevronRight aria-hidden="true" className="size-3.5 text-muted" />}
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={isLoading}
+                                    onClick={() => onChange([node.id])}
+                                    aria-current={index === breadcrumbs.length - 1 ? 'page' : undefined}
+                                >
+                                    {node.label}
+                                </Button>
+                            </li>
+                        ))}
+                    </ol>
+                </nav>
             )}
 
-            {presentation === 'select' && configuration.multi_select === false ? (
+            {result.selected.length > 0 &&
+                (configuration.source === 'location' || configuration.source === 'collection') && (
+                    <div className="flex flex-wrap gap-1">
+                        {result.selected.map((value) => {
+                            const node = result.nodes.find((candidate) => candidate.id === value);
+                            return (
+                                <Badge key={value} variant="secondary">
+                                    {node?.label ?? value}
+                                </Badge>
+                            );
+                        })}
+                    </div>
+                )}
+
+            {presentation === 'select' && multiSelect === false ? (
                 <SelectBox<ViewNavigationNode>
                     options={result.nodes}
                     value={result.nodes.find((node) => result.selected.includes(node.id))}
@@ -96,6 +126,24 @@ export function DefaultViewNavigation({ configuration, result, isLoading, onChan
                         >
                             {node.label}
                             <span className="text-xs tabular-nums text-muted">{node.count}</span>
+                        </Button>
+                    ))}
+                </div>
+            ) : configuration.source === 'hierarchy' ? (
+                <div className="space-y-1">
+                    {result.nodes.map((node) => (
+                        <Button
+                            type="button"
+                            variant={result.selected.includes(node.id) ? 'secondary' : 'ghost'}
+                            className="w-full justify-start"
+                            key={node.id}
+                            disabled={isLoading}
+                            onClick={() => onChange([node.id])}
+                        >
+                            <NodeLabel node={node} />
+                            {node.expandable && (
+                                <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted" />
+                            )}
                         </Button>
                     ))}
                 </div>

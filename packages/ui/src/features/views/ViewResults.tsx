@@ -60,10 +60,12 @@ export function formatViewFieldValue(hit: ViewHit, field: ViewResultField): stri
     if (value === undefined || value === null || value === '') return fallback;
 
     if (field.format === 'date') {
-        const date = new Date(String(value));
+        const text = String(value);
+        const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(text);
+        const date = new Date(text);
         return Number.isNaN(date.getTime())
             ? (primitiveText(value) ?? fallback)
-            : new Intl.DateTimeFormat().format(date);
+            : new Intl.DateTimeFormat(undefined, dateOnly ? { timeZone: 'UTC' } : undefined).format(date);
     }
     if (field.format === 'number') {
         const number = typeof value === 'number' ? value : Number(value);

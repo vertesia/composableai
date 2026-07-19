@@ -1,8 +1,10 @@
 import { Button, FormItem, Input } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Search } from 'lucide-react';
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ViewSearchRendererProps } from './types.js';
+
+type ViewKeyTerm = NonNullable<ViewSearchRendererProps['configuration']['key_terms']>[number];
 
 function keyTermInputType(type: string, multiple: boolean | undefined): 'text' | 'number' | 'date' {
     if (multiple) return 'text';
@@ -20,6 +22,65 @@ function rangeValues(from: string, to: string): string[] {
     return from || to ? [`${from}..${to}`] : [];
 }
 
+function serializeKeyTerm(values: string[], multiple: boolean | undefined): string {
+    return multiple ? values.join(', ') : (values[0] ?? '');
+}
+
+function parseKeyTerm(value: string, multiple: boolean | undefined): string[] {
+    if (multiple) {
+        return value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+    }
+    return value.trim() ? [value.trim()] : [];
+}
+
+function KeyTermInput({
+    term,
+    values,
+    isLoading,
+    onChange,
+}: {
+    term: ViewKeyTerm;
+    values: string[];
+    isLoading: boolean;
+    onChange: (values: string[]) => void;
+}) {
+    const focused = useRef(false);
+    const [input, setInput] = useState(() => serializeKeyTerm(values, term.multiple));
+    const serializedValues = serializeKeyTerm(values, term.multiple);
+
+    useEffect(() => {
+        if (!focused.current) setInput(serializedValues);
+    }, [serializedValues]);
+
+    return (
+        <FormItem label={term.label}>
+            <Input
+                type={keyTermInputType(term.type, term.multiple)}
+                name={`view-key-term-${term.id}`}
+                autoComplete="off"
+                value={input}
+                onFocus={() => {
+                    focused.current = true;
+                }}
+                onBlur={() => {
+                    focused.current = false;
+                    const normalized = parseKeyTerm(input, term.multiple);
+                    setInput(serializeKeyTerm(normalized, term.multiple));
+                }}
+                onChange={(value) => {
+                    setInput(value);
+                    onChange(parseKeyTerm(value, term.multiple));
+                }}
+                placeholder={term.label}
+                disabled={isLoading}
+            />
+        </FormItem>
+    );
+}
+
 export function DefaultViewSearch({
     configuration,
     query,
@@ -34,31 +95,17 @@ export function DefaultViewSearch({
     const fieldTerms = configuration.key_terms?.filter((term) => term.operator !== 'range') ?? [];
     const rangeTerms = configuration.key_terms?.filter((term) => term.operator === 'range') ?? [];
 
-    const renderTerm = (term: NonNullable<ViewSearchRendererProps['configuration']['key_terms']>[number]) => (
-        <FormItem key={term.id} label={term.label}>
-            <Input
-                type={keyTermInputType(term.type, term.multiple)}
-                name={`view-key-term-${term.id}`}
-                autoComplete="off"
-                value={(keyTerms[term.id] ?? []).join(', ')}
-                onChange={(value) => {
-                    const values = term.multiple
-                        ? value
-                              .split(',')
-                              .map((entry) => entry.trim())
-                              .filter(Boolean)
-                        : value.trim()
-                          ? [value.trim()]
-                          : [];
-                    onKeyTermsChange(term.id, values);
-                }}
-                placeholder={term.label}
-                disabled={isLoading}
-            />
-        </FormItem>
+    const renderTerm = (term: ViewKeyTerm) => (
+        <KeyTermInput
+            key={term.id}
+            term={term}
+            values={keyTerms[term.id] ?? []}
+            isLoading={isLoading}
+            onChange={(values) => onKeyTermsChange(term.id, values)}
+        />
     );
 
-    const renderRange = (term: NonNullable<ViewSearchRendererProps['configuration']['key_terms']>[number]) => {
+    const renderRange = (term: ViewKeyTerm) => {
         const [from, to] = rangeBounds(keyTerms[term.id] ?? []);
         const inputType = term.type === 'number' ? 'number' : term.type === 'date' ? 'date' : 'text';
         return (

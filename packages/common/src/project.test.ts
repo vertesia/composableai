@@ -33,12 +33,12 @@ describe('validateProjectSearchPropertyMappings', () => {
         );
     });
 
-    it('rejects conflicting parent and child mappings', () => {
+    it('allows parent and child leaf mappings for subobjects:false indexes', () => {
         expect(
             validateProjectSearchPropertyMappings({
                 customer: { type: 'keyword' },
                 'customer.name': { type: 'keyword' },
             }),
-        ).toContain('indexing.property_mappings.customer.name conflicts with the mapped parent field "customer"');
+        ).toEqual([]);
     });
 });

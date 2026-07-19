@@ -53,6 +53,26 @@ export interface ViewTermsNavigation extends ViewNavigationBase {
     missing_label?: string;
 }
 
+export interface ViewHierarchyLevel {
+    id: string;
+    label: string;
+    field: string;
+    size?: number;
+    sort?: 'count' | 'label';
+}
+
+/**
+ * A drill-down hierarchy assembled from independently mapped properties.
+ *
+ * Hierarchies represent one selected path, so multi_select may only be false.
+ * Selection ids are opaque runtime values and must not be constructed by clients.
+ */
+export interface ViewHierarchyNavigation extends ViewNavigationBase {
+    source: 'hierarchy';
+    levels: ViewHierarchyLevel[];
+    multi_select?: false;
+}
+
 export interface ViewRangeDefinition {
     id: string;
     label: string;
@@ -70,6 +90,7 @@ export type ViewNavigationItem =
     | ViewLocationNavigation
     | ViewCollectionNavigation
     | ViewTermsNavigation
+    | ViewHierarchyNavigation
     | ViewRangeNavigation;
 
 export interface ViewKeyTermDefinition {
@@ -81,7 +102,9 @@ export interface ViewKeyTermDefinition {
     operator?: 'match' | 'term' | 'range';
 }
 
-export type ViewSearchFieldType = 'text' | 'keyword' | 'number' | 'date' | 'boolean';
+export const VIEW_SEARCH_FIELD_TYPES = ['text', 'keyword', 'number', 'date', 'boolean'] as const;
+
+export type ViewSearchFieldType = (typeof VIEW_SEARCH_FIELD_TYPES)[number];
 
 /**
  * A mapped Elasticsearch field that a View may use for query planning and
@@ -364,6 +387,8 @@ export interface ViewNavigationResult {
     id: string;
     selected: string[];
     nodes: ViewNavigationNode[];
+    /** Selected hierarchy path from its root through the current value. */
+    breadcrumbs?: ViewNavigationNode[];
     truncated?: boolean;
 }
 
@@ -378,11 +403,37 @@ export interface ViewExecutionSearchResult {
     warnings: ViewExecutionWarning[];
 }
 
+/**
+ * Client-visible search controls. Agentic planner instructions, interaction,
+ * and model configuration are intentionally omitted.
+ */
+export interface ViewExecutionSearchConfiguration {
+    renderer?: string;
+    mode?: 'deterministic' | 'agentic';
+    placeholder?: string;
+    fields?: ViewSearchFieldDefinition[];
+    key_terms?: ViewKeyTermDefinition[];
+}
+
+/**
+ * The reusable, client-visible part of the View definition used for an execution.
+ * Server-owned scope is intentionally omitted.
+ */
+export interface ViewExecutionDefinition {
+    name: string;
+    description?: string;
+    enabled?: boolean;
+    layout?: ViewExperienceLayout;
+    navigation?: ViewNavigationItem[];
+    search?: ViewExecutionSearchConfiguration;
+    results?: ViewResultsConfiguration;
+}
+
 export interface ViewExecutionResult {
     view: string;
     revision: number;
-    /** The authoritative runtime-safe definition resolved by Zeno for this execution. */
-    definition: ViewExperienceConfiguration;
+    /** The runtime-safe rendering definition resolved by Zeno for this execution. */
+    definition: ViewExecutionDefinition;
     display?: string;
     sort?: string;
     search: ViewExecutionSearchResult;

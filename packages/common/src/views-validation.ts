@@ -1,3 +1,4 @@
+import { validateSupportedViewQuery } from './view-query-validation.js';
 import type {
     AgenticViewSearchConfiguration,
     ViewDisplayConfiguration,
@@ -6,6 +7,7 @@ import type {
     ViewResultField,
     ViewResultMedia,
 } from './views.js';
+import { VIEW_SEARCH_FIELD_TYPES } from './views.js';
 
 export interface ViewValidationIssue {
     path: string;
@@ -13,6 +15,7 @@ export interface ViewValidationIssue {
 }
 
 const EXPERIENCE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const APP_VIEW_ID_PATTERN = /^app:([A-Za-z0-9][A-Za-z0-9._@-]*):([A-Za-z0-9][A-Za-z0-9._:-]*)$/;
 const CONFIGURATION_ID_PATTERN = /^[a-z][a-z0-9_-]*$/;
 const FIELD_PATTERN = /^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$/;
 
@@ -207,11 +210,12 @@ function addNavigationIssues(issues: ViewValidationIssue[], navigation: unknown)
             ids.add(item.id);
         }
         addStringIssue(issues, item.label, `${path}.label`, { required: true, maxLength: 120 });
+        addStringIssue(issues, item.source, `${path}.source`, { required: true });
         addEnumIssue(issues, item.presentation, `${path}.presentation`, ['tree', 'list', 'select', 'chips']);
         addBooleanIssue(issues, item.multi_select, `${path}.multi_select`);
         addNumberIssue(issues, item.order, `${path}.order`, { integer: true });
         addStringIssue(issues, item.renderer, `${path}.renderer`, { maxLength: 120 });
-        addEnumIssue(issues, item.source, `${path}.source`, ['location', 'collection', 'terms', 'range']);
+        addEnumIssue(issues, item.source, `${path}.source`, ['location', 'collection', 'terms', 'hierarchy', 'range']);
 
         if (item.source === 'location') {
             addStringArrayIssues(issues, item.roots, `${path}.roots`, { maxItems: 50, pathValues: true });
@@ -224,6 +228,46 @@ function addNavigationIssues(issues: ViewValidationIssue[], navigation: unknown)
             addNumberIssue(issues, item.size, `${path}.size`, { integer: true, min: 1, max: 500 });
             addEnumIssue(issues, item.sort, `${path}.sort`, ['count', 'label']);
             addStringIssue(issues, item.missing_label, `${path}.missing_label`, { maxLength: 120 });
+        } else if (item.source === 'hierarchy') {
+            if (item.multi_select !== undefined && item.multi_select !== false) {
+                issues.push({ path: `${path}.multi_select`, message: 'must be false for a property hierarchy' });
+            }
+            if (!Array.isArray(item.levels) || item.levels.length < 2 || item.levels.length > 10) {
+                issues.push({ path: `${path}.levels`, message: 'must contain between 2 and 10 hierarchy levels' });
+            } else {
+                const levelIds = new Set<string>();
+                const levelFields = new Set<string>();
+                item.levels.forEach((level, levelIndex) => {
+                    const levelPath = `${path}.levels[${levelIndex}]`;
+                    addConfigurationIdIssue(issues, level?.id, `${levelPath}.id`);
+                    addStringIssue(issues, level?.label, `${levelPath}.label`, {
+                        required: true,
+                        maxLength: 120,
+                    });
+                    addFieldIssue(issues, level?.field, `${levelPath}.field`);
+                    addNumberIssue(issues, level?.size, `${levelPath}.size`, {
+                        integer: true,
+                        min: 1,
+                        max: 500,
+                    });
+                    addEnumIssue(issues, level?.sort, `${levelPath}.sort`, ['count', 'label']);
+                    if (typeof level?.id === 'string') {
+                        if (levelIds.has(level.id)) {
+                            issues.push({ path: `${levelPath}.id`, message: 'must be unique within the hierarchy' });
+                        }
+                        levelIds.add(level.id);
+                    }
+                    if (typeof level?.field === 'string') {
+                        if (levelFields.has(level.field)) {
+                            issues.push({
+                                path: `${levelPath}.field`,
+                                message: 'must be unique within the hierarchy',
+                            });
+                        }
+                        levelFields.add(level.field);
+                    }
+                });
+            }
         } else if (item.source === 'range') {
             addFieldIssue(issues, item.field, `${path}.field`);
             if (!Array.isArray(item.ranges) || item.ranges.length === 0) {
@@ -323,7 +367,7 @@ function addSearchIssues(issues: ViewValidationIssue[], value: unknown): void {
                 }
                 addFieldIssue(issues, rawField.field, `${path}.field`);
                 addStringIssue(issues, rawField.description, `${path}.description`, { maxLength: 500 });
-                addEnumIssue(issues, rawField.type, `${path}.type`, ['text', 'keyword', 'number', 'date', 'boolean']);
+                addEnumIssue(issues, rawField.type, `${path}.type`, VIEW_SEARCH_FIELD_TYPES);
                 addEnumIssue(issues, rawField.mode, `${path}.mode`, ['auto', 'full_text', 'exact']);
                 addNumberIssue(issues, rawField.boost, `${path}.boost`, { min: 0.1, max: 20 });
                 if (rawField.mode === 'full_text' && rawField.type !== undefined && rawField.type !== 'text') {
@@ -343,6 +387,9 @@ function addSearchIssues(issues: ViewValidationIssue[], value: unknown): void {
         if (!Array.isArray(value.key_terms)) {
             issues.push({ path: 'search.key_terms', message: 'must be an array' });
         } else {
+            if (value.key_terms.length > 50) {
+                issues.push({ path: 'search.key_terms', message: 'must contain at most 50 terms' });
+            }
             const ids = new Set<string>();
             value.key_terms.forEach((rawTerm, index) => {
                 const path = `search.key_terms[${index}]`;
@@ -352,7 +399,7 @@ function addSearchIssues(issues: ViewValidationIssue[], value: unknown): void {
                 }
                 addConfigurationIdIssue(issues, rawTerm.id, `${path}.id`);
                 addStringIssue(issues, rawTerm.label, `${path}.label`, { required: true, maxLength: 120 });
-                addEnumIssue(issues, rawTerm.type, `${path}.type`, ['text', 'keyword', 'number', 'date', 'boolean']);
+                addEnumIssue(issues, rawTerm.type, `${path}.type`, VIEW_SEARCH_FIELD_TYPES);
                 addEnumIssue(issues, rawTerm.operator, `${path}.operator`, ['match', 'term', 'range']);
                 addBooleanIssue(issues, rawTerm.multiple, `${path}.multiple`);
                 if (rawTerm.field !== undefined) {
@@ -533,6 +580,22 @@ export function validateViewExperienceId(value: unknown): ViewValidationIssue[] 
     return issues;
 }
 
+export interface AppViewExperienceId {
+    app_name: string;
+    local_id: string;
+}
+
+/**
+ * Parse an app-contributed View id without allowing URL path separators or
+ * percent-encoded path material into a downstream privileged request.
+ */
+export function parseAppViewExperienceId(value: unknown): AppViewExperienceId | undefined {
+    if (typeof value !== 'string') return undefined;
+    const match = APP_VIEW_ID_PATTERN.exec(value);
+    if (!match) return undefined;
+    return { app_name: match[1], local_id: match[2] };
+}
+
 export function validateViewExperienceConfiguration(value: unknown): ViewValidationIssue[] {
     const issues: ViewValidationIssue[] = [];
     if (!isRecord(value)) {
@@ -572,8 +635,8 @@ export function validateViewExperienceConfiguration(value: unknown): ViewValidat
                 'scope.include_collection_descendants',
             );
             addBooleanIssue(issues, configuration.scope.head_only, 'scope.head_only');
-            if (configuration.scope.fixed_filter !== undefined && !isRecord(configuration.scope.fixed_filter)) {
-                issues.push({ path: 'scope.fixed_filter', message: 'must be an Elasticsearch query object' });
+            if (configuration.scope.fixed_filter !== undefined) {
+                issues.push(...validateSupportedViewQuery(configuration.scope.fixed_filter, 'scope.fixed_filter'));
             }
         }
     }

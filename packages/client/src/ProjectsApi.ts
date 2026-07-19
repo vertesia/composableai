@@ -81,54 +81,54 @@ export default class ProjectsApi extends ApiTopic {
     }
 
     listAppContentTypes(projectId: string, tag?: string): Promise<InCodeTypeDefinition[]> {
-        return this.get(`/${projectId}/app-types`, {
+        return this.get(`/${encodeURIComponent(projectId)}/app-types`, {
             query: { tag },
         });
     }
 
     getAppContentType(projectId: string, typeId: string): Promise<InCodeTypeDefinition> {
-        return this.get(`/${projectId}/app-types/${typeId}`);
+        return this.get(`/${encodeURIComponent(projectId)}/app-types/${encodeURIComponent(typeId)}`);
     }
 
     listAppProcesses(projectId: string, tag?: string): Promise<InCodeProcessDefinition[]> {
-        return this.get(`/${projectId}/app-processes`, {
+        return this.get(`/${encodeURIComponent(projectId)}/app-processes`, {
             query: { tag },
         });
     }
 
     getAppProcess(projectId: string, processId: string): Promise<InCodeProcessDefinition> {
-        return this.get(`/${projectId}/app-processes/${processId}`);
+        return this.get(`/${encodeURIComponent(projectId)}/app-processes/${encodeURIComponent(processId)}`);
     }
 
     listAppViews(projectId: string, tag?: string): Promise<InCodeViewDefinition[]> {
-        return this.get(`/${projectId}/app-views`, {
+        return this.get(`/${encodeURIComponent(projectId)}/app-views`, {
             query: { tag },
         });
     }
 
     getAppView(projectId: string, viewId: string): Promise<InCodeViewDefinition> {
-        return this.get(`/${projectId}/app-views/${viewId}`);
+        return this.get(`/${encodeURIComponent(projectId)}/app-views/${encodeURIComponent(viewId)}`);
     }
 
     listAppRenderingTemplates(projectId: string, tag?: string): Promise<RenderingTemplateDefinitionRef[]> {
-        return this.get(`/${projectId}/app-templates`, {
+        return this.get(`/${encodeURIComponent(projectId)}/app-templates`, {
             query: { tag },
         });
     }
 
     getAppRenderingTemplate(projectId: string, templateUri: string): Promise<RenderingTemplateDefinition> {
-        return this.get(`/${projectId}/app-templates/${templateUri}`);
+        return this.get(`/${encodeURIComponent(projectId)}/app-templates/${encodeURIComponent(templateUri)}`);
     }
 
     getCompositeAppConfiguration(projectId: string): Promise<CompositeAppConfig> {
-        return this.get(`/${projectId}/composite-app`);
+        return this.get(`/${encodeURIComponent(projectId)}/composite-app`);
     }
 
     updateCompositeAppConfiguration(
         projectId: string,
         payload: CompositeAppConfigPayload,
     ): Promise<CompositeAppConfig> {
-        return this.put(`/${projectId}/composite-app`, {
+        return this.put(`/${encodeURIComponent(projectId)}/composite-app`, {
             payload,
         });
     }

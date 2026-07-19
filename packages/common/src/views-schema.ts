@@ -1,4 +1,5 @@
 import type { JSONSchema } from './json-schema.js';
+import { VIEW_SEARCH_FIELD_TYPES } from './views.js';
 
 export const VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
     'https://schemas.vertesia.com/view-experience.v1.schema.json';
@@ -46,6 +47,7 @@ export const ViewExperienceConfigurationJsonSchema = {
                     { $ref: '#/$defs/locationNavigation' },
                     { $ref: '#/$defs/collectionNavigation' },
                     { $ref: '#/$defs/termsNavigation' },
+                    { $ref: '#/$defs/hierarchyNavigation' },
                     { $ref: '#/$defs/rangeNavigation' },
                 ],
             },
@@ -216,6 +218,49 @@ export const ViewExperienceConfigurationJsonSchema = {
             required: ['id', 'label', 'source', 'field'],
             additionalProperties: false,
         },
+        hierarchyLevel: {
+            type: 'object',
+            title: 'Property hierarchy level',
+            description: 'One mapped property in a drill-down hierarchy.',
+            properties: {
+                id: { $ref: '#/$defs/configurationId' },
+                label: { type: 'string', minLength: 1, maxLength: 120 },
+                field: { $ref: '#/$defs/fieldName' },
+                size: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 500,
+                },
+                sort: {
+                    type: 'string',
+                    enum: ['count', 'label'],
+                },
+            },
+            required: ['id', 'label', 'field'],
+            additionalProperties: false,
+        },
+        hierarchyNavigation: {
+            type: 'object',
+            title: 'Property hierarchy',
+            description: 'Drill down through mapped properties such as State, then City.',
+            properties: {
+                id: { $ref: '#/$defs/configurationId' },
+                label: { type: 'string', minLength: 1, maxLength: 120 },
+                source: { const: 'hierarchy' },
+                presentation: { type: 'string', enum: ['tree', 'list', 'select', 'chips'] },
+                multi_select: { const: false },
+                order: { type: 'integer' },
+                renderer: { type: 'string', minLength: 1, maxLength: 120 },
+                levels: {
+                    type: 'array',
+                    minItems: 2,
+                    maxItems: 10,
+                    items: { $ref: '#/$defs/hierarchyLevel' },
+                },
+            },
+            required: ['id', 'label', 'source', 'levels'],
+            additionalProperties: false,
+        },
         rangeDefinition: {
             type: 'object',
             properties: {
@@ -259,7 +304,7 @@ export const ViewExperienceConfigurationJsonSchema = {
                 field: { $ref: '#/$defs/fieldName' },
                 type: {
                     type: 'string',
-                    enum: ['text', 'keyword', 'number', 'date', 'boolean'],
+                    enum: [...VIEW_SEARCH_FIELD_TYPES],
                 },
                 multiple: { type: 'boolean' },
                 operator: {
@@ -284,7 +329,7 @@ export const ViewExperienceConfigurationJsonSchema = {
                 },
                 type: {
                     type: 'string',
-                    enum: ['text', 'keyword', 'number', 'date', 'boolean'],
+                    enum: [...VIEW_SEARCH_FIELD_TYPES],
                     description: 'Mapping hint used only when the active index does not expose the field type.',
                 },
                 mode: {
@@ -411,6 +456,7 @@ export const ViewExperienceConfigurationJsonSchema = {
                 },
                 key_terms: {
                     type: 'array',
+                    maxItems: 50,
                     items: { $ref: '#/$defs/keyTerm' },
                 },
                 agentic: { $ref: '#/$defs/agenticSearch' },

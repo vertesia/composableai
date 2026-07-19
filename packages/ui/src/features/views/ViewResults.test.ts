@@ -33,4 +33,19 @@ describe('View result fields', () => {
         expect(formatViewFieldValue(hit, { field: 'properties.size', format: 'number' })).toBe('2,500');
         expect(formatViewFieldValue(hit, { field: 'properties.missing', fallback: 'Unknown' })).toBe('Unknown');
     });
+
+    it('renders date-only values as calendar dates independent of the client time zone', () => {
+        const dateOnlyHit = {
+            ...hit,
+            document: {
+                ...hit.document,
+                properties: { ...hit.document.properties, release_date: '2026-01-01' },
+            },
+        };
+        const expected = new Intl.DateTimeFormat(undefined, { timeZone: 'UTC' }).format(
+            new Date('2026-01-01T00:00:00.000Z'),
+        );
+
+        expect(formatViewFieldValue(dateOnlyHit, { field: 'properties.release_date', format: 'date' })).toBe(expected);
+    });
 });

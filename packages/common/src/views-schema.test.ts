@@ -1,8 +1,12 @@
 import Ajv from 'ajv';
 import { describe, expect, it } from 'vitest';
-import type { ViewExperienceConfiguration } from './views.js';
+import type { ViewExperienceConfiguration, ViewNavigationItem } from './views.js';
 import { ViewExperienceConfigurationJsonSchema } from './views-schema.js';
-import { validateViewExperienceConfiguration, validateViewExperienceId } from './views-validation.js';
+import {
+    parseAppViewExperienceId,
+    validateViewExperienceConfiguration,
+    validateViewExperienceId,
+} from './views-validation.js';
 
 function documentLibrary(): ViewExperienceConfiguration {
     return {
@@ -29,6 +33,15 @@ function documentLibrary(): ViewExperienceConfiguration {
                 source: 'terms',
                 field: 'properties.brand.keyword',
                 size: 30,
+            },
+            {
+                id: 'geography',
+                label: 'Geography',
+                source: 'hierarchy',
+                levels: [
+                    { id: 'state', label: 'State', field: 'properties.state' },
+                    { id: 'city', label: 'City', field: 'properties.city', sort: 'label' },
+                ],
             },
             {
                 id: 'project_size',
@@ -174,5 +187,59 @@ describe('View Experience semantic validation', () => {
                 },
             ]),
         );
+    });
+
+    it('rejects ambiguous property hierarchies', () => {
+        const invalid = documentLibrary();
+        invalid.navigation = [
+            {
+                id: 'geography',
+                label: 'Geography',
+                source: 'hierarchy',
+                multi_select: true,
+                levels: [
+                    { id: 'state', label: 'State', field: 'properties.state' },
+                    { id: 'state', label: 'City', field: 'properties.state' },
+                ],
+            } as unknown as ViewNavigationItem,
+        ];
+
+        expect(validateViewExperienceConfiguration(invalid)).toEqual(
+            expect.arrayContaining([
+                {
+                    path: 'navigation[0].multi_select',
+                    message: 'must be false for a property hierarchy',
+                },
+                {
+                    path: 'navigation[0].levels[1].id',
+                    message: 'must be unique within the hierarchy',
+                },
+                {
+                    path: 'navigation[0].levels[1].field',
+                    message: 'must be unique within the hierarchy',
+                },
+            ]),
+        );
+    });
+
+    it('rejects fixed filters that the execution runtime cannot apply', () => {
+        const invalid = documentLibrary();
+        if (invalid.scope) {
+            invalid.scope.fixed_filter = { query_string: { query: '*' } };
+        }
+
+        expect(validateViewExperienceConfiguration(invalid)).toContainEqual({
+            path: 'scope.fixed_filter.query_string',
+            message: "query type 'query_string' is not supported",
+        });
+    });
+
+    it('parses canonical app View ids and rejects URL path material', () => {
+        expect(parseAppViewExperienceId('app:content:document-lib')).toEqual({
+            app_name: 'content',
+            local_id: 'document-lib',
+        });
+        expect(parseAppViewExperienceId('app:content:../../environments')).toBeUndefined();
+        expect(parseAppViewExperienceId('app:content:%2F..%2Fenvironments')).toBeUndefined();
     });
 });

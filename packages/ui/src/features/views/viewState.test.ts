@@ -19,11 +19,16 @@ describe('View URL state', () => {
     });
 
     it('round trips View state and preserves unrelated host parameters', () => {
+        const hierarchyPath = 'h1:WyJGTCIsIk1pYW1pIl0';
         const serialized = serializeViewState(
             {
                 query: 'renewal rights',
                 key_terms: { party: ['Acme'], topic: ['renewal'] },
-                navigation: { location: ['/Customers/Acme'], brand: ['Contoso', 'Vertesia'] },
+                navigation: {
+                    location: ['/Customers/Acme'],
+                    brand: ['Contoso', 'Vertesia'],
+                    geography: [hierarchyPath],
+                },
                 display: 'table',
             },
             '?account=account-1&project=project-1&q=stale&n.brand=stale',
@@ -34,7 +39,11 @@ describe('View URL state', () => {
         expect(parseViewState(serialized)).toEqual({
             query: 'renewal rights',
             key_terms: { party: ['Acme'], topic: ['renewal'] },
-            navigation: { brand: ['Contoso', 'Vertesia'], location: ['/Customers/Acme'] },
+            navigation: {
+                brand: ['Contoso', 'Vertesia'],
+                geography: [hierarchyPath],
+                location: ['/Customers/Acme'],
+            },
             display: 'table',
         });
     });

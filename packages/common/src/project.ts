@@ -485,22 +485,12 @@ export function validateProjectSearchPropertyMappings(value: unknown): string[] 
         issues.push(`indexing.property_mappings must contain at most ${MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS} fields`);
     }
 
-    const paths = new Set(entries.map(([path]) => path));
     const supportedTypes = new Set<string>(PROJECT_SEARCH_PROPERTY_TYPES);
     for (const [path, rawMapping] of entries) {
         const field = `indexing.property_mappings.${path}`;
         if (!PROJECT_SEARCH_PROPERTY_PATH_PATTERN.test(path)) {
             issues.push(`${field} must be a dot-separated path containing only letters, numbers, and underscores`);
         }
-        const segments = path.split('.');
-        for (let index = 1; index < segments.length; index++) {
-            const parentPath = segments.slice(0, index).join('.');
-            if (paths.has(parentPath)) {
-                issues.push(`${field} conflicts with the mapped parent field "${parentPath}"`);
-                break;
-            }
-        }
-
         if (!rawMapping || typeof rawMapping !== 'object' || Array.isArray(rawMapping)) {
             issues.push(`${field} must be an object`);
             continue;
