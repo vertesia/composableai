@@ -5,6 +5,11 @@ export const VIEW_EXPERIENCE_SCHEMA_VERSION = 1 as const;
 
 export type ViewExperienceSchemaVersion = typeof VIEW_EXPERIENCE_SCHEMA_VERSION;
 
+/** Build the generic reusable client route for a persisted or app-contributed View. */
+export function viewExperienceRoute(id: string): string {
+    return `/view/${encodeURIComponent(id)}`;
+}
+
 /** An author-provided Elasticsearch query subtree validated by the View runtime. */
 export interface ViewElasticsearchQuery {
     [clause: string]: unknown;
@@ -12,7 +17,7 @@ export interface ViewElasticsearchQuery {
 
 export interface ViewExperienceLayout {
     mode?: 'browse' | 'worklist';
-    navigation_position?: 'sidebar' | 'top' | 'drawer';
+    navigation_position?: 'sidebar' | 'top';
 }
 
 export interface ViewExperienceScope {
@@ -50,7 +55,6 @@ export interface ViewTermsNavigation extends ViewNavigationBase {
     field: string;
     size?: number;
     sort?: 'count' | 'label';
-    missing_label?: string;
 }
 
 export interface ViewHierarchyLevel {
@@ -125,21 +129,14 @@ export interface ViewSearchFieldDefinition {
     boost?: number;
 }
 
-export interface AgenticViewSearchAnnotationsConfiguration {
-    mode?: 'none' | 'why_match' | 'answer';
-    instructions?: string;
-}
-
 export interface AgenticViewSearchConfiguration {
     interaction?: string;
     config?: InteractionExecutionConfiguration;
     /** View-specific guidance for Elasticsearch query planning. */
     instructions?: string;
-    mode?: 'query' | 'rerank' | 'curate';
-    candidate_limit?: number;
+    mode?: 'query';
     timeout_ms?: number;
     minimum_confidence?: number;
-    annotations?: AgenticViewSearchAnnotationsConfiguration;
 }
 
 export interface ViewSearchConfiguration {
@@ -162,7 +159,17 @@ export interface ViewSortOption {
     sort: ViewSortClause[];
 }
 
-export type ViewResultFieldFormat = 'text' | 'date' | 'number' | 'badge' | 'user' | 'content_type' | 'location';
+export const VIEW_RESULT_FIELD_FORMATS = [
+    'text',
+    'date',
+    'number',
+    'badge',
+    'user',
+    'content_type',
+    'location',
+] as const;
+
+export type ViewResultFieldFormat = (typeof VIEW_RESULT_FIELD_FORMATS)[number];
 
 export interface ViewResultField {
     field: string;
@@ -230,8 +237,6 @@ export interface ViewBoardColumn {
 }
 
 export interface ViewBoardCardConfiguration {
-    renderer?: string;
-    page_size?: number;
     title: ViewResultField;
     description?: ViewResultField;
     media?: ViewResultMedia;
@@ -282,11 +287,12 @@ export interface PersistedViewExperienceConfiguration extends Omit<ViewExperienc
     description: string;
 }
 
-/** Project a persisted or extended View value back to its reusable configuration fields. */
-export function getViewExperienceConfiguration(
-    value: PersistedViewExperienceConfiguration,
-): PersistedViewExperienceConfiguration;
-export function getViewExperienceConfiguration(value: ViewExperienceConfiguration): ViewExperienceConfiguration;
+/**
+ * Project a persisted or extended View value back to its reusable configuration
+ * fields. Callers that require a persisted configuration must validate the
+ * result at their API or persistence boundary because legacy records may not
+ * satisfy newer persisted-only requirements.
+ */
 export function getViewExperienceConfiguration(value: ViewExperienceConfiguration): ViewExperienceConfiguration {
     return {
         name: value.name,
@@ -297,6 +303,16 @@ export function getViewExperienceConfiguration(value: ViewExperienceConfiguratio
         ...(value.navigation === undefined ? {} : { navigation: value.navigation }),
         ...(value.search === undefined ? {} : { search: value.search }),
         ...(value.results === undefined ? {} : { results: value.results }),
+    };
+}
+
+/** Project a type-valid persisted View while preserving its required documentation field. */
+export function getPersistedViewExperienceConfiguration(
+    value: PersistedViewExperienceConfiguration,
+): PersistedViewExperienceConfiguration {
+    return {
+        ...getViewExperienceConfiguration(value),
+        description: value.description,
     };
 }
 
@@ -422,7 +438,7 @@ export interface ViewExecutionSearchResult {
     key_terms?: Record<string, string[]>;
     plan?: ViewExecutionQueryPlan;
     requested_mode: 'browse' | 'deterministic' | 'agentic';
-    applied_mode: 'browse' | 'deterministic' | 'query' | 'rerank' | 'curate';
+    applied_mode: 'browse' | 'deterministic' | 'query';
     fallback_reason?: string;
     warnings: ViewExecutionWarning[];
 }

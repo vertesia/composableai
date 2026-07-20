@@ -757,6 +757,7 @@
   "view.from": "От",
   "view.pagination": "Страницы результатов",
   "view.ranges": "Диапазоны",
+  "view.removeSelection": "Удалить {{value}}",
   "view.resultsCount_one": "{{count}} результат",
   "view.resultsCount_few": "{{count}} результата",
   "view.resultsCount_many": "{{count}} результатов",

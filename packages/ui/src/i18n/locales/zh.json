@@ -737,6 +737,7 @@
   "view.from": "起始",
   "view.pagination": "结果页面",
   "view.ranges": "范围",
+  "view.removeSelection": "移除 {{value}}",
   "view.resultsCount_other": "{{count}} 个结果",
   "view.searchFields": "搜索字段",
   "view.sort": "排序",

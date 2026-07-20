@@ -1,16 +1,12 @@
 import Ajv from 'ajv';
 import { describe, expect, it } from 'vitest';
-import type { ViewExperienceConfiguration, ViewNavigationItem } from './views.js';
+import { validateViewConfiguration } from './view-configuration-validation.js';
+import { type ViewExperienceConfiguration, type ViewNavigationItem, viewExperienceRoute } from './views.js';
 import {
     PersistedViewExperienceConfigurationJsonSchema,
     ViewExperienceConfigurationJsonSchema,
 } from './views-schema.js';
-import {
-    parseAppViewExperienceId,
-    validatePersistedViewExperienceConfiguration,
-    validateViewExperienceConfiguration,
-    validateViewExperienceId,
-} from './views-validation.js';
+import { parseAppViewExperienceId, validateViewExperienceId } from './views-validation.js';
 
 function documentLibrary(): ViewExperienceConfiguration {
     return {
@@ -139,6 +135,63 @@ describe('View Experience configuration schema', () => {
         expect(validate.errors?.some((error) => error.instancePath.includes('/navigation/0'))).toBe(true);
     });
 
+    it('advertises only executable version 1 options', () => {
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(
+            ViewExperienceConfigurationJsonSchema,
+        );
+        const unsupported = [
+            { name: 'Drawer', layout: { navigation_position: 'drawer' } },
+            {
+                name: 'Missing bucket',
+                navigation: [
+                    {
+                        id: 'brand',
+                        label: 'Brand',
+                        source: 'terms',
+                        field: 'properties.brand',
+                        missing_label: 'Unknown',
+                    },
+                ],
+            },
+            { name: 'Rerank', search: { mode: 'agentic', agentic: { mode: 'rerank' } } },
+            { name: 'Candidate limit', search: { mode: 'agentic', agentic: { candidate_limit: 50 } } },
+            {
+                name: 'Annotations',
+                search: { mode: 'agentic', agentic: { annotations: { mode: 'why_match' } } },
+            },
+            {
+                name: 'Board card renderer',
+                results: {
+                    default_display: 'board',
+                    displays: [
+                        {
+                            id: 'board',
+                            label: 'Board',
+                            type: 'board',
+                            group_by: 'status',
+                            card: { renderer: 'custom-card', title: { field: 'name' } },
+                        },
+                    ],
+                },
+            },
+        ];
+
+        unsupported.forEach((configuration) => {
+            expect(validate(configuration), JSON.stringify(validate.errors)).toBe(false);
+        });
+    });
+
+    it('matches the agentic timeout schema to the runtime budget', () => {
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(
+            ViewExperienceConfigurationJsonSchema,
+        );
+        expect(validate({ name: 'Agentic', search: { mode: 'agentic', agentic: { timeout_ms: 60_000 } } })).toBe(true);
+        expect(validate({ name: 'Too short', search: { mode: 'agentic', agentic: { timeout_ms: 999 } } })).toBe(false);
+        expect(validate({ name: 'Too long', search: { mode: 'agentic', agentic: { timeout_ms: 60_001 } } })).toBe(
+            false,
+        );
+    });
+
     it('requires a description only for persisted View resources', () => {
         const validatePersisted = new Ajv.default({ allErrors: true, strict: false }).compile(
             PersistedViewExperienceConfigurationJsonSchema,
@@ -151,26 +204,28 @@ describe('View Experience configuration schema', () => {
                 description: 'Browse the project document library by location and business metadata.',
             }),
         ).toBe(true);
-        expect(validateViewExperienceConfiguration(documentLibrary())).toEqual([]);
-        expect(validatePersistedViewExperienceConfiguration(documentLibrary())).toContainEqual({
-            path: 'description',
-            message: 'is required and must explain the View purpose',
-        });
+        expect(validateViewConfiguration(documentLibrary())).toEqual([]);
+        const missingDescriptionIssues = validateViewConfiguration(documentLibrary(), 'persisted');
+        expect(missingDescriptionIssues).toHaveLength(1);
+        expect(missingDescriptionIssues[0]?.path).toBe('description');
         expect(
-            validatePersistedViewExperienceConfiguration({
-                ...documentLibrary(),
-                description: '   ',
-            }),
+            validateViewConfiguration(
+                {
+                    ...documentLibrary(),
+                    description: '   ',
+                },
+                'persisted',
+            ),
         ).toContainEqual({
             path: 'description',
-            message: 'is required and must explain the View purpose',
+            message: 'must explain the View purpose',
         });
     });
 });
 
 describe('View Experience semantic validation', () => {
     it('accepts a complete document library configuration', () => {
-        expect(validateViewExperienceConfiguration(documentLibrary())).toEqual([]);
+        expect(validateViewConfiguration(documentLibrary())).toEqual([]);
         expect(validateViewExperienceId('document-library')).toEqual([]);
     });
 
@@ -186,7 +241,7 @@ describe('View Experience semantic validation', () => {
             });
         }
 
-        const issues = validateViewExperienceConfiguration(invalid);
+        const issues = validateViewConfiguration(invalid);
 
         expect(issues).toContainEqual({
             path: 'results.default_display',
@@ -207,7 +262,7 @@ describe('View Experience semantic validation', () => {
             ];
         }
 
-        expect(validateViewExperienceConfiguration(invalid)).toEqual(
+        expect(validateViewConfiguration(invalid)).toEqual(
             expect.arrayContaining([
                 {
                     path: 'search.fields[0].type',
@@ -228,20 +283,15 @@ describe('View Experience semantic validation', () => {
                 id: 'geography',
                 label: 'Geography',
                 source: 'hierarchy',
-                multi_select: true,
                 levels: [
                     { id: 'state', label: 'State', field: 'properties.state' },
                     { id: 'state', label: 'City', field: 'properties.state' },
                 ],
-            } as unknown as ViewNavigationItem,
+            } as ViewNavigationItem,
         ];
 
-        expect(validateViewExperienceConfiguration(invalid)).toEqual(
+        expect(validateViewConfiguration(invalid)).toEqual(
             expect.arrayContaining([
-                {
-                    path: 'navigation[0].multi_select',
-                    message: 'must be false for a property hierarchy',
-                },
                 {
                     path: 'navigation[0].levels[1].id',
                     message: 'must be unique within the hierarchy',
@@ -254,13 +304,45 @@ describe('View Experience semantic validation', () => {
         );
     });
 
+    it('runs structural validation before semantic validation', () => {
+        const invalid = {
+            ...documentLibrary(),
+            navigation: [
+                {
+                    id: 'geography',
+                    label: 'Geography',
+                    source: 'hierarchy',
+                    multi_select: true,
+                    levels: [
+                        { id: 'state', label: 'State', field: 'properties.state' },
+                        { id: 'state', label: 'City', field: 'properties.state' },
+                    ],
+                },
+            ],
+        };
+
+        const issues = validateViewConfiguration(invalid);
+        expect(issues.some((issue) => issue.path === 'navigation[0].multi_select')).toBe(true);
+        expect(issues.some((issue) => issue.message === 'must be unique within the hierarchy')).toBe(false);
+    });
+
+    it('normalizes required and array paths from JSON Schema errors', () => {
+        const issues = validateViewConfiguration({
+            name: 'Invalid',
+            navigation: [{ id: 'brand', label: 'Brand', source: 'terms' }],
+        });
+
+        expect(issues.some((issue) => issue.path === 'navigation[0].field')).toBe(true);
+        expect(issues.every((issue) => !issue.path.startsWith('/'))).toBe(true);
+    });
+
     it('rejects fixed filters that the execution runtime cannot apply', () => {
         const invalid = documentLibrary();
         if (invalid.scope) {
             invalid.scope.fixed_filter = { query_string: { query: '*' } };
         }
 
-        expect(validateViewExperienceConfiguration(invalid)).toContainEqual({
+        expect(validateViewConfiguration(invalid)).toContainEqual({
             path: 'scope.fixed_filter.query_string',
             message: "query type 'query_string' is not supported",
         });
@@ -273,5 +355,10 @@ describe('View Experience semantic validation', () => {
         });
         expect(parseAppViewExperienceId('app:content:../../environments')).toBeUndefined();
         expect(parseAppViewExperienceId('app:content:%2F..%2Fenvironments')).toBeUndefined();
+    });
+
+    it('builds the generic route without exposing path material from an id', () => {
+        expect(viewExperienceRoute('app:content:document-library')).toBe('/view/app%3Acontent%3Adocument-library');
+        expect(viewExperienceRoute('unsafe/id')).toBe('/view/unsafe%2Fid');
     });
 });

@@ -111,4 +111,37 @@ describe('DefaultViewSearch', () => {
         expect(customers.value).toBe('Acme, Globex');
         expect(onKeyTermsChange).toHaveBeenCalledWith('customers', ['Acme', 'Globex']);
     });
+
+    it('applies external key-term resets while preserving focused local formatting echoes', () => {
+        const onKeyTermsChange = vi.fn();
+        const props = {
+            configuration: {
+                mode: 'deterministic' as const,
+                key_terms: [
+                    {
+                        id: 'customers',
+                        label: 'Customers',
+                        field: 'properties.customer',
+                        type: 'keyword' as const,
+                        multiple: true,
+                    },
+                ],
+            },
+            query: '',
+            isLoading: false,
+            onQueryChange: vi.fn(),
+            onKeyTermsChange,
+            onSubmit: vi.fn(),
+        };
+        const { rerender } = renderWithProviders(<DefaultViewSearch {...props} keyTerms={{}} />);
+        const customers = screen.getByLabelText('Customers') as HTMLInputElement;
+
+        fireEvent.focus(customers);
+        fireEvent.change(customers, { target: { value: 'Acme, ' } });
+        rerender(<DefaultViewSearch {...props} keyTerms={{ customers: ['Acme'] }} />);
+        expect(customers.value).toBe('Acme, ');
+
+        rerender(<DefaultViewSearch {...props} keyTerms={{}} />);
+        expect(customers.value).toBe('');
+    });
 });

@@ -747,6 +747,7 @@
   "view.from": "Desde",
   "view.pagination": "Páginas de resultados",
   "view.ranges": "Rangos",
+  "view.removeSelection": "Quitar {{value}}",
   "view.resultsCount_one": "{{count}} resultado",
   "view.resultsCount_many": "{{count}} resultados",
   "view.resultsCount_other": "{{count}} resultados",

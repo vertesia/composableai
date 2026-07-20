@@ -777,6 +777,7 @@
   "view.from": "من",
   "view.pagination": "صفحات النتائج",
   "view.ranges": "النطاقات",
+  "view.removeSelection": "إزالة {{value}}",
   "view.resultsCount_zero": "{{count}} نتيجة",
   "view.resultsCount_one": "{{count}} نتيجة",
   "view.resultsCount_two": "{{count}} نتيجتان",

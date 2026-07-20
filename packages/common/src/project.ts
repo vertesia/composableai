@@ -3,6 +3,7 @@ import type { SupportedIntegrations } from './integrations.js';
 import type { ContentTypeIntakePolicy, IntakeVisionDetail, IntakeVisionProfileSettings } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
+import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
 
 export interface ICreateProjectPayload {
     name: string;
@@ -463,7 +464,6 @@ export const PROJECT_SEARCH_PROPERTY_TYPES: readonly ProjectSearchPropertyType[]
     'date',
 ];
 
-const PROJECT_SEARCH_PROPERTY_PATH_PATTERN = /^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$/;
 const MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS = 200;
 const MAX_KEYWORD_IGNORE_ABOVE = 8191;
 
@@ -488,7 +488,7 @@ export function validateProjectSearchPropertyMappings(value: unknown): string[] 
     const supportedTypes = new Set<string>(PROJECT_SEARCH_PROPERTY_TYPES);
     for (const [path, rawMapping] of entries) {
         const field = `indexing.property_mappings.${path}`;
-        if (!PROJECT_SEARCH_PROPERTY_PATH_PATTERN.test(path)) {
+        if (!ELASTICSEARCH_FIELD_PATH_PATTERN.test(path)) {
             issues.push(`${field} must be a dot-separated path containing only letters, numbers, and underscores`);
         }
         if (!rawMapping || typeof rawMapping !== 'object' || Array.isArray(rawMapping)) {

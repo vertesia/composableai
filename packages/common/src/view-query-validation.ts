@@ -1,3 +1,8 @@
+import {
+    ELASTICSEARCH_FIELD_PATH_PATTERN as FIELD_PATTERN,
+    isViewValidationRecord as isRecord,
+    SERVER_CONTROLLED_VIEW_FIELD_ROOTS,
+} from './view-validation-helpers.js';
 import type { ViewElasticsearchQuery } from './views.js';
 
 export interface ViewQueryValidationIssue {
@@ -23,20 +28,8 @@ const ALLOWED_QUERY_TYPES = new Set([
     'prefix',
     'match_all',
 ]);
-const FIELD_PATTERN = /^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$/;
-const FORBIDDEN_FIELD_ROOTS = new Set([
-    'security',
-    'revision',
-    'is_deleted',
-    'embeddings_text',
-    'embeddings_image',
-    'embeddings_properties',
-    '_indexing_metadata',
-]);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
+const MAX_QUERY_CLAUSES = 100;
+const FORBIDDEN_FIELD_ROOTS = new Set<string>(SERVER_CONTROLLED_VIEW_FIELD_ROOTS);
 
 function addFieldIssue(
     issues: ViewQueryValidationIssue[],
@@ -102,8 +95,8 @@ function validateQueryNode(
     options: ViewQueryValidationOptions,
 ): void {
     state.clauses++;
-    if (state.clauses > 100) {
-        issues.push({ path, message: 'exceeds the maximum of 100 query clauses' });
+    if (state.clauses > MAX_QUERY_CLAUSES) {
+        issues.push({ path, message: `exceeds the maximum of ${MAX_QUERY_CLAUSES} query clauses` });
         return;
     }
     if (!isRecord(value)) {
@@ -270,7 +263,9 @@ function validateQueryNode(
     );
 }
 
-export function normalizeViewQuery(value: unknown): unknown {
+function normalizeViewQueryNode(value: unknown, state: { clauses: number }): unknown {
+    state.clauses++;
+    if (state.clauses > MAX_QUERY_CLAUSES) return value;
     if (!isRecord(value)) return value;
     const entries = Object.entries(value);
     if (entries.length !== 1) return value;
@@ -280,9 +275,9 @@ export function normalizeViewQuery(value: unknown): unknown {
         for (const key of ['must', 'filter', 'should', 'must_not'] as const) {
             const child = body[key];
             if (Array.isArray(child)) {
-                normalizedBody[key] = child.map(normalizeViewQuery);
+                normalizedBody[key] = child.map((item) => normalizeViewQueryNode(item, state));
             } else if (child !== undefined) {
-                normalizedBody[key] = normalizeViewQuery(child);
+                normalizedBody[key] = normalizeViewQueryNode(child, state);
             }
         }
         return { bool: normalizedBody };
@@ -293,6 +288,10 @@ export function normalizeViewQuery(value: unknown): unknown {
     const [field, fieldValue] = fieldEntries[0];
     if (!isRecord(fieldValue) || Object.keys(fieldValue).length !== 1 || !('value' in fieldValue)) return value;
     return { term: { [field]: fieldValue.value } };
+}
+
+export function normalizeViewQuery(value: unknown): unknown {
+    return normalizeViewQueryNode(value, { clauses: 0 });
 }
 
 export function validateSupportedViewQuery(

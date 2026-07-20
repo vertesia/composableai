@@ -1,5 +1,5 @@
 import type { ViewNavigationNode } from '@vertesia/common';
-import { Badge, Button, Checkbox, SelectBox } from '@vertesia/ui/core';
+import { Button, Checkbox, SelectBox } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ChevronRight, X } from 'lucide-react';
 import { useId } from 'react';
@@ -81,10 +81,20 @@ export function DefaultViewNavigation({ configuration, result, isLoading, onChan
                     <div className="flex flex-wrap gap-1">
                         {result.selected.map((value) => {
                             const node = result.nodes.find((candidate) => candidate.id === value);
+                            const label = node?.label ?? value;
                             return (
-                                <Badge key={value} variant="secondary">
-                                    {node?.label ?? value}
-                                </Badge>
+                                <Button
+                                    key={value}
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={isLoading}
+                                    onClick={() => toggle(value, false)}
+                                    aria-label={t('view.removeSelection', { value: label })}
+                                >
+                                    {label}
+                                    <X aria-hidden="true" className="size-3.5" />
+                                </Button>
                             );
                         })}
                     </div>

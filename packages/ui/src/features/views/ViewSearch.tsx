@@ -48,11 +48,14 @@ function KeyTermInput({
     onChange: (values: string[]) => void;
 }) {
     const focused = useRef(false);
+    const lastEmittedValues = useRef<string | undefined>(undefined);
     const [input, setInput] = useState(() => serializeKeyTerm(values, term.multiple));
     const serializedValues = serializeKeyTerm(values, term.multiple);
 
     useEffect(() => {
-        if (!focused.current) setInput(serializedValues);
+        const isLocalEcho = focused.current && lastEmittedValues.current === serializedValues;
+        if (!isLocalEcho) setInput(serializedValues);
+        lastEmittedValues.current = undefined;
     }, [serializedValues]);
 
     return (
@@ -72,7 +75,9 @@ function KeyTermInput({
                 }}
                 onChange={(value) => {
                     setInput(value);
-                    onChange(parseKeyTerm(value, term.multiple));
+                    const parsed = parseKeyTerm(value, term.multiple);
+                    lastEmittedValues.current = serializeKeyTerm(parsed, term.multiple);
+                    onChange(parsed);
                 }}
                 placeholder={term.label}
                 disabled={isLoading}

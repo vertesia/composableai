@@ -747,6 +747,7 @@
   "view.from": "Da",
   "view.pagination": "Pagine dei risultati",
   "view.ranges": "Intervalli",
+  "view.removeSelection": "Rimuovi {{value}}",
   "view.resultsCount_one": "{{count}} risultato",
   "view.resultsCount_many": "{{count}} risultati",
   "view.resultsCount_other": "{{count}} risultati",

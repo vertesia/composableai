@@ -89,6 +89,26 @@ describe('ViewExperience', () => {
         });
     });
 
+    it('places results before sidebar navigation visually for worklist layouts', async () => {
+        const execute = vi.fn().mockResolvedValue({
+            ...result,
+            definition: {
+                ...result.definition,
+                layout: { mode: 'worklist', navigation_position: 'sidebar' },
+            },
+        } satisfies ViewExecutionResult);
+        renderWithProviders(
+            <ViewExperience viewId="case-worklist" execute={execute} syncUrl={false} showHeader={false} />,
+        );
+
+        expect(await screen.findByText('Renewal Agreement')).not.toBeNull();
+        expect(document.querySelector('main')?.className).toContain('lg:order-1');
+        expect(document.querySelector('aside')?.className).toContain('lg:order-2');
+        expect(document.querySelector('main')?.parentElement?.className).toContain(
+            'lg:grid-cols-[minmax(0,1fr)_18rem]',
+        );
+    });
+
     it('uses an app-provided resolver for content thumbnails', async () => {
         const execute = vi.fn().mockResolvedValue({
             ...result,

@@ -1,5 +1,9 @@
 import type { JSONSchema } from './json-schema.js';
-import { VIEW_SEARCH_FIELD_TYPES } from './views.js';
+import {
+    ELASTICSEARCH_FIELD_PATH_PATTERN_SOURCE,
+    VIEW_CONFIGURATION_ID_PATTERN_SOURCE,
+} from './view-validation-helpers.js';
+import { VIEW_RESULT_FIELD_FORMATS, VIEW_SEARCH_FIELD_TYPES } from './views.js';
 
 export const VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
     'https://schemas.vertesia.com/view-experience.v1.schema.json';
@@ -10,7 +14,7 @@ export const PERSISTED_VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
  * Canonical structural schema for reusable inline and app-contributed View configuration.
  *
  * Cross-reference rules such as unique navigation ids and valid default display
- * references are enforced by validateViewExperienceConfiguration().
+ * references are enforced by validateViewConfiguration().
  */
 export const ViewExperienceConfigurationJsonSchema = {
     $id: VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID,
@@ -68,14 +72,14 @@ export const ViewExperienceConfigurationJsonSchema = {
             type: 'string',
             minLength: 1,
             maxLength: 64,
-            pattern: '^[a-z][a-z0-9_-]*$',
+            pattern: VIEW_CONFIGURATION_ID_PATTERN_SOURCE,
             description: 'Stable id starting with a letter and containing letters, numbers, underscores, or hyphens.',
         },
         fieldName: {
             type: 'string',
             minLength: 1,
             maxLength: 160,
-            pattern: '^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$',
+            pattern: ELASTICSEARCH_FIELD_PATH_PATTERN_SOURCE,
             description: 'Dot-separated Elasticsearch field name.',
         },
         stringArray: {
@@ -97,7 +101,7 @@ export const ViewExperienceConfigurationJsonSchema = {
                 },
                 navigation_position: {
                     type: 'string',
-                    enum: ['sidebar', 'top', 'drawer'],
+                    enum: ['sidebar', 'top'],
                     description: 'Where navigation widgets appear.',
                 },
             },
@@ -211,10 +215,6 @@ export const ViewExperienceConfigurationJsonSchema = {
                 sort: {
                     type: 'string',
                     enum: ['count', 'label'],
-                },
-                missing_label: {
-                    type: 'string',
-                    maxLength: 120,
                 },
             },
             required: ['id', 'label', 'source', 'field'],
@@ -395,38 +395,18 @@ export const ViewExperienceConfigurationJsonSchema = {
                 },
                 mode: {
                     type: 'string',
-                    enum: ['query', 'rerank', 'curate'],
-                    description: 'Query is currently executable; rerank and curate are reserved modes.',
-                },
-                candidate_limit: {
-                    type: 'integer',
-                    minimum: 1,
-                    maximum: 500,
+                    enum: ['query'],
+                    description: 'Generate and validate an Elasticsearch query before execution.',
                 },
                 timeout_ms: {
                     type: 'integer',
-                    minimum: 100,
-                    maximum: 30000,
+                    minimum: 1000,
+                    maximum: 60000,
                 },
                 minimum_confidence: {
                     type: 'number',
                     minimum: 0,
                     maximum: 1,
-                },
-                annotations: {
-                    type: 'object',
-                    properties: {
-                        mode: {
-                            type: 'string',
-                            enum: ['none', 'why_match', 'answer'],
-                        },
-                        instructions: {
-                            type: 'string',
-                            maxLength: 4000,
-                        },
-                    },
-                    required: [],
-                    additionalProperties: false,
                 },
             },
             required: [],
@@ -473,7 +453,7 @@ export const ViewExperienceConfigurationJsonSchema = {
                 label: { type: 'string', maxLength: 120 },
                 format: {
                     type: 'string',
-                    enum: ['text', 'date', 'number', 'badge', 'user', 'content_type', 'location'],
+                    enum: [...VIEW_RESULT_FIELD_FORMATS],
                 },
                 fallback: { type: 'string', maxLength: 240 },
             },
@@ -528,7 +508,7 @@ export const ViewExperienceConfigurationJsonSchema = {
                 label: { type: 'string', maxLength: 120 },
                 format: {
                     type: 'string',
-                    enum: ['text', 'date', 'number', 'badge', 'user', 'content_type', 'location'],
+                    enum: [...VIEW_RESULT_FIELD_FORMATS],
                 },
                 fallback: { type: 'string', maxLength: 240 },
                 width: { type: 'integer', minimum: 40, maximum: 2000 },
@@ -592,8 +572,6 @@ export const ViewExperienceConfigurationJsonSchema = {
         boardCard: {
             type: 'object',
             properties: {
-                renderer: { type: 'string', minLength: 1, maxLength: 120 },
-                page_size: { type: 'integer', minimum: 1, maximum: 200 },
                 title: { $ref: '#/$defs/resultField' },
                 description: { $ref: '#/$defs/resultField' },
                 media: { $ref: '#/$defs/resultMedia' },

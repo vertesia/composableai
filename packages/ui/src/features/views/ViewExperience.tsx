@@ -237,6 +237,7 @@ function ViewExperienceRuntime({
         ? (renderers?.results?.[display.renderer] ?? DefaultViewResults)
         : DefaultViewResults;
     const hasSidebarNavigation = navigation.length > 0 && definition.layout?.navigation_position !== 'top';
+    const isWorklist = definition.layout?.mode === 'worklist';
     const offset = request.offset ?? 0;
     const pageStep = request.limit ?? display.page_size ?? 20;
     const hasPrevious = offset > 0;
@@ -280,13 +281,25 @@ function ViewExperienceRuntime({
             <FullHeightLayout.Body className="p-0">
                 <div
                     className={
-                        hasSidebarNavigation ? 'grid min-h-full lg:grid-cols-[18rem_minmax(0,1fr)]' : 'min-h-full'
+                        hasSidebarNavigation
+                            ? isWorklist
+                                ? 'grid min-h-full lg:grid-cols-[minmax(0,1fr)_18rem]'
+                                : 'grid min-h-full lg:grid-cols-[18rem_minmax(0,1fr)]'
+                            : 'min-h-full'
                     }
                 >
                     {hasSidebarNavigation && (
-                        <aside className="space-y-5 border-b p-4 lg:border-e lg:border-b-0">{navigationWidgets}</aside>
+                        <aside
+                            className={
+                                isWorklist
+                                    ? 'space-y-5 border-b p-4 lg:order-2 lg:border-s lg:border-b-0'
+                                    : 'space-y-5 border-b p-4 lg:border-e lg:border-b-0'
+                            }
+                        >
+                            {navigationWidgets}
+                        </aside>
                     )}
-                    <main className="min-w-0 space-y-4 p-4">
+                    <main className={`min-w-0 space-y-4 p-4 ${isWorklist ? 'lg:order-1' : ''}`}>
                         {error && (
                             <ErrorBox
                                 title={t('store.searchFailed')}

@@ -30,6 +30,25 @@ describe('DefaultViewNavigation', () => {
         expect(onChange).toHaveBeenCalledWith([]);
     });
 
+    it('lets users remove a selected location after drill-down hides the parent node', () => {
+        const onChange = vi.fn();
+        renderWithProviders(
+            <DefaultViewNavigation
+                configuration={{ id: 'location', label: 'Location', source: 'location', multi_select: true }}
+                result={{
+                    id: 'location',
+                    selected: ['/Customers/Acme'],
+                    nodes: [{ id: '/Customers/Acme/Orders', label: 'Orders', count: 8 }],
+                }}
+                isLoading={false}
+                onChange={onChange}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Remove /Customers/Acme' }));
+        expect(onChange).toHaveBeenCalledWith([]);
+    });
+
     it('renders property hierarchy buckets as drill-down choices with clickable breadcrumbs', () => {
         const onChange = vi.fn();
         renderWithProviders(

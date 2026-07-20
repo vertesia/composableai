@@ -26,9 +26,9 @@ import {
     THead,
     VTooltip,
 } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { type LocaleFormat, useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { ChevronDown, ChevronsUpDown, ChevronUp, ExternalLink, FileText, ImageIcon } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import type { ViewMediaResolver, ViewResultsRendererProps } from './types.js';
 import { resolveViewSort } from './viewState.js';
 
@@ -47,6 +47,10 @@ export function getViewFieldValue(hit: ViewHit, field: string): unknown {
     return nestedValue(hit.document, field);
 }
 
+type ViewValueFormatters = Pick<LocaleFormat, 'formatDate' | 'formatNumber'>;
+
+const ViewValueFormattersContext = createContext<ViewValueFormatters | undefined>(undefined);
+
 function primitiveText(value: unknown): string | undefined {
     if (value === undefined || value === null || value === '') return undefined;
     if (Array.isArray(value)) return value.map(primitiveText).filter(Boolean).join(', ');
@@ -54,7 +58,7 @@ function primitiveText(value: unknown): string | undefined {
     return String(value);
 }
 
-export function formatViewFieldValue(hit: ViewHit, field: ViewResultField): string {
+export function formatViewFieldValue(hit: ViewHit, field: ViewResultField, formatters?: ViewValueFormatters): string {
     const value = getViewFieldValue(hit, field.field);
     const fallback = field.fallback ?? '';
     if (value === undefined || value === null || value === '') return fallback;
@@ -63,19 +67,26 @@ export function formatViewFieldValue(hit: ViewHit, field: ViewResultField): stri
         const text = String(value);
         const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(text);
         const date = new Date(text);
-        return Number.isNaN(date.getTime())
-            ? (primitiveText(value) ?? fallback)
-            : new Intl.DateTimeFormat(undefined, dateOnly ? { timeZone: 'UTC' } : undefined).format(date);
+        if (Number.isNaN(date.getTime())) return primitiveText(value) ?? fallback;
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            ...(dateOnly ? { timeZone: 'UTC' } : {}),
+        };
+        return formatters?.formatDate(date, options) ?? new Intl.DateTimeFormat(undefined, options).format(date);
     }
     if (field.format === 'number') {
         const number = typeof value === 'number' ? value : Number(value);
-        return Number.isFinite(number) ? new Intl.NumberFormat().format(number) : (primitiveText(value) ?? fallback);
+        if (!Number.isFinite(number)) return primitiveText(value) ?? fallback;
+        return formatters?.formatNumber(number) ?? new Intl.NumberFormat().format(number);
     }
     return primitiveText(value) ?? fallback;
 }
 
 function ViewField({ hit, field, className }: { hit: ViewHit; field: ViewResultField; className?: string }) {
-    const text = formatViewFieldValue(hit, field);
+    const formatters = useContext(ViewValueFormattersContext);
+    const text = formatViewFieldValue(hit, field, formatters);
     if (!text) return null;
     if (field.format === 'badge' || field.format === 'content_type') {
         return <Badge className={className}>{text}</Badge>;
@@ -197,11 +208,12 @@ function BadgeFields({ hit, fields }: { hit: ViewHit; fields?: ViewResultField[]
 }
 
 function LabeledFields({ hit, fields }: { hit: ViewHit; fields?: ViewResultField[] }) {
+    const formatters = useContext(ViewValueFormattersContext);
     if (!fields?.length) return null;
     return (
         <dl className="space-y-1 text-sm">
             {fields.map((field) => {
-                const value = formatViewFieldValue(hit, field);
+                const value = formatViewFieldValue(hit, field, formatters);
                 if (!value) return null;
                 return (
                     <div key={`${field.field}-${field.label ?? ''}`} className="flex gap-2">
@@ -576,11 +588,12 @@ export function DefaultViewResults({
     resolveMedia,
 }: ViewResultsRendererProps) {
     const { t } = useUITranslation();
+    const formatters = useLocaleFormat();
     if (!isLoading && result.hits.length === 0) {
         return <p className="py-12 text-center text-sm text-muted">{t('filter.noResultsFound')}</p>;
     }
     return (
-        <>
+        <ViewValueFormattersContext.Provider value={formatters}>
             {renderResults(
                 configuration,
                 result.hits,
@@ -591,6 +604,6 @@ export function DefaultViewResults({
                 resolveViewSort(request, result, definition.results?.default_sort),
                 onSortChange,
             )}
-        </>
+        </ViewValueFormattersContext.Provider>
     );
 }

@@ -747,6 +747,7 @@
   "view.from": "De",
   "view.pagination": "Pages de résultats",
   "view.ranges": "Plages",
+  "view.removeSelection": "Supprimer {{value}}",
   "view.resultsCount_one": "{{count}} résultat",
   "view.resultsCount_many": "{{count}} résultats",
   "view.resultsCount_other": "{{count}} résultats",

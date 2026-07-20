@@ -48,4 +48,35 @@ describe('View result fields', () => {
 
         expect(formatViewFieldValue(dateOnlyHit, { field: 'properties.release_date', format: 'date' })).toBe(expected);
     });
+
+    it('uses the active locale formatters supplied by the View renderer', () => {
+        const formatDate = (date: Date | string | number | null | undefined, options?: Intl.DateTimeFormatOptions) =>
+            new Intl.DateTimeFormat('fr', options).format(new Date(date ?? 0));
+        const formatNumber = (value: number | null | undefined) =>
+            value === null || value === undefined ? '—' : new Intl.NumberFormat('fr').format(value);
+
+        expect(
+            formatViewFieldValue(hit, { field: 'properties.size', format: 'number' }, { formatDate, formatNumber }),
+        ).toBe(new Intl.NumberFormat('fr').format(2500));
+        expect(
+            formatViewFieldValue(
+                {
+                    ...hit,
+                    document: {
+                        ...hit.document,
+                        properties: { ...hit.document.properties, release_date: '2026-01-01' },
+                    },
+                },
+                { field: 'properties.release_date', format: 'date' },
+                { formatDate, formatNumber },
+            ),
+        ).toBe(
+            new Intl.DateTimeFormat('fr', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                timeZone: 'UTC',
+            }).format(new Date('2026-01-01T00:00:00.000Z')),
+        );
+    });
 });

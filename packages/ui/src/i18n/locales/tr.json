@@ -737,6 +737,7 @@
   "view.from": "Başlangıç",
   "view.pagination": "Sonuç sayfaları",
   "view.ranges": "Aralıklar",
+  "view.removeSelection": "{{value}} seçimini kaldır",
   "view.resultsCount_one": "{{count}} sonuç",
   "view.resultsCount_other": "{{count}} sonuç",
   "view.searchFields": "Arama alanları",

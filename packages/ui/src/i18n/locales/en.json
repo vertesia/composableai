@@ -949,6 +949,7 @@
     "view.from": "From",
     "view.pagination": "Results pages",
     "view.ranges": "Ranges",
+    "view.removeSelection": "Remove {{value}}",
     "view.resultsCount_one": "{{count}} result",
     "view.resultsCount_other": "{{count}} results",
     "view.searchFields": "Search fields",

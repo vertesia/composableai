@@ -737,6 +737,7 @@
   "view.from": "Von",
   "view.pagination": "Ergebnisseiten",
   "view.ranges": "Bereiche",
+  "view.removeSelection": "{{value}} entfernen",
   "view.resultsCount_one": "{{count}} Ergebnis",
   "view.resultsCount_other": "{{count}} Ergebnisse",
   "view.searchFields": "Suchfelder",

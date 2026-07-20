@@ -737,6 +737,7 @@
   "view.from": "開始",
   "view.pagination": "結果ページ",
   "view.ranges": "範囲",
+  "view.removeSelection": "{{value}}を削除",
   "view.resultsCount_other": "{{count}} 件の結果",
   "view.searchFields": "検索フィールド",
   "view.sort": "並べ替え",
