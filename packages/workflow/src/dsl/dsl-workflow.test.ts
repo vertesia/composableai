@@ -8,6 +8,7 @@ describe('Workflow DSL', () => {
                 {},
                 {
                     startToCloseTimeout: 1000,
+                    heartbeatTimeout: 600,
                     scheduleToCloseTimeout: 2000,
                     scheduleToStartTimeout: 3000,
                     retry: {
@@ -21,6 +22,7 @@ describe('Workflow DSL', () => {
             ),
         ).toEqual({
             startToCloseTimeout: 1000,
+            heartbeatTimeout: 600,
             scheduleToCloseTimeout: 2000,
             scheduleToStartTimeout: 3000,
             retry: {
@@ -38,6 +40,7 @@ describe('Workflow DSL', () => {
             computeActivityOptions(
                 {
                     startToCloseTimeout: 100,
+                    heartbeatTimeout: 600,
                 },
                 {
                     startToCloseTimeout: 1000,
@@ -54,6 +57,7 @@ describe('Workflow DSL', () => {
             ),
         ).toEqual({
             startToCloseTimeout: `100ms`, // custom value
+            heartbeatTimeout: '600ms',
             scheduleToCloseTimeout: 2000,
             scheduleToStartTimeout: 3000,
             retry: {
