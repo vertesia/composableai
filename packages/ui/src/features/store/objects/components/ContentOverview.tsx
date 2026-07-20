@@ -255,7 +255,7 @@ function PropertiesPanel({
                         <Button
                             variant={`${viewCode ? 'ghost' : 'primary'}`}
                             size="sm"
-                            alt={t('store.previewProperties')}
+                            title={t('store.previewProperties')}
                             onClick={() => setViewCode(!viewCode)}
                         >
                             Properties
@@ -263,7 +263,7 @@ function PropertiesPanel({
                         <Button
                             variant={`${viewCode ? 'primary' : 'ghost'}`}
                             size="sm"
-                            alt={t('store.viewInJsonFormat')}
+                            title={t('store.viewInJsonFormat')}
                             onClick={() => setViewCode(!viewCode)}
                         >
                             JSON
@@ -501,7 +501,7 @@ function DataPanelContent({
                             <Button
                                 variant={currentPanel === PanelView.Image ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewImage')}
+                                title={t('store.viewImage')}
                                 onClick={() => setCurrentPanel(PanelView.Image)}
                             >
                                 Image
@@ -511,7 +511,7 @@ function DataPanelContent({
                             <Button
                                 variant={currentPanel === PanelView.Video ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewVideo')}
+                                title={t('store.viewVideo')}
                                 onClick={() => setCurrentPanel(PanelView.Video)}
                             >
                                 Video
@@ -521,7 +521,7 @@ function DataPanelContent({
                             <Button
                                 variant={currentPanel === PanelView.Audio ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewAudio')}
+                                title={t('store.viewAudio')}
                                 onClick={() => setCurrentPanel(PanelView.Audio)}
                             >
                                 Audio
@@ -531,7 +531,7 @@ function DataPanelContent({
                             <Button
                                 variant={currentPanel === PanelView.Transcript ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewTranscript')}
+                                title={t('store.viewTranscript')}
                                 onClick={() => setCurrentPanel(PanelView.Transcript)}
                             >
                                 Transcript
@@ -540,7 +540,7 @@ function DataPanelContent({
                         <Button
                             variant={currentPanel === PanelView.Text ? 'primary' : 'ghost'}
                             size="sm"
-                            alt={t('store.viewText')}
+                            title={t('store.viewText')}
                             onClick={() => setCurrentPanel(PanelView.Text)}
                         >
                             Text
@@ -549,7 +549,7 @@ function DataPanelContent({
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewPdf')}
+                                title={t('store.viewPdf')}
                                 onClick={() => setCurrentPanel(PanelView.Pdf)}
                             >
                                 PDF
@@ -559,7 +559,7 @@ function DataPanelContent({
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewAsPdf')}
+                                title={t('store.viewAsPdf')}
                                 onClick={() => {
                                     setCurrentPanel(PanelView.Pdf);
                                     if (!pdfRendition && !officePdfUrl && !officePdfConverting) {
@@ -766,7 +766,7 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                     </>
                 )}
                 {isDownloading ? (
-                    <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" alt="download">
+                    <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" title="download">
                         <Spinner size="sm" />
                     </Button>
                 ) : (
@@ -777,7 +777,7 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                                 size="sm"
                                 disabled={!text}
                                 className="flex items-center gap-2"
-                                alt="download"
+                                title="download"
                             >
                                 <Download className="size-4" />
                             </Button>

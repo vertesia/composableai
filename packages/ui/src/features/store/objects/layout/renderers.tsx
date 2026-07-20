@@ -212,7 +212,7 @@ const renderers: Record<
                     {displayValue}
                     <Button
                         variant="ghost"
-                        alt="Preview Object"
+                        title="Preview Object"
                         onClick={(e) => {
                             e.stopPropagation();
                             onClick?.(objectId);
