@@ -3,7 +3,7 @@ import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
 import { createContext, useContext } from 'react';
-import { CENTRAL_AUTH_URL } from './auth/centralAuth';
+
 import { getComposableToken } from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
@@ -11,6 +11,8 @@ import { getFirebaseAuth } from './auth/firebase';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
+
+const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
 
 export interface UserSessionLoginOptions {
     loadOnboardingStatus?: boolean;
@@ -102,12 +104,10 @@ class UserSession {
 
         //store selected account in local storage
         localStorage.setItem(LastSelectedAccountId_KEY, this.authToken.account.id);
-        const selectedProjectKey = `${LastSelectedProjectId_KEY}-${this.authToken.account.id}`;
-        if (this.authToken.project) {
-            localStorage.setItem(selectedProjectKey, this.authToken.project.id);
-        } else {
-            localStorage.removeItem(selectedProjectKey);
-        }
+        localStorage.setItem(
+            `${LastSelectedProjectId_KEY}-${this.authToken.account.id}`,
+            this.authToken.project?.id ?? '',
+        );
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
@@ -135,7 +135,7 @@ class UserSession {
             this.setSession = undefined;
             this.client.withAuthCallback(undefined);
 
-            const logoutUrl = new URL(CENTRAL_AUTH_URL);
+            const logoutUrl = new URL(CENTRAL_AUTH_REDIRECT);
             const currentUrl = new URL(window.location.href);
             currentUrl.hash = '';
             logoutUrl.pathname = '/logout';
