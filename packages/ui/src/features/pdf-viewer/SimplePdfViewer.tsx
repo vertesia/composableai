@@ -1,5 +1,5 @@
 import type { ContentObject } from '@vertesia/common';
-import { Button, Spinner, VTooltip } from '@vertesia/ui/core';
+import { Button, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Maximize2, X } from 'lucide-react';
@@ -131,16 +131,15 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
                 className={className}
                 compact
                 headerExtra={
-                    <VTooltip description={t('pdf.fullscreen')} placement="bottom" size="xs">
-                        <Button
-                            variant="unstyled"
-                            className="p-1 rounded cursor-pointer transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
-                            onClick={() => setIsFullscreen(true)}
-                            aria-label={t('pdf.fullscreen')}
-                        >
-                            <Maximize2 className="size-4" />
-                        </Button>
-                    </VTooltip>
+                    <Button
+                        title={t('pdf.fullscreen')}
+                        tooltipPlacement="bottom"
+                        variant="unstyled"
+                        className="p-1 rounded cursor-pointer transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+                        onClick={() => setIsFullscreen(true)}
+                    >
+                        <Maximize2 className="size-4" />
+                    </Button>
                 }
             />
         </div>
