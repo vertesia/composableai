@@ -12,7 +12,6 @@ import {
     Spinner,
     useIntersectionObserver,
     useToast,
-    VTooltip,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
@@ -442,11 +441,9 @@ function Toolsbar(props: ToolsbarProps) {
                 </div>
             )}
             <div className="flex gap-1 items-center">
-                <VTooltip description={t('store.refresh')} asChild size="xs" placement="top">
-                    <Button variant="outline" onClick={handleRefetch} aria-label={t('store.refresh')}>
-                        <RefreshCw size={16} />
-                    </Button>
-                </VTooltip>
+                <Button variant="outline" onClick={handleRefetch} title={t('store.refresh')}>
+                    <RefreshCw size={16} />
+                </Button>
                 <ContentDispositionButton onUpdate={setIsGridView} />
             </div>
         </div>

@@ -156,7 +156,6 @@ const renderers: Record<
                 <td key={index} className="flex justify-start items-center gap-2 group/field">
                     <Button
                         variant="ghost"
-                        aria-label="Preview Object"
                         title="Preview Object"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -213,7 +212,7 @@ const renderers: Record<
                     {displayValue}
                     <Button
                         variant="ghost"
-                        alt="Preview Object"
+                        title="Preview Object"
                         onClick={(e) => {
                             e.stopPropagation();
                             onClick?.(objectId);
