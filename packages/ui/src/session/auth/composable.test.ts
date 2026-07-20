@@ -23,7 +23,12 @@ vi.mock('./firebase', () => ({
     getFirebaseAuthToken: vi.fn(),
 }));
 
-import { fetchComposableToken, getComposableToken, type TokenAuthorizationError } from './composable';
+import {
+    fetchComposableToken,
+    getComposableToken,
+    resolveAuthSelection,
+    type TokenAuthorizationError,
+} from './composable';
 
 describe('fetchComposableToken', () => {
     const getIdToken = vi.fn(async () => 'identity-token');
@@ -102,5 +107,42 @@ describe('fetchComposableToken', () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBe('account-b');
         expect(localStorage.getItem('composableai.lastSelectedProjectId-account-b')).toBe('project-b');
+    });
+});
+
+describe('resolveAuthSelection', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        localStorage.setItem('composableai.lastSelectedAccountId', 'stored-account');
+        localStorage.setItem('composableai.lastSelectedProjectId-stored-account', 'stored-project');
+        localStorage.setItem('composableai.lastSelectedProjectId-url-account', 'account-project');
+    });
+
+    it('does not combine a URL project with a stored account', () => {
+        expect(resolveAuthSelection(new URL('https://app.example.test/?p=url-project'))).toEqual({
+            accountId: undefined,
+            projectId: 'url-project',
+        });
+    });
+
+    it('uses an account and project supplied together by the URL', () => {
+        expect(resolveAuthSelection(new URL('https://app.example.test/?a=url-account&p=url-project'))).toEqual({
+            accountId: 'url-account',
+            projectId: 'url-project',
+        });
+    });
+
+    it('preserves cached project restoration for an account-only URL', () => {
+        expect(resolveAuthSelection(new URL('https://app.example.test/?a=url-account'))).toEqual({
+            accountId: 'url-account',
+            projectId: 'account-project',
+        });
+    });
+
+    it('restores the complete persisted selection when the URL has no scope', () => {
+        expect(resolveAuthSelection(new URL('https://app.example.test/'))).toEqual({
+            accountId: 'stored-account',
+            projectId: 'stored-project',
+        });
     });
 });

@@ -34,6 +34,17 @@ interface ComposableTokenResponse {
     message?: string;
 }
 
+export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
+    const urlAccount = currentUrl.searchParams.get('a') ?? undefined;
+    const urlProject = currentUrl.searchParams.get('p') ?? undefined;
+    const accountId =
+        urlAccount ??
+        (urlProject === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
+    const projectId = urlProject ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${accountId}`) ?? undefined;
+
+    return { accountId, projectId };
+}
+
 export async function fetchComposableToken(
     getIdToken: () => Promise<string | null | undefined>,
     accountId?: string,

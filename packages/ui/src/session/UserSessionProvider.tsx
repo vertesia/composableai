@@ -1,11 +1,17 @@
 import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { getComposableToken, STSError, TokenAuthorizationError, UserNotFoundError } from './auth/composable';
+import {
+    getComposableToken,
+    resolveAuthSelection,
+    STSError,
+    TokenAuthorizationError,
+    UserNotFoundError,
+} from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from './UserSession';
+import { UserSession, UserSessionContext } from './UserSession';
 
 const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
 
@@ -56,12 +62,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         console.log('Auth: starting auth flow');
         Env.logger.info('Starting auth flow');
         const currentUrl = new URL(window.location.href);
-        const selectedAccount =
-            currentUrl.searchParams.get('a') ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
-        const selectedProject =
-            currentUrl.searchParams.get('p') ??
-            localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ??
-            undefined;
+        const { accountId: selectedAccount, projectId: selectedProject } = resolveAuthSelection(currentUrl);
         console.log('Auth: selected account', selectedAccount);
         console.log('Auth: selected project', selectedProject);
         Env.logger.info('Selected account and project', {
