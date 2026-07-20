@@ -147,6 +147,59 @@ describe('Test Vertesia Client', () => {
     });
 });
 
+describe('Indexing API zeno-bulk requests', () => {
+    test('does not apply the client default timeout to indexShard', async () => {
+        const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+        let capturedRequest: Request | undefined;
+        const fetchImpl = vi.fn(async (input: RequestInfo, _init?: RequestInit) => {
+            capturedRequest = input instanceof Request ? input : new Request(input);
+            return new Response(
+                JSON.stringify({
+                    status: 'done',
+                    projects_done: 1,
+                    projects_total: 1,
+                    scanned: 0,
+                    written: 0,
+                    errors: 0,
+                    read_docs_s: 0,
+                    write_docs_s: 0,
+                    read_mb: 0,
+                    write_mb: 0,
+                    duration_sec: 0,
+                }),
+                {
+                    status: 200,
+                    headers: { 'content-type': 'application/json' },
+                },
+            );
+        });
+
+        try {
+            const client = new VertesiaClient({
+                serverUrl: 'https://api.us1.vertesia.io',
+                storeUrl: 'https://api.us1.vertesia.io',
+                tokenServerUrl: 'https://sts.us1.vertesia.io',
+                apikey: 'test-token',
+                timeout: 60_000,
+                fetch: fetchImpl,
+            });
+
+            await client.store.indexing.indexShard({
+                tenant_id: 'abcdef_123456',
+                target_index: 'target-index',
+                shard_min: '',
+                shard_max: 'z',
+            });
+
+            expect(timeoutSpy).not.toHaveBeenCalled();
+            expect(fetchImpl).toHaveBeenCalledTimes(1);
+            expect(capturedRequest?.url).toBe('https://api.us1.vertesia.io/reindex/shard');
+        } finally {
+            timeoutSpy.mockRestore();
+        }
+    });
+});
+
 describe('isTokenExpired', () => {
     // EXPIRATION_THRESHOLD inside client.ts is 60000ms (60s). Tokens with `exp`
     // less than 60s in the future are treated as expired so the caller refreshes
