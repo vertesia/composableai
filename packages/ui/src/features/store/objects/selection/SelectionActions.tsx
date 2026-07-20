@@ -60,7 +60,7 @@ export function SelectionActions({
                 >
                     {(actions) =>
                         actions.length > 0 ? (
-                            <Button variant="ghost" alt="More action" size="sm">
+                            <Button variant="ghost" title="More action" size="sm">
                                 <EllipsisVertical size={16} />
                             </Button>
                         ) : null
