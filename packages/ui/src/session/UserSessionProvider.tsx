@@ -1,7 +1,7 @@
 import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { getComposableToken, STSError, UserNotFoundError } from './auth/composable';
+import { getComposableToken, STSError, TokenAuthorizationError, UserNotFoundError } from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
@@ -88,6 +88,14 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         session.isLoading = false;
                         session.authError = err;
                         setSession(session.clone());
+                        return;
+                    }
+
+                    if (err instanceof TokenAuthorizationError) {
+                        session.isLoading = false;
+                        session.authError = err;
+                        setSession(session.clone());
+                        window.location.hash = '';
                         return;
                     }
 
@@ -184,7 +192,9 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                                 error: err,
                             },
                         });
-                        if (!(err instanceof UserNotFoundError)) session.logout();
+                        if (!(err instanceof UserNotFoundError || err instanceof TokenAuthorizationError)) {
+                            session.logout();
+                        }
                         session.isLoading = false;
                         session.authError = err;
                         setSession(session.clone());

@@ -174,44 +174,16 @@ export async function fetchComposableToken(
         }
 
         if (stsRes.status === 403) {
-            // User doesn't have access to the requested account/project, or has no accounts
-            // This can happen with:
-            // 1. Stale localStorage from previous user
-            // 2. User invited to a new account (doesn't have access yet)
-            // 3. User exists but has no accounts at all
-
-            if (retryCount > 0) {
-                // Already retried without account scope - this is a real authorization failure
-                console.error('403: Access denied even without account scope - user may have no accounts');
-                Env.logger.error('403: Access denied after retry - authorization failure', {
-                    vertesia: {
-                        account_id: accountId,
-                        project_id: projectId,
-                        status: stsRes.status,
-                        retry_count: retryCount,
-                    },
-                });
-                throw new Error('Access denied - user may not have access to any accounts');
-            }
-
-            console.log('403: Access denied - clearing cached account and retrying without account scope');
-            Env.logger.warn('403: Access denied - clearing cached account and retrying', {
+            const responseMessage = await stsRes.text();
+            Env.logger.warn('STS rejected the requested account or project', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
                     status: stsRes.status,
-                    retry_count: retryCount,
+                    error: responseMessage,
                 },
             });
-
-            // Clear any stale account/project from localStorage
-            localStorage.removeItem(LastSelectedAccountId_KEY);
-            if (accountId) {
-                localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
-            }
-
-            // Retry without account/project scope - let user log in to their default account
-            return fetchComposableToken(getIdToken, undefined, undefined, ttl, retryCount + 1);
+            throw new TokenAuthorizationError(stsEndpoint, accountId, projectId, responseMessage);
         }
 
         if (!stsRes.ok) {
@@ -354,5 +326,17 @@ export class STSError extends Error {
         super(message);
         this.name = 'STSError';
         this.stsURL = stsURL;
+    }
+}
+
+export class TokenAuthorizationError extends STSError {
+    constructor(
+        stsURL: string,
+        public readonly accountId?: string,
+        public readonly projectId?: string,
+        public readonly responseMessage?: string,
+    ) {
+        super('Access denied for the selected account or project', stsURL);
+        this.name = 'TokenAuthorizationError';
     }
 }
