@@ -236,6 +236,11 @@ export class HistoryNavigator {
             this.fireLocationChange(new AfterLocationChangeEvent(type, to, state));
         };
         const _linkNavListener = (ev: MouseEvent) => {
+            // Let the browser handle modifier / non-primary clicks natively (open in new tab/window,
+            // download). Intercepting them here would preventDefault those affordances.
+            if (ev.defaultPrevented || ev.metaKey || ev.altKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) {
+                return;
+            }
             const target = ev.target as HTMLElement;
             // Skip anchors with download attribute or blob: URLs - they are file downloads, not navigation
             if (

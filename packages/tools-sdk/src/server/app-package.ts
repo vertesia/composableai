@@ -93,6 +93,9 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
         }
         pkg.processes = allProcesses;
     },
+    async views(pkg: AppPackage, config: ToolServerConfig) {
+        pkg.views = [...(config.views ?? [])];
+    },
     async templates(pkg: AppPackage, config: ToolServerConfig) {
         const basePath = `${config.prefix || '/api'}/templates`;
         pkg.templates = (config.templates || []).flatMap((coll) =>
@@ -174,6 +177,7 @@ export async function buildAppPackage(
         await builders.interactions(pkg, config, options);
         await builders.types(pkg, config, options);
         await builders.processes(pkg, config, options);
+        await builders.views(pkg, config, options);
         await builders.templates(pkg, config, options);
         await builders.dashboards(pkg, config, options);
         await builders.widgets(pkg, config, options);
@@ -192,6 +196,9 @@ export async function buildAppPackage(
         }
         if (scopes.has('processes')) {
             await builders.processes(pkg, config, options);
+        }
+        if (scopes.has('views')) {
+            await builders.views(pkg, config, options);
         }
         if (scopes.has('templates')) {
             await builders.templates(pkg, config, options);

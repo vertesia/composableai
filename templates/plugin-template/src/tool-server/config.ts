@@ -8,6 +8,7 @@ import {
     templates,
     tools,
     types,
+    views,
 } from './app-server-modules.js';
 import { mcpProviders } from './mcp/index.js';
 import settingsSchema from './settings.js';
@@ -26,6 +27,9 @@ export const ServerConfig = {
     dashboards,
     skills,
     templates,
+    // In-code View Experiences. Studio contributes each as `app:<app-name>:<view-id>`
+    // and renders it via the `/view/<id>` route or the `<ViewExperience>` component.
+    views,
     mcpProviders,
     uiConfig: {
         isolation: 'shadow',

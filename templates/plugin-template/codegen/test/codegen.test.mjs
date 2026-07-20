@@ -72,7 +72,9 @@ test('default module codegen keeps only the app module', () => {
         assert.doesNotMatch(serverModules, /modules\/examples/);
         const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
         assert.equal(packageJson.scripts['codegen:dev'], undefined);
+        assert.equal(packageJson.scripts.pretest, undefined);
         assert.equal(packageJson.scripts['test:codegen'], undefined);
+        assert.equal(packageJson.scripts.test, 'echo "(no tests in template scaffold)"');
         assert.equal(packageJson.scripts['seed:content'], undefined);
         assert.equal(packageJson.scripts['exercise:content'], undefined);
         assert.equal(packageJson.scripts['service:quality'], undefined);

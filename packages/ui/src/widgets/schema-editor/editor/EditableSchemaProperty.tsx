@@ -4,6 +4,8 @@ export interface EditableSchemaProperty {
     name: string;
     type: string;
     description?: string;
+    /** When false, field is excluded from model extraction (`x-extract: false`). Default true. */
+    extractable?: boolean;
 }
 
 export function getEditableSchemaProperty(schema: SchemaNode): EditableSchemaProperty {
@@ -11,5 +13,6 @@ export function getEditableSchemaProperty(schema: SchemaNode): EditableSchemaPro
         name: schema.getNameSignature(),
         type: schema.getTypeSignature(),
         description: schema.description,
+        extractable: schema.extractable,
     };
 }

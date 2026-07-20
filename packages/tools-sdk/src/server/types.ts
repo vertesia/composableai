@@ -3,6 +3,7 @@ import type {
     AppDashboardDefinition,
     AppUIConfig,
     InCodeProcessDefinition,
+    InCodeViewDefinition,
     ProjectConfiguration,
 } from '@vertesia/common';
 import type { Context } from 'hono';
@@ -72,6 +73,10 @@ export interface ToolServerConfig {
      * Dashboard definitions to expose as app-contributed dashboards.
      */
     dashboards?: AppDashboardDefinition[];
+    /**
+     * View Experiences to expose as app-contributed in-code definitions.
+     */
+    views?: InCodeViewDefinition[];
     /**
      * Skill collections to expose
      */

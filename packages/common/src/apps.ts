@@ -2,6 +2,7 @@ import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common'
 import type { AppDashboardDefinition } from './data-platform.js';
 import type { CatalogInteractionRef } from './interaction.js';
 import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
+import type { InCodeViewDefinition } from './views.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
@@ -383,7 +384,15 @@ export interface RemoteActivityDefinition {
     options?: DSLActivityOptions;
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates' | 'dashboards';
+export type AppCapabilities =
+    | 'ui'
+    | 'tools'
+    | 'interactions'
+    | 'types'
+    | 'processes'
+    | 'views'
+    | 'templates'
+    | 'dashboards';
 
 /**
  * Canonical runtime list of {@link AppCapabilities} — the app capabilities Studio
@@ -397,6 +406,7 @@ export const APP_CAPABILITIES: readonly AppCapabilities[] = [
     'interactions',
     'types',
     'processes',
+    'views',
     'templates',
     'dashboards',
 ];
@@ -501,7 +511,6 @@ export interface AppCapabilityManifest {
 
 /** Repo-relative path the capability manifest is committed to, read by the publish gate. */
 export const APP_CAPABILITY_MANIFEST_PATH = 'docs/app-capability-manifest.json';
-
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 
 export type AppVersionKind = 'design' | 'preview' | 'published';
@@ -1025,6 +1034,7 @@ export type AppPackageScope =
     | 'interactions'
     | 'types'
     | 'processes'
+    | 'views'
     | 'templates'
     | 'dashboards'
     | 'settings'
@@ -1083,6 +1093,11 @@ export interface AppPackage {
      * A list of process definitions exposed by the app.
      */
     processes?: InCodeProcessDefinition[];
+
+    /**
+     * View Experiences exposed by the app as in-code definitions.
+     */
+    views?: InCodeViewDefinition[];
 
     /**
      * Templates provided by the app.
