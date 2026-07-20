@@ -108,7 +108,6 @@ export function AgentChatPlaybackControls({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={t('agent.rewind.jumpToStart')}
                     title={t('agent.rewind.jumpToStart')}
                     disabled={!canJumpToStart}
                     onClick={jumpToStart}
@@ -120,7 +119,6 @@ export function AgentChatPlaybackControls({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={t('agent.rewind.previousMessage')}
                     title={t('agent.rewind.previousMessage')}
                     disabled={!canStepPrevious}
                     onClick={setPreviousMessage}
@@ -165,7 +163,6 @@ export function AgentChatPlaybackControls({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={t('agent.rewind.nextMessage')}
                     title={t('agent.rewind.nextMessage')}
                     disabled={!canStepNext}
                     onClick={setNextMessage}
@@ -177,7 +174,6 @@ export function AgentChatPlaybackControls({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={t('agent.rewind.jumpToLatest')}
                     title={t('agent.rewind.jumpToLatest')}
                     disabled={!canJumpToLatest}
                     onClick={jumpToLatest}
@@ -189,7 +185,6 @@ export function AgentChatPlaybackControls({
                     type="button"
                     variant={isLive ? 'secondary' : 'ghost'}
                     size="icon"
-                    aria-label={t('agent.rewind.jumpToLive')}
                     title={t('agent.rewind.jumpToLive')}
                     disabled={isLive}
                     onClick={() => onChangeCursor('live')}
