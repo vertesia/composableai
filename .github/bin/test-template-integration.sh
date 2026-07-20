@@ -94,6 +94,9 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
+  '@*/*':
+    access: $all
+    proxy: npmjs
   '**':
     access: $all
     proxy: npmjs

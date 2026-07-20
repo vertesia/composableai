@@ -1,6 +1,7 @@
 import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
 import type { CatalogInteractionRef } from './interaction.js';
 import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
+import type { InCodeViewDefinition } from './views.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
@@ -40,11 +41,17 @@ export interface AppUIConfig {
      */
     src: string;
     /**
-     * The isolation strategy. If not specified it defaults to shadow
+     * The isolation strategy. If not specified it defaults to shadow.
      * - shadow - use Shadow DOM to fully isolate the plugin from the host.
-     * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
+     * - css - inject the plugin's styles (minus the preflight) into the host document;
+     *   lighter but styles may conflict with the host.
      */
     isolation?: 'shadow' | 'css';
+    /**
+     * When true the host modifies the app's css at load time to attempt to fix broken
+     * or missing styles. Only takes effect in css isolation mode. Defaults to false.
+     */
+    css_rebuild?: boolean;
     /**
      * Navigation items for the app's sidebar UI.
      * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
@@ -376,7 +383,7 @@ export interface RemoteActivityDefinition {
     options?: DSLActivityOptions;
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates';
+export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'views' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 
 /**
@@ -662,6 +669,7 @@ export type AppPackageScope =
     | 'interactions'
     | 'types'
     | 'processes'
+    | 'views'
     | 'templates'
     | 'settings'
     | 'widgets'
@@ -700,6 +708,11 @@ export interface AppPackage {
      * A list of process definitions exposed by the app.
      */
     processes?: InCodeProcessDefinition[];
+
+    /**
+     * View Experiences exposed by the app as in-code definitions.
+     */
+    views?: InCodeViewDefinition[];
 
     /**
      * Templates provided by the app.

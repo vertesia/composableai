@@ -7,6 +7,7 @@ import {
     type CompletedWorkstreamEntry,
     type ConversationFile,
     type ConversationFileRef,
+    FileProcessingStatus,
     type McpConnectUxConfig,
     normalizeAgentToolApprovalMode,
     type Plan,
@@ -1360,12 +1361,8 @@ function ModernAgentConversationInner({
         updateDocumentTitle,
     } = useDocumentPanel(messages);
 
-    const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile } = useFileProcessing(
-        client,
-        agentRunId,
-        serverFileUpdates,
-        toast,
-    );
+    const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles } =
+        useFileProcessing(client, agentRunId, serverFileUpdates, toast);
     const canUploadFiles = interactive && !hideFileUpload;
 
     const handleRemoveProcessingFile = useCallback(
@@ -1429,6 +1426,8 @@ function ModernAgentConversationInner({
     isSendingRef.current = isSending;
     const hasProcessingFilesRef = useRef(hasProcessingFiles);
     hasProcessingFilesRef.current = hasProcessingFiles;
+    const processingFilesRef = useRef(processingFiles);
+    processingFilesRef.current = processingFiles;
 
     const lastMainMessage = useMemo(() => {
         const mainMessages = messages.filter((m) => (m.workstream_id || 'main') === 'main');
@@ -1972,6 +1971,24 @@ function ModernAgentConversationInner({
                 messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
             }
 
+            // Bind ready uploaded files to this message: embed them as an "Uploaded artifacts:"
+            // markdown block so they render underneath the sent bubble (parsed by
+            // parseUserMessageAttachments) and get cleared from the composer on send.
+            const uploadedArtifactLines = Array.from(processingFilesRef.current.values())
+                .filter((file) => file.status === FileProcessingStatus.READY)
+                .map((file) => {
+                    const href = file.reference?.startsWith('artifact:')
+                        ? file.reference
+                        : file.artifact_path
+                          ? `artifact:${file.artifact_path}`
+                          : undefined;
+                    return href ? `[${file.name}](${href})` : undefined;
+                })
+                .filter((line): line is string => Boolean(line));
+            if (uploadedArtifactLines.length > 0) {
+                messageContent = [messageContent, '', 'Uploaded artifacts:', ...uploadedArtifactLines].join('\n');
+            }
+
             const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
             const optimisticMessage: AgentMessage = {
@@ -2003,6 +2020,7 @@ function ModernAgentConversationInner({
             const markReceived = () => {
                 updateOptimisticMessageStatus(messageId, 'received');
                 onAttachmentsSent?.();
+                clearProcessingFiles();
             };
 
             // When the workflow has already completed, restart it first so it resumes
@@ -2041,6 +2059,7 @@ function ModernAgentConversationInner({
             getAttachedDocs,
             getMessageContext,
             onAttachmentsSent,
+            clearProcessingFiles,
             reconnectStream,
             addOptimisticMessage,
             updateOptimisticMessageStatus,
@@ -2466,6 +2485,7 @@ function ModernAgentConversationInner({
             ) : (
                 <AllMessagesMixed
                     messages={displayedMessages}
+                    workstreamSourceMessages={messages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                     isCompleted={displayedIsCompleted}
                     plan={getActivePlan.plan}

@@ -7,6 +7,7 @@ export * from './conversation-state.js';
 export * from './doc-analyzer.js';
 export * from './document-comments.js';
 export * from './dsl-workflow.js';
+export * from './grounded-extraction.js';
 export * from './hive-memory.js';
 export * from './object-types.js';
 export * from './process.js';

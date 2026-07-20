@@ -20,4 +20,5 @@ export * from './signed-url.js';
 export * from './TaskApi.js';
 export * from './TypeCatalogApi.js';
 export * from './TypesApi.js';
+export * from './ViewsApi.js';
 export * from './WorkflowsApi.js';

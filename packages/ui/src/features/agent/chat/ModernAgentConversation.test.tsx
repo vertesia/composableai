@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
-import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import { type AgentMessage, AgentMessageType, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
@@ -245,6 +245,7 @@ describe('ModernAgentConversation send handling', () => {
             hasProcessingFiles: false,
             handleFileUpload: vi.fn(),
             removeProcessingFile: vi.fn(),
+            clearProcessingFiles: vi.fn(),
         });
     });
 
@@ -283,6 +284,53 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.reconnect.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
+    });
+
+    it('binds ready uploaded files into the sent message and clears them after send', async () => {
+        const clearProcessingFiles = vi.fn();
+        const readyFile: ConversationFile = {
+            id: 'file-1',
+            name: 'report.pdf',
+            content_type: 'application/pdf',
+            size: 10,
+            status: FileProcessingStatus.READY,
+            artifact_path: 'files/report.pdf',
+            reference: 'artifact:files/report.pdf',
+            started_at: 1_000,
+        };
+        mocks.useFileProcessing.mockReturnValue({
+            processingFiles: new Map([[readyFile.id, readyFile]]),
+            hasProcessingFiles: false,
+            handleFileUpload: vi.fn(),
+            removeProcessingFile: vi.fn(),
+            clearProcessingFiles,
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({ onRestart: vi.fn() });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith(
+                'agent-run-1',
+                'UserInput',
+                expect.objectContaining({
+                    message: expect.stringContaining('Uploaded artifacts:'),
+                }),
+            );
+        });
+
+        const userInputCall = mocks.sendSignal.mock.calls.find((call) => call[1] === 'UserInput');
+        expect((userInputCall?.[2] as { message: string }).message).toContain(
+            '[report.pdf](artifact:files/report.pdf)',
+        );
+        await waitFor(() => {
+            expect(clearProcessingFiles).toHaveBeenCalledTimes(1);
+        });
     });
 
     it('does not restart or send from a terminal run that cannot continue', () => {
@@ -1343,6 +1391,54 @@ describe('ModernAgentConversation send handling', () => {
                 metadata: expect.objectContaining({
                     tool_approval_response: {
                         decision: 'deny_with_feedback',
+                        approval_key: 'write_artifact:name:quotes.md',
+                    },
+                    id: expect.any(String),
+                    _messageId: expect.any(String),
+                }),
+            }),
+        );
+    });
+
+    it('passes approval option metadata through the request overlay signal', async () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Write Artifact: quotes.md?'),
+                    details: {
+                        tool_approval: {
+                            tool_name: 'write_artifact',
+                            approval_key: 'write_artifact:name:quotes.md',
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Allow this action for this run' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledTimes(1);
+        });
+        expect(mocks.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({
+                message: 'allow_for_run',
+                metadata: expect.objectContaining({
+                    tool_approval_response: {
+                        decision: 'allow_for_run',
                         approval_key: 'write_artifact:name:quotes.md',
                     },
                     id: expect.any(String),

@@ -37,6 +37,7 @@ export * from './rate-limiter.js';
 export * from './refs.js';
 export * from './roles/types.js';
 export * from './runs.js';
+export * from './schema-for-extraction.js';
 export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
@@ -74,4 +75,15 @@ export * from './utils/auth.js';
 export * from './utils/schemas.js';
 export type * from './utils/type-helpers.js';
 export * from './versions.js';
+export * from './view-configuration-validation.js';
+export * from './view-query-validation.js';
+export * from './view-validation-helpers.js';
+export * from './views.js';
+export * from './views-schema.js';
+export {
+    type AppViewExperienceId,
+    parseAppViewExperienceId,
+    type ViewValidationIssue,
+    validateViewExperienceId,
+} from './views-validation.js';
 export * from './workflow-analytics.js';

@@ -1,9 +1,4 @@
-import {
-    type DocAnalyzerProgress,
-    type DocProcessorOutputFormat,
-    MarkdownRenditionFormat,
-    WorkflowExecutionStatus,
-} from '@vertesia/common';
+import { type DocAnalyzerProgress, MarkdownRenditionFormat, WorkflowExecutionStatus } from '@vertesia/common';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useCallback, useEffect, useState } from 'react';
@@ -89,7 +84,6 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
     const [state, setState] = useState<{
         progress?: DocAnalyzerProgress;
         status?: WorkflowExecutionStatus;
-        outputFormat?: DocProcessorOutputFormat;
         isComplete: boolean;
     }>({ isComplete: false });
 
@@ -102,7 +96,6 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
         const updateStateIfChanged = (
             nextProgress: DocAnalyzerProgress | undefined,
             nextStatus: WorkflowExecutionStatus | undefined,
-            nextOutputFormat: DocProcessorOutputFormat | undefined,
             nextIsComplete: boolean,
         ) => {
             setState((prev) => {
@@ -111,7 +104,6 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
 
                 if (
                     prev.status === nextStatus &&
-                    prev.outputFormat === nextOutputFormat &&
                     prev.isComplete === nextIsComplete &&
                     prevProgress === nextProgressSignature
                 ) {
@@ -121,7 +113,6 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
                 return {
                     progress: nextProgress,
                     status: nextStatus,
-                    outputFormat: nextOutputFormat,
                     isComplete: nextIsComplete,
                 };
             });
@@ -134,17 +125,15 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
                 .analyze(objectId)
                 .getStatus()
                 .then((r) => {
-                    const nextOutputFormat = r.output_format ?? r.progress?.output_format;
-
                     if (r.status === WorkflowExecutionStatus.RUNNING) {
-                        updateStateIfChanged(r.progress, r.status, nextOutputFormat, false);
+                        updateStateIfChanged(r.progress, r.status, false);
                         // Workflow is running, poll every 2 seconds for progress
                         if (!interrupted) {
                             timeoutId = setTimeout(poll, 2000);
                         }
                     } else {
                         // Workflow completed or terminal state
-                        updateStateIfChanged(r.progress, r.status, nextOutputFormat, true);
+                        updateStateIfChanged(r.progress, r.status, true);
                     }
                 })
                 .catch(() => {
@@ -167,7 +156,6 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
     return {
         progress: state.progress,
         status: state.status,
-        outputFormat: state.outputFormat,
         isComplete: state.isComplete,
     };
 }

@@ -30,7 +30,7 @@ const client = new VertesiaClient({
 ```typescript
 const client = new VertesiaClient({
   // The Vertesia site to connect to
-  site: "api.vertesia.io", // or "api-preview.vertesia.io", "api-staging.vertesia.io"
+  site: "api.vertesia.io", // or "api-preview.vertesia.io", "api.us1.vertesia.io", "api-preview.eu1.vertesia.io"
 
   // Or use custom URLs
   serverUrl: "https://custom-api.example.com",

@@ -1,4 +1,6 @@
 import {
+    Button,
+    ConfirmModal,
     EmptyCollection,
     ErrorBox,
     Input,
@@ -6,9 +8,11 @@ import {
     useDebounce,
     useIntersectionObserver,
     useToast,
+    VTooltip,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ContentObjectTypesTable } from './ContentObjectTypesTable';
 import { CreateOrUpdateTypeModal, type CreateOrUpdateTypePayload } from './CreateOrUpdateTypeModal';
@@ -32,6 +36,58 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     const [isReady, setIsReady] = useState(false);
     const { search, isLoading, error, objects } = useWatchSearchResult();
+
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [showBulkDelete, setShowBulkDelete] = useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+    const selectedCount = selectedIds.length;
+    const allVisibleSelected = !!objects && objects.length > 0 && objects.every((o) => selectedIds.includes(o.id));
+    const selectedTypes = objects?.filter((o) => selectedIds.includes(o.id)) ?? [];
+
+    const toggleOne = (id: string, checked: boolean) => {
+        setSelectedIds((cur) => (checked ? (cur.includes(id) ? cur : [...cur, id]) : cur.filter((v) => v !== id)));
+    };
+
+    const toggleAll = (checked: boolean) => {
+        setSelectedIds(checked && objects ? objects.map((o) => o.id) : []);
+    };
+
+    const handleBulkDelete = async () => {
+        if (isBulkDeleting) return;
+        setIsBulkDeleting(true);
+        try {
+            const results = await Promise.allSettled(selectedIds.map((id) => store.types.delete(id)));
+            const failed = results.filter((r) => r.status === 'rejected').length;
+            const succeeded = results.length - failed;
+            setShowBulkDelete(false);
+            setSelectedIds([]);
+            reloadTypes();
+            await search.search();
+            if (failed === 0) {
+                toast({
+                    status: 'success',
+                    title: t('store.actions.typeDeleted', { count: succeeded }),
+                    duration: 3000,
+                });
+            } else {
+                toast({
+                    status: 'error',
+                    title: t('store.actions.typeDeletePartial', { succeeded, failed }),
+                    duration: 5000,
+                });
+            }
+        } catch (err: unknown) {
+            toast({
+                status: 'error',
+                title: t('store.actions.failedToDeleteTypes'),
+                description: err instanceof Error ? err.message : undefined,
+                duration: 5000,
+            });
+        } finally {
+            setIsBulkDeleting(false);
+        }
+    };
 
     const [searchTerm, setSearchTerm] = useState<string>('');
     const debounceValue = useDebounce(searchTerm, 500);
@@ -107,7 +163,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="flex flex-shrink-0 gap-4">
+            <div className="flex flex-shrink-0 gap-4 items-center">
                 <Input placeholder={t('store.filterByName')} value={searchTerm} onChange={setSearchTerm} />
                 <SelectBox
                     className="w-60"
@@ -117,6 +173,29 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                     onChange={onChunkableChange}
                     placeholder={t('store.isChunkable')}
                 />
+                {selectedCount > 0 && (
+                    <div className="flex items-center gap-2 ms-auto">
+                        <span className="text-sm font-medium whitespace-nowrap">
+                            {t('store.actions.selectedCount', { n: selectedCount })}
+                        </span>
+                        <VTooltip description={t('store.actions.clearSelection')} asChild>
+                            <Button
+                                variant="ghost"
+                                aria-label={t('store.actions.clearSelection')}
+                                onClick={() => setSelectedIds([])}
+                            >
+                                <X className="size-4" />
+                            </Button>
+                        </VTooltip>
+                        <Button
+                            variant="destructive"
+                            isDisabled={isBulkDeleting}
+                            onClick={() => setShowBulkDelete(true)}
+                        >
+                            {isBulkDeleting ? t('store.actions.deleting') : t('store.actions.deleteSelected')}
+                        </Button>
+                    </div>
+                )}
             </div>
             <div className="flex flex-col w-full flex-1 min-h-0 border rounded-md my-2">
                 <div className="flex-1 min-h-0 overflow-y-auto">
@@ -136,6 +215,10 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                                 onFilter={(field, value) => {
                                     if (field === 'name') setSearchTerm(value);
                                 }}
+                                selectedIds={selectedIds}
+                                onToggleOne={toggleOne}
+                                allSelected={allVisibleSelected}
+                                onToggleAll={toggleAll}
                             />
                             <div ref={loadMoreRef} className="h-4 w-full" />
                         </>
@@ -145,6 +228,32 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                         title={t('store.createType')}
                         isOpen={showCreateModal}
                         onClose={onCloseCreateModal}
+                    />
+                    <ConfirmModal
+                        isOpen={showBulkDelete}
+                        title={t('store.actions.deleteType', { count: selectedCount })}
+                        content={
+                            <div>
+                                <p>{t('store.actions.deleteTypeConfirm', { count: selectedCount })}</p>
+                                {selectedTypes.length > 0 && (
+                                    <>
+                                        <div className="mt-2">{t('store.actions.affectedItems')}</div>
+                                        <ul className="mt-1 max-h-40 overflow-y-auto rounded-md border p-2 text-sm">
+                                            {selectedTypes.map((o) => (
+                                                <li key={o.id} className="truncate py-0.5">
+                                                    {o.name || o.id}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </>
+                                )}
+                            </div>
+                        }
+                        onConfirm={handleBulkDelete}
+                        onCancel={() => setShowBulkDelete(false)}
+                        confirmationValue="delete"
+                        confirmationLabel={t('store.actions.typeToConfirmDelete')}
+                        confirmationPlaceholder="delete"
                     />
                 </div>
             </div>

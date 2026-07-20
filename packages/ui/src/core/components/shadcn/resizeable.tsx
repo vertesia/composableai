@@ -23,8 +23,34 @@ function ResizablePanelGroup({ className, direction = 'horizontal', orientation,
     );
 }
 
-function ResizablePanel({ ...props }: React.ComponentProps<typeof ResizablePrimitive.Panel>) {
-    return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />;
+/**
+ * react-resizable-panels v4 treats bare numeric sizes as **pixels**; earlier majors
+ * (v3 and below) treated them as **percentages** of the group. Every call site in this
+ * codebase passes percentage-intended numbers (e.g. `defaultSize={50}`), so coerce bare
+ * numbers to percentage strings to preserve that contract after the v3→v4 upgrade.
+ * Explicit unit strings ("300px", "50%", "10rem", ...) are passed through untouched.
+ */
+function toPercentSize(value: number | string | undefined): number | string | undefined {
+    return typeof value === 'number' ? `${value}%` : value;
+}
+
+function ResizablePanel({
+    defaultSize,
+    minSize,
+    maxSize,
+    collapsedSize,
+    ...props
+}: React.ComponentProps<typeof ResizablePrimitive.Panel>) {
+    return (
+        <ResizablePrimitive.Panel
+            data-slot="resizable-panel"
+            defaultSize={toPercentSize(defaultSize)}
+            minSize={toPercentSize(minSize)}
+            maxSize={toPercentSize(maxSize)}
+            collapsedSize={toPercentSize(collapsedSize)}
+            {...props}
+        />
+    );
 }
 
 function ResizableHandle({
