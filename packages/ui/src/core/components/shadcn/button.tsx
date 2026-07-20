@@ -60,35 +60,55 @@ export interface ButtonProps
         VariantProps<typeof buttonVariants> {
     asChild?: boolean;
     /**
-     * @deprecated Use `aria-label` for the accessible name and wrap in `<VTooltip>` for a visual tooltip.
-     * For backward compatibility, `alt` is forwarded to `aria-label` (when not set) AND still
-     * triggers the legacy VTooltip wrap. Slated for removal in the next major.
+     * @deprecated Use `title` instead — it drives the same tooltip and the accessible name.
+     * For backward compatibility `alt` still works as an alias. Slated for removal in the next major.
      */
     alt?: string;
+    /**
+     * Tooltip text. Renders a `<VTooltip>` around the button and doubles as the accessible name,
+     * so icon-only buttons need nothing else. Pass `aria-label` to override the name independently.
+     */
     title?: string;
+    /** Which side the `title` tooltip opens on. Defaults to `top`. */
+    tooltipPlacement?: 'top' | 'right' | 'bottom' | 'left';
     isDisabled?: boolean;
     isLoading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     (
-        { className, variant, size, asChild = false, alt, isDisabled, isLoading, title, onClick, type, ...props },
+        {
+            className,
+            variant,
+            size,
+            asChild = false,
+            alt,
+            isDisabled,
+            isLoading,
+            title,
+            tooltipPlacement = 'top',
+            onClick,
+            type,
+            ...props
+        },
         ref,
     ) => {
         useDeprecationWarning(
             'Button.alt',
             alt !== undefined,
-            'use aria-label for the accessible name and wrap in <VTooltip> for a visual tooltip. ' +
-                '`alt` is forwarded to both for one release.',
+            'use `title` instead — it drives the same tooltip and the accessible name. ' +
+                '`alt` remains an alias for one release.',
         );
 
         const Comp = asChild ? Slot : 'button';
         // Default type="button" only when rendering an actual <button>. With asChild,
         // the rendered element may be an <a> or other tag where injecting `type` is wrong.
         const resolvedType = asChild ? type : (type ?? 'button');
-        // Back-fill aria-label from alt during the deprecation window so existing call
-        // sites keep their accessible name without code changes.
-        const ariaLabel = props['aria-label'] ?? alt;
+        // `title` (or its deprecated alias `alt`) drives the VTooltip below AND back-fills the
+        // accessible name, so an icon-only <Button title="Refresh"> is labelled without any extra
+        // props or a manual <VTooltip> wrap at the call site. An explicit aria-label still wins.
+        const tooltip = title ?? alt;
+        const ariaLabel = props['aria-label'] ?? tooltip;
 
         // asChild renders via Radix Slot, which requires exactly one React child.
         // Skip the loader wrap in that case — Slot would reject the multi-child array.
@@ -116,9 +136,18 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             </Comp>
         );
 
-        if (alt || title) {
+        // Note: the native `title` attribute is deliberately NOT forwarded to the DOM — it would
+        // stack a second, delayed browser tooltip on top of the VTooltip. `aria-label` above is
+        // what exposes the text to screen readers and to getByRole('button', { name }).
+        if (tooltip) {
             return (
-                <VTooltip description={alt || title} asChild className="cursor-pointer" size="xs" placement="top">
+                <VTooltip
+                    description={tooltip}
+                    asChild
+                    className="cursor-pointer"
+                    size="xs"
+                    placement={tooltipPlacement}
+                >
                     {buttonElement}
                 </VTooltip>
             );
@@ -190,7 +219,6 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
                 size={size || 'sm'}
                 onClick={handleCopy}
                 {...props}
-                aria-label={label}
                 title={label}
             >
                 {isCopied ? <Check className="text-success" /> : <CopyIcon className="size-4" />}

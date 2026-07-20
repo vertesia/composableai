@@ -161,7 +161,6 @@ export function McpConnectionsInlineList({
                                 size="sm"
                                 disabled
                                 className="h-6 w-32 justify-center px-2 text-xs"
-                                aria-label={t('mcpConnections.checkingStatus')}
                                 title={t('mcpConnections.checkingStatus')}
                             >
                                 <Spinner className="size-3" />
@@ -234,7 +233,6 @@ export function McpConnectionsActionMenu({
                         variant="ghost"
                         size="icon"
                         className="size-8 rounded-md text-muted hover:bg-muted"
-                        aria-label={t('mcpConnections.settings')}
                         title={t('mcpConnections.settings')}
                         disabled={loading}
                     >

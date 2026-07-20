@@ -179,7 +179,6 @@ export default function Header({
                     variant={isPlaybackEnabled ? 'primary' : 'ghost'}
                     onClick={onTogglePlayback}
                     aria-pressed={isPlaybackEnabled}
-                    aria-label={t('agent.rewind.label')}
                     title={t('agent.rewind.label')}
                     className={cn(
                         'transition-all duration-200 rounded-md',
@@ -378,7 +377,6 @@ function MoreDropdown({
                     size={compact ? 'icon' : 'xs'}
                     variant="ghost"
                     title={t('agent.moreActions')}
-                    aria-label={t('agent.moreActions')}
                     className={compact ? 'size-8 rounded-lg' : undefined}
                 >
                     <MoreVertical className="size-4" />

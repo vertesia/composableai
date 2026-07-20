@@ -523,7 +523,6 @@ export default function MessageInput({
                                         variant="ghost"
                                         size="icon"
                                         className="size-8 rounded-full text-muted hover:bg-muted"
-                                        aria-label={t('agent.addAttachment')}
                                         title={t('agent.addAttachment')}
                                     >
                                         <PlusIcon className="size-4" />
@@ -654,7 +653,6 @@ export default function MessageInput({
                                 '[&_svg]:text-destructive disabled:[&_svg]:text-muted',
                             )}
                             title={t('agent.stopTooltip')}
-                            aria-label={t('agent.stopTooltip')}
                         >
                             {isStopping ? (
                                 <Spinner size="sm" />
