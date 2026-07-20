@@ -104,7 +104,7 @@ export function DocumentIcon({
                 <Button
                     variant="ghost"
                     size="sm"
-                    title="Preivew Object"
+                    title="Preview Object"
                     onClick={(e) => {
                         e.stopPropagation();
                         previewObject?.(document.id);

@@ -67,6 +67,31 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
+    it('Button.title does NOT override the name of a button that shows text', async () => {
+        // WCAG 2.5.3 Label in Name: the accessible name must contain the visible label, so a
+        // tooltip must never replace it. Regression test for the Playwright failure where
+        // getByRole('button', { name: 'Installed' }) stopped matching.
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Show only installed apps">
+                Installed
+            </Button>,
+        );
+        const button = container.querySelector('button');
+        expect(button?.hasAttribute('aria-label')).toBe(false);
+        expect(button?.textContent).toBe('Installed');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('Button.title does not override a nested text label either', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Open the definition editor">
+                <span aria-hidden="true">📄</span>
+                <span>Definition</span>
+            </Button>,
+        );
+        expect(container.querySelector('button')?.hasAttribute('aria-label')).toBe(false);
+    });
+
     it('Button.tooltipPlacement does not leak onto the DOM element', async () => {
         const { container } = renderWithProviders(
             <Button onClick={() => undefined} title="Zoom in" tooltipPlacement="bottom">

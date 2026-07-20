@@ -23,6 +23,22 @@ function useDeprecationWarning(propName: string, isUsed: boolean, message: strin
     }, [isUsed, message, propName]);
 }
 
+// Does this subtree contribute any text to the accessible name? Used to decide whether `title`
+// may supply that name. Icons (lucide elements) have no string children and return false, and
+// `aria-hidden` subtrees are skipped because they are excluded from the name computation.
+function hasVisibleText(node: React.ReactNode): boolean {
+    return React.Children.toArray(node).some((child) => {
+        if (typeof child === 'string') return child.trim().length > 0;
+        if (typeof child === 'number') return true;
+        if (React.isValidElement(child)) {
+            const props = child.props as { children?: React.ReactNode; 'aria-hidden'?: boolean | string };
+            if (props['aria-hidden'] === true || props['aria-hidden'] === 'true') return false;
+            return hasVisibleText(props.children);
+        }
+        return false;
+    });
+}
+
 const buttonVariants = cva(
     'hover:cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
     {
@@ -107,8 +123,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         // `title` (or its deprecated alias `alt`) drives the VTooltip below AND back-fills the
         // accessible name, so an icon-only <Button title="Refresh"> is labelled without any extra
         // props or a manual <VTooltip> wrap at the call site. An explicit aria-label still wins.
+        //
+        // Crucially, the back-fill is skipped when the button already shows text: turning
+        // <Button title="Show only installed apps">Installed</Button> into aria-label="Show only
+        // installed apps" would replace the visible name with the tooltip, which breaks WCAG 2.5.3
+        // (Label in Name) and makes the control unreachable by the label users actually see.
         const tooltip = title ?? alt;
-        const ariaLabel = props['aria-label'] ?? tooltip;
+        const ariaLabel = props['aria-label'] ?? (hasVisibleText(props.children) ? undefined : tooltip);
 
         // asChild renders via Radix Slot, which requires exactly one React child.
         // Skip the loader wrap in that case — Slot would reject the multi-child array.
