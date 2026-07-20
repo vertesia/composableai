@@ -260,13 +260,15 @@ class UserSession {
             const onboarding = await this.client.account.onboardingProgress();
             this.onboardingComplete = Object.values(onboarding).every((value) => value === true);
             if (previousStatus !== this.onboardingComplete) {
-                return true;
+                this.setSession?.(this.clone());
             }
-            this.setSession?.(this.clone());
+            return previousStatus === false && this.onboardingComplete;
         } catch (error) {
             console.error('Error fetching onboarding status:', error);
             this.onboardingComplete = false;
-            this.setSession?.(this.clone());
+            if (previousStatus !== this.onboardingComplete) {
+                this.setSession?.(this.clone());
+            }
         }
         return false;
     }

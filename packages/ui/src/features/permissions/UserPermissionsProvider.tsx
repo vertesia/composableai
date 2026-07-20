@@ -79,7 +79,7 @@ export function UserPermissionProvider({ children }: UserPermissionProviderProps
             return session.client.iam.roles.listSystem();
         }
         return Promise.resolve(undefined);
-    }, [session, shouldFetchRoleMappings]);
+    }, [session.client, authToken, shouldFetchRoleMappings]);
 
     const perms = useMemo(() => {
         if (authToken) {

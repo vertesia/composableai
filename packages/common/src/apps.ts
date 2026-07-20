@@ -989,6 +989,28 @@ export interface AppRepoFile {
     content: string;
 }
 
+/** One commit that inserted or changed a file in an app git repository. */
+export interface AppRepoCommit {
+    /** Full commit SHA. */
+    commit: string;
+    /** Complete commit message. */
+    message: string;
+    /** Commit author name, when available. */
+    author?: string;
+    /** Commit author date as an ISO-8601 string, when available. */
+    date?: string;
+}
+
+/** File-specific commit history in an app git repository. */
+export interface AppRepoCommits {
+    /** Ref from which history traversal started (empty/undefined = default branch / HEAD). */
+    ref?: string;
+    /** File path relative to the repository root. */
+    path: string;
+    /** Commits ordered newest first. */
+    commits: AppRepoCommit[];
+}
+
 /** A branch or tag in an app git repo, resolved to its latest commit. */
 export interface AppRepoRef {
     /** Short ref name (e.g. `main`, `v1.0.0`). */

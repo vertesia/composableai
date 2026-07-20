@@ -13,6 +13,7 @@ import type {
     AppManifestData,
     AppPackage,
     AppPackageScope,
+    AppRepoCommits,
     AppRepoFile,
     AppRepoRefs,
     AppRepoTree,
@@ -145,6 +146,20 @@ export default class AppsApi extends ApiTopic {
     getRepoFile(appIdOrName: string, path: string, options?: { ref?: string }): Promise<AppRepoFile> {
         return this.get(`/${encodeURIComponent(appIdOrName)}/repo/file`, {
             query: { path, ref: options?.ref },
+        });
+    }
+
+    /**
+     * List commits that inserted or changed a file, newest first. The history starts
+     * at the default branch unless a branch, tag, or commit SHA is supplied as `ref`.
+     */
+    getRepoCommits(
+        appIdOrName: string,
+        path: string,
+        options?: { ref?: string; limit?: number },
+    ): Promise<AppRepoCommits> {
+        return this.get(`/${encodeURIComponent(appIdOrName)}/repo/commits`, {
+            query: { path, ref: options?.ref, limit: options?.limit },
         });
     }
 
