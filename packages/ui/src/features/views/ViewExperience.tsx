@@ -34,7 +34,7 @@ const FALLBACK_DISPLAY: ViewDisplayConfiguration = {
 
 export interface ViewExperienceProps {
     viewId: string;
-    /** Override execution for embedded apps or tests. Defaults to client.store.views.execute. */
+    /** Override execution for embedded apps or tests. Defaults to client.views.execute. */
     execute?: ViewExecutor;
     renderers?: ViewExperienceRenderers;
     onOpenHit?: (hit: ViewHit) => void;
@@ -58,7 +58,7 @@ function cleanRecord(values: Record<string, string[]>): Record<string, string[]>
 function ViewExperienceWithSession(props: Omit<ViewExperienceProps, 'execute'>) {
     const { client } = useUserSession();
     const execute = useCallback(
-        (request: ExecuteViewRequest) => client.store.views.execute(props.viewId, request),
+        (request: ExecuteViewRequest) => client.views.execute(props.viewId, request),
         [client, props.viewId],
     );
     const resolveMedia = useCallback<ViewMediaResolver>(

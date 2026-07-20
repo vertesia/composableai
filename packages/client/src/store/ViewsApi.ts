@@ -3,7 +3,7 @@ import type { ExecuteViewRequest, PreviewViewExperienceRequest, ViewExecutionRes
 
 export class StoreViewsApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, '/api/v1/views');
+        super(parent, '/api/v1/view-executions');
     }
 
     execute(id: string, payload: ExecuteViewRequest = {}): Promise<ViewExecutionResult> {

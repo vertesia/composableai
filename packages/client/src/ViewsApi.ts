@@ -2,13 +2,20 @@ import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateViewExperienceRequest,
     DeleteByIdResult,
+    ExecuteViewRequest,
+    PreviewViewExperienceRequest,
     UpdateViewExperienceRequest,
+    ViewExecutionResult,
     ViewExperience,
     ViewExperienceListQuery,
 } from '@vertesia/common';
+import type { StoreViewsApi } from './store/ViewsApi.js';
 
 export default class ViewsApi extends ApiTopic {
-    constructor(parent: ClientBase) {
+    constructor(
+        parent: ClientBase,
+        private readonly executionApi: StoreViewsApi,
+    ) {
         super(parent, '/api/v1/views');
     }
 
@@ -35,5 +42,19 @@ export default class ViewsApi extends ApiTopic {
 
     delete(id: string): Promise<DeleteByIdResult> {
         return this.del(`/${encodeURIComponent(id)}`);
+    }
+
+    /**
+     * Execute a persisted or app-contributed View through the content service.
+     */
+    execute(id: string, payload: ExecuteViewRequest = {}): Promise<ViewExecutionResult> {
+        return this.executionApi.execute(id, payload);
+    }
+
+    /**
+     * Validate and execute an unsaved View through the content service.
+     */
+    preview(payload: PreviewViewExperienceRequest): Promise<ViewExecutionResult> {
+        return this.executionApi.preview(payload);
     }
 }

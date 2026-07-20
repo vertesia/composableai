@@ -207,6 +207,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             timeout: opts.timeout,
             fetch: opts.fetch,
         });
+        this.views = new ViewsApi(this, this.store.views);
 
         if (opts.retryPolicy) {
             this.withRetryPolicy(opts.retryPolicy);
@@ -412,7 +413,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     apps = new AppsApi(this);
     tools = new ToolsApi(this);
     quota = new QuotaApi(this);
-    views = new ViewsApi(this);
+    views: ViewsApi;
 }
 
 function isApiKey(apiKey: string) {
