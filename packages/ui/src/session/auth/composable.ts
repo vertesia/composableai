@@ -10,6 +10,23 @@ import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
 
+function clearRejectedPersistedScope(accountId?: string, projectId?: string) {
+    if (!accountId) return;
+
+    const projectKey = `${LastSelectedProjectId_KEY}-${accountId}`;
+    if (projectId) {
+        if (localStorage.getItem(projectKey) === projectId) {
+            localStorage.removeItem(projectKey);
+        }
+        return;
+    }
+
+    if (localStorage.getItem(LastSelectedAccountId_KEY) === accountId) {
+        localStorage.removeItem(LastSelectedAccountId_KEY);
+        localStorage.removeItem(projectKey);
+    }
+}
+
 interface ComposableTokenResponse {
     rawToken: string;
     token: AuthTokenPayload;
@@ -272,17 +289,26 @@ export async function getComposableToken(
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
-    //token is close to expire, refresh it
-    if (!useInternalAuth && getFirebaseAuth().currentUser) {
-        //we have a firebase user, get the token from there
-        AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
-    } else if (initToken || AUTH_TOKEN_RAW) {
-        // we have a token already and no firebase user, refresh it
-        AUTH_TOKEN_RAW = await fetchComposableToken(
-            () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
-            selectedAccount,
-            selectedProject,
-        );
+    try {
+        //token is close to expire, refresh it
+        if (!useInternalAuth && getFirebaseAuth().currentUser) {
+            //we have a firebase user, get the token from there
+            AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
+        } else if (initToken || AUTH_TOKEN_RAW) {
+            // we have a token already and no firebase user, refresh it
+            AUTH_TOKEN_RAW = await fetchComposableToken(
+                () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
+                selectedAccount,
+                selectedProject,
+            );
+        }
+    } catch (error: unknown) {
+        if (error instanceof TokenAuthorizationError) {
+            AUTH_TOKEN_RAW = undefined;
+            AUTH_TOKEN = undefined;
+            clearRejectedPersistedScope(selectedAccount, selectedProject);
+        }
+        throw error;
     }
 
     if (!AUTH_TOKEN_RAW) {

@@ -22,6 +22,18 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     const hasInitiatedAuthRef = useRef(false);
     const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
+    const clearRejectedUrlScope = (error: TokenAuthorizationError, clearHash = false) => {
+        const url = new URL(window.location.href);
+        if (error.projectId && url.searchParams.get('p') === error.projectId) {
+            url.searchParams.delete('p');
+        } else if (error.accountId && url.searchParams.get('a') === error.accountId) {
+            url.searchParams.delete('a');
+            url.searchParams.delete('p');
+        }
+        if (clearHash) url.hash = '';
+        window.history.replaceState(window.history.state, '', url);
+    };
+
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
         const currentUrl = new URL(window.location.href);
@@ -95,7 +107,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         session.isLoading = false;
                         session.authError = err;
                         setSession(session.clone());
-                        window.location.hash = '';
+                        clearRejectedUrlScope(err, true);
                         return;
                     }
 
@@ -194,6 +206,9 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         });
                         if (!(err instanceof UserNotFoundError || err instanceof TokenAuthorizationError)) {
                             session.logout();
+                        }
+                        if (err instanceof TokenAuthorizationError) {
+                            clearRejectedUrlScope(err);
                         }
                         session.isLoading = false;
                         session.authError = err;
