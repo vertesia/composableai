@@ -1,9 +1,9 @@
-import { execFile as execFileCallback } from 'node:child_process';
+import { type ExecFileOptions, execFile as execFileCallback } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { ApplicationFailure, log } from '@temporalio/activity';
+import { ApplicationFailure, Context, log } from '@temporalio/activity';
 import { RequestError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
 import {
@@ -39,12 +39,80 @@ const FFMPEG_MAX_BUFFER = 1024 * 1024 * 10; // 10MB buffer for ffmpeg output
 const VIDEO_CRF = '23'; // Constant Rate Factor for video quality (18-28, lower = better)
 const AUDIO_BITRATE = '128k'; // Audio bitrate for AAC encoding
 const JPEG_QUALITY = '2'; // JPEG quality for screenshots (1-31, lower = better)
+const MAX_COMMAND_TIMEOUT_MARGIN_MS = 60_000;
+const activityCommandDeadlines = new WeakMap<Context, number>();
+
+function initializeActivityCommandDeadline(): number {
+    const context = Context.current();
+    const existingDeadlineMs = activityCommandDeadlines.get(context);
+    if (existingDeadlineMs) {
+        return existingDeadlineMs;
+    }
+    const deadlineMs = Date.now() + context.info.startToCloseTimeoutMs;
+    activityCommandDeadlines.set(context, deadlineMs);
+    return deadlineMs;
+}
+
+function getActivityCommandTimeoutMs(): number {
+    const context = Context.current();
+    const { startToCloseTimeoutMs } = context.info;
+    const timeoutMarginMs = Math.min(MAX_COMMAND_TIMEOUT_MARGIN_MS, startToCloseTimeoutMs / 10);
+    const activityDeadlineMs = initializeActivityCommandDeadline();
+    return Math.max(1, activityDeadlineMs - Date.now() - timeoutMarginMs);
+}
+
+/**
+ * Execute media tooling with Temporal cancellation propagated to the child process.
+ *
+ * Temporal can begin a retry after an attempt times out while the original worker process is still running. Passing the
+ * Activity cancellation signal prevents an orphaned ffmpeg process from competing with its retry for CPU.
+ */
+export async function execActivityFile(
+    command: string,
+    args: string[],
+    options: ExecFileOptions = {},
+): Promise<{ stdout: string; stderr: string }> {
+    const activityTimeoutMs = getActivityCommandTimeoutMs();
+    const configuredTimeoutMs = options.timeout && options.timeout > 0 ? options.timeout : activityTimeoutMs;
+
+    return (await execFileAsync(command, args, {
+        ...options,
+        encoding: 'utf8',
+        signal: Context.current().cancellationSignal,
+        timeout: Math.min(configuredTimeoutMs, activityTimeoutMs),
+    })) as { stdout: string; stderr: string };
+}
+
+function rethrowIfActivityStopped(error: unknown): void {
+    const commandTimedOut = typeof error === 'object' && error !== null && 'killed' in error && error.killed === true;
+    if (Context.current().cancellationSignal.aborted || commandTimedOut) {
+        throw error;
+    }
+}
 
 export interface PrepareVideoParams {
     maxResolution?: number; // Max resolution (longest side) for video rendition, default 1920 (produces 1080p: 1920x1080 landscape or 1080x1920 portrait)
     thumbnailSize?: number; // Max size (longest side) for thumbnail image, default 256
     posterSize?: number; // Max size (longest side) for poster image, default 1920
     generateAudio?: boolean; // Generate audio-only rendition (AAC), default true
+    videoPreset?: VideoPreset; // FFmpeg encoding preset, default medium
+    skipTranscode?: boolean; // Skip the main video re-encode, default false
+}
+
+export type VideoPreset = 'medium' | 'fast' | 'veryfast' | 'ultrafast';
+
+export function shouldTranscodeVideo(skipTranscode?: boolean): boolean {
+    return skipTranscode !== true;
+}
+
+export function resolveVideoPreset(preset: VideoPreset, attempt: number): VideoPreset {
+    if (preset === 'ultrafast') {
+        return preset;
+    }
+
+    const retryPresets: VideoPreset[] = ['medium', 'fast', 'veryfast'];
+    const initialPresetIndex = retryPresets.indexOf(preset);
+    return retryPresets[Math.min(initialPresetIndex + attempt - 1, retryPresets.length - 1)];
 }
 
 export interface PrepareVideo extends DSLActivitySpec<PrepareVideoParams> {
@@ -85,7 +153,7 @@ interface FFProbeOutput {
 async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtended> {
     try {
         const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', videoPath];
-        const { stdout } = await execFileAsync('ffprobe', args);
+        const { stdout } = await execActivityFile('ffprobe', args);
         const metadata = JSON.parse(stdout.toString()) as FFProbeOutput;
 
         const videoStream = metadata.streams.find((stream) => stream.codec_type === 'video');
@@ -113,6 +181,7 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtende
 
         return { duration, width, height, codec, bitrate, fps, hasAudio };
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(`Failed to get video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
         if (error instanceof ApplicationFailure) {
             throw error;
@@ -184,6 +253,7 @@ async function generateRenditionWithDimensions(
     outputDir: string,
     metadata: VideoMetadataExtended,
     maxResolution: number,
+    videoPreset: VideoPreset,
 ): Promise<MediaResult | null> {
     const outputFile = path.join(outputDir, `rendition_${maxResolution}p.mp4`);
 
@@ -207,7 +277,7 @@ async function generateRenditionWithDimensions(
         '-c:v',
         'libx264', // H.264 codec
         '-preset',
-        'medium', // Balance between speed and compression
+        videoPreset,
         '-crf',
         VIDEO_CRF, // Constant Rate Factor (18-28, lower = better quality)
         '-pix_fmt',
@@ -226,7 +296,7 @@ async function generateRenditionWithDimensions(
     log.info(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execActivityFile('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
         const stderrText = stderr.toString();
 
         if (stderrText && !stderrText.includes('frame=')) {
@@ -247,6 +317,7 @@ async function generateRenditionWithDimensions(
             return null;
         }
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(`Failed to generate video rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
@@ -273,7 +344,7 @@ async function generateAudioRendition(videoPath: string, outputDir: string): Pro
     log.info('Generating audio-only rendition', { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execActivityFile('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
         const stderrText = stderr.toString();
 
         if (stderrText && !stderrText.includes('frame=')) {
@@ -290,6 +361,7 @@ async function generateAudioRendition(videoPath: string, outputDir: string): Pro
             return null;
         }
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(`Failed to generate audio rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
@@ -331,7 +403,7 @@ async function generateScreenshot(
     log.info(`Generating ${name} at ${timestamp}s`, { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execFileAsync('ffmpeg', command);
+        const { stderr } = await execActivityFile('ffmpeg', command);
         const stderrText = stderr.toString();
 
         if (stderrText && !stderrText.includes('frame=')) {
@@ -352,6 +424,7 @@ async function generateScreenshot(
             return null;
         }
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(`Failed to generate ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
@@ -412,17 +485,22 @@ async function uploadMediaAsRendition(
 export async function prepareVideo(
     payload: DSLActivityExecutionPayload<PrepareVideoParams>,
 ): Promise<PrepareVideoResult> {
+    initializeActivityCommandDeadline();
     const { client, objectId, params } = await setupActivity<PrepareVideoParams>(payload);
 
     const maxResolution = params.maxResolution ?? DEFAULT_MAX_RESOLUTION;
     const thumbnailSize = params.thumbnailSize ?? DEFAULT_THUMBNAIL_SIZE;
     const posterSize = params.posterSize ?? DEFAULT_POSTER_SIZE;
     const generateAudio = params.generateAudio ?? DEFAULT_GENERATE_AUDIO;
+    const skipTranscode = params.skipTranscode ?? false;
+    const videoPreset = resolveVideoPreset(params.videoPreset ?? 'medium', Context.current().info.attempt);
 
     log.info(`Preparing video for ${objectId}`, {
         maxResolution,
         thumbnailSize,
         posterSize,
+        skipTranscode,
+        videoPreset,
     });
 
     // Retrieve the content object
@@ -454,13 +532,19 @@ export async function prepareVideo(
         const metadata = await getVideoMetadata(videoFile);
 
         // Step 2: Generate video rendition
-        log.info('Generating video rendition');
-        const renditionResult = await generateRenditionWithDimensions(
-            videoFile,
-            tempOutputDir,
-            metadata,
-            maxResolution,
-        );
+        let renditionResult: MediaResult | null = null;
+        if (!shouldTranscodeVideo(skipTranscode)) {
+            log.info('Skipping video rendition transcode by configuration');
+        } else {
+            log.info('Generating video rendition');
+            renditionResult = await generateRenditionWithDimensions(
+                videoFile,
+                tempOutputDir,
+                metadata,
+                maxResolution,
+                videoPreset,
+            );
+        }
 
         // Step 3 & 4: Generate thumbnail and poster in parallel
         log.info('Generating thumbnail and poster');
@@ -578,6 +662,7 @@ export async function prepareVideo(
             status: 'success',
         };
     } catch (error) {
+        rethrowIfActivityStopped(error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         log.error(`Error preparing video: ${errorMessage}`, { error });
 
