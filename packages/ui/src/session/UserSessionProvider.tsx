@@ -1,18 +1,18 @@
 import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type AuthSelection, buildCentralAuthRedirectUrl } from './auth/centralAuth';
 import { getComposableToken, STSError, UserNotFoundError } from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from './UserSession';
 
-const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
-
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
     loadOnboardingStatus?: boolean;
 }
+
 export function UserSessionProvider({ children, loadOnboardingStatus = true }: UserSessionProviderProps) {
     const hashParams = new URLSearchParams(location.hash.substring(1));
     const token = hashParams.get('token');
@@ -22,15 +22,15 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     const hasInitiatedAuthRef = useRef(false);
     const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
-    const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
-        const currentUrl = new URL(window.location.href);
-        currentUrl.hash = '';
-        if (projectId) currentUrl.searchParams.set('p', projectId);
-        if (accountId) currentUrl.searchParams.set('a', accountId);
-        url.searchParams.set('redirect_uri', currentUrl.toString());
-        url.searchParams.set('state', generateState());
-        location.replace(url.toString());
+    const redirectToCentralAuth = ({ accountId, projectId }: AuthSelection = {}) => {
+        location.replace(
+            buildCentralAuthRedirectUrl(
+                window.location.href,
+                Env.endpoints.sts ?? 'https://sts.vertesia.io',
+                generateState(),
+                { accountId, projectId },
+            ),
+        );
     };
 
     authFlowRef.current = () => {
@@ -69,7 +69,8 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         state: state,
                     },
                 });
-                redirectToCentralAuth();
+                redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
+                return;
             } else {
                 clearState();
             }
@@ -116,7 +117,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             error: err,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                 });
             return;
         } else {
@@ -141,7 +142,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             project_id: selectedProject,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                     return; // Don't register onAuthStateChanged listener when redirecting
                 } else {
                     console.log('Auth: host is in Firebase auth allowlist');

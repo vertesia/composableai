@@ -17,6 +17,37 @@ interface ComposableTokenResponse {
     message?: string;
 }
 
+interface TokenScope {
+    accountId?: string;
+    projectId?: string;
+}
+
+export function tokenMatchesSelection(
+    token: AuthTokenPayload | undefined,
+    accountId?: string,
+    projectId?: string,
+): boolean {
+    const tokenAccountId = token?.account?.id;
+    if (!tokenAccountId) return false;
+
+    const tokenScopeIsConsistent = !token.project || token.project.account === tokenAccountId;
+    return (
+        tokenScopeIsConsistent &&
+        (!accountId || tokenAccountId === accountId) &&
+        (!projectId || token.project?.id === projectId)
+    );
+}
+
+function getAuthorizationRecoveryScope(accountId?: string, projectId?: string): TokenScope | undefined {
+    if (accountId && projectId) {
+        return { accountId };
+    }
+    if (accountId || projectId) {
+        return {};
+    }
+    return undefined;
+}
+
 export async function fetchComposableToken(
     getIdToken: () => Promise<string | null | undefined>,
     accountId?: string,
@@ -180,9 +211,9 @@ export async function fetchComposableToken(
             // 2. User invited to a new account (doesn't have access yet)
             // 3. User exists but has no accounts at all
 
-            if (retryCount > 0) {
-                // Already retried without account scope - this is a real authorization failure
-                console.error('403: Access denied even without account scope - user may have no accounts');
+            const recoveryScope = getAuthorizationRecoveryScope(accountId, projectId);
+            if (!recoveryScope) {
+                console.error('403: Access denied without account or project scope - user may have no accounts');
                 Env.logger.error('403: Access denied after retry - authorization failure', {
                     vertesia: {
                         account_id: accountId,
@@ -194,24 +225,32 @@ export async function fetchComposableToken(
                 throw new Error('Access denied - user may not have access to any accounts');
             }
 
-            console.log('403: Access denied - clearing cached account and retrying without account scope');
-            Env.logger.warn('403: Access denied - clearing cached account and retrying', {
+            console.log('403: Access denied - clearing stale selection and retrying with reduced scope');
+            Env.logger.warn('403: Access denied - clearing stale selection and retrying with reduced scope', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
+                    retry_account_id: recoveryScope.accountId,
+                    retry_project_id: recoveryScope.projectId,
                     status: stsRes.status,
                     retry_count: retryCount,
                 },
             });
 
-            // Clear any stale account/project from localStorage
-            localStorage.removeItem(LastSelectedAccountId_KEY);
-            if (accountId) {
+            if (accountId && projectId) {
+                localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
+            } else if (accountId) {
+                localStorage.removeItem(LastSelectedAccountId_KEY);
                 localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
             }
 
-            // Retry without account/project scope - let user log in to their default account
-            return fetchComposableToken(getIdToken, undefined, undefined, ttl, retryCount + 1);
+            return fetchComposableToken(
+                getIdToken,
+                recoveryScope.accountId,
+                recoveryScope.projectId,
+                ttl,
+                retryCount + 1,
+            );
         }
 
         if (!stsRes.ok) {
@@ -228,7 +267,20 @@ export async function fetchComposableToken(
             throw new Error(`Failed to get token from STS: ${stsRes.status}`);
         }
 
-        const { token } = await stsRes.json();
+        const { token } = (await stsRes.json()) as { token?: unknown };
+        if (typeof token !== 'string') {
+            throw new STSError('STS returned an invalid token response', stsEndpoint);
+        }
+
+        let decodedToken: AuthTokenPayload;
+        try {
+            decodedToken = jwtDecode(token) as AuthTokenPayload;
+        } catch (error: unknown) {
+            throw new STSError('STS returned an invalid token', stsEndpoint, error);
+        }
+        if (!tokenMatchesSelection(decodedToken, accountId, projectId)) {
+            throw new STSError('STS returned a token for a different account or project', stsEndpoint);
+        }
         console.log('Successfully got token from STS');
         Env.logger.info('Successfully got token from STS');
         return token;
@@ -237,11 +289,6 @@ export async function fetchComposableToken(
             throw error; // Re-throw UserNotFoundError and STSError to be handled separately in the caller
         }
 
-        // Clear any stale account/project from localStorage on error
-        localStorage.removeItem(LastSelectedAccountId_KEY);
-        if (accountId) {
-            localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
-        }
         console.error('Failed to get composable token from STS', error);
         Env.logger.error('Failed to get composable token from STS', {
             vertesia: {
@@ -296,7 +343,14 @@ export async function getComposableToken(
         projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined;
 
     //token is still valid for more than 5 minutes
-    if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > Date.now() / 1000 + 300) {
+    const cachedTokenMatchesSelection = tokenMatchesSelection(AUTH_TOKEN, selectedAccount, selectedProject);
+    if (
+        !forceRefresh &&
+        cachedTokenMatchesSelection &&
+        AUTH_TOKEN_RAW &&
+        AUTH_TOKEN &&
+        AUTH_TOKEN.exp > Date.now() / 1000 + 300
+    ) {
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
@@ -350,8 +404,8 @@ export class UserNotFoundError extends Error {
 
 export class STSError extends Error {
     stsURL: string;
-    constructor(message: string, stsURL: string) {
-        super(message);
+    constructor(message: string, stsURL: string, cause?: unknown) {
+        super(message, { cause });
         this.name = 'STSError';
         this.stsURL = stsURL;
     }
