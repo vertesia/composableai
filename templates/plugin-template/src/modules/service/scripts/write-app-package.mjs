@@ -110,6 +110,7 @@ function validateLocalCapabilityIds(pkg, appName) {
         ['types', 'type'],
         ['interactions', 'interaction'],
         ['processes', 'process'],
+        ['views', 'view'],
         ['dashboards', 'dashboard'],
         ['templates', 'template'],
     ];
@@ -154,7 +155,7 @@ function packageInteractionSelectors(pkg, appName) {
 
 function packageCapabilityIds(pkg) {
     const ids = new Set();
-    const groups = ['types', 'interactions', 'processes', 'dashboards', 'templates'];
+    const groups = ['types', 'interactions', 'processes', 'views', 'dashboards', 'templates'];
     for (const key of groups) {
         const items = Array.isArray(pkg[key]) ? pkg[key] : [];
         for (const item of items) {
@@ -284,6 +285,7 @@ function summarizeAppPackage(pkg) {
         interactions: names(pkg.interactions, (interaction) => interaction.id || interaction.name),
         types: names(pkg.types, (type) => type.id || type.name),
         processes: names(pkg.processes, (process) => process.id || process.name),
+        views: names(pkg.views, (view) => view.id || view.name),
         templates: names(pkg.templates, (template) => template.id || template.name || template.path),
         dashboards: names(pkg.dashboards, (dashboard) => dashboard.id || dashboard.name),
         widgets: Object.keys(pkg.widgets || {}).sort(),

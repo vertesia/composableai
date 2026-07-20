@@ -384,23 +384,11 @@ export interface RemoteActivityDefinition {
     options?: DSLActivityOptions;
 }
 
-export type AppCapabilities =
-    | 'ui'
-    | 'tools'
-    | 'interactions'
-    | 'types'
-    | 'processes'
-    | 'views'
-    | 'templates'
-    | 'dashboards';
-
 /**
- * Canonical runtime list of {@link AppCapabilities} — the app capabilities Studio
- * renders/supports. Co-located with the type so TypeScript rejects any drift between
- * the two. Consumers (publish manifest derivation, etc.) must use this rather than
- * re-listing the values.
+ * Canonical app capabilities Studio renders/supports. The public type is derived from
+ * this list so runtime validation and TypeScript cannot drift.
  */
-export const APP_CAPABILITIES: readonly AppCapabilities[] = [
+export const APP_CAPABILITIES = [
     'ui',
     'tools',
     'interactions',
@@ -409,7 +397,9 @@ export const APP_CAPABILITIES: readonly AppCapabilities[] = [
     'views',
     'templates',
     'dashboards',
-];
+] as const;
+
+export type AppCapabilities = (typeof APP_CAPABILITIES)[number];
 
 /**
  * Header carrying the app version a generated-app UI is running, so studio/zeno resolve app-owned
@@ -424,26 +414,19 @@ export const APP_VERSION_HEADER = 'x-vertesia-app-version';
  * {@link AppCapabilities} folds together. Used by the App Solution Architect manifest and
  * the publish-time capability gate.
  */
-export type AppArtifactType =
-    | 'interaction'
-    | 'agent'
-    | 'type'
-    | 'process'
-    | 'template'
-    | 'dashboard'
-    | 'activity'
-    | 'tool';
-
-export const APP_ARTIFACT_TYPES: readonly AppArtifactType[] = [
+export const APP_ARTIFACT_TYPES = [
     'interaction',
     'agent',
     'type',
     'process',
+    'view',
     'template',
     'dashboard',
     'activity',
     'tool',
-];
+] as const;
+
+export type AppArtifactType = (typeof APP_ARTIFACT_TYPES)[number];
 
 /**
  * A single platform artifact the App Solution Architect requires the build to create.
@@ -1028,38 +1011,26 @@ export interface AppRepoRefs {
     tags: AppRepoRef[];
 }
 
-export type AppPackageScope =
-    | 'ui'
-    | 'tools'
-    | 'interactions'
-    | 'types'
-    | 'processes'
-    | 'views'
-    | 'templates'
-    | 'dashboards'
-    | 'settings'
-    | 'widgets'
-    | 'activities'
-    | 'all';
-
 /**
- * Canonical runtime list of {@link AppPackageScope} — every package scope, including the
- * catch-all `'all'`. Co-located with the type so TypeScript rejects drift. Consumers (the
- * /package?scope= parser, the inspection report) must use this rather than re-listing.
+ * Canonical package scopes, including the catch-all `all`. The public type is derived
+ * from this list so request parsing and TypeScript cannot drift.
  */
-export const APP_PACKAGE_SCOPES: readonly AppPackageScope[] = [
+export const APP_PACKAGE_SCOPES = [
     'ui',
     'tools',
     'interactions',
     'types',
     'processes',
+    'views',
     'templates',
     'dashboards',
     'settings',
     'widgets',
     'activities',
     'all',
-];
+] as const;
+
+export type AppPackageScope = (typeof APP_PACKAGE_SCOPES)[number];
 export interface AppPackage {
     /**
      * The UI configuration of the app

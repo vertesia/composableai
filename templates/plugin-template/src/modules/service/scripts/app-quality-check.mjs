@@ -159,6 +159,7 @@ report.artifacts = {
     interactions: namesFromResourceFiles(serverResourceFiles, 'interactions'),
     prompts: directResourceFiles(serverResourceFiles, 'interactions', ['.hbs']),
     processes: directResourceFiles(serverResourceFiles, 'processes', ['.yaml', '.yml', '.ts']),
+    views: directResourceFiles(serverResourceFiles, 'views', ['.ts', '.tsx']),
     dashboards: directResourceFiles(serverResourceFiles, 'dashboards', ['.ts', '.tsx']),
     templates: namesFromResourceFiles(serverResourceFiles, 'templates'),
     tools: namesFromResourceFiles(serverResourceFiles, 'tools'),

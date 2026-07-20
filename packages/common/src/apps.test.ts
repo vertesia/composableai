@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { effectiveAppAccessControl } from './apps.js';
+import { APP_ARTIFACT_TYPES, APP_CAPABILITIES, APP_PACKAGE_SCOPES, effectiveAppAccessControl } from './apps.js';
+
+describe('app capability contracts', () => {
+    it('keeps views in manifest, package, and build-artifact contracts', () => {
+        expect(APP_CAPABILITIES).toContain('views');
+        expect(APP_PACKAGE_SCOPES).toContain('views');
+        expect(APP_ARTIFACT_TYPES).toContain('view');
+    });
+});
 
 describe('effectiveAppAccessControl', () => {
     it("returns 'all' when neither installation nor manifest set the field", () => {
