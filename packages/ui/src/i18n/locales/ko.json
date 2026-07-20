@@ -733,6 +733,16 @@
   "user.unnamedGroup": "이름 없는 그룹",
   "user.user": "사용자",
   "user.userId": "사용자 ID",
+  "view.display": "표시",
+  "view.from": "시작",
+  "view.pagination": "결과 페이지",
+  "view.ranges": "범위",
+  "view.removeSelection": "{{value}} 제거",
+  "view.resultsCount_other": "{{count}}개 결과",
+  "view.searchFields": "검색 필드",
+  "view.sort": "정렬",
+  "view.to": "종료",
+  "view.warning": "보기 알림",
   "widgets.schema.editDescription": "설명 편집",
   "widgets.schema.invalidPropertyDeclaration": "유효하지 않은 속성 선언"
 }

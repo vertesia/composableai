@@ -6,3 +6,4 @@ export const activities = [];
 export const skills = [];
 export const templates = [];
 export const tools = [];
+export const views = [];

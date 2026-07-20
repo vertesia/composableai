@@ -1,6 +1,7 @@
 import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
 import type { CatalogInteractionRef } from './interaction.js';
 import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
+import type { InCodeViewDefinition } from './views.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
@@ -382,7 +383,7 @@ export interface RemoteActivityDefinition {
     options?: DSLActivityOptions;
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates';
+export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'views' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 
 /**
@@ -668,6 +669,7 @@ export type AppPackageScope =
     | 'interactions'
     | 'types'
     | 'processes'
+    | 'views'
     | 'templates'
     | 'settings'
     | 'widgets'
@@ -706,6 +708,11 @@ export interface AppPackage {
      * A list of process definitions exposed by the app.
      */
     processes?: InCodeProcessDefinition[];
+
+    /**
+     * View Experiences exposed by the app as in-code definitions.
+     */
+    views?: InCodeViewDefinition[];
 
     /**
      * Templates provided by the app.
