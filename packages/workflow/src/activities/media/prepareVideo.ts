@@ -96,9 +96,14 @@ export interface PrepareVideoParams {
     posterSize?: number; // Max size (longest side) for poster image, default 1920
     generateAudio?: boolean; // Generate audio-only rendition (AAC), default true
     videoPreset?: VideoPreset; // FFmpeg encoding preset, default medium
+    skipTranscode?: boolean; // Skip the main video re-encode, default false
 }
 
 export type VideoPreset = 'medium' | 'fast' | 'veryfast' | 'ultrafast';
+
+export function shouldTranscodeVideo(skipTranscode?: boolean): boolean {
+    return skipTranscode !== true;
+}
 
 export function resolveVideoPreset(preset: VideoPreset, attempt: number): VideoPreset {
     if (preset === 'ultrafast') {
@@ -487,12 +492,14 @@ export async function prepareVideo(
     const thumbnailSize = params.thumbnailSize ?? DEFAULT_THUMBNAIL_SIZE;
     const posterSize = params.posterSize ?? DEFAULT_POSTER_SIZE;
     const generateAudio = params.generateAudio ?? DEFAULT_GENERATE_AUDIO;
+    const skipTranscode = params.skipTranscode ?? false;
     const videoPreset = resolveVideoPreset(params.videoPreset ?? 'medium', Context.current().info.attempt);
 
     log.info(`Preparing video for ${objectId}`, {
         maxResolution,
         thumbnailSize,
         posterSize,
+        skipTranscode,
         videoPreset,
     });
 
@@ -525,14 +532,19 @@ export async function prepareVideo(
         const metadata = await getVideoMetadata(videoFile);
 
         // Step 2: Generate video rendition
-        log.info('Generating video rendition');
-        const renditionResult = await generateRenditionWithDimensions(
-            videoFile,
-            tempOutputDir,
-            metadata,
-            maxResolution,
-            videoPreset,
-        );
+        let renditionResult: MediaResult | null = null;
+        if (!shouldTranscodeVideo(skipTranscode)) {
+            log.info('Skipping video rendition transcode by configuration');
+        } else {
+            log.info('Generating video rendition');
+            renditionResult = await generateRenditionWithDimensions(
+                videoFile,
+                tempOutputDir,
+                metadata,
+                maxResolution,
+                videoPreset,
+            );
+        }
 
         // Step 3 & 4: Generate thumbnail and poster in parallel
         log.info('Generating thumbnail and poster');

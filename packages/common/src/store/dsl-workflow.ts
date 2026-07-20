@@ -48,6 +48,7 @@ export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload<Re
  */
 export interface DSLActivityOptions {
     startToCloseTimeout?: DurationValue;
+    heartbeatTimeout?: DurationValue;
     scheduleToStartTimeout?: DurationValue;
     scheduleToCloseTimeout?: DurationValue;
     retry?: DSLRetryPolicy;

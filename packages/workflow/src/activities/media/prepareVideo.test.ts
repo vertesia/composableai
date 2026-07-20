@@ -1,6 +1,17 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { describe, expect, it } from 'vitest';
-import { execActivityFile, resolveVideoPreset } from './prepareVideo.js';
+import { execActivityFile, resolveVideoPreset, shouldTranscodeVideo } from './prepareVideo.js';
+
+describe('shouldTranscodeVideo', () => {
+    it('transcodes by default', () => {
+        expect(shouldTranscodeVideo()).toBe(true);
+        expect(shouldTranscodeVideo(false)).toBe(true);
+    });
+
+    it('skips transcoding when explicitly requested', () => {
+        expect(shouldTranscodeVideo(true)).toBe(false);
+    });
+});
 
 describe('resolveVideoPreset', () => {
     it.each([
