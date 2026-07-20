@@ -197,16 +197,22 @@ export function ArtifactDocumentEditor({
 
     const startComment = useCallback(() => {
         const selection = lastSelectionRef.current;
-        if (!editor || !selection || selection.from === selection.to) {
+        const { from, to } = editor?.state.selection ?? { from: 0, to: 0 };
+        // Prefer the live selection; fall back to the last non-empty one (e.g. after the
+        // toolbar button stole focus). Guide the user instead of silently doing nothing.
+        const range = from !== to ? { from, to } : selection;
+        if (!editor || !range || range.from === range.to) {
+            toast({ status: 'info', title: t('agent.selectTextToComment') });
             return;
         }
-        const anchor = captureAnchor(editor.state.doc, selection.from, selection.to);
+        const anchor = captureAnchor(editor.state.doc, range.from, range.to);
         if (!anchor.quote.trim()) {
+            toast({ status: 'info', title: t('agent.selectTextToComment') });
             return;
         }
         setPendingAnchor(anchor);
         setShowComments(true);
-    }, [editor]);
+    }, [editor, toast, t]);
 
     const notifyFailure = useCallback(
         (err: unknown) => {
@@ -326,8 +332,11 @@ export function ArtifactDocumentEditor({
                 <Button
                     variant="ghost"
                     size="sm"
-                    disabled={!hasSelection || !canEdit || !commentsReady}
+                    // Stays enabled without a selection so the click can explain what's needed
+                    // (select text first) rather than being an inert, unexplained disabled button.
+                    disabled={!canEdit || !commentsReady}
                     onClick={startComment}
+                    title={hasSelection ? undefined : t('agent.selectTextToComment')}
                 >
                     <MessageSquarePlusIcon className="size-4 me-1" />
                     {t('agent.addComment')}

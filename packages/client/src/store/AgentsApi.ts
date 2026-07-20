@@ -741,7 +741,16 @@ export class AgentsApi extends ApiTopic {
         const { url } = await this.getArtifactUrl(id, path, 'attachment');
         const res = await fetchSignedUrl(url);
         if (!res.ok) {
-            throw new Error(`Failed to download artifact: ${res.statusText}`);
+            // Carry the HTTP status on the error. The signed URL is granted without checking
+            // existence, so a missing artifact 404s here (not at getArtifactUrl); callers such as
+            // the document-comments store distinguish "not created yet" (404) from real failures.
+            // `statusText` is often empty over HTTP/2, so surface the numeric status too.
+            const statusText = res.statusText ? ` ${res.statusText}` : '';
+            const error = new Error(`Failed to download artifact: ${res.status}${statusText}`) as Error & {
+                status?: number;
+            };
+            error.status = res.status;
+            throw error;
         }
         if (!res.body) {
             throw new Error('No body in artifact download response');

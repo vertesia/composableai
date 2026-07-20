@@ -182,6 +182,7 @@
   "agent.selectInteraction": "Select an interaction and click Start to start an agent",
   "agent.selectOption": "Select Option",
   "agent.selectRightPanelSection": "Select right panel section",
+  "agent.selectTextToComment": "Select text in the document to comment on it",
   "agent.send": "Send",
   "agent.sendToAgent": "Send to agent",
   "agent.sendTooltip": "Click or Enter to send",
