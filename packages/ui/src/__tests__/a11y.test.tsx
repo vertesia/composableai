@@ -92,6 +92,18 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(container.querySelector('button')?.hasAttribute('aria-label')).toBe(false);
     });
 
+    it('Button.alt keeps overriding the name of a text button (legacy behavior)', async () => {
+        // Unlike `title`, the deprecated `alt` overrides the accessible name even when text is
+        // present. Call sites such as <Button alt="Launch a new agent."><Rocket/> Run</Button>
+        // depend on this, so the WCAG 2.5.3 guard must NOT apply to `alt`.
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} alt="Launch a new agent.">
+                Run
+            </Button>,
+        );
+        expect(container.querySelector('button')?.getAttribute('aria-label')).toBe('Launch a new agent.');
+    });
+
     it('Button.tooltipPlacement does not leak onto the DOM element', async () => {
         const { container } = renderWithProviders(
             <Button onClick={() => undefined} title="Zoom in" tooltipPlacement="bottom">

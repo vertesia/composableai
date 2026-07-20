@@ -17,7 +17,7 @@ export function ModeOption({ option, current, setTheme, icon, alt }: ModeOptionP
             variant={current === option ? 'secondary' : 'outline'}
             size="sm"
             onClick={() => setTheme(option)}
-            alt={alt}
+            title={alt}
         >
             {icon}
         </Button>

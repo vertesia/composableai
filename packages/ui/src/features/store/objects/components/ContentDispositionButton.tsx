@@ -33,7 +33,11 @@ export function ContentDispositionButton({ onUpdate }: Readonly<ContentDispositi
     };
 
     return (
-        <Button variant="outline" onClick={updateView} alt={isGridView ? t('misc.tableView') : t('misc.thumbnailView')}>
+        <Button
+            variant="outline"
+            onClick={updateView}
+            title={isGridView ? t('misc.tableView') : t('misc.thumbnailView')}
+        >
             {isGridView ? <TableProperties /> : <LayoutGrid />}
         </Button>
     );

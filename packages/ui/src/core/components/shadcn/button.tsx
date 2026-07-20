@@ -76,8 +76,10 @@ export interface ButtonProps
         VariantProps<typeof buttonVariants> {
     asChild?: boolean;
     /**
-     * @deprecated Use `title` instead — it drives the same tooltip and the accessible name.
-     * For backward compatibility `alt` still works as an alias. Slated for removal in the next major.
+     * @deprecated Use `title` instead. `alt` drives the same tooltip but, unlike `title`, it
+     * overrides the accessible name even when the button shows a text label — which usually
+     * violates WCAG 2.5.3 (Label in Name). That legacy behavior is preserved so existing call
+     * sites keep announcing what they always did. Slated for removal in the next major.
      */
     alt?: string;
     /**
@@ -120,16 +122,20 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         // Default type="button" only when rendering an actual <button>. With asChild,
         // the rendered element may be an <a> or other tag where injecting `type` is wrong.
         const resolvedType = asChild ? type : (type ?? 'button');
-        // `title` (or its deprecated alias `alt`) drives the VTooltip below AND back-fills the
-        // accessible name, so an icon-only <Button title="Refresh"> is labelled without any extra
-        // props or a manual <VTooltip> wrap at the call site. An explicit aria-label still wins.
+        // `title` (or its deprecated alias `alt`) drives the VTooltip below. `title` also back-fills
+        // the accessible name, so an icon-only <Button title="Refresh"> is labelled without any
+        // extra props or a manual <VTooltip> wrap at the call site.
         //
-        // Crucially, the back-fill is skipped when the button already shows text: turning
+        // That back-fill is skipped when the button already shows text: turning
         // <Button title="Show only installed apps">Installed</Button> into aria-label="Show only
         // installed apps" would replace the visible name with the tooltip, which breaks WCAG 2.5.3
         // (Label in Name) and makes the control unreachable by the label users actually see.
+        //
+        // `alt` deliberately does NOT get that treatment: it has always overridden the name
+        // unconditionally, and callers rely on that. Preserving it keeps every existing call site
+        // announcing exactly what it announced before, and confines the new rule to `title`.
         const tooltip = title ?? alt;
-        const ariaLabel = props['aria-label'] ?? (hasVisibleText(props.children) ? undefined : tooltip);
+        const ariaLabel = props['aria-label'] ?? alt ?? (hasVisibleText(props.children) ? undefined : title);
 
         // asChild renders via Radix Slot, which requires exactly one React child.
         // Skip the loader wrap in that case — Slot would reject the multi-child array.
