@@ -53,6 +53,42 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
+    it('Button.title is forwarded to aria-label so icon-only buttons are labelled', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Refresh">
+                <span aria-hidden="true">↻</span>
+            </Button>,
+        );
+        const button = container.querySelector('button');
+        expect(button?.getAttribute('aria-label')).toBe('Refresh');
+        // The native title attribute is intentionally not forwarded — it would stack a second
+        // browser tooltip on top of the VTooltip that `title` already renders.
+        expect(button?.hasAttribute('title')).toBe(false);
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('Button.tooltipPlacement does not leak onto the DOM element', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Zoom in" tooltipPlacement="bottom">
+                <span aria-hidden="true">+</span>
+            </Button>,
+        );
+        const button = container.querySelector('button');
+        expect(button?.getAttribute('aria-label')).toBe('Zoom in');
+        expect(button?.hasAttribute('tooltipPlacement')).toBe(false);
+        expect(button?.hasAttribute('tooltipplacement')).toBe(false);
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('an explicit aria-label wins over Button.title', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Refresh" aria-label="Reload the results">
+                <span aria-hidden="true">↻</span>
+            </Button>,
+        );
+        expect(container.querySelector('button')?.getAttribute('aria-label')).toBe('Reload the results');
+    });
+
     it('CopyButton has an accessible name via internal aria-label', async () => {
         const { container } = renderWithProviders(<CopyButton content="example value" />);
         const button = container.querySelector('button');
