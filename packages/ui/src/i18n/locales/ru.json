@@ -868,5 +868,13 @@
   "richText.editMarkdownSource": "Редактировать исходный Markdown",
   "richText.markdownSourceEditor": "Редактор исходного Markdown",
   "richText.sourceCompatibilityWarningDescription": "Визуальное редактирование нормализует часть синтаксиса Markdown в этом документе и может перезаписать неизменённые строки. Чтобы сохранить точное форматирование, редактируйте исходный Markdown, либо продолжите в визуальном редакторе, если нормализация допустима.",
-  "richText.sourceCompatibilityWarningTitle": "Некоторое форматирование Markdown может измениться"
+  "richText.sourceCompatibilityWarningTitle": "Некоторое форматирование Markdown может измениться",
+    "agent.addComment": "Add comment",
+    "agent.blockMode": "Block mode",
+    "agent.commentingOn": "Commenting on",
+    "agent.comments": "Comments",
+    "agent.deleteComment": "Remove comment",
+    "agent.editMode": "Edit mode",
+    "agent.selectTextToComment": "Select text in the document to comment on it",
+    "agent.sendToAgent": "Send to agent"
 }

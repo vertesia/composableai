@@ -857,5 +857,13 @@
   "richText.editMarkdownSource": "Modifica sorgente Markdown",
   "richText.markdownSourceEditor": "Editor del sorgente Markdown",
   "richText.sourceCompatibilityWarningDescription": "La modifica in testo formattato normalizzerà parte della sintassi Markdown di questo documento e potrebbe riscrivere righe invariate. Modifica il sorgente Markdown per conservare la formattazione esatta oppure continua con il testo formattato se la normalizzazione è accettabile.",
-  "richText.sourceCompatibilityWarningTitle": "Parte della formattazione Markdown potrebbe cambiare"
+  "richText.sourceCompatibilityWarningTitle": "Parte della formattazione Markdown potrebbe cambiare",
+    "agent.addComment": "Add comment",
+    "agent.blockMode": "Block mode",
+    "agent.commentingOn": "Commenting on",
+    "agent.comments": "Comments",
+    "agent.deleteComment": "Remove comment",
+    "agent.editMode": "Edit mode",
+    "agent.selectTextToComment": "Select text in the document to comment on it",
+    "agent.sendToAgent": "Send to agent"
 }

@@ -846,5 +846,13 @@
   "richText.editMarkdownSource": "Markdown kaynağını düzenle",
   "richText.markdownSourceEditor": "Markdown kaynak düzenleyicisi",
   "richText.sourceCompatibilityWarningDescription": "Zengin metin düzenleme, bu belgedeki bazı Markdown sözdizimlerini normalleştirir ve değişmeyen satırları yeniden yazabilir. Tam biçimlendirmeyi korumak için Markdown kaynağını düzenleyin veya normalleştirme kabul edilebilirse zengin metinle devam edin.",
-  "richText.sourceCompatibilityWarningTitle": "Bazı Markdown biçimlendirmeleri değişebilir"
+  "richText.sourceCompatibilityWarningTitle": "Bazı Markdown biçimlendirmeleri değişebilir",
+    "agent.addComment": "Add comment",
+    "agent.blockMode": "Block mode",
+    "agent.commentingOn": "Commenting on",
+    "agent.comments": "Comments",
+    "agent.deleteComment": "Remove comment",
+    "agent.editMode": "Edit mode",
+    "agent.selectTextToComment": "Select text in the document to comment on it",
+    "agent.sendToAgent": "Send to agent"
 }

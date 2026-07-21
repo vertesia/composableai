@@ -890,5 +890,13 @@
   "richText.editMarkdownSource": "تحرير مصدر Markdown",
   "richText.markdownSourceEditor": "محرر مصدر Markdown",
   "richText.sourceCompatibilityWarningDescription": "سيؤدي تحرير النص المنسق إلى توحيد بعض صياغات Markdown في هذا المستند، وقد يعيد كتابة أسطر لم تتغير. حرّر مصدر Markdown للحفاظ على التنسيق الدقيق، أو تابع بالنص المنسق إذا كان التوحيد مقبولًا.",
-  "richText.sourceCompatibilityWarningTitle": "قد يتغير بعض تنسيق Markdown"
+  "richText.sourceCompatibilityWarningTitle": "قد يتغير بعض تنسيق Markdown",
+    "agent.addComment": "Add comment",
+    "agent.blockMode": "Block mode",
+    "agent.commentingOn": "Commenting on",
+    "agent.comments": "Comments",
+    "agent.deleteComment": "Remove comment",
+    "agent.editMode": "Edit mode",
+    "agent.selectTextToComment": "Select text in the document to comment on it",
+    "agent.sendToAgent": "Send to agent"
 }

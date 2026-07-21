@@ -846,5 +846,13 @@
   "richText.editMarkdownSource": "Markdown-Quelltext bearbeiten",
   "richText.markdownSourceEditor": "Markdown-Quelltexteditor",
   "richText.sourceCompatibilityWarningDescription": "Die Rich-Text-Bearbeitung normalisiert Teile der Markdown-Syntax in diesem Dokument und kann unveränderte Zeilen neu schreiben. Bearbeiten Sie den Markdown-Quelltext, um die genaue Formatierung beizubehalten, oder fahren Sie mit Rich-Text fort, wenn die Normalisierung akzeptabel ist.",
-  "richText.sourceCompatibilityWarningTitle": "Einige Markdown-Formatierungen können sich ändern"
+  "richText.sourceCompatibilityWarningTitle": "Einige Markdown-Formatierungen können sich ändern",
+    "agent.addComment": "Add comment",
+    "agent.blockMode": "Block mode",
+    "agent.commentingOn": "Commenting on",
+    "agent.comments": "Comments",
+    "agent.deleteComment": "Remove comment",
+    "agent.editMode": "Edit mode",
+    "agent.selectTextToComment": "Select text in the document to comment on it",
+    "agent.sendToAgent": "Send to agent"
 }

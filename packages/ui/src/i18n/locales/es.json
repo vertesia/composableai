@@ -857,5 +857,13 @@
   "richText.editMarkdownSource": "Editar código Markdown",
   "richText.markdownSourceEditor": "Editor de código Markdown",
   "richText.sourceCompatibilityWarningDescription": "La edición de texto enriquecido normalizará parte de la sintaxis Markdown de este documento y puede reescribir líneas sin cambios. Edita el código Markdown para conservar el formato exacto o continúa con texto enriquecido si la normalización es aceptable.",
-  "richText.sourceCompatibilityWarningTitle": "Parte del formato Markdown puede cambiar"
+  "richText.sourceCompatibilityWarningTitle": "Parte del formato Markdown puede cambiar",
+    "agent.addComment": "Add comment",
+    "agent.blockMode": "Block mode",
+    "agent.commentingOn": "Commenting on",
+    "agent.comments": "Comments",
+    "agent.deleteComment": "Remove comment",
+    "agent.editMode": "Edit mode",
+    "agent.selectTextToComment": "Select text in the document to comment on it",
+    "agent.sendToAgent": "Send to agent"
 }
