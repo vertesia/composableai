@@ -1,8 +1,8 @@
 import type { ViewNavigationNode } from '@vertesia/common';
-import { Button, Checkbox, SelectBox } from '@vertesia/ui/core';
+import { Button, Checkbox, Input, SelectBox } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { ChevronRight, X } from 'lucide-react';
-import { useId } from 'react';
+import { ChevronRight, Search, X } from 'lucide-react';
+import { type FormEvent, useEffect, useId, useState } from 'react';
 import type { ViewNavigationRendererProps } from './types.js';
 
 function nextSelection(current: string[], id: string, selected: boolean, multiSelect: boolean | undefined): string[] {
@@ -20,7 +20,13 @@ function NodeLabel({ node }: { node: ViewNavigationNode }) {
     );
 }
 
-export function DefaultViewNavigation({ configuration, result, isLoading, onChange }: ViewNavigationRendererProps) {
+export function DefaultViewNavigation({
+    configuration,
+    result,
+    isLoading,
+    onChange,
+    onQueryChange,
+}: ViewNavigationRendererProps) {
     const { t } = useUITranslation();
     const idPrefix = useId();
     const presentation =
@@ -28,9 +34,19 @@ export function DefaultViewNavigation({ configuration, result, isLoading, onChan
         (configuration.source === 'location' || configuration.source === 'hierarchy' ? 'tree' : 'list');
     const multiSelect = configuration.source === 'hierarchy' ? false : configuration.multi_select;
     const breadcrumbs = result.breadcrumbs ?? [];
+    const [draftQuery, setDraftQuery] = useState(result.query ?? '');
+
+    useEffect(() => {
+        setDraftQuery(result.query ?? '');
+    }, [result.query]);
 
     const toggle = (id: string, selected: boolean) => {
         onChange(nextSelection(result.selected, id, selected, multiSelect));
+    };
+
+    const submitQuery = (event: FormEvent) => {
+        event.preventDefault();
+        onQueryChange?.(draftQuery.trim());
     };
 
     return (
@@ -54,7 +70,28 @@ export function DefaultViewNavigation({ configuration, result, isLoading, onChan
                 )}
             </div>
 
-            {configuration.source === 'hierarchy' && breadcrumbs.length > 0 && (
+            {configuration.source === 'collection' && onQueryChange && (
+                <form className="flex items-center gap-1" onSubmit={submitQuery}>
+                    <Input
+                        value={draftQuery}
+                        onChange={setDraftQuery}
+                        disabled={isLoading}
+                        placeholder={t('view.filterNavigation', { label: configuration.label })}
+                        aria-label={t('view.filterNavigation', { label: configuration.label })}
+                    />
+                    <Button
+                        type="submit"
+                        variant="outline"
+                        size="icon"
+                        disabled={isLoading}
+                        aria-label={t('view.searchNavigation', { label: configuration.label })}
+                    >
+                        <Search aria-hidden="true" className="size-4" />
+                    </Button>
+                </form>
+            )}
+
+            {breadcrumbs.length > 0 && (
                 <nav aria-label={`${configuration.label} path`}>
                     <ol className="flex flex-wrap items-center gap-1 text-sm">
                         {breadcrumbs.map((node, index) => (
@@ -77,6 +114,7 @@ export function DefaultViewNavigation({ configuration, result, isLoading, onChan
             )}
 
             {result.selected.length > 0 &&
+                breadcrumbs.length === 0 &&
                 (configuration.source === 'location' || configuration.source === 'collection') && (
                     <div className="flex flex-wrap gap-1">
                         {result.selected.map((value) => {

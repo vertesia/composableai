@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { VertesiaClient } from './client.js';
 
 describe('ViewsApi', () => {
-    it('keeps CRUD on Studio and proxies execution to Zeno', async () => {
+    it('keeps CRUD on Studio and proxies persisted and app-contributed execution to Zeno', async () => {
         const requests: Request[] = [];
         const fetchMock = vi.fn(async () => {
             return new Response(JSON.stringify({}), {
@@ -19,6 +19,7 @@ describe('ViewsApi', () => {
 
         await client.views.retrieve('document-library');
         await client.views.execute('document-library');
+        await client.views.execute('app:content:document-library');
         await client.views.preview({
             configuration: {
                 name: 'Document library',
@@ -30,6 +31,7 @@ describe('ViewsApi', () => {
         expect(requests.map((request) => request.url)).toEqual([
             'https://studio.example.com/api/v1/views/document-library',
             'https://zeno.example.com/api/v1/view-executions/document-library/execute',
+            'https://zeno.example.com/api/v1/view-executions/app%3Acontent%3Adocument-library/execute',
             'https://zeno.example.com/api/v1/view-executions/preview',
         ]);
     });

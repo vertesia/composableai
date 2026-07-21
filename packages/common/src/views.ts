@@ -358,6 +358,8 @@ export interface ExecuteViewRequest {
     query?: string;
     key_terms?: Record<string, string[]>;
     navigation?: Record<string, string[]>;
+    /** Server-side text filters for large navigation sources, keyed by navigation id. */
+    navigation_queries?: Record<string, string>;
     display?: string;
     sort?: string;
     offset?: number;
@@ -427,7 +429,9 @@ export interface ViewNavigationResult {
     id: string;
     selected: string[];
     nodes: ViewNavigationNode[];
-    /** Selected hierarchy path from its root through the current value. */
+    /** Applied server-side node filter, when the navigation source supports it. */
+    query?: string;
+    /** Selected drill-down path from its root through the current value. */
     breadcrumbs?: ViewNavigationNode[];
     truncated?: boolean;
 }

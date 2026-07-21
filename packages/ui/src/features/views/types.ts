@@ -26,6 +26,8 @@ export interface ViewNavigationRendererProps {
     result: ViewNavigationResult;
     isLoading: boolean;
     onChange: (values: string[]) => void;
+    /** Apply a server-side node filter for navigation sources that support it. */
+    onQueryChange?: (query: string) => void;
 }
 
 export interface ViewResultsRendererProps {

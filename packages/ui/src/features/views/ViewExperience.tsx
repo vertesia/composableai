@@ -55,6 +55,15 @@ function cleanRecord(values: Record<string, string[]>): Record<string, string[]>
     return Object.keys(filtered).length > 0 ? filtered : undefined;
 }
 
+function cleanStringRecord(values: Record<string, string>): Record<string, string> | undefined {
+    const filtered = Object.fromEntries(
+        Object.entries(values)
+            .map(([key, value]) => [key, value.trim()] as const)
+            .filter(([, value]) => value.length > 0),
+    );
+    return Object.keys(filtered).length > 0 ? filtered : undefined;
+}
+
 function ViewExperienceWithSession(props: Omit<ViewExperienceProps, 'execute'>) {
     const { client } = useUserSession();
     const execute = useCallback(
@@ -199,6 +208,14 @@ function ViewExperienceRuntime({
         applyRequest({ ...request, navigation: nextNavigation, offset: undefined });
     };
 
+    const updateNavigationQuery = (item: ViewNavigationItem, query: string) => {
+        const navigation_queries = cleanStringRecord({
+            ...(request.navigation_queries ?? {}),
+            [item.id]: query,
+        });
+        applyRequest({ ...request, navigation_queries, offset: undefined });
+    };
+
     const submitSearch = () => {
         applyRequest({
             ...request,
@@ -255,6 +272,7 @@ function ViewExperienceRuntime({
                 result={navigationResult}
                 isLoading={isLoading}
                 onChange={(values) => updateNavigation(item, values)}
+                onQueryChange={item.source === 'collection' ? (query) => updateNavigationQuery(item, query) : undefined}
             />
         );
     });
