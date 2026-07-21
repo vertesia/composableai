@@ -40,6 +40,12 @@ import {
 } from '../workstreams.js';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
+import {
+    AGENT_LINE_CLAMP_CLASS,
+    AGENT_PROSE_CLASS as SUMMARY_PROSE_CLASS,
+    AGENT_COLLAPSE_LINES as SUMMARY_THOUGHT_COLLAPSE_LINES,
+    AGENT_COLLAPSE_THRESHOLD as SUMMARY_THOUGHT_COLLAPSE_THRESHOLD,
+} from './CollapsibleAgentMarkdown.js';
 import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDeliveryStatus';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import {
@@ -332,17 +338,7 @@ function SummaryWorkstreamLaunchMessage({
     );
 }
 
-const SUMMARY_PROSE_CLASS = [
-    'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/80',
-    'prose-p:my-2 prose-p:leading-6 prose-li:my-0.5 prose-pre:my-3 prose-headings:tracking-normal',
-    'prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground',
-    'prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4',
-    '[&_p]:text-foreground/80 [&_li]:text-foreground/80 [&_li::marker]:text-muted',
-].join(' ');
-
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
-const SUMMARY_THOUGHT_COLLAPSE_LINES = 6;
-const SUMMARY_THOUGHT_COLLAPSE_THRESHOLD = 520;
 const STORE_LINK_MARKDOWN_RE =
     /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
 const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
@@ -754,20 +750,22 @@ function SummaryMessage({
                         />
                     </div>
                 )}
-                {questionBody && (
+                {editingAction ? (
+                    // Editing actions read as flat, model-message-style blocks rather than user bubbles.
+                    <div className="mx-auto w-full max-w-3xl px-1">
+                        <DocumentEditingActionCard action={editingAction} />
+                    </div>
+                ) : questionBody ? (
                     <SummaryUserBubble
                         message={message}
                         workstreamId={workstreamId}
                         artifactRunId={runId}
                         onOpenArtifact={onOpenArtifact}
                         markdownComponents={markdownComponents}
-                        className={
-                            editingAction ? 'w-[min(34rem,92%)] max-w-[92%] bg-transparent p-0 shadow-none' : undefined
-                        }
                     >
-                        {editingAction ? <DocumentEditingActionCard action={editingAction} /> : questionBody}
+                        {questionBody}
                     </SummaryUserBubble>
-                )}
+                ) : null}
             </>
         );
     }
@@ -2050,13 +2048,7 @@ function SummaryThoughtProseItem({
         <div className="min-w-0 py-1">
             <div
                 data-testid="summary-thought-prose"
-                className={cn(
-                    SUMMARY_PROSE_CLASS,
-                    isLong &&
-                        !disableCollapse &&
-                        !isExpanded &&
-                        '[display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:6]',
-                )}
+                className={cn(SUMMARY_PROSE_CLASS, isLong && !disableCollapse && !isExpanded && AGENT_LINE_CLAMP_CLASS)}
                 style={{ overflowWrap: 'anywhere' }}
             >
                 <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>

@@ -1,13 +1,8 @@
 import { cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import {
-    diffWordSegments,
-    type MarkdownBlockType,
-    type MarkdownEditingAction,
-    type MarkdownEditingResource,
-} from '@vertesia/ui/widgets';
+import type { MarkdownBlockType, MarkdownEditingAction, MarkdownEditingResource } from '@vertesia/ui/widgets';
 import { CircleCheck, MessageSquareText, PencilLine } from 'lucide-react';
-import { useMemo } from 'react';
+import { CollapsibleAgentMarkdown } from './ModernAgentOutput/CollapsibleAgentMarkdown.js';
 
 const BLOCK_TYPES = new Set<MarkdownBlockType>([
     'heading',
@@ -101,47 +96,13 @@ function resourceLabel(resource: MarkdownEditingResource): string {
     return resource.path;
 }
 
-function SourcePreview({ children, className }: { children: React.ReactNode; className?: string }) {
-    return (
-        <pre
-            className={cn(
-                'm-0 max-h-32 overflow-auto whitespace-pre-wrap rounded-md border border-mixer-muted/20',
-                'bg-background/55 px-2.5 py-2 font-mono text-xs leading-5 text-foreground/80',
-                className,
-            )}
-        >
-            {children}
-        </pre>
-    );
-}
-
-function ChangeDiff({ before, after }: { before: string; after: string }) {
-    const segments = useMemo(() => diffWordSegments(before, after), [before, after]);
-    return (
-        <SourcePreview className="max-h-48">
-            {segments.map((segment, index) => {
-                if (segment.type === 'removed') {
-                    return (
-                        <del
-                            key={index}
-                            className="rounded-xs bg-mixer-destructive/15 text-destructive line-through decoration-destructive/50"
-                        >
-                            {segment.text}
-                        </del>
-                    );
-                }
-                if (segment.type === 'added') {
-                    return (
-                        <ins key={index} className="rounded-xs bg-mixer-success/15 text-success no-underline">
-                            {segment.text}
-                        </ins>
-                    );
-                }
-                return <span key={index}>{segment.text}</span>;
-            })}
-        </SourcePreview>
-    );
-}
+// A referenced block is a preview, not a document title — keep headings at body scale so a heading
+// block doesn't render as a full-size H1 inside a chat bubble, and trim the outer block margins.
+const COMPACT_MARKDOWN_CLASS = [
+    '[&_h1]:text-base [&_h2]:text-base [&_h3]:text-base [&_h4]:text-base [&_h5]:text-base [&_h6]:text-base',
+    '[&_h1]:leading-snug [&_h2]:leading-snug [&_h3]:leading-snug',
+    '[&_:first-child]:mt-0 [&_:last-child]:mb-0',
+].join(' ');
 
 export function DocumentEditingActionCard({ action }: { action: MarkdownEditingAction }) {
     const { t } = useUITranslation();
@@ -149,10 +110,15 @@ export function DocumentEditingActionCard({ action }: { action: MarkdownEditingA
     const isApplied = action.applied === true;
     const blockType = action.anchor.block_type.replaceAll('_', ' ');
     const Icon = isComment ? MessageSquareText : isApplied ? CircleCheck : PencilLine;
+    const artifactRunId = action.resource.kind === 'agent_artifact' ? action.resource.run_id : undefined;
+    // The referenced block: what the comment is about, or the block's content after an edit.
+    const referenceMarkdown = isComment
+        ? action.anchor.exact_text
+        : (action.user_change?.after ?? action.anchor.exact_text);
 
     return (
-        <div className="min-w-0 space-y-1.5 text-start" data-document-edit-action={action.action}>
-            <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted">
+        <div className="min-w-0 space-y-2 text-start" data-document-edit-action={action.action}>
+            <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted">
                 <Icon className={cn('size-3.5 shrink-0', isApplied && 'text-success')} aria-hidden="true" />
                 <span className="shrink-0 font-medium text-foreground">
                     {isComment
@@ -167,19 +133,18 @@ export function DocumentEditingActionCard({ action }: { action: MarkdownEditingA
                 <span className="truncate">{resourceLabel(action.resource)}</span>
             </div>
 
-            {isComment ? (
-                <>
-                    <p className="m-0 whitespace-pre-wrap text-sm leading-5 text-foreground">{action.comment}</p>
-                    <blockquote className="m-0 border-s-2 border-mixer-muted/30 ps-2 text-xs italic text-muted">
-                        {action.anchor.exact_text}
-                    </blockquote>
-                </>
-            ) : (
-                <ChangeDiff
-                    before={action.user_change?.before ?? action.anchor.exact_text}
-                    after={action.user_change?.after ?? ''}
-                />
-            )}
+            {isComment && action.comment ? (
+                <CollapsibleAgentMarkdown artifactRunId={artifactRunId} className={COMPACT_MARKDOWN_CLASS}>
+                    {action.comment}
+                </CollapsibleAgentMarkdown>
+            ) : null}
+
+            <CollapsibleAgentMarkdown
+                artifactRunId={artifactRunId}
+                className={cn('border-s-2 border-mixer-muted/30 ps-3 text-foreground/70', COMPACT_MARKDOWN_CLASS)}
+            >
+                {referenceMarkdown}
+            </CollapsibleAgentMarkdown>
         </div>
     );
 }
