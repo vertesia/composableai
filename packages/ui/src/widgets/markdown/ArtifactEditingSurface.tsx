@@ -1,4 +1,3 @@
-import type { Editor } from '@vertesia/rich-text';
 import { Button, Center, cn, errorMessage, MessageBox, Spinner, useToast, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -9,7 +8,6 @@ import {
     CollaborativeMarkdownRenderer,
     type MarkdownEditingAction,
 } from './CollaborativeMarkdownRenderer.js';
-import { SpanSelectionComment } from './SpanSelectionComment.js';
 import { getTextLineChangeRegions, rebaseTextChanges } from './textDiff.js';
 
 const HYDRATION_RETRY_DELAY_MS = 500;
@@ -195,7 +193,6 @@ export function ArtifactEditingSurface({
     const [loadError, setLoadError] = useState<string | undefined>();
     const [documentConflict, setDocumentConflict] = useState<ArtifactDocumentConflict>();
     const [isResolvingConflict, setIsResolvingConflict] = useState(false);
-    const [documentEditor, setDocumentEditor] = useState<Editor | null>(null);
     const contentRef = useRef(content);
     const generationRef = useRef(generation);
     const loadRequestRef = useRef(0);
@@ -730,13 +727,6 @@ export function ArtifactEditingSurface({
                     }
                 >
                     <div className="flex h-full min-h-0 flex-col">
-                        {onSendMessage ? (
-                            <SpanSelectionComment
-                                editor={documentEditor}
-                                readOnly={readOnly || !runId || Boolean(documentConflict)}
-                                onSend={onSendMessage}
-                            />
-                        ) : null}
                         <div ref={documentEditorContainerRef} className="relative min-h-0 flex-1">
                             <MarkdownDocumentEditor
                                 value={content}
@@ -748,8 +738,10 @@ export function ArtifactEditingSurface({
                                 onEditor={(editor) => {
                                     documentEditorRef.current =
                                         editor as unknown as MarkdownDocumentEditorHandle | null;
-                                    setDocumentEditor((editor as Editor | null) ?? null);
                                 }}
+                                onSendComment={
+                                    onSendMessage && !readOnly && runId && !documentConflict ? onSendMessage : undefined
+                                }
                                 contentClassName="pe-5"
                             />
                             <MarkdownChangeRuler

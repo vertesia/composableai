@@ -108,7 +108,10 @@ export function VertesiaMarkdownComponentEditor({
 
 export interface VertesiaMarkdownDocumentEditorProps
     extends Omit<MarkdownDocumentEditorProps, keyof RichTextRenderers>,
-        VertesiaEditorProps {}
+        VertesiaEditorProps {
+    /** When set, the toolbar shows comment controls that queue and send a batch to the agent. */
+    onSendComment?: (message: string) => void | Promise<void>;
+}
 
 export function VertesiaMarkdownDocumentEditor({
     artifactRunId,
@@ -116,6 +119,7 @@ export function VertesiaMarkdownDocumentEditor({
     contentClassName,
     editorClassName,
     onEditor,
+    onSendComment,
     ...props
 }: VertesiaMarkdownDocumentEditorProps) {
     const { t } = useUITranslation();
@@ -136,7 +140,7 @@ export function VertesiaMarkdownDocumentEditor({
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
             {resolvedEditingMode === 'rich-text' ? (
                 <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
-                    <EditorToolbar editor={editor} />
+                    <EditorToolbar editor={editor} onSendComment={onSendComment} />
                     <MarkdownDocumentEditor
                         {...props}
                         {...vertesiaRichTextRenderers}

@@ -31,7 +31,6 @@ describe('DocumentEditingActionCard', () => {
             </I18nProvider>,
         );
 
-        expect(screen.getByRole('region', { name: 'Document edit request' })).not.toBeNull();
         expect(screen.getByText('Add one concrete example.')).not.toBeNull();
         expect(screen.getByText('list item')).not.toBeNull();
         expect(screen.getByText('Launch plan')).not.toBeNull();

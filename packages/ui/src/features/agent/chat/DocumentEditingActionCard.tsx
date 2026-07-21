@@ -6,7 +6,7 @@ import {
     type MarkdownEditingAction,
     type MarkdownEditingResource,
 } from '@vertesia/ui/widgets';
-import { ChevronDown, ChevronRight, CircleCheck, FilePenLine, MessageSquareText, PencilLine } from 'lucide-react';
+import { CircleCheck, MessageSquareText, PencilLine } from 'lucide-react';
 import { useMemo } from 'react';
 
 const BLOCK_TYPES = new Set<MarkdownBlockType>([
@@ -151,71 +151,35 @@ export function DocumentEditingActionCard({ action }: { action: MarkdownEditingA
     const Icon = isComment ? MessageSquareText : isApplied ? CircleCheck : PencilLine;
 
     return (
-        <section
-            aria-label={t('agent.documentEditCardTitle')}
-            className={cn(
-                'w-full min-w-0 overflow-hidden rounded-lg border text-start shadow-sm',
-                isApplied ? 'border-mixer-success/25 bg-mixer-success/5' : 'border-mixer-info/20 bg-mixer-info/5',
-            )}
-            data-document-edit-action={action.action}
-        >
-            <div className="flex items-center gap-2 px-3 pb-1 pt-2.5">
-                <span
-                    className={cn(
-                        'flex size-7 shrink-0 items-center justify-center rounded-full',
-                        isApplied ? 'bg-mixer-success/15 text-success' : 'bg-mixer-info/15 text-info',
-                    )}
-                >
-                    <Icon className="size-3.5" aria-hidden="true" />
+        <div className="min-w-0 space-y-1.5 text-start" data-document-edit-action={action.action}>
+            <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted">
+                <Icon className={cn('size-3.5 shrink-0', isApplied && 'text-success')} aria-hidden="true" />
+                <span className="shrink-0 font-medium text-foreground">
+                    {isComment
+                        ? t('agent.documentEditCardComment')
+                        : isApplied
+                          ? t('agent.documentEditCardApplied')
+                          : t('agent.documentEditCardDirectEdit')}
                 </span>
-                <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-foreground">
-                        {isComment
-                            ? t('agent.documentEditCardComment')
-                            : isApplied
-                              ? t('agent.documentEditCardApplied')
-                              : t('agent.documentEditCardDirectEdit')}
-                    </div>
-                    <div className="flex min-w-0 items-center gap-1 text-[11px] text-muted">
-                        <FilePenLine className="size-3 shrink-0" aria-hidden="true" />
-                        <span className="shrink-0 capitalize">{blockType}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className="truncate">{resourceLabel(action.resource)}</span>
-                    </div>
-                </div>
+                <span aria-hidden="true">·</span>
+                <span className="shrink-0 capitalize">{blockType}</span>
+                <span aria-hidden="true">·</span>
+                <span className="truncate">{resourceLabel(action.resource)}</span>
             </div>
 
-            <div className="space-y-2.5 px-3 py-3">
-                {isComment ? (
+            {isComment ? (
+                <>
                     <p className="m-0 whitespace-pre-wrap text-sm leading-5 text-foreground">{action.comment}</p>
-                ) : (
-                    <ChangeDiff
-                        before={action.user_change?.before ?? action.anchor.exact_text}
-                        after={action.user_change?.after ?? ''}
-                    />
-                )}
-
-                {isComment ? (
-                    <details className="group">
-                        <summary
-                            className={cn(
-                                'flex cursor-pointer select-none list-none items-center gap-1 rounded text-xs',
-                                'font-medium text-muted transition-colors hover:text-foreground',
-                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mixer-info/40',
-                                '[&::-webkit-details-marker]:hidden',
-                            )}
-                        >
-                            <ChevronRight
-                                className="cn-rtl-flip size-3.5 shrink-0 group-open:hidden"
-                                aria-hidden="true"
-                            />
-                            <ChevronDown className="hidden size-3.5 shrink-0 group-open:block" aria-hidden="true" />
-                            {t('agent.documentEditCardSelectedContent')}
-                        </summary>
-                        <SourcePreview className="mt-1.5">{action.anchor.exact_text}</SourcePreview>
-                    </details>
-                ) : null}
-            </div>
-        </section>
+                    <blockquote className="m-0 border-s-2 border-mixer-muted/30 ps-2 text-xs italic text-muted">
+                        {action.anchor.exact_text}
+                    </blockquote>
+                </>
+            ) : (
+                <ChangeDiff
+                    before={action.user_change?.before ?? action.anchor.exact_text}
+                    after={action.user_change?.after ?? ''}
+                />
+            )}
+        </div>
     );
 }
