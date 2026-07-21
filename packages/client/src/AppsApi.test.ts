@@ -1,7 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
 import { VertesiaClient } from './client.js';
 
-describe('AppsApi repository files', () => {
+describe('AppsApi', () => {
+    it('starts an in-place version rebuild without a caller-controlled payload', async () => {
+        const requests: Request[] = [];
+        const fetchMock = vi.fn(async () =>
+            Response.json({
+                workflow_id: 'workflow-1',
+                run_id: 'run-1',
+                app_id: 'sample-app',
+                version_id: 'version-1',
+                rebuild_version_record_id: 'record-1',
+            }),
+        );
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: fetchMock,
+            onRequest: (request) => requests.push(request),
+        });
+
+        const result = await client.apps.rebuildVersion('record-1');
+
+        expect(result.version_id).toBe('version-1');
+        expect(requests[0]?.method).toBe('POST');
+        expect(requests[0]?.url).toBe('https://studio.example.com/api/v1/apps/versions/record-1/rebuild');
+    });
+
     it('returns the original response bytes and content type', async () => {
         const requests: Request[] = [];
         const bytes = new Uint8Array([0, 255, 10, 42]);

@@ -574,6 +574,8 @@ export interface AppVersionRecord {
 }
 
 export interface UpsertAppVersionRequest {
+    /** Existing version record to update in place, used by reproducible rebuilds. */
+    record_id?: string;
     app?: string;
     app_id: string;
     app_name?: string;
@@ -629,6 +631,8 @@ export interface StartAppBuildResponse {
     workflow_id: string;
     run_id: string;
     app_id: string;
+    version_id?: string;
+    rebuild_version_record_id?: string;
     source_ref?: string;
     source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
 }
@@ -636,6 +640,8 @@ export interface StartAppBuildResponse {
 export interface AppBuildWorkflowInput extends StartAppBuildRequest {
     app_id: string;
     app_record_id?: string;
+    /** Rebuild this persisted version record at its original commit and target. */
+    rebuild_version_record_id?: string;
     app_title?: string;
     app_description?: string;
     source_git_url?: string;

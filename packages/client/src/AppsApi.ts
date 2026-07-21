@@ -91,6 +91,10 @@ export default class AppsApi extends ApiTopic {
         return this.post(`/versions/${recordId}/promote`);
     }
 
+    rebuildVersion(recordId: string): Promise<StartAppBuildResponse> {
+        return this.post(`/versions/${recordId}/rebuild`);
+    }
+
     startBuild(appIdOrRecordId: string, payload: StartAppBuildRequest): Promise<StartAppBuildResponse> {
         return this.post(`/${encodeURIComponent(appIdOrRecordId)}/builds`, { payload });
     }
