@@ -40,6 +40,6 @@ describe('TextEditorPanel', () => {
 
         expect(await screen.findByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
         expect(screen.getByRole('heading', { name: 'Editable document' })).not.toBeNull();
-        expect(screen.getByRole('combobox', { name: 'Block style' })).not.toBeNull();
+        expect(await screen.findByRole('toolbar')).not.toBeNull();
     });
 });
