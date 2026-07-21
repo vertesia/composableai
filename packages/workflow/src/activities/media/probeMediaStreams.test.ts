@@ -2,11 +2,8 @@ import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-<<<<<<< HEAD
 import type { ActivityContext } from '../../dsl/setup/ActivityContext.js';
-=======
 import { execActivityFile } from './exec.js';
->>>>>>> 82a63d92 (fix(workflow): ffmpeg progress-stall watchdog for media activities (#1771))
 import { type ProbeMediaStreamsParams, type ProbeMediaStreamsResult, probeMediaStreams } from './probeMediaStreams.js';
 
 vi.mock('../../dsl/setup/ActivityContext.js', async (importOriginal) => {
