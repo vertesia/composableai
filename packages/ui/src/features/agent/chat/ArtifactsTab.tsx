@@ -17,6 +17,14 @@ import {
 import React, { useCallback, useId, useMemo, useState } from 'react';
 import { type ArtifactTreeNode, useArtifacts } from './hooks/useArtifacts.js';
 
+/** Artifact file extensions that open in the Markdown editor rather than downloading. */
+const EDITABLE_ARTIFACT_EXTENSIONS = new Set(['md', 'markdown', 'mdx', 'txt']);
+
+function isEditableArtifact(path: string): boolean {
+    const extension = path.split('.').pop()?.toLowerCase();
+    return extension !== undefined && EDITABLE_ARTIFACT_EXTENSIONS.has(extension);
+}
+
 // ---------------------------------------------------------------------------
 // Tree node component
 // ---------------------------------------------------------------------------
@@ -303,7 +311,7 @@ function ArtifactsTabComponent({
 
     const handleOpen = useCallback(
         (relativePath: string) => {
-            if (/\.md$/i.test(relativePath)) {
+            if (isEditableArtifact(relativePath)) {
                 setSelectedPath(relativePath);
                 return;
             }
