@@ -187,7 +187,9 @@ describe('ArtifactEditingSurface', () => {
         const view = renderSurface({ viewMode: 'document' });
 
         fireEvent.click(await screen.findByRole('button', { name: 'Edit Markdown source' }));
-        fireEvent.change(screen.getByRole('textbox', { name: 'Markdown source editor' }), {
+        const sourceEditor = screen.getByRole('textbox', { name: 'Markdown source editor' });
+        fireEvent.focus(sourceEditor);
+        fireEvent.change(sourceEditor, {
             target: { value: 'Updated heading\n===============' },
         });
         expect(mocks.updateArtifactContent).not.toHaveBeenCalled();

@@ -124,6 +124,9 @@ interface MarkdownDocumentEditorHandle {
     };
 }
 
+/** Working-copy save state of the document editor. `idle` means nothing to show. */
+export type ArtifactSaveStatus = 'idle' | 'saving' | 'saved';
+
 export interface ArtifactEditingSurfaceProps {
     runId?: string;
     path: string;
@@ -140,6 +143,12 @@ export interface ArtifactEditingSurfaceProps {
     onSendMessage?: (message: string) => void | Promise<void>;
     onContentChange?: (content: string, generation?: string) => void;
     onDocumentEdit?: () => void;
+    /**
+     * Reports document-editor save state so a parent can render its own indicator
+     * (e.g. next to the file name). When provided, the built-in floating badge is
+     * suppressed and the parent owns the display.
+     */
+    onSaveStatusChange?: (status: ArtifactSaveStatus) => void;
     /**
      * Imperative flush used before handing direct full-document edits to the agent.
      * Resolves false when the flush failed; otherwise returns the delta since the
@@ -178,6 +187,7 @@ export function ArtifactEditingSurface({
     onSendMessage,
     onContentChange,
     onDocumentEdit,
+    onSaveStatusChange,
     flushChangesRef,
 }: ArtifactEditingSurfaceProps) {
     const { client } = useUserSession();
@@ -193,6 +203,21 @@ export function ArtifactEditingSurface({
     const [loadError, setLoadError] = useState<string | undefined>();
     const [documentConflict, setDocumentConflict] = useState<ArtifactDocumentConflict>();
     const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+
+    // Working-copy save state for the document editor, shared with the built-in badge and
+    // optionally reported to a parent that renders its own indicator.
+    const saveStatus: ArtifactSaveStatus =
+        viewMode !== 'document' || documentConflict
+            ? 'idle'
+            : isSavingDocument || isDocumentSavePending
+              ? 'saving'
+              : generation
+                ? 'saved'
+                : 'idle';
+    useEffect(() => {
+        onSaveStatusChange?.(saveStatus);
+    }, [saveStatus, onSaveStatusChange]);
+
     const contentRef = useRef(content);
     const generationRef = useRef(generation);
     const loadRequestRef = useRef(0);
@@ -202,6 +227,11 @@ export function ArtifactEditingSurface({
     const documentSavePromiseRef = useRef<Promise<boolean> | undefined>(undefined);
     const persistPendingDocumentContentRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
     const documentEditorFocusedRef = useRef(false);
+    // Latches true once the user focuses the editor. The editor re-serializes (normalizes) the
+    // loaded Markdown when it mounts — e.g. after switching into edit mode — which fires an onChange
+    // that is NOT a user edit. We ignore those pre-interaction changes so they don't autosave the
+    // artifact or post a spurious "working copy updated" message to the chat.
+    const documentEditorInteractedRef = useRef(false);
     const documentEditorRef = useRef<MarkdownDocumentEditorHandle | null>(null);
     const documentBaseGenerationRef = useRef<string | undefined>(generation);
     const documentBaseContentRef = useRef(initialContent);
@@ -229,6 +259,15 @@ export function ArtifactEditingSurface({
     useEffect(() => {
         generationRef.current = generation;
     }, [generation]);
+
+    // Entering edit mode mounts a fresh editor that re-serializes the loaded content. Require a new
+    // user focus before those serialization changes count as edits. Keyed on viewMode (a stable
+    // trigger) — not the per-render onEditor callback, which would reset the latch mid-typing.
+    useEffect(() => {
+        if (viewMode !== 'document') return;
+        documentEditorInteractedRef.current = false;
+        documentEditorFocusedRef.current = false;
+    }, [viewMode]);
 
     const loadContent = useCallback(
         async (allowHydrationRetry: boolean) => {
@@ -293,6 +332,7 @@ export function ArtifactEditingSurface({
         documentBaseContentRef.current = initialContent;
         documentConflictRef.current = undefined;
         documentEditorFocusedRef.current = false;
+        documentEditorInteractedRef.current = false;
         setContent(initialContent);
         setGeneration(undefined);
         setHighlightChangesFrom(undefined);
@@ -603,6 +643,13 @@ export function ArtifactEditingSurface({
     const handleDocumentChange = useCallback(
         (nextContent: string) => {
             if (nextContent === contentRef.current) return;
+            // The editor normalizes loaded Markdown on mount, firing onChange before the user has
+            // touched it. Adopt that serialization as the baseline silently — no save, no message.
+            if (!documentEditorInteractedRef.current) {
+                contentRef.current = nextContent;
+                setContent(nextContent);
+                return;
+            }
             contentRef.current = nextContent;
             setContent(nextContent);
             onDocumentEdit?.();
@@ -628,6 +675,7 @@ export function ArtifactEditingSurface({
 
     const handleDocumentFocusChange = useCallback((focused: boolean) => {
         documentEditorFocusedRef.current = focused;
+        if (focused) documentEditorInteractedRef.current = true;
         if (focused) {
             documentBaseGenerationRef.current = generationRef.current;
             documentBaseContentRef.current = contentRef.current;
@@ -749,7 +797,7 @@ export function ArtifactEditingSurface({
                                 totalLines={documentLineCount}
                                 onNavigate={navigateToChangedLine}
                             />
-                            {!documentConflict && (generation || isSavingDocument || isDocumentSavePending) ? (
+                            {!onSaveStatusChange && saveStatus !== 'idle' ? (
                                 <div
                                     className={cn(
                                         'pointer-events-none absolute bottom-3 end-6 flex items-center gap-1.5 rounded-full',

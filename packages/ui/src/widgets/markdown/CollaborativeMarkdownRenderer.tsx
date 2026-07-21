@@ -465,7 +465,10 @@ function createBlockComponent(
             !highlightChangesFrom?.includes(anchor.exact_text);
         const containerClassName = cn(
             'group/collab relative rounded-md border transition-colors duration-700',
-            '-mx-2 px-2',
+            // Negative margins keep the document's flow spacing while giving the hover/selection box
+            // padding on all sides — otherwise text (notably the first block, whose prose margin-top
+            // is 0) sits flush against the top of its highlight box.
+            '-mx-2 -my-1 px-2 py-1',
             isSelected
                 ? 'border-info bg-mixer-info/5'
                 : isAnchorable

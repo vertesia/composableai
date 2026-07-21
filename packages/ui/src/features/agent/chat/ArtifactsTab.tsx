@@ -1,9 +1,10 @@
-import { Button, Center, ErrorBox, Input } from '@vertesia/ui/core';
+import { Button, Center, cn, ErrorBox, Input, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { ArtifactEditingSurface, type MarkdownEditingAction } from '@vertesia/ui/widgets';
+import { ArtifactEditingSurface, type ArtifactSaveStatus, type MarkdownEditingAction } from '@vertesia/ui/widgets';
 import {
     ArrowLeftIcon,
+    CheckIcon,
     ChevronDownIcon,
     ChevronRightIcon,
     DownloadIcon,
@@ -12,7 +13,9 @@ import {
     FolderOpenIcon,
     Loader2Icon,
     PackageIcon,
+    PenLineIcon,
     RefreshCwIcon,
+    Rows3Icon,
 } from 'lucide-react';
 import React, { useCallback, useId, useMemo, useState } from 'react';
 import { type ArtifactTreeNode, useArtifacts } from './hooks/useArtifacts.js';
@@ -199,6 +202,8 @@ function ArtifactMarkdownEditor({
     onSendMessage,
 }: ArtifactMarkdownEditorProps) {
     const { t } = useUITranslation();
+    const [viewMode, setViewMode] = useState<'components' | 'document'>('document');
+    const [saveStatus, setSaveStatus] = useState<ArtifactSaveStatus>('idle');
 
     const handleAction = (action: MarkdownEditingAction) => {
         if (!onSendMessage) return;
@@ -209,24 +214,65 @@ function ArtifactMarkdownEditor({
 
     return (
         <div className="flex h-full min-h-0 flex-col">
-            <div className="flex shrink-0 items-center gap-1 border-b border-mixer-muted/20 px-2 py-1">
+            <div className="flex shrink-0 items-center gap-1 border-b border-border/60 px-2 py-1">
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0"
+                    className="size-8 shrink-0 rounded-md p-0"
                     onClick={onBack}
                     aria-label={t('agent.backToArtifacts')}
                     title={t('agent.backToArtifacts')}
                 >
                     <ArrowLeftIcon className="size-4 cn-rtl-flip" />
                 </Button>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium" title={path}>
-                    {path.split('/').pop()}
-                </span>
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <span className="truncate text-sm font-medium" title={path}>
+                        {path.split('/').pop()}
+                    </span>
+                    {saveStatus === 'saving' ? (
+                        <VTooltip description={t('agent.savingWorkingCopy')} asChild>
+                            <Loader2Icon
+                                className="size-3.5 shrink-0 animate-spin text-muted"
+                                aria-label={t('agent.savingWorkingCopy')}
+                            />
+                        </VTooltip>
+                    ) : saveStatus === 'saved' ? (
+                        <VTooltip description={t('agent.savedToWorkingCopy')} asChild>
+                            <CheckIcon
+                                className="size-3.5 shrink-0 text-success"
+                                aria-label={t('agent.savedToWorkingCopy')}
+                            />
+                        </VTooltip>
+                    ) : null}
+                </div>
+                <div className="flex items-center gap-0.5">
+                    <Button
+                        variant={viewMode === 'components' ? 'primary' : 'ghost'}
+                        size="sm"
+                        className="size-8 shrink-0 rounded-md p-0"
+                        onClick={() => setViewMode('components')}
+                        aria-label={t('agent.blockMode')}
+                        aria-pressed={viewMode === 'components'}
+                        title={t('agent.blockMode')}
+                    >
+                        <Rows3Icon className="size-4" />
+                    </Button>
+                    <Button
+                        variant={viewMode === 'document' ? 'primary' : 'ghost'}
+                        size="sm"
+                        className="size-8 shrink-0 rounded-md p-0"
+                        onClick={() => setViewMode('document')}
+                        aria-label={t('agent.editMode')}
+                        aria-pressed={viewMode === 'document'}
+                        title={t('agent.editMode')}
+                    >
+                        <PenLineIcon className="size-4" />
+                    </Button>
+                </div>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0"
+                    className="size-8 shrink-0 rounded-md p-0"
                     onClick={() => onDownload(path)}
                     aria-label={t('agent.download')}
                     title={t('agent.download')}
@@ -237,13 +283,18 @@ function ArtifactMarkdownEditor({
             <ArtifactEditingSurface
                 runId={runId}
                 path={path}
-                viewMode="document"
+                viewMode={viewMode}
                 refreshKey={refreshKey}
                 refreshDetails={refreshDetails}
                 readOnly={!onSendMessage}
                 onAction={handleAction}
+                onSaveStatusChange={setSaveStatus}
                 onSendMessage={onSendMessage ? (message) => onSendMessage(message) : undefined}
-                className="relative min-h-0 flex-1 overflow-hidden"
+                className={cn(
+                    'relative min-h-0 flex-1',
+                    // Edit mode self-scrolls; block mode needs the surface to scroll and pad its blocks.
+                    viewMode === 'document' ? 'overflow-hidden' : 'overflow-y-auto px-6 py-5',
+                )}
             />
         </div>
     );

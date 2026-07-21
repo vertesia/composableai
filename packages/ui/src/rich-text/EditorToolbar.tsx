@@ -460,10 +460,13 @@ export function EditorToolbar({ editor, className, onSendComment }: EditorToolba
                                 size="sm"
                                 onMouseDown={retainSelection}
                                 onClick={startComment}
-                                className={cn('h-8 gap-1 px-2 text-xs text-foreground', !hasSelection && 'opacity-60')}
+                                aria-label={t('agent.commentOnSelection')}
+                                className={cn(
+                                    'size-8 shrink-0 rounded-md p-0 text-foreground hover:bg-muted/60',
+                                    !hasSelection && 'opacity-60',
+                                )}
                             >
                                 <MessageSquarePlus className="size-4" />
-                                {t('agent.commentOnSelection')}
                             </Button>
                         </VTooltip>
                         {pending.length > 0 ? (

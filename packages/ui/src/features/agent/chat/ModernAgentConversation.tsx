@@ -70,6 +70,7 @@ import {
     getConversationUrl,
     getWorkstreamId,
     isInProgress,
+    isPassiveArtifactUpdate,
 } from './ModernAgentOutput/utils';
 import {
     type AgentChatPlaybackCursor,
@@ -1571,9 +1572,10 @@ function ModernAgentConversationInner({
     const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
     const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
     const playbackSourceMessages = useMemo(() => {
-        const visibleMessages = hiddenMessageTypes?.length
-            ? messages.filter((message) => !hiddenMessageTypes.includes(message.type))
-            : messages;
+        // Passive artifact autosaves are surfaced by the editor's own save indicator, not the chat.
+        const visibleMessages = messages.filter(
+            (message) => !isPassiveArtifactUpdate(message) && !(hiddenMessageTypes?.includes(message.type) ?? false),
+        );
         return filterMessagesForActiveWorkstream(visibleMessages, activeWorkstream);
     }, [activeWorkstream, hiddenMessageTypes, messages]);
     const playbackState = useMemo(
@@ -1704,15 +1706,6 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     // Stable callbacks
     // ────────────────────────────────────────────
-    const handleTogglePlanPanel = useCallback(() => {
-        setShowSlidingPanel((prev: boolean) => {
-            if (!prev) {
-                sessionStorage.setItem('plan-panel-shown', 'true');
-            }
-            return !prev;
-        });
-    }, [setShowSlidingPanel]);
-
     const handleChangePlan = useCallback(
         (index: number) => {
             setActivePlanIndex(index);
@@ -1730,14 +1723,40 @@ function ModernAgentConversationInner({
     const [selectedArtifactPath, setSelectedArtifactPath] = useState<string | null>(null);
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
+    // Master override for the "Toggle right sidebar" control. `showSlidingPanel` only tracks the
+    // plan; open documents/workstreams keep the panel visible on their own, so without this the
+    // toggle can't hide the panel while a document is open. Explicit reveals (opening an artifact
+    // or document) clear it again.
+    const [rightPanelManuallyClosed, setRightPanelManuallyClosed] = useState(false);
 
     const isRightPanelVisible =
         showRightPanelProp &&
+        !rightPanelManuallyClosed &&
         (showSlidingPanel ||
             isDocPanelOpen ||
             (!hideWorkstreamTabs && panelWorkstreams.length > 0) ||
             !!conversationContent ||
             conversationTab);
+
+    // A newly opened document should reveal the panel even if the user had manually collapsed it.
+    const previousDocPanelOpenRef = useRef(isDocPanelOpen);
+    useEffect(() => {
+        if (isDocPanelOpen && !previousDocPanelOpenRef.current) {
+            setRightPanelManuallyClosed(false);
+        }
+        previousDocPanelOpenRef.current = isDocPanelOpen;
+    }, [isDocPanelOpen]);
+
+    const handleTogglePlanPanel = useCallback(() => {
+        if (isRightPanelVisible) {
+            setRightPanelManuallyClosed(true);
+            setShowSlidingPanel(false);
+        } else {
+            setRightPanelManuallyClosed(false);
+            setShowSlidingPanel(true);
+            sessionStorage.setItem('plan-panel-shown', 'true');
+        }
+    }, [isRightPanelVisible, setShowSlidingPanel]);
 
     useEffect(() => {
         if (!isRightPanelVisible && isRightPanelResizing) {
@@ -1780,6 +1799,7 @@ function ModernAgentConversationInner({
     }, [isRightPanelResizing]);
 
     const handleCloseRightPanel = useCallback(() => {
+        setRightPanelManuallyClosed(true);
         setShowSlidingPanel(false);
         handleCloseDocPanel();
     }, [setShowSlidingPanel, handleCloseDocPanel]);
@@ -1787,6 +1807,7 @@ function ModernAgentConversationInner({
     const handleOpenArtifact = useCallback(
         (path: string) => {
             if (!/\.md$/i.test(path)) return;
+            setRightPanelManuallyClosed(false);
             setSelectedArtifactPath(path);
             setRightPanelTab('artifacts');
             setShowSlidingPanel(true);
@@ -1810,6 +1831,7 @@ function ModernAgentConversationInner({
         }
         if (!target || !marker || marker === displayedArtifactMarkerRef.current) return;
         displayedArtifactMarkerRef.current = marker;
+        setRightPanelManuallyClosed(false);
         setSelectedArtifactPath(target);
         setRightPanelTab('artifacts');
         setShowSlidingPanel(true);
@@ -2497,7 +2519,7 @@ function ModernAgentConversationInner({
             workflowRunId={workflowRunId || ''}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            showPlanPanel={showRightPanelProp && showSlidingPanel}
+            showPlanPanel={isRightPanelVisible}
             hasPlan={showRightPanelProp && plans.length > 0}
             showPlanButton={showRightPanelProp && !conversationTab}
             onTogglePlanPanel={handleTogglePlanPanel}

@@ -7,6 +7,7 @@ export {
     ArtifactEditingSurface,
     type ArtifactEditingSurfaceDocumentEdit,
     type ArtifactEditingSurfaceProps,
+    type ArtifactSaveStatus,
     applyArtifactRefreshChanges,
     isArtifactRefreshEvent,
 } from './ArtifactEditingSurface';

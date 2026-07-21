@@ -138,7 +138,7 @@ describe('AllMessagesMixed summary view', () => {
             }),
         ]);
 
-        expect(screen.getByRole('region', { name: 'Document edit request' })).not.toBeNull();
+        expect(document.querySelector('[data-document-edit-action="comment"]')).not.toBeNull();
         expect(screen.getByText('Add one concrete example.')).not.toBeNull();
         expect(screen.queryByText('operation-1')).toBeNull();
     });
