@@ -187,16 +187,16 @@ export default class AppsApi extends ApiTopic {
     }
 
     /**
-     * List commits that inserted or changed a file, newest first. The history starts
-     * at the default branch unless a branch, tag, or commit SHA is supplied as `ref`.
+     * List repository commits newest first, optionally filtered to commits that changed a file.
+     * History starts at the default branch unless a branch, tag, or commit SHA is supplied as `ref`.
      */
     getRepoCommits(
         appIdOrName: string,
-        path: string,
-        options?: { ref?: string; limit?: number },
+        path?: string,
+        options?: { ref?: string; limit?: number; cursor?: string },
     ): Promise<AppRepoCommits> {
         return this.get(`/${encodeURIComponent(appIdOrName)}/repo/commits`, {
-            query: { path, ref: options?.ref, limit: options?.limit },
+            query: { path, ref: options?.ref, limit: options?.limit, cursor: options?.cursor },
         });
     }
 

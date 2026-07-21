@@ -1008,14 +1008,16 @@ export interface AppRepoCommit {
     date?: string;
 }
 
-/** File-specific commit history in an app git repository. */
+/** Commit history in an app git repository, optionally filtered to a file. */
 export interface AppRepoCommits {
     /** Ref from which history traversal started (empty/undefined = default branch / HEAD). */
     ref?: string;
-    /** File path relative to the repository root. */
-    path: string;
+    /** File path relative to the repository root, when history was filtered to a file. */
+    path?: string;
     /** Commits ordered newest first. */
     commits: AppRepoCommit[];
+    /** Pass this cursor to retrieve the next page. Absent when history is exhausted. */
+    next_cursor?: string;
 }
 
 /** A branch or tag in an app git repo, resolved to its latest commit. */
