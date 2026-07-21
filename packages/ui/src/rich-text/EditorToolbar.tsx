@@ -45,6 +45,13 @@ interface EditorChain {
     toggleCodeBlock(): EditorChain;
     setHorizontalRule(): EditorChain;
     insertTable(attrs: { rows: number; cols: number; withHeaderRow: boolean }): EditorChain;
+    addRowBefore(): EditorChain;
+    addRowAfter(): EditorChain;
+    deleteRow(): EditorChain;
+    addColumnBefore(): EditorChain;
+    addColumnAfter(): EditorChain;
+    deleteColumn(): EditorChain;
+    deleteTable(): EditorChain;
     undo(): EditorChain;
     redo(): EditorChain;
 }
@@ -93,7 +100,10 @@ function ToolButton({
             disabled={disabled}
             onMouseDown={retainSelection}
             onClick={onClick}
-            className={cn('size-8 shrink-0 p-0 text-muted', active && 'bg-info/15 text-info hover:text-info')}
+            className={cn(
+                'size-8 shrink-0 rounded-md p-0 text-foreground hover:bg-muted/60',
+                active && 'bg-muted text-foreground',
+            )}
         >
             <Icon className="size-4" />
         </Button>
@@ -127,6 +137,7 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
               : headingLevel === 3
                 ? t('richText.heading3')
                 : t('richText.paragraph');
+    const inTable = editor.isActive('table');
 
     return (
         <div
@@ -137,16 +148,31 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
                 className,
             )}
         >
+            <ToolButton
+                icon={Undo2}
+                label={t('richText.undo')}
+                disabled={!canChain(editor).focus().undo().run()}
+                onClick={() => chain(editor).focus().undo().run()}
+            />
+            <ToolButton
+                icon={Redo2}
+                label={t('richText.redo')}
+                disabled={!canChain(editor).focus().redo().run()}
+                onClick={() => chain(editor).focus().redo().run()}
+            />
+
+            <Divider />
+
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button
                         variant="ghost"
                         size="sm"
                         onMouseDown={retainSelection}
-                        className="h-8 shrink-0 gap-1 px-2 text-xs font-medium text-muted"
+                        className="h-8 shrink-0 gap-1 px-2 text-xs font-medium text-foreground hover:bg-muted/60"
                     >
                         {blockLabel}
-                        <ChevronDown className="size-3" />
+                        <ChevronDown className="size-3 opacity-60" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
@@ -226,27 +252,58 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
                 label={t('richText.horizontalRule')}
                 onClick={() => chain(editor).focus().setHorizontalRule().run()}
             />
-            <ToolButton
-                icon={Table}
-                label={t('richText.table')}
-                disabled={editor.isActive('table')}
-                onClick={() => chain(editor).focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-            />
-
-            <div className="ms-auto flex items-center gap-0.5">
-                <ToolButton
-                    icon={Undo2}
-                    label={t('richText.undo')}
-                    disabled={!canChain(editor).focus().undo().run()}
-                    onClick={() => chain(editor).focus().undo().run()}
-                />
-                <ToolButton
-                    icon={Redo2}
-                    label={t('richText.redo')}
-                    disabled={!canChain(editor).focus().redo().run()}
-                    onClick={() => chain(editor).focus().redo().run()}
-                />
-            </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t('richText.tableActions')}
+                        title={inTable ? t('richText.tableActions') : t('richText.table')}
+                        onMouseDown={retainSelection}
+                        className={cn(
+                            'size-8 shrink-0 rounded-md p-0 text-foreground hover:bg-muted/60',
+                            inTable && 'bg-muted',
+                        )}
+                    >
+                        <Table className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                    {inTable ? (
+                        <>
+                            <DropdownMenuItem onClick={() => chain(editor).focus().addRowBefore().run()}>
+                                {t('richText.addRowAbove')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => chain(editor).focus().addRowAfter().run()}>
+                                {t('richText.addRowBelow')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => chain(editor).focus().deleteRow().run()}>
+                                {t('richText.deleteRow')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => chain(editor).focus().addColumnBefore().run()}>
+                                {t('richText.addColumnLeft')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => chain(editor).focus().addColumnAfter().run()}>
+                                {t('richText.addColumnRight')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => chain(editor).focus().deleteColumn().run()}>
+                                {t('richText.deleteColumn')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => chain(editor).focus().deleteTable().run()}>
+                                {t('richText.deleteTable')}
+                            </DropdownMenuItem>
+                        </>
+                    ) : (
+                        <DropdownMenuItem
+                            onClick={() =>
+                                chain(editor).focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+                            }
+                        >
+                            {t('richText.table')}
+                        </DropdownMenuItem>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
     );
 }

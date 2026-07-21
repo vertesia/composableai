@@ -123,6 +123,6 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
     });
 
-    // Table row/column editing and list indent/outdent are intentionally not in the clean toolbar
-    // (list nesting works via Tab / Shift-Tab; table structure editing is a planned context menu).
+    // Table row/column actions live in the toolbar's Table context dropdown (only when the caret is
+    // in a table); list indent/outdent is handled by Tab / Shift-Tab rather than a toolbar control.
 });
