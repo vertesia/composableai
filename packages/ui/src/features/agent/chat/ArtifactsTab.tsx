@@ -242,6 +242,7 @@ function ArtifactMarkdownEditor({
                 refreshDetails={refreshDetails}
                 readOnly={!onSendMessage}
                 onAction={handleAction}
+                onSendMessage={onSendMessage ? (message) => onSendMessage(message) : undefined}
                 className="relative min-h-0 flex-1 overflow-hidden"
             />
         </div>

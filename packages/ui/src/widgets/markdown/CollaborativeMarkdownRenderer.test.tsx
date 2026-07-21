@@ -346,11 +346,11 @@ describe('collaborative Markdown actions', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Edit selection' }));
         const editor = await screen.findByRole('textbox');
-        // Wait for the draft to hydrate, then triple-click to select the whole paragraph so the
-        // retype replaces it cleanly.
+        // Wait for the draft to hydrate, then select the whole paragraph and paste the replacement
+        // in one operation — char-by-char typing races ProseMirror in jsdom and drops chars.
         await waitFor(() => expect(editor.textContent ?? '').toContain('Original paragraph.'));
         await user.tripleClick(editor);
-        await user.type(editor, 'Revised paragraph.');
+        await user.paste('Revised paragraph.');
         fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
         await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));
@@ -384,8 +384,9 @@ describe('collaborative Markdown actions', () => {
 
         const editor = await screen.findByRole('textbox');
         await user.click(editor);
-        await user.keyboard('{Control>}a{/Control}');
-        await user.type(editor, 'Inserted paragraph.');
+        // Paste in one operation — char-by-char typing races ProseMirror in jsdom and drops chars.
+        await user.paste('Inserted paragraph.');
+        await waitFor(() => expect(editor.textContent ?? '').toContain('Inserted paragraph.'));
         fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
         await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));

@@ -138,6 +138,8 @@ export interface ArtifactEditingSurfaceProps {
     baselineContent?: string;
     className?: string;
     onAction?: (action: MarkdownEditingAction) => void | Promise<void>;
+    /** Send a composed batch of span comments to the agent as one conversation message. */
+    onSendMessage?: (message: string) => void | Promise<void>;
     onContentChange?: (content: string, generation?: string) => void;
     onDocumentEdit?: () => void;
     /**
@@ -175,6 +177,7 @@ export function ArtifactEditingSurface({
     baselineContent,
     className,
     onAction,
+    onSendMessage,
     onContentChange,
     onDocumentEdit,
     flushChangesRef,
@@ -727,13 +730,11 @@ export function ArtifactEditingSurface({
                     }
                 >
                     <div className="flex h-full min-h-0 flex-col">
-                        {onAction ? (
+                        {onSendMessage ? (
                             <SpanSelectionComment
                                 editor={documentEditor}
-                                resource={{ kind: 'agent_artifact', run_id: runId ?? 'pending', path }}
-                                baseVersion={generation}
                                 readOnly={readOnly || !runId || Boolean(documentConflict)}
-                                onAction={handleAction}
+                                onSend={onSendMessage}
                             />
                         ) : null}
                         <div ref={documentEditorContainerRef} className="relative min-h-0 flex-1">
