@@ -1,6 +1,5 @@
 import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch-client';
 import type {
-    ActivateAppVersionResponse,
     AppBuildProgress,
     AppDeleteSummary,
     AppInspectionResult,
@@ -23,6 +22,7 @@ import type {
     AppVersionRecord,
     CountResult,
     ProjectRef,
+    PromoteAppVersionResponse,
     RequireAtLeastOne,
     StartAppBuildRequest,
     StartAppBuildResponse,
@@ -87,8 +87,8 @@ export default class AppsApi extends ApiTopic {
         return this.get(`/versions/${recordId}`);
     }
 
-    activateVersion(recordId: string): Promise<ActivateAppVersionResponse> {
-        return this.post(`/versions/${recordId}/activate`);
+    promoteVersion(recordId: string): Promise<PromoteAppVersionResponse> {
+        return this.post(`/versions/${recordId}/promote`);
     }
 
     startBuild(appIdOrRecordId: string, payload: StartAppBuildRequest): Promise<StartAppBuildResponse> {
@@ -210,7 +210,7 @@ export default class AppsApi extends ApiTopic {
     }
 
     /**
-     * Get the published package an app exposes, filtered by scope. App-owned (in-code) artifacts are
+     * Get the promoted package an app exposes, filtered by scope. App-owned (in-code) artifacts are
      * package-resolved (no per-id route), so this is how a client reads the full definition — type
      * schema, interaction prompt, process definition, dashboard spec — to visualize an exposed id.
      */

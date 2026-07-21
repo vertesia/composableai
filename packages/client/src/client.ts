@@ -245,7 +245,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     /**
      * Pin the app version this client's requests resolve against. A generated app's UI sets this from
      * its build-time `VITE_APP_VERSION` so studio/zeno resolve its `app:<app>:…` refs against that
-     * published version (candidate testing) instead of current. Pass null/empty to clear (→ current).
+     * exact built version instead of the promoted version. Pass null/empty to clear (→ promoted).
      */
     withAppVersion(version: string | null | undefined) {
         if (!version) {

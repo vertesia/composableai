@@ -243,7 +243,7 @@ export interface ConversationState {
     launch_id?: string;
 
     /**
-     * The app version this run is pinned to (candidate testing), derived from the `@version` on the
+     * The exact app version this run is pinned to, derived from the `@version` on the
      * started interaction ref / the `x-vertesia-app-version` header at start. Persisted on the state
      * so it survives resume, and applied to the activity client (`withAppVersion`) so every app-owned
      * ref the run resolves — interactions, types, processes, tools — targets this version instead of

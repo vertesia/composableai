@@ -403,7 +403,7 @@ export type AppCapabilities = (typeof APP_CAPABILITIES)[number];
 
 /**
  * Header carrying the app version a generated-app UI is running, so studio/zeno resolve app-owned
- * capability refs (`app:<app>:...`) against that version (candidate testing) instead of current.
+ * capability refs (`app:<app>:...`) against that exact version instead of the promoted version.
  * Resolution-time only; never persisted. Set by the generated app template via client.withAppVersion.
  */
 export const APP_VERSION_HEADER = 'x-vertesia-app-version';
@@ -466,8 +466,8 @@ export interface AppPlannedArtifact {
 /**
  * Structured result the App Solution Architect emits alongside its prose artifacts — the
  * machine-readable contract for the build. The implementation MUST create and successfully
- * exercise every required artifact before preview/publish. Persisted into the app repo as
- * {@link APP_CAPABILITY_MANIFEST_PATH} so it survives across runs and the publish-time
+ * exercise every required artifact before building a deployable version. Persisted into the app repo as
+ * {@link APP_CAPABILITY_MANIFEST_PATH} so it survives across runs and the version-build
  * capability gate can verify against it deterministically. If the builder finds the plan
  * wrong or insufficient, the orchestrator relaunches the architect to revise the manifest;
  * the gate always checks against the latest committed copy.
@@ -492,15 +492,14 @@ export interface AppCapabilityManifest {
     notes?: string;
 }
 
-/** Repo-relative path the capability manifest is committed to, read by the publish gate. */
+/** Repo-relative path the capability manifest is committed to, read by version-build gates. */
 export const APP_CAPABILITY_MANIFEST_PATH = 'docs/app-capability-manifest.json';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 
-export type AppVersionKind = 'design' | 'preview' | 'published';
+export type AppVersionKind = 'design' | 'version';
 export type AppVersionState = 'ready' | 'failed' | 'expired';
 export type AppVersionTarget = 'static' | 'service';
 export type AppVersionGitRefType = 'branch' | 'tag' | 'commit' | 'detached';
-export type AppBuildIntent = 'preview' | 'publish';
 export type AppBuildTrigger = 'ui' | 'git_push' | 'agent' | 'api';
 
 export interface AppVersionStorage {
@@ -519,8 +518,8 @@ export interface AppVersionGitSource {
     url?: string;
     remote?: string;
     /**
-     * The source ref that should be used to reproduce this version. For immutable
-     * app versions this is normally the tag created during preview/publish.
+     * The source ref that should be used to reproduce this version. Immutable
+     * app versions use the exact commit SHA rather than a mutable branch or tag.
      */
     ref?: string;
     ref_type?: AppVersionGitRefType;
@@ -550,13 +549,15 @@ export interface AppVersionRecord {
     version_id: string;
     kind: AppVersionKind;
     state: AppVersionState;
-    active?: boolean;
+    promoted?: boolean;
     target?: AppVersionTarget;
     agent_run_id?: string;
     sandbox_id?: string;
     title?: string;
     description?: string;
     storage?: AppVersionStorage;
+    /** Exact Git commit used to build this immutable version. */
+    source_commit?: string;
     urls?: AppVersionUrls;
     manifest?: Record<string, unknown>;
     files?: string[];
@@ -567,7 +568,7 @@ export interface AppVersionRecord {
     created_by?: string;
     created_at: string;
     updated_at: string;
-    published_at?: string;
+    built_at?: string;
     checked_at?: string;
     expires_at?: string;
 }
@@ -579,13 +580,14 @@ export interface UpsertAppVersionRequest {
     version_id: string;
     kind: AppVersionKind;
     state?: AppVersionState;
-    active?: boolean;
     target?: AppVersionTarget;
     agent_run_id?: string;
     sandbox_id?: string;
     title?: string;
     description?: string;
     storage?: AppVersionStorage;
+    /** Exact Git commit used to build this immutable version. */
+    source_commit?: string;
     urls?: AppVersionUrls;
     manifest?: Record<string, unknown>;
     files?: string[];
@@ -593,7 +595,7 @@ export interface UpsertAppVersionRequest {
     source_file_count?: number;
     screenshot_artifact?: string;
     checks?: string[];
-    published_at?: string;
+    built_at?: string;
     checked_at?: string;
     expires_at?: string;
 }
@@ -605,7 +607,7 @@ export interface AppVersionListQuery {
     limit?: number;
 }
 
-export interface ActivateAppVersionResponse {
+export interface PromoteAppVersionResponse {
     version: AppVersionRecord;
     app?: AppManifest;
 }
@@ -613,15 +615,12 @@ export interface ActivateAppVersionResponse {
 export interface StartAppBuildRequest {
     /**
      * Source branch, tag, or commit to build. When omitted, the app source
-     * configuration chooses the dev branch for previews and production branch
-     * for publishes.
+     * configuration chooses its default branch.
      */
     source_ref?: string;
     source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
-    intent?: AppBuildIntent;
     trigger?: AppBuildTrigger;
     target?: AppVersionTarget;
-    activate?: boolean;
     title?: string;
     description?: string;
 }
@@ -630,7 +629,6 @@ export interface StartAppBuildResponse {
     workflow_id: string;
     run_id: string;
     app_id: string;
-    intent: AppBuildIntent;
     source_ref?: string;
     source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
 }
@@ -646,8 +644,9 @@ export interface AppBuildWorkflowInput extends StartAppBuildRequest {
 export interface AppBuildWorkflowResult {
     app_id: string;
     version_id: string;
-    kind: Extract<AppVersionKind, 'preview' | 'published'>;
+    kind: Extract<AppVersionKind, 'version'>;
     state: AppVersionState;
+    source_commit: string;
     source_git?: AppVersionGitSource;
     urls?: AppVersionUrls;
     file_count?: number;
@@ -660,7 +659,6 @@ export interface AppBuildProgress {
     step: string;
     app_id?: string;
     version_id?: string;
-    intent?: AppBuildIntent;
     source_ref?: string;
     source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
     source_commit?: string;
@@ -682,7 +680,7 @@ export interface StartAppScaffoldRequest {
     description?: string;
     modules?: AppScaffoldModule[];
     /**
-     * Start an initial preview build after the source has been pushed.
+     * Start an initial app version build after the source has been pushed.
      * Defaults to true.
      */
     create_version?: boolean;
@@ -705,7 +703,7 @@ export interface AppScaffoldWorkflowResult {
     git_url?: string;
     source_git?: AppVersionGitSource;
     files?: number;
-    initial_build?: StartAppBuildResponse;
+    initial_version_build?: StartAppBuildResponse;
 }
 
 export type AppScaffoldProgressStatus =
@@ -724,7 +722,7 @@ export interface AppScaffoldProgress {
     app_record_id?: string;
     git_url?: string;
     files?: number;
-    initial_build?: StartAppBuildResponse;
+    initial_version_build?: StartAppBuildResponse;
     error?: string;
     error_details?: string[];
     updated_at: string;
@@ -884,8 +882,9 @@ export interface AppManifestData {
 
     /**
      * Source repository configuration for apps generated and maintained through
-     * AppGen. Branches are mutable deployment lanes; immutable app versions
-     * record their exact source tag/commit in AppVersionRecord.storage.source_git.
+     * AppGen. Branches are mutable development lanes; immutable app versions
+     * record their exact source commit in AppVersionRecord.source_commit and
+     * AppVersionRecord.storage.source_git.
      */
     source?: AppSourceConfig;
 
@@ -933,7 +932,7 @@ export interface Endpoints {
     ui?: string;
     /** The Smart HTTP app source git server base URL */
     git?: string;
-    /** The appgen app-gateway base URL (serves published app bundles + their `/api` runtime). */
+    /** The appgen app-gateway base URL (serves promoted app bundles + their `/api` runtime). */
     gateway?: string;
 }
 
@@ -1142,14 +1141,14 @@ export interface AppInspectionIssue {
 }
 
 /**
- * Per-capability report of what an app's published package actually exposes,
+ * Per-capability report of what an app's promoted package actually exposes,
  * compared against what its manifest declares.
  */
 export interface AppInspectionCapabilityReport {
     capability: AppPackageScope;
     /** True when the manifest's `capabilities` array declares this capability. */
     declared: boolean;
-    /** The local ids the published package actually serves for this capability. */
+    /** The local ids the promoted package actually serves for this capability. */
     exposed_ids: string[];
     /** Convenience count of `exposed_ids`. */
     exposed_count: number;
@@ -1157,7 +1156,7 @@ export interface AppInspectionCapabilityReport {
 
 /**
  * Result of inspecting an app's registration: the resolved manifest state, what
- * the published package actually exposes per capability, and diagnostics. This
+ * the promoted package actually exposes per capability, and diagnostics. This
  * is the ground truth used by the `app_inspect_registration` agent tool and the
  * Build › App inspection UI to verify what is registered vs declared, instead of
  * inferring it from failed object/import calls.
@@ -1175,7 +1174,7 @@ export interface AppInspectionResult {
     access_control?: string;
     /** The capabilities declared on the manifest. */
     capabilities: AppPackageScope[];
-    /** What the published package exposes, per capability. */
+    /** What the promoted package exposes, per capability. */
     package: AppInspectionCapabilityReport[];
     /** Diagnostics — errors and warnings about the registration state. */
     issues: AppInspectionIssue[];
