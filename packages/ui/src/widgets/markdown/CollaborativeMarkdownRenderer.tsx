@@ -59,7 +59,9 @@ export type MarkdownBlockType =
     | 'list_item'
     | 'blockquote'
     | 'code_block'
-    | 'table';
+    | 'table'
+    /** Thematic break / horizontal rule (`---`). */
+    | 'separator';
 
 /** Container blocks whose inner blocks must not offer their own selection controls. */
 const CONTAINER_BLOCK_TYPES = new Set<MarkdownBlockType>(['list', 'blockquote', 'table']);
@@ -387,7 +389,7 @@ function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing)
     };
 
     return (
-        <div className="mb-2 space-y-2 rounded-md border border-mixer-info/30 bg-background p-2 shadow-sm">
+        <div className="mb-2 space-y-2">
             {mode === 'edit' || mode === 'insert' ? (
                 <Suspense
                     fallback={
@@ -458,6 +460,9 @@ function createBlockComponent(
         const anchor = createMarkdownBlockLocator(markdown, node, blockType);
         const isAnchorable = !readOnly && Boolean(anchor.source_range && anchor.exact_text);
         const isSelected = activeEditing?.anchor.block_id === anchor.block_id;
+        // While editing a block's content, the editor replaces the rendered block. Comment/insert
+        // keep the rendered block visible as context.
+        const isEditingContent = isSelected && activeEditing?.mode === 'edit';
         const isChanged =
             flashChangedBlocks &&
             Boolean(anchor.exact_text) &&
@@ -469,11 +474,13 @@ function createBlockComponent(
             // padding on all sides — otherwise text (notably the first block, whose prose margin-top
             // is 0) sits flush against the top of its highlight box.
             '-mx-2 -my-1 px-2 py-1',
-            isSelected
-                ? 'border-info bg-mixer-info/5'
-                : isAnchorable
-                  ? 'border-transparent hover:border-mixer-info/30 hover:bg-mixer-muted/10'
-                  : 'border-transparent',
+            isEditingContent
+                ? 'border-transparent'
+                : isSelected
+                  ? 'border-info bg-mixer-info/5'
+                  : isAnchorable
+                    ? 'border-transparent hover:border-mixer-info/30 hover:bg-mixer-muted/10'
+                    : 'border-transparent',
             isChanged && 'border-mixer-success/50 bg-mixer-success/15 ring-1 ring-mixer-success/20',
         );
         const showControls = isAnchorable || isSelected;
@@ -482,7 +489,7 @@ function createBlockComponent(
                 <div
                     className={cn(
                         'absolute end-1 top-1 z-10 flex items-center gap-0.5 rounded-md border bg-background p-0.5 shadow-sm',
-                        !isAnchorable && 'hidden',
+                        (!isAnchorable || isEditingContent) && 'hidden',
                         isSelected
                             ? 'opacity-100'
                             : 'pointer-events-none opacity-0 group-hover/collab:pointer-events-auto group-hover/collab:opacity-100 group-focus-within/collab:pointer-events-auto group-focus-within/collab:opacity-100',
@@ -600,7 +607,7 @@ function createBlockComponent(
 
         return (
             <div className={containerClassName} data-collaborative-block={anchor.block_id}>
-                {content}
+                {isEditingContent ? null : content}
                 {controls}
             </div>
         );
@@ -670,6 +677,7 @@ export function CollaborativeMarkdownRenderer({
             ),
             pre: createBlockComponent('pre', 'code_block', components?.pre as React.ElementType | undefined),
             table: createBlockComponent('table', 'table', components?.table as React.ElementType | undefined),
+            hr: createBlockComponent('hr', 'separator', components?.hr as React.ElementType | undefined),
         };
     }, [components]);
 

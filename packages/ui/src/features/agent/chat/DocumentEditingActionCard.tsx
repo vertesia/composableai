@@ -18,6 +18,7 @@ const BLOCK_TYPES = new Set<MarkdownBlockType>([
     'blockquote',
     'code_block',
     'table',
+    'separator',
 ]);
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {

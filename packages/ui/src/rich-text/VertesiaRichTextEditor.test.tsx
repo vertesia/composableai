@@ -69,7 +69,7 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(await screen.findByText('External paragraph')).not.toBeNull();
     });
 
-    it('offers a bare compact component surface and a full-document editor with a formatting toolbar', async () => {
+    it('offers a formatting toolbar for both the compact component editor and the full-document editor', async () => {
         const { rerender } = render(
             <I18nProvider lng="en">
                 <VertesiaMarkdownComponentEditor value="Component text" />
@@ -77,8 +77,8 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         );
 
         expect(await screen.findByText('Component text')).not.toBeNull();
-        // The compact component editor is chrome-free; the formatting toolbar is document-only.
-        expect(screen.queryByRole('toolbar')).toBeNull();
+        // The compact component editor now carries the same formatting toolbar as the document editor.
+        expect(await screen.findByRole('toolbar')).not.toBeNull();
 
         rerender(
             <I18nProvider lng="en">

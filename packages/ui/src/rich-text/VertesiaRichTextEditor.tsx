@@ -91,17 +91,30 @@ export function VertesiaMarkdownComponentEditor({
     className,
     contentClassName,
     editorClassName,
+    onEditor,
     ...props
 }: VertesiaMarkdownComponentEditorProps) {
+    const [editor, setEditor] = useState<Editor | null>(null);
+    const handleEditor = useCallback(
+        (next: Editor | null) => {
+            setEditor(next);
+            onEditor?.(next);
+        },
+        [onEditor],
+    );
+
     return (
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
-            <MarkdownComponentEditor
-                {...props}
-                {...vertesiaRichTextRenderers}
-                className={cn('overflow-hidden rounded-md border border-mixer-muted/30 bg-background', className)}
-                contentClassName={cn('max-h-80 overflow-auto', contentClassName)}
-                editorClassName={cn('vprose prose-sm min-h-24 max-w-none px-3 py-2 outline-none', editorClassName)}
-            />
+            <div className={cn('overflow-hidden rounded-md border border-mixer-muted/30 bg-background', className)}>
+                <EditorToolbar editor={editor} />
+                <MarkdownComponentEditor
+                    {...props}
+                    {...vertesiaRichTextRenderers}
+                    onEditor={handleEditor}
+                    contentClassName={cn('max-h-80 overflow-auto', contentClassName)}
+                    editorClassName={cn('vprose prose-sm min-h-24 max-w-none px-3 py-2 outline-none', editorClassName)}
+                />
+            </div>
         </CodeBlockHandlerProvider>
     );
 }
