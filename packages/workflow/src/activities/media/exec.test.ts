@@ -168,4 +168,27 @@ describe('execActivityFileWithProgress', () => {
         },
         TIMING_TEST_TIMEOUT_MS,
     );
+
+    it(
+        'terminates a still-progressing child at the Activity start-to-close deadline',
+        async () => {
+            // The child keeps reporting advancing progress, so the stall watchdog never fires; the Activity deadline
+            // must still terminate it. This exercises a different path than execActivityFile — the spawn timeout, not
+            // execFile's timeout.
+            const deadlineEnv = new MockActivityEnvironment({
+                currentAttemptScheduledTimestampMs: Date.now(),
+                startToCloseTimeoutMs: 600,
+            });
+            const execution = deadlineEnv.run(() =>
+                execActivityFileWithProgress(
+                    process.execPath,
+                    ['-e', 'setInterval(() => process.stderr.write(`frame=${Date.now()}\\n`), 50)'],
+                    { stallTimeoutMs: 60_000 },
+                ),
+            );
+
+            await expect(execution).rejects.toMatchObject({ killed: true });
+        },
+        TIMING_TEST_TIMEOUT_MS,
+    );
 });

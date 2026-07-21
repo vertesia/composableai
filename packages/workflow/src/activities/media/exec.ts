@@ -69,6 +69,11 @@ export async function execActivityFile(
 }
 
 export interface ProgressAwareOptions {
+    /**
+     * Coarse upper bound on retained stdout/stderr, counted in UTF-16 code units (not UTF-8 bytes). ffmpeg output is
+     * ASCII-dominant so this closely tracks bytes; it only exists to keep captured output from growing without bound
+     * (older output is dropped — tail retained — rather than failing the command). Not a strict byte cap.
+     */
     maxBuffer?: number;
     stallTimeoutMs?: number;
 }
