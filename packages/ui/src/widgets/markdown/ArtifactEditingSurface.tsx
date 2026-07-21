@@ -1,3 +1,4 @@
+import type { Editor } from '@vertesia/rich-text';
 import { Button, Center, cn, errorMessage, MessageBox, Spinner, useToast, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -8,6 +9,7 @@ import {
     CollaborativeMarkdownRenderer,
     type MarkdownEditingAction,
 } from './CollaborativeMarkdownRenderer.js';
+import { SpanSelectionComment } from './SpanSelectionComment.js';
 import { getTextLineChangeRegions, rebaseTextChanges } from './textDiff.js';
 
 const HYDRATION_RETRY_DELAY_MS = 500;
@@ -190,6 +192,7 @@ export function ArtifactEditingSurface({
     const [loadError, setLoadError] = useState<string | undefined>();
     const [documentConflict, setDocumentConflict] = useState<ArtifactDocumentConflict>();
     const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+    const [documentEditor, setDocumentEditor] = useState<Editor | null>(null);
     const contentRef = useRef(content);
     const generationRef = useRef(generation);
     const loadRequestRef = useRef(0);
@@ -723,42 +726,55 @@ export function ArtifactEditingSurface({
                         </Center>
                     }
                 >
-                    <div ref={documentEditorContainerRef} className="relative h-full min-h-0">
-                        <MarkdownDocumentEditor
-                            value={content}
-                            onChange={handleDocumentChange}
-                            artifactRunId={runId}
-                            editable={!readOnly && Boolean(runId)}
-                            externalValueSync="when-blurred"
-                            onFocusChange={handleDocumentFocusChange}
-                            onEditor={(editor) => {
-                                documentEditorRef.current = editor as unknown as MarkdownDocumentEditorHandle | null;
-                            }}
-                            contentClassName="pe-5"
-                        />
-                        <MarkdownChangeRuler
-                            regions={changeRegions}
-                            totalLines={documentLineCount}
-                            onNavigate={navigateToChangedLine}
-                        />
-                        {!documentConflict && (generation || isSavingDocument || isDocumentSavePending) ? (
-                            <div
-                                className={cn(
-                                    'pointer-events-none absolute bottom-3 end-6 flex items-center gap-1.5 rounded-full',
-                                    'border border-mixer-muted/25 bg-background/90 px-2.5 py-1 text-[11px] shadow-sm',
-                                    isSavingDocument || isDocumentSavePending ? 'text-muted' : 'text-success',
-                                )}
-                            >
-                                {isSavingDocument || isDocumentSavePending ? (
-                                    <Spinner size="sm" />
-                                ) : (
-                                    <Check className="size-3" />
-                                )}
-                                {isSavingDocument || isDocumentSavePending
-                                    ? t('agent.savingWorkingCopy')
-                                    : t('agent.savedToWorkingCopy')}
-                            </div>
+                    <div className="flex h-full min-h-0 flex-col">
+                        {onAction ? (
+                            <SpanSelectionComment
+                                editor={documentEditor}
+                                resource={{ kind: 'agent_artifact', run_id: runId ?? 'pending', path }}
+                                baseVersion={generation}
+                                readOnly={readOnly || !runId || Boolean(documentConflict)}
+                                onAction={handleAction}
+                            />
                         ) : null}
+                        <div ref={documentEditorContainerRef} className="relative min-h-0 flex-1">
+                            <MarkdownDocumentEditor
+                                value={content}
+                                onChange={handleDocumentChange}
+                                artifactRunId={runId}
+                                editable={!readOnly && Boolean(runId)}
+                                externalValueSync="when-blurred"
+                                onFocusChange={handleDocumentFocusChange}
+                                onEditor={(editor) => {
+                                    documentEditorRef.current =
+                                        editor as unknown as MarkdownDocumentEditorHandle | null;
+                                    setDocumentEditor((editor as Editor | null) ?? null);
+                                }}
+                                contentClassName="pe-5"
+                            />
+                            <MarkdownChangeRuler
+                                regions={changeRegions}
+                                totalLines={documentLineCount}
+                                onNavigate={navigateToChangedLine}
+                            />
+                            {!documentConflict && (generation || isSavingDocument || isDocumentSavePending) ? (
+                                <div
+                                    className={cn(
+                                        'pointer-events-none absolute bottom-3 end-6 flex items-center gap-1.5 rounded-full',
+                                        'border border-mixer-muted/25 bg-background/90 px-2.5 py-1 text-[11px] shadow-sm',
+                                        isSavingDocument || isDocumentSavePending ? 'text-muted' : 'text-success',
+                                    )}
+                                >
+                                    {isSavingDocument || isDocumentSavePending ? (
+                                        <Spinner size="sm" />
+                                    ) : (
+                                        <Check className="size-3" />
+                                    )}
+                                    {isSavingDocument || isDocumentSavePending
+                                        ? t('agent.savingWorkingCopy')
+                                        : t('agent.savedToWorkingCopy')}
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                 </Suspense>
             ) : (

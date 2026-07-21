@@ -1,3 +1,4 @@
+export type { Editor } from '@tiptap/core';
 export {
     MarkdownComponentEditor,
     type MarkdownComponentEditorProps,
