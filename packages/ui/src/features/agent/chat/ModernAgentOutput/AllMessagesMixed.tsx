@@ -750,22 +750,20 @@ function SummaryMessage({
                         />
                     </div>
                 )}
-                {editingAction ? (
-                    // Editing actions read as flat, model-message-style blocks rather than user bubbles.
-                    <div className="mx-auto w-full max-w-3xl px-1">
-                        <DocumentEditingActionCard action={editingAction} />
-                    </div>
-                ) : questionBody ? (
+                {questionBody && (
                     <SummaryUserBubble
                         message={message}
                         workstreamId={workstreamId}
                         artifactRunId={runId}
                         onOpenArtifact={onOpenArtifact}
                         markdownComponents={markdownComponents}
+                        // Comments/edits are user actions: keep the user-message background and end
+                        // alignment, just give the card a little more room for tables and diffs.
+                        className={editingAction ? 'max-w-[min(44rem,90%)]' : undefined}
                     >
-                        {questionBody}
+                        {editingAction ? <DocumentEditingActionCard action={editingAction} /> : questionBody}
                     </SummaryUserBubble>
-                ) : null}
+                )}
             </>
         );
     }
@@ -2147,9 +2145,9 @@ function SummaryStoppedMessage({
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)} data-testid="summary-stopped-message">
-            <div className="flex items-center justify-end gap-2 text-lg font-medium text-muted sm:text-xl">
+            <div className="flex items-center justify-end gap-2 text-sm font-medium text-muted">
                 <span>{t('agent.youStoppedAfter', { duration })}</span>
-                <MessageDeliveryStatus message={message} className="h-5 w-5" />
+                <MessageDeliveryStatus message={message} className="h-4 w-4" />
             </div>
             <div className="mt-5 border-b border-border/70" />
         </div>

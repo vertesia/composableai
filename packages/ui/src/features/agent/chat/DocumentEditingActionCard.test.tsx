@@ -70,7 +70,7 @@ describe('DocumentEditingActionCard', () => {
         expect(screen.getByText('Launch plan')).not.toBeNull();
     });
 
-    it('renders the edited block content as markdown', () => {
+    it('highlights the change as an inline diff', () => {
         const parsed = parseMarkdownEditingAction({
             operation_id: 'operation-3',
             resource: { kind: 'store_document', document_id: 'document-1', name: 'Launch plan' },
@@ -87,13 +87,16 @@ describe('DocumentEditingActionCard', () => {
         });
         if (!parsed) throw new Error('Expected a valid editing action');
 
-        render(
+        const { container } = render(
             <I18nProvider lng="en">
                 <DocumentEditingActionCard action={parsed} />
             </I18nProvider>,
         );
 
-        expect(screen.getByText('Keep the tone light. Session edit A.')).not.toBeNull();
+        const inserted = container.querySelector('ins');
+        expect(inserted?.textContent).toBe(' Session edit A.');
+        expect(container.querySelector('del')).toBeNull();
+        expect(screen.getByText('Keep the tone light.')).not.toBeNull();
     });
 
     it('rejects malformed editing metadata', () => {

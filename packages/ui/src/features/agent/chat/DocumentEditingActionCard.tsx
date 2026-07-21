@@ -1,7 +1,13 @@
 import { cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import type { MarkdownBlockType, MarkdownEditingAction, MarkdownEditingResource } from '@vertesia/ui/widgets';
-import { CircleCheck, MessageSquareText, PencilLine } from 'lucide-react';
+import {
+    diffWordSegments,
+    type MarkdownBlockType,
+    type MarkdownEditingAction,
+    type MarkdownEditingResource,
+} from '@vertesia/ui/widgets';
+import { MessageSquareText, PencilLine } from 'lucide-react';
+import { type ReactNode, useMemo } from 'react';
 import { CollapsibleAgentMarkdown } from './ModernAgentOutput/CollapsibleAgentMarkdown.js';
 
 const BLOCK_TYPES = new Set<MarkdownBlockType>([
@@ -97,29 +103,66 @@ function resourceLabel(resource: MarkdownEditingResource): string {
 }
 
 // A referenced block is a preview, not a document title — keep headings at body scale so a heading
-// block doesn't render as a full-size H1 inside a chat bubble, and trim the outer block margins.
+// block doesn't render as a full-size H1, and trim the outer block margins.
 const COMPACT_MARKDOWN_CLASS = [
     '[&_h1]:text-base [&_h2]:text-base [&_h3]:text-base [&_h4]:text-base [&_h5]:text-base [&_h6]:text-base',
     '[&_h1]:leading-snug [&_h2]:leading-snug [&_h3]:leading-snug',
     '[&_:first-child]:mt-0 [&_:last-child]:mb-0',
 ].join(' ');
 
+function SourcePreview({ children, className }: { children: ReactNode; className?: string }) {
+    return (
+        <pre
+            className={cn(
+                'm-0 max-h-48 overflow-auto whitespace-pre-wrap font-mono text-xs leading-5 text-foreground/80',
+                className,
+            )}
+        >
+            {children}
+        </pre>
+    );
+}
+
+function ChangeDiff({ before, after }: { before: string; after: string }) {
+    const segments = useMemo(() => diffWordSegments(before, after), [before, after]);
+    return (
+        <SourcePreview>
+            {segments.map((segment, index) => {
+                if (segment.type === 'removed') {
+                    return (
+                        <del
+                            key={index}
+                            className="rounded-xs bg-mixer-destructive/15 text-destructive line-through decoration-destructive/50"
+                        >
+                            {segment.text}
+                        </del>
+                    );
+                }
+                if (segment.type === 'added') {
+                    return (
+                        <ins key={index} className="rounded-xs bg-mixer-success/15 text-success no-underline">
+                            {segment.text}
+                        </ins>
+                    );
+                }
+                return <span key={index}>{segment.text}</span>;
+            })}
+        </SourcePreview>
+    );
+}
+
 export function DocumentEditingActionCard({ action }: { action: MarkdownEditingAction }) {
     const { t } = useUITranslation();
     const isComment = action.action === 'comment';
     const isApplied = action.applied === true;
     const blockType = action.anchor.block_type.replaceAll('_', ' ');
-    const Icon = isComment ? MessageSquareText : isApplied ? CircleCheck : PencilLine;
+    const Icon = isComment ? MessageSquareText : PencilLine;
     const artifactRunId = action.resource.kind === 'agent_artifact' ? action.resource.run_id : undefined;
-    // The referenced block: what the comment is about, or the block's content after an edit.
-    const referenceMarkdown = isComment
-        ? action.anchor.exact_text
-        : (action.user_change?.after ?? action.anchor.exact_text);
 
     return (
         <div className="min-w-0 space-y-2 text-start" data-document-edit-action={action.action}>
-            <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted">
-                <Icon className={cn('size-3.5 shrink-0', isApplied && 'text-success')} aria-hidden="true" />
+            <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
+                <Icon className="size-4 shrink-0" aria-hidden="true" />
                 <span className="shrink-0 font-medium text-foreground">
                     {isComment
                         ? t('agent.documentEditCardComment')
@@ -133,18 +176,34 @@ export function DocumentEditingActionCard({ action }: { action: MarkdownEditingA
                 <span className="truncate">{resourceLabel(action.resource)}</span>
             </div>
 
-            {isComment && action.comment ? (
-                <CollapsibleAgentMarkdown artifactRunId={artifactRunId} className={COMPACT_MARKDOWN_CLASS}>
-                    {action.comment}
-                </CollapsibleAgentMarkdown>
-            ) : null}
-
-            <CollapsibleAgentMarkdown
-                artifactRunId={artifactRunId}
-                className={cn('border-s-2 border-mixer-muted/30 ps-3 text-foreground/70', COMPACT_MARKDOWN_CLASS)}
-            >
-                {referenceMarkdown}
-            </CollapsibleAgentMarkdown>
+            {isComment ? (
+                <>
+                    {action.comment ? (
+                        <CollapsibleAgentMarkdown
+                            artifactRunId={artifactRunId}
+                            disableCollapse
+                            className={COMPACT_MARKDOWN_CLASS}
+                        >
+                            {action.comment}
+                        </CollapsibleAgentMarkdown>
+                    ) : null}
+                    <CollapsibleAgentMarkdown
+                        artifactRunId={artifactRunId}
+                        disableCollapse
+                        className={cn(
+                            'border-s-2 border-mixer-muted/30 ps-3 text-foreground/70',
+                            COMPACT_MARKDOWN_CLASS,
+                        )}
+                    >
+                        {action.anchor.exact_text}
+                    </CollapsibleAgentMarkdown>
+                </>
+            ) : (
+                <ChangeDiff
+                    before={action.user_change?.before ?? action.anchor.exact_text}
+                    after={action.user_change?.after ?? ''}
+                />
+            )}
         </div>
     );
 }
