@@ -1129,7 +1129,6 @@ function StartWorkflowView({
                                 size="xs"
                                 variant="ghost"
                                 onClick={onClose}
-                                aria-label={t('agent.close')}
                                 title={t('agent.close')}
                                 className="text-muted hover:text-foreground"
                             >
@@ -1235,7 +1234,6 @@ function StartWorkflowView({
                                     'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                                 )}
                                 title={resolvedStartButtonText}
-                                aria-label={resolvedStartButtonText}
                             >
                                 {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
                             </Button>

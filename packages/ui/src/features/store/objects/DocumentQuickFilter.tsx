@@ -1,4 +1,4 @@
-import { Button, CopyButton, VTooltip } from '@vertesia/ui/core';
+import { Button, CopyButton } from '@vertesia/ui/core';
 import { Filter } from 'lucide-react';
 import { createContext, type ReactNode, useContext } from 'react';
 
@@ -52,20 +52,18 @@ export function DocumentCellActions({
                 <CopyButton content={copyContent} className={ACTION_BTN_CLASS} />
             )}
             {hasValue && value !== undefined && (
-                <VTooltip description={`Filter by ${label}`} asChild size="xs">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Filter by ${label}`}
-                        className={ACTION_BTN_CLASS}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onFilter?.(field, value);
-                        }}
-                    >
-                        <Filter className="size-3" />
-                    </Button>
-                </VTooltip>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    title={`Filter by ${label}`}
+                    className={ACTION_BTN_CLASS}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onFilter?.(field, value);
+                    }}
+                >
+                    <Filter className="size-3" />
+                </Button>
             )}
         </>
     );

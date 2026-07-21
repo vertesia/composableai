@@ -22,6 +22,7 @@
         "preview": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
         "start": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
         "start:vercel": "vercel dev",
+        "pretest": "pnpm test:codegen",
         "test": "echo \"(no tests in template scaffold)\"",
         "codegen:dev": "node codegen/dist/codegen.js --context codegen/dev-codegen-context.json",
         "test:codegen": "node --test codegen/test/*.test.mjs",

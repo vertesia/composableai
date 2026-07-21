@@ -13,6 +13,7 @@ import { createSkillsRoute } from './server/skills.js';
 import { createTemplatesRoute } from './server/templates.js';
 import { createToolsRoute } from './server/tools.js';
 import type { ToolContext, ToolServerConfig } from './server/types.js';
+import { createViewsRoute } from './server/views.js';
 import { createWidgetsRoute } from './server/widgets.js';
 import type { ToolExecutionPayload } from './types.js';
 
@@ -100,6 +101,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
                 interactions: interactions.map((col) => `${prefix}/interactions/${col.name}`),
                 templates: templates.map((col) => `${prefix}/templates/${col.name}`),
                 processes: `${prefix}/processes`,
+                views: `${prefix}/views`,
                 activities: activities.map((col) => `${prefix}/activities/${col.name}`),
                 mcp: mcpProviders.map((p) => `${prefix}/mcp/${p.name}`),
             },
@@ -115,6 +117,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createTemplatesRoute(app, `${prefix}/templates`, config);
     createContentTypesRoute(app, `${prefix}/types`, config);
     createProcessesRoute(app, `${prefix}/processes`, config);
+    createViewsRoute(app, `${prefix}/views`, config);
     createMcpRoute(app, `${prefix}/mcp`, config);
 
     // Global error handler - returns ToolExecutionResponseError format

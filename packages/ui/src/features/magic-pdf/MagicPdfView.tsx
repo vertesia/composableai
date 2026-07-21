@@ -93,7 +93,7 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
                 {/* Header matching the main view layout */}
                 <div className="flex h-9 items-center justify-end shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
                     {onClose && (
-                        <Button variant="ghost" size="xs" onClick={onClose} alt={t('pdf.close')}>
+                        <Button variant="ghost" size="xs" onClick={onClose} title={t('pdf.close')}>
                             <X className="size-4" />
                         </Button>
                     )}
@@ -147,7 +147,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                     <span className="text-xs text-muted-foreground">{t('pdf.pageOf', { pageNumber, totalPages })}</span>
                     <div className="flex items-center gap-x-2">
                         {!!onClose && (
-                            <Button variant="ghost" size="xs" onClick={onClose} alt={t('pdf.close')}>
+                            <Button variant="ghost" size="xs" onClick={onClose} title={t('pdf.close')}>
                                 <X className="size-4" />
                             </Button>
                         )}
