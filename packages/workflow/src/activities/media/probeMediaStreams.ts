@@ -1,12 +1,9 @@
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
 import { ApplicationFailure, log } from '@temporalio/activity';
 import { RequestError } from '@vertesia/api-fetch-client';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../../errors.js';
-
-const execAsync = promisify(exec);
+import { execActivityFile, initializeActivityCommandDeadline, rethrowIfActivityStopped } from './exec.js';
 
 const FFPROBE_MAX_BUFFER = 1024 * 1024; // 1MB is more than enough for stream metadata JSON
 
@@ -32,6 +29,7 @@ interface FFProbeOutput {
 export async function probeMediaStreams(
     payload: DSLActivityExecutionPayload<ProbeMediaStreamsParams>,
 ): Promise<ProbeMediaStreamsResult> {
+    initializeActivityCommandDeadline();
     const { client, objectId } = await setupActivity<ProbeMediaStreamsParams>(payload);
 
     const inputObject = await client.objects.retrieve(objectId).catch((err: unknown) => {
@@ -54,12 +52,18 @@ export async function probeMediaStreams(
 
     // ffprobe reads only the container headers via HTTP range requests.
     // -probesize 32k caps the amount read from the network to ~32 KB.
+    // ffprobe emits no frame=/time= progress, so the stall watchdog does not apply here; the shared exec wrapper still
+    // propagates Activity cancellation and bounds the read by the Activity deadline, and passing the URL as an argv
+    // entry (not a shell string) removes the shell-interpolation surface.
     let stdout: string;
     try {
-        ({ stdout } = await execAsync(`ffprobe -v quiet -probesize 32k -print_format json -show_streams "${url}"`, {
-            maxBuffer: FFPROBE_MAX_BUFFER,
-        }));
+        ({ stdout } = await execActivityFile(
+            'ffprobe',
+            ['-v', 'quiet', '-probesize', '32k', '-print_format', 'json', '-show_streams', url],
+            { maxBuffer: FFPROBE_MAX_BUFFER },
+        ));
     } catch (err: unknown) {
+        rethrowIfActivityStopped(err);
         const message = err instanceof Error ? err.message : String(err);
         log.error(`ffprobe failed for object ${objectId}: ${message}`);
         throw new Error(`Failed to probe media streams for object ${objectId}: ${message}`);

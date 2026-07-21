@@ -1,16 +1,18 @@
-import { execFile as execFileCallback } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { promisify } from 'node:util';
 import { log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, WorkflowParamNotFoundError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
 import { type ImageRenditionParams, uploadRenditionPages } from '../../utils/renditions.js';
-
-const execFileAsync = promisify(execFileCallback);
+import {
+    execActivityFile,
+    execActivityFileWithProgress,
+    initializeActivityCommandDeadline,
+    rethrowIfActivityStopped,
+} from '../media/exec.js';
 
 interface GenerateVideoRenditionParams extends ImageRenditionParams {}
 
@@ -32,7 +34,7 @@ interface VideoMetadata {
 async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
     try {
         const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', videoPath];
-        const { stdout } = await execFileAsync('ffprobe', args);
+        const { stdout } = await execActivityFile('ffprobe', args);
         const metadata = JSON.parse(stdout.toString()) as {
             streams?: Array<{ codec_type?: string; width?: number; height?: number }>;
             format?: { duration?: string };
@@ -45,6 +47,7 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
 
         return { duration, width, height };
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(`Failed to get video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
         throw new Error(`Failed to probe video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -79,7 +82,7 @@ async function generateThumbnail(
     ];
     log.info(`Generating thumbnail at ${timestamp}s`, { command: 'ffmpeg', args: command });
     try {
-        const { stderr } = await execFileAsync('ffmpeg', command);
+        const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
         const stderrText = stderr.toString();
 
         // Log any warnings from ffmpeg
@@ -96,6 +99,7 @@ async function generateThumbnail(
             return undefined;
         }
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(
             `Failed to generate thumbnail at ${timestamp}s: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );
@@ -104,6 +108,7 @@ async function generateThumbnail(
 }
 
 export async function generateVideoRendition(payload: DSLActivityExecutionPayload<GenerateVideoRenditionParams>) {
+    initializeActivityCommandDeadline();
     const { client, objectId, params: originParams } = await setupActivity<GenerateVideoRenditionParams>(payload);
 
     // Fix: Use maxHeightWidth if max_hw is not provided
@@ -209,6 +214,7 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
             requestedCount: thumbnailCount,
         });
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(`Error generating thumbnails for video: ${error instanceof Error ? error.message : 'Unknown error'}`);
         throw new Error(`Failed to generate thumbnails for video: ${objectId}`);
     } finally {
