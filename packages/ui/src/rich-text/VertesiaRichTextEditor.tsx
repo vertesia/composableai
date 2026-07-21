@@ -106,7 +106,7 @@ export function VertesiaMarkdownComponentEditor({
     return (
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
             <div className={cn('overflow-hidden rounded-md border border-mixer-muted/30 bg-background', className)}>
-                <EditorToolbar editor={editor} />
+                <EditorToolbar editor={editor} editable={props.editable !== false} />
                 <MarkdownComponentEditor
                     {...props}
                     {...vertesiaRichTextRenderers}
@@ -153,7 +153,7 @@ export function VertesiaMarkdownDocumentEditor({
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
             {resolvedEditingMode === 'rich-text' ? (
                 <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
-                    <EditorToolbar editor={editor} onSendComment={onSendComment} />
+                    <EditorToolbar editor={editor} editable={props.editable !== false} onSendComment={onSendComment} />
                     <MarkdownDocumentEditor
                         {...props}
                         {...vertesiaRichTextRenderers}

@@ -40,6 +40,7 @@ import {
     type SendAgentMessageFn,
     type StartWorkflowOptions,
 } from '../../../agent/chat/ModernAgentConversation.js';
+import { resolveTypeCached } from '../../types/typeCatalogCache.js';
 import {
     type DocumentEditingConfiguration,
     DocumentEditingConfigurationSelector,
@@ -54,6 +55,7 @@ import {
 } from './documentEditingAgentConfig.js';
 import {
     createDocumentEditingRunIdentity,
+    DOCUMENT_EDITING_DEFAULT_INTERACTION,
     type DocumentEditingRunProperties,
     findDocumentEditingRun,
 } from './documentEditingRun.js';
@@ -264,6 +266,10 @@ export function DocumentEditingWorkspace({
     const [saveConflict, setSaveConflict] = useState<{ headId: string } | undefined>();
     const [targetDocumentId, setTargetDocumentId] = useState(object.id);
     const [targetEtag, setTargetEtag] = useState(object.content?.etag);
+    const [resolvedEditingPolicy, setResolvedEditingPolicy] = useState<{
+        key: string;
+        interaction: string;
+    }>();
     const [executionConfiguration, setExecutionConfiguration] = useState<DocumentEditingConfiguration>({});
     const configurationSourceRef = useRef<'none' | 'project' | 'run' | 'user'>('none');
     const seenUpdatesRef = useRef(new Set<string>());
@@ -274,6 +280,9 @@ export function DocumentEditingWorkspace({
     const draftPath = useMemo(() => getDocumentDraftPath(documentRootId), [documentRootId]);
     const startedBy = user?.sub ? `user:${user.sub}` : undefined;
     const editingScopeKey = `${project?.id ?? 'no-project'}:${documentRootId}`;
+    const editingPolicyKey = `${editingScopeKey}:${object.type?.id ?? 'no-type'}`;
+    const editingInteraction =
+        resolvedEditingPolicy?.key === editingPolicyKey ? resolvedEditingPolicy.interaction : undefined;
     const editingScopeRef = useRef(editingScopeKey);
     const originalDocumentRef = useRef({ editingScopeKey, id: object.id });
     const lookupIdentityRef = useRef({ documentId: object.id, documentRootId });
@@ -347,6 +356,31 @@ export function DocumentEditingWorkspace({
     }, [documentRootId, editingScopeKey, store.objects, targetResolutionAttempt]);
 
     useEffect(() => {
+        let cancelled = false;
+        const typeId = object.type?.id;
+
+        if (!typeId) {
+            setResolvedEditingPolicy({
+                key: editingPolicyKey,
+                interaction: DOCUMENT_EDITING_DEFAULT_INTERACTION,
+            });
+            return;
+        }
+
+        void resolveTypeCached(client, typeId).then((type) => {
+            if (cancelled) return;
+            setResolvedEditingPolicy({
+                key: editingPolicyKey,
+                interaction: type?.editing?.interaction?.trim() || DOCUMENT_EDITING_DEFAULT_INTERACTION,
+            });
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [client, editingPolicyKey, object.type?.id]);
+
+    useEffect(() => {
         if (!project) {
             setIsLoadingConfiguration(false);
             return;
@@ -382,14 +416,20 @@ export function DocumentEditingWorkspace({
 
     useEffect(() => {
         setAgentRunId(undefined);
-        if (!startedBy) {
+        if (!startedBy || !editingInteraction) {
             setIsResolvingRun(false);
             return;
         }
 
         let cancelled = false;
         setIsResolvingRun(true);
-        void findDocumentEditingRun(client.agents, lookupIdentityRef.current.documentId, documentRootId, startedBy)
+        void findDocumentEditingRun(
+            client.agents,
+            lookupIdentityRef.current.documentId,
+            documentRootId,
+            startedBy,
+            editingInteraction,
+        )
             .then((run) => {
                 if (cancelled || !run) return;
                 setAgentRunId(run.id);
@@ -408,7 +448,7 @@ export function DocumentEditingWorkspace({
         return () => {
             cancelled = true;
         };
-    }, [client, documentRootId, startedBy]);
+    }, [client, documentRootId, editingInteraction, startedBy]);
 
     const handleConfigurationChange = useCallback((value: DocumentEditingConfiguration) => {
         configurationSourceRef.current = 'user';
@@ -448,6 +488,7 @@ export function DocumentEditingWorkspace({
         async (initialMessage?: string, options?: StartWorkflowOptions) => {
             if (
                 !project ||
+                !editingInteraction ||
                 isResolvingRun ||
                 isResolvingTarget ||
                 targetResolutionFailed ||
@@ -472,7 +513,7 @@ export function DocumentEditingWorkspace({
                 );
                 const identity = createDocumentEditingRunIdentity(targetDocumentId, documentRootId);
                 const payload: CreateAgentRunPayload<{ user_prompt: string }, DocumentEditingRunProperties> = {
-                    interaction: 'sys:GeneralAgent',
+                    interaction: editingInteraction,
                     interactive: true,
                     tool_approval_mode: options?.tool_approval_mode,
                     tool_names: DOCUMENT_EDITING_TOOLS,
@@ -520,6 +561,7 @@ export function DocumentEditingWorkspace({
             documentRootId,
             draftPath,
             executionConfiguration,
+            editingInteraction,
             isLoadingConfiguration,
             isResolvingRun,
             isResolvingTarget,
@@ -554,18 +596,25 @@ export function DocumentEditingWorkspace({
         }
     }, []);
 
-    const handleArtifactAction = useCallback(
-        (action: MarkdownEditingAction) => {
+    const sendEditingMessage = useCallback(
+        (message: string, inputMetadata?: Record<string, unknown>) => {
             const sendMessage = messageRef.current;
             if (!sendMessage) {
                 toast({ status: 'warning', title: t('agent.artifactEditingUnavailable'), duration: 3000 });
                 return;
             }
-            const blockType = action.anchor.block_type.replaceAll('_', ' ');
-            const displayMessage = action.comment?.trim() || t('agent.editedSelectionMessage', { blockType });
-            sendMessage(displayMessage, { editing_action: action });
+            sendMessage(message, inputMetadata);
         },
         [messageRef, t, toast],
+    );
+
+    const handleArtifactAction = useCallback(
+        (action: MarkdownEditingAction) => {
+            const blockType = action.anchor.block_type.replaceAll('_', ' ');
+            const displayMessage = action.comment?.trim() || t('agent.editedSelectionMessage', { blockType });
+            sendEditingMessage(displayMessage, { editing_action: action });
+        },
+        [sendEditingMessage, t],
     );
 
     const handleSave = useCallback(
@@ -969,8 +1018,10 @@ export function DocumentEditingWorkspace({
                                     refreshKey={artifactRefresh.key}
                                     refreshDetails={artifactRefresh.details}
                                     readOnly={isEditingLocked}
+                                    allowComments={Boolean(agentRunId)}
                                     onContentChange={handleArtifactContentChange}
                                     onAction={handleArtifactAction}
+                                    onSendMessage={sendEditingMessage}
                                     onDocumentEdit={() => setHasDirectEditorChanges(true)}
                                     flushChangesRef={flushArtifactChangesRef}
                                 />

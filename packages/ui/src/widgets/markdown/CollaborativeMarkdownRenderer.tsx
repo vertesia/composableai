@@ -104,6 +104,8 @@ export interface CollaborativeMarkdownRendererProps extends Omit<MarkdownRendere
     baseVersion?: string;
     components?: Components;
     readOnly?: boolean;
+    /** Keep comments available when content mutations are read-only (for example while the agent is working). */
+    allowComments?: boolean;
     highlightChangesFrom?: string;
     highlightVersion?: number;
     onAction: (action: MarkdownEditingAction) => void | Promise<void>;
@@ -130,6 +132,7 @@ interface CollaborativeMarkdownContextValue {
     markdown: string;
     artifactRunId?: string;
     readOnly: boolean;
+    allowComments: boolean;
     activeEditing?: ActiveEditing;
     highlightChangesFrom?: string;
     flashChangedBlocks: boolean;
@@ -367,11 +370,13 @@ function useCollaborativeMarkdownContext(): CollaborativeMarkdownContextValue {
 
 function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing) {
     const { t } = useUITranslation();
-    const { artifactRunId, readOnly, cancelEditing, submit, updateDraft } = useCollaborativeMarkdownContext();
+    const { artifactRunId, readOnly, allowComments, cancelEditing, submit, updateDraft } =
+        useCollaborativeMarkdownContext();
     const [draft, setDraft] = useState(
         mode === 'edit' ? anchor.exact_text : mode === 'insert' ? (initialDraft ?? '') : '',
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const isActionDisabled = mode === 'comment' ? !allowComments : readOnly;
 
     const changeDraft = (nextDraft: string) => {
         setDraft(nextDraft);
@@ -418,7 +423,7 @@ function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing)
                     placeholder={t('agent.commentOnSelectionPlaceholder')}
                     rows={3}
                     autoFocus
-                    disabled={readOnly}
+                    disabled={!allowComments}
                 />
             )}
             <div className="flex justify-end gap-2">
@@ -429,7 +434,7 @@ function CollaborativeBlockEditor({ anchor, mode, initialDraft }: ActiveEditing)
                 <Button
                     size="sm"
                     onClick={() => void submitDraft()}
-                    disabled={readOnly || !draft.trim() || isSubmitting}
+                    disabled={isActionDisabled || !draft.trim() || isSubmitting}
                 >
                     <Send className="me-1 size-4" />
                     {t('agent.send')}
@@ -446,8 +451,15 @@ function createBlockComponent(
 ) {
     return function CollaborativeBlock({ node, children: blockChildren, ...props }: MarkdownBlockProps) {
         const { t } = useUITranslation();
-        const { markdown, readOnly, activeEditing, highlightChangesFrom, flashChangedBlocks, beginEditing } =
-            useCollaborativeMarkdownContext();
+        const {
+            markdown,
+            readOnly,
+            allowComments,
+            activeEditing,
+            highlightChangesFrom,
+            flashChangedBlocks,
+            beginEditing,
+        } = useCollaborativeMarkdownContext();
         const isNested = useContext(NestedMarkdownBlockContext);
         const rendered = ExistingComponent
             ? React.createElement(ExistingComponent, { node, ...props }, blockChildren)
@@ -458,7 +470,9 @@ function createBlockComponent(
         if (isNested) return rendered;
 
         const anchor = createMarkdownBlockLocator(markdown, node, blockType);
-        const isAnchorable = !readOnly && Boolean(anchor.source_range && anchor.exact_text);
+        const hasAnchor = Boolean(anchor.source_range && anchor.exact_text);
+        const isEditable = !readOnly && hasAnchor;
+        const isCommentable = allowComments && hasAnchor;
         const isSelected = activeEditing?.anchor.block_id === anchor.block_id;
         // While editing a block's content, the editor replaces the rendered block. Comment/insert
         // keep the rendered block visible as context.
@@ -478,115 +492,127 @@ function createBlockComponent(
                 ? 'border-transparent'
                 : isSelected
                   ? 'border-info bg-mixer-info/5'
-                  : isAnchorable
+                  : isEditable || isCommentable
                     ? 'border-transparent hover:border-mixer-info/30 hover:bg-mixer-muted/10'
                     : 'border-transparent',
             isChanged && 'border-mixer-success/50 bg-mixer-success/15 ring-1 ring-mixer-success/20',
         );
-        const showControls = isAnchorable || isSelected;
+        const showControls = isEditable || isCommentable || isSelected;
         const controls = showControls ? (
             <>
                 <div
                     className={cn(
                         'absolute end-1 top-1 z-10 flex items-center gap-0.5 rounded-md border bg-background p-0.5 shadow-sm',
-                        (!isAnchorable || isEditingContent) && 'hidden',
+                        ((!isEditable && !isCommentable) || isEditingContent) && 'hidden',
                         isSelected
                             ? 'opacity-100'
                             : 'pointer-events-none opacity-0 group-hover/collab:pointer-events-auto group-hover/collab:opacity-100 group-focus-within/collab:pointer-events-auto group-focus-within/collab:opacity-100',
                     )}
                 >
-                    <VTooltip description={t('agent.commentOnSelection')} asChild>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            aria-label={t('agent.commentOnSelection')}
-                            onClick={() => beginEditing(anchor, 'comment')}
-                        >
-                            <MessageSquare className="size-4" />
-                        </Button>
-                    </VTooltip>
-                    <VTooltip description={t('agent.editSelection')} asChild>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            aria-label={t('agent.editSelection')}
-                            onClick={() => beginEditing(anchor, 'edit')}
-                        >
-                            <Pencil className="size-4" />
-                        </Button>
-                    </VTooltip>
-                    <DropdownMenu>
-                        <VTooltip description={t('agent.insertComponent')} asChild>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 w-7 p-0"
-                                    aria-label={t('agent.insertComponent')}
-                                >
-                                    <Plus className="size-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
+                    {isCommentable ? (
+                        <VTooltip description={t('agent.commentOnSelection')} asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                aria-label={t('agent.commentOnSelection')}
+                                onClick={() => beginEditing(anchor, 'comment')}
+                            >
+                                <MessageSquare className="size-4" />
+                            </Button>
                         </VTooltip>
-                        <DropdownMenuContent align="end" className="w-52">
-                            <DropdownMenuItem onClick={() => beginEditing(anchor, 'insert', t('richText.paragraph'))}>
-                                <Pilcrow />
-                                {t('richText.paragraph')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => beginEditing(anchor, 'insert', `## ${t('richText.heading2')}`)}
+                    ) : null}
+                    {isEditable ? (
+                        <VTooltip description={t('agent.editSelection')} asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                aria-label={t('agent.editSelection')}
+                                onClick={() => beginEditing(anchor, 'edit')}
                             >
-                                <Heading2 />
-                                {t('richText.heading2')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => beginEditing(anchor, 'insert', `- ${t('richText.bulletList')}`)}
-                            >
-                                <List />
-                                {t('richText.bulletList')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => beginEditing(anchor, 'insert', `> ${t('richText.blockquote')}`)}
-                            >
-                                <Quote />
-                                {t('richText.blockquote')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => beginEditing(anchor, 'insert', '```\nCode\n```')}>
-                                <Code2 />
-                                {t('richText.codeBlock')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() =>
-                                    beginEditing(anchor, 'insert', '| Column | Value |\n| --- | --- |\n| A | 1 |')
-                                }
-                            >
-                                <Table2 />
-                                {t('richText.table')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() =>
-                                    beginEditing(anchor, 'insert', `[${t('agent.insertLink')}](https://example.com)`)
-                                }
-                            >
-                                <Link />
-                                {t('agent.insertLink')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() =>
-                                    beginEditing(
-                                        anchor,
-                                        'insert',
-                                        '```chart\n{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"values":[{"category":"A","value":1}]},"mark":"bar","encoding":{"x":{"field":"category","type":"nominal"},"y":{"field":"value","type":"quantitative"}}}\n```',
-                                    )
-                                }
-                            >
-                                <BarChart3 />
-                                {t('agent.insertChart')}
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                <Pencil className="size-4" />
+                            </Button>
+                        </VTooltip>
+                    ) : null}
+                    {isEditable ? (
+                        <DropdownMenu>
+                            <VTooltip description={t('agent.insertComponent')} asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        aria-label={t('agent.insertComponent')}
+                                    >
+                                        <Plus className="size-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </VTooltip>
+                            <DropdownMenuContent align="end" className="w-52">
+                                <DropdownMenuItem
+                                    onClick={() => beginEditing(anchor, 'insert', t('richText.paragraph'))}
+                                >
+                                    <Pilcrow />
+                                    {t('richText.paragraph')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => beginEditing(anchor, 'insert', `## ${t('richText.heading2')}`)}
+                                >
+                                    <Heading2 />
+                                    {t('richText.heading2')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => beginEditing(anchor, 'insert', `- ${t('richText.bulletList')}`)}
+                                >
+                                    <List />
+                                    {t('richText.bulletList')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => beginEditing(anchor, 'insert', `> ${t('richText.blockquote')}`)}
+                                >
+                                    <Quote />
+                                    {t('richText.blockquote')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => beginEditing(anchor, 'insert', '```\nCode\n```')}>
+                                    <Code2 />
+                                    {t('richText.codeBlock')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() =>
+                                        beginEditing(anchor, 'insert', '| Column | Value |\n| --- | --- |\n| A | 1 |')
+                                    }
+                                >
+                                    <Table2 />
+                                    {t('richText.table')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() =>
+                                        beginEditing(
+                                            anchor,
+                                            'insert',
+                                            `[${t('agent.insertLink')}](https://example.com)`,
+                                        )
+                                    }
+                                >
+                                    <Link />
+                                    {t('agent.insertLink')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() =>
+                                        beginEditing(
+                                            anchor,
+                                            'insert',
+                                            '```chart\n{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","data":{"values":[{"category":"A","value":1}]},"mark":"bar","encoding":{"x":{"field":"category","type":"nominal"},"y":{"field":"value","type":"quantitative"}}}\n```',
+                                        )
+                                    }
+                                >
+                                    <BarChart3 />
+                                    {t('agent.insertChart')}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : null}
                 </div>
                 {isSelected && activeEditing ? (
                     <CollaborativeBlockEditor
@@ -621,6 +647,7 @@ export function CollaborativeMarkdownRenderer({
     artifactRunId,
     components,
     readOnly = false,
+    allowComments = !readOnly,
     highlightChangesFrom,
     highlightVersion = 0,
     onAction,
@@ -683,12 +710,12 @@ export function CollaborativeMarkdownRenderer({
 
     const beginEditing = useCallback(
         (anchor: MarkdownBlockAnchor, mode: EditingMode, initialDraft?: string) => {
-            if (readOnly) return;
+            if ((mode === 'comment' && !allowComments) || (mode !== 'comment' && readOnly)) return;
             const enrichedAnchor = enrichMarkdownBlockAnchor(markdown, anchor);
             draftRef.current = mode === 'edit' ? enrichedAnchor.exact_text : (initialDraft ?? '');
             setActiveEditing({ anchor: enrichedAnchor, mode, initialDraft });
         },
-        [markdown, readOnly],
+        [allowComments, markdown, readOnly],
     );
 
     const cancelEditing = useCallback(() => {
@@ -702,7 +729,7 @@ export function CollaborativeMarkdownRenderer({
 
     const submit = useCallback(
         async (anchor: MarkdownBlockAnchor, mode: EditingMode, draft: string) => {
-            if (readOnly) return;
+            if ((mode === 'comment' && !allowComments) || (mode !== 'comment' && readOnly)) return;
             const after = mode === 'insert' ? `${anchor.exact_text.replace(/\s+$/, '')}\n\n${draft.trim()}` : draft;
             const action: MarkdownEditingAction = {
                 operation_id: createOperationId(),
@@ -717,7 +744,7 @@ export function CollaborativeMarkdownRenderer({
             draftRef.current = '';
             setActiveEditing(undefined);
         },
-        [baseVersion, onAction, readOnly, resource],
+        [allowComments, baseVersion, onAction, readOnly, resource],
     );
 
     const contextValue = useMemo<CollaborativeMarkdownContextValue>(
@@ -725,6 +752,7 @@ export function CollaborativeMarkdownRenderer({
             markdown,
             artifactRunId,
             readOnly,
+            allowComments,
             activeEditing,
             highlightChangesFrom,
             flashChangedBlocks,
@@ -735,6 +763,7 @@ export function CollaborativeMarkdownRenderer({
         }),
         [
             activeEditing,
+            allowComments,
             artifactRunId,
             beginEditing,
             cancelEditing,

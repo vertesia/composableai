@@ -4,7 +4,7 @@ import type { AgentRun } from '@vertesia/common';
 const DOCUMENT_EDITING_TAG = 'document-editing';
 const DOCUMENT_ROOT_TAG_PREFIX = 'document-root:';
 const LEGACY_DOCUMENT_TAG_PREFIX = 'document:';
-const DOCUMENT_EDITING_INTERACTION = 'sys:GeneralAgent';
+export const DOCUMENT_EDITING_DEFAULT_INTERACTION = 'sys:GeneralAgent';
 const openDocumentEditingScopes = new Set<string>();
 
 export type DocumentEditingRunProperties = {
@@ -74,8 +74,9 @@ export function isDocumentEditingRun(
     documentId: string,
     documentRootId: string,
     startedBy: string,
+    interaction = DOCUMENT_EDITING_DEFAULT_INTERACTION,
 ): boolean {
-    if (run.interaction !== DOCUMENT_EDITING_INTERACTION || run.started_by !== startedBy) return false;
+    if (run.interaction !== interaction || run.started_by !== startedBy) return false;
     // A cancelled run was explicitly terminated by the user; never resume it as the editing session.
     if (run.status === 'cancelled') return false;
 
@@ -98,11 +99,12 @@ async function retrieveMatchingRun(
     documentId: string,
     documentRootId: string,
     startedBy: string,
+    interaction: string,
 ): Promise<AgentRun | undefined> {
     for (const runId of runIds) {
         try {
             const run = await agents.retrieve(runId);
-            if (isDocumentEditingRun(run, documentId, documentRootId, startedBy)) return run;
+            if (isDocumentEditingRun(run, documentId, documentRootId, startedBy, interaction)) return run;
         } catch {
             // The run may have been deleted between search and retrieval. Try the next candidate.
         }
@@ -115,6 +117,7 @@ export async function findDocumentEditingRun(
     documentId: string,
     documentRootId: string,
     startedBy: string,
+    interaction = DOCUMENT_EDITING_DEFAULT_INTERACTION,
 ): Promise<AgentRun | undefined> {
     const lookupTags = [
         documentRootTag(documentRootId),
@@ -126,7 +129,7 @@ export async function findDocumentEditingRun(
     for (const tag of new Set(lookupTags)) {
         try {
             const response = await agents.search({
-                interaction: DOCUMENT_EDITING_INTERACTION,
+                interaction,
                 started_by: startedBy,
                 tags: [tag],
                 limit: 20,
@@ -136,7 +139,14 @@ export async function findDocumentEditingRun(
             for (const id of candidateIds) {
                 searchedRunIds.add(id);
             }
-            const run = await retrieveMatchingRun(agents, candidateIds, documentId, documentRootId, startedBy);
+            const run = await retrieveMatchingRun(
+                agents,
+                candidateIds,
+                documentId,
+                documentRootId,
+                startedBy,
+                interaction,
+            );
             if (run) return run;
         } catch {
             // Fall through to the authoritative Mongo-backed list lookup below.
@@ -145,7 +155,7 @@ export async function findDocumentEditingRun(
     }
 
     const response = await agents.list({
-        interaction: DOCUMENT_EDITING_INTERACTION,
+        interaction,
         started_by: startedBy,
         limit: 100,
         sort: 'updated_at',
@@ -153,6 +163,6 @@ export async function findDocumentEditingRun(
     });
     return response.items.find(
         (run): run is AgentRun =>
-            run.run_kind === 'agent' && isDocumentEditingRun(run, documentId, documentRootId, startedBy),
+            run.run_kind === 'agent' && isDocumentEditingRun(run, documentId, documentRootId, startedBy, interaction),
     );
 }

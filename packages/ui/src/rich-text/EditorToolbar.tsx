@@ -186,6 +186,8 @@ function Divider() {
 export interface EditorToolbarProps {
     editor: Editor | null;
     className?: string;
+    /** Whether formatting commands may mutate the document. Comment controls remain available. */
+    editable?: boolean;
     /**
      * When provided, the toolbar also shows comment controls: the user queues comments on text
      * selections and this sends the whole batch to the agent as one message.
@@ -197,7 +199,7 @@ export interface EditorToolbarProps {
  * Clean, icon-based formatting toolbar for the Markdown document editor, optionally with inline
  * comment controls. Reactive to the current selection; uses the shared `richText.*` i18n strings.
  */
-export function EditorToolbar({ editor, className, onSendComment }: EditorToolbarProps) {
+export function EditorToolbar({ editor, className, editable = true, onSendComment }: EditorToolbarProps) {
     const { t } = useUITranslation();
     const toast = useToast();
     useEditorRevision(editor);
@@ -296,13 +298,13 @@ export function EditorToolbar({ editor, className, onSendComment }: EditorToolba
                 <ToolButton
                     icon={Undo2}
                     label={t('richText.undo')}
-                    disabled={!canChain(editor).focus().undo().run()}
+                    disabled={!editable || !canChain(editor).focus().undo().run()}
                     onClick={() => chain(editor).focus().undo().run()}
                 />
                 <ToolButton
                     icon={Redo2}
                     label={t('richText.redo')}
-                    disabled={!canChain(editor).focus().redo().run()}
+                    disabled={!editable || !canChain(editor).focus().redo().run()}
                     onClick={() => chain(editor).focus().redo().run()}
                 />
 
@@ -313,6 +315,7 @@ export function EditorToolbar({ editor, className, onSendComment }: EditorToolba
                         <Button
                             variant="ghost"
                             size="sm"
+                            disabled={!editable}
                             onMouseDown={retainSelection}
                             className="h-8 shrink-0 gap-1 px-2 text-xs font-medium text-foreground hover:bg-muted/60"
                         >
@@ -342,24 +345,28 @@ export function EditorToolbar({ editor, className, onSendComment }: EditorToolba
                     icon={Bold}
                     label={t('richText.bold')}
                     active={editor.isActive('bold')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().toggleBold().run()}
                 />
                 <ToolButton
                     icon={Italic}
                     label={t('richText.italic')}
                     active={editor.isActive('italic')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().toggleItalic().run()}
                 />
                 <ToolButton
                     icon={Strikethrough}
                     label={t('richText.strike')}
                     active={editor.isActive('strike')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().toggleStrike().run()}
                 />
                 <ToolButton
                     icon={Code}
                     label={t('richText.inlineCode')}
                     active={editor.isActive('code')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().toggleCode().run()}
                 />
 
@@ -369,24 +376,28 @@ export function EditorToolbar({ editor, className, onSendComment }: EditorToolba
                     icon={List}
                     label={t('richText.bulletList')}
                     active={editor.isActive('bulletList')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().toggleBulletList().run()}
                 />
                 <ToolButton
                     icon={ListOrdered}
                     label={t('richText.orderedList')}
                     active={editor.isActive('orderedList')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().toggleOrderedList().run()}
                 />
                 <ToolButton
                     icon={Quote}
                     label={t('richText.blockquote')}
                     active={editor.isActive('blockquote')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().toggleBlockquote().run()}
                 />
                 <ToolButton
                     icon={SquareCode}
                     label={t('richText.codeBlock')}
                     active={editor.isActive('codeBlock')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().toggleCodeBlock().run()}
                 />
 
@@ -395,6 +406,7 @@ export function EditorToolbar({ editor, className, onSendComment }: EditorToolba
                 <ToolButton
                     icon={Minus}
                     label={t('richText.horizontalRule')}
+                    disabled={!editable}
                     onClick={() => chain(editor).focus().setHorizontalRule().run()}
                 />
                 <DropdownMenu>
@@ -402,6 +414,7 @@ export function EditorToolbar({ editor, className, onSendComment }: EditorToolba
                         <Button
                             variant="ghost"
                             size="sm"
+                            disabled={!editable}
                             aria-label={t('richText.tableActions')}
                             title={inTable ? t('richText.tableActions') : t('richText.table')}
                             onMouseDown={retainSelection}
@@ -454,6 +467,7 @@ export function EditorToolbar({ editor, className, onSendComment }: EditorToolba
                     <div className="ms-auto flex shrink-0 items-center gap-1 ps-1">
                         <VTooltip
                             description={hasSelection ? t('agent.commentOnSelection') : t('agent.selectTextToComment')}
+                            asChild
                         >
                             <Button
                                 variant="ghost"

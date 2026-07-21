@@ -91,6 +91,39 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
     });
 
+    it('sends selected-text comments while full-document content editing is locked', async () => {
+        const onSendComment = vi.fn();
+        let editor: Parameters<NonNullable<MarkdownRichTextEditorProps['onEditor']>>[0] = null;
+        render(
+            <I18nProvider lng="en">
+                <VertesiaMarkdownDocumentEditor
+                    value="Locked paragraph."
+                    editable={false}
+                    onSendComment={onSendComment}
+                    onEditor={(nextEditor) => {
+                        editor = nextEditor;
+                    }}
+                />
+            </I18nProvider>,
+        );
+
+        await waitFor(() => expect(editor).not.toBeNull());
+        act(() => {
+            editor?.commands.setTextSelection({ from: 1, to: 7 });
+        });
+        expect(screen.getByRole('button', { name: 'Bold' })).toHaveProperty('disabled', true);
+        fireEvent.click(await screen.findByRole('button', { name: 'Comment on selection' }));
+        fireEvent.change(screen.getByPlaceholderText('Describe how the agent should improve this section...'), {
+            target: { value: 'Make this claim measurable.' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Send to agent' }));
+
+        await waitFor(() => expect(onSendComment).toHaveBeenCalledTimes(1));
+        expect(onSendComment).toHaveBeenCalledWith(expect.stringContaining('“Locked”'));
+        expect(onSendComment).toHaveBeenCalledWith(expect.stringContaining('Make this claim measurable.'));
+    });
+
     it('warns before rich-text editing would normalize Markdown and lets the user preserve source', async () => {
         const onChange = vi.fn();
         render(

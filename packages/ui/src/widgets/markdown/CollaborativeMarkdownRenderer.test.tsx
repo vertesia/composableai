@@ -255,6 +255,36 @@ describe('collaborative Markdown actions', () => {
         expect(screen.queryByRole('button', { name: 'Edit selection' })).toBeNull();
     });
 
+    it('keeps comments enabled while content mutations are locked', async () => {
+        const onAction = vi.fn();
+        render(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'agent_artifact', run_id: 'run-1', path: 'draft.md' }}
+                    readOnly
+                    allowComments
+                    onAction={onAction}
+                >
+                    {'Locked paragraph.'}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        expect(screen.queryByRole('button', { name: 'Edit selection' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Comment on selection' }));
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Add supporting evidence.' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+        await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));
+        expect(onAction).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: 'comment',
+                comment: 'Add supporting evidence.',
+                anchor: expect.objectContaining({ exact_text: 'Locked paragraph.' }),
+            }),
+        );
+    });
+
     it('prevents an open component editor from submitting after the surface becomes read-only', () => {
         const onAction = vi.fn();
         const view = render(

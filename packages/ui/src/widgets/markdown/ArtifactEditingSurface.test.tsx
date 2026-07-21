@@ -33,7 +33,10 @@ function renderSurface(props?: {
     refreshKey?: number;
     viewMode?: 'components' | 'document';
     baselineContent?: string;
+    readOnly?: boolean;
+    allowComments?: boolean;
     onAction?: (action: MarkdownEditingAction) => void;
+    onSendMessage?: (message: string) => void;
     flushChangesRef?: React.MutableRefObject<(() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null>;
 }) {
     return render(
@@ -44,7 +47,10 @@ function renderSurface(props?: {
                 refreshKey={props?.refreshKey}
                 viewMode={props?.viewMode}
                 baselineContent={props?.baselineContent}
+                readOnly={props?.readOnly}
+                allowComments={props?.allowComments}
                 onAction={props?.onAction}
+                onSendMessage={props?.onSendMessage}
                 flushChangesRef={props?.flushChangesRef}
             />
         </I18nProvider>,
@@ -152,6 +158,19 @@ describe('ArtifactEditingSurface', () => {
             },
             { timeout: 2500 },
         );
+    });
+
+    it('keeps TipTap comment controls available when full-document content editing is locked', async () => {
+        renderSurface({
+            viewMode: 'document',
+            readOnly: true,
+            allowComments: true,
+            onSendMessage: vi.fn(),
+        });
+
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        expect(editor.getAttribute('contenteditable')).toBe('false');
+        expect(screen.getByRole('button', { name: 'Comment on selection' })).not.toBeNull();
     });
 
     it('flushes the latest editor transaction before handing changes to the agent', async () => {

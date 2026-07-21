@@ -78,6 +78,14 @@ describe('document editing run identity', () => {
 
         expect(isDocumentEditingRun(run, 'document-2', 'document-root', startedBy)).toBe(false);
     });
+
+    it('matches the interaction configured for the document type', () => {
+        const identity = createDocumentEditingRunIdentity('document-2', 'document-root');
+        const run = createRun({ ...identity, interaction: 'custom-editor' });
+
+        expect(isDocumentEditingRun(run, 'document-2', 'document-root', startedBy, 'custom-editor')).toBe(true);
+        expect(isDocumentEditingRun(run, 'document-2', 'document-root', startedBy)).toBe(false);
+    });
 });
 
 describe('findDocumentEditingRun', () => {
@@ -120,5 +128,27 @@ describe('findDocumentEditingRun', () => {
             sort: 'updated_at',
             order: 'desc',
         });
+    });
+
+    it('searches and validates runs using a type-specific interaction', async () => {
+        const identity = createDocumentEditingRunIdentity('document-2', 'document-root');
+        const run = createRun({ ...identity, interaction: 'custom-editor' });
+        const agents = {
+            search: vi.fn().mockResolvedValue({
+                hits: [{ id: run.id, created_at: '2026-01-01', updated_at: '2026-01-02' }],
+                total: 1,
+            }),
+            retrieve: vi.fn().mockResolvedValue(run),
+            list: vi.fn(),
+        };
+
+        await expect(
+            findDocumentEditingRun(agents, 'document-2', 'document-root', startedBy, 'custom-editor'),
+        ).resolves.toBe(run);
+        expect(agents.search).toHaveBeenCalledWith(
+            expect.objectContaining({
+                interaction: 'custom-editor',
+            }),
+        );
     });
 });

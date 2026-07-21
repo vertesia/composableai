@@ -134,6 +134,8 @@ export interface ArtifactEditingSurfaceProps {
     refreshKey?: number;
     refreshDetails?: Record<string, unknown>;
     readOnly?: boolean;
+    /** Keep comment controls enabled when content mutations are read-only. */
+    allowComments?: boolean;
     viewMode?: 'components' | 'document';
     /** Canonical Markdown used by the full editor's change ruler. */
     baselineContent?: string;
@@ -180,6 +182,7 @@ export function ArtifactEditingSurface({
     refreshKey = 0,
     refreshDetails,
     readOnly = false,
+    allowComments = false,
     viewMode = 'components',
     baselineContent,
     className,
@@ -203,6 +206,7 @@ export function ArtifactEditingSurface({
     const [loadError, setLoadError] = useState<string | undefined>();
     const [documentConflict, setDocumentConflict] = useState<ArtifactDocumentConflict>();
     const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+    const commentsEnabled = !readOnly || allowComments;
 
     // Working-copy save state for the document editor, shared with the built-in badge and
     // optionally reported to a parent that renders its own indicator.
@@ -788,7 +792,9 @@ export function ArtifactEditingSurface({
                                         editor as unknown as MarkdownDocumentEditorHandle | null;
                                 }}
                                 onSendComment={
-                                    onSendMessage && !readOnly && runId && !documentConflict ? onSendMessage : undefined
+                                    onSendMessage && runId && !documentConflict && commentsEnabled
+                                        ? onSendMessage
+                                        : undefined
                                 }
                                 contentClassName="pe-5"
                             />
@@ -825,6 +831,7 @@ export function ArtifactEditingSurface({
                         resource={{ kind: 'agent_artifact', run_id: runId ?? 'pending', path }}
                         baseVersion={generation}
                         readOnly={readOnly || !runId || Boolean(documentConflict)}
+                        allowComments={commentsEnabled && Boolean(runId) && !documentConflict}
                         highlightChangesFrom={highlightChangesFrom}
                         highlightVersion={highlightVersion}
                         onAction={handleAction}
