@@ -69,7 +69,7 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(await screen.findByText('External paragraph')).not.toBeNull();
     });
 
-    it('offers compact component and full-document editor surfaces', async () => {
+    it('offers a bare compact component surface and a full-document editor with a formatting toolbar', async () => {
         const { rerender } = render(
             <I18nProvider lng="en">
                 <VertesiaMarkdownComponentEditor value="Component text" />
@@ -77,8 +77,8 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         );
 
         expect(await screen.findByText('Component text')).not.toBeNull();
-        expect(screen.getByRole('toolbar', { name: 'Markdown formatting' })).not.toBeNull();
-        expect(screen.queryByRole('combobox', { name: 'Block style' })).toBeNull();
+        // The compact component editor is chrome-free; the formatting toolbar is document-only.
+        expect(screen.queryByRole('toolbar')).toBeNull();
 
         rerender(
             <I18nProvider lng="en">
@@ -87,7 +87,7 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         );
 
         expect(await screen.findByRole('heading', { name: 'Full document' })).not.toBeNull();
-        expect(screen.getByRole('combobox', { name: 'Block style' })).not.toBeNull();
+        expect(await screen.findByRole('toolbar')).not.toBeNull();
         expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
     });
 
@@ -123,115 +123,6 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
     });
 
-    it('offers contextual row and column actions while editing a table', async () => {
-        let editor: Parameters<NonNullable<MarkdownRichTextEditorProps['onEditor']>>[0] = null;
-        render(
-            <I18nProvider lng="en">
-                <VertesiaMarkdownDocumentEditor
-                    value={'| Name | Value |\n| --- | --- |\n| Aurora | 1 |'}
-                    onEditor={(nextEditor) => {
-                        editor = nextEditor;
-                    }}
-                />
-            </I18nProvider>,
-        );
-
-        fireEvent.click(await screen.findByRole('button', { name: 'Continue with rich text' }));
-        await waitFor(() => expect(editor).not.toBeNull());
-        expect(screen.queryByRole('combobox', { name: 'Table actions' })).toBeNull();
-
-        act(() => {
-            const currentEditor = editor;
-            if (!currentEditor) throw new Error('Expected the editor to be ready');
-            let cellTextPosition: number | undefined;
-            currentEditor.state.doc.descendants((node, position) => {
-                if (cellTextPosition === undefined && node.type.name === 'tableCell') {
-                    cellTextPosition = position + 2;
-                }
-            });
-            if (cellTextPosition === undefined) throw new Error('Expected a table body cell');
-            currentEditor.commands.setTextSelection(cellTextPosition);
-        });
-
-        const countNodes = (type: string): number => {
-            const currentEditor = editor;
-            if (!currentEditor) return 0;
-            let count = 0;
-            currentEditor.state.doc.descendants((node) => {
-                if (node.type.name === type) count += 1;
-            });
-            return count;
-        };
-        const runTableAction = (action: string) => {
-            fireEvent.change(screen.getByRole('combobox', { name: 'Table actions' }), {
-                target: { value: action },
-            });
-        };
-
-        expect(await screen.findByRole('option', { name: 'Add row below' })).not.toBeNull();
-        runTableAction('add-row-below');
-        expect(countNodes('tableRow')).toBe(3);
-
-        runTableAction('add-column-right');
-        expect(countNodes('tableCell') + countNodes('tableHeader')).toBe(9);
-
-        runTableAction('delete-column');
-        expect(countNodes('tableCell') + countNodes('tableHeader')).toBe(6);
-
-        runTableAction('delete-row');
-        expect(countNodes('tableRow')).toBe(2);
-
-        runTableAction('delete-table');
-        expect(countNodes('table')).toBe(0);
-        expect(screen.queryByRole('combobox', { name: 'Table actions' })).toBeNull();
-    });
-
-    it('offers contextual list nesting actions', async () => {
-        let editor: Parameters<NonNullable<MarkdownRichTextEditorProps['onEditor']>>[0] = null;
-        render(
-            <I18nProvider lng="en">
-                <VertesiaMarkdownComponentEditor
-                    value={'- First item\n- Second item'}
-                    onEditor={(nextEditor) => {
-                        editor = nextEditor;
-                    }}
-                />
-            </I18nProvider>,
-        );
-
-        await waitFor(() => expect(editor).not.toBeNull());
-        act(() => {
-            const currentEditor = editor;
-            if (!currentEditor) throw new Error('Expected the editor to be ready');
-            const listItemPositions: number[] = [];
-            currentEditor.state.doc.descendants((node, position) => {
-                if (node.type.name === 'listItem') listItemPositions.push(position + 2);
-            });
-            const secondItemPosition = listItemPositions[1];
-            if (secondItemPosition === undefined) throw new Error('Expected a second list item');
-            currentEditor.commands.setTextSelection(secondItemPosition);
-        });
-
-        const countLists = (): number => {
-            const currentEditor = editor;
-            if (!currentEditor) return 0;
-            let count = 0;
-            currentEditor.state.doc.descendants((node) => {
-                if (node.type.name === 'bulletList') count += 1;
-            });
-            return count;
-        };
-        const runListAction = (action: string) => {
-            fireEvent.change(screen.getByRole('combobox', { name: 'List actions' }), {
-                target: { value: action },
-            });
-        };
-
-        expect(await screen.findByRole('option', { name: 'Increase indent' })).not.toBeNull();
-        runListAction('indent-list-item');
-        expect(countLists()).toBe(2);
-
-        runListAction('outdent-list-item');
-        expect(countLists()).toBe(1);
-    });
+    // Table row/column editing and list indent/outdent are intentionally not in the clean toolbar
+    // (list nesting works via Tab / Shift-Tab; table structure editing is a planned context menu).
 });

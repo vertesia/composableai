@@ -6,11 +6,6 @@ export {
     type MarkdownDocumentEditorProps,
 } from './MarkdownEditors.js';
 export {
-    MarkdownEditorToolbar,
-    type MarkdownEditorToolbarLabels,
-    type MarkdownEditorToolbarProps,
-} from './MarkdownEditorToolbar.js';
-export {
     type ExternalValueSyncPolicy,
     MarkdownRichTextEditor,
     type MarkdownRichTextEditorProps,

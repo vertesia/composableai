@@ -330,7 +330,8 @@ describe('collaborative Markdown actions', () => {
     });
 
     it('uses the rich component editor for a selected block', async () => {
-        const user = userEvent.setup();
+        // delay:null types synchronously so ProseMirror doesn't drop characters between renders.
+        const user = userEvent.setup({ delay: null });
         const onAction = vi.fn();
         render(
             <I18nProvider lng="en">
@@ -344,10 +345,11 @@ describe('collaborative Markdown actions', () => {
         );
 
         fireEvent.click(screen.getByRole('button', { name: 'Edit selection' }));
-        expect(await screen.findByRole('toolbar', { name: 'Markdown formatting' })).not.toBeNull();
-        const editor = screen.getByRole('textbox');
-        await user.click(editor);
-        await user.keyboard('{Control>}a{/Control}');
+        const editor = await screen.findByRole('textbox');
+        // Wait for the draft to hydrate, then triple-click to select the whole paragraph so the
+        // retype replaces it cleanly.
+        await waitFor(() => expect(editor.textContent ?? '').toContain('Original paragraph.'));
+        await user.tripleClick(editor);
         await user.type(editor, 'Revised paragraph.');
         fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
@@ -364,7 +366,7 @@ describe('collaborative Markdown actions', () => {
     });
 
     it('inserts a new component after a selected block as an already-applicable edit', async () => {
-        const user = userEvent.setup();
+        const user = userEvent.setup({ delay: null });
         const onAction = vi.fn();
         render(
             <I18nProvider lng="en">

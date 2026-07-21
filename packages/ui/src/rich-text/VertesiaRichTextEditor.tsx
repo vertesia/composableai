@@ -1,10 +1,10 @@
 import {
+    type Editor,
     isMarkdownSourcePreserving,
     MarkdownComponentEditor,
     type MarkdownComponentEditorProps,
     MarkdownDocumentEditor,
     type MarkdownDocumentEditorProps,
-    type MarkdownEditorToolbarLabels,
     MarkdownRichTextEditor,
     type MarkdownRichTextEditorProps,
     type RichTextCodeBlockRendererProps,
@@ -15,7 +15,7 @@ import {
 } from '@vertesia/rich-text';
 import { Button, cn, Modal, ModalBody, ModalFooter, ModalTitle, Textarea } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { CodeBlockHandlerProvider, useCodeBlockContext } from '../widgets/markdown/CodeBlockContext.js';
 import { useCodeBlockRendererRegistry } from '../widgets/markdown/CodeBlockRendering.js';
 import { createDefaultCodeBlockHandlers, ExpandCodeBlockHandler } from '../widgets/markdown/codeBlockHandlers.js';
@@ -23,21 +23,9 @@ import { MarkdownFigure } from '../widgets/markdown/MarkdownFigure.js';
 import { MarkdownImage } from '../widgets/markdown/MarkdownImage.js';
 import { MarkdownLink } from '../widgets/markdown/MarkdownLink.js';
 import { MarkdownRenderer } from '../widgets/markdown/MarkdownRenderer.js';
+import { EditorToolbar } from './EditorToolbar.js';
 
 const defaultCodeBlockHandlers = createDefaultCodeBlockHandlers();
-const TOOLBAR_CLASS_NAME =
-    'flex min-h-10 shrink-0 items-center gap-1 overflow-x-auto border-b border-mixer-muted/25 bg-muted/10 px-2 py-1 ' +
-    '[&_.vertesia-rich-text-toolbar-button]:h-7 [&_.vertesia-rich-text-toolbar-button]:min-w-7 ' +
-    '[&_.vertesia-rich-text-toolbar-button]:rounded [&_.vertesia-rich-text-toolbar-button]:px-1.5 ' +
-    '[&_.vertesia-rich-text-toolbar-button]:text-xs [&_.vertesia-rich-text-toolbar-button]:text-muted ' +
-    '[&_.vertesia-rich-text-toolbar-button:hover]:bg-muted/30 ' +
-    '[&_.vertesia-rich-text-toolbar-button[data-active]]:bg-info/15 ' +
-    '[&_.vertesia-rich-text-toolbar-button[data-active]]:text-info ' +
-    '[&_.vertesia-rich-text-toolbar-button:disabled]:opacity-40 ' +
-    '[&_.vertesia-rich-text-toolbar-select]:h-7 [&_.vertesia-rich-text-toolbar-select]:rounded ' +
-    '[&_.vertesia-rich-text-toolbar-select]:border [&_.vertesia-rich-text-toolbar-select]:border-mixer-muted/30 ' +
-    '[&_.vertesia-rich-text-toolbar-select]:bg-background [&_.vertesia-rich-text-toolbar-select]:px-2 ' +
-    '[&_.vertesia-rich-text-toolbar-select]:text-xs [&_.vertesia-rich-text-toolbar-spacer]:flex-1';
 
 function VertesiaCodeBlockPreview({ code, language }: RichTextCodeBlockRendererProps) {
     const registry = useCodeBlockRendererRegistry();
@@ -78,43 +66,6 @@ export const vertesiaRichTextRenderers: RichTextRenderers = {
     opaqueBlock: VertesiaOpaqueBlockPreview,
 };
 
-function useToolbarLabels(overrides?: Partial<MarkdownEditorToolbarLabels>): Partial<MarkdownEditorToolbarLabels> {
-    const { t } = useUITranslation();
-    return {
-        blockStyle: t('richText.blockStyle'),
-        paragraph: t('richText.paragraph'),
-        heading1: t('richText.heading1'),
-        heading2: t('richText.heading2'),
-        heading3: t('richText.heading3'),
-        bold: t('richText.bold'),
-        italic: t('richText.italic'),
-        strike: t('richText.strike'),
-        inlineCode: t('richText.inlineCode'),
-        bulletList: t('richText.bulletList'),
-        orderedList: t('richText.orderedList'),
-        listActions: t('richText.listActions'),
-        indentListItem: t('richText.indentListItem'),
-        outdentListItem: t('richText.outdentListItem'),
-        blockquote: t('richText.blockquote'),
-        codeBlock: t('richText.codeBlock'),
-        horizontalRule: t('richText.horizontalRule'),
-        table: t('richText.table'),
-        tableActions: t('richText.tableActions'),
-        tableRows: t('richText.tableRows'),
-        tableColumns: t('richText.tableColumns'),
-        addRowAbove: t('richText.addRowAbove'),
-        addRowBelow: t('richText.addRowBelow'),
-        deleteRow: t('richText.deleteRow'),
-        addColumnLeft: t('richText.addColumnLeft'),
-        addColumnRight: t('richText.addColumnRight'),
-        deleteColumn: t('richText.deleteColumn'),
-        deleteTable: t('richText.deleteTable'),
-        undo: t('richText.undo'),
-        redo: t('richText.redo'),
-        ...overrides,
-    };
-}
-
 interface VertesiaEditorProps {
     artifactRunId?: string;
 }
@@ -140,11 +91,8 @@ export function VertesiaMarkdownComponentEditor({
     className,
     contentClassName,
     editorClassName,
-    toolbarClassName,
-    toolbarLabels,
     ...props
 }: VertesiaMarkdownComponentEditorProps) {
-    const labels = useToolbarLabels(toolbarLabels);
     return (
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
             <MarkdownComponentEditor
@@ -153,8 +101,6 @@ export function VertesiaMarkdownComponentEditor({
                 className={cn('overflow-hidden rounded-md border border-mixer-muted/30 bg-background', className)}
                 contentClassName={cn('max-h-80 overflow-auto', contentClassName)}
                 editorClassName={cn('vprose prose-sm min-h-24 max-w-none px-3 py-2 outline-none', editorClassName)}
-                toolbarClassName={cn(TOOLBAR_CLASS_NAME, toolbarClassName)}
-                toolbarLabels={labels}
             />
         </CodeBlockHandlerProvider>
     );
@@ -169,12 +115,18 @@ export function VertesiaMarkdownDocumentEditor({
     className,
     contentClassName,
     editorClassName,
-    toolbarClassName,
-    toolbarLabels,
+    onEditor,
     ...props
 }: VertesiaMarkdownDocumentEditorProps) {
     const { t } = useUITranslation();
-    const labels = useToolbarLabels(toolbarLabels);
+    const [editor, setEditor] = useState<Editor | null>(null);
+    const handleEditor = useCallback(
+        (next: Editor | null) => {
+            setEditor(next);
+            onEditor?.(next);
+        },
+        [onEditor],
+    );
     const [editingMode, setEditingMode] = useState<'choose' | 'rich-text' | 'source'>(() =>
         isMarkdownSourcePreserving(props.value) ? 'rich-text' : 'choose',
     );
@@ -183,19 +135,21 @@ export function VertesiaMarkdownDocumentEditor({
     return (
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
             {resolvedEditingMode === 'rich-text' ? (
-                <MarkdownDocumentEditor
-                    {...props}
-                    {...vertesiaRichTextRenderers}
-                    ariaLabel={props.ariaLabel ?? t('richText.documentEditor')}
-                    className={cn('flex h-full min-h-0 flex-col bg-background', className)}
-                    contentClassName={cn('min-h-0 flex-1 overflow-auto', contentClassName)}
-                    editorClassName={cn(
-                        'vprose prose-sm mx-auto min-h-full w-full max-w-5xl px-6 py-5 outline-none',
-                        editorClassName,
-                    )}
-                    toolbarClassName={cn(TOOLBAR_CLASS_NAME, toolbarClassName)}
-                    toolbarLabels={labels}
-                />
+                <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
+                    <EditorToolbar editor={editor} />
+                    <MarkdownDocumentEditor
+                        {...props}
+                        {...vertesiaRichTextRenderers}
+                        onEditor={handleEditor}
+                        ariaLabel={props.ariaLabel ?? t('richText.documentEditor')}
+                        className="flex min-h-0 flex-1 flex-col"
+                        contentClassName={cn('min-h-0 flex-1 overflow-auto', contentClassName)}
+                        editorClassName={cn(
+                            'vprose prose-sm mx-auto min-h-full w-full max-w-5xl px-6 py-5 outline-none',
+                            editorClassName,
+                        )}
+                    />
+                </div>
             ) : (
                 <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
                     <Textarea
