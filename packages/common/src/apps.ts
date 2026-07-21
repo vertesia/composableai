@@ -979,14 +979,22 @@ export interface AppRepoTree {
     entries: AppRepoTreeEntry[];
 }
 
-/** The content of a single file read from an app git repo at a given ref. */
-export interface AppRepoFile {
-    /** Path relative to the repo root. */
-    path: string;
-    /** The ref the file was read at (empty/undefined = default branch / HEAD). */
-    ref?: string;
-    /** UTF-8 file content. */
-    content: string;
+/** Browser-side limits mirrored by the app Git service document endpoint. */
+export const APP_REPO_DOCUMENT_UPLOAD_MAX_FILE_BYTES = 20 * 1024 * 1024;
+export const APP_REPO_DOCUMENT_UPLOAD_MAX_TOTAL_BYTES = 80 * 1024 * 1024;
+export const APP_REPO_DOCUMENT_UPLOAD_MAX_FILES = 20;
+export const APP_REPO_DOCUMENT_UPLOAD_PREFIX = 'docs/';
+
+/** Result of committing one or more uploaded documents to an app repository. */
+export interface AppRepoDocumentCommit {
+    /** Updated branch name. */
+    ref: string;
+    /** Branch HEAD before the commit. */
+    previous_commit: string;
+    /** Newly created commit SHA. */
+    commit: string;
+    /** Repository paths changed by the commit. */
+    paths: string[];
 }
 
 /** One commit that inserted or changed a file in an app git repository. */

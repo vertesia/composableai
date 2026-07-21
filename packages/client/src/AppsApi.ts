@@ -14,7 +14,7 @@ import type {
     AppPackage,
     AppPackageScope,
     AppRepoCommits,
-    AppRepoFile,
+    AppRepoDocumentCommit,
     AppRepoRefs,
     AppRepoTree,
     AppScaffoldProgress,
@@ -140,12 +140,49 @@ export default class AppsApi extends ApiTopic {
     }
 
     /**
-     * Read the UTF-8 content of a single file in the app's git repository (default
-     * branch unless `ref` is given). Read-only; reads live from the git server.
+     * Read the original bytes of a single file in the app's git repository (default
+     * branch unless `ref` is given). The caller decides whether to consume the
+     * successful response as text, a Blob, or an ArrayBuffer.
      */
-    getRepoFile(appIdOrName: string, path: string, options?: { ref?: string }): Promise<AppRepoFile> {
-        return this.get(`/${encodeURIComponent(appIdOrName)}/repo/file`, {
+    async getRepoFile(appIdOrName: string, path: string, options?: { ref?: string }): Promise<Response> {
+        const endpoint = `/${encodeURIComponent(appIdOrName)}/repo/file`;
+        const response = await this.get<Response>(endpoint, {
             query: { path, ref: options?.ref },
+            reader: (rawResponse) => rawResponse,
+        });
+        if (!response.ok) {
+            const payload = await this.readJSONPayload(response);
+            const request = await this.createRequest(response.url || this.getUrl(endpoint), { method: 'GET' });
+            throw this.createServerError(request, response, payload);
+        }
+        return response;
+    }
+
+    /**
+     * Commit one or more files under the repository's allowed document roots.
+     * The Git service currently permits only `docs/`. All files are written in
+     * one commit and `expectedHead` prevents overwriting a concurrent push.
+     */
+    commitRepoDocuments(
+        appIdOrName: string,
+        files: Array<{ path: string; content: Blob; fileName?: string }>,
+        options: { ref: string; expectedHead: string; message?: string },
+    ): Promise<AppRepoDocumentCommit> {
+        const form = new FormData();
+        const metadata = {
+            ref: options.ref,
+            expected_head: options.expectedHead,
+            message: options.message || 'Upload documentation',
+            files: files.map((file, index) => ({ field: `file_${index}`, path: file.path })),
+        };
+        form.append('metadata', JSON.stringify(metadata));
+        files.forEach((file, index) => {
+            form.append(`file_${index}`, file.content, file.fileName || file.path.split('/').pop() || 'document');
+        });
+        return this.post(`/${encodeURIComponent(appIdOrName)}/repo/documents`, {
+            payload: form,
+            jsonPayload: false,
+            timeoutMs: 120_000,
         });
     }
 
