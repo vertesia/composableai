@@ -1794,6 +1794,27 @@ function ModernAgentConversationInner({
         [setShowSlidingPanel],
     );
 
+    // The `display_artifact` tool emits a `display_artifact` stream event asking the UI
+    // to reveal a text artifact in the editor. Act on the latest such event, once per
+    // distinct occurrence so the user can still close the panel without it snapping back.
+    const displayedArtifactMarkerRef = useRef<string | null>(null);
+    useEffect(() => {
+        let target: string | undefined;
+        let marker: string | undefined;
+        for (const message of messages) {
+            const details = message.details as Record<string, unknown> | undefined;
+            if (details?.event_class === 'display_artifact' && typeof details.path === 'string') {
+                target = details.path;
+                marker = `${message.timestamp ?? ''}:${details.path}`;
+            }
+        }
+        if (!target || !marker || marker === displayedArtifactMarkerRef.current) return;
+        displayedArtifactMarkerRef.current = marker;
+        setSelectedArtifactPath(target);
+        setRightPanelTab('artifacts');
+        setShowSlidingPanel(true);
+    }, [messages, setShowSlidingPanel]);
+
     // Default StoreLinkComponent that opens documents in the panel
     const internalStoreLinkComponent = useCallback(
         ({ href, documentId, children }: { href: string; documentId: string; children: React.ReactNode }) => (
