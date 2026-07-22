@@ -13,6 +13,7 @@ const SUBPATH_INDEX_FILES: Record<string, string> = {
     features: 'src/features/index.ts',
     i18n: 'src/i18n/index.tsx',
     layout: 'src/layout/index.ts',
+    'rich-text': 'src/rich-text/index.ts',
     env: 'src/env/index.ts',
     widgets: 'src/widgets/index.ts',
     code: 'src/code/index.ts',
@@ -21,10 +22,16 @@ const SUBPATH_INDEX_FILES: Record<string, string> = {
 
 export default defineConfig({
     resolve: {
-        alias: Object.entries(SUBPATH_INDEX_FILES).map(([sub, file]) => ({
-            find: `@vertesia/ui/${sub}`,
-            replacement: resolve(__dirname, file),
-        })),
+        alias: [
+            ...Object.entries(SUBPATH_INDEX_FILES).map(([sub, file]) => ({
+                find: `@vertesia/ui/${sub}`,
+                replacement: resolve(__dirname, file),
+            })),
+            {
+                find: '@vertesia/rich-text',
+                replacement: resolve(__dirname, '../rich-text/src/index.ts'),
+            },
+        ],
     },
     test: {
         environment: 'jsdom',

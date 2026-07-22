@@ -16,6 +16,7 @@ import type { UserChannel } from '../email.js';
 import type {
     AgentSearchScope,
     ConversationVisibility,
+    InitialToolCall,
     InteractionExecutionConfiguration,
     InteractionRef,
     RunSource,
@@ -172,6 +173,15 @@ export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Rec
 
     /** Tools configured for this run (+/- syntax supported) */
     tool_names?: string[];
+
+    /** Builtin system skills activated before the first model turn. */
+    initial_skills?: string[];
+
+    /** Ordered, bounded hydration/read calls executed before the first model turn. */
+    initial_tool_calls?: InitialToolCall[];
+
+    /** Hard denylist of tool names: never exposed to the model, refused at execution time. */
+    excluded_tools?: string[];
 
     /** Scoped collection (if any) */
     collection_id?: string;
@@ -543,6 +553,25 @@ export interface PostAgentRunUpdateResponse {
 export interface AgentArtifactUrlResponse {
     url: string;
     path: string;
+}
+
+/** Text content and concurrency token for an agent artifact. */
+export interface AgentArtifactContentResponse {
+    path: string;
+    content: string;
+    generation: string;
+}
+
+/** Conditional text update for an agent artifact. */
+export interface UpdateAgentArtifactContentPayload {
+    content: string;
+    generation: string;
+}
+
+/** Result of a conditional agent artifact update. */
+export interface UpdateAgentArtifactContentResponse {
+    path: string;
+    generation: string;
 }
 
 /**

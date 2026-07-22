@@ -98,6 +98,10 @@ function isTimelineStateMessage(message: AgentMessage): boolean {
 function shouldStoreTimelineMessage(message: AgentMessage): boolean {
     if (message.type === AgentMessageType.STREAMING_CHUNK) return false;
 
+    // Structured resource events must survive replay even if a producer accidentally
+    // omits the human-readable display message.
+    if (message.type === AgentMessageType.UPDATE && typeof message.details?.event_class === 'string') return true;
+
     if (message.type === AgentMessageType.SYSTEM) {
         const details = message.details as FileProcessingDetails | undefined;
         if (details?.system_type === 'file_processing' && details.files) return false;
@@ -210,13 +214,19 @@ function getStreamingReplacementKeys(message: AgentMessage): string[] {
  * File-processing SYSTEM messages are passed through to the messages array
  * (Option A from the plan) so downstream hooks can react to them.
  */
-export function useAgentStream(client: VertesiaClient, agentRunId: string): UseAgentStreamResult {
+export function useAgentStream(
+    client: VertesiaClient,
+    agentRunId: string,
+    onMessage?: (message: AgentMessage) => void,
+): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const [initialHistoryStatus, setInitialHistoryStatus] =
         useState<UseAgentStreamResult['initialHistoryStatus']>('loading');
     const [agentRunStatus, setAgentRunStatus] = useState<string | null>(null);
     const [workflowRunId, setWorkflowRunId] = useState<string | null>(null);
+    const onMessageRef = useRef(onMessage);
+    onMessageRef.current = onMessage;
 
     // Server-side file processing status updates
     const [serverFileUpdates, setServerFileUpdates] = useState<Map<string, ConversationFile>>(new Map());
@@ -345,6 +355,12 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                 agentRunId,
                 (message) => {
                     if (abortController.signal.aborted) return;
+                    // Completed and idle runs replay their archived history through the live
+                    // stream. Only forward genuinely new deliveries so onMessage consumers
+                    // never treat replayed events as fresh ones.
+                    if (!message.timestamp || message.timestamp > lastDeliveredTsRef.current) {
+                        onMessageRef.current?.(message);
+                    }
 
                     debugAgentChat('stream message', {
                         agentRunId,
@@ -450,6 +466,14 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                     onHistoryLoaded: (historical) => {
                         if (abortController.signal.aborted) return;
                         const timelineMessages = historical.filter(shouldStoreTimelineMessage);
+                        // Advance the watermark synchronously before React processes the
+                        // history state update. Some completed streams replay history via
+                        // the live callback immediately after onHistoryLoaded returns.
+                        for (const message of historical) {
+                            if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
+                                lastDeliveredTsRef.current = message.timestamp;
+                            }
+                        }
                         debugAgentChat('history loaded', {
                             agentRunId,
                             count: historical.length,
@@ -461,12 +485,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                         setInitialHistoryStatus(historical.length > 0 ? 'has_messages' : 'empty');
                         if (timelineMessages.length > 0) {
                             setMessages((prev) =>
-                                timelineMessages.reduce((next, message) => {
-                                    if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
-                                        lastDeliveredTsRef.current = message.timestamp;
-                                    }
-                                    return insertTimelineMessage(next, message);
-                                }, prev),
+                                timelineMessages.reduce((next, message) => insertTimelineMessage(next, message), prev),
                             );
                         }
                     },

@@ -66,6 +66,8 @@ export interface MarkdownRendererProps {
      * Optional workflow run id used to resolve shorthand artifact paths (e.g. artifact:out/result.csv)
      */
     artifactRunId?: string;
+    /** Open Markdown artifact links in a host-provided viewer instead of downloading them. */
+    onArtifactOpen?: (path: string) => void;
     /** Additional className for the markdown wrapper */
     className?: string;
     /** Additional className for code blocks */
@@ -80,6 +82,11 @@ export interface MarkdownRendererProps {
     onProposalSelect?: (optionId: string) => void;
     /** Callback when user submits free-form response to proposal */
     onProposalSubmit?: (response: string) => void;
+    /**
+     * Keep parser source positions aligned with `children` by skipping source-changing
+     * normalization. Editing surfaces use this when node offsets are part of an anchor.
+     */
+    preserveSourcePositions?: boolean;
 }
 
 // Create default handlers once, outside component
@@ -91,6 +98,7 @@ export function MarkdownRenderer({
     remarkPlugins = [],
     removeComments = true,
     artifactRunId,
+    onArtifactOpen,
     className,
     codeClassName,
     inlineCodeClassName,
@@ -98,11 +106,15 @@ export function MarkdownRenderer({
     imageClassName,
     onProposalSelect,
     onProposalSubmit,
+    preserveSourcePositions = false,
 }: MarkdownRendererProps) {
     const codeBlockRegistry = useCodeBlockRendererRegistry();
     const normalizedMarkdown = React.useMemo(
-        () => normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
-        [children],
+        () =>
+            preserveSourcePositions
+                ? children
+                : normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
+        [children, preserveSourcePositions],
     );
 
     // Remark plugins (markdown parsing)
@@ -218,6 +230,7 @@ export function MarkdownRenderer({
                     href={href}
                     className={linkClassName}
                     artifactRunId={artifactRunId}
+                    onArtifactOpen={onArtifactOpen}
                     ExistingLink={
                         typeof ExistingLink === 'function'
                             ? (ExistingLink as React.ComponentType<MarkdownLinkProps>)
@@ -272,6 +285,7 @@ export function MarkdownRenderer({
     }, [
         components,
         artifactRunId,
+        onArtifactOpen,
         codeBlockRegistry,
         codeClassName,
         inlineCodeClassName,

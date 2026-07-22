@@ -124,6 +124,99 @@ describe('useAgentStream', () => {
         });
     });
 
+    it('retains structured update events even when their display message is empty', async () => {
+        const structuredUpdate: AgentMessage = {
+            ...createMessage(AgentMessageType.UPDATE, 1_000, ''),
+            details: { event_class: 'document_updated', document_id: 'document-1' },
+        };
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([structuredUpdate]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.messages).toEqual([structuredUpdate]);
+        });
+    });
+
+    it('forwards delivered stream messages without reconnecting when the callback changes', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const firstCallback = vi.fn();
+        const secondCallback = vi.fn();
+        const { rerender } = renderHook(
+            ({ onMessage }: { onMessage: (message: AgentMessage) => void }) =>
+                useAgentStream(client, 'agent-run-1', onMessage),
+            { initialProps: { onMessage: firstCallback } },
+        );
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        act(() => deliver?.(createMessage(AgentMessageType.UPDATE, 1_000, 'first update')));
+        expect(firstCallback).toHaveBeenCalledTimes(1);
+
+        rerender({ onMessage: secondCallback });
+        act(() => deliver?.(createMessage(AgentMessageType.UPDATE, 1_100, 'second update')));
+
+        expect(firstCallback).toHaveBeenCalledTimes(1);
+        expect(secondCallback).toHaveBeenCalledTimes(1);
+        expect(streamMessages).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not forward replayed history deliveries to onMessage', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const historical = createMessage(AgentMessageType.UPDATE, 1_000, 'historical update');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([historical]);
+            // Mirror completed-run behavior where archived events can be replayed
+            // immediately, before React has rendered the history state update.
+            onMessage?.(historical);
+            onMessage?.(createMessage(AgentMessageType.UPDATE, 900, 'older replay'));
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const onMessage = vi.fn();
+        renderHook(() => useAgentStream(client, 'agent-run-1', onMessage));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        expect(onMessage).not.toHaveBeenCalled();
+
+        act(() => deliver?.(createMessage(AgentMessageType.UPDATE, 1_100, 'live update')));
+        expect(onMessage).toHaveBeenCalledTimes(1);
+    });
+
     it('marks initial history as errored when the history fetch fails', async () => {
         const streamMessages = vi.fn<
             (

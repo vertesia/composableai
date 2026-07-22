@@ -29,6 +29,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
+import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
@@ -108,6 +109,8 @@ export interface MessageItemProps extends MessageItemClassNames {
     showPulsatingCircle?: boolean;
     /** Callback when user sends a message (e.g., from proposal selection) */
     onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    /** Open a Markdown artifact in the surrounding agent panel. */
+    onOpenArtifact?: (path: string) => void;
     /** Whether a REQUEST_INPUT message has already been answered by a later user message */
     requestInputAnswered?: boolean;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
@@ -197,6 +200,7 @@ function MessageItemComponent({
     message,
     showPulsatingCircle = false,
     onSendMessage,
+    onOpenArtifact,
     requestInputAnswered = false,
     className,
     cardClassName,
@@ -304,6 +308,13 @@ function MessageItemComponent({
 
     const visibleMessageContent = parsedUserAttachments?.body ?? messageContent;
     const messageAttachments = parsedUserAttachments?.attachments ?? [];
+    const editingAction = useMemo(
+        () =>
+            message.type === AgentMessageType.QUESTION
+                ? parseMarkdownEditingAction(message.details?.editing_action)
+                : undefined,
+        [message.details, message.type],
+    );
 
     // PERFORMANCE: Memoize processed content - expensive regex operations only run when messageContent changes
     const processedContent = useMemo(() => {
@@ -466,6 +477,7 @@ function MessageItemComponent({
             >
                 <MarkdownRenderer
                     artifactRunId={runId}
+                    onArtifactOpen={onOpenArtifact}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
                     onProposalSubmit={(text) => onSendMessage?.(text)}
                     components={markdownComponents}
@@ -662,6 +674,8 @@ function MessageItemComponent({
                             compact
                             answered={requestInputAnswered}
                         />
+                    ) : editingAction ? (
+                        <DocumentEditingActionCard action={editingAction} />
                     ) : (
                         visibleMessageContent && (
                             <div
@@ -677,6 +691,7 @@ function MessageItemComponent({
                         <AttachmentPreviewList
                             items={messageAttachments}
                             artifactRunId={runId}
+                            onOpenArtifact={onOpenArtifact}
                             variant="message"
                             className={cn(visibleMessageContent && 'mt-3')}
                             StoreLinkComponent={StoreLinkComponent}
@@ -723,7 +738,13 @@ function MessageItemComponent({
                                         variant="outline"
                                         size="xs"
                                         className="px-2 py-1 text-xs"
-                                        onClick={() => window.open(url, '_blank')}
+                                        onClick={() => {
+                                            if (/\.md$/i.test(artifactPath) && onOpenArtifact) {
+                                                onOpenArtifact(artifactPath);
+                                                return;
+                                            }
+                                            window.open(url, '_blank');
+                                        }}
                                         title={artifactPath}
                                     >
                                         {displayName}
@@ -790,6 +811,7 @@ const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
         prevProps.message.workflow_run_id === nextProps.message.workflow_run_id &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
+        prevProps.onOpenArtifact === nextProps.onOpenArtifact &&
         prevProps.requestInputAnswered === nextProps.requestInputAnswered &&
         prevProps.messageStyleOverrides === nextProps.messageStyleOverrides &&
         MESSAGE_ITEM_CLASS_NAME_KEYS.every((key) => prevProps[key] === nextProps[key])

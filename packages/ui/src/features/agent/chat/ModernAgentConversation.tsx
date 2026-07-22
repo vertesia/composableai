@@ -30,6 +30,7 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { isArtifactRefreshEvent } from '@vertesia/ui/widgets';
 import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -69,6 +70,7 @@ import {
     getConversationUrl,
     getWorkstreamId,
     isInProgress,
+    isPassiveArtifactUpdate,
 } from './ModernAgentOutput/utils';
 import {
     type AgentChatPlaybackCursor,
@@ -96,6 +98,8 @@ export type StartWorkflowFn = (
     initialMessage?: string,
     options?: StartWorkflowOptions,
 ) => Promise<{ agent_run_id: string } | undefined>;
+
+export type SendAgentMessageFn = (message: string, inputMetadata?: Record<string, unknown>) => void;
 
 const EMPTY_STREAMING_MESSAGES = new Map<string, never>();
 
@@ -567,6 +571,12 @@ export interface ModernAgentConversationProps {
 
     /** Ref populated with the internal file upload handler for external triggering */
     fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
+    /** Ref populated with the internal message sender for document or artifact collaboration controls. */
+    sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
+    /** Called for each live message delivered after the conversation stream connects. */
+    onMessage?: (message: AgentMessage) => void;
+    /** Called when the main agent turn starts or reaches an idle/terminal state. */
+    onAgentWorkingChange?: (isWorking: boolean) => void;
     /** Called when processingFiles state changes (for external progress display) */
     onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
     /** Processing files to display in the right panel Uploads tab */
@@ -763,6 +773,7 @@ function StartWorkflowView({
     className,
     allowWorkflowControl,
     initialToolApprovalMode,
+    onAgentWorkingChange,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const canStageFiles = !hideFileUpload;
@@ -784,6 +795,10 @@ function StartWorkflowView({
 
     // Staged files - stored locally until workflow starts
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+
+    useEffect(() => {
+        onAgentWorkingChange?.(isSending);
+    }, [isSending, onAgentWorkingChange]);
 
     // Drag and drop state
     const [isDragOver, setIsDragOver] = useState(false);
@@ -982,6 +997,13 @@ function StartWorkflowView({
                     status: 'success',
                     duration: 3000,
                 });
+            } else {
+                // startWorkflow declined to start (it surfaced its own error or a
+                // validation failure) — drop the optimistic first message so the
+                // conversation doesn't stay in the preparing state forever. The
+                // composed text is kept in the input for a retry.
+                setPendingStartMessage(null);
+                setPendingStartTimestamp(null);
             }
         } catch (err: unknown) {
             setPendingStartMessage(null);
@@ -1045,6 +1067,7 @@ function StartWorkflowView({
                     inputClassName,
                     className,
                     allowWorkflowControl,
+                    onAgentWorkingChange,
                 }}
                 agentRunId={startedAgentRunId}
                 title={title}
@@ -1274,6 +1297,9 @@ function ModernAgentConversationInner({
     fusionData,
     // External file upload API
     fileUploadRef,
+    sendMessageRef,
+    onMessage,
+    onAgentWorkingChange,
     onProcessingFilesChange,
     processingFiles: processingFilesProp,
     // External plan panel API
@@ -1334,7 +1360,7 @@ function ModernAgentConversationInner({
         agentRunStatus,
         workflowRunId,
         serverFileUpdates,
-    } = useAgentStream(client, agentRunId);
+    } = useAgentStream(client, agentRunId, onMessage);
 
     const {
         plans,
@@ -1544,9 +1570,10 @@ function ModernAgentConversationInner({
     const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
     const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
     const playbackSourceMessages = useMemo(() => {
-        const visibleMessages = hiddenMessageTypes?.length
-            ? messages.filter((message) => !hiddenMessageTypes.includes(message.type))
-            : messages;
+        // Passive artifact autosaves are surfaced by the editor's own save indicator, not the chat.
+        const visibleMessages = messages.filter(
+            (message) => !isPassiveArtifactUpdate(message) && !(hiddenMessageTypes?.includes(message.type) ?? false),
+        );
         return filterMessagesForActiveWorkstream(visibleMessages, activeWorkstream);
     }, [activeWorkstream, hiddenMessageTypes, messages]);
     const playbackState = useMemo(
@@ -1569,11 +1596,20 @@ function ModernAgentConversationInner({
     );
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
+    const isAgentWorking = !effectiveIsCompleted && !isWorkflowTerminal;
+
+    useEffect(() => {
+        onAgentWorkingChange?.(isAgentWorking);
+    }, [isAgentWorking, onAgentWorkingChange]);
     const pendingRequestInputMessage = useMemo(
         () => getPendingRequestInputMessage(displayedMessages),
         [displayedMessages],
     );
-    const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
+    // A terminal run silently drops user input unless it can be continued (see the guard in
+    // handleSendMessage), so never surface an actionable question overlay in that state —
+    // the terminal status box renders instead.
+    const shouldShowRequestInputOverlay =
+        Boolean(pendingRequestInputMessage) && !isFailed && (!isWorkflowTerminal || canContinueConversation);
     const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
     const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);
@@ -1668,15 +1704,6 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     // Stable callbacks
     // ────────────────────────────────────────────
-    const handleTogglePlanPanel = useCallback(() => {
-        setShowSlidingPanel((prev: boolean) => {
-            if (!prev) {
-                sessionStorage.setItem('plan-panel-shown', 'true');
-            }
-            return !prev;
-        });
-    }, [setShowSlidingPanel]);
-
     const handleChangePlan = useCallback(
         (index: number) => {
             setActivePlanIndex(index);
@@ -1691,16 +1718,43 @@ function ModernAgentConversationInner({
     const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>(
         conversationContent || conversationTab ? 'conversation' : 'plan',
     );
+    const [selectedArtifactPath, setSelectedArtifactPath] = useState<string | null>(null);
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
+    // Master override for the "Toggle right sidebar" control. `showSlidingPanel` only tracks the
+    // plan; open documents/workstreams keep the panel visible on their own, so without this the
+    // toggle can't hide the panel while a document is open. Explicit reveals (opening an artifact
+    // or document) clear it again.
+    const [rightPanelManuallyClosed, setRightPanelManuallyClosed] = useState(false);
 
     const isRightPanelVisible =
         showRightPanelProp &&
+        !rightPanelManuallyClosed &&
         (showSlidingPanel ||
             isDocPanelOpen ||
             (!hideWorkstreamTabs && panelWorkstreams.length > 0) ||
             !!conversationContent ||
             conversationTab);
+
+    // A newly opened document should reveal the panel even if the user had manually collapsed it.
+    const previousDocPanelOpenRef = useRef(isDocPanelOpen);
+    useEffect(() => {
+        if (isDocPanelOpen && !previousDocPanelOpenRef.current) {
+            setRightPanelManuallyClosed(false);
+        }
+        previousDocPanelOpenRef.current = isDocPanelOpen;
+    }, [isDocPanelOpen]);
+
+    const handleTogglePlanPanel = useCallback(() => {
+        if (isRightPanelVisible) {
+            setRightPanelManuallyClosed(true);
+            setShowSlidingPanel(false);
+        } else {
+            setRightPanelManuallyClosed(false);
+            setShowSlidingPanel(true);
+            sessionStorage.setItem('plan-panel-shown', 'true');
+        }
+    }, [isRightPanelVisible, setShowSlidingPanel]);
 
     useEffect(() => {
         if (!isRightPanelVisible && isRightPanelResizing) {
@@ -1743,9 +1797,43 @@ function ModernAgentConversationInner({
     }, [isRightPanelResizing]);
 
     const handleCloseRightPanel = useCallback(() => {
+        setRightPanelManuallyClosed(true);
         setShowSlidingPanel(false);
         handleCloseDocPanel();
     }, [setShowSlidingPanel, handleCloseDocPanel]);
+
+    const handleOpenArtifact = useCallback(
+        (path: string) => {
+            if (!/\.md$/i.test(path)) return;
+            setRightPanelManuallyClosed(false);
+            setSelectedArtifactPath(path);
+            setRightPanelTab('artifacts');
+            setShowSlidingPanel(true);
+        },
+        [setShowSlidingPanel],
+    );
+
+    // The `display_artifact` tool emits a `display_artifact` stream event asking the UI
+    // to reveal a text artifact in the editor. Act on the latest such event, once per
+    // distinct occurrence so the user can still close the panel without it snapping back.
+    const displayedArtifactMarkerRef = useRef<string | null>(null);
+    useEffect(() => {
+        let target: string | undefined;
+        let marker: string | undefined;
+        for (const message of messages) {
+            const details = message.details as Record<string, unknown> | undefined;
+            if (details?.event_class === 'display_artifact' && typeof details.path === 'string') {
+                target = details.path;
+                marker = `${message.timestamp ?? ''}:${details.path}`;
+            }
+        }
+        if (!target || !marker || marker === displayedArtifactMarkerRef.current) return;
+        displayedArtifactMarkerRef.current = marker;
+        setRightPanelManuallyClosed(false);
+        setSelectedArtifactPath(target);
+        setRightPanelTab('artifacts');
+        setShowSlidingPanel(true);
+    }, [messages, setShowSlidingPanel]);
 
     // Default StoreLinkComponent that opens documents in the panel
     const internalStoreLinkComponent = useCallback(
@@ -1797,6 +1885,7 @@ function ModernAgentConversationInner({
 
     useEffect(() => {
         void agentRunId;
+        setSelectedArtifactPath(null);
         workstreamFetchFailedRef.current = false;
         setIsWorkstreamQueryUnavailable(false);
         setQueriedActiveWorkstreams([]);
@@ -1974,7 +2063,12 @@ function ModernAgentConversationInner({
                 type: AgentMessageType.QUESTION,
                 message: messageContent,
                 workstream_id: 'main',
-                details: { _optimistic: true, _messageId: messageId, _deliveryStatus: 'sending' },
+                details: {
+                    _optimistic: true,
+                    _messageId: messageId,
+                    _deliveryStatus: 'sending',
+                    ...(inputMetadata?.editing_action ? { editing_action: inputMetadata.editing_action } : {}),
+                },
             };
 
             addOptimisticMessage(optimisticMessage);
@@ -2044,6 +2138,13 @@ function ModernAgentConversationInner({
             waitForPendingToolApprovalModeChange,
         ],
     );
+
+    useEffect(() => {
+        if (sendMessageRef) sendMessageRef.current = handleSendMessage;
+        return () => {
+            if (sendMessageRef?.current === handleSendMessage) sendMessageRef.current = null;
+        };
+    }, [handleSendMessage, sendMessageRef]);
 
     // After the user connects an MCP server requested via request_mcp_connection, flag the
     // conversation for tool re-discovery and resume it with a confirmation message so the agent
@@ -2378,6 +2479,21 @@ function ModernAgentConversationInner({
             return false;
         }).length;
     }, [messages]);
+    const selectedArtifactRefresh = useMemo(() => {
+        if (!selectedArtifactPath) return { key: artifactRefreshKey, details: undefined };
+
+        let key = 0;
+        let details: Record<string, unknown> | undefined;
+        for (const message of messages) {
+            const candidate = message.details as Record<string, unknown> | undefined;
+            if (!isArtifactRefreshEvent(candidate, selectedArtifactPath)) continue;
+            key++;
+            details = candidate;
+        }
+        return { key, details };
+    }, [artifactRefreshKey, messages, selectedArtifactPath]);
+    const canCollaborateWithArtifacts =
+        interactive && isPlaybackLive && effectiveWorkflowStatus?.toUpperCase() === 'RUNNING';
 
     // PERFORMANCE: Memoize taskLabels to prevent AllMessagesMixed re-renders
     const taskLabels = useMemo(
@@ -2401,7 +2517,7 @@ function ModernAgentConversationInner({
             workflowRunId={workflowRunId || ''}
             viewMode={viewMode}
             onViewModeChange={handleViewModeChange}
-            showPlanPanel={showRightPanelProp && showSlidingPanel}
+            showPlanPanel={isRightPanelVisible}
             hasPlan={showRightPanelProp && plans.length > 0}
             showPlanButton={showRightPanelProp && !conversationTab}
             onTogglePlanPanel={handleTogglePlanPanel}
@@ -2475,6 +2591,7 @@ function ModernAgentConversationInner({
                     taskLabels={taskLabels}
                     streamingMessages={displayedStreamingMessages}
                     onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                    onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
                     messageItemClassNames={messageItemClassNames}
                     messageStyleOverrides={messageStyleOverrides}
                     toolCallGroupClassNames={toolCallGroupClassNames}
@@ -2713,7 +2830,11 @@ function ModernAgentConversationInner({
                                     processingFiles={processingFilesProp ?? processingFiles}
                                     // Artifacts
                                     showArtifacts={showArtifacts}
-                                    artifactRefreshKey={artifactRefreshKey}
+                                    artifactRefreshKey={selectedArtifactRefresh.key}
+                                    artifactRefreshDetails={selectedArtifactRefresh.details}
+                                    selectedArtifactPath={selectedArtifactPath}
+                                    onSelectedArtifactPathChange={setSelectedArtifactPath}
+                                    onSendMessage={canCollaborateWithArtifacts ? handleSendMessage : undefined}
                                     // Messages (for workstreams tab context)
                                     messages={messages}
                                     // Payload content
