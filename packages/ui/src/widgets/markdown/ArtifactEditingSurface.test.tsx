@@ -219,7 +219,7 @@ describe('ArtifactEditingSurface', () => {
     it('flushes a pending debounced document save when the editor unmounts', async () => {
         mocks.getArtifactContent.mockResolvedValueOnce({
             path: 'drafts/document.md',
-            content: 'Setext heading\n==============',
+            content: '#',
             generation: 'generation-1',
         });
         const view = renderSurface({ viewMode: 'document' });
@@ -228,7 +228,7 @@ describe('ArtifactEditingSurface', () => {
         const sourceEditor = screen.getByRole('textbox', { name: 'Markdown source editor' });
         fireEvent.focus(sourceEditor);
         fireEvent.change(sourceEditor, {
-            target: { value: 'Updated heading\n===============' },
+            target: { value: '## Updated heading' },
         });
         expect(mocks.updateArtifactContent).not.toHaveBeenCalled();
 
@@ -236,7 +236,7 @@ describe('ArtifactEditingSurface', () => {
 
         await waitFor(() => {
             expect(mocks.updateArtifactContent).toHaveBeenCalledWith('run-1', 'drafts/document.md', {
-                content: 'Updated heading\n===============',
+                content: '## Updated heading',
                 generation: 'generation-1',
             });
         });

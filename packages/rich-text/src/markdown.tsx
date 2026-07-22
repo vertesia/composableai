@@ -429,6 +429,29 @@ export function roundTripMarkdown(markdown: string, options: VertesiaMarkdownKit
     return serializeMarkdown(parseMarkdown(markdown, options), options);
 }
 
+export type MarkdownCompatibility = 'exact' | 'normalized' | 'lossy';
+
+/**
+ * Classifies whether rich-text editing preserves the document structure, even when the serializer
+ * canonicalizes equivalent Markdown syntax such as Setext headings or table spacing.
+ */
+export function getMarkdownCompatibility(
+    markdown: string,
+    options: VertesiaMarkdownKitOptions = {},
+): MarkdownCompatibility {
+    try {
+        const parsed = parseMarkdown(markdown, options);
+        const normalized = serializeMarkdown(parsed, options);
+        if (normalized === markdown) return 'exact';
+
+        const reparsed = parseMarkdown(normalized, options);
+        const isStructurallyEquivalent = JSON.stringify(reparsed) === JSON.stringify(parsed);
+        return isStructurallyEquivalent ? 'normalized' : 'lossy';
+    } catch {
+        return 'lossy';
+    }
+}
+
 /**
  * Returns whether opening Markdown in the rich-text editor can preserve its
  * exact source representation. Hosts can use this to warn before entering a

@@ -161,7 +161,7 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(onSendComment).toHaveBeenCalledWith(expect.stringContaining('Make this claim measurable.'));
     });
 
-    it('warns before rich-text editing would normalize Markdown and lets the user preserve source', async () => {
+    it('opens structurally preserving normalized Markdown directly in rich-text mode', async () => {
         const onChange = vi.fn();
         render(
             <I18nProvider lng="en">
@@ -169,28 +169,39 @@ describe('VertesiaMarkdownRichTextEditor', () => {
             </I18nProvider>,
         );
 
+        expect(await screen.findByRole('heading', { name: 'Setext heading' })).not.toBeNull();
+        expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
+        expect(screen.queryByRole('heading', { name: 'Some Markdown formatting may change' })).toBeNull();
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('lets the user preserve Markdown source when normalization is lossy', async () => {
+        const onChange = vi.fn();
+        render(
+            <I18nProvider lng="en">
+                <VertesiaMarkdownDocumentEditor value="#" onChange={onChange} />
+            </I18nProvider>,
+        );
+
         expect(await screen.findByRole('heading', { name: 'Some Markdown formatting may change' })).not.toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Edit Markdown source' }));
 
         const sourceEditor = screen.getByRole('textbox', { name: 'Markdown source editor' });
-        expect((sourceEditor as HTMLTextAreaElement).value).toBe('Setext heading\n==============');
-        fireEvent.change(sourceEditor, { target: { value: 'Updated heading\n===============' } });
-
-        expect(onChange).toHaveBeenLastCalledWith('Updated heading\n===============');
-        expect(screen.queryByRole('toolbar', { name: 'Markdown formatting' })).toBeNull();
+        expect((sourceEditor as HTMLTextAreaElement).value).toBe('#');
+        fireEvent.change(sourceEditor, { target: { value: '##' } });
+        expect(onChange).toHaveBeenLastCalledWith('##');
     });
 
-    it('lets the user accept Markdown normalization and continue in rich-text mode', async () => {
+    it('lets the user accept a lossy conversion and continue in rich-text mode', async () => {
         render(
             <I18nProvider lng="en">
-                <VertesiaMarkdownDocumentEditor value={'Setext heading\n=============='} />
+                <VertesiaMarkdownDocumentEditor value="#" />
             </I18nProvider>,
         );
 
         fireEvent.click(await screen.findByRole('button', { name: 'Continue with rich text' }));
 
-        expect(await screen.findByRole('heading', { name: 'Setext heading' })).not.toBeNull();
-        expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
+        expect(await screen.findByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
     });
 
     // Table row/column actions live in the toolbar's Table context dropdown (only when the caret is

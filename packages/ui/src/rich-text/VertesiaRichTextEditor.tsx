@@ -1,6 +1,6 @@
 import {
     type Editor,
-    isMarkdownSourcePreserving,
+    getMarkdownCompatibility,
     MarkdownComponentEditor,
     type MarkdownComponentEditorProps,
     MarkdownDocumentEditor,
@@ -154,7 +154,7 @@ export function VertesiaMarkdownDocumentEditor({
         [onEditor],
     );
     const [editingMode, setEditingMode] = useState<'choose' | 'rich-text' | 'source'>(() =>
-        isMarkdownSourcePreserving(props.value) ? 'rich-text' : 'choose',
+        getMarkdownCompatibility(props.value) === 'lossy' ? 'choose' : 'rich-text',
     );
     const resolvedEditingMode = editingMode === 'choose' ? 'source' : editingMode;
 

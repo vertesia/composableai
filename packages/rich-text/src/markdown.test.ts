@@ -2,6 +2,7 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import { describe, expect, it } from 'vitest';
 import {
     createMarkdownEditor,
+    getMarkdownCompatibility,
     isMarkdownSourcePreserving,
     isVertesiaWidgetLanguage,
     parseMarkdown,
@@ -285,6 +286,9 @@ Content between horizontal rules.
     it('detects source syntax that rich-text serialization would normalize', () => {
         expect(isMarkdownSourcePreserving('# Canonical heading')).toBe(true);
         expect(isMarkdownSourcePreserving('Setext heading\n==============')).toBe(false);
+        expect(getMarkdownCompatibility('# Canonical heading')).toBe('exact');
+        expect(getMarkdownCompatibility('Setext heading\n==============')).toBe('normalized');
+        expect(getMarkdownCompatibility(REPRESENTATIVE_DOCUMENT)).toBe('normalized');
     });
 
     it('registers node and mark views for every important Vertesia widget shape', () => {
