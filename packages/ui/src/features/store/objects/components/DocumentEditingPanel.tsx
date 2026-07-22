@@ -32,6 +32,7 @@ import {
     RotateCcw,
     Save,
     Send,
+    Sparkles,
     X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -917,6 +918,28 @@ export function DocumentEditingWorkspace({
                         disabled={Boolean(agentRunId) || isStarting || isResolvingRun}
                         isLoading={isLoadingConfiguration}
                     />
+                    {!agentRunId ? (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                            onClick={() => void startWorkflow(t('agent.documentEditingStartRequest'))}
+                            disabled={
+                                isStarting ||
+                                isResolvingRun ||
+                                isResolvingTarget ||
+                                isLoadingConfiguration ||
+                                targetResolutionFailed ||
+                                !project ||
+                                !editingInteraction ||
+                                !executionConfiguration.environment ||
+                                !executionConfiguration.model
+                            }
+                        >
+                            {isStarting ? <Spinner size="sm" /> : <Sparkles className="size-4" />}
+                            {isStarting ? t('agent.startingAgent') : t('agent.documentEditingStart')}
+                        </Button>
+                    ) : null}
                     {agentRunId ? (
                         <>
                             <VTooltip description={agentRunId} asChild>
