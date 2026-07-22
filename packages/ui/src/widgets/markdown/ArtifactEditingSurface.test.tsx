@@ -331,12 +331,12 @@ describe('ArtifactEditingSurface', () => {
         const selection = window.getSelection();
         selection?.removeAllRanges();
         selection?.addRange(range);
-        await user.type(editor, ' local edit', { skipClick: true });
+        await user.type(editor, '!', { skipClick: true });
 
         await waitFor(
             () => {
                 expect(mocks.updateArtifactContent).toHaveBeenNthCalledWith(2, 'run-1', 'drafts/document.md', {
-                    content: expect.stringMatching(/updated remotely[\s\S]*Second paragraph\. local edit/),
+                    content: expect.stringMatching(/updated remotely[\s\S]*Second paragraph\.!/),
                     generation: 'generation-agent',
                 });
             },
