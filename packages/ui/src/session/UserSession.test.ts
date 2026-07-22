@@ -26,7 +26,7 @@ describe('UserSession.fetchOnboardingStatus', () => {
 
         await expect(session.fetchOnboardingStatus()).resolves.toBe(true);
         expect(session.setSession).toHaveBeenCalledOnce();
-        expect(vi.mocked(session.setSession).mock.calls[0]?.[0].onboardingComplete).toBe(true);
+        expect(vi.mocked(session.setSession!).mock.calls[0]?.[0]?.onboardingComplete).toBe(true);
     });
 
     it('publishes the initial incomplete status without reporting completion', async () => {
@@ -34,6 +34,6 @@ describe('UserSession.fetchOnboardingStatus', () => {
 
         await expect(session.fetchOnboardingStatus()).resolves.toBe(false);
         expect(session.setSession).toHaveBeenCalledOnce();
-        expect(vi.mocked(session.setSession).mock.calls[0]?.[0].onboardingComplete).toBe(false);
+        expect(vi.mocked(session.setSession!).mock.calls[0]?.[0]?.onboardingComplete).toBe(false);
     });
 });
