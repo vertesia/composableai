@@ -22,7 +22,7 @@
     },
     "license": "Apache-2.0",
     "devDependencies": {
-        "@smithy/types": "^4.15.1",
+        "@smithy/types": "^4.16.1",
         "@temporalio/proto": "^1.20.2",
         "@temporalio/testing": "^1.20.2",
         "@temporalio/worker": "^1.20.2",

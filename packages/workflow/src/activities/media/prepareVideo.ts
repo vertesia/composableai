@@ -1,8 +1,6 @@
-import { type ExecFileOptions, execFile as execFileCallback } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { promisify } from 'node:util';
 import { ApplicationFailure, Context, log } from '@temporalio/activity';
 import { RequestError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
@@ -19,8 +17,12 @@ import {
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
-
-const execFileAsync = promisify(execFileCallback);
+import {
+    execActivityFile,
+    execActivityFileWithProgress,
+    initializeActivityCommandDeadline,
+    rethrowIfActivityStopped,
+} from './exec.js';
 
 // Default configuration constants
 const DEFAULT_MAX_RESOLUTION = 1920; // Max resolution for video rendition (produces 1080p)
@@ -35,60 +37,9 @@ const POSTER_TIMESTAMP_MAX = 2; // Maximum poster timestamp in seconds
 const MIN_SCREENSHOT_TIMESTAMP = 1; // Minimum timestamp for screenshots in seconds
 
 // FFmpeg configuration constants
-const FFMPEG_MAX_BUFFER = 1024 * 1024 * 10; // 10MB buffer for ffmpeg output
 const VIDEO_CRF = '23'; // Constant Rate Factor for video quality (18-28, lower = better)
 const AUDIO_BITRATE = '128k'; // Audio bitrate for AAC encoding
 const JPEG_QUALITY = '2'; // JPEG quality for screenshots (1-31, lower = better)
-const MAX_COMMAND_TIMEOUT_MARGIN_MS = 60_000;
-const activityCommandDeadlines = new WeakMap<Context, number>();
-
-function initializeActivityCommandDeadline(): number {
-    const context = Context.current();
-    const existingDeadlineMs = activityCommandDeadlines.get(context);
-    if (existingDeadlineMs) {
-        return existingDeadlineMs;
-    }
-    const deadlineMs = Date.now() + context.info.startToCloseTimeoutMs;
-    activityCommandDeadlines.set(context, deadlineMs);
-    return deadlineMs;
-}
-
-function getActivityCommandTimeoutMs(): number {
-    const context = Context.current();
-    const { startToCloseTimeoutMs } = context.info;
-    const timeoutMarginMs = Math.min(MAX_COMMAND_TIMEOUT_MARGIN_MS, startToCloseTimeoutMs / 10);
-    const activityDeadlineMs = initializeActivityCommandDeadline();
-    return Math.max(1, activityDeadlineMs - Date.now() - timeoutMarginMs);
-}
-
-/**
- * Execute media tooling with Temporal cancellation propagated to the child process.
- *
- * Temporal can begin a retry after an attempt times out while the original worker process is still running. Passing the
- * Activity cancellation signal prevents an orphaned ffmpeg process from competing with its retry for CPU.
- */
-export async function execActivityFile(
-    command: string,
-    args: string[],
-    options: ExecFileOptions = {},
-): Promise<{ stdout: string; stderr: string }> {
-    const activityTimeoutMs = getActivityCommandTimeoutMs();
-    const configuredTimeoutMs = options.timeout && options.timeout > 0 ? options.timeout : activityTimeoutMs;
-
-    return (await execFileAsync(command, args, {
-        ...options,
-        encoding: 'utf8',
-        signal: Context.current().cancellationSignal,
-        timeout: Math.min(configuredTimeoutMs, activityTimeoutMs),
-    })) as { stdout: string; stderr: string };
-}
-
-function rethrowIfActivityStopped(error: unknown): void {
-    const commandTimedOut = typeof error === 'object' && error !== null && 'killed' in error && error.killed === true;
-    if (Context.current().cancellationSignal.aborted || commandTimedOut) {
-        throw error;
-    }
-}
 
 export interface PrepareVideoParams {
     maxResolution?: number; // Max resolution (longest side) for video rendition, default 1920 (produces 1080p: 1920x1080 landscape or 1080x1920 portrait)
@@ -296,7 +247,7 @@ async function generateRenditionWithDimensions(
     log.info(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execActivityFile('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
         const stderrText = stderr.toString();
 
         if (stderrText && !stderrText.includes('frame=')) {
@@ -344,7 +295,7 @@ async function generateAudioRendition(videoPath: string, outputDir: string): Pro
     log.info('Generating audio-only rendition', { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execActivityFile('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
         const stderrText = stderr.toString();
 
         if (stderrText && !stderrText.includes('frame=')) {

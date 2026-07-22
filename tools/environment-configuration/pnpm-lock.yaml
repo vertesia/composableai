@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@types/node': ^24.13.2
+  '@types/node': ^24.13.3
   minimatch@>=3.0.0 <4.0.0: legacy-v3
   minimatch@>=9.0.0 <10.0.0: legacy-v9
   ajv@>=7.0.0 <8.18.0: ^8.20.0
@@ -13,8 +13,8 @@ overrides:
   yaml@>=2.0.0 <2.8.3: ^2.9.0
   picomatch@<2.3.2: ^4.0.5
   picomatch@>=4.0.0 <4.0.4: ^4.0.5
-  fast-xml-parser@<5.7.0: ^5.9.3
-  fast-xml-builder@<=1.1.6: ^1.2.1
+  fast-xml-parser@<5.7.0: ^5.10.0
+  fast-xml-builder@<=1.1.6: ^1.3.0
   fast-uri@<=3.1.1: ^4.1.0
 
 importers:
@@ -209,8 +209,8 @@ packages:
   '@types/bun@1.3.14':
     resolution: {integrity: sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw==}
 
-  '@types/node@24.13.2':
-    resolution: {integrity: sha512-fRa09kZTgu8o71KFcDjUFuc7F+dEbZYZmkI0mg5YBTRs0yMKjYHsq/c0urDKeDb+D5qVgXOdFcuu+DZPKOITwA==}
+  '@types/node@24.13.3':
+    resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
 
   '@vertesia/api-fetch-client@1.4.0':
     resolution: {integrity: sha512-KZsqY11/pfWAUufn5jJ0TKWS3P0unlIxKMSZ2SZQpCZ+DwjJe0WwPzdc/XNYuId4qYYSvTkmY+UCZwkfxeEBdg==}
@@ -589,7 +589,7 @@ snapshots:
     dependencies:
       bun-types: 1.3.14
 
-  '@types/node@24.13.2':
+  '@types/node@24.13.3':
     dependencies:
       undici-types: 7.18.2
 
@@ -628,7 +628,7 @@ snapshots:
 
   bun-types@1.3.14:
     dependencies:
-      '@types/node': 24.13.2
+      '@types/node': 24.13.3
 
   commander@15.0.0: {}
 
