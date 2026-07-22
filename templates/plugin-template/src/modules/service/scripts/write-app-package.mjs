@@ -1,12 +1,13 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import * as VertesiaCommon from '@vertesia/common';
-import { ServerConfig } from '../lib/config.js';
-import server from '../lib/server.js';
 
 const PACKAGE_BUILD_ORIGIN = 'https://app-package-build.local';
 const cwd = process.cwd();
+const { ServerConfig } = await import(pathToFileURL(path.join(cwd, 'lib/config.js')).href);
+const { default: server } = await import(pathToFileURL(path.join(cwd, 'lib/server.js')).href);
 const SYSTEM_INTERACTION_SELECTORS = [
     'sys:GeneralAgent',
     'sys:StudioAssistant',

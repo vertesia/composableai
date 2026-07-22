@@ -80,19 +80,20 @@ export function NavLink({
     skipStickyParams,
 }: NavLinkProps) {
     const { router } = useRouterContext();
-    // In-app route = not an external URL, `_blank` target, or bare hash. Relative paths count too —
-    // they must be routed, else the global link listener re-applies the module base path (wrong URL).
+    // Resolve internal URLs even when a target makes navigation native. New-tab links still need
+    // the mount path and tenant sticky params, but must not be intercepted by the SPA router.
     const isAnchorOrEmpty = !href || href.startsWith('#');
-    const isExternal = /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//') || (!!target && target !== '_self');
-    const isInternal = !isAnchorOrEmpty && !isExternal;
+    const isExternalUrl = /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//');
+    const isInternalUrl = !isAnchorOrEmpty && !isExternalUrl;
+    const isNativeNavigation = !!target && target !== '_self';
     // Keep the rendered href under the served `<base href>` mount (correct middle-click / hover /
     // open-in-new-tab); the onClick navigates via the router which applies the same rule. No-op when
     // origin-served (Studio UI). Click handler below passes the raw `href` — navigate() re-bases it.
-    const resolvedHref = isInternal
+    const resolvedHref = isInternalUrl
         ? withMountBasename(!skipStickyParams ? router.getTopRouter().navigator.addStickyParams(href) : href)
         : href;
     const _onClick = (ev: MouseEvent) => {
-        if (ev.defaultPrevented || !isInternal || isModifiedClick(ev)) {
+        if (ev.defaultPrevented || !isInternalUrl || isNativeNavigation || isModifiedClick(ev)) {
             return;
         }
         ev.stopPropagation();

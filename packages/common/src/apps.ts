@@ -552,6 +552,10 @@ export interface AppVersionRecord {
     promoted?: boolean;
     target?: AppVersionTarget;
     agent_run_id?: string;
+    /** Temporal workflow that produced this version. */
+    build_workflow_id?: string;
+    /** Temporal run that produced this version. */
+    build_workflow_run_id?: string;
     sandbox_id?: string;
     title?: string;
     description?: string;
@@ -593,6 +597,8 @@ export interface UpsertAppVersionRequest {
     state?: AppVersionState;
     target?: AppVersionTarget;
     agent_run_id?: string;
+    build_workflow_id?: string;
+    build_workflow_run_id?: string;
     sandbox_id?: string;
     title?: string;
     description?: string;
