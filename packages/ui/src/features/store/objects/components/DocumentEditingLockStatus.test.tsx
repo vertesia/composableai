@@ -3,14 +3,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../../../i18n/index.js';
-import { DocumentEditingLockBanner } from './DocumentEditingLockBanner.js';
+import { DocumentEditingLockStatus } from './DocumentEditingLockStatus.js';
 
-describe('DocumentEditingLockBanner', () => {
+describe('DocumentEditingLockStatus', () => {
     it('shows the active lock and exposes manual unlock', () => {
         const onToggleLock = vi.fn();
         render(
             <I18nProvider lng="en">
-                <DocumentEditingLockBanner isLocked onToggleLock={onToggleLock} />
+                <DocumentEditingLockStatus isLocked onToggleLock={onToggleLock} />
             </I18nProvider>,
         );
 
@@ -22,7 +22,7 @@ describe('DocumentEditingLockBanner', () => {
     it('warns when editing was manually unlocked and offers relocking', () => {
         render(
             <I18nProvider lng="en">
-                <DocumentEditingLockBanner isLocked={false} onToggleLock={vi.fn()} />
+                <DocumentEditingLockStatus isLocked={false} onToggleLock={vi.fn()} />
             </I18nProvider>,
         );
 

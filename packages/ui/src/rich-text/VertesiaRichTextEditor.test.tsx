@@ -148,6 +148,8 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(screen.getByRole('button', { name: 'Bold' })).toHaveProperty('disabled', true);
         const commentButton = await screen.findByRole('button', { name: 'Comment on selection' });
         expect(screen.getByRole('toolbar').contains(commentButton)).toBe(false);
+        expect(commentButton.parentElement?.className).toContain('pointer-events-auto');
+        expect(commentButton.parentElement?.className).toContain('z-100');
         fireEvent.click(commentButton);
         expect(screen.getByRole('dialog', { name: 'Comment on selection' })).not.toBeNull();
         fireEvent.change(screen.getByPlaceholderText('Describe how the agent should improve this section...'), {

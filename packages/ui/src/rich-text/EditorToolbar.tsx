@@ -32,7 +32,7 @@ import {
     Undo2,
     X,
 } from 'lucide-react';
-import { type ComponentType, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * The formatting commands (toggleBold, setHeading, …) are augmented onto Tiptap's chain by the
@@ -203,7 +203,7 @@ function SelectionComment({
 
     return (
         <FloatingPortal root={portalContainer}>
-            <div ref={refs.setFloating} style={floatingStyles} className="z-50">
+            <div ref={refs.setFloating} style={floatingStyles} className="pointer-events-auto z-100">
                 {composing ? (
                     <div
                         role="dialog"
@@ -315,6 +315,8 @@ export interface EditorToolbarProps {
     isSendingChanges?: boolean;
     /** Additional session-level constraints, such as no active run or an agent editing lock. */
     sendChangesDisabled?: boolean;
+    /** Compact session status rendered immediately beside the document hand-off action. */
+    toolbarStatus?: ReactNode;
 }
 
 interface SendChangesToAgentButtonProps {
@@ -359,6 +361,7 @@ export function EditorToolbar({
     hasUnsentChanges = false,
     isSendingChanges = false,
     sendChangesDisabled = false,
+    toolbarStatus,
 }: EditorToolbarProps) {
     const { t } = useUITranslation();
     const toast = useToast();
@@ -648,12 +651,15 @@ export function EditorToolbar({
                             </>
                         ) : null}
                         {onSendChangesToAgent ? (
-                            <SendChangesToAgentButton
-                                onSend={onSendChangesToAgent}
-                                hasUnsentChanges={hasUnsentChanges}
-                                isSending={isSendingChanges}
-                                disabled={sendChangesDisabled}
-                            />
+                            <>
+                                {toolbarStatus}
+                                <SendChangesToAgentButton
+                                    onSend={onSendChangesToAgent}
+                                    hasUnsentChanges={hasUnsentChanges}
+                                    isSending={isSendingChanges}
+                                    disabled={sendChangesDisabled}
+                                />
+                            </>
                         ) : null}
                     </div>
                 ) : null}

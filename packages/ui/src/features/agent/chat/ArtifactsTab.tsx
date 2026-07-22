@@ -202,7 +202,7 @@ function ArtifactMarkdownEditor({
     onSendMessage,
 }: ArtifactMarkdownEditorProps) {
     const { t } = useUITranslation();
-    const [viewMode, setViewMode] = useState<'components' | 'document'>('document');
+    const [viewMode, setViewMode] = useState<'components' | 'document'>('components');
     const [saveStatus, setSaveStatus] = useState<ArtifactSaveStatus>('idle');
 
     const handleAction = (action: MarkdownEditingAction) => {

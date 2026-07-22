@@ -46,13 +46,14 @@ import {
     DocumentEditingConfigurationSelector,
     getDocumentEditingProjectDefault,
 } from './DocumentEditingConfigurationSelector.js';
-import { DocumentEditingLockBanner } from './DocumentEditingLockBanner.js';
+import { DocumentEditingLockStatus } from './DocumentEditingLockStatus.js';
 import { persistRunLocalArtifactRefs } from './documentArtifactRefs.js';
 import {
     DOCUMENT_EDITING_EXCLUDED_TOOLS,
     DOCUMENT_EDITING_INITIAL_SKILLS,
     DOCUMENT_EDITING_TOOLS,
 } from './documentEditingAgentConfig.js';
+import { createDirectEditsAppliedPrompt } from './documentEditingPrompts.js';
 import {
     createDocumentEditingRunIdentity,
     DOCUMENT_EDITING_DEFAULT_INTERACTION,
@@ -139,20 +140,6 @@ export function createDocumentReconcilePrompt(
         `1) Fetch the latest canonical revision ${headDocumentId} with fetch_document into 'drafts/${documentRootId}.theirs.md'.`,
         `2) Compare it with the working copy '${draftPath}' and merge the external changes into the working copy with edit_artifact, preserving this session's edits.`,
         '3) Reply with a short list of what was merged, plus any conflicting passages and how you resolved them, so I can review before saving again.',
-    ].join('\n');
-}
-
-// Above this size a diff stops being cheaper than re-reading; fall back to the read-the-artifact notice.
-const DIRECT_EDITS_DIFF_MAX_CHARS = 4000;
-
-/** Chat notice handing the agent the exact delta of direct editor edits, already applied to the working copy. */
-export function createDirectEditsAppliedPrompt(draftPath: string, unifiedDiff: string): string {
-    return [
-        `I edited the working copy '${draftPath}' directly in the editor. The changes below are already applied —`,
-        'do not re-apply them. Treat the artifact as the current source of truth.',
-        '```diff',
-        unifiedDiff,
-        '```',
     ].join('\n');
 }
 
@@ -786,17 +773,10 @@ export function DocumentEditingWorkspace({
         try {
             const flushed = await flushArtifactChangesRef.current?.();
             if (!flushed) return;
-            // Hand the agent the exact delta so it doesn't burn a turn re-reading the
-            // artifact to discover what changed; oversized deltas fall back to that.
-            const diff = createUnifiedLineDiff(flushed.previous, flushed.current, {
-                context: 2,
-                maxChars: DIRECT_EDITS_DIFF_MAX_CHARS,
-            });
-            sendMessage(
-                diff
-                    ? createDirectEditsAppliedPrompt(draftPath, diff)
-                    : t('agent.directEditsReadyMessage', { path: draftPath }),
-            );
+            // Hand the agent the exact persisted delta so it can update its context
+            // without spending another turn reading or re-applying the artifact.
+            const unifiedDiff = createUnifiedLineDiff(flushed.previous, flushed.current, { context: 1 });
+            if (unifiedDiff) sendMessage(createDirectEditsAppliedPrompt(draftPath, unifiedDiff));
             setHasDirectEditorChanges(false);
             toast({ status: 'success', title: t('agent.changesSentToAgent'), duration: 2000 });
         } finally {
@@ -1000,12 +980,6 @@ export function DocumentEditingWorkspace({
                     </div>
                 </div>
             ) : null}
-            {isAgentWorking ? (
-                <DocumentEditingLockBanner
-                    isLocked={isEditingLocked}
-                    onToggleLock={() => setIsEditingManuallyUnlocked((isUnlocked) => !isUnlocked)}
-                />
-            ) : null}
             <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
                 <ResizablePanel defaultSize={65} minSize={35} className="min-w-0 bg-background">
                     <div className="flex h-full min-h-0 flex-col">
@@ -1030,6 +1004,16 @@ export function DocumentEditingWorkspace({
                                     hasUnsentChanges={isDirty && hasDirectEditorChanges}
                                     isSendingChanges={isSendingChanges}
                                     sendChangesDisabled={!agentRunId || isEditingLocked}
+                                    toolbarStatus={
+                                        isAgentWorking ? (
+                                            <DocumentEditingLockStatus
+                                                isLocked={isEditingLocked}
+                                                onToggleLock={() =>
+                                                    setIsEditingManuallyUnlocked((isUnlocked) => !isUnlocked)
+                                                }
+                                            />
+                                        ) : undefined
+                                    }
                                     onDocumentEdit={() => setHasDirectEditorChanges(true)}
                                     flushChangesRef={flushArtifactChangesRef}
                                 />

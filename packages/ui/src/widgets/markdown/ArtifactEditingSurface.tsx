@@ -148,6 +148,8 @@ export interface ArtifactEditingSurfaceProps {
     hasUnsentChanges?: boolean;
     isSendingChanges?: boolean;
     sendChangesDisabled?: boolean;
+    /** Compact status rendered beside the full editor's document hand-off action. */
+    toolbarStatus?: React.ReactNode;
     onContentChange?: (content: string, generation?: string) => void;
     onDocumentEdit?: () => void;
     /**
@@ -197,6 +199,7 @@ export function ArtifactEditingSurface({
     hasUnsentChanges = false,
     isSendingChanges = false,
     sendChangesDisabled = false,
+    toolbarStatus,
     onContentChange,
     onDocumentEdit,
     onSaveStatusChange,
@@ -809,6 +812,7 @@ export function ArtifactEditingSurface({
                                 hasUnsentChanges={hasUnsentChanges}
                                 isSendingChanges={isSendingChanges}
                                 sendChangesDisabled={sendChangesDisabled || !runId || Boolean(documentConflict)}
+                                toolbarStatus={toolbarStatus}
                                 contentClassName="pe-5"
                             />
                             <MarkdownChangeRuler

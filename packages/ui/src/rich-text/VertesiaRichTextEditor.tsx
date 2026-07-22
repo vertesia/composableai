@@ -15,7 +15,7 @@ import {
 } from '@vertesia/rich-text';
 import { Button, cn, Modal, ModalBody, ModalFooter, ModalTitle, Textarea } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { CodeBlockHandlerProvider, useCodeBlockContext } from '../widgets/markdown/CodeBlockContext.js';
 import { useCodeBlockRendererRegistry } from '../widgets/markdown/CodeBlockRendering.js';
 import { createDefaultCodeBlockHandlers, ExpandCodeBlockHandler } from '../widgets/markdown/codeBlockHandlers.js';
@@ -129,6 +129,8 @@ export interface VertesiaMarkdownDocumentEditorProps
     hasUnsentChanges?: boolean;
     isSendingChanges?: boolean;
     sendChangesDisabled?: boolean;
+    /** Compact status rendered immediately beside the document hand-off action. */
+    toolbarStatus?: ReactNode;
 }
 
 export function VertesiaMarkdownDocumentEditor({
@@ -142,6 +144,7 @@ export function VertesiaMarkdownDocumentEditor({
     hasUnsentChanges = false,
     isSendingChanges = false,
     sendChangesDisabled = false,
+    toolbarStatus,
     ...props
 }: VertesiaMarkdownDocumentEditorProps) {
     const { t } = useUITranslation();
@@ -170,6 +173,7 @@ export function VertesiaMarkdownDocumentEditor({
                         hasUnsentChanges={hasUnsentChanges}
                         isSendingChanges={isSendingChanges}
                         sendChangesDisabled={sendChangesDisabled}
+                        toolbarStatus={toolbarStatus}
                     />
                     <MarkdownDocumentEditor
                         {...props}
@@ -187,7 +191,8 @@ export function VertesiaMarkdownDocumentEditor({
             ) : (
                 <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
                     {onSendChangesToAgent ? (
-                        <div className="flex min-h-10 shrink-0 items-center justify-end border-b border-mixer-muted/25 px-1.5 py-1">
+                        <div className="flex min-h-10 shrink-0 items-center justify-end gap-1 border-b border-mixer-muted/25 px-1.5 py-1">
+                            {toolbarStatus}
                             <SendChangesToAgentButton
                                 onSend={onSendChangesToAgent}
                                 hasUnsentChanges={hasUnsentChanges}

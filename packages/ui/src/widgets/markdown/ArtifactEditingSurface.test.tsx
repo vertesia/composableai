@@ -39,6 +39,7 @@ function renderSurface(props?: {
     onSendMessage?: (message: string) => void;
     onSendChangesToAgent?: () => void;
     hasUnsentChanges?: boolean;
+    toolbarStatus?: React.ReactNode;
     flushChangesRef?: React.MutableRefObject<(() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null>;
 }) {
     return render(
@@ -55,6 +56,7 @@ function renderSurface(props?: {
                 onSendMessage={props?.onSendMessage}
                 onSendChangesToAgent={props?.onSendChangesToAgent}
                 hasUnsentChanges={props?.hasUnsentChanges}
+                toolbarStatus={props?.toolbarStatus}
                 flushChangesRef={props?.flushChangesRef}
             />
         </I18nProvider>,
@@ -183,10 +185,12 @@ describe('ArtifactEditingSurface', () => {
             viewMode: 'document',
             onSendChangesToAgent,
             hasUnsentChanges: true,
+            toolbarStatus: <span>AI is editing</span>,
         });
 
         const button = await screen.findByRole('button', { name: 'Send changes to agent' });
         expect(screen.getByRole('toolbar').contains(button)).toBe(true);
+        expect(button.previousElementSibling?.textContent).toBe('AI is editing');
         expect(button).toHaveProperty('disabled', false);
         fireEvent.click(button);
         expect(onSendChangesToAgent).toHaveBeenCalledTimes(1);
