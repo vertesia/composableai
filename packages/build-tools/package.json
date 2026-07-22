@@ -32,13 +32,13 @@
         }
     },
     "devDependencies": {
-        "@hono/node-server": "^2.0.8",
+        "@hono/node-server": "^2.0.9",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
         "vite": "catalog:",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
@@ -48,8 +48,8 @@
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "@hono/node-server": "^2.0.8",
-        "vite": "^8.1.0"
+        "@hono/node-server": "^2.0.9",
+        "vite": "^8.1.4"
     },
     "peerDependenciesMeta": {
         "@hono/node-server": {

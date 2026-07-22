@@ -22,7 +22,7 @@
     },
     "license": "Apache-2.0",
     "devDependencies": {
-        "@smithy/types": "^4.15.1",
+        "@smithy/types": "^4.16.1",
         "@temporalio/proto": "^1.20.2",
         "@temporalio/testing": "^1.20.2",
         "@temporalio/worker": "^1.20.2",
@@ -32,7 +32,7 @@
         "@types/tmp": "^0.2.6",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.1083.0",
