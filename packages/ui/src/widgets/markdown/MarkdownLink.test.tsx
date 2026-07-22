@@ -2,11 +2,17 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type AgentResourceResolver, AgentResourceResolverProvider } from './AgentResourceResolver';
-import { MarkdownLink } from './MarkdownLink';
+import { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 
 afterEach(() => cleanup());
 
 describe('MarkdownLink agent resources', () => {
+    const ExistingLink = ({ href, children, className }: MarkdownLinkProps) => (
+        <a href={href} className={className}>
+            {children}
+        </a>
+    );
+
     it('routes a custom resource scheme through the host resolver', () => {
         const resolver = vi.fn<AgentResourceResolver>(() => ({ kind: 'navigate', href: '/custom/interactions/int-1' }));
         render(
@@ -43,5 +49,22 @@ describe('MarkdownLink agent resources', () => {
 
         expect(screen.queryByRole('link')).toBeNull();
         expect(screen.getByText('Collection').tagName).toBe('SPAN');
+    });
+
+    it('preserves the class name when delegating standard and resolved resource links', () => {
+        const resolver: AgentResourceResolver = () => ({ kind: 'navigate', href: '/custom/interactions/int-1' });
+        render(
+            <AgentResourceResolverProvider value={resolver}>
+                <MarkdownLink href="https://example.com" className="standard-link" ExistingLink={ExistingLink}>
+                    Standard
+                </MarkdownLink>
+                <MarkdownLink href="interaction:int-1" className="resource-link" ExistingLink={ExistingLink}>
+                    Resource
+                </MarkdownLink>
+            </AgentResourceResolverProvider>,
+        );
+
+        expect(screen.getByRole('link', { name: 'Standard' }).className).toBe('standard-link');
+        expect(screen.getByRole('link', { name: 'Resource' }).className).toBe('resource-link');
     });
 });

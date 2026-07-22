@@ -51,7 +51,7 @@ export function MarkdownLink({
     if (scheme === 'standard') {
         if (typeof ExistingLink === 'function') {
             return (
-                <ExistingLink node={node} href={href} {...rest}>
+                <ExistingLink node={node} href={href} className={className} {...rest}>
                     {children}
                 </ExistingLink>
             );
@@ -98,7 +98,7 @@ function AgentResourceMarkdownLink({
     if (target.kind === 'navigate') {
         if (typeof ExistingLink === 'function') {
             return (
-                <ExistingLink href={target.href} {...rest}>
+                <ExistingLink href={target.href} className={className} {...rest}>
                     {children}
                 </ExistingLink>
             );

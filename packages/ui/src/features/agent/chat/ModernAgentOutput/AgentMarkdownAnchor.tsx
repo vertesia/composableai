@@ -6,6 +6,7 @@ export type StoreLinkComponentType = React.ComponentType<{
     href: string;
     documentId: string;
     children: React.ReactNode;
+    className?: string;
 }>;
 
 /** Host-provided renderer for store/collection links. */
@@ -13,6 +14,7 @@ export type CollectionLinkComponentType = React.ComponentType<{
     href: string;
     collectionId: string;
     children: React.ReactNode;
+    className?: string;
 }>;
 
 export interface AgentMarkdownAnchorOptions {
@@ -32,6 +34,14 @@ interface AnchorProps {
     ref?: unknown;
     href?: string;
     children?: React.ReactNode;
+    className?: string;
+}
+
+function getInternalRouteId(href: string, routePrefix: string): string | undefined {
+    if (!href.startsWith(routePrefix)) {
+        return undefined;
+    }
+    return href.slice(routePrefix.length).split(/[/?#]/, 1)[0] || undefined;
 }
 
 /**
@@ -48,38 +58,24 @@ export function createAgentMarkdownAnchor(options: AgentMarkdownAnchorOptions = 
 
     return function AgentMarkdownAnchor({ node: _node, ref: _ref, ...props }: AnchorProps) {
         const href = props.href || '';
-        const isInternal = href.startsWith('/');
+        const isInternal = href.startsWith('/') && !href.startsWith('//');
         const withParams = isInternal && addStickyParams ? addStickyParams(href) : href;
+        const documentId = isInternal ? getInternalRouteId(href, '/store/objects/') : undefined;
 
-        if (href.includes('/store/objects')) {
-            if (StoreLinkComponent) {
-                const documentId = href.split('/store/objects/')[1] || '';
-                return (
-                    <StoreLinkComponent href={withParams} documentId={documentId}>
-                        {props.children}
-                    </StoreLinkComponent>
-                );
-            }
+        if (documentId && StoreLinkComponent) {
             return (
-                <NavLink href={withParams} topLevelNav>
+                <StoreLinkComponent href={withParams} documentId={documentId} className={props.className}>
                     {props.children}
-                </NavLink>
+                </StoreLinkComponent>
             );
         }
 
-        if (href.includes('/store/collections')) {
-            if (CollectionLinkComponent) {
-                const collectionId = href.split('/store/collections/')[1] || '';
-                return (
-                    <CollectionLinkComponent href={withParams} collectionId={collectionId}>
-                        {props.children}
-                    </CollectionLinkComponent>
-                );
-            }
+        const collectionId = isInternal ? getInternalRouteId(href, '/store/collections/') : undefined;
+        if (collectionId && CollectionLinkComponent) {
             return (
-                <NavLink href={withParams} topLevelNav>
+                <CollectionLinkComponent href={withParams} collectionId={collectionId} className={props.className}>
                     {props.children}
-                </NavLink>
+                </CollectionLinkComponent>
             );
         }
 
@@ -87,7 +83,7 @@ export function createAgentMarkdownAnchor(options: AgentMarkdownAnchorOptions = 
         // navigates internally so tenant params are preserved and the SPA is not reloaded.
         if (isInternal) {
             return (
-                <NavLink href={withParams} topLevelNav>
+                <NavLink href={withParams} className={props.className} topLevelNav>
                     {props.children}
                 </NavLink>
             );
