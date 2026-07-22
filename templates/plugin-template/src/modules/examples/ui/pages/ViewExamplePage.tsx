@@ -1,9 +1,6 @@
 import { ViewExperience } from '@vertesia/ui/features';
 
-// The example in-code View (src/modules/app/resources/views/document-library.ts) is
-// contributed to Studio as `app:<app-name>:document-library`. Replace `example` with
-// your plugin's registered app name (the app-package manifest `name`).
-const DOCUMENT_LIBRARY_VIEW_ID = 'app:example:document-library';
+const DOCUMENT_LIBRARY_VIEW_ID = `app:${import.meta.env.VITE_APP_NAME}:document-library`;
 
 /**
  * Example of embedding a reusable View Experience.
@@ -11,7 +8,7 @@ const DOCUMENT_LIBRARY_VIEW_ID = 'app:example:document-library';
  * Inside the Vertesia session (provided by VertesiaShell) `<ViewExperience>`
  * self-fetches and executes the View, so it needs only a `viewId`. Add
  * `onOpenHit` to route result clicks to a detail page, or `renderers` to
- * override the search / results / navigation surfaces.
+ * override the search, results, or navigation surfaces.
  */
 export function ViewExamplePage() {
     return (

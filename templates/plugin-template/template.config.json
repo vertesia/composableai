@@ -62,6 +62,9 @@
     },
     "agent": {},
     "examples": {
+      "ui": {
+        "routes": "src/modules/examples/ui/routes"
+      },
       "resources": "src/modules/examples/resources"
     }
   },

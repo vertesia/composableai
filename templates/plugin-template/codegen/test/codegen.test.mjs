@@ -83,6 +83,9 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
+        const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
+        assert.doesNotMatch(appRoutes, /Document Library/);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/views')), false);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
@@ -124,6 +127,33 @@ test('service module selects service entry and cleans inactive modules', () => {
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/service')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
+        const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
+        assert.doesNotMatch(appRoutes, /Document Library/);
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('examples module contributes optional UI routes and views', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['examples']);
+
+        const uiModules = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-modules.tsx'), 'utf8');
+        const serverModules = fs.readFileSync(path.join(tmpRoot, 'src/tool-server/app-server-modules.ts'), 'utf8');
+        const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
+        const exampleRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/examples/ui/routes.tsx'), 'utf8');
+        const exampleResources = fs.readFileSync(
+            path.join(tmpRoot, 'src/modules/examples/resources/views/index.ts'),
+            'utf8',
+        );
+
+        assert.match(uiModules, /modules\/examples\/ui\/routes/);
+        assert.match(serverModules, /modules\/examples\/resources\/index\.js/);
+        assert.doesNotMatch(appRoutes, /Document Library/);
+        assert.match(exampleRoutes, /Document Library/);
+        assert.match(exampleResources, /DocumentLibraryView/);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

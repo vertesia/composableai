@@ -6,4 +6,5 @@ export { skills } from './skills/index.js';
 export { templates } from './templates/index.js';
 export { tools } from './tools/index.js';
 export { types } from './types/index.js';
-export { views } from './views/index.js';
+
+export const views = [];
