@@ -1065,6 +1065,19 @@ export interface AppRepoRefs {
     tags: AppRepoRef[];
 }
 
+/** Request to create a branch from an existing branch, tag, or commit. */
+export interface CreateAppRepoBranchRequest {
+    name: string;
+    source_ref: string;
+}
+
+/** A newly created app repository branch. */
+export interface AppRepoBranch {
+    name: string;
+    commit: string;
+    source_ref: string;
+}
+
 /**
  * Canonical package scopes, including the catch-all `all`. The public type is derived
  * from this list so request parsing and TypeScript cannot drift.

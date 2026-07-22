@@ -12,6 +12,7 @@ import type {
     AppManifestData,
     AppPackage,
     AppPackageScope,
+    AppRepoBranch,
     AppRepoCommits,
     AppRepoDocumentCommit,
     AppRepoRefs,
@@ -21,6 +22,7 @@ import type {
     AppVersionListQuery,
     AppVersionRecord,
     CountResult,
+    CreateAppRepoBranchRequest,
     DeleteAppVersionResponse,
     ProjectRef,
     PromoteAppVersionResponse,
@@ -216,6 +218,11 @@ export default class AppsApi extends ApiTopic {
      */
     getRepoRefs(appIdOrName: string): Promise<AppRepoRefs> {
         return this.get(`/${encodeURIComponent(appIdOrName)}/repo/refs`);
+    }
+
+    /** Create a repository branch from an existing branch, tag, or commit. */
+    createRepoBranch(appIdOrName: string, payload: CreateAppRepoBranchRequest): Promise<AppRepoBranch> {
+        return this.post(`/${encodeURIComponent(appIdOrName)}/repo/branches`, { payload });
     }
 
     /**
