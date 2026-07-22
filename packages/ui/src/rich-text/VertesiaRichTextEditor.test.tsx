@@ -91,6 +91,40 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
     });
 
+    it('puts the document hand-off in the editor toolbar and highlights it when edits are pending', async () => {
+        const onSendChangesToAgent = vi.fn();
+        const view = render(
+            <I18nProvider lng="en">
+                <VertesiaMarkdownDocumentEditor
+                    value="Document text"
+                    onSendChangesToAgent={onSendChangesToAgent}
+                    hasUnsentChanges={false}
+                />
+            </I18nProvider>,
+        );
+
+        const inactiveButton = await screen.findByRole('button', { name: 'Send changes to agent' });
+        expect(screen.getByRole('toolbar').contains(inactiveButton)).toBe(true);
+        expect(inactiveButton).toHaveProperty('disabled', true);
+        expect(inactiveButton.className).not.toContain('bg-primary');
+
+        view.rerender(
+            <I18nProvider lng="en">
+                <VertesiaMarkdownDocumentEditor
+                    value="Document text"
+                    onSendChangesToAgent={onSendChangesToAgent}
+                    hasUnsentChanges
+                />
+            </I18nProvider>,
+        );
+
+        const activeButton = screen.getByRole('button', { name: 'Send changes to agent' });
+        expect(activeButton).toHaveProperty('disabled', false);
+        expect(activeButton.className).toContain('bg-primary');
+        fireEvent.click(activeButton);
+        expect(onSendChangesToAgent).toHaveBeenCalledTimes(1);
+    });
+
     it('sends selected-text comments while full-document content editing is locked', async () => {
         const onSendComment = vi.fn();
         let editor: Parameters<NonNullable<MarkdownRichTextEditorProps['onEditor']>>[0] = null;
@@ -112,7 +146,10 @@ describe('VertesiaMarkdownRichTextEditor', () => {
             editor?.commands.setTextSelection({ from: 1, to: 7 });
         });
         expect(screen.getByRole('button', { name: 'Bold' })).toHaveProperty('disabled', true);
-        fireEvent.click(await screen.findByRole('button', { name: 'Comment on selection' }));
+        const commentButton = await screen.findByRole('button', { name: 'Comment on selection' });
+        expect(screen.getByRole('toolbar').contains(commentButton)).toBe(false);
+        fireEvent.click(commentButton);
+        expect(screen.getByRole('dialog', { name: 'Comment on selection' })).not.toBeNull();
         fireEvent.change(screen.getByPlaceholderText('Describe how the agent should improve this section...'), {
             target: { value: 'Make this claim measurable.' },
         });

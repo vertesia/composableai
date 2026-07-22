@@ -31,7 +31,6 @@ import {
     RefreshCw,
     RotateCcw,
     Save,
-    Send,
     Sparkles,
     X,
 } from 'lucide-react';
@@ -882,24 +881,6 @@ export function DocumentEditingWorkspace({
                             {t('agent.summarizeChanges')}
                         </Button>
                     ) : null}
-                    {workspaceView === 'editor' ? (
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 gap-1.5"
-                            onClick={() => void handleSendChangesToAgent()}
-                            disabled={
-                                !agentRunId ||
-                                !isDirty ||
-                                !hasDirectEditorChanges ||
-                                isEditingLocked ||
-                                isSendingChanges
-                            }
-                        >
-                            {isSendingChanges ? <Spinner size="sm" /> : <Send className="size-3.5" />}
-                            {t('agent.sendChangesToAgent')}
-                        </Button>
-                    ) : null}
                     <VTooltip description={t('agent.refresh')} asChild>
                         <Button
                             variant="ghost"
@@ -1045,6 +1026,10 @@ export function DocumentEditingWorkspace({
                                     onContentChange={handleArtifactContentChange}
                                     onAction={handleArtifactAction}
                                     onSendMessage={sendEditingMessage}
+                                    onSendChangesToAgent={handleSendChangesToAgent}
+                                    hasUnsentChanges={isDirty && hasDirectEditorChanges}
+                                    isSendingChanges={isSendingChanges}
+                                    sendChangesDisabled={!agentRunId || isEditingLocked}
                                     onDocumentEdit={() => setHasDirectEditorChanges(true)}
                                     flushChangesRef={flushArtifactChangesRef}
                                 />

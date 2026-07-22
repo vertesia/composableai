@@ -23,7 +23,7 @@ import { MarkdownFigure } from '../widgets/markdown/MarkdownFigure.js';
 import { MarkdownImage } from '../widgets/markdown/MarkdownImage.js';
 import { MarkdownLink } from '../widgets/markdown/MarkdownLink.js';
 import { MarkdownRenderer } from '../widgets/markdown/MarkdownRenderer.js';
-import { EditorToolbar } from './EditorToolbar.js';
+import { EditorToolbar, SendChangesToAgentButton } from './EditorToolbar.js';
 
 const defaultCodeBlockHandlers = createDefaultCodeBlockHandlers();
 
@@ -124,6 +124,11 @@ export interface VertesiaMarkdownDocumentEditorProps
         VertesiaEditorProps {
     /** When set, the toolbar shows comment controls that queue and send a batch to the agent. */
     onSendComment?: (message: string) => void | Promise<void>;
+    /** When set, the editor shows the document-level hand-off action in its own toolbar. */
+    onSendChangesToAgent?: () => void | Promise<void>;
+    hasUnsentChanges?: boolean;
+    isSendingChanges?: boolean;
+    sendChangesDisabled?: boolean;
 }
 
 export function VertesiaMarkdownDocumentEditor({
@@ -133,6 +138,10 @@ export function VertesiaMarkdownDocumentEditor({
     editorClassName,
     onEditor,
     onSendComment,
+    onSendChangesToAgent,
+    hasUnsentChanges = false,
+    isSendingChanges = false,
+    sendChangesDisabled = false,
     ...props
 }: VertesiaMarkdownDocumentEditorProps) {
     const { t } = useUITranslation();
@@ -153,7 +162,15 @@ export function VertesiaMarkdownDocumentEditor({
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
             {resolvedEditingMode === 'rich-text' ? (
                 <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
-                    <EditorToolbar editor={editor} editable={props.editable !== false} onSendComment={onSendComment} />
+                    <EditorToolbar
+                        editor={editor}
+                        editable={props.editable !== false}
+                        onSendComment={onSendComment}
+                        onSendChangesToAgent={onSendChangesToAgent}
+                        hasUnsentChanges={hasUnsentChanges}
+                        isSendingChanges={isSendingChanges}
+                        sendChangesDisabled={sendChangesDisabled}
+                    />
                     <MarkdownDocumentEditor
                         {...props}
                         {...vertesiaRichTextRenderers}
@@ -169,6 +186,16 @@ export function VertesiaMarkdownDocumentEditor({
                 </div>
             ) : (
                 <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
+                    {onSendChangesToAgent ? (
+                        <div className="flex min-h-10 shrink-0 items-center justify-end border-b border-mixer-muted/25 px-1.5 py-1">
+                            <SendChangesToAgentButton
+                                onSend={onSendChangesToAgent}
+                                hasUnsentChanges={hasUnsentChanges}
+                                isSending={isSendingChanges}
+                                disabled={sendChangesDisabled}
+                            />
+                        </div>
+                    ) : null}
                     <Textarea
                         value={props.value}
                         onChange={(event) => props.onChange?.(event.target.value)}

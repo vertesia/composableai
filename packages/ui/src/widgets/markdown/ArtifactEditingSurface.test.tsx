@@ -37,6 +37,8 @@ function renderSurface(props?: {
     allowComments?: boolean;
     onAction?: (action: MarkdownEditingAction) => void;
     onSendMessage?: (message: string) => void;
+    onSendChangesToAgent?: () => void;
+    hasUnsentChanges?: boolean;
     flushChangesRef?: React.MutableRefObject<(() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null>;
 }) {
     return render(
@@ -51,6 +53,8 @@ function renderSurface(props?: {
                 allowComments={props?.allowComments}
                 onAction={props?.onAction}
                 onSendMessage={props?.onSendMessage}
+                onSendChangesToAgent={props?.onSendChangesToAgent}
+                hasUnsentChanges={props?.hasUnsentChanges}
                 flushChangesRef={props?.flushChangesRef}
             />
         </I18nProvider>,
@@ -160,7 +164,7 @@ describe('ArtifactEditingSurface', () => {
         );
     });
 
-    it('keeps TipTap comment controls available when full-document content editing is locked', async () => {
+    it('uses the floating selection comment control instead of a redundant toolbar button', async () => {
         renderSurface({
             viewMode: 'document',
             readOnly: true,
@@ -170,7 +174,22 @@ describe('ArtifactEditingSurface', () => {
 
         const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
         expect(editor.getAttribute('contenteditable')).toBe('false');
-        expect(screen.getByRole('button', { name: 'Comment on selection' })).not.toBeNull();
+        expect(screen.queryByRole('button', { name: 'Comment on selection' })).toBeNull();
+    });
+
+    it('exposes the pending direct-edit hand-off inside the full-document editor toolbar', async () => {
+        const onSendChangesToAgent = vi.fn();
+        renderSurface({
+            viewMode: 'document',
+            onSendChangesToAgent,
+            hasUnsentChanges: true,
+        });
+
+        const button = await screen.findByRole('button', { name: 'Send changes to agent' });
+        expect(screen.getByRole('toolbar').contains(button)).toBe(true);
+        expect(button).toHaveProperty('disabled', false);
+        fireEvent.click(button);
+        expect(onSendChangesToAgent).toHaveBeenCalledTimes(1);
     });
 
     it('flushes the latest editor transaction before handing changes to the agent', async () => {

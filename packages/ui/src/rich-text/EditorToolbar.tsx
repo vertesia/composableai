@@ -1,3 +1,4 @@
+import { autoUpdate, FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react';
 import type { Editor } from '@vertesia/rich-text';
 import {
     Button,
@@ -6,7 +7,9 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    Spinner,
     Textarea,
+    usePortalContainer,
     useToast,
     VTooltip,
 } from '@vertesia/ui/core';
@@ -29,7 +32,7 @@ import {
     Undo2,
     X,
 } from 'lucide-react';
-import { type ComponentType, useCallback, useEffect, useRef, useState } from 'react';
+import { type ComponentType, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * The formatting commands (toggleBold, setHeading, …) are augmented onto Tiptap's chain by the
@@ -91,6 +94,8 @@ function createId(): string {
 interface Selection {
     blockLabel: string;
     quote: string;
+    from: number;
+    to: number;
 }
 
 /** Human-readable block label + selected text for the enclosing node of the current selection. */
@@ -124,7 +129,7 @@ function readSelection(editor: Editor): Selection | null {
             break;
         }
     }
-    return { blockLabel, quote };
+    return { blockLabel, quote, from, to };
 }
 
 interface PendingComment extends Selection {
@@ -144,6 +149,115 @@ function composeCommentMessage(comments: PendingComment[]): string {
         '',
         'Please revise the document to address each comment, preserving everything else.',
     ].join('\n');
+}
+
+function getSelectionAnchor(editor: Editor, selection: Selection) {
+    return {
+        contextElement: editor.view.dom,
+        getBoundingClientRect: () => {
+            try {
+                const end = editor.view.coordsAtPos(selection.to);
+                const height = Math.max(1, end.bottom - end.top);
+                return new DOMRect(end.right, end.top, 1, height);
+            } catch {
+                return editor.view.dom.getBoundingClientRect();
+            }
+        },
+    };
+}
+
+interface SelectionCommentProps {
+    editor: Editor;
+    selection: Selection;
+    composing: boolean;
+    draft: string;
+    onStart: () => void;
+    onDraftChange: (value: string) => void;
+    onCancel: () => void;
+    onAdd: () => void;
+}
+
+function SelectionComment({
+    editor,
+    selection,
+    composing,
+    draft,
+    onStart,
+    onDraftChange,
+    onCancel,
+    onAdd,
+}: SelectionCommentProps) {
+    const { t } = useUITranslation();
+    const portalContainer = usePortalContainer();
+    const { refs, floatingStyles } = useFloating({
+        placement: 'right-start',
+        strategy: 'fixed',
+        middleware: [offset(8), flip({ fallbackPlacements: ['left-start', 'bottom-start'] }), shift({ padding: 12 })],
+        whileElementsMounted: autoUpdate,
+    });
+    const anchor = useMemo(() => getSelectionAnchor(editor, selection), [editor, selection]);
+
+    useEffect(() => {
+        refs.setPositionReference(anchor);
+    }, [anchor, refs]);
+
+    return (
+        <FloatingPortal root={portalContainer}>
+            <div ref={refs.setFloating} style={floatingStyles} className="z-50">
+                {composing ? (
+                    <div
+                        role="dialog"
+                        aria-label={t('agent.commentOnSelection')}
+                        className="w-80 max-w-[calc(100vw-1.5rem)] space-y-2 rounded-lg border border-mixer-muted/25 bg-popover p-3 text-popover-foreground shadow-lg"
+                    >
+                        <div className="line-clamp-2 text-xs text-muted">
+                            <span className="font-medium text-foreground">{t('agent.commentingOn')}</span>{' '}
+                            <span className="italic">“{selection.quote}”</span>
+                        </div>
+                        <Textarea
+                            value={draft}
+                            onChange={(event) => onDraftChange(event.target.value)}
+                            placeholder={t('agent.commentOnSelectionPlaceholder')}
+                            rows={3}
+                            autoFocus
+                            onKeyDown={(event) => {
+                                if (event.key === 'Escape') {
+                                    event.preventDefault();
+                                    onCancel();
+                                    return;
+                                }
+                                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                                    event.preventDefault();
+                                    onAdd();
+                                }
+                            }}
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={onCancel}>
+                                {t('store.cancelEdit')}
+                            </Button>
+                            <Button size="sm" onClick={onAdd} disabled={!draft.trim()}>
+                                {t('agent.addComment')}
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <VTooltip description={t('agent.commentOnSelection')} asChild>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onMouseDown={retainSelection}
+                            onClick={onStart}
+                            aria-label={t('agent.commentOnSelection')}
+                            className="size-9 rounded-full p-0 shadow-md"
+                        >
+                            <MessageSquarePlus className="size-4" />
+                        </Button>
+                    </VTooltip>
+                )}
+            </div>
+        </FloatingPortal>
+    );
 }
 
 function ToolButton({
@@ -193,31 +307,77 @@ export interface EditorToolbarProps {
      * selections and this sends the whole batch to the agent as one message.
      */
     onSendComment?: (message: string) => void | Promise<void>;
+    /** Hand the user's persisted full-document edits to the active agent. */
+    onSendChangesToAgent?: () => void | Promise<void>;
+    /** Whether the user has direct edits that have not yet been handed to the agent. */
+    hasUnsentChanges?: boolean;
+    /** Whether the hand-off is currently being prepared and sent. */
+    isSendingChanges?: boolean;
+    /** Additional session-level constraints, such as no active run or an agent editing lock. */
+    sendChangesDisabled?: boolean;
+}
+
+interface SendChangesToAgentButtonProps {
+    onSend: () => void | Promise<void>;
+    hasUnsentChanges: boolean;
+    isSending: boolean;
+    disabled: boolean;
+}
+
+export function SendChangesToAgentButton({
+    onSend,
+    hasUnsentChanges,
+    isSending,
+    disabled,
+}: SendChangesToAgentButtonProps) {
+    const { t } = useUITranslation();
+    return (
+        <Button
+            variant={hasUnsentChanges ? 'primary' : 'ghost'}
+            size="sm"
+            className={cn('h-8 gap-1.5', !hasUnsentChanges && 'text-muted')}
+            onMouseDown={retainSelection}
+            onClick={() => void onSend()}
+            disabled={disabled || !hasUnsentChanges || isSending}
+        >
+            {isSending ? <Spinner size="sm" /> : <Send className="size-3.5" />}
+            {t('agent.sendChangesToAgent')}
+        </Button>
+    );
 }
 
 /**
  * Clean, icon-based formatting toolbar for the Markdown document editor, optionally with inline
  * comment controls. Reactive to the current selection; uses the shared `richText.*` i18n strings.
  */
-export function EditorToolbar({ editor, className, editable = true, onSendComment }: EditorToolbarProps) {
+export function EditorToolbar({
+    editor,
+    className,
+    editable = true,
+    onSendComment,
+    onSendChangesToAgent,
+    hasUnsentChanges = false,
+    isSendingChanges = false,
+    sendChangesDisabled = false,
+}: EditorToolbarProps) {
     const { t } = useUITranslation();
     const toast = useToast();
     useEditorRevision(editor);
 
-    const [hasSelection, setHasSelection] = useState(false);
     const [composing, setComposing] = useState(false);
     const [draft, setDraft] = useState('');
     const [pendingSelection, setPendingSelection] = useState<Selection | null>(null);
+    const [activeSelection, setActiveSelection] = useState<Selection | null>(null);
     const [pending, setPending] = useState<PendingComment[]>([]);
     const [showList, setShowList] = useState(false);
-    const [isSending, setIsSending] = useState(false);
+    const [isSendingComments, setIsSendingComments] = useState(false);
     const lastSelectionRef = useRef<Selection | null>(null);
 
     useEffect(() => {
         if (!editor || !onSendComment) return;
         const update = () => {
             const selection = readSelection(editor);
-            setHasSelection(Boolean(selection));
+            setActiveSelection(selection);
             if (selection) lastSelectionRef.current = selection;
         };
         update();
@@ -261,16 +421,16 @@ export function EditorToolbar({ editor, className, editable = true, onSendCommen
     }, []);
 
     const sendAll = useCallback(async () => {
-        if (!onSendComment || pending.length === 0 || isSending) return;
-        setIsSending(true);
+        if (!onSendComment || pending.length === 0 || isSendingComments) return;
+        setIsSendingComments(true);
         try {
             await onSendComment(composeCommentMessage(pending));
             setPending([]);
             setShowList(false);
         } finally {
-            setIsSending(false);
+            setIsSendingComments(false);
         }
-    }, [isSending, onSendComment, pending]);
+    }, [isSendingComments, onSendComment, pending]);
 
     if (!editor) return null;
 
@@ -284,6 +444,7 @@ export function EditorToolbar({ editor, className, editable = true, onSendCommen
                 ? t('richText.heading3')
                 : t('richText.paragraph');
     const inTable = editor.isActive('table');
+    const commentSelection = pendingSelection ?? activeSelection;
 
     return (
         <>
@@ -463,26 +624,8 @@ export function EditorToolbar({ editor, className, editable = true, onSendCommen
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {onSendComment ? (
+                {onSendComment || onSendChangesToAgent ? (
                     <div className="ms-auto flex shrink-0 items-center gap-1 ps-1">
-                        <VTooltip
-                            description={hasSelection ? t('agent.commentOnSelection') : t('agent.selectTextToComment')}
-                            asChild
-                        >
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onMouseDown={retainSelection}
-                                onClick={startComment}
-                                aria-label={t('agent.commentOnSelection')}
-                                className={cn(
-                                    'size-8 shrink-0 rounded-md p-0 text-foreground hover:bg-muted/60',
-                                    !hasSelection && 'opacity-60',
-                                )}
-                            >
-                                <MessageSquarePlus className="size-4" />
-                            </Button>
-                        </VTooltip>
                         {pending.length > 0 ? (
                             <>
                                 <Button
@@ -493,44 +636,40 @@ export function EditorToolbar({ editor, className, editable = true, onSendCommen
                                 >
                                     {t('agent.comments')} ({pending.length})
                                 </Button>
-                                <Button size="sm" className="h-8" onClick={() => void sendAll()} disabled={isSending}>
+                                <Button
+                                    size="sm"
+                                    className="h-8"
+                                    onClick={() => void sendAll()}
+                                    disabled={isSendingComments}
+                                >
                                     <Send className="me-1 size-4" />
                                     {t('agent.sendToAgent')}
                                 </Button>
                             </>
                         ) : null}
+                        {onSendChangesToAgent ? (
+                            <SendChangesToAgentButton
+                                onSend={onSendChangesToAgent}
+                                hasUnsentChanges={hasUnsentChanges}
+                                isSending={isSendingChanges}
+                                disabled={sendChangesDisabled}
+                            />
+                        ) : null}
                     </div>
                 ) : null}
             </div>
 
-            {composing && pendingSelection ? (
-                <div className="shrink-0 space-y-2 border-b border-mixer-muted/15 px-3 py-2">
-                    <div className="line-clamp-2 text-xs text-muted">
-                        <span className="font-medium text-foreground">{t('agent.commentingOn')}</span>{' '}
-                        <span className="italic">“{pendingSelection.quote}”</span>
-                    </div>
-                    <Textarea
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
-                        placeholder={t('agent.commentOnSelectionPlaceholder')}
-                        rows={3}
-                        autoFocus
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                                event.preventDefault();
-                                addComment();
-                            }
-                        }}
-                    />
-                    <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={cancelDraft}>
-                            {t('store.cancelEdit')}
-                        </Button>
-                        <Button size="sm" onClick={addComment} disabled={!draft.trim()}>
-                            {t('agent.addComment')}
-                        </Button>
-                    </div>
-                </div>
+            {onSendComment && commentSelection ? (
+                <SelectionComment
+                    editor={editor}
+                    selection={commentSelection}
+                    composing={composing}
+                    draft={draft}
+                    onStart={startComment}
+                    onDraftChange={setDraft}
+                    onCancel={cancelDraft}
+                    onAdd={addComment}
+                />
             ) : null}
 
             {showList && pending.length > 0 ? (

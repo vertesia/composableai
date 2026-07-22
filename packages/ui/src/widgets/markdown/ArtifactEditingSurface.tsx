@@ -143,6 +143,11 @@ export interface ArtifactEditingSurfaceProps {
     onAction?: (action: MarkdownEditingAction) => void | Promise<void>;
     /** Send a composed batch of span comments to the agent as one conversation message. */
     onSendMessage?: (message: string) => void | Promise<void>;
+    /** Hand persisted full-document edits to the active agent. */
+    onSendChangesToAgent?: () => void | Promise<void>;
+    hasUnsentChanges?: boolean;
+    isSendingChanges?: boolean;
+    sendChangesDisabled?: boolean;
     onContentChange?: (content: string, generation?: string) => void;
     onDocumentEdit?: () => void;
     /**
@@ -188,6 +193,10 @@ export function ArtifactEditingSurface({
     className,
     onAction,
     onSendMessage,
+    onSendChangesToAgent,
+    hasUnsentChanges = false,
+    isSendingChanges = false,
+    sendChangesDisabled = false,
     onContentChange,
     onDocumentEdit,
     onSaveStatusChange,
@@ -796,6 +805,10 @@ export function ArtifactEditingSurface({
                                         ? onSendMessage
                                         : undefined
                                 }
+                                onSendChangesToAgent={onSendChangesToAgent}
+                                hasUnsentChanges={hasUnsentChanges}
+                                isSendingChanges={isSendingChanges}
+                                sendChangesDisabled={sendChangesDisabled || !runId || Boolean(documentConflict)}
                                 contentClassName="pe-5"
                             />
                             <MarkdownChangeRuler
