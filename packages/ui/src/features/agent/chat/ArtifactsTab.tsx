@@ -14,11 +14,13 @@ import {
     RefreshCwIcon,
 } from 'lucide-react';
 import React, { useCallback, useId, useMemo, useState } from 'react';
-import {
-    type UniversalDocumentSource,
-    UniversalDocumentViewer,
-} from '../../document-viewer/UniversalDocumentViewer.js';
+import type { UniversalDocumentSource } from '../../document-viewer/UniversalDocumentViewer.js';
 import { type ArtifactTreeNode, useArtifacts } from './hooks/useArtifacts.js';
+
+const UniversalDocumentViewer = React.lazy(async () => {
+    const module = await import('../../document-viewer/UniversalDocumentViewer.js');
+    return { default: module.UniversalDocumentViewer };
+});
 
 // ---------------------------------------------------------------------------
 // Tree node component
@@ -419,11 +421,19 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                 >
                     <ModalTitle show={false}>{previewSource.fileName}</ModalTitle>
                     <ModalBody className="h-full max-h-none p-0">
-                        <UniversalDocumentViewer
-                            source={previewSource}
-                            className="h-full"
-                            onDownload={() => previewPath && void handleDownload(previewPath)}
-                        />
+                        <React.Suspense
+                            fallback={
+                                <Center className="h-full">
+                                    <Loader2Icon className="size-6 animate-spin text-muted" />
+                                </Center>
+                            }
+                        >
+                            <UniversalDocumentViewer
+                                source={previewSource}
+                                className="h-full"
+                                onDownload={() => previewPath && void handleDownload(previewPath)}
+                            />
+                        </React.Suspense>
                     </ModalBody>
                 </Modal>
             )}
