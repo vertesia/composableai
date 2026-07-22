@@ -1,3 +1,13 @@
+// Resource deep-link resolver — lets an embedding app override how agent resource references
+// (documents, collections, interactions, ...) map to routes/links in the chat.
+export {
+    type AgentResourceLinkReference,
+    type AgentResourceResolver,
+    AgentResourceResolverProvider,
+    type AgentResourceTarget,
+    type ResourceResolveContext,
+    useAgentResourceResolver,
+} from '@vertesia/ui/widgets';
 export {
     AgentApprovalModeSelector,
     type AgentApprovalModeSelectorProps,

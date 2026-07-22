@@ -1,7 +1,9 @@
+import { Button } from '@vertesia/ui/core';
 import type { Element } from 'hast';
 import type React from 'react';
+import { parseAgentResourceHref, useAgentResourceResolver } from './AgentResourceResolver';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
-import { mapSchemeToRoute, parseUrlScheme, useResolvedUrl } from './useResolvedUrl';
+import { parseUrlScheme, useResolvedUrl } from './useResolvedUrl';
 
 export interface MarkdownLinkProps {
     node?: Element;
@@ -27,24 +29,23 @@ export function MarkdownLink({
     ...rest
 }: MarkdownLinkProps) {
     const rawHref = href || '';
-    const { scheme, path } = parseUrlScheme(rawHref);
-
-    // For schemes that map directly to routes (store:, document://, collection:)
-    const mappedRoute = mapSchemeToRoute(scheme, path);
-    if (mappedRoute) {
-        if (typeof ExistingLink === 'function') {
-            return (
-                <ExistingLink node={node} href={mappedRoute} {...rest}>
-                    {children}
-                </ExistingLink>
-            );
-        }
+    const resource = parseAgentResourceHref(rawHref);
+    if (resource) {
         return (
-            <a href={mappedRoute} {...rest} className={className} target="_blank" rel="noopener noreferrer">
+            <AgentResourceMarkdownLink
+                resource={resource}
+                rawHref={rawHref}
+                artifactRunId={artifactRunId}
+                className={className}
+                ExistingLink={ExistingLink}
+                rest={rest}
+            >
                 {children}
-            </a>
+            </AgentResourceMarkdownLink>
         );
     }
+
+    const { scheme } = parseUrlScheme(rawHref);
 
     // For standard URLs, delegate to existing component or render directly
     if (scheme === 'standard') {
@@ -68,6 +69,56 @@ export function MarkdownLink({
             {children}
         </ResolvedLink>
     );
+}
+
+function AgentResourceMarkdownLink({
+    resource,
+    rawHref,
+    artifactRunId,
+    className,
+    children,
+    ExistingLink,
+    rest,
+}: {
+    resource: NonNullable<ReturnType<typeof parseAgentResourceHref>>;
+    rawHref: string;
+    artifactRunId?: string;
+    className?: string;
+    children?: React.ReactNode;
+    ExistingLink?: React.ComponentType<MarkdownLinkProps>;
+    rest: Record<string, unknown>;
+}) {
+    const resolve = useAgentResourceResolver();
+    const target = resolve(resource, {
+        workflowRunId: artifactRunId,
+        source: 'markdown',
+        rawHref,
+    });
+
+    if (target.kind === 'navigate') {
+        if (typeof ExistingLink === 'function') {
+            return (
+                <ExistingLink href={target.href} {...rest}>
+                    {children}
+                </ExistingLink>
+            );
+        }
+        return (
+            <a href={target.href} {...rest} className={className} target="_blank" rel="noopener noreferrer">
+                {children}
+            </a>
+        );
+    }
+
+    if (target.kind === 'activate') {
+        return (
+            <Button variant="link" size="none" className={className} onClick={target.onActivate}>
+                {children}
+            </Button>
+        );
+    }
+
+    return <span className={className}>{children}</span>;
 }
 
 /**

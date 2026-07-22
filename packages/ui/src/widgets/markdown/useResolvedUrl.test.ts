@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapSchemeToRoute, parseUrlScheme } from './useResolvedUrl';
+import { parseUrlScheme } from './useResolvedUrl';
 
 describe('parseUrlScheme', () => {
     it('should parse artifact: URLs', () => {
@@ -50,15 +50,41 @@ describe('parseUrlScheme', () => {
         expect(result.path).toBe('doc-id-123');
     });
 
-    it('should map collection:// through to a single-slash route', () => {
+    it('should normalize collection:// to its resource id', () => {
         const { scheme, path } = parseUrlScheme('collection://my-collection');
-        expect(mapSchemeToRoute(scheme, path)).toBe('/store/collections/my-collection');
+        expect(scheme).toBe('collection');
+        expect(path).toBe('my-collection');
+    });
+
+    it.each([
+        ['interaction:int-1', 'interaction', 'int-1'],
+        ['prompt:prm-1', 'prompt', 'prm-1'],
+        ['agent:agt-1', 'agent', 'agt-1'],
+        ['workflow:wf-1', 'workflow', 'wf-1'],
+        ['process:proc-1', 'process', 'proc-1'],
+        ['run:run-1', 'run', 'run-1'],
+    ])('should parse %s as a route scheme', (raw, scheme, path) => {
+        const result = parseUrlScheme(raw);
+        expect(result.scheme).toBe(scheme);
+        expect(result.path).toBe(path);
+    });
+
+    it('should strip the // authority from interaction:// URLs', () => {
+        const result = parseUrlScheme('interaction://int-1');
+        expect(result.scheme).toBe('interaction');
+        expect(result.path).toBe('int-1');
     });
 
     it('should parse standard URLs', () => {
         const result = parseUrlScheme('https://example.com/page');
         expect(result.scheme).toBe('standard');
         expect(result.path).toBe('https://example.com/page');
+    });
+
+    it('should treat an unknown scheme as standard', () => {
+        const result = parseUrlScheme('mailto:user@example.com');
+        expect(result.scheme).toBe('standard');
+        expect(result.path).toBe('mailto:user@example.com');
     });
 
     it('should parse relative URLs as standard', () => {
@@ -76,42 +102,5 @@ describe('parseUrlScheme', () => {
         const result = parseUrlScheme('');
         expect(result.scheme).toBe('standard');
         expect(result.path).toBe('');
-    });
-});
-
-describe('mapSchemeToRoute', () => {
-    it('should map store: to /store/objects/', () => {
-        const result = mapSchemeToRoute('store', 'abc123');
-        expect(result).toBe('/store/objects/abc123');
-    });
-
-    it('should map document: to /store/objects/', () => {
-        const result = mapSchemeToRoute('document', 'doc-id');
-        expect(result).toBe('/store/objects/doc-id');
-    });
-
-    it('should map collection: to /store/collections/', () => {
-        const result = mapSchemeToRoute('collection', 'my-collection');
-        expect(result).toBe('/store/collections/my-collection');
-    });
-
-    it('should return null for artifact: scheme', () => {
-        const result = mapSchemeToRoute('artifact', 'path/to/file');
-        expect(result).toBeNull();
-    });
-
-    it('should return null for image: scheme', () => {
-        const result = mapSchemeToRoute('image', 'path/to/image');
-        expect(result).toBeNull();
-    });
-
-    it('should return null for standard scheme', () => {
-        const result = mapSchemeToRoute('standard', 'https://example.com');
-        expect(result).toBeNull();
-    });
-
-    it('should return null for empty path', () => {
-        const result = mapSchemeToRoute('store', '');
-        expect(result).toBeNull();
     });
 });
