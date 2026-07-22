@@ -159,6 +159,26 @@ test('examples module contributes optional UI routes and views', () => {
     }
 });
 
+test('service quality accepts an intentionally selected examples module', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['appgen', 'examples']);
+
+        const packageJsonPath = path.join(tmpRoot, 'package.json');
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        packageJson.name = 'generated-examples-app';
+        fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+
+        execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
+            cwd: tmpRoot,
+            stdio: 'pipe',
+        });
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
 test('content-app module composes app routes and contributes resources', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {

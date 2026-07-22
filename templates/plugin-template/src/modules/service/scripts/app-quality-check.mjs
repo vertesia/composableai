@@ -197,6 +197,10 @@ const isPluginTemplatePackage = packageName === 'plugin-template';
 // instead of failing the example-artifact gate.
 const isPluginTemplateSmokePackage = /^(integration|smoke)-test-plugin(-npm)?-\d+$/.test(packageName ?? '');
 const isTemplateScaffoldPackage = isPluginTemplatePackage || isPluginTemplateSmokePackage;
+// Template codegen deletes inactive module directories. If this directory is
+// present in a generated app, Resource Examples was selected deliberately and
+// its teaching fixtures are valid app content rather than accidental leftovers.
+const hasSelectedExamplesModule = allFiles.some((file) => rel(file).startsWith('src/modules/examples/'));
 
 function hasDependency(name) {
     if (!packageJson || typeof packageJson !== 'object') return false;
@@ -230,7 +234,7 @@ if (toolServerFiles.length > 0) {
     requireDependency('hono', 'Service-target apps expose a Hono runtime imported by app-runtime.');
 }
 
-if (!isTemplateScaffoldPackage) {
+if (!isTemplateScaffoldPackage && !hasSelectedExamplesModule) {
     const templateExamples = [
         ...report.artifacts.tools.filter((name) => name === 'calculator' || name === 'examples'),
         ...report.artifacts.skills.filter((name) => name === 'learn_user-select' || name === 'examples'),
