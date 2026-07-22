@@ -21,6 +21,7 @@ import type {
     AppVersionListQuery,
     AppVersionRecord,
     CountResult,
+    DeleteAppVersionResponse,
     ProjectRef,
     PromoteAppVersionResponse,
     RequireAtLeastOne,
@@ -93,6 +94,10 @@ export default class AppsApi extends ApiTopic {
 
     rebuildVersion(recordId: string): Promise<StartAppBuildResponse> {
         return this.post(`/versions/${recordId}/rebuild`);
+    }
+
+    deleteVersion(recordId: string): Promise<DeleteAppVersionResponse> {
+        return this.del(`/versions/${recordId}`);
     }
 
     startBuild(appIdOrRecordId: string, payload: StartAppBuildRequest): Promise<StartAppBuildResponse> {

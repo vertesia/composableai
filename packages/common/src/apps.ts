@@ -573,6 +573,15 @@ export interface AppVersionRecord {
     expires_at?: string;
 }
 
+export interface DeleteAppVersionResponse {
+    id: string;
+    app_id: string;
+    version_id: string;
+    storage_prefix?: string;
+    deleted: boolean;
+    warnings: string[];
+}
+
 export interface UpsertAppVersionRequest {
     /** Existing version record to update in place, used by reproducible rebuilds. */
     record_id?: string;

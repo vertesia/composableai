@@ -27,6 +27,31 @@ describe('AppsApi', () => {
         expect(requests[0]?.url).toBe('https://studio.example.com/api/v1/apps/versions/record-1/rebuild');
     });
 
+    it('deletes a version through its dedicated endpoint', async () => {
+        const requests: Request[] = [];
+        const fetchMock = vi.fn(async () =>
+            Response.json({
+                id: 'record-1',
+                app_id: 'sample-app',
+                version_id: 'version-1',
+                deleted: true,
+                warnings: [],
+            }),
+        );
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: fetchMock,
+            onRequest: (request) => requests.push(request),
+        });
+
+        const result = await client.apps.deleteVersion('record-1');
+
+        expect(result.deleted).toBe(true);
+        expect(requests[0]?.method).toBe('DELETE');
+        expect(requests[0]?.url).toBe('https://studio.example.com/api/v1/apps/versions/record-1');
+    });
+
     it('returns the original response bytes and content type', async () => {
         const requests: Request[] = [];
         const bytes = new Uint8Array([0, 255, 10, 42]);
