@@ -21,6 +21,7 @@ export interface ResourceRef {
     id: string;
     name: string;
     type: string;
+    email?: string;
     description?: string;
     version?: number;
     status?: string;

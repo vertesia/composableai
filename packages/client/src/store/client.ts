@@ -24,6 +24,7 @@ import { RenderingApi } from './RenderingApi.js';
 import { SchedulesApi } from './SchedulesApi.js';
 import { TaskApi } from './TaskApi.js';
 import { TypesApi } from './TypesApi.js';
+import { StoreViewsApi } from './ViewsApi.js';
 import { VERSION, VERSION_HEADER } from './version.js';
 import { WorkflowsApi } from './WorkflowsApi.js';
 
@@ -115,4 +116,5 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     query = new QueryApi(this);
     hiveMemory = new HiveMemoryApi(this);
     rendering = new RenderingApi(this);
+    views = new StoreViewsApi(this);
 }

@@ -86,6 +86,7 @@
     // Catch-all npm dependencies, later groups take precedence
     {
       "groupName": "node dependencies",
+      "assignees": ["michaelva"],
       "matchManagers": [
         "npm"
       ],
@@ -100,6 +101,7 @@
     // developer laptop (arm64 / Apple Silicon), so bumps need manual review.
     {
       "groupName": "biome",
+      "assignees": ["michaelva"],
       "matchManagers": [
         "npm"
       ],
@@ -120,17 +122,10 @@
       ],
       "schedule": "* * * * 2" // Tuesday
     },
-    // Docker dependencies
-    {
-      "groupName": "docker",
-      "matchManagers": [
-        "dockerfile"
-      ],
-      "schedule": "* * * * 5" // Friday
-    },
     // Group dependencies by mono-repo(s) or similarity to reduce the number of updates.
     {
       "groupName": "backend dependencies",
+      "assignees": ["cmorman89"],
       "matchManagers": [
         "npm"
       ],
@@ -157,6 +152,7 @@
     },
     {
       "groupName": "codemirror dependencies",
+      "assignees": ["bstefanescu"],
       "matchManagers": [
         "npm"
       ],
@@ -171,24 +167,8 @@
       "schedule": "* * * * 2" // Tuesday
     },
     {
-      "groupName": "eslint dependencies",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchDepTypes": [
-        "!overrides"
-      ],
-      "matchPackageNames": [
-        "@eslint/**",
-        "@typescript-eslint/**",
-        "typescript-eslint",
-        "eslint**"
-      ],
-      "rangeStrategy": "bump",
-      "schedule": "* * * * 4" // Thursday
-    },
-    {
       "groupName": "UI Component dependencies",
+      "assignees": ["yangchi-tw"],
       "matchManagers": [
         "npm"
       ],
@@ -224,6 +204,7 @@
     },
     {
       "groupName": "UI Infrastructure dependencies",
+      "assignees": ["bstefanescu"],
       "matchManagers": [
         "npm"
       ],
@@ -245,6 +226,7 @@
     },
     {
       "groupName": "google-cloud dependencies",
+      "assignees": ["cmorman89"],
       "matchManagers": [
         "npm"
       ],
@@ -265,6 +247,7 @@
     },
     {
       "groupName": "tsconfig dependencies",
+      "assignees": ["bstefanescu"],
       "matchManagers": [
         "npm"
       ],
@@ -308,6 +291,7 @@
     },
     {
       "groupName": "package manager dependencies",
+      "assignees": ["LeonRuggiero"],
       "matchManagers": [
         "npm"
       ],
@@ -350,6 +334,14 @@
         "engines"
       ],
       "enabled": false
+    },
+    // Ownership: assign GitHub Actions dependency PRs to their maintainer.
+    {
+      "description": "Assign GitHub Actions dependency PRs to mincong-h",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "assignees": ["mincong-h"]
     }
   ]
 }

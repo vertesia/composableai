@@ -16,7 +16,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
     };
 
     return (
-        <Button variant="ghost" size="xs" onClick={() => onDownload('document.md')} alt={t('pdf.download')}>
+        <Button variant="ghost" size="xs" onClick={() => onDownload('document.md')} title={t('pdf.download')}>
             <Download className="size-4" />
         </Button>
     );

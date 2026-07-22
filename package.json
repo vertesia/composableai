@@ -28,9 +28,9 @@
     "devDependencies": {
         "@biomejs/biome": "2.5.2",
         "rimraf": "^6.1.3",
-        "turbo": "^2.10.4",
+        "turbo": "^2.10.5",
         "typescript": "^6.0.3",
         "vite": "catalog:"
     },
-    "packageManager": "pnpm@11.8.0"
+    "packageManager": "pnpm@11.11.0"
 }

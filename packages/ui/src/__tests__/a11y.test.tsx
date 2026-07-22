@@ -53,6 +53,79 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
+    it('Button.title is forwarded to aria-label so icon-only buttons are labelled', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Refresh">
+                <span aria-hidden="true">↻</span>
+            </Button>,
+        );
+        const button = container.querySelector('button');
+        expect(button?.getAttribute('aria-label')).toBe('Refresh');
+        // The native title attribute is intentionally not forwarded — it would stack a second
+        // browser tooltip on top of the VTooltip that `title` already renders.
+        expect(button?.hasAttribute('title')).toBe(false);
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('Button.title does NOT override the name of a button that shows text', async () => {
+        // WCAG 2.5.3 Label in Name: the accessible name must contain the visible label, so a
+        // tooltip must never replace it. Regression test for the Playwright failure where
+        // getByRole('button', { name: 'Installed' }) stopped matching.
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Show only installed apps">
+                Installed
+            </Button>,
+        );
+        const button = container.querySelector('button');
+        expect(button?.hasAttribute('aria-label')).toBe(false);
+        expect(button?.textContent).toBe('Installed');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('Button.title does not override a nested text label either', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Open the definition editor">
+                <span aria-hidden="true">📄</span>
+                <span>Definition</span>
+            </Button>,
+        );
+        expect(container.querySelector('button')?.hasAttribute('aria-label')).toBe(false);
+    });
+
+    it('Button.alt keeps overriding the name of a text button (legacy behavior)', async () => {
+        // Unlike `title`, the deprecated `alt` overrides the accessible name even when text is
+        // present. Call sites such as <Button alt="Launch a new agent."><Rocket/> Run</Button>
+        // depend on this, so the WCAG 2.5.3 guard must NOT apply to `alt`.
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} alt="Launch a new agent.">
+                Run
+            </Button>,
+        );
+        expect(container.querySelector('button')?.getAttribute('aria-label')).toBe('Launch a new agent.');
+    });
+
+    it('Button.tooltipPlacement does not leak onto the DOM element', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Zoom in" tooltipPlacement="bottom">
+                <span aria-hidden="true">+</span>
+            </Button>,
+        );
+        const button = container.querySelector('button');
+        expect(button?.getAttribute('aria-label')).toBe('Zoom in');
+        expect(button?.hasAttribute('tooltipPlacement')).toBe(false);
+        expect(button?.hasAttribute('tooltipplacement')).toBe(false);
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('an explicit aria-label wins over Button.title', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} title="Refresh" aria-label="Reload the results">
+                <span aria-hidden="true">↻</span>
+            </Button>,
+        );
+        expect(container.querySelector('button')?.getAttribute('aria-label')).toBe('Reload the results');
+    });
+
     it('CopyButton has an accessible name via internal aria-label', async () => {
         const { container } = renderWithProviders(<CopyButton content="example value" />);
         const button = container.querySelector('button');
