@@ -721,6 +721,7 @@ export interface AppScaffoldWorkflowInput extends StartAppScaffoldRequest {}
 export interface AppScaffoldWorkflowResult {
     app_id: string;
     app_record_id?: string;
+    installation_id?: string;
     git_url?: string;
     source_git?: AppVersionGitSource;
     files?: number;
@@ -741,6 +742,7 @@ export interface AppScaffoldProgress {
     step: string;
     app_id?: string;
     app_record_id?: string;
+    installation_id?: string;
     git_url?: string;
     files?: number;
     initial_version_build?: StartAppBuildResponse;
