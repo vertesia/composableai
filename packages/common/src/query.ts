@@ -64,6 +64,7 @@ export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
 
 export interface PromptSearchQuery extends SimpleSearchQuery {
     role?: string;
+    tags?: string[];
     matchInteractions?: boolean;
 }
 
@@ -87,6 +88,12 @@ export interface RunSearchQuery extends SimpleSearchQuery {
     model?: string;
     status?: ExecutionRunStatus;
     tags?: string[];
+    /**
+     * Tags to exclude. Runs carrying any of these tags are filtered out of the results,
+     * counts, and facet buckets. Combined with `tags` (which requires all of the listed
+     * tags) as an additional `$nin` constraint on the same field.
+     */
+    exclude_tags?: string[];
     query?: string;
     default_query_path?: string;
     parent?: string[];

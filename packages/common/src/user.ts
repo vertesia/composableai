@@ -7,7 +7,7 @@ export interface UserWithAccounts extends User {
 
 export interface User {
     id: string;
-    externalId: string;
+    externalId?: string;
     email: string;
     name: string;
     username?: string;
@@ -24,6 +24,8 @@ export interface User {
     clearance?: number;
     /** Compartments the user belongs to — restricts access to documents in matching compartments */
     compartments?: string[];
+    /** Free-form user metadata - restricted to internal use */
+    annotations?: string[];
 }
 
 export interface UpdateUserPayload {
@@ -46,6 +48,20 @@ export interface UserRef {
 }
 
 export const UserRefPopulate = 'id name email picture';
+
+/**
+ * Annotation marker (stored in {@link User.annotations}) that grants a user access to
+ * non-production environments (`preview`, `preprod`). See
+ * `docs/restrict-access-to-non-production-envs.md`.
+ */
+export const EARLY_ACCESS_ANNOTATION = 'early-access';
+
+/**
+ * Business error code returned by the STS (token server) when a user is denied access to a
+ * restricted (`preview`/`preprod`) environment because they lack the {@link EARLY_ACCESS_ANNOTATION}
+ * annotation. The UI keys its dedicated rejection screen off this code.
+ */
+export const RESTRICTED_ENVIRONMENT_ERROR_CODE = 'restricted_environment';
 
 export enum Datacenters {
     aws = 'aws',
@@ -72,6 +88,34 @@ export interface AccountBilling {
     stripe_customer_id?: string;
 }
 
+/**
+ * Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota`
+ * (`QUOTA_TIERS`); these names must match its keys.
+ * - `standard` — protective baseline limits (the default for most accounts).
+ * - `enterprise` — high limits for contracted customers / internal / partners.
+ *
+ * An account with no explicit `quota_tier` derives its tier from its `account_type`.
+ */
+export enum QuotaTier {
+    standard = 'standard',
+    enterprise = 'enterprise',
+}
+
+/**
+ * Default tier for an account that has no explicit `quota_tier`, derived from its `account_type`:
+ * contracted customers and internal Vertesia accounts get `enterprise`; everyone else (partner,
+ * free, prospect, unknown) gets the protective `standard` baseline.
+ */
+export function quotaTierForAccountType(accountType: AccountType | undefined | null): QuotaTier {
+    switch (accountType) {
+        case AccountType.customer:
+        case AccountType.vertesia:
+            return QuotaTier.enterprise;
+        default:
+            return QuotaTier.standard;
+    }
+}
+
 export interface Account {
     id: string;
     name: string;
@@ -89,6 +133,9 @@ export interface Account {
 
     billing: AccountBilling;
 
+    /** Quota/rate-limit tier. Unset → the deployment default tier (env `QUOTA_BASE_TIER`). */
+    quota_tier?: QuotaTier;
+
     created_by: string;
     updated_by: string;
     created_at: string;
@@ -99,6 +146,7 @@ export interface UpdateAccountPayload {
     name?: string;
     email_domains?: string[];
     billing?: AccountBilling;
+    quota_tier?: QuotaTier;
 }
 
 export interface AccountRef {

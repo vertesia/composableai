@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
-import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import { type AgentMessage, AgentMessageType, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
@@ -71,12 +71,16 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
         };
         onCompactContext?: () => void;
         isCompactingContext?: boolean;
+        approvalModeSlot?: React.ReactNode;
     }) => {
         mocks.messageInputProps(props);
         return (
-            <button type="button" onClick={() => props.onSend('follow up')}>
-                composer send
-            </button>
+            <div>
+                {props.approvalModeSlot}
+                <button type="button" onClick={() => props.onSend('follow up')}>
+                    composer send
+                </button>
+            </div>
         );
     },
 }));
@@ -97,7 +101,7 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
         streamingMessages: Map<string, unknown>;
         isCompleted?: boolean;
         bottomRef: React.RefObject<HTMLDivElement>;
-        onSendMessage?: (message: string) => void;
+        onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
         showInitialRequest?: boolean;
         renderRequestInputControls?: boolean;
         activeWorkstream?: string;
@@ -241,6 +245,7 @@ describe('ModernAgentConversation send handling', () => {
             hasProcessingFiles: false,
             handleFileUpload: vi.fn(),
             removeProcessingFile: vi.fn(),
+            clearProcessingFiles: vi.fn(),
         });
     });
 
@@ -279,6 +284,53 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.reconnect.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
+    });
+
+    it('binds ready uploaded files into the sent message and clears them after send', async () => {
+        const clearProcessingFiles = vi.fn();
+        const readyFile: ConversationFile = {
+            id: 'file-1',
+            name: 'report.pdf',
+            content_type: 'application/pdf',
+            size: 10,
+            status: FileProcessingStatus.READY,
+            artifact_path: 'files/report.pdf',
+            reference: 'artifact:files/report.pdf',
+            started_at: 1_000,
+        };
+        mocks.useFileProcessing.mockReturnValue({
+            processingFiles: new Map([[readyFile.id, readyFile]]),
+            hasProcessingFiles: false,
+            handleFileUpload: vi.fn(),
+            removeProcessingFile: vi.fn(),
+            clearProcessingFiles,
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({ onRestart: vi.fn() });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith(
+                'agent-run-1',
+                'UserInput',
+                expect.objectContaining({
+                    message: expect.stringContaining('Uploaded artifacts:'),
+                }),
+            );
+        });
+
+        const userInputCall = mocks.sendSignal.mock.calls.find((call) => call[1] === 'UserInput');
+        expect((userInputCall?.[2] as { message: string }).message).toContain(
+            '[report.pdf](artifact:files/report.pdf)',
+        );
+        await waitFor(() => {
+            expect(clearProcessingFiles).toHaveBeenCalledTimes(1);
+        });
     });
 
     it('does not restart or send from a terminal run that cannot continue', () => {
@@ -336,6 +388,277 @@ describe('ModernAgentConversation send handling', () => {
         expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
     });
 
+    it('passes the selected approval mode when starting a new interactive run', async () => {
+        const startWorkflow = vi.fn().mockResolvedValue(undefined);
+        renderWithProviders(
+            <ModernAgentConversation startWorkflow={startWorkflow} hideHeader hideFileUpload initialMessage="" />,
+        );
+
+        const selector = screen.getByRole('button', { name: 'Agent approval mode' });
+        expect(selector.getAttribute('title')).toBeNull();
+
+        fireEvent.pointerDown(selector, {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Approve for me/ }));
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Draft the release notes' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+
+        await waitFor(() => {
+            expect(startWorkflow).toHaveBeenCalledWith('Draft the release notes', {
+                tool_approval_mode: 'auto_review',
+            });
+        });
+    });
+
+    it('signals approval mode changes for an active interactive run', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        await waitFor(() => {
+            expect(screen.getByText('Ask for approval')).not.toBeNull();
+        });
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Approve for me/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'auto_review',
+            });
+        });
+    });
+
+    it('switches to full control without a confirmation modal', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        await waitFor(() => {
+            expect(screen.getByText('Ask for approval')).not.toBeNull();
+        });
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Full control/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'full_control',
+            });
+        });
+        expect(screen.queryByText('Switch to full control?')).toBeNull();
+    });
+
+    it('orders a follow-up user message after an in-flight approval mode change', async () => {
+        let resolveModeSignal: (() => void) | undefined;
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mocks.sendSignal.mockImplementation((_runId: string, signalName: string) => {
+            if (signalName === 'ToolApprovalModeChanged') {
+                return new Promise<void>((resolve) => {
+                    resolveModeSignal = resolve;
+                });
+            }
+            return Promise.resolve({});
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.REQUEST_INPUT, 'What should I do next?')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        const selector = await screen.findByRole('button', { name: 'Agent approval mode' });
+        fireEvent.pointerDown(selector, {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Full control/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'full_control',
+            });
+            expect(resolveModeSignal).toBeDefined();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'composer send' }));
+
+        expect(mocks.sendSignal.mock.calls.some((call) => call[1] === 'UserInput')).toBe(false);
+
+        await act(async () => {
+            resolveModeSignal?.();
+        });
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith(
+                'agent-run-1',
+                'UserInput',
+                expect.objectContaining({ message: 'follow up' }),
+            );
+        });
+
+        const modeCallIndex = mocks.sendSignal.mock.calls.findIndex((call) => call[1] === 'ToolApprovalModeChanged');
+        const userInputCallIndex = mocks.sendSignal.mock.calls.findIndex((call) => call[1] === 'UserInput');
+        expect(modeCallIndex).toBeGreaterThanOrEqual(0);
+        expect(userInputCallIndex).toBeGreaterThan(modeCallIndex);
+    });
+
+    it('keeps a local approval mode change when stale run metadata loads later', async () => {
+        let resolveRetrieve: (run: {
+            tool_approval_mode: 'ask';
+            interactive: true;
+            disabled_mcp_collections: undefined;
+        }) => void = () => {};
+        mocks.retrieve.mockReturnValue(
+            new Promise((resolve) => {
+                resolveRetrieve = resolve;
+            }),
+        );
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            interactive: true,
+            allowWorkflowControl: true,
+            initialToolApprovalMode: 'ask',
+        });
+
+        expect(await screen.findByText('Ask for approval')).not.toBeNull();
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Full control/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'full_control',
+            });
+        });
+
+        resolveRetrieve({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Full control')).not.toBeNull();
+        });
+    });
+
+    it('reverts the local approval mode when the change signal fails', async () => {
+        let rejectSignal: (error: Error) => void = () => {};
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mocks.sendSignal.mockReturnValueOnce(
+            new Promise((_resolve, reject) => {
+                rejectSignal = reject;
+            }),
+        );
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        const selector = await screen.findByRole('button', { name: 'Agent approval mode' });
+        expect(selector.textContent).toContain('Ask for approval');
+        fireEvent.pointerDown(selector, {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Full control/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'full_control',
+            });
+            expect(selector.textContent).toContain('Full control');
+        });
+
+        rejectSignal(new Error('Signal failed'));
+
+        await waitFor(() => {
+            expect(selector.textContent).toContain('Ask for approval');
+        });
+    });
+
+    it('does not show a full-control fallback before active run mode metadata loads', () => {
+        mocks.retrieve.mockReturnValue(new Promise(() => {}));
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        expect(screen.queryByRole('button', { name: 'Agent approval mode' })).toBeNull();
+        expect(screen.queryByText('Full control')).toBeNull();
+    });
+
+    it('disables the active-run approval selector when a run is completed', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+            isCompleted: true,
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            interactive: true,
+            allowWorkflowControl: true,
+            onRestart: vi.fn(),
+        });
+
+        const selector = await screen.findByRole('button', { name: 'Agent approval mode' });
+        expect((selector as HTMLButtonElement).disabled).toBe(true);
+    });
+
     it('unlocks the composer when an idle marker arrives before the stream completion flag updates', () => {
         mockStreamState({
             messages: [
@@ -358,6 +681,57 @@ describe('ModernAgentConversation send handling', () => {
 
         expect(latestMessageInputProps.isCompleted).toBe(true);
         expect(latestMessageInputProps.isStreaming).toBe(false);
+    });
+
+    it('keeps live run controls enabled while the agent is idle waiting for user input', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.THOUGHT, 'Planning the next tool call'),
+                    details: {
+                        token_usage: {
+                            total: 50_000,
+                        },
+                        checkpoint_at: 100_000,
+                    },
+                },
+                createMessage(AgentMessageType.IDLE, 'Waiting for your command...'),
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            interactive: true,
+            allowWorkflowControl: true,
+        });
+
+        const selector = await screen.findByRole('button', { name: 'Agent approval mode' });
+        expect((selector as HTMLButtonElement).disabled).toBe(false);
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            contextWindowUsage?: {
+                usedTokens: number;
+                checkpointTokens: number;
+                usedPercent: number;
+                remainingPercent: number;
+            };
+            onCompactContext?: () => void | Promise<void>;
+        };
+
+        expect(latestMessageInputProps.contextWindowUsage).toEqual({
+            usedTokens: 50_000,
+            checkpointTokens: 100_000,
+            usedPercent: 50,
+            remainingPercent: 50,
+        });
+        expect(latestMessageInputProps.onCompactContext).toBeTypeOf('function');
     });
 
     it('derives context usage from persisted messages and sends manual compact signal', async () => {
@@ -407,6 +781,49 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'TriggerCheckpoint', {
             reason: 'manual user request',
         });
+    });
+
+    it('derives context usage from approval request messages when no preamble was posted', () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Create Document?'),
+                    details: {
+                        tool_approval: {
+                            tool_name: 'create_document',
+                            tool_title: 'Create Document',
+                            target: 'name:Budget plan',
+                        },
+                        token_usage: {
+                            total: 82_000,
+                        },
+                        checkpoint_threshold: 100_000,
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            contextWindowUsage?: {
+                usedTokens: number;
+                checkpointTokens: number;
+                usedPercent: number;
+                remainingPercent: number;
+            };
+            onCompactContext?: () => void | Promise<void>;
+        };
+
+        expect(latestMessageInputProps.contextWindowUsage).toEqual({
+            usedTokens: 82_000,
+            checkpointTokens: 100_000,
+            usedPercent: 82,
+            remainingPercent: 18,
+        });
+        expect(latestMessageInputProps.onCompactContext).toBeTypeOf('function');
     });
 
     it('makes it explicit that the composer still messages the main agent while viewing a workstream', async () => {
@@ -915,6 +1332,115 @@ describe('ModernAgentConversation send handling', () => {
                 message: 'blue',
                 client_message_id: expect.any(String),
                 metadata: expect.objectContaining({
+                    id: expect.any(String),
+                    _messageId: expect.any(String),
+                }),
+            }),
+        );
+    });
+
+    it('passes commented approval denial metadata through the request overlay signal', async () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Write Artifact: quotes.md?'),
+                    details: {
+                        tool_approval: {
+                            tool_name: 'write_artifact',
+                            approval_key: 'write_artifact:name:quotes.md',
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                            free_response: {
+                                placeholder: 'No, and tell the agent what to do differently',
+                                submit_label: 'Submit',
+                                metadata: {
+                                    tool_approval_response: {
+                                        decision: 'deny_with_feedback',
+                                        approval_key: 'write_artifact:name:quotes.md',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation();
+
+        fireEvent.change(screen.getByPlaceholderText('No, and tell the agent what to do differently'), {
+            target: { value: 'Do not write a file. Put the summary in chat.' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledTimes(1);
+        });
+        expect(mocks.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({
+                message: 'Do not write a file. Put the summary in chat.',
+                metadata: expect.objectContaining({
+                    tool_approval_response: {
+                        decision: 'deny_with_feedback',
+                        approval_key: 'write_artifact:name:quotes.md',
+                    },
+                    id: expect.any(String),
+                    _messageId: expect.any(String),
+                }),
+            }),
+        );
+    });
+
+    it('passes approval option metadata through the request overlay signal', async () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Write Artifact: quotes.md?'),
+                    details: {
+                        tool_approval: {
+                            tool_name: 'write_artifact',
+                            approval_key: 'write_artifact:name:quotes.md',
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Allow this action for this run' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledTimes(1);
+        });
+        expect(mocks.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({
+                message: 'allow_for_run',
+                metadata: expect.objectContaining({
+                    tool_approval_response: {
+                        decision: 'allow_for_run',
+                        approval_key: 'write_artifact:name:quotes.md',
+                    },
                     id: expect.any(String),
                     _messageId: expect.any(String),
                 }),

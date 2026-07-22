@@ -10,12 +10,14 @@ import CommandsApi from './CommandsApi.js';
 import EnvironmentsApi from './EnvironmentsApi.js';
 import { IamApi } from './IamApi.js';
 import InteractionsApi from './InteractionsApi.js';
+import InternalSecretsApi from './InternalSecretsApi.js';
 import OAuthClientsApi from './OAuthClientsApi.js';
 import OAuthGrantsApi from './OAuthGrantsApi.js';
 import OAuthProvidersApi from './OAuthProvidersApi.js';
 import OAuthServerApi from './OAuthServerApi.js';
 import ProjectsApi from './ProjectsApi.js';
 import PromptsApi from './PromptsApi.js';
+import QuotaApi from './QuotaApi.js';
 import { RefsApi } from './RefsApi.js';
 import RemoteMcpConnectionsApi from './RemoteMcpConnectionsApi.js';
 import { RunsApi } from './RunsApi.js';
@@ -26,6 +28,7 @@ import { VERSION, VERSION_HEADER } from './store/version.js';
 import ToolsApi from './ToolsApi.js';
 import TrainingApi from './TrainingApi.js';
 import UsersApi from './UsersApi.js';
+import ViewsApi from './ViewsApi.js';
 
 /**
  * 1 min threshold constant in ms
@@ -101,6 +104,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     oauthProviders: OAuthProvidersApi;
     remoteMcpConnections: RemoteMcpConnectionsApi;
     secrets: SecretsApi;
+    internalSecrets: InternalSecretsApi;
 
     /**
      * Create a client from the given token.
@@ -158,14 +162,17 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         if (opts.tokenServerUrl) {
             this.tokenServerUrl = opts.tokenServerUrl;
         } else if (opts.site) {
-            // Strip -preview (preview uses the same STS as production for the same region),
-            // then replace api prefix with sts.
+            // Replace the leading api prefix with sts, preserving the env segment so each
+            // environment hits its own STS. preview/preprod run a separately versioned STS
+            // (sts-preview / sts-preprod); collapsing them onto the production sts.<region>
+            // can route to an older STS that rejects scopes the env-matched STS supports
+            // (e.g. `offline_access`).
             // Examples:
-            //   api.vertesia.io          -> sts.vertesia.io
-            //   api-preview.vertesia.io  -> sts.vertesia.io
-            //   api.us1.vertesia.io      -> sts.us1.vertesia.io
-            //   api-preview.eu1.vertesia.io -> sts.eu1.vertesia.io
-            const stsHost = opts.site.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+            //   api.vertesia.io             -> sts.vertesia.io
+            //   api-preview.vertesia.io     -> sts-preview.vertesia.io
+            //   api.us1.vertesia.io         -> sts.us1.vertesia.io
+            //   api-preview.eu1.vertesia.io -> sts-preview.eu1.vertesia.io
+            const stsHost = opts.site.replace(/^api/, 'sts');
             this.tokenServerUrl = `https://${stsHost}`;
         } else if (opts.serverUrl || opts.storeUrl) {
             // Determine STS URL based on environment in serverUrl or storeUrl
@@ -173,11 +180,12 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             try {
                 const url = new URL(urlToCheck);
                 if (url.hostname.startsWith('api')) {
-                    // Strip -preview and replace api with sts.
+                    // Replace the leading api prefix with sts, preserving the env segment so
+                    // preview/preprod hit their own STS rather than production's.
                     // api.us1.vertesia.io         -> sts.us1.vertesia.io
-                    // api-preview.us1.vertesia.io -> sts.us1.vertesia.io
+                    // api-preview.us1.vertesia.io -> sts-preview.us1.vertesia.io
                     // api.vertesia.io             -> sts.vertesia.io
-                    const stsHost = url.hostname.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+                    const stsHost = url.hostname.replace(/^api/, 'sts');
                     this.tokenServerUrl = `https://${stsHost}`;
                 } else {
                     this.tokenServerUrl = 'https://sts.dev1.vertesia.io';
@@ -199,6 +207,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             timeout: opts.timeout,
             fetch: opts.fetch,
         });
+        this.views = new ViewsApi(this, this.store.views);
 
         if (opts.retryPolicy) {
             this.withRetryPolicy(opts.retryPolicy);
@@ -221,6 +230,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.oauthProviders = new OAuthProvidersApi(this);
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
         this.secrets = new SecretsApi(this);
+        this.internalSecrets = new InternalSecretsApi(this);
     }
 
     withApiVersion(version: string | number | null) {
@@ -343,6 +353,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.data;
     }
 
+    get events() {
+        return this.store.events;
+    }
+
     get storeUrl() {
         return this.store.baseUrl;
     }
@@ -398,6 +412,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
     tools = new ToolsApi(this);
+    quota = new QuotaApi(this);
+    views: ViewsApi;
 }
 
 function isApiKey(apiKey: string) {

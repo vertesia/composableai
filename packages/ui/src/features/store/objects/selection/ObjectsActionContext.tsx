@@ -1,6 +1,5 @@
 import type { ContentObjectTypeItem } from '@vertesia/common';
-import { ErrorBox, errorMessage, useFetch, useToast } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { type ReactNode, useMemo } from 'react';
 
@@ -11,7 +10,6 @@ import { ChangeTypeAction } from './actions/ChangeTypeAction';
 import { DeleteObjectsAction, DeleteObjectsFromCollectionsAction } from './actions/DeleteObjectsAction';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
 import { RemoveFromCollectionAction } from './actions/RemoveFromCollectionAction';
-import { StartWorkflowAction, StartWorkflowComponent } from './actions/StartWorkflowComponent';
 import { ObjectsActionContext } from './ObjectsActionContextClass';
 import { ObjectsActionContextReact, useObjectsActionContext } from './ObjectsActionHooks';
 import type { ObjectsActionSpec } from './ObjectsActionSpec';
@@ -19,7 +17,6 @@ import type { ObjectsActionSpec } from './ObjectsActionSpec';
 const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
     ExportPropertiesAction,
     ChangeTypeAction,
-    StartWorkflowAction,
     AddToCollectionAction,
     DeleteObjectsAction,
     RemoveFromCollectionAction,
@@ -31,26 +28,10 @@ interface ObjectsActionContextProps {
     type?: ContentObjectTypeItem;
 }
 export function ObjectsActionContextProvider({ children, type }: ObjectsActionContextProps) {
-    const { t } = useUITranslation();
     const selection = useDocumentSelection();
     const toast = useToast();
     const { client } = useUserSession();
     const search = useDocumentSearch();
-
-    const { data: rules, error } = useFetch<ObjectsActionSpec[]>(() => {
-        return client.workflows.rules.list().then((rules) => {
-            return rules
-                .map((rule) => ({
-                    id: rule.id,
-                    name: rule.name,
-                    description: rule.description,
-                    confirm: false,
-                    isWorkflow: true,
-                    component: StartWorkflowComponent,
-                }))
-                .sort((a, b) => a.name.localeCompare(b.name));
-        });
-    }, []);
 
     const context = useMemo(() => {
         const context = new ObjectsActionContext({
@@ -61,14 +42,8 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
             type,
         });
         context.allActions = DEFAULT_ACTIONS;
-        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-        context.wfRules = rules!;
         return context;
-    }, [client, search, selection, rules, toast, type]);
-
-    if (error) {
-        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{errorMessage(error)}</ErrorBox>;
-    }
+    }, [client, search, selection, toast, type]);
 
     return (
         context && (

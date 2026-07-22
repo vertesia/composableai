@@ -106,7 +106,7 @@ async function listFilesInDirectory(dir: string, recursive = false): Promise<str
                 return ent.isFile() && ent.name.lastIndexOf('.') > 0;
             })
             .map((ent) => {
-                // In Node.js 22+, use parentPath; fallback to dir for older versions
+                // Node.js 24 exposes parentPath; fallback to dir for older generated/runtime shapes.
                 const parentPath = 'parentPath' in ent ? (ent as Dirent & { parentPath: string }).parentPath : dir;
                 return join(parentPath, ent.name);
             }),

@@ -1,7 +1,7 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import type { DSLWorkflowSpec } from '@vertesia/common';
-import * as ts from 'typescript';
+import * as ts from 'typescript-legacy';
 import { ValidationError, validateWorkflow } from './validation.js';
 
 function compile(
@@ -34,10 +34,13 @@ function compile(
             }
         }
         if (diagnostic.file) {
-            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-            const { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!);
             const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-            console.log(`${prefix}${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
+            if (diagnostic.start === undefined) {
+                console.log(`${prefix}${diagnostic.file.fileName}: ${message}`);
+            } else {
+                const { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start);
+                console.log(`${prefix}${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
+            }
         } else {
             console.log(prefix + ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
         }

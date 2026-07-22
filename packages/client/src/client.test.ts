@@ -59,7 +59,8 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('https://api-preview.vertesia.io');
         expect(client.storeUrl).toBe('https://api-preview.vertesia.io');
-        expect(client.tokenServerUrl).toBe('https://sts.vertesia.io');
+        // preview keeps its env segment: api-preview → sts-preview (its own STS)
+        expect(client.tokenServerUrl).toBe('https://sts-preview.vertesia.io');
     });
 
     test('Initialization with site api.dev1.vertesia.io', () => {
@@ -81,7 +82,8 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('https://api-preview.dev1.vertesia.io');
         expect(client.storeUrl).toBe('https://api-preview.dev1.vertesia.io');
-        expect(client.tokenServerUrl).toBe('https://sts.dev1.vertesia.io');
+        // preview keeps its env segment: api-preview → sts-preview (its own STS)
+        expect(client.tokenServerUrl).toBe('https://sts-preview.dev1.vertesia.io');
     });
 
     test('Initialization with regional serverUrl (api.us1)', () => {
@@ -116,8 +118,8 @@ describe('Test Vertesia Client', () => {
 
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('https://api-preview.us1.vertesia.io');
-        // preview strips -preview., then api → sts: sts.us1.vertesia.io
-        expect(client.tokenServerUrl).toBe('https://sts.us1.vertesia.io');
+        // preview keeps its env segment: api-preview → sts-preview (its own versioned STS)
+        expect(client.tokenServerUrl).toBe('https://sts-preview.us1.vertesia.io');
     });
 
     test('Initialization with site localhost', () => {

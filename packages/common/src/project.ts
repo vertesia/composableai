@@ -1,7 +1,9 @@
 import type { JSONSchemaType } from 'ajv';
 import type { SupportedIntegrations } from './integrations.js';
+import type { ContentTypeIntakePolicy, IntakeVisionDetail, IntakeVisionProfileSettings } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
+import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
 
 export interface ICreateProjectPayload {
     name: string;
@@ -125,6 +127,7 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
     Mediator: SystemInteractionCategory.non_applicable,
     AnalyzeConversation: SystemInteractionCategory.analysis,
     GetAgentConversationTopic: SystemInteractionCategory.analysis,
+    ContentSearchAgent: SystemInteractionCategory.analysis,
     StudioAssistant: SystemInteractionCategory.agent,
 };
 
@@ -269,6 +272,102 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 export type ProjectSearchTier = 'standard' | 'performance';
 export type ElasticsearchBackend = 'serverless' | 'hosted';
 
+/**
+ * Fast pre-conversion type identification (the "sniff") for untyped documents.
+ * The sniff classifies a document from cheap local evidence (first/last page text,
+ * a low-res first-page image, office docProps) BEFORE any conversion, so a
+ * high-confidence match can apply the type's intake policy — including skipping
+ * conversion — without paying for it first.
+ */
+export interface ProjectIntakeSniffConfiguration {
+    /**
+     * Enable the pre-conversion sniff for untyped documents. Defaults to true.
+     * Can be overridden per run with the `sniffEnabled` workflow var.
+     */
+    enabled?: boolean;
+
+    /**
+     * Confidence at or above which the sniffed type is committed and its full policy applied
+     * (including conversion-skip). 0..1, defaults to 0.85.
+     */
+    high_confidence?: number;
+
+    /**
+     * Confidence at or above which the sniffed type is treated as provisional: the document
+     * still converts and the post-conversion selector confirms on neutral evidence.
+     * 0..1, defaults to 0.6. Below this the sniff result is advisory provenance only.
+     */
+    medium_confidence?: number;
+
+    /**
+     * Minimum page count for the sniff LLM call. Below this, conversion is cheap and full
+     * converted text is better selection evidence, so intake uses the standard
+     * convert-then-select path. Documents with unknown page counts are sniffed.
+     * Defaults to 5; 0 means always sniff.
+     */
+    min_pages?: number;
+}
+
+export interface ProjectIntakeConfiguration {
+    /**
+     * Master switch for the standard intake pipeline. When false, StandardIntake exits as a
+     * no-op WITHOUT touching object status (objects stay in `created`, identifiable as
+     * unprocessed). Defaults to true.
+     */
+    enabled?: boolean;
+
+    /**
+     * Fast pre-conversion type identification for untyped documents. Absent means enabled
+     * with platform default thresholds.
+     */
+    sniff?: ProjectIntakeSniffConfiguration;
+
+    /**
+     * Project-level intake policy defaults. Same shape as the per-content-type policy; a
+     * type's `intake` block wins field-by-field over these defaults, which in turn win over
+     * the legacy flat fields below. `identification` is type-specific and ignored here.
+     */
+    default_policy?: ContentTypeIntakePolicy;
+
+    /**
+     * Project overrides for the platform vision detail profiles used by intake visual
+     * extraction (`low`/`standard`/`high`). Partial: omitted profiles or fields inherit the
+     * platform defaults. Types reference detail NAMES only; the profile settings live here.
+     */
+    vision_profiles?: Partial<Record<IntakeVisionDetail, Partial<IntakeVisionProfileSettings>>>;
+
+    /**
+     * Generate table-of-content sections during standard document intake.
+     * Defaults to false.
+     */
+    generate_toc?: boolean;
+
+    /**
+     * Skip table-of-content generation when the document text exceeds this many characters.
+     * Avoids sending very large documents through the TOC interactions. Unset means no limit.
+     */
+    generate_toc_max_size?: number;
+
+    /**
+     * Select or assign a content type during standard intake.
+     * Defaults to true.
+     */
+    generate_content_type?: boolean;
+
+    /**
+     * Extract document properties after content type assignment.
+     * Defaults to true.
+     */
+    generate_properties?: boolean;
+
+    /**
+     * Default content type assigned during intake when type selection finds no matching type.
+     * A type id resolvable in this project (a stored `oid:` type, an `app:` type, or a `sys:` type).
+     * Defaults to the platform `sys:GenericDocument` when unset.
+     */
+    default_content_type?: string;
+}
+
 export interface ProjectConfiguration {
     human_context?: string;
 
@@ -298,28 +397,12 @@ export interface ProjectConfiguration {
      * Indexing configuration for this project.
      * Controls whether indexing and querying are enabled at the project level.
      */
-    indexing?: {
-        /**
-         * Enable indexing for content objects in this project.
-         * When enabled, content changes trigger indexing workflows.
-         * Defaults to true - indexing is always on when ES infrastructure is available.
-         */
-        enabled?: boolean;
+    indexing?: ProjectIndexingConfiguration;
 
-        /**
-         * Search tier for this project.
-         * standard uses the regional hosted Elasticsearch deployment.
-         * performance uses the regional serverless Elasticsearch project.
-         * Defaults to standard when omitted.
-         */
-        search_tier?: ProjectSearchTier;
-
-        /**
-         * Elasticsearch backend override for this project.
-         * Prefer search_tier for project configuration unless an explicit backend override is needed.
-         */
-        backend?: ElasticsearchBackend;
-    };
+    /**
+     * Standard content intake behavior.
+     */
+    intake?: ProjectIntakeConfiguration;
 
     /**
      * Primary language for full-text search analysis.
@@ -342,6 +425,142 @@ export interface ProjectConfiguration {
      * template instead of the built-in Vertesia default template.
      */
     pdf_template_object_id?: string;
+}
+
+/**
+ * Elasticsearch field types that may be explicitly assigned to content-object
+ * properties. Paths are relative to the object's `properties` field.
+ */
+export type ProjectSearchPropertyType = 'keyword' | 'text' | 'boolean' | 'long' | 'double' | 'date';
+
+/**
+ * Explicit search mapping for one content-object property.
+ *
+ * Changing a mapping requires a full reindex. Existing Elasticsearch fields
+ * cannot change type in place.
+ */
+export interface ProjectSearchPropertyMapping {
+    type: ProjectSearchPropertyType;
+
+    /** Elasticsearch date format. Valid only when type is `date`. */
+    format?: string;
+
+    /** Maximum indexed string length. Valid only when type is `keyword`. */
+    ignore_above?: number;
+
+    /**
+     * Skip malformed values instead of rejecting the whole document. Valid only
+     * for long, double, and date mappings.
+     */
+    ignore_malformed?: boolean;
+}
+
+export const PROJECT_SEARCH_PROPERTY_TYPES: readonly ProjectSearchPropertyType[] = [
+    'keyword',
+    'text',
+    'boolean',
+    'long',
+    'double',
+    'date',
+];
+
+const MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS = 200;
+const MAX_KEYWORD_IGNORE_ABOVE = 8191;
+
+/**
+ * Validate property mappings at API and index-creation boundaries.
+ *
+ * Returns user-facing issue strings instead of throwing so callers can map the
+ * result to the error type appropriate for their boundary.
+ */
+export function validateProjectSearchPropertyMappings(value: unknown): string[] {
+    if (value === undefined) return [];
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return ['indexing.property_mappings must be an object keyed by property path'];
+    }
+
+    const entries = Object.entries(value as Record<string, unknown>);
+    const issues: string[] = [];
+    if (entries.length > MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS) {
+        issues.push(`indexing.property_mappings must contain at most ${MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS} fields`);
+    }
+
+    const supportedTypes = new Set<string>(PROJECT_SEARCH_PROPERTY_TYPES);
+    for (const [path, rawMapping] of entries) {
+        const field = `indexing.property_mappings.${path}`;
+        if (!ELASTICSEARCH_FIELD_PATH_PATTERN.test(path)) {
+            issues.push(`${field} must be a dot-separated path containing only letters, numbers, and underscores`);
+        }
+        if (!rawMapping || typeof rawMapping !== 'object' || Array.isArray(rawMapping)) {
+            issues.push(`${field} must be an object`);
+            continue;
+        }
+        const mapping = rawMapping as Record<string, unknown>;
+        const extraKeys = Object.keys(mapping).filter(
+            (key) => !['type', 'format', 'ignore_above', 'ignore_malformed'].includes(key),
+        );
+        if (extraKeys.length > 0) {
+            issues.push(`${field} contains unsupported option(s): ${extraKeys.join(', ')}`);
+        }
+        if (typeof mapping.type !== 'string' || !supportedTypes.has(mapping.type)) {
+            issues.push(`${field}.type must be one of: ${PROJECT_SEARCH_PROPERTY_TYPES.join(', ')}`);
+        }
+        if (mapping.format !== undefined && (mapping.type !== 'date' || typeof mapping.format !== 'string')) {
+            issues.push(`${field}.format is supported only for date mappings`);
+        }
+        if (
+            mapping.ignore_above !== undefined &&
+            (mapping.type !== 'keyword' ||
+                !Number.isInteger(mapping.ignore_above) ||
+                (mapping.ignore_above as number) < 1 ||
+                (mapping.ignore_above as number) > MAX_KEYWORD_IGNORE_ABOVE)
+        ) {
+            issues.push(
+                `${field}.ignore_above is supported only for keyword mappings and must be an integer from 1 to ${MAX_KEYWORD_IGNORE_ABOVE}`,
+            );
+        }
+        if (
+            mapping.ignore_malformed !== undefined &&
+            (!['long', 'double', 'date'].includes(String(mapping.type)) ||
+                typeof mapping.ignore_malformed !== 'boolean')
+        ) {
+            issues.push(`${field}.ignore_malformed is supported only for long, double, and date mappings`);
+        }
+    }
+    return issues;
+}
+
+export interface ProjectIndexingConfiguration {
+    /**
+     * Enable indexing for content objects in this project.
+     * When enabled, content changes trigger indexing workflows.
+     * Defaults to true - indexing is always on when ES infrastructure is available.
+     */
+    enabled?: boolean;
+
+    /**
+     * Search tier for this project.
+     * standard uses the regional hosted Elasticsearch deployment.
+     * performance uses the regional serverless Elasticsearch project.
+     * Defaults to standard when omitted.
+     */
+    search_tier?: ProjectSearchTier;
+
+    /**
+     * Elasticsearch backend override for this project.
+     * Prefer search_tier for project configuration unless an explicit backend override is needed.
+     */
+    backend?: ElasticsearchBackend;
+
+    /**
+     * Explicit mappings for selected content-object property paths.
+     *
+     * Keys are dot-separated paths relative to `properties`, for example
+     * `order_total` or `customer.account_number`. Unlisted fields are mapped
+     * dynamically from their JSON values. Changing this value requires a full
+     * reindex.
+     */
+    property_mappings?: Record<string, ProjectSearchPropertyMapping>;
 }
 
 // export interface ProjectConfigurationEmbeddings {
@@ -899,6 +1118,8 @@ export interface IndexConfiguration {
     };
     /** ISO 639-1 language code for text analysis */
     language?: string;
+    /** Explicit mappings for selected content-object property paths. */
+    property_mappings?: Record<string, ProjectSearchPropertyMapping>;
     field_mappings?: Record<string, unknown>;
     project_embeddings_config?: {
         text?: EmbeddingTypeConfig;

@@ -26,7 +26,7 @@ describe('getRoleByName', () => {
     it('returns an ABAC role by name', () => {
         const role = getRoleByName(ContentRoleNames.content_reader);
         expect(role).toBeInstanceOf(AbacRole);
-        expect(role.name).toBe('content_reader');
+        expect(role.name).toBe('content:reader');
         expect(role.domain).toBe('content');
     });
 
@@ -97,7 +97,7 @@ describe('listAbacRolesForScope', () => {
     it('returns content roles for "document" scope', () => {
         const roles = listAbacRolesForScope('document');
         expect(roles).toHaveLength(3);
-        expect(roles.map((r) => r.name).sort()).toEqual(['content_manager', 'content_reader', 'content_writer']);
+        expect(roles.map((r) => r.name).sort()).toEqual(['content:manager', 'content:reader', 'content:writer']);
     });
 
     it('returns content roles for "collection" scope (same roles, applicableScopes covers both)', () => {
@@ -121,7 +121,7 @@ describe('getAllRoleNames', () => {
         const names = getAllRoleNames();
         expect(names).toHaveLength(19);
         expect(names).toContain('owner');
-        expect(names).toContain('content_reader');
+        expect(names).toContain('content:reader');
     });
 
     it('produces a flat list suited for mongoose enum constraints', () => {
@@ -132,8 +132,8 @@ describe('getAllRoleNames', () => {
 
 describe('getPermissionsForRoles', () => {
     it('merges permissions across multiple roles, deduped', () => {
-        // content_reader: ['read']
-        // content_writer: ['read', 'write']
+        // content:reader: ['read']
+        // content:writer: ['read', 'write']
         const merged = getPermissionsForRoles([ContentRoleNames.content_reader, ContentRoleNames.content_writer]);
         expect(merged.sort()).toEqual(['read', 'write']);
     });

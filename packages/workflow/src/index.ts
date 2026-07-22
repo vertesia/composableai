@@ -10,6 +10,7 @@ export * from './activities/advanced/createDocumentTypeFromInteractionRun.js';
 export * from './activities/advanced/createOrUpdateDocumentFromInteractionRun.js';
 export * from './activities/advanced/updateDocumentFromInteractionRun.js';
 export * from './activities/chunkDocument.js';
+export * from './activities/detectDocumentLanguage.js';
 export * from './activities/executeInteraction.js';
 export * from './activities/extractDocumentText.js';
 export * from './activities/generateDocumentProperties.js';

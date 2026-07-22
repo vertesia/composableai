@@ -54,6 +54,31 @@ describe('MessageInput', () => {
         expect(onFilesSelected).toHaveBeenCalledWith([file]);
     });
 
+    it('does not send or clear the text when Enter is pressed while files are still processing', () => {
+        const onSend = vi.fn();
+        renderWithProviders(<MessageInput onSend={onSend} onFilesSelected={vi.fn()} hasProcessingFiles />);
+
+        const textbox = screen.getByRole('textbox') as HTMLTextAreaElement;
+        fireEvent.change(textbox, { target: { value: 'please analyze this' } });
+        fireEvent.keyDown(textbox, { key: 'Enter' });
+
+        expect(onSend).not.toHaveBeenCalled();
+        // The typed text must be retained so the user doesn't have to re-type it.
+        expect(textbox.value).toBe('please analyze this');
+    });
+
+    it('sends and clears the text on Enter once files have finished processing', () => {
+        const onSend = vi.fn();
+        renderWithProviders(<MessageInput onSend={onSend} onFilesSelected={vi.fn()} />);
+
+        const textbox = screen.getByRole('textbox') as HTMLTextAreaElement;
+        fireEvent.change(textbox, { target: { value: 'please analyze this' } });
+        fireEvent.keyDown(textbox, { key: 'Enter' });
+
+        expect(onSend).toHaveBeenCalledWith('please analyze this');
+        expect(textbox.value).toBe('');
+    });
+
     it('renders attachment actions before the MCP slot', () => {
         renderWithProviders(<MessageInput onSend={vi.fn()} mcpSlot={<button type="button">MCP</button>} isCompleted />);
 
@@ -176,7 +201,7 @@ describe('MessageInput', () => {
         expect(screen.getByText('Ready')).not.toBeNull();
     });
 
-    it('renders context usage and triggers manual compaction', () => {
+    it('renders context usage and triggers manual compaction', async () => {
         const onCompactContext = vi.fn();
 
         renderWithProviders(
@@ -193,7 +218,13 @@ describe('MessageInput', () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: /50% context used/i }));
+        const contextButton = screen.getByRole('button', { name: /50% context used/i });
+
+        fireEvent.pointerMove(contextButton);
+
+        expect((await screen.findAllByText('Context size: 50K / 100K tokens')).length).toBeGreaterThan(0);
+
+        fireEvent.click(contextButton);
 
         expect(onCompactContext).toHaveBeenCalledTimes(1);
     });

@@ -145,7 +145,7 @@ export function PulsingMessageLoader({ message, className, color = 'blue' }: Pul
 
     return (
         <div className={cn('flex items-center gap-2 py-1', className)}>
-            <div className="flex space-x-1">
+            <div className="flex gap-1">
                 <div className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`} />
                 <div
                     className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`}
@@ -393,8 +393,7 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
         >
             {barHeights.map((height, i) => (
                 <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length array of 7 visual bars never re-orders
-                    key={i}
+                    key={`bar-${i}`}
                     className={cn(sizeClasses[size].barWidth, 'rounded-full transform-gpu', colorClasses[color])}
                     style={{
                         height: `${height}%`,

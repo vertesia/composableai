@@ -1,8 +1,6 @@
-import { execFile as execFileCallback } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { promisify } from 'node:util';
 import { log } from '@temporalio/activity';
 import { RequestError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
@@ -17,12 +15,15 @@ import {
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
-
-const execFileAsync = promisify(execFileCallback);
+import {
+    execActivityFile,
+    execActivityFileWithProgress,
+    initializeActivityCommandDeadline,
+    rethrowIfActivityStopped,
+} from './exec.js';
 
 // Default configuration constants
 const DEFAULT_AUDIO_BITRATE = '128k'; // Default audio bitrate for AAC encoding
-const FFMPEG_MAX_BUFFER = 1024 * 1024 * 10; // 10MB buffer for ffmpeg output
 
 export interface PrepareAudioParams {
     audioBitrate?: string; // Audio bitrate for AAC encoding, default '128k'
@@ -79,7 +80,7 @@ export interface PrepareAudioResult {
 async function getAudioMetadata(audioPath: string): Promise<AudioMetadataExtended> {
     try {
         const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', audioPath];
-        const { stdout } = await execFileAsync('ffprobe', args);
+        const { stdout } = await execActivityFile('ffprobe', args);
         const metadata = JSON.parse(stdout.toString()) as FFProbeOutput;
 
         const audioStream = metadata.streams.find((stream) => stream.codec_type === 'audio');
@@ -96,6 +97,7 @@ async function getAudioMetadata(audioPath: string): Promise<AudioMetadataExtende
 
         return { duration, codec, bitrate, sampleRate, channels };
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(`Failed to get audio metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
         throw new Error(`Failed to probe audio metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -128,7 +130,7 @@ async function generateAudioRendition(
     log.info('Generating web audio rendition (AAC M4A)', { command: 'ffmpeg', args: command, audioBitrate });
 
     try {
-        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
         const stderrText = stderr.toString();
 
         if (stderrText && !stderrText.includes('frame=')) {
@@ -145,6 +147,7 @@ async function generateAudioRendition(
             return null;
         }
     } catch (error) {
+        rethrowIfActivityStopped(error);
         log.error(`Failed to generate audio rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
@@ -200,6 +203,7 @@ async function uploadAudioAsRendition(
 export async function prepareAudio(
     payload: DSLActivityExecutionPayload<PrepareAudioParams>,
 ): Promise<PrepareAudioResult> {
+    initializeActivityCommandDeadline();
     const { client, objectId, params } = await setupActivity<PrepareAudioParams>(payload);
 
     const audioBitrate = params.audioBitrate ?? DEFAULT_AUDIO_BITRATE;
@@ -258,11 +262,14 @@ export async function prepareAudio(
         }
 
         // Step 4: Update content object with metadata and renditions
+        const generationRuns = Array.isArray(inputObject.metadata?.generation_runs)
+            ? inputObject.metadata.generation_runs
+            : [];
         const audioMetadata: AudioMetadata = {
             type: ContentNature.Audio,
             duration: metadata.duration,
             renditions,
-            generation_runs: inputObject.metadata?.generation_runs || [],
+            generation_runs: generationRuns,
         };
 
         await client.objects.update(objectId, {
@@ -291,6 +298,7 @@ export async function prepareAudio(
             status: 'success',
         };
     } catch (error) {
+        rethrowIfActivityStopped(error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         log.error(`Error preparing audio: ${errorMessage}`, { error });
 

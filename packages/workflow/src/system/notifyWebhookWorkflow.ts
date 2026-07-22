@@ -16,9 +16,17 @@ const { notifyWebhook } = dslProxyActivities<typeof activities>('notifyWebhookWo
 });
 
 export interface NotifyWebhookWorfklowParams {
-    workflow_type: string;
-    endpoints: (string | WebHookSpec)[];
-    data: Record<string, unknown>;
+    workflow_type?: string;
+    endpoints?: (string | WebHookSpec)[];
+    data?: Record<string, unknown>;
+    requests?: NotifyWebhookRequest[];
+}
+
+export interface NotifyWebhookRequest {
+    url: string;
+    body: string;
+    headers?: Record<string, string>;
+    timeout_ms?: number;
 }
 
 export async function notifyWebhookWorkflow(
@@ -32,6 +40,7 @@ export async function notifyWebhookWorkflow(
         webhook_data?: Record<string, unknown>;
     };
     const endpoints = legacyVars.endpoints ?? legacyVars.webhooks ?? [];
+    const requests = legacyVars.requests ?? [];
     const data = legacyVars.data ?? legacyVars.webhook_data ?? undefined;
     const workflow_type = vars.workflow_type ?? info.workflowType;
     const eventName = payload.event;
@@ -39,9 +48,27 @@ export async function notifyWebhookWorkflow(
     const workflowId = info.parent?.workflowId || info.workflowId;
     const workflowRunId = info.parent?.runId || info.runId;
 
-    if (!endpoints.length) {
+    if (!endpoints.length && !requests.length) {
         log.info(`No webhooks to notify`);
         return { notifications: [], message: 'No webhooks to notify' };
+    }
+
+    for (const request of requests) {
+        const n = notifyWebhook(payload, {
+            webhook: request.url,
+            method: 'POST',
+            workflow_type,
+            workflow_id: workflowId,
+            workflow_run_id: workflowRunId,
+            event_name: eventName,
+            body: request.body,
+            headers: request.headers,
+            timeout_ms: request.timeout_ms,
+        }).then((res) => {
+            log.info(`Webhook notified at ${request.url} with response code: ${res.status}`, { res });
+            return res;
+        });
+        notifications.push(n);
     }
 
     for (const ep of endpoints) {

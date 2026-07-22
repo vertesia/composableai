@@ -7,6 +7,8 @@ import type {
 } from '../interaction.js';
 import type { JSONObject, JSONValue } from '../json.js';
 import type { JSONSchema } from '../json-schema.js';
+import type { SupportedEmbeddingTypes } from '../project.js';
+import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { WorkflowInput } from './dsl-workflow.js';
 
 export enum ContentEventName {
@@ -58,7 +60,8 @@ export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
      * The user input ar custom user options that can be used to configure the workflow.
      * You can see the user input as the arguments for a command line app.
      *
-     * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
+     * In the case of workflows started by event subscriptions, the user input vars
+     * are initialized from the subscription target configuration.
      *
      * In case of dsl workflows the workflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
      */
@@ -137,11 +140,12 @@ export interface WebHookSpec {
     result_path?: string;
 }
 
-export interface WorkflowExecutionPayload<T = Record<string, unknown>> extends WorkflowExecutionBaseParams<T> {
+export interface WorkflowExecutionPayload<T = Record<string, unknown>, EventName extends string = string>
+    extends WorkflowExecutionBaseParams<T> {
     /**
      * The event which started the workflow who created the activity.
      */
-    event: ContentEventName;
+    event: EventName;
 
     /*
      * The Workflow Rule ID if any. If the workflow was started by a rule this field will contain the rule ID
@@ -241,7 +245,7 @@ export interface ListWorkflowRunsPayload {
     event_name?: string;
 
     /**
-     * The workflow rule ID that triggered the workflow.
+     * Legacy workflow rule ID filter, when applicable.
      */
     rule_id?: string;
 
@@ -638,6 +642,7 @@ export interface WorkflowInteractionVars {
     type: string;
     interaction: string;
     interactive: boolean;
+    tool_approval_mode?: AgentToolApprovalMode;
     debug_mode?: boolean;
     non_blocking_subagents?: boolean;
     /**
@@ -1354,7 +1359,7 @@ export interface AgentIntakeWorkflowParams {
     http_timeout?: HttpTimeoutOptions;
 
     /**
-     * LLM execution config. Prefer this for workflow-rule-driven execution settings.
+     * LLM execution config. Prefer this for event-subscription-driven execution settings.
      */
     config?: InteractionExecutionConfiguration;
 
@@ -1387,6 +1392,8 @@ export interface AgentIntakeWorkflowResult {
     collectionIds?: string[];
     /** Whether embeddings were generated */
     hasEmbeddings: boolean;
+    /** Embedding kinds that were actually generated. Skipped or failed activity results are omitted. */
+    generatedEmbeddings?: SupportedEmbeddingTypes[];
 }
 
 // ---------------------------------------------------------------------------

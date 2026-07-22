@@ -116,4 +116,28 @@ describe('ImageMagick image resizing', () => {
         // Check that interlace is disabled (should be 'none' or empty string)
         expect(['none', '']).to.include(interlaceMode);
     });
+
+    test('should apply EXIF orientation before resizing and stripping metadata', async () => {
+        const max_hw = 100;
+        const format = 'jpeg';
+        const inputImagePath = path.join(__dirname, '../../fixtures', 'synthetic-exif-righttop.jpg');
+
+        // Generated from synthetic pixels with only EXIF Orientation=6 added.
+        const { stdout: sourceStdout } = await execAsync(`identify -format "%w %h %[orientation]" "${inputImagePath}"`);
+        const [sourceWidth, sourceHeight, sourceOrientation] = sourceStdout.trim().split(' ');
+        expect(parseInt(sourceWidth, 10)).to.equal(120);
+        expect(parseInt(sourceHeight, 10)).to.equal(180);
+        expect(sourceOrientation).to.equal('RightTop');
+
+        const resizedImagePath = await imageResizer(inputImagePath, max_hw, format);
+
+        expect(fs.existsSync(resizedImagePath)).toBe(true);
+
+        const { stdout } = await execAsync(`identify -format "%w %h %[orientation]" "${resizedImagePath}"`);
+        const [width, height, orientation] = stdout.trim().split(' ');
+
+        expect(parseInt(width, 10)).to.equal(100);
+        expect(parseInt(height, 10)).to.equal(67);
+        expect(['Undefined', 'TopLeft']).to.include(orientation);
+    });
 });

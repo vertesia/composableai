@@ -410,6 +410,68 @@ describe('process definition validation', () => {
         expect(result.errors).toContain('human_task node "review" is missing task');
     });
 
+    it('rejects human_task fields that use "id" instead of "name"', () => {
+        const definition = validDefinition();
+        definition.nodes.review.task = {
+            title: 'Review',
+            fields: [{ id: 'approved', type: 'boolean' } as unknown as { name: string; type: 'boolean' }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain(
+            'human_task node "review" task.fields[0].name must be a non-empty string (not "id")',
+        );
+    });
+
+    it('rejects human_task fields with an unsupported type', () => {
+        const definition = validDefinition();
+        definition.nodes.review.task = {
+            title: 'Review',
+            fields: [{ name: 'approved', type: 'date' } as unknown as { name: string; type: 'string' }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain(
+            'human_task node "review" task.fields[0].type must be one of string, number, boolean, select, text',
+        );
+    });
+
+    it('rejects select fields without options', () => {
+        const definition = validDefinition();
+        definition.nodes.review.task = {
+            title: 'Review',
+            fields: [{ name: 'decision', type: 'select' }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain(
+            'human_task node "review" task.fields[0] of type "select" requires a non-empty options[] array',
+        );
+    });
+
+    it('accepts human_task select fields with options', () => {
+        const definition = validDefinition();
+        definition.nodes.review.task = {
+            title: 'Review',
+            fields: [
+                {
+                    name: 'decision',
+                    type: 'select',
+                    options: ['approved', 'rejected'],
+                    required: true,
+                },
+            ],
+        };
+
+        expect(() => validateProcessDefinitionBody(definition)).not.toThrow();
+    });
+
     it('rejects overly deep guard rules', () => {
         const definition = validDefinition();
         let guard: Record<string, unknown> = { var: 'approved' };

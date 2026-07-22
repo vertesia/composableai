@@ -11,6 +11,7 @@ import { CostApi } from './CostApi.js';
 import { DataApi } from './DataApi.js';
 import { EmailApi } from './EmailApi.js';
 import { EmbeddingsApi } from './EmbeddingsApi.js';
+import { EventsApi } from './EventsApi.js';
 import { ZenoClientNotFoundError } from './errors.js';
 import { FilesApi } from './FilesApi.js';
 import { HiveMemoryApi } from './HiveMemoryApi.js';
@@ -22,8 +23,8 @@ import { QueryApi } from './QueryApi.js';
 import { RenderingApi } from './RenderingApi.js';
 import { SchedulesApi } from './SchedulesApi.js';
 import { TaskApi } from './TaskApi.js';
-import { ToolsApi } from './ToolsApi.js';
 import { TypesApi } from './TypesApi.js';
+import { StoreViewsApi } from './ViewsApi.js';
 import { VERSION, VERSION_HEADER } from './version.js';
 import { WorkflowsApi } from './WorkflowsApi.js';
 
@@ -106,11 +107,14 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     collections = new CollectionsApi(this);
     embeddings = new EmbeddingsApi(this);
     email = new EmailApi(this);
+    events = new EventsApi(this);
+    /** @deprecated Use events.subscriptions. */
+    eventSubscriptions = this.events.subscriptions;
     pendingAsks = new PendingAsksApi(this);
     data = new DataApi(this);
-    tools = new ToolsApi(this);
     indexing = new IndexingApi(this);
     query = new QueryApi(this);
     hiveMemory = new HiveMemoryApi(this);
     rendering = new RenderingApi(this);
+    views = new StoreViewsApi(this);
 }

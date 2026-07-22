@@ -166,6 +166,13 @@ export interface ExecutionEnvironmentConfigUpdatePayload {
     config?: MediatorEnvConfig | LoadBalancingEnvConfig;
 }
 
+export interface EnableEnvironmentModelPayload {
+    /**
+     * Provider model ID to resolve from the environment's available model listing.
+     */
+    model_id: string;
+}
+
 export interface MigrateInteractionsPayload {
     /**
      * The new environment ID to set in the Interactions

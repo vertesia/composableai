@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/api-fetch-client",
-    "version": "1.3.0",
+    "version": "1.5.0-dev.20260714.072725Z",
     "description": "HTTP client which wraps a fetch implementation and simplify the creation of REST API clients. Works both in browser and in node.",
     "type": "module",
     "main": "./lib/index.js",
@@ -19,8 +19,9 @@
         "test": "ESBK_TSCONFIG_PATH=./test/tsconfig.json pnpm exec mocha -r tsx --exit ./test/**/*.ts",
         "lint": "biome lint src",
         "typecheck:test": "tsc -p test/tsconfig.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
-        "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "repository": {
         "type": "git",
@@ -49,12 +50,12 @@
         "@koa-stack/server": "workspace:*",
         "@types/koa": "^3.0.3",
         "@types/mocha": "^10.0.10",
-        "@types/node": "^24.13.2",
+        "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "koa": "^3.2.1",
         "mocha": "^11.7.6",
-        "tsx": "^4.22.4",
-        "typescript": "rc"
+        "tsx": "^4.23.1",
+        "typescript": "catalog:"
     },
     "dependencies": {
         "eventsource-parser": "^3.1.0"

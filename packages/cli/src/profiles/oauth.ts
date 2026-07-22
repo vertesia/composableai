@@ -3,7 +3,13 @@ import type {
     OAuthDeviceAuthorizationResponse,
     OAuthTokenResponse,
 } from '@vertesia/common';
-import { OAUTH_SCOPE_OFFLINE_ACCESS, OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, Permission } from '@vertesia/common';
+import {
+    OAUTH_SCOPE_OFFLINE_ACCESS,
+    OAUTH_SCOPE_OPENID,
+    OAUTH_SCOPE_PROFILE,
+    OAUTH_SCOPE_PROJECT_SWITCH,
+    Permission,
+} from '@vertesia/common';
 import jwt from 'jsonwebtoken';
 import open from 'open';
 import type { Profile } from './index.js';
@@ -12,16 +18,16 @@ import type { ConfigResult } from './server/index.js';
 
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
-// Base OIDC scopes that are not platform permissions.
-const BASE_OIDC_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, OAUTH_SCOPE_OFFLINE_ACCESS];
+// Base CLI scopes that are not platform API permissions.
+const BASE_CLI_SCOPES = [
+    OAUTH_SCOPE_OPENID,
+    OAUTH_SCOPE_PROFILE,
+    OAUTH_SCOPE_OFFLINE_ACCESS,
+    OAUTH_SCOPE_PROJECT_SWITCH,
+];
 
-// The full set of platform permission scopes. The CLI requests ALL of them and
-// never curates a subset: dropping admin scopes here (e.g. content:admin,
-// account:admin) silently denied legitimate operations — reindex, publish ACE
-// grants — even for account owners / project admins. The authorization server
-// is the right place to gate access: it downscopes the issued token to exactly
-// what the signed-in user's roles allow, so requesting everything is safe and a
-// user only ever receives the permissions they are entitled to.
+// Old servers may not advertise scopes_supported. In that case only, fall back to the local
+// permission catalog; modern servers remain the source of truth for grantable scopes.
 const ALL_PERMISSION_SCOPES = Object.values(Permission) as string[];
 
 type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> &
@@ -66,6 +72,14 @@ export function getOAuthClientId(oauthServerUrl: string): string {
     return new URL(OAUTH_CLIENT_METADATA_PATH, withTrailingSlash(oauthServerUrl)).toString();
 }
 
+export function getOAuthClientIdFromMetadata(
+    metadata: Pick<OAuthAuthorizationServerMetadata, 'issuer' | 'token_endpoint'>,
+): string {
+    // Regional STS aliases can advertise canonical endpoints. CIMD client_id values must
+    // match the canonical client metadata document URL, not the alias used for discovery.
+    return getOAuthClientId(new URL(metadata.token_endpoint || metadata.issuer).origin);
+}
+
 export function getOAuthResource(metadata: Pick<OAuthAuthorizationServerMetadata, 'issuer'>): string {
     return new URL(metadata.issuer).toString();
 }
@@ -74,7 +88,7 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
     assertOAuthProfile(profile);
 
     const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
-    const clientId = getOAuthClientId(serverUrl);
+    const clientId = getOAuthClientIdFromMetadata(metadata);
     const resource = getOAuthResource(metadata);
     const scope = getDefaultOAuthScope(metadata);
     const deviceAuthorization = await createDeviceAuthorization(metadata, {
@@ -107,7 +121,7 @@ export async function refreshOAuthSession(
     assertOAuthProfile(profile);
 
     const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
-    const clientId = getOAuthClientId(serverUrl);
+    const clientId = getOAuthClientIdFromMetadata(metadata);
     const resource = bundle?.oauthResource || readTokenRefs(bundle?.accessToken).audience || getOAuthResource(metadata);
     const response = await exchangeRefreshToken(metadata, clientId, refreshToken, resource, options.projectId);
     return buildConfigResult(profile, response, clientId, resource, serverUrl);
@@ -158,15 +172,15 @@ async function discoverAuthorizationServer(
 }
 
 function getDefaultOAuthScope(metadata: Partial<Pick<OAuthAuthorizationServerMetadata, 'scopes_supported'>>): string {
-    // Request every scope the server advertises — no exclusions. When the server
-    // does not advertise a list, fall back to the full known permission set. The
-    // authorization server downscopes the issued token to the user's entitlements,
-    // so this never grants more than the signed-in user's roles allow.
+    // Request every scope the server advertises — no exclusions. When the server does not advertise
+    // a list, fall back to the full known permission set. The authorization server downscopes the
+    // issued token to the user's entitlements, so this never grants more than the signed-in user's
+    // roles allow.
     const requested =
         Array.isArray(metadata.scopes_supported) && metadata.scopes_supported.length > 0
             ? metadata.scopes_supported
             : ALL_PERMISSION_SCOPES;
-    return Array.from(new Set([...BASE_OIDC_SCOPES, ...requested])).join(' ');
+    return Array.from(new Set([...BASE_CLI_SCOPES, ...requested])).join(' ');
 }
 
 function applyProfileAuthorizationEndpoint(
@@ -421,6 +435,9 @@ async function readOAuthError(response: Response): Promise<{ error?: string; mes
         const error = typeof parsed.error === 'string' ? parsed.error : undefined;
         if (typeof parsed.error_description === 'string') {
             return { error, message: parsed.error_description };
+        }
+        if (typeof parsed.message === 'string') {
+            return { error, message: parsed.message };
         }
         if (error) {
             return { error, message: error };

@@ -1,6 +1,7 @@
 import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
 import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
 import type { ExecutionRunDocRef } from '../runs.js';
+import type { AgentToolApprovalMode, PendingToolApprovalResults, ToolApprovalGrant } from './agent-approval.js';
 import type { Plan, WorkflowAncestor } from './workflow.js';
 
 /**
@@ -37,6 +38,18 @@ export interface ConversationState {
      * The tools to call next.
      */
     tool_use?: ToolUse[];
+
+    /** Effective side-effecting tool approval mode for this interactive conversation. */
+    tool_approval_mode?: AgentToolApprovalMode;
+
+    /** Run-scoped, exact-target grants created by "allow this action for this run". */
+    tool_approval_grants?: Record<string, ToolApprovalGrant>;
+
+    /** Buffered tool results held while approval denial pauses until the next user message. */
+    pending_tool_approval_results?: PendingToolApprovalResults;
+
+    /** Compact, redacted latest user intent for reviewer-style system interactions. */
+    latest_user_message?: string;
 
     /**
      * The output of the this conversation step
@@ -143,6 +156,18 @@ export interface ConversationState {
      * When a skill is called, its related tools are added to unlocked_tools.
      */
     skill_tool_map?: Record<string, string[]>;
+
+    /**
+     * Names of skills whose full instructions are already present in the live conversation
+     * history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill
+     * re-activation idempotent: a repeat call returns a short "already active" acknowledgement
+     * instead of re-dumping the instructions.
+     *
+     * Unlike `unlocked_tools`/`skill_tool_map` (which must survive a checkpoint so tools stay
+     * unlocked), this list is reset when a checkpoint compacts the conversation, because the
+     * summary no longer carries the skill instructions and the next call must re-deliver them.
+     */
+    skill_instructions_delivered?: string[];
 
     /**
      * Denylist of MCP tool-collection ids deactivated for this conversation.

@@ -1,4 +1,5 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
+import type { VertesiaClient } from '@vertesia/client';
 import { ApiVersions, ContentEventName, type DSLActivityExecutionPayload, type WebHookSpec } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -7,6 +8,23 @@ import {
     notifyWebhook,
     type WebhookNotificationPayload,
 } from './notifyWebhook.js';
+
+const mockValidateUrl = vi.hoisted(() => vi.fn());
+
+vi.mock('../utils/client.js', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../utils/client.js')>();
+    return {
+        ...actual,
+        getVertesiaClient: vi.fn(
+            () =>
+                ({
+                    apps: {
+                        validateUrl: mockValidateUrl,
+                    },
+                }) as unknown as VertesiaClient,
+        ),
+    };
+});
 
 // Mock fetch globally
 vi.stubGlobal('fetch', vi.fn());
@@ -20,6 +38,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mockValidateUrl.mockResolvedValue({ valid: true });
 });
 
 const defaultParams = {
@@ -64,6 +83,7 @@ describe('Webhook should be notified', () => {
             status: 200,
             statusText: 'OK',
             url: defaultParams.webhook,
+            headers: new Headers(),
         };
         mockFetch.mockResolvedValueOnce(mockResponse as Response);
 
@@ -82,6 +102,7 @@ describe('Webhook should be notified', () => {
             headers: {
                 'Content-Type': 'application/json',
             },
+            redirect: 'manual',
         });
 
         // Verify response
@@ -99,6 +120,7 @@ describe('Webhook should be notified', () => {
             status: 500,
             statusText: 'Internal Server Error',
             url: defaultParams.webhook,
+            headers: new Headers(),
             text: vi.fn().mockResolvedValue('{"error": "Database connection failed", "code": "DB_ERROR"}'),
         } as unknown as Response;
         mockFetch.mockResolvedValueOnce(mockResponse);
@@ -122,6 +144,7 @@ describe('Webhook should be notified', () => {
             headers: {
                 'Content-Type': 'application/json',
             },
+            redirect: 'manual',
         });
 
         // Verify that text() was called to read the response
@@ -150,6 +173,100 @@ describe('Webhook should be notified', () => {
             headers: {
                 'Content-Type': 'application/json',
             },
+            redirect: 'manual',
+        });
+    });
+
+    it('should block URLs rejected by central URL validation', async () => {
+        mockValidateUrl.mockRejectedValueOnce(new Error('Access to internal hosts is not allowed'));
+
+        const payload = createTestPayload({
+            webhook: 'https://metadata.google.internal/computeMetadata/v1/',
+        });
+
+        await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow(
+            'Webhook endpoint blocked: Access to internal hosts is not allowed',
+        );
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should retry transient central URL validation failures', async () => {
+        const transientError = Object.assign(new Error('studio-server unavailable'), { statusCode: 503 });
+        mockValidateUrl.mockRejectedValueOnce(transientError);
+
+        const payload = createTestPayload();
+
+        await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow('studio-server unavailable');
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should block webhook redirects', async () => {
+        mockFetch.mockResolvedValueOnce(
+            new Response(null, {
+                status: 302,
+                statusText: 'Found',
+                headers: {
+                    Location: 'https://example.com/redirected',
+                },
+            }),
+        );
+
+        const payload = createTestPayload();
+
+        await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow('Webhook endpoint blocked: Request to');
+        expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
+            method: 'POST',
+            body: JSON.stringify({
+                workflowId: 'wf_id',
+                runId: 'wf_run_id',
+                status: 'completed',
+                result: { message: 'Hello World' },
+            }),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            redirect: 'manual',
+        });
+    });
+
+    it('should send a raw body when provided', async () => {
+        const mockResponse = {
+            ok: true,
+            status: 202,
+            statusText: 'Accepted',
+            url: defaultParams.webhook,
+            headers: new Headers(),
+        };
+        mockFetch.mockResolvedValueOnce(mockResponse as Response);
+
+        const body = JSON.stringify({ event: { event_id: 'evt-1' } });
+        const payload = createTestPayload({
+            body,
+            headers: {
+                'content-type': 'application/json',
+                'X-Vertesia-Event-Id': 'evt-1',
+            },
+            timeout_ms: 5000,
+        });
+
+        const res: NotifyWebhookResult = await testEnv.run(notifyWebhook, payload);
+
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        const [url, options] = mockFetch.mock.calls[0];
+        expect(url).toBe(defaultParams.webhook);
+        expect(options).toMatchObject({
+            method: 'POST',
+            body,
+            headers: {
+                'content-type': 'application/json',
+                'X-Vertesia-Event-Id': 'evt-1',
+            },
+        });
+        expect(options?.signal).toBeInstanceOf(AbortSignal);
+        expect(res).toEqual({
+            status: 202,
+            message: 'Accepted',
+            url: defaultParams.webhook,
         });
     });
 
@@ -160,6 +277,7 @@ describe('Webhook should be notified', () => {
             status: 200,
             statusText: 'OK',
             url: 'https://vertesia.test',
+            headers: new Headers(),
         };
         mockFetch.mockResolvedValueOnce(mockResponse as Response);
 
@@ -213,6 +331,7 @@ describe('Webhook should be notified', () => {
             status: 200,
             statusText: 'OK',
             url: 'https://vertesia.test',
+            headers: new Headers(),
         };
         mockFetch.mockResolvedValueOnce(mockResponse as Response);
 

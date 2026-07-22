@@ -88,7 +88,7 @@ export function Modal({
                             <DialogClose onClick={() => handleOpenChange(false)} asChild autoFocus={false}>
                                 <Button
                                     variant="outline"
-                                    alt="Close"
+                                    title="Close"
                                     className="data-[state=open]:bg-accent opacity-70 hover:opacity-100 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background focus:ring-offset-2 data-[state=open]:text-muted-foreground transition-opacity disabled:pointer-events-none"
                                 >
                                     <X className="size-4" />
@@ -162,7 +162,7 @@ export const ModalFooter = ({ align = 'right', children, className, ...props }: 
     return (
         <div
             className={cn(
-                'w-full flex py-3 sm:py-2 sm:flex sm:flex-row-reverse sm:flex-row sm:justify-end sm:space-x-2',
+                'w-full flex py-3 sm:py-2 sm:flex sm:flex-row-reverse sm:flex-row sm:justify-end gap-2',
                 alignClass[align],
                 className,
             )}

@@ -31,6 +31,15 @@ interface RunsFacetsNavProps {
     search: SearchInterface;
     actions?: React.ReactNode[];
     selectionCount?: number;
+    /**
+     * Optional controlled filter state. When provided, the parent owns the filter list (and is
+     * responsible for translating it into the search query via {@link useRunsFilterHandler}). This
+     * lets other surfaces — e.g. per-row "quick filter" buttons in the table — add filters that show
+     * up in the filter bar. When omitted, the component manages its own filter state internally.
+     */
+    filters?: BaseFilter[];
+    setFilters?: React.Dispatch<React.SetStateAction<BaseFilter[]>>;
+    filterGroups?: FilterGroup[];
 }
 
 // Hook to create filter groups for runs
@@ -179,14 +188,32 @@ export function useRunsFilterHandler(search: SearchInterface) {
 }
 
 // Legacy component for backward compatibility
-export function RunsFacetsNav({ facets, search, actions, selectionCount }: RunsFacetsNavProps) {
-    const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const filterGroups = useRunsFilterGroups(facets);
+export function RunsFacetsNav({
+    facets,
+    search,
+    actions,
+    selectionCount,
+    filters: controlledFilters,
+    setFilters: controlledSetFilters,
+    filterGroups: controlledFilterGroups,
+}: RunsFacetsNavProps) {
+    const [internalFilters, setInternalFilters] = useState<BaseFilter[]>([]);
+    const internalFilterGroups = useRunsFilterGroups(facets);
     const handleFilterLogic = useRunsFilterHandler(search);
 
+    // Controlled when the parent supplies both the filter list and its setter; otherwise self-managed.
+    const isControlled = controlledFilters !== undefined && controlledSetFilters !== undefined;
+    const filters = isControlled ? controlledFilters : internalFilters;
+    const filterGroups = controlledFilterGroups ?? internalFilterGroups;
+
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-        const newFilters = typeof value === 'function' ? value(filters) : value;
-        setFilters(newFilters);
+        if (isControlled) {
+            // The parent's setter is expected to also run the filter→query translation.
+            controlledSetFilters(value);
+            return;
+        }
+        const newFilters = typeof value === 'function' ? value(internalFilters) : value;
+        setInternalFilters(newFilters);
         handleFilterLogic(newFilters);
     };
 
@@ -210,8 +237,7 @@ export function RunsFacetsNav({ facets, search, actions, selectionCount }: RunsF
                         {actions && actions.length > 0 ? (
                             <div className="flex items-center gap-2 mb-1 me-2">
                                 {actions.map((action, index) => (
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                    <div key={index}>{action}</div>
+                                    <div key={`action-${index}`}>{action}</div>
                                 ))}
                             </div>
                         ) : null}

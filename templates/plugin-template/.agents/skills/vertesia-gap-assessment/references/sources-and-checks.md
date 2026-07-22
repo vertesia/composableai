@@ -90,15 +90,16 @@ Inspect the local app/plugin to see what is already implemented.
 ### Default paths to inspect
 
 ```text
-src/tool-server/types/
-src/tool-server/interactions/
-src/tool-server/tools/
-src/tool-server/activities/
+src/modules/app/resources/types/
+src/modules/app/resources/interactions/
+src/modules/app/resources/tools/
+src/modules/app/resources/activities/
+src/modules/app/ui/routes.tsx
+src/modules/app/ui/pages/
 src/tool-server/config.ts
-src/ui/routes.tsx
-src/ui/pages.tsx
+src/tool-server/app-server-modules.ts
 workflow-specs/
-.claude/skills/
+.agents/skills/
 ```
 
 ### Questions to answer

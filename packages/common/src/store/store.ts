@@ -1,4 +1,6 @@
+import type { JSONSchemaType } from 'ajv';
 import type { ComputedFacetResponse } from '../facets.js';
+import type { InteractionExecutionConfiguration } from '../interaction.js';
 import type { JSONObject } from '../json.js';
 import type { SearchPayload } from '../payload.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
@@ -10,7 +12,9 @@ export enum ContentObjectApiHeaders {
     PROCESSING_PRIORITY = 'x-processing-priority',
     CREATE_REVISION = 'x-create-revision',
     REVISION_LABEL = 'x-revision-label',
-    /** When set to 'true', prevents this update from triggering workflow rules */
+    /**
+     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
+     */
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
@@ -35,6 +39,9 @@ export interface UpdateContentObjectHeaders {
     'x-create-revision'?: boolean;
     'x-revision-label'?: string;
     'x-processing-priority'?: ContentObjectProcessingPriority;
+    /**
+     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
+     */
     'x-suppress-workflows'?: boolean;
 }
 
@@ -67,6 +74,238 @@ export interface Embedding {
     model: string; //the model used to generate this embedding
     values: number[];
     etag?: string; // the etag of the text used for the embedding
+}
+
+/**
+ * Optional object context to include in content object export rows.
+ */
+export interface ExportContentObjectsIncludeOptions {
+    /**
+     * Include stored embeddings. Disabled by default for generic object exports.
+     */
+    embeddings?: boolean;
+    /**
+     * Include content source metadata. Enabled by default.
+     */
+    content?: boolean;
+    /**
+     * Include object lifecycle status. Enabled by default.
+     */
+    status?: boolean;
+    /**
+     * Include object properties. Enabled by default.
+     */
+    properties?: boolean;
+    /**
+     * Include technical object metadata. Disabled by default because metadata may be large.
+     */
+    metadata?: boolean;
+    /**
+     * Include object revision details. Enabled by default.
+     */
+    revision?: boolean;
+}
+
+/**
+ * Bounded filters supported by the bulk content object export API.
+ */
+export interface ExportContentObjectsFilter {
+    types?: string[];
+    created_from?: string;
+    created_to?: string;
+    updated_from?: string;
+    updated_to?: string;
+}
+
+/**
+ * Exported object identity and context for a single content object row.
+ */
+export interface ExportedContentObjectRecord {
+    id: string;
+    name: string;
+    location: string;
+    external_id?: string;
+    type?: {
+        ref_type?: 'stored' | 'incode' | 'untyped';
+        id?: string;
+        code?: string;
+        name?: string;
+    };
+    status?: ContentObjectStatus;
+    content?: {
+        source?: string;
+        type?: string;
+        name?: string;
+        etag?: string;
+    };
+    created_at: string;
+    updated_at: string;
+    revision?: RevisionInfo;
+    properties?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+    embeddings?: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
+}
+
+export interface StartContentObjectExportRequest {
+    /**
+     * Embedding types to export when include.embeddings is true. Defaults to all supported embedding types.
+     */
+    embedding_types?: SupportedEmbeddingTypes[];
+    /**
+     * Explicit export filters. This intentionally does not accept the search API's full Mongo/search DSL.
+     */
+    filter?: ExportContentObjectsFilter;
+    /**
+     * Include all revisions. Defaults to false, exporting only head revisions.
+     */
+    all_revisions?: boolean;
+    /**
+     * Optional object context selectors.
+     */
+    include?: ExportContentObjectsIncludeOptions;
+    /**
+     * Compress the export with gzip. Defaults to true.
+     */
+    compression?: boolean;
+}
+
+export interface StartContentObjectExportResponse {
+    workflow_id: string;
+    run_id: string;
+    export_id: string;
+}
+
+export interface ZenoBulkContentObjectExportRequest extends Omit<StartContentObjectExportRequest, 'compression'> {
+    tenant_id: string;
+    project_id: string;
+    export_id: string;
+    output_path: string;
+    filename: string;
+    manifest_path: string;
+    manifest_filename: string;
+    compression: boolean;
+}
+
+export interface ZenoBulkContentObjectExportShardRange {
+    min_id?: string;
+    max_id?: string;
+}
+
+export interface ZenoBulkContentObjectExportPlanRequest extends ZenoBulkContentObjectExportRequest {
+    target_shard_records?: number;
+    max_shards?: number;
+}
+
+export interface ZenoBulkContentObjectExportPlanResponse {
+    shards: ZenoBulkContentObjectExportShardRange[];
+}
+
+export interface ZenoBulkContentObjectExportShardRequest extends ZenoBulkContentObjectExportRequest {
+    shard_index: number;
+    shard_count: number;
+    shard: ZenoBulkContentObjectExportShardRange;
+}
+
+export interface ZenoBulkContentObjectExportSplitShardRequest extends ZenoBulkContentObjectExportRequest {
+    shard: ZenoBulkContentObjectExportShardRange;
+    min_split_records?: number;
+}
+
+export interface ZenoBulkContentObjectExportSplitShardResponse {
+    shards: ZenoBulkContentObjectExportShardRange[];
+    splittable: boolean;
+    records: number;
+}
+
+export interface ZenoBulkContentObjectExportShardResult {
+    status: 'completed';
+    shard_index: number;
+    shard_count: number;
+    path: string;
+    filename: string;
+    content_type: string;
+    records: number;
+    bytes: number;
+    started_at: string;
+    completed_at: string;
+    duration_ms: number;
+}
+
+export interface ZenoBulkContentObjectExportComposeRequest extends ZenoBulkContentObjectExportRequest {
+    parts: string[];
+    records?: number;
+    /**
+     * Export workflow start timestamp. Used to report end-to-end duration after final compose.
+     */
+    started_at?: string;
+}
+
+export interface ContentObjectExportResult {
+    status: 'completed';
+    path: string;
+    filename: string;
+    content_type: string;
+    manifest_path?: string;
+    manifest_filename?: string;
+    manifest_content_type?: string;
+    manifest_bytes?: number;
+    records: number;
+    bytes: number;
+    started_at: string;
+    completed_at: string;
+    duration_ms: number;
+}
+
+export interface ContentObjectExportProgress {
+    status: 'queued' | 'planning' | 'exporting' | 'composing' | 'completed' | 'failed';
+    records: number;
+    bytes: number;
+    path?: string;
+    filename?: string;
+    completed_shards?: number;
+    total_shards?: number;
+    started_at?: string;
+    completed_at?: string;
+    error?: string;
+}
+
+export interface ContentObjectExportStatusResponse {
+    workflow_id: string;
+    run_id: string;
+    status: 'queued' | 'running' | 'completed' | 'failed' | 'canceled' | 'terminated' | 'timed_out' | 'unknown';
+    done: boolean;
+    progress?: ContentObjectExportProgress;
+    result?: ContentObjectExportResult;
+    error?: string;
+}
+
+export interface ContentObjectExportArtifact {
+    export_id: string;
+    path: string;
+    filename: string;
+    content_type: string;
+    bytes: number;
+    created_at?: string;
+    files?: ContentObjectExportArtifactFile[];
+}
+
+export interface ContentObjectExportArtifactFile {
+    role: 'data' | 'manifest';
+    path: string;
+    filename: string;
+    content_type: string;
+    bytes: number;
+}
+
+export interface ListContentObjectExportsResponse {
+    items: ContentObjectExportArtifact[];
+    limit: number;
+}
+
+export interface DeleteContentObjectExportResponse {
+    success: boolean;
+    export_id: string;
+    path: string;
 }
 
 /**
@@ -116,12 +355,12 @@ export interface ContentObjectItemApiResponse extends BaseObject {
     type?: ContentObjectApiTypeRef;
     content?: ContentSource;
     external_id?: string;
-    properties: Record<string, unknown>;
+    properties: JSONObject;
     metadata?: Record<string, unknown>;
     tokens?: {
-        count: number;
-        encoding: string;
-        etag: string;
+        count?: number;
+        encoding?: string;
+        etag?: string;
     };
     revision: ContentObjectApiRevision;
     is_deleted?: boolean;
@@ -185,6 +424,12 @@ export interface GenerationRunMetadata {
     date: string;
     model: string;
     target?: string;
+    /**
+     * Fingerprint of the inputs used by property extraction (content etag, type + its object
+     * schema, source, instructions, interaction). Lets a later run skip re-extraction when
+     * nothing changed.
+     */
+    extraction_fingerprint?: string;
 }
 
 // Base rendition interface for document and audio
@@ -211,7 +456,89 @@ export interface ContentMetadata {
     location?: Location;
     generation_runs?: GenerationRunMetadata[];
     etag?: string;
+    /** ETag of text materialized from object properties by intake rendering. */
+    rendered_text_etag?: string;
     renditions?: Rendition[];
+    /**
+     * Embedded/technical metadata harvested from the source file by intake
+     * (office docProps, PDF docinfo). Free-form, nature-appropriate keys.
+     */
+    embedded?: Record<string, unknown>;
+    /** Type-detection provenance recorded by the intake sniff pipeline. */
+    type_detection?: TypeDetectionMetadata;
+    /** Locate-pass provenance: which pages the document map found relevant. */
+    locate?: LocateMetadata;
+    /** Vision-evidence provenance for the last visual extraction run. */
+    vision_evidence?: VisionEvidenceMetadata;
+}
+
+/**
+ * Provenance persisted at `metadata.locate` when the intake locate (document-map) pass runs.
+ * The page list doubles as navigation metadata for the UI.
+ */
+export interface LocateMetadata {
+    /** Relevant pages proposed by the locate pass, in plan-ranked order (1-based). */
+    pages: number[];
+    /** Detail profile the plan requested for visual extraction. */
+    visual_detail?: 'low' | 'standard' | 'high';
+    /** Whether the plan asked for color rendering. */
+    needs_color?: boolean;
+    /** The model's one-line explanation of the selection. */
+    reason?: string;
+    page_count?: number;
+    /** Pages per contact sheet used for the pass (8 or 16). */
+    detail?: number;
+    sheet_count?: number;
+    located_at: string;
+}
+
+/**
+ * Provenance persisted at `metadata.vision_evidence` whenever intake prepares scoped page
+ * images for visual extraction (design: vision evidence spec — dropped pages are recorded,
+ * never silently batched).
+ */
+export interface VisionEvidenceMetadata {
+    /** Extraction source that requested the evidence. */
+    source_requested?: 'auto' | 'text' | 'vision' | 'mixed';
+    /** Pages rendered and sent as evidence, in ranked order (1-based). */
+    pages_sent: number[];
+    /** Resolved detail profile name. */
+    detail: 'low' | 'standard' | 'high';
+    /** Candidate pages dropped by budget clamping (recorded, not batched). */
+    dropped_pages?: number[];
+    /** The locate plan's reason, when the plan drove the page selection. */
+    plan_reason?: string;
+    /** Which clamps fired (page_count, allowed_details, token budget, page caps, payload). */
+    clamps_applied?: string[];
+    /** Estimated image tokens for the pages sent. */
+    est_tokens?: number;
+    page_count?: number;
+    prepared_at: string;
+}
+
+/**
+ * Durable provenance persisted at `metadata.type_detection` whenever the intake sniff pipeline
+ * runs. `method` records which mechanism decides the type: the sniff itself (high confidence),
+ * the post-conversion selector (medium/low/other), or the post-conversion selector because the
+ * document was below the small-doc page threshold.
+ */
+export interface TypeDetectionMetadata {
+    method: 'sniff' | 'post_conversion' | 'post_conversion_small_doc';
+    /** Sniffed type id, or 'other'. */
+    type?: string;
+    type_name?: string;
+    /** Sniff confidence, 0..1. */
+    confidence?: number;
+    band?: 'high' | 'medium' | 'low';
+    rationale?: string;
+    alternates?: string[];
+    /** Which evidence kinds the sniff saw. */
+    evidence?: 'text' | 'image' | 'both';
+    page_count?: number;
+    /** Why the sniff LLM call was skipped (e.g. 'below_min_pages'). */
+    skipped_reason?: string;
+    min_pages?: number;
+    detected_at: string;
 }
 
 // Type-specific metadata interfaces
@@ -254,8 +581,32 @@ export interface DocumentMetadata extends ContentMetadata {
         image_count?: number;
         zone_count?: number;
         needs_ocr_count?: number;
+        /** Fingerprint of source+policy used for custom conversion, to skip re-converting unchanged docs. */
+        conversion_fingerprint?: string;
     };
+    /**
+     * Grounded-extraction trust signal + key data. Written by the grounded pipeline
+     * (verdict, confidence, citation counts, review status, source etag, ...) and
+     * queryable for list/filter. Open-ended so more grounded key-data can be stored
+     * without a type change.
+     */
+    grounded?: GroundedMetadata;
     sections?: TextSection[]; // List of sections with descriptions and line indexes
+}
+
+/** Grounded-extraction summary stored on document metadata. Additional keys allowed. */
+export interface GroundedMetadata {
+    verdict?: string;
+    confidence?: number;
+    citation_count?: number;
+    verified_citations?: number;
+    reviewed_at?: string;
+    generated_at?: string;
+    /** Source PDF content etag used by the grounded extraction. */
+    source_content_etag?: string | null;
+    /** @deprecated Grounded source identity is tracked by source_content_etag. */
+    source_text_etag?: string | null;
+    [key: string]: unknown;
 }
 
 export interface Transcript {
@@ -356,13 +707,19 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     properties: T; // a JSON object that describes the object
 
     /** Technical metadata of the object */
-    metadata?: VideoMetadata | AudioMetadata | ImageMetadata | DocumentMetadata | ContentMetadata;
+    metadata?:
+        | VideoMetadata
+        | AudioMetadata
+        | ImageMetadata
+        | DocumentMetadata
+        | ContentMetadata
+        | Record<string, unknown>;
 
     /** Token information  */
     tokens?: {
-        count: number; // the number of tokens in the text
-        encoding: string; // the encoding used to calculate the tokens
-        etag: string; //the etag of the text used for the token count
+        count?: number; // the number of tokens in the text
+        encoding?: string; // the encoding used to calculate the tokens
+        etag?: string; //the etag of the text used for the token count
     };
 
     /**
@@ -442,6 +799,12 @@ interface StoredTypeRef {
      */
     id: string;
     name: string;
+    /**
+     * Display hint from the type's intake policy (`intake.default_view`). Enriched by the
+     * API on single-object reads so clients can pick the initial view without fetching the
+     * type. Absent on list responses and older servers.
+     */
+    default_view?: ContentTypeIntakePolicy['default_view'];
 }
 
 interface InCodeTypeRef {
@@ -451,6 +814,12 @@ interface InCodeTypeRef {
      */
     id: string;
     name: string;
+    /**
+     * Display hint from the type's intake policy (`intake.default_view`). Enriched by the
+     * API on single-object reads so clients can pick the initial view without fetching the
+     * type. Absent on list responses and older servers.
+     */
+    default_view?: ContentTypeIntakePolicy['default_view'];
 }
 
 export interface ComplexSearchPayload extends Omit<SearchPayload, 'query'> {
@@ -480,9 +849,651 @@ export interface ColumnLayout {
      */
     default?: unknown;
 }
+
+export type ContentObjectTypeStatus = 'active' | 'draft';
+
+/** Vision detail level names referenced by intake policies. The rendering profiles behind the
+ * names (dpi, max size, quality, color mode) are PLATFORM-defined and project-overridable —
+ * a type only ever references a detail name. */
+export type IntakeVisionDetail = 'low' | 'standard' | 'high';
+
+/**
+ * Named page scope for intake conversion/extraction: everything or the locate-pass result.
+ * Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as
+ * a SEPARATE field because scalar-or-collection unions generate unstable API clients.
+ */
+export type IntakePageScope = 'all' | 'located';
+
+/**
+ * Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of
+ * the document ([[1, 2], [-1, -1]] = first two pages plus the last page).
+ */
+export type IntakePageRanges = [number, number][];
+
+/** Rendering settings behind a vision detail name (platform defaults, project-overridable
+ * via `configuration.intake.vision_profiles`). */
+export interface IntakeVisionProfileSettings {
+    /** Render resolution in dots per inch. */
+    dpi: number;
+    /** Maximum height/width of the rendered page image in pixels. */
+    max_hw: number;
+    /** JPEG quality (0-100). */
+    quality: number;
+    /** grayscale renders gray always; auto keeps color when the plan asks for it. */
+    color_mode: 'grayscale' | 'auto';
+}
+
+export interface ContentTypeExtractionGroundingReviewPolicy {
+    /** Set false to disable an inherited grounding review pass for this type. */
+    enabled?: boolean;
+    /** Model execution configuration for the review interaction. */
+    config?: InteractionExecutionConfiguration;
+    /** Hardness score at or above which review runs. Defaults to hardness_threshold. */
+    threshold?: number;
+    /**
+     * Review also runs when any page's citation coverage falls below this
+     * floor (evidence of missed content). Default 0.2.
+     */
+    coverage_threshold?: number;
+    /** Run review regardless of hardness. */
+    force?: boolean;
+}
+
+export interface ContentTypeExtractionGroundingPolicy {
+    /** Enable PDF block-level citation grounding for property extraction. */
+    enabled?: boolean;
+    /** Grounded extraction interaction. Defaults to the system grounded extractor. */
+    interaction?: string;
+    /** Maximum pages to process. */
+    max_pages?: number;
+    /** Run OCR on every page even when a text layer exists. */
+    force_ocr?: boolean;
+    /** Attach instrumented page images to the grounded extraction prompt. */
+    use_vision?: boolean;
+    /**
+     * How to read pages with no digital text layer (scans / image-only pages).
+     * 'vision' (default): read them off the page image and skip OCR. 'ocr': legacy
+     * path — OCR those pages and block-ground on the (lossy) OCR text.
+     */
+    raster_mode?: 'vision' | 'ocr';
+    /**
+     * A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid
+     * (more cells, tighter boxes) but can trip weaker models into over-reading;
+     * tune per the model in `config`. Default 15.
+     */
+    grid_cell_pt?: number;
+    /**
+     * Drop block bounding boxes from the extraction prompt. Only sound with
+     * use_vision (layout comes from the image).
+     */
+    omit_block_boxes?: boolean;
+    /** Maximum pages per grounded extraction call before windowing. */
+    window_pages?: number;
+    /** Update object properties with grounded extraction data. Default true. */
+    update_properties?: boolean;
+    /** Model execution configuration for the main grounded extraction interaction. */
+    config?: InteractionExecutionConfiguration;
+    /** Model execution configuration used for hard-to-read content. */
+    hard_config?: InteractionExecutionConfiguration;
+    /** Hardness score at or above which hard_config is used. Default 0.5. */
+    hardness_threshold?: number;
+    /**
+     * Minimum citations-per-leaf-value ratio; completions below it retry with
+     * escalation. Default 0.3.
+     */
+    min_citation_density?: number;
+    /** Re-run OCR instead of restoring durable OCR artifacts (stale pipeline output). */
+    refresh_ocr?: boolean;
+    /** Optional post-extraction review pass. */
+    review?: ContentTypeExtractionGroundingReviewPolicy;
+}
+
+/**
+ * Per-content-type policy for the standard intake workflows.
+ */
+export interface ContentTypeIntakePolicy {
+    /** Intake orchestration mode for this type. */
+    mode?: 'programmatic' | 'agentic';
+    /** Guidance used when selecting or creating this content type. */
+    identification?: {
+        guidance?: string;
+        distinguish_from?: string;
+        examples?: string[];
+    };
+    /**
+     * Document-map ("locate") pass: page thumbnails tiled into labeled contact sheets, one
+     * vision call returns which pages matter for THIS type. The result can scope conversion
+     * and extraction, and doubles as the vision planner for visual extraction.
+     */
+    locate?: {
+        /** What to look for ("commercial terms, payment schedule, signature pages"). */
+        instructions: string;
+        /** Pages per contact sheet: 8 = bigger tiles (headings readable). Default 16. */
+        detail?: 8 | 16;
+        /** Only run when the page count is at least this. Default 8. */
+        min_pages?: number;
+    };
+    /** Controls source-to-text conversion before extraction and embedding. */
+    text_conversion?: {
+        enabled?: boolean;
+        method?: 'auto' | 'basic' | 'llm' | 'custom';
+        custom?: {
+            interaction?: string;
+            agent?: string;
+        };
+        instructions?: string;
+        output_format?: 'markdown' | 'text';
+        /** Which pages to convert: everything or the locate result. Default all. */
+        scope?: IntakePageScope;
+        /** Static page ranges to convert (wins over `scope` when set). */
+        page_ranges?: IntakePageRanges;
+    };
+    /** Controls schema-property extraction after type assignment. */
+    extraction?: {
+        enabled?: boolean;
+        source?: 'auto' | 'text' | 'vision' | 'mixed';
+        instructions?: string;
+        interaction?: string;
+        /** Which pages extraction sees: everything or the locate result. */
+        scope?: IntakePageScope;
+        /** Static page ranges extraction sees (wins over `scope` when set). */
+        page_ranges?: IntakePageRanges;
+        /** Cap on pages sent to extraction. Default 20. */
+        max_pages?: number;
+        /** Vision evidence budget for visual extraction. Detail names reference platform
+         * profiles; the type never defines dpi/quality/resolution. */
+        vision?: {
+            default_detail?: IntakeVisionDetail;
+            allowed_details?: IntakeVisionDetail[];
+            /** PRIMARY budget: estimated image tokens per extraction call. Default 16000. */
+            max_image_tokens?: number;
+            /** Transport guard in megabytes. Default 16. */
+            max_payload_mb?: number;
+            /** Cap on page images per extraction call. Default 8. */
+            max_pages_per_call?: number;
+        };
+        verification?: {
+            enabled?: boolean;
+            model?: string;
+            environment?: string;
+            materiality?: string;
+            threshold?: number;
+            max_retries?: number;
+            on_fail?: 'flag' | 'block';
+        };
+        /** Controls PDF block-level citation grounding with annotated proof output. */
+        grounding?: ContentTypeExtractionGroundingPolicy;
+    };
+    /** Handlebars template used to materialize extracted properties into object text. */
+    rendering_template?: string;
+    /** Per-type embedding switches. Unspecified values inherit the project policy. */
+    embeddings?: Partial<Record<SupportedEmbeddingTypes, boolean>>;
+    /** Whether intake should generate a table of contents for matching documents. */
+    generate_toc?: boolean;
+    /** Preferred first view for objects of this type. */
+    default_view?: 'auto' | 'text' | 'pdf' | 'image' | 'properties';
+}
+
+/** Reusable sub-schema for IntakePageScope ('all' | 'located'). */
+const IntakePageScopeSchema = {
+    type: 'string',
+    enum: ['all', 'located'],
+    description: "Named pages selection: 'all' or 'located' (the locate-pass result). Default all.",
+    nullable: true,
+};
+
+/** Reusable sub-schema for IntakePageRanges (inclusive [start, end] pairs, negative = from end). */
+const IntakePageRangesSchema = {
+    type: 'array',
+    items: { type: 'array', items: { type: 'integer' }, minItems: 2, maxItems: 2 },
+    description:
+        'Static inclusive [start, end] page ranges; negative indexes count from the end ' +
+        '([[1,2],[-1,-1]] = first two pages plus the last). Wins over scope when set.',
+    nullable: true,
+};
+
+const IntakeExecutionConfigurationSchema = {
+    type: 'object',
+    description: 'Interaction execution configuration such as model, environment, and model options.',
+    nullable: true,
+    required: [],
+    additionalProperties: true,
+    properties: {
+        id: { type: 'string', nullable: true },
+        environment: { type: 'string', nullable: true },
+        model: { type: 'string', nullable: true },
+        do_validate: { type: 'boolean', nullable: true },
+        run_data: { type: 'string', nullable: true },
+        configMode: { type: 'string', nullable: true },
+        model_options: {
+            type: 'object',
+            nullable: true,
+            required: [],
+            additionalProperties: true,
+        },
+        http_timeout: {
+            type: 'object',
+            nullable: true,
+            required: [],
+            additionalProperties: true,
+        },
+    },
+};
+
+const ContentTypeExtractionGroundingPolicySchema = {
+    type: 'object',
+    description:
+        'PDF block-level citation grounding policy. When enabled, property extraction uses the grounded ' +
+        'child workflow and stores citations plus annotated proof output.',
+    nullable: true,
+    required: [],
+    additionalProperties: false,
+    properties: {
+        enabled: {
+            type: 'boolean',
+            description: 'Enable PDF block-level citation grounding for this type.',
+            nullable: true,
+        },
+        interaction: {
+            type: 'string',
+            description: 'Grounded extraction interaction id. Omit to use the system grounded extractor.',
+            nullable: true,
+        },
+        max_pages: {
+            type: 'integer',
+            minimum: 1,
+            description: 'Maximum pages to process.',
+            nullable: true,
+        },
+        force_ocr: {
+            type: 'boolean',
+            description: 'Run OCR on every page even when a text layer exists.',
+            nullable: true,
+        },
+        use_vision: {
+            type: 'boolean',
+            description: 'Attach instrumented page images to the grounded extraction prompt.',
+            nullable: true,
+        },
+        raster_mode: {
+            type: 'string',
+            enum: ['vision', 'ocr'],
+            description:
+                "How to read pages with no digital text layer (scans). 'vision' (default) reads off the page image and skips OCR; 'ocr' is the legacy OCR-then-block-ground path.",
+            nullable: true,
+        },
+        grid_cell_pt: {
+            type: 'number',
+            minimum: 1,
+            description:
+                'A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid; tune per the model in config. Default 14.',
+            nullable: true,
+        },
+        omit_block_boxes: {
+            type: 'boolean',
+            description: 'Drop block bounding boxes from the extraction prompt (only sound with use_vision).',
+            nullable: true,
+        },
+        window_pages: {
+            type: 'integer',
+            minimum: 1,
+            description:
+                'Maximum pages per extraction call before sequential window completion (later windows append to prior). Default 3.',
+            nullable: true,
+        },
+        update_properties: {
+            type: 'boolean',
+            description: 'Update object properties with grounded extraction data. Default true.',
+            nullable: true,
+        },
+        config: IntakeExecutionConfigurationSchema,
+        hard_config: IntakeExecutionConfigurationSchema,
+        hardness_threshold: {
+            type: 'number',
+            minimum: 0,
+            maximum: 1,
+            description: 'Hardness score at or above which hard_config is used. Default 0.5.',
+            nullable: true,
+        },
+        min_citation_density: {
+            type: 'number',
+            minimum: 0,
+            maximum: 1,
+            description:
+                'Minimum citations-per-leaf-value ratio; completions below it retry with escalation. Default 0.3.',
+            nullable: true,
+        },
+        refresh_ocr: {
+            type: 'boolean',
+            description: 'Re-run OCR instead of restoring durable OCR artifacts (stale pipeline output).',
+            nullable: true,
+        },
+        review: {
+            type: 'object',
+            description: 'Optional post-extraction review pass for hard content.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                enabled: {
+                    type: 'boolean',
+                    description: 'Set false to disable an inherited grounding review pass for this type.',
+                    nullable: true,
+                },
+                config: IntakeExecutionConfigurationSchema,
+                threshold: {
+                    type: 'number',
+                    minimum: 0,
+                    maximum: 1,
+                    description: 'Hardness score at or above which review runs.',
+                    nullable: true,
+                },
+                coverage_threshold: {
+                    type: 'number',
+                    minimum: 0,
+                    maximum: 1,
+                    description:
+                        "Review also runs when any page's citation coverage falls below this floor. Default 0.2.",
+                    nullable: true,
+                },
+                force: {
+                    type: 'boolean',
+                    description: 'Run review regardless of hardness.',
+                    nullable: true,
+                },
+            },
+        },
+    },
+};
+
+/** JSON schema for validating ContentTypeIntakePolicy payloads at API/tool boundaries.
+ * NOTE: typed via a cast because AJV's strict `JSONSchemaType` mapping cannot express the
+ * `[number, number]` pair items of `page_ranges` as a uniform-items array. The runtime
+ * schema is compiled (and thus validated) by every consumer and by the schema-acceptance
+ * unit test in packages/workflows. */
+export const ContentTypeIntakePolicySchema = {
+    type: 'object',
+    description:
+        'Per-content-type policy for standard intake: type selection, conversion, extraction, rendering, and embeddings.',
+    required: [],
+    additionalProperties: false,
+    properties: {
+        mode: {
+            type: 'string',
+            enum: ['programmatic', 'agentic'],
+            description:
+                'Intake orchestration mode. Use programmatic unless the user explicitly asks for agentic intake.',
+            nullable: true,
+        },
+        identification: {
+            type: 'object',
+            description: 'Guidance used by automatic type selection to recognize this type before full extraction.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                guidance: {
+                    type: 'string',
+                    description: 'Classifier-facing description of what this type is and when it should be selected.',
+                    nullable: true,
+                },
+                distinguish_from: {
+                    type: 'string',
+                    description: 'How to distinguish this type from common look-alike document types.',
+                    nullable: true,
+                },
+                examples: {
+                    type: 'array',
+                    description: 'Object ids of human-confirmed examples for this type.',
+                    nullable: true,
+                    items: { type: 'string' },
+                },
+            },
+        },
+        locate: {
+            type: 'object',
+            description:
+                'Document-map pass: labeled page-thumbnail contact sheets and one vision call return which ' +
+                'pages matter for this type. Scopes conversion/extraction and plans visual extraction.',
+            nullable: true,
+            required: ['instructions'],
+            additionalProperties: false,
+            properties: {
+                instructions: {
+                    type: 'string',
+                    description: 'What to look for (e.g. "commercial terms, payment schedule, signature pages").',
+                },
+                detail: {
+                    type: 'integer',
+                    enum: [8, 16],
+                    description: 'Pages per contact sheet: 8 = bigger tiles with readable headings. Default 16.',
+                    nullable: true,
+                },
+                min_pages: {
+                    type: 'integer',
+                    minimum: 0,
+                    description: 'Only run the locate pass when the page count is at least this. Default 8.',
+                    nullable: true,
+                },
+            },
+        },
+        text_conversion: {
+            type: 'object',
+            description: 'Controls source-to-text conversion before extraction, search, and text embeddings.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                enabled: {
+                    type: 'boolean',
+                    description: 'Set false for extraction-only types that should not create converted markdown/text.',
+                    nullable: true,
+                },
+                method: {
+                    type: 'string',
+                    enum: ['auto', 'basic', 'llm', 'custom'],
+                    description: 'Conversion method. Use auto unless the user asks for a specific converter.',
+                    nullable: true,
+                },
+                custom: {
+                    type: 'object',
+                    description: 'Custom conversion implementation for method=custom.',
+                    nullable: true,
+                    required: [],
+                    additionalProperties: false,
+                    properties: {
+                        interaction: {
+                            type: 'string',
+                            description: 'Interaction id to call for custom conversion.',
+                            nullable: true,
+                        },
+                        agent: {
+                            type: 'string',
+                            description: 'Agent id to launch for custom conversion.',
+                            nullable: true,
+                        },
+                    },
+                },
+                instructions: {
+                    type: 'string',
+                    description: 'Instructions for what source content to preserve during conversion.',
+                    nullable: true,
+                },
+                output_format: {
+                    type: 'string',
+                    enum: ['markdown', 'text'],
+                    description: 'Output format for converted text. Prefer markdown for readable documents.',
+                    nullable: true,
+                },
+                scope: IntakePageScopeSchema,
+                page_ranges: IntakePageRangesSchema,
+            },
+        },
+        extraction: {
+            type: 'object',
+            description: 'Controls structured property extraction against the content type object_schema.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                enabled: {
+                    type: 'boolean',
+                    description: 'Whether intake should extract structured properties for this type.',
+                    nullable: true,
+                },
+                source: {
+                    type: 'string',
+                    enum: ['auto', 'text', 'vision', 'mixed'],
+                    description:
+                        'Evidence source for extraction: auto chooses text or vision, text sends text only, vision sends image/PDF evidence only, mixed sends both.',
+                    nullable: true,
+                },
+                instructions: {
+                    type: 'string',
+                    description: 'Type-specific extraction instructions such as pages or sections to ignore.',
+                    nullable: true,
+                },
+                interaction: {
+                    type: 'string',
+                    description: 'Interaction id used for extraction. Omit to use the system extractor.',
+                    nullable: true,
+                },
+                scope: IntakePageScopeSchema,
+                page_ranges: IntakePageRangesSchema,
+                max_pages: {
+                    type: 'integer',
+                    minimum: 1,
+                    description: 'Cap on pages sent to extraction. Default 20.',
+                    nullable: true,
+                },
+                vision: {
+                    type: 'object',
+                    description:
+                        'Vision evidence budget for visual extraction. Detail names reference platform-defined ' +
+                        'profiles; the type never sets dpi, quality, or resolution.',
+                    nullable: true,
+                    required: [],
+                    additionalProperties: false,
+                    properties: {
+                        default_detail: {
+                            type: 'string',
+                            enum: ['low', 'standard', 'high'],
+                            description: 'Detail profile used when the plan does not request one. Default standard.',
+                            nullable: true,
+                        },
+                        allowed_details: {
+                            type: 'array',
+                            items: { type: 'string', enum: ['low', 'standard', 'high'] },
+                            description: 'Detail profiles the plan may request. Others fall back to default_detail.',
+                            nullable: true,
+                        },
+                        max_image_tokens: {
+                            type: 'integer',
+                            minimum: 1,
+                            description: 'PRIMARY budget: estimated image tokens per extraction call. Default 16000.',
+                            nullable: true,
+                        },
+                        max_payload_mb: {
+                            type: 'number',
+                            minimum: 1,
+                            description: 'Transport guard in megabytes. Default 16.',
+                            nullable: true,
+                        },
+                        max_pages_per_call: {
+                            type: 'integer',
+                            minimum: 1,
+                            description: 'Cap on page images per extraction call. Default 8.',
+                            nullable: true,
+                        },
+                    },
+                },
+                verification: {
+                    type: 'object',
+                    description: 'Optional safe-mode verification of extracted values against source evidence.',
+                    nullable: true,
+                    required: [],
+                    additionalProperties: false,
+                    properties: {
+                        enabled: {
+                            type: 'boolean',
+                            description: 'Whether to verify extracted values after extraction.',
+                            nullable: true,
+                        },
+                        model: { type: 'string', description: 'Verifier model override.', nullable: true },
+                        environment: {
+                            type: 'string',
+                            description: 'Verifier environment override.',
+                            nullable: true,
+                        },
+                        materiality: {
+                            type: 'string',
+                            description: 'What errors are material for this type.',
+                            nullable: true,
+                        },
+                        threshold: {
+                            type: 'number',
+                            minimum: 0,
+                            maximum: 1,
+                            description: 'Minimum verification confidence before flag/block behavior applies.',
+                            nullable: true,
+                        },
+                        max_retries: {
+                            type: 'integer',
+                            minimum: 0,
+                            description: 'Maximum extraction retries when verification fails.',
+                            nullable: true,
+                        },
+                        on_fail: {
+                            type: 'string',
+                            enum: ['flag', 'block'],
+                            description: 'Failure behavior after retries: flag for review or block property write.',
+                            nullable: true,
+                        },
+                    },
+                },
+                grounding: ContentTypeExtractionGroundingPolicySchema,
+            },
+        },
+        rendering_template: {
+            type: 'string',
+            description: 'Handlebars template used to materialize extracted properties into object text.',
+            nullable: true,
+        },
+        embeddings: {
+            type: 'object',
+            description: 'Per-type embedding switches. Omitted fields inherit the project embedding policy.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                text: { type: 'boolean', description: 'Whether to generate text embeddings.', nullable: true },
+                image: { type: 'boolean', description: 'Whether to generate image embeddings.', nullable: true },
+                properties: {
+                    type: 'boolean',
+                    description: 'Whether to generate property embeddings.',
+                    nullable: true,
+                },
+            },
+        },
+        generate_toc: {
+            type: 'boolean',
+            description: 'Whether intake should generate table-of-contents sections for this type.',
+            nullable: true,
+        },
+        default_view: {
+            type: 'string',
+            enum: ['auto', 'text', 'pdf', 'image', 'properties'],
+            description: 'Preferred first view for objects of this type.',
+            nullable: true,
+        },
+    },
+} as unknown as JSONSchemaType<ContentTypeIntakePolicy>;
+
 export interface ContentObjectType extends ContentObjectTypeItem {}
 export interface ContentObjectTypeItem extends BaseObject {
+    status?: ContentObjectTypeStatus;
     is_chunkable?: boolean;
+    intake?: ContentTypeIntakePolicy;
     /**
      * This is only included in ContentObjectTypeItem if explicitly requested
      * It is always included in ContentObjectType
@@ -501,7 +1512,16 @@ export interface ContentObjectTypeItem extends BaseObject {
 }
 export type InCodeTypeDefinition = Pick<
     ContentObjectTypeItem,
-    'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'
+    | 'id'
+    | 'name'
+    | 'description'
+    | 'tags'
+    | 'object_schema'
+    | 'table_layout'
+    | 'is_chunkable'
+    | 'strict_mode'
+    | 'status'
+    | 'intake'
 >;
 export interface ContentObjectTypeCatalogEntry extends InCodeTypeDefinition {
     updated_by?: string;
@@ -562,6 +1582,16 @@ export interface WorkflowRule extends WorkflowRuleItem {
      * Optional task queue name to use when starting workflows for this rule
      */
     task_queue?: string;
+
+    /**
+     * Event subscription migration status for legacy workflow-rule cutover.
+     */
+    event_subscription_migration_status?: 'migrated' | 'unsupported_match' | 'failed';
+
+    /**
+     * Migration failure or unsupported-match reason, when applicable.
+     */
+    event_subscription_migration_error?: string;
 }
 
 export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
@@ -597,7 +1627,7 @@ export interface GetRenditionResponse {
 }
 
 export interface ObjectSearchResponse {
-    results: ContentObjectItem[];
+    results: ContentObjectItemApiResponse[];
     facets: ComputedFacetResponse;
     aggregations?: Record<string, unknown>;
 }

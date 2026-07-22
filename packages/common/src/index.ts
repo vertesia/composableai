@@ -27,6 +27,8 @@ export * from './oauth-server.js';
 export * from './Progress.js';
 export * from './payload.js';
 export * from './pending-asks.js';
+export * from './platform-event.js';
+export * from './platform-event-validation.js';
 export * from './principal-context.js';
 export * from './project.js';
 export * from './prompt.js';
@@ -35,9 +37,33 @@ export * from './rate-limiter.js';
 export * from './refs.js';
 export * from './roles/types.js';
 export * from './runs.js';
+export * from './schema-for-extraction.js';
 export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
+export type {
+    ContentObjectExportArtifact,
+    ContentObjectExportArtifactFile,
+    ContentObjectExportProgress,
+    ContentObjectExportResult,
+    ContentObjectExportStatusResponse,
+    DeleteContentObjectExportResponse,
+    ExportContentObjectsFilter,
+    ExportContentObjectsIncludeOptions,
+    ExportedContentObjectRecord,
+    ListContentObjectExportsResponse,
+    StartContentObjectExportRequest,
+    StartContentObjectExportResponse,
+    ZenoBulkContentObjectExportComposeRequest,
+    ZenoBulkContentObjectExportPlanRequest,
+    ZenoBulkContentObjectExportPlanResponse,
+    ZenoBulkContentObjectExportRequest,
+    ZenoBulkContentObjectExportShardRange,
+    ZenoBulkContentObjectExportShardRequest,
+    ZenoBulkContentObjectExportShardResult,
+    ZenoBulkContentObjectExportSplitShardRequest,
+    ZenoBulkContentObjectExportSplitShardResponse,
+} from './store/store.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';
 export * from './tool-execution.js';
@@ -49,4 +75,15 @@ export * from './utils/auth.js';
 export * from './utils/schemas.js';
 export type * from './utils/type-helpers.js';
 export * from './versions.js';
+export * from './view-configuration-validation.js';
+export * from './view-query-validation.js';
+export * from './view-validation-helpers.js';
+export * from './views.js';
+export * from './views-schema.js';
+export {
+    type AppViewExperienceId,
+    parseAppViewExperienceId,
+    type ViewValidationIssue,
+    validateViewExperienceId,
+} from './views-validation.js';
 export * from './workflow-analytics.js';

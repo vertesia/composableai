@@ -1,25 +1,33 @@
-export type AuditAction =
+import type { EventCategory } from './platform-event.js';
+
+export const AUDIT_ACTIONS = [
     // CRUD operations
-    | 'create'
-    | 'update'
-    | 'delete'
-    | 'bulk_create'
-    | 'bulk_change_type'
-    | 'bulk_update'
-    | 'bulk_delete'
-    | 'attach'
-    | 'detach'
-    | 'credentials_fill'
-    | 'credentials_totp_generation'
-    | 'publish'
-    | 'unpublish'
+    'create',
+    'update',
+    'delete',
+    'bulk_create',
+    'bulk_change_type',
+    'bulk_update',
+    'bulk_delete',
+    'attach',
+    'detach',
+    'credentials_fill',
+    'credentials_totp_generation',
+    'publish',
+    'unpublish',
     // Billable operations
-    | 'inference'
-    | 'embedding'
-    | 'image_generation';
+    'inference',
+    'embedding',
+    'image_generation',
+    // Content processing outcomes
+    'document_processed',
+] as const;
+
+export type KnownAuditAction = (typeof AUDIT_ACTIONS)[number];
+export type AuditAction = KnownAuditAction | (string & {});
 
 /** Billable audit actions for cost analytics queries */
-export const BILLABLE_AUDIT_ACTIONS: AuditAction[] = ['inference', 'embedding', 'image_generation'];
+export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];
 
 /**
  * Generic metering entry attached to audit events.
@@ -39,6 +47,16 @@ export interface AuditMeter {
 
 export interface AuditTrailEvent {
     event_type: 'audit';
+    event_id?: string;
+    event_category?: EventCategory;
+    source?: string | null;
+    root_event_id?: string;
+    caused_by_event_id?: string;
+    hop_count?: number;
+    audit_trail?: boolean;
+    replay_of?: string;
+    replay_root_event_id?: string;
+    replayed_by?: string;
     action: AuditAction;
     resource_type: string;
     resource_id: string;
@@ -96,4 +114,85 @@ export interface AuditTrailResponse {
     hasNext: boolean;
     limit: number;
     offset: number;
+}
+
+export const AUDIT_AGGREGATION_DIMENSIONS = [
+    'time',
+    'action',
+    'resource_type',
+    'event_category',
+    'provider',
+    'project_id',
+    'details.pipeline',
+    'details.verdict',
+    'details.workflow_type',
+    'details.rule_id',
+    'model',
+] as const;
+
+export type AuditAggregationDimension = (typeof AUDIT_AGGREGATION_DIMENSIONS)[number];
+export type AuditAggregationResolution = 'hour' | 'day' | 'week' | 'month';
+export type AuditAggregationDetailField = 'pipeline' | 'verdict' | 'workflow_type' | 'rule_id';
+export type AuditAggregationOperation = 'count' | 'count_distinct' | 'sum_meter' | 'average_meter';
+export type AuditAggregationDistinctField = 'resource_id' | 'request_id';
+
+export interface AuditAggregationGroup {
+    dimension: AuditAggregationDimension;
+    /** Required for the time dimension; defaults to day. */
+    resolution?: AuditAggregationResolution;
+}
+
+export interface AuditAggregationMetric {
+    /** Stable key used in response rows. Must contain only letters, numbers, underscores, or hyphens. */
+    id: string;
+    operation: AuditAggregationOperation;
+    /** Required for count_distinct. */
+    field?: AuditAggregationDistinctField;
+    /** Required for meter operations. */
+    meterCategory?: string;
+    /** Required for meter operations. */
+    meterType?: string;
+}
+
+export interface AuditAggregationDetailFilter {
+    field: AuditAggregationDetailField;
+    values: string[];
+}
+
+export interface AuditAggregationFilter {
+    actions?: AuditAction[];
+    resourceTypes?: string[];
+    eventCategories?: EventCategory[];
+    providers?: string[];
+    success?: boolean;
+    details?: AuditAggregationDetailFilter[];
+}
+
+/**
+ * Safe audit aggregation query. The server always applies the authenticated account scope and,
+ * for project-scoped principals, replaces projectId with the authenticated project.
+ */
+export interface AuditAggregationQuery {
+    /** Optional account-admin project filter. Ignored for project-scoped principals. */
+    projectId?: string;
+    /** Start time; defaults to 30 days before to. The server caps the range at 366 days. */
+    from?: string;
+    /** End time; defaults to the current time. */
+    to?: string;
+    filter?: AuditAggregationFilter;
+    groupBy?: AuditAggregationGroup[];
+    metrics: AuditAggregationMetric[];
+    /** Maximum groups returned (default 50, max 200). */
+    limit?: number;
+}
+
+export interface AuditAggregationRow {
+    dimensions: Partial<Record<AuditAggregationDimension, string | null>>;
+    metrics: Record<string, number>;
+}
+
+export interface AuditAggregationResponse {
+    rows: AuditAggregationRow[];
+    from: string;
+    to: string;
 }

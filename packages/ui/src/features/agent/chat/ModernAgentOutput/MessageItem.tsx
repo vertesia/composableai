@@ -35,6 +35,7 @@ import { ThinkingMessages } from '../WaitingMessages';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
+import { getToolApprovalResponseMetadata } from './requestInputMessages';
 import { getWorkstreamId } from './utils';
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
@@ -106,7 +107,7 @@ export interface MessageItemProps extends MessageItemClassNames {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
     /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     /** Whether a REQUEST_INPUT message has already been answered by a later user message */
     requestInputAnswered?: boolean;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
@@ -358,6 +359,10 @@ function MessageItemComponent({
 
     // Check if message has exportable content (markdown text)
     const hasExportableContent = typeof messageContent === 'string' && messageContent.trim().length > 0;
+
+    // UX config for REQUEST_INPUT messages (narrowed const so it stays typed inside the JSX closures below)
+    const askUserUx =
+        message.type === AgentMessageType.REQUEST_INPUT ? (message.details as AskUserMessageDetails)?.ux : undefined;
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(
@@ -639,32 +644,34 @@ function MessageItemComponent({
                     )}
                 >
                     {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
-                    {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux
-                        ? (() => {
-                              // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                              const uxConfig = (message.details as AskUserMessageDetails).ux!;
-                              return (
-                                  <AskUserWidget
-                                      question={typeof messageContent === 'string' ? messageContent : ''}
-                                      options={uxConfig.options}
-                                      variant={uxConfig.variant}
-                                      multiSelect={uxConfig.multiSelect}
-                                      onSelect={(optionId) => onSendMessage?.(optionId)}
-                                      onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
-                                      hideBorder
-                                      compact
-                                      answered={requestInputAnswered}
-                                  />
-                              );
-                          })()
-                        : visibleMessageContent && (
-                              <div
-                                  className="message-content break-words w-full"
-                                  style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-                              >
-                                  {renderContent(processedContent || visibleMessageContent)}
-                              </div>
-                          )}
+                    {askUserUx ? (
+                        <AskUserWidget
+                            question={typeof messageContent === 'string' ? messageContent : ''}
+                            options={askUserUx.options}
+                            variant={askUserUx.variant}
+                            multiSelect={askUserUx.multiSelect}
+                            onSelect={(optionId) =>
+                                onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                            }
+                            onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                            allowFreeResponse={!askUserUx.options?.length || !!askUserUx.free_response}
+                            placeholder={askUserUx.free_response?.placeholder}
+                            submitLabel={askUserUx.free_response?.submit_label}
+                            onSubmit={(value) => onSendMessage?.(value, askUserUx.free_response?.metadata)}
+                            hideBorder
+                            compact
+                            answered={requestInputAnswered}
+                        />
+                    ) : (
+                        visibleMessageContent && (
+                            <div
+                                className="message-content break-words w-full"
+                                style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                            >
+                                {renderContent(processedContent || visibleMessageContent)}
+                            </div>
+                        )
+                    )}
 
                     {messageAttachments.length > 0 && (
                         <AttachmentPreviewList

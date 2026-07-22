@@ -100,7 +100,9 @@ export default function Header({
     const controls = (
         <div
             className={cn(
-                isCompact ? 'flex flex-col items-center gap-1' : 'flex justify-end items-center gap-2 ms-auto',
+                isCompact
+                    ? 'flex flex-row items-center gap-1 lg:flex-col'
+                    : 'flex justify-end items-center gap-2 ms-auto',
             )}
         >
             {showPlanButton && (
@@ -177,7 +179,6 @@ export default function Header({
                     variant={isPlaybackEnabled ? 'primary' : 'ghost'}
                     onClick={onTogglePlayback}
                     aria-pressed={isPlaybackEnabled}
-                    aria-label={t('agent.rewind.label')}
                     title={t('agent.rewind.label')}
                     className={cn(
                         'transition-all duration-200 rounded-md',
@@ -240,8 +241,8 @@ export default function Header({
                     className,
                 )}
             >
-                <div className="flex flex-wrap items-center space-x-2">
-                    <div className="flex items-center space-x-1">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1">
                         <Bot className="size-5 text-muted" />
                         <span className="font-medium">{title}</span>
                     </div>
@@ -376,7 +377,6 @@ function MoreDropdown({
                     size={compact ? 'icon' : 'xs'}
                     variant="ghost"
                     title={t('agent.moreActions')}
-                    aria-label={t('agent.moreActions')}
                     className={compact ? 'size-8 rounded-lg' : undefined}
                 >
                     <MoreVertical className="size-4" />

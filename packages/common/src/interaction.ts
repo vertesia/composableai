@@ -25,6 +25,7 @@ import type {
     TemplateType,
 } from './prompt.js';
 import type { ExecutionRunDocRef } from './runs.js';
+import type { AgentToolApprovalMode } from './store/agent-approval.js';
 import type { ConversationState } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 import type { LlmCallType } from './workflow-analytics.js';
@@ -719,6 +720,9 @@ export {
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: 'conversation';
 
+    /** Effective tool approval mode for interactive agent conversations. */
+    tool_approval_mode?: AgentToolApprovalMode;
+
     /**
      * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project
      * If not specified, the default is project
@@ -1177,6 +1181,10 @@ export interface InteractionExecutionConfiguration {
     run_data?: RunDataStorageLevel;
     configMode?: ConfigModes;
     model_options?: ModelOptions;
+    /** Stable provider-side routing key for automatic prompt caching. */
+    prompt_cache_key?: string;
+    /** Put the result schema after the cached prefix; Vertesia still validates the returned JSON against it. */
+    prompt_cache_schema_suffix?: boolean;
     /** Per-run HTTP timeouts for upstream LLM-provider calls. */
     http_timeout?: HttpTimeoutOptions;
 }
