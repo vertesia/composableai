@@ -3,6 +3,11 @@ import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import * as VertesiaCommon from '@vertesia/common';
+import {
+    isTemplateExampleId,
+    isTemplateScaffoldPackageName,
+    shouldRejectTemplateExampleIds,
+} from './template-example-policy.mjs';
 
 const PACKAGE_BUILD_ORIGIN = 'https://app-package-build.local';
 const cwd = process.cwd();
@@ -92,10 +97,6 @@ function packageJsonName(packageJson) {
     return typeof packageJson?.name === 'string' && packageJson.name ? packageJson.name : undefined;
 }
 
-function isTemplateScaffoldPackageName(name) {
-    return name === 'plugin-template' || /^(integration|smoke)-test-plugin(-npm)?-\d+$/.test(name ?? '');
-}
-
 function itemId(item) {
     if (!item || typeof item !== 'object') return undefined;
     if (typeof item.id === 'string' && item.id) return item.id;
@@ -103,7 +104,7 @@ function itemId(item) {
     return undefined;
 }
 
-function validateLocalCapabilityIds(pkg, appName) {
+function validateLocalCapabilityIds(pkg, appName, rejectTemplateExampleIds) {
     if (isTemplateScaffoldPackageName(appName)) return [];
 
     const errors = [];
@@ -126,7 +127,7 @@ function validateLocalCapabilityIds(pkg, appName) {
                     `${label} ${id} must use a package-local id; runtime refs become app:<app-name>:${id.slice(4)}`,
                 );
             }
-            if (id === 'examples' || id.startsWith('examples:') || id.startsWith('examples/')) {
+            if (rejectTemplateExampleIds && isTemplateExampleId(id)) {
                 errors.push(`${label} #${index + 1} is still using template example id "${id}"`);
             }
         });
@@ -217,9 +218,9 @@ async function validateSourceAppRefs(pkg, appName) {
     return errors;
 }
 
-async function validatePackageProcesses(pkg, appName) {
+async function validatePackageProcesses(pkg, appName, rejectTemplateExampleIds) {
     const processes = Array.isArray(pkg.processes) ? pkg.processes : [];
-    const errors = validateLocalCapabilityIds(pkg, appName);
+    const errors = validateLocalCapabilityIds(pkg, appName, rejectTemplateExampleIds);
     const seenIds = new Set();
     const seenNames = new Set();
     const knownInteractions = packageInteractionSelectors(pkg, appName);
@@ -321,7 +322,8 @@ await mkdir('dist', { recursive: true });
 
 const pkg = await readAppPackage();
 const packageJson = await readJsonIfExists('package.json');
-await validatePackageProcesses(pkg, packageJsonName(packageJson));
+const appName = packageJsonName(packageJson);
+await validatePackageProcesses(pkg, appName, shouldRejectTemplateExampleIds(appName, cwd));
 const summary = summarizeAppPackage(pkg);
 const qualityReport = await readJsonIfExists('dist/app-quality-report.json');
 if (qualityReport?.artifacts && typeof qualityReport.artifacts === 'object') {

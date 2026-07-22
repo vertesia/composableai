@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const templateRoot = path.resolve(testDir, '../..');
@@ -85,7 +85,7 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
         const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
         assert.doesNotMatch(appRoutes, /Document Library/);
-        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/views')), false);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/views/document-library.ts')), false);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
@@ -159,7 +159,7 @@ test('examples module contributes optional UI routes and views', () => {
     }
 });
 
-test('service quality accepts an intentionally selected examples module', () => {
+test('service quality accepts an intentionally selected examples module', async () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
         copyTemplateInputs(tmpRoot);
@@ -169,6 +169,10 @@ test('service quality accepts an intentionally selected examples module', () => 
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         packageJson.name = 'generated-examples-app';
         fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+
+        const policyPath = path.join(tmpRoot, 'src/modules/service/scripts/template-example-policy.mjs');
+        const { shouldRejectTemplateExampleIds } = await import(pathToFileURL(policyPath).href);
+        assert.equal(shouldRejectTemplateExampleIds(packageJson.name, tmpRoot), false);
 
         execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
             cwd: tmpRoot,

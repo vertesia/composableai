@@ -2,6 +2,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { shouldRejectTemplateExampleIds } from './template-example-policy.mjs';
 
 const cwd = process.cwd();
 const allowAdminShell = process.env.APPGEN_ALLOW_INTERNAL_APP_SHELL === 'true';
@@ -189,18 +190,15 @@ async function readPackageJson() {
 
 const packageJson = await readPackageJson();
 const packageName = typeof packageJson?.name === 'string' ? packageJson.name : undefined;
-const isPluginTemplatePackage = packageName === 'plugin-template';
 // The smoke/integration tests bootstrap this exact template under throwaway
 // package names — both package managers (with an optional `-npm` infix) across
 // the smoke and integration scripts. The `--module dev` leg ships examples on
 // purpose, so recognize every test-bootstrap name and keep the examples there
 // instead of failing the example-artifact gate.
-const isPluginTemplateSmokePackage = /^(integration|smoke)-test-plugin(-npm)?-\d+$/.test(packageName ?? '');
-const isTemplateScaffoldPackage = isPluginTemplatePackage || isPluginTemplateSmokePackage;
 // Template codegen deletes inactive module directories. If this directory is
 // present in a generated app, Resource Examples was selected deliberately and
 // its teaching fixtures are valid app content rather than accidental leftovers.
-const hasSelectedExamplesModule = allFiles.some((file) => rel(file).startsWith('src/modules/examples/'));
+const rejectTemplateExampleIds = shouldRejectTemplateExampleIds(packageName, cwd);
 
 function hasDependency(name) {
     if (!packageJson || typeof packageJson !== 'object') return false;
@@ -234,7 +232,7 @@ if (toolServerFiles.length > 0) {
     requireDependency('hono', 'Service-target apps expose a Hono runtime imported by app-runtime.');
 }
 
-if (!isTemplateScaffoldPackage && !hasSelectedExamplesModule) {
+if (rejectTemplateExampleIds) {
     const templateExamples = [
         ...report.artifacts.tools.filter((name) => name === 'calculator' || name === 'examples'),
         ...report.artifacts.skills.filter((name) => name === 'learn_user-select' || name === 'examples'),
