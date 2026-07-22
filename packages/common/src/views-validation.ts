@@ -177,6 +177,33 @@ function addResultsIssues(issues: ViewValidationIssue[], configuration: ViewExpe
     results.displays.forEach((display, index) => {
         addDisplayIssues(issues, display, index, sortOptionIds);
     });
+
+    const actions = results.actions?.items ?? [];
+    addDuplicateIssues(
+        issues,
+        actions.map((action) => action.id),
+        (index) => `results.actions.items[${index}].id`,
+    );
+    actions.forEach((action, index) => {
+        if (action.id === 'export' || action.id === 'delete') {
+            issues.push({
+                path: `results.actions.items[${index}].id`,
+                message: 'is reserved for a built-in action',
+            });
+        }
+        if (action.handler === 'export' || action.handler === 'delete') {
+            issues.push({
+                path: `results.actions.items[${index}].handler`,
+                message: 'is reserved for a built-in action',
+            });
+        }
+    });
+    if (results.selection?.mode === 'single' && results.selection.select_all !== undefined) {
+        issues.push({
+            path: 'results.selection.select_all',
+            message: 'is only supported for multiple selection',
+        });
+    }
 }
 
 /**

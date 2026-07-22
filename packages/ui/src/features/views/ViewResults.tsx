@@ -19,6 +19,7 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
+    Checkbox,
     SortableTableHeaderCell,
     Table,
     TableHeaderCell,
@@ -28,8 +29,9 @@ import {
 } from '@vertesia/ui/core';
 import { type LocaleFormat, useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { ChevronDown, ChevronsUpDown, ChevronUp, ExternalLink, FileText, ImageIcon } from 'lucide-react';
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import type { ViewMediaResolver, ViewResultsRendererProps } from './types.js';
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import type { ViewMediaResolver, ViewResultsRendererProps, ViewSelectionController } from './types.js';
+import { useViewActions, ViewRowActions } from './ViewActions.js';
 import { resolveViewSort } from './viewState.js';
 
 function nestedValue(root: unknown, path: string): unknown {
@@ -196,6 +198,37 @@ function Annotation({ hit }: { hit: ViewHit }) {
     return annotation ? <p className="text-sm text-info">{annotation}</p> : null;
 }
 
+function HitSelectionCheckbox({
+    hit,
+    page,
+    selection,
+}: {
+    hit: ViewHit;
+    page: ViewHit[];
+    selection?: ViewSelectionController;
+}) {
+    const { t } = useUITranslation();
+    const shiftPressed = useRef(false);
+    if (!selection) return null;
+    return (
+        <Checkbox
+            checked={selection.isSelected(hit.id)}
+            aria-label={t('view.selectResult', { name: hit.document.name })}
+            onClick={(event) => {
+                shiftPressed.current = event.shiftKey;
+                event.stopPropagation();
+            }}
+            onCheckedChange={(checked) => {
+                selection.toggle(hit, checked === true, {
+                    page,
+                    range: selection.mode === 'multiple' && shiftPressed.current,
+                });
+                shiftPressed.current = false;
+            }}
+        />
+    );
+}
+
 function BadgeFields({ hit, fields }: { hit: ViewHit; fields?: ViewResultField[] }) {
     if (!fields?.length) return null;
     return (
@@ -231,16 +264,26 @@ function ListResults({
     hits,
     onOpenHit,
     resolveMedia,
+    selection,
 }: {
     display: ViewListDisplay;
     hits: ViewHit[];
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
 }) {
     return (
         <div className="divide-y divide-border rounded-md border">
             {hits.map((hit) => (
-                <article key={hit.id} className="flex gap-4 p-4">
+                <article
+                    key={hit.id}
+                    className={`flex gap-4 p-4 ${selection?.isSelected(hit.id) ? 'bg-muted/40' : ''}`}
+                >
+                    {selection && (
+                        <div className="pt-1">
+                            <HitSelectionCheckbox hit={hit} page={hits} selection={selection} />
+                        </div>
+                    )}
                     {display.media && (
                         <ViewMedia
                             hit={hit}
@@ -272,6 +315,7 @@ function ListResults({
                     </div>
                     <div className="shrink-0 self-center">
                         <OpenResultButton hit={hit} onOpenHit={onOpenHit} compact />
+                        <ViewRowActions hit={hit} />
                     </div>
                 </article>
             ))}
@@ -287,6 +331,7 @@ function TableResults({
     sortOptions,
     currentSort,
     onSortChange,
+    selection,
 }: {
     display: ViewTableDisplay;
     hits: ViewHit[];
@@ -295,13 +340,31 @@ function TableResults({
     sortOptions?: ViewSortOption[];
     currentSort?: string;
     onSortChange?: (sort: string) => void;
+    selection?: ViewSelectionController;
 }) {
     const { t } = useUITranslation();
+    const actions = useViewActions();
+    const hasRowActions = actions?.actions.some((action) => action.placement === 'row') ?? false;
+    const selectedOnPage = selection ? hits.filter((hit) => selection.isSelected(hit.id)).length : 0;
+    const allOnPageSelected = hits.length > 0 && selectedOnPage === hits.length;
     return (
         <div className="overflow-x-auto rounded-md border">
             <Table className="w-full">
                 <THead>
                     <tr>
+                        {selection && (
+                            <TableHeaderCell className="w-0">
+                                {selection.selectAll && (
+                                    <Checkbox
+                                        checked={
+                                            allOnPageSelected ? true : selectedOnPage > 0 ? 'indeterminate' : false
+                                        }
+                                        aria-label={t('view.selectPage')}
+                                        onCheckedChange={(checked) => selection.togglePage(hits, checked === true)}
+                                    />
+                                )}
+                            </TableHeaderCell>
+                        )}
                         {display.columns.map((column) => {
                             const sortOption = column.sort_option
                                 ? sortOptions?.find((option) => option.id === column.sort_option)
@@ -339,19 +402,26 @@ function TableResults({
                                 </SortableTableHeaderCell>
                             );
                         })}
-                        {onOpenHit && (
+                        {(onOpenHit || hasRowActions) && (
                             <TableHeaderCell className="w-0">
-                                <span className="sr-only">{t('agent.openDocument')}</span>
+                                <span className="sr-only">
+                                    {hasRowActions ? t('view.actions') : t('agent.openDocument')}
+                                </span>
                             </TableHeaderCell>
                         )}
                     </tr>
                 </THead>
                 <TBody
                     isLoading={isLoading && hits.length === 0}
-                    columns={display.columns.length + (onOpenHit ? 1 : 0)}
+                    columns={display.columns.length + (selection ? 1 : 0) + (onOpenHit || hasRowActions ? 1 : 0)}
                 >
                     {hits.map((hit) => (
-                        <tr key={hit.id}>
+                        <tr key={hit.id} className={selection?.isSelected(hit.id) ? 'bg-muted/40' : undefined}>
+                            {selection && (
+                                <td className="w-0">
+                                    <HitSelectionCheckbox hit={hit} page={hits} selection={selection} />
+                                </td>
+                            )}
                             {display.columns.map((column) => (
                                 <td
                                     key={`${hit.id}-${column.field}`}
@@ -360,9 +430,12 @@ function TableResults({
                                     <ViewField hit={hit} field={column} />
                                 </td>
                             ))}
-                            {onOpenHit && (
+                            {(onOpenHit || hasRowActions) && (
                                 <td className="w-0 whitespace-nowrap text-end">
-                                    <OpenResultButton hit={hit} onOpenHit={onOpenHit} compact />
+                                    <div className="flex items-center justify-end gap-1">
+                                        <OpenResultButton hit={hit} onOpenHit={onOpenHit} compact />
+                                        <ViewRowActions hit={hit} />
+                                    </div>
                                 </td>
                             )}
                         </tr>
@@ -386,14 +459,27 @@ function ResultCard({
     configuration,
     onOpenHit,
     resolveMedia,
+    selection,
+    page,
 }: {
     hit: ViewHit;
     configuration: ViewCardsDisplay | ViewBoardCardConfiguration;
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
+    page: ViewHit[];
 }) {
+    const actions = useViewActions();
+    const hasRowActions = actions?.actions.some((action) => action.placement === 'row') ?? false;
     return (
-        <Card className="flex h-full min-w-0 flex-col overflow-hidden">
+        <Card
+            className={`relative flex h-full min-w-0 flex-col overflow-hidden ${selection?.isSelected(hit.id) ? 'ring-2 ring-primary' : ''}`}
+        >
+            {selection && (
+                <div className="absolute start-2 top-2 z-10 rounded bg-background/80 p-1">
+                    <HitSelectionCheckbox hit={hit} page={page} selection={selection} />
+                </div>
+            )}
             {configuration.media && (
                 <ViewMedia
                     hit={hit}
@@ -417,9 +503,10 @@ function ResultCard({
                 <LabeledFields hit={hit} fields={configuration.fields} />
                 <Annotation hit={hit} />
             </CardContent>
-            {onOpenHit && (
+            {(onOpenHit || hasRowActions) && (
                 <CardFooter className="justify-end p-4 pt-0">
                     <OpenResultButton hit={hit} onOpenHit={onOpenHit} />
+                    <ViewRowActions hit={hit} />
                 </CardFooter>
             )}
         </Card>
@@ -431,11 +518,13 @@ function CardsResults({
     hits,
     onOpenHit,
     resolveMedia,
+    selection,
 }: {
     display: ViewCardsDisplay;
     hits: ViewHit[];
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
 }) {
     return (
         <div className={`grid grid-cols-1 gap-4 ${GRID_COLUMNS[display.columns ?? 3]}`}>
@@ -446,6 +535,8 @@ function CardsResults({
                     configuration={display}
                     onOpenHit={onOpenHit}
                     resolveMedia={resolveMedia}
+                    selection={selection}
+                    page={hits}
                 />
             ))}
         </div>
@@ -457,16 +548,26 @@ function GalleryResults({
     hits,
     onOpenHit,
     resolveMedia,
+    selection,
 }: {
     display: ViewGalleryDisplay;
     hits: ViewHit[];
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
 }) {
     return (
         <div className={`grid grid-cols-1 gap-4 ${GRID_COLUMNS[display.columns ?? 4]}`}>
             {hits.map((hit) => (
-                <Card key={hit.id} className="overflow-hidden">
+                <Card
+                    key={hit.id}
+                    className={`relative overflow-hidden ${selection?.isSelected(hit.id) ? 'ring-2 ring-primary' : ''}`}
+                >
+                    {selection && (
+                        <div className="absolute start-2 top-2 z-10 rounded bg-background/80 p-1">
+                            <HitSelectionCheckbox hit={hit} page={hits} selection={selection} />
+                        </div>
+                    )}
                     <ViewMedia
                         hit={hit}
                         media={display.media}
@@ -486,7 +587,10 @@ function GalleryResults({
                                 ))}
                             </div>
                         )}
-                        <OpenResultButton hit={hit} onOpenHit={onOpenHit} />
+                        <div className="flex items-center justify-end gap-1">
+                            <OpenResultButton hit={hit} onOpenHit={onOpenHit} />
+                            <ViewRowActions hit={hit} />
+                        </div>
                     </CardContent>
                 </Card>
             ))}
@@ -499,11 +603,13 @@ function BoardResults({
     hits,
     onOpenHit,
     resolveMedia,
+    selection,
 }: {
     display: Extract<ViewDisplayConfiguration, { type: 'board' }>;
     hits: ViewHit[];
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
 }) {
     const grouped = new Map<string, ViewHit[]>();
     for (const hit of hits) {
@@ -532,6 +638,8 @@ function BoardResults({
                                     configuration={display.card}
                                     onOpenHit={onOpenHit}
                                     resolveMedia={resolveMedia}
+                                    selection={selection}
+                                    page={hits}
                                 />
                             ))}
                         </div>
@@ -551,6 +659,7 @@ function renderResults(
     sortOptions?: ViewSortOption[],
     currentSort?: string,
     onSortChange?: (sort: string) => void,
+    selection?: ViewSelectionController,
 ): ReactNode {
     if (configuration.type === 'table') {
         return (
@@ -562,19 +671,52 @@ function renderResults(
                 sortOptions={sortOptions}
                 currentSort={currentSort}
                 onSortChange={onSortChange}
+                selection={selection}
             />
         );
     }
     if (configuration.type === 'cards') {
-        return <CardsResults display={configuration} hits={hits} onOpenHit={onOpenHit} resolveMedia={resolveMedia} />;
+        return (
+            <CardsResults
+                display={configuration}
+                hits={hits}
+                onOpenHit={onOpenHit}
+                resolveMedia={resolveMedia}
+                selection={selection}
+            />
+        );
     }
     if (configuration.type === 'gallery') {
-        return <GalleryResults display={configuration} hits={hits} onOpenHit={onOpenHit} resolveMedia={resolveMedia} />;
+        return (
+            <GalleryResults
+                display={configuration}
+                hits={hits}
+                onOpenHit={onOpenHit}
+                resolveMedia={resolveMedia}
+                selection={selection}
+            />
+        );
     }
     if (configuration.type === 'board') {
-        return <BoardResults display={configuration} hits={hits} onOpenHit={onOpenHit} resolveMedia={resolveMedia} />;
+        return (
+            <BoardResults
+                display={configuration}
+                hits={hits}
+                onOpenHit={onOpenHit}
+                resolveMedia={resolveMedia}
+                selection={selection}
+            />
+        );
     }
-    return <ListResults display={configuration} hits={hits} onOpenHit={onOpenHit} resolveMedia={resolveMedia} />;
+    return (
+        <ListResults
+            display={configuration}
+            hits={hits}
+            onOpenHit={onOpenHit}
+            resolveMedia={resolveMedia}
+            selection={selection}
+        />
+    );
 }
 
 export function DefaultViewResults({
@@ -586,6 +728,7 @@ export function DefaultViewResults({
     onSortChange,
     onOpenHit,
     resolveMedia,
+    selection,
 }: ViewResultsRendererProps) {
     const { t } = useUITranslation();
     const formatters = useLocaleFormat();
@@ -603,6 +746,7 @@ export function DefaultViewResults({
                 definition.results?.sort_options,
                 resolveViewSort(request, result, definition.results?.default_sort),
                 onSortChange,
+                selection,
             )}
         </ViewValueFormattersContext.Provider>
     );

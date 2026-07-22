@@ -3,7 +3,14 @@ import {
     ELASTICSEARCH_FIELD_PATH_PATTERN_SOURCE,
     VIEW_CONFIGURATION_ID_PATTERN_SOURCE,
 } from './view-validation-helpers.js';
-import { VIEW_RESULT_FIELD_FORMATS, VIEW_SEARCH_FIELD_TYPES } from './views.js';
+import {
+    VIEW_ACTION_PLACEMENTS,
+    VIEW_ACTION_SELECTION_REQUIREMENTS,
+    VIEW_AGENTIC_SEARCH_MODES,
+    VIEW_RESULT_FIELD_FORMATS,
+    VIEW_SEARCH_FIELD_TYPES,
+    VIEW_SELECTION_MODES,
+} from './views.js';
 
 export const VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
     'https://schemas.vertesia.com/view-experience.v1.schema.json';
@@ -395,8 +402,9 @@ export const ViewExperienceConfigurationJsonSchema = {
                 },
                 mode: {
                     type: 'string',
-                    enum: ['query'],
-                    description: 'Generate and validate an Elasticsearch query before execution.',
+                    enum: [...VIEW_AGENTIC_SEARCH_MODES],
+                    description:
+                        'Generate and validate an Elasticsearch query, optionally with a safe ephemeral result presentation.',
                 },
                 timeout_ms: {
                     type: 'integer',
@@ -407,6 +415,31 @@ export const ViewExperienceConfigurationJsonSchema = {
                     type: 'number',
                     minimum: 0,
                     maximum: 1,
+                },
+                rerank: {
+                    type: 'object',
+                    description: 'Optional bounded candidate reranking using the same model execution configuration.',
+                    properties: {
+                        interaction: {
+                            type: 'string',
+                            maxLength: 200,
+                            description: 'Defaults to sys:ContentSearchReranker.',
+                        },
+                        max_candidates: {
+                            type: 'integer',
+                            minimum: 2,
+                            maximum: 50,
+                            description: 'Candidates from the current result page sent to the reranker.',
+                        },
+                        include_why_match: { type: 'boolean' },
+                        timeout_ms: {
+                            type: 'integer',
+                            minimum: 1000,
+                            maximum: 60000,
+                        },
+                    },
+                    required: [],
+                    additionalProperties: false,
                 },
             },
             required: [],
@@ -644,6 +677,102 @@ export const ViewExperienceConfigurationJsonSchema = {
             required: ['id', 'label', 'sort'],
             additionalProperties: false,
         },
+        selection: {
+            type: 'object',
+            description: 'Selection behavior shared by all built-in and app-rendered result layouts.',
+            properties: {
+                mode: {
+                    type: 'string',
+                    enum: [...VIEW_SELECTION_MODES],
+                },
+                select_all: {
+                    type: 'string',
+                    enum: ['page'],
+                    description: 'Select-all affects the currently rendered page.',
+                },
+            },
+            required: ['mode'],
+            additionalProperties: false,
+        },
+        action: {
+            type: 'object',
+            description:
+                'A declarative result action. The handler is resolved from built-ins or the embedding application.',
+            properties: {
+                id: { $ref: '#/$defs/configurationId' },
+                label: { type: 'string', minLength: 1, maxLength: 120 },
+                handler: { $ref: '#/$defs/configurationId' },
+                placement: {
+                    type: 'string',
+                    enum: [...VIEW_ACTION_PLACEMENTS],
+                },
+                requires_selection: {
+                    type: 'string',
+                    enum: [...VIEW_ACTION_SELECTION_REQUIREMENTS],
+                },
+                destructive: { type: 'boolean' },
+                confirm: { type: 'boolean' },
+                params: {
+                    type: 'object',
+                    required: [],
+                    additionalProperties: true,
+                },
+            },
+            required: ['id', 'label', 'handler'],
+            additionalProperties: false,
+        },
+        actions: {
+            type: 'object',
+            description: 'Built-in and app-contributed actions exposed by the result area.',
+            properties: {
+                include_defaults: { type: 'boolean' },
+                exclude_defaults: {
+                    type: 'array',
+                    maxItems: 2,
+                    uniqueItems: true,
+                    items: { type: 'string', enum: ['export', 'delete'] },
+                },
+                items: {
+                    type: 'array',
+                    maxItems: 30,
+                    items: { $ref: '#/$defs/action' },
+                },
+            },
+            required: [],
+            additionalProperties: false,
+        },
+        drop: {
+            type: 'object',
+            description: 'A file drop target using the built-in content upload flow.',
+            properties: {
+                handler: { const: 'upload' },
+                accept: {
+                    type: 'array',
+                    minItems: 1,
+                    maxItems: 1,
+                    uniqueItems: true,
+                    items: { type: 'string', enum: ['files'] },
+                },
+                params: {
+                    type: 'object',
+                    properties: {
+                        type_id: { type: 'string', minLength: 1, maxLength: 200 },
+                        collection_id: { type: 'string', minLength: 1, maxLength: 200 },
+                        location: { type: 'string', minLength: 1, maxLength: 2000, pattern: '^/' },
+                        properties: {
+                            type: 'object',
+                            required: [],
+                            additionalProperties: true,
+                        },
+                        allow_folders: { type: 'boolean' },
+                    },
+                    required: [],
+                    additionalProperties: false,
+                },
+            },
+            required: ['handler'],
+            additionalProperties: false,
+        },
         results: {
             type: 'object',
             description: 'Built-in or app-rendered visual result layouts.',
@@ -661,6 +790,9 @@ export const ViewExperienceConfigurationJsonSchema = {
                     type: 'array',
                     items: { $ref: '#/$defs/sortOption' },
                 },
+                selection: { $ref: '#/$defs/selection' },
+                actions: { $ref: '#/$defs/actions' },
+                drop: { $ref: '#/$defs/drop' },
             },
             required: ['default_display', 'displays'],
             additionalProperties: false,

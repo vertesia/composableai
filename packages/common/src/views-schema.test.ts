@@ -79,6 +79,25 @@ function documentLibrary(): ViewExperienceConfiguration {
         results: {
             default_display: 'table',
             allow_display_switch: true,
+            selection: { mode: 'multiple', select_all: 'page' },
+            actions: {
+                include_defaults: true,
+                items: [
+                    {
+                        id: 'approve',
+                        label: 'Approve',
+                        handler: 'approve-orders',
+                        placement: 'selection',
+                        requires_selection: 'any',
+                        params: { status: 'approved' },
+                    },
+                ],
+            },
+            drop: {
+                handler: 'upload',
+                accept: ['files'],
+                params: { type_id: 'sales-order', properties: { source: 'view-drop' } },
+            },
             displays: [
                 {
                     id: 'table',
@@ -122,6 +141,37 @@ describe('View Experience configuration schema', () => {
 
         expect(validate(documentLibrary())).toBe(true);
         expect(validate.errors).toBeNull();
+    });
+
+    it('accepts agentic query-and-view generation', () => {
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(
+            ViewExperienceConfigurationJsonSchema,
+        );
+        const configuration = documentLibrary();
+        if (configuration.search?.agentic) {
+            configuration.search.agentic.mode = 'query_and_view';
+            configuration.search.agentic.rerank = {
+                max_candidates: 30,
+                include_why_match: true,
+                timeout_ms: 12_000,
+            };
+        }
+
+        expect(validate(configuration)).toBe(true);
+        expect(validateViewConfiguration(configuration)).toEqual([]);
+    });
+
+    it('rejects rerank candidate limits beyond the bounded page stage', () => {
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(
+            ViewExperienceConfigurationJsonSchema,
+        );
+        const configuration = documentLibrary();
+        if (configuration.search?.agentic) configuration.search.agentic.rerank = { max_candidates: 51 };
+
+        expect(validate(configuration)).toBe(false);
+        expect(validate.errors?.some((error) => error.instancePath === '/search/agentic/rerank/max_candidates')).toBe(
+            true,
+        );
     });
 
     it('rejects malformed discriminated navigation and display entries', () => {
@@ -304,6 +354,69 @@ describe('View Experience semantic validation', () => {
         );
     });
 
+    it('rejects duplicate actions and select-all on single selection', () => {
+        const invalid = documentLibrary();
+        if (invalid.results) {
+            invalid.results.selection = { mode: 'single', select_all: 'page' };
+            invalid.results.actions = {
+                items: [
+                    { id: 'approve', label: 'Approve', handler: 'approve' },
+                    { id: 'approve', label: 'Approve again', handler: 'approve-again' },
+                ],
+            };
+        }
+
+        expect(validateViewConfiguration(invalid)).toEqual(
+            expect.arrayContaining([
+                {
+                    path: 'results.actions.items[1].id',
+                    message: 'must be unique',
+                },
+                {
+                    path: 'results.selection.select_all',
+                    message: 'is only supported for multiple selection',
+                },
+            ]),
+        );
+    });
+
+    it('keeps custom drop behavior out of persisted JSON', () => {
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(
+            ViewExperienceConfigurationJsonSchema,
+        );
+        const invalid = documentLibrary() as unknown as Record<string, unknown>;
+        invalid.results = {
+            ...(invalid.results as Record<string, unknown>),
+            drop: { handler: 'custom-drop' },
+        };
+
+        expect(validate(invalid)).toBe(false);
+        expect(validate.errors?.some((error) => error.instancePath === '/results/drop/handler')).toBe(true);
+    });
+
+    it('reserves built-in action identifiers for the runtime', () => {
+        const invalid = documentLibrary();
+        if (invalid.results?.actions) {
+            invalid.results.actions.items = [
+                { id: 'delete', label: 'Archive', handler: 'archive' },
+                { id: 'archive', label: 'Archive', handler: 'export' },
+            ];
+        }
+
+        expect(validateViewConfiguration(invalid)).toEqual(
+            expect.arrayContaining([
+                {
+                    path: 'results.actions.items[0].id',
+                    message: 'is reserved for a built-in action',
+                },
+                {
+                    path: 'results.actions.items[1].handler',
+                    message: 'is reserved for a built-in action',
+                },
+            ]),
+        );
+    });
+
     it('runs structural validation before semantic validation', () => {
         const invalid = {
             ...documentLibrary(),
@@ -359,6 +472,7 @@ describe('View Experience semantic validation', () => {
 
     it('builds the generic route without exposing path material from an id', () => {
         expect(viewExperienceRoute('app:content:document-library')).toBe('/view/app%3Acontent%3Adocument-library');
+        expect(viewExperienceRoute('sys:AgenticDocumentExplorer')).toBe('/view/sys%3AAgenticDocumentExplorer');
         expect(viewExperienceRoute('unsafe/id')).toBe('/view/unsafe%2Fid');
     });
 });

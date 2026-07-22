@@ -1,6 +1,8 @@
 import type {
     ExecuteViewRequest,
+    ViewActionConfiguration,
     ViewDisplayConfiguration,
+    ViewDropConfiguration,
     ViewExecutionDefinition,
     ViewExecutionResult,
     ViewHit,
@@ -39,6 +41,52 @@ export interface ViewResultsRendererProps {
     onSortChange?: (sort: string) => void;
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
+}
+
+export interface ViewSelectionController {
+    mode: 'single' | 'multiple';
+    selectAll: boolean;
+    selectedIds: string[];
+    selectedHits: ViewHit[];
+    isSelected: (id: string) => boolean;
+    toggle: (hit: ViewHit, selected: boolean, options?: { page?: ViewHit[]; range?: boolean }) => void;
+    togglePage: (hits: ViewHit[], selected: boolean) => void;
+    clear: () => void;
+}
+
+export interface ViewActionContext {
+    action: ViewActionConfiguration;
+    hits: ViewHit[];
+    definition: ViewExecutionDefinition;
+    request: ExecuteViewRequest;
+    result: ViewExecutionResult;
+    refresh: () => Promise<void>;
+    clearSelection: () => void;
+}
+
+export interface ViewActionContribution {
+    run: (context: ViewActionContext) => void | Promise<void>;
+    isAvailable?: (context: Omit<ViewActionContext, 'action' | 'hits'>) => boolean;
+}
+
+export interface ViewDropContext {
+    configuration?: ViewDropConfiguration;
+    files: File[];
+    definition: ViewExecutionDefinition;
+    request: ExecuteViewRequest;
+    result: ViewExecutionResult;
+    refresh: () => Promise<void>;
+}
+
+export interface ViewDropContribution {
+    run: (context: ViewDropContext) => void | Promise<void>;
+}
+
+export interface ViewExperienceContributions {
+    actions?: Record<string, ViewActionContribution>;
+    /** Code-only drop behavior. When present it overrides the JSON-configured upload target. */
+    drop?: ViewDropContribution;
 }
 
 export interface ViewExperienceRenderers {

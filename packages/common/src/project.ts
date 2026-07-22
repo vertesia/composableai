@@ -128,6 +128,7 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
     AnalyzeConversation: SystemInteractionCategory.analysis,
     GetAgentConversationTopic: SystemInteractionCategory.analysis,
     ContentSearchAgent: SystemInteractionCategory.analysis,
+    ContentSearchReranker: SystemInteractionCategory.analysis,
     StudioAssistant: SystemInteractionCategory.agent,
 };
 

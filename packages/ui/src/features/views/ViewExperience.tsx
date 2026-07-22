@@ -1,20 +1,31 @@
+import type { VertesiaClient } from '@vertesia/client';
 import type {
     ExecuteViewRequest,
+    Permission,
     ViewDisplayConfiguration,
     ViewExecutionResult,
     ViewHit,
     ViewNavigationItem,
     ViewResultMedia,
 } from '@vertesia/common';
-import { ImageRenditionFormat } from '@vertesia/common';
+import { ImageRenditionFormat, Permission as PermissionValue } from '@vertesia/common';
 import { Button, ErrorBox, MessageBox, SelectBox, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { FullHeightLayout } from '@vertesia/ui/layout';
 import { useUserSession } from '@vertesia/ui/session';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { GenericPageNavHeader } from '../layout/GenericPageNavHeader.js';
-import type { ViewExecutor, ViewExperienceRenderers, ViewMediaResolver } from './types.js';
+import { UserPermissionsContext } from '../permissions/UserPermissionsProvider.js';
+import type {
+    ViewExecutor,
+    ViewExperienceContributions,
+    ViewExperienceRenderers,
+    ViewMediaResolver,
+    ViewSelectionController,
+} from './types.js';
+import { ViewActionsProvider, ViewActionsToolbar } from './ViewActions.js';
+import { ViewDropTarget } from './ViewDropTarget.js';
 import { DefaultViewNavigation } from './ViewNavigation.js';
 import { DefaultViewResults } from './ViewResults.js';
 import { DefaultViewSearch } from './ViewSearch.js';
@@ -37,6 +48,7 @@ export interface ViewExperienceProps {
     /** Override execution for embedded apps or tests. Defaults to client.views.execute. */
     execute?: ViewExecutor;
     renderers?: ViewExperienceRenderers;
+    contributions?: ViewExperienceContributions;
     onOpenHit?: (hit: ViewHit) => void;
     /** Override media resolution for embedded apps or custom storage backends. */
     resolveMedia?: ViewMediaResolver;
@@ -66,6 +78,7 @@ function cleanStringRecord(values: Record<string, string>): Record<string, strin
 
 function ViewExperienceWithSession(props: Omit<ViewExperienceProps, 'execute'>) {
     const { client } = useUserSession();
+    const permissions = useContext(UserPermissionsContext);
     const execute = useCallback(
         (request: ExecuteViewRequest) => client.views.execute(props.viewId, request),
         [client, props.viewId],
@@ -97,11 +110,30 @@ function ViewExperienceWithSession(props: Omit<ViewExperienceProps, 'execute'>) 
         },
         [client],
     );
-    return <ViewExperienceRuntime {...props} execute={execute} resolveMedia={props.resolveMedia ?? resolveMedia} />;
+    const hasAnyPermission = (values: Permission[]) =>
+        permissions !== undefined && values.some((permission) => permissions.hasPermission(permission));
+    return (
+        <ViewExperienceRuntime
+            {...props}
+            execute={execute}
+            resolveMedia={props.resolveMedia ?? resolveMedia}
+            client={client}
+            canDelete={hasAnyPermission([
+                PermissionValue.content_delete,
+                PermissionValue.content_admin,
+                PermissionValue.content_superadmin,
+            ])}
+            canWrite={hasAnyPermission([
+                PermissionValue.content_write,
+                PermissionValue.content_admin,
+                PermissionValue.content_superadmin,
+            ])}
+        />
+    );
 }
 
 /**
- * Reusable renderer for stored and app-contributed View Experiences.
+ * Reusable renderer for stored, system, and app-contributed View Experiences.
  * Pass `execute` to use it outside Vertesia's session provider.
  */
 export function ViewExperience({ execute, ...props }: ViewExperienceProps) {
@@ -114,16 +146,23 @@ export function ViewExperience({ execute, ...props }: ViewExperienceProps) {
 
 interface ViewExperienceRuntimeProps extends Omit<ViewExperienceProps, 'execute'> {
     execute: ViewExecutor;
+    client?: VertesiaClient;
+    canDelete?: boolean;
+    canWrite?: boolean;
 }
 
 function ViewExperienceRuntime({
     execute,
     renderers,
+    contributions,
     onOpenHit,
     resolveMedia,
     syncUrl = true,
     showHeader = true,
     className,
+    client,
+    canDelete = false,
+    canWrite = false,
 }: ViewExperienceRuntimeProps) {
     const { t } = useUITranslation();
     const executeRef = useRef(execute);
@@ -135,10 +174,18 @@ function ViewExperienceRuntime({
     const [result, setResult] = useState<ViewExecutionResult>();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error>();
+    const [selectedHits, setSelectedHits] = useState<Record<string, ViewHit>>({});
+    const selectionAnchorRef = useRef<string | undefined>(undefined);
+
+    const clearSelection = useCallback(() => {
+        selectionAnchorRef.current = undefined;
+        setSelectedHits({});
+    }, []);
 
     const runRequest = useCallback(
-        (next: ExecuteViewRequest, updateUrl: boolean) => {
+        (next: ExecuteViewRequest, updateUrl: boolean, preserveSelection = false) => {
             const generation = ++generationRef.current;
+            if (!preserveSelection) clearSelection();
             setRequest(next);
             if (updateUrl && syncUrl) replaceViewStateInUrl(next);
             setIsLoading(true);
@@ -162,7 +209,7 @@ function ViewExperienceRuntime({
                     if (generation === generationRef.current) setIsLoading(false);
                 });
         },
-        [syncUrl],
+        [clearSelection, syncUrl],
     );
 
     const loadUrlState = useCallback(() => {
@@ -192,6 +239,7 @@ function ViewExperienceRuntime({
         [definition?.navigation],
     );
     const resultsConfiguration = definition?.results;
+    const selectionConfiguration = resultsConfiguration?.selection;
     const effectiveDisplayId = result?.display ?? request.display ?? resultsConfiguration?.default_display;
     const display =
         resultsConfiguration?.displays.find((candidate) => candidate.id === effectiveDisplayId) ?? FALLBACK_DISPLAY;
@@ -224,6 +272,59 @@ function ViewExperienceRuntime({
             offset: undefined,
         });
     };
+
+    const selection = useMemo<ViewSelectionController | undefined>(() => {
+        if (!selectionConfiguration) return undefined;
+        const selectedIds = Object.keys(selectedHits);
+        return {
+            mode: selectionConfiguration.mode,
+            selectAll: selectionConfiguration.mode === 'multiple' && selectionConfiguration.select_all === 'page',
+            selectedIds,
+            selectedHits: selectedIds.map((id) => selectedHits[id]).filter((hit): hit is ViewHit => hit !== undefined),
+            isSelected: (id) => selectedHits[id] !== undefined,
+            toggle: (hit, selected, options) => {
+                setSelectedHits((current) => {
+                    if (!selected) {
+                        const next = { ...current };
+                        delete next[hit.id];
+                        return next;
+                    }
+                    if (selectionConfiguration.mode === 'single') {
+                        selectionAnchorRef.current = hit.id;
+                        return { [hit.id]: hit };
+                    }
+                    const next = { ...current, [hit.id]: hit };
+                    if (options?.range && options.page && selectionAnchorRef.current) {
+                        const anchorIndex = options.page.findIndex(
+                            (candidate) => candidate.id === selectionAnchorRef.current,
+                        );
+                        const hitIndex = options.page.findIndex((candidate) => candidate.id === hit.id);
+                        if (anchorIndex >= 0 && hitIndex >= 0) {
+                            const start = Math.min(anchorIndex, hitIndex);
+                            const end = Math.max(anchorIndex, hitIndex);
+                            for (const candidate of options.page.slice(start, end + 1)) {
+                                next[candidate.id] = candidate;
+                            }
+                        }
+                    }
+                    selectionAnchorRef.current = hit.id;
+                    return next;
+                });
+            },
+            togglePage: (hits, selected) => {
+                if (selectionConfiguration.mode !== 'multiple') return;
+                setSelectedHits((current) => {
+                    const next = { ...current };
+                    for (const hit of hits) {
+                        if (selected) next[hit.id] = hit;
+                        else delete next[hit.id];
+                    }
+                    return next;
+                });
+            },
+            clear: clearSelection,
+        };
+    }, [clearSelection, selectedHits, selectionConfiguration]);
 
     if (!result && isLoading) {
         return (
@@ -277,7 +378,9 @@ function ViewExperienceRuntime({
         );
     });
 
-    return (
+    const refresh = () => runRequest(request, false, true);
+
+    const content = (
         <FullHeightLayout className={className}>
             {showHeader && <GenericPageNavHeader title={definition.name} description={definition.description} />}
             <FullHeightLayout.Fixed heightClass="h-auto" className="space-y-3 border-b p-3">
@@ -342,6 +445,11 @@ function ViewExperienceRuntime({
                                 {isLoading && <Spinner size="sm" />}
                             </div>
                             <div className="flex flex-wrap items-center gap-3">
+                                <ViewActionsToolbar
+                                    selection={selection}
+                                    page={result.hits}
+                                    showSelectPage={display.type !== 'table'}
+                                />
                                 {resultsConfiguration?.allow_display_switch &&
                                     resultsConfiguration.displays.length > 1 && (
                                         <div className="flex items-center gap-2">
@@ -350,7 +458,11 @@ function ViewExperienceRuntime({
                                                 options={resultsConfiguration.displays}
                                                 value={display}
                                                 onChange={(option) =>
-                                                    applyRequest({ ...request, display: option.id, offset: undefined })
+                                                    void runRequest(
+                                                        { ...request, display: option.id, offset: undefined },
+                                                        true,
+                                                        true,
+                                                    )
                                                 }
                                                 optionLabel={(option) => option.label}
                                                 by="id"
@@ -369,7 +481,11 @@ function ViewExperienceRuntime({
                                                 (option) => option.id === effectiveSortId,
                                             )}
                                             onChange={(option) =>
-                                                applyRequest({ ...request, sort: option.id, offset: undefined })
+                                                void runRequest(
+                                                    { ...request, sort: option.id, offset: undefined },
+                                                    true,
+                                                    true,
+                                                )
                                             }
                                             optionLabel={(option) => option.label}
                                             by="id"
@@ -381,16 +497,28 @@ function ViewExperienceRuntime({
                                 )}
                             </div>
                         </div>
-                        <ResultsRenderer
-                            configuration={display}
+                        <ViewDropTarget
                             definition={definition}
                             request={request}
                             result={result}
-                            isLoading={isLoading}
-                            onSortChange={(sort) => applyRequest({ ...request, sort, offset: undefined })}
-                            onOpenHit={onOpenHit}
-                            resolveMedia={resolveMedia}
-                        />
+                            contribution={contributions?.drop}
+                            canWrite={canWrite}
+                            refresh={refresh}
+                        >
+                            <ResultsRenderer
+                                configuration={display}
+                                definition={definition}
+                                request={request}
+                                result={result}
+                                isLoading={isLoading}
+                                onSortChange={(sort) =>
+                                    void runRequest({ ...request, sort, offset: undefined }, true, true)
+                                }
+                                onOpenHit={onOpenHit}
+                                resolveMedia={resolveMedia}
+                                selection={selection}
+                            />
+                        </ViewDropTarget>
                         {(hasPrevious || hasNext) && (
                             <nav className="flex items-center justify-center gap-2" aria-label={t('view.pagination')}>
                                 <Button
@@ -398,10 +526,14 @@ function ViewExperienceRuntime({
                                     variant="outline"
                                     disabled={!hasPrevious || isLoading}
                                     onClick={() =>
-                                        applyRequest({
-                                            ...request,
-                                            offset: Math.max(0, offset - pageStep) || undefined,
-                                        })
+                                        void runRequest(
+                                            {
+                                                ...request,
+                                                offset: Math.max(0, offset - pageStep) || undefined,
+                                            },
+                                            true,
+                                            true,
+                                        )
                                     }
                                 >
                                     <ChevronLeft className="size-4 cn-rtl-flip" />
@@ -411,7 +543,9 @@ function ViewExperienceRuntime({
                                     type="button"
                                     variant="outline"
                                     disabled={!hasNext || isLoading}
-                                    onClick={() => applyRequest({ ...request, offset: offset + pageStep })}
+                                    onClick={() =>
+                                        void runRequest({ ...request, offset: offset + pageStep }, true, true)
+                                    }
                                 >
                                     {t('grounded.nextPage')}
                                     <ChevronRight className="size-4 cn-rtl-flip" />
@@ -422,5 +556,20 @@ function ViewExperienceRuntime({
                 </div>
             </FullHeightLayout.Body>
         </FullHeightLayout>
+    );
+
+    return (
+        <ViewActionsProvider
+            definition={definition}
+            request={request}
+            result={result}
+            selection={selection}
+            contributions={contributions}
+            client={client}
+            canDelete={canDelete}
+            refresh={refresh}
+        >
+            {content}
+        </ViewActionsProvider>
     );
 }

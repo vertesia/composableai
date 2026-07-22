@@ -1,4 +1,4 @@
-import type { Collection, ContentObjectTypeItem, DynamicCollection } from '@vertesia/common';
+import type { Collection, ContentObjectTypeItem, DynamicCollection, JSONObject } from '@vertesia/common';
 import {
     Button,
     errorMessage,
@@ -59,6 +59,10 @@ interface DocumentUploadModalProps {
     /** Show only the type selection, used for type change operations */
     showTypeSelectionOnly?: boolean;
     allowFolders?: boolean;
+    /** Preselect a content type while preserving the normal type chooser. */
+    initialTypeId?: string;
+    /** Properties applied to newly created objects from this upload. */
+    defaultProperties?: JSONObject;
 }
 
 /**
@@ -81,6 +85,8 @@ export function DocumentUploadModal({
     hideFileSelection = false,
     showTypeSelectionOnly = false,
     allowFolders = true,
+    initialTypeId,
+    defaultProperties,
 }: DocumentUploadModalProps) {
     const { client } = useUserSession();
     const { registry: typeRegistry } = useTypeRegistry();
@@ -222,7 +228,7 @@ export function DocumentUploadModal({
             // Always reset state first
             setProcessedFiles([]);
             setProcessingDone(false);
-            setSelectedType(null);
+            setSelectedType(initialTypeId ? (typeRegistry?.getType(initialTypeId) ?? null) : null);
             setFileStatuses([]);
             setIsUploading(false);
             setUploadComplete(false);
@@ -243,7 +249,7 @@ export function DocumentUploadModal({
             // Create a new key to ensure the modal is fresh
             setModalKey(Date.now());
         }
-    }, [isOpen, initialFiles, processFiles, resolvedTitle]);
+    }, [initialFiles, initialTypeId, isOpen, processFiles, resolvedTitle, typeRegistry]);
 
     // Complete cleanup when modal closes
     const handleClose = () => {
@@ -415,6 +421,7 @@ export function DocumentUploadModal({
                                         content: fileInfo.file,
                                         location:
                                             fileInfo.location || fileInfo.file.webkitRelativePath || fileInfo.name,
+                                        properties: defaultProperties,
                                     },
                                     {
                                         collection_id: collectionId,

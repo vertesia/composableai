@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { validateProjectSearchPropertyMappings } from './project.js';
+import {
+    getSystemInteractionCategory,
+    SystemInteractionCategory,
+    validateProjectSearchPropertyMappings,
+} from './project.js';
+
+describe('system interaction model defaults', () => {
+    it('uses the same analysis model category for query planning and reranking', () => {
+        expect(getSystemInteractionCategory('sys:ContentSearchAgent')).toBe(SystemInteractionCategory.analysis);
+        expect(getSystemInteractionCategory('sys:ContentSearchReranker')).toBe(SystemInteractionCategory.analysis);
+    });
+});
 
 describe('validateProjectSearchPropertyMappings', () => {
     it('accepts supported leaf mappings on relative property paths', () => {
