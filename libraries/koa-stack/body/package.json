@@ -38,7 +38,7 @@
         "@types/koa": "^3.0.3",
         "@types/qs": "^6.15.1",
         "@vertesia/tsconfig": "workspace:*",
-        "fast-xml-parser": "^5.9.3",
+        "fast-xml-parser": "^5.10.0",
         "typescript": "^6.0.3"
     },
     "main": "./lib/index.js",
