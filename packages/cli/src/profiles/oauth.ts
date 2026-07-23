@@ -72,6 +72,14 @@ export function getOAuthClientId(oauthServerUrl: string): string {
     return new URL(OAUTH_CLIENT_METADATA_PATH, withTrailingSlash(oauthServerUrl)).toString();
 }
 
+export function getOAuthClientIdFromMetadata(
+    metadata: Pick<OAuthAuthorizationServerMetadata, 'issuer' | 'token_endpoint'>,
+): string {
+    // Regional STS aliases can advertise canonical endpoints. CIMD client_id values must
+    // match the canonical client metadata document URL, not the alias used for discovery.
+    return getOAuthClientId(new URL(metadata.token_endpoint || metadata.issuer).origin);
+}
+
 export function getOAuthResource(metadata: Pick<OAuthAuthorizationServerMetadata, 'issuer'>): string {
     return new URL(metadata.issuer).toString();
 }
@@ -80,7 +88,7 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
     assertOAuthProfile(profile);
 
     const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
-    const clientId = getOAuthClientId(serverUrl);
+    const clientId = getOAuthClientIdFromMetadata(metadata);
     const resource = getOAuthResource(metadata);
     const scope = getDefaultOAuthScope(metadata);
     const deviceAuthorization = await createDeviceAuthorization(metadata, {
@@ -113,7 +121,7 @@ export async function refreshOAuthSession(
     assertOAuthProfile(profile);
 
     const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
-    const clientId = getOAuthClientId(serverUrl);
+    const clientId = getOAuthClientIdFromMetadata(metadata);
     const resource = bundle?.oauthResource || readTokenRefs(bundle?.accessToken).audience || getOAuthResource(metadata);
     const response = await exchangeRefreshToken(metadata, clientId, refreshToken, resource, options.projectId);
     return buildConfigResult(profile, response, clientId, resource, serverUrl);
@@ -427,6 +435,9 @@ async function readOAuthError(response: Response): Promise<{ error?: string; mes
         const error = typeof parsed.error === 'string' ? parsed.error : undefined;
         if (typeof parsed.error_description === 'string') {
             return { error, message: parsed.error_description };
+        }
+        if (typeof parsed.message === 'string') {
+            return { error, message: parsed.message };
         }
         if (error) {
             return { error, message: error };

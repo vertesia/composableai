@@ -7,6 +7,7 @@ import {
     type CompletedWorkstreamEntry,
     type ConversationFile,
     type ConversationFileRef,
+    FileProcessingStatus,
     type McpConnectUxConfig,
     normalizeAgentToolApprovalMode,
     type Plan,
@@ -29,6 +30,7 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { type AgentResourceResolver, AgentResourceResolverProvider } from '@vertesia/ui/widgets';
 import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -532,6 +534,12 @@ function downloadJsonFile(filename: string, payload: unknown) {
 export interface ModernAgentConversationProps {
     /** Stable AgentRun ID — the primary identifier for all runtime operations. */
     agentRunId?: string;
+    /**
+     * Optional override for mapping agent resource references (documents, collections, interactions,
+     * ...) to navigation or activation targets in the chat. This overrides an inherited
+     * AgentResourceResolverProvider; without either, resources remain non-interactive.
+     */
+    resourceResolver?: AgentResourceResolver;
     title?: string;
     interactive?: boolean;
     onClose?: () => void;
@@ -707,13 +715,18 @@ export interface ModernAgentConversationProps {
 }
 
 export function ModernAgentConversation(props: ModernAgentConversationProps) {
-    const { agentRunId, startWorkflow } = props;
+    const { agentRunId, startWorkflow, resourceResolver } = props;
 
     if (agentRunId) {
-        return (
+        const conversation = (
             <SkillWidgetProvider>
                 <ModernAgentConversationInner {...props} agentRunId={agentRunId} />
             </SkillWidgetProvider>
+        );
+        return resourceResolver ? (
+            <AgentResourceResolverProvider value={resourceResolver}>{conversation}</AgentResourceResolverProvider>
+        ) : (
+            conversation
         );
     } else if (startWorkflow) {
         // If we have startWorkflow capability but no agentRunId yet
@@ -1105,7 +1118,6 @@ function StartWorkflowView({
                                 size="xs"
                                 variant="ghost"
                                 onClick={onClose}
-                                aria-label={t('agent.close')}
                                 title={t('agent.close')}
                                 className="text-muted hover:text-foreground"
                             >
@@ -1211,7 +1223,6 @@ function StartWorkflowView({
                                     'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                                 )}
                                 title={resolvedStartButtonText}
-                                aria-label={resolvedStartButtonText}
                             >
                                 {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
                             </Button>
@@ -1359,12 +1370,8 @@ function ModernAgentConversationInner({
         updateDocumentTitle,
     } = useDocumentPanel(messages);
 
-    const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile } = useFileProcessing(
-        client,
-        agentRunId,
-        serverFileUpdates,
-        toast,
-    );
+    const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles } =
+        useFileProcessing(client, agentRunId, serverFileUpdates, toast);
     const canUploadFiles = interactive && !hideFileUpload;
 
     const handleRemoveProcessingFile = useCallback(
@@ -1416,6 +1423,8 @@ function ModernAgentConversationInner({
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
     const pendingPlaybackScrollRef = useRef(false);
+    const toolApprovalModeChangeVersionRef = useRef(0);
+    const pendingToolApprovalModeChangeRef = useRef<Promise<void> | null>(null);
 
     useEffect(() => {
         setToolApprovalMode(initialResolvedToolApprovalMode);
@@ -1426,6 +1435,8 @@ function ModernAgentConversationInner({
     isSendingRef.current = isSending;
     const hasProcessingFilesRef = useRef(hasProcessingFiles);
     hasProcessingFilesRef.current = hasProcessingFiles;
+    const processingFilesRef = useRef(processingFiles);
+    processingFilesRef.current = processingFiles;
 
     const lastMainMessage = useMemo(() => {
         const mainMessages = messages.filter((m) => (m.workstream_id || 'main') === 'main');
@@ -1909,6 +1920,13 @@ function ModernAgentConversationInner({
     // Handlers
     // ────────────────────────────────────────────
 
+    const waitForPendingToolApprovalModeChange = useCallback(async () => {
+        const pendingChange = pendingToolApprovalModeChangeRef.current;
+        if (pendingChange) {
+            await pendingChange;
+        }
+    }, []);
+
     // Send a message to the agent
     const handleSendMessage = useCallback(
         (message: string, inputMetadata?: Record<string, unknown>) => {
@@ -1942,6 +1960,24 @@ function ModernAgentConversationInner({
                 messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
             }
 
+            // Bind ready uploaded files to this message: embed them as an "Uploaded artifacts:"
+            // markdown block so they render underneath the sent bubble (parsed by
+            // parseUserMessageAttachments) and get cleared from the composer on send.
+            const uploadedArtifactLines = Array.from(processingFilesRef.current.values())
+                .filter((file) => file.status === FileProcessingStatus.READY)
+                .map((file) => {
+                    const href = file.reference?.startsWith('artifact:')
+                        ? file.reference
+                        : file.artifact_path
+                          ? `artifact:${file.artifact_path}`
+                          : undefined;
+                    return href ? `[${file.name}](${href})` : undefined;
+                })
+                .filter((line): line is string => Boolean(line));
+            if (uploadedArtifactLines.length > 0) {
+                messageContent = [messageContent, '', 'Uploaded artifacts:', ...uploadedArtifactLines].join('\n');
+            }
+
             const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
             const optimisticMessage: AgentMessage = {
@@ -1973,6 +2009,7 @@ function ModernAgentConversationInner({
             const markReceived = () => {
                 updateOptimisticMessageStatus(messageId, 'received');
                 onAttachmentsSent?.();
+                clearProcessingFiles();
             };
 
             // When the workflow has already completed, restart it first so it resumes
@@ -1980,12 +2017,15 @@ function ModernAgentConversationInner({
             // buffers the signal until the new run is ready to receive it. We reconnect
             // the stream in place (rather than remounting via onRestart) so the existing
             // timeline is preserved and the new exchange appends seamlessly at the bottom.
-            const deliver = isWorkflowTerminalRef.current
-                ? client.agents.restart(agentRunId).then(() => {
-                      reconnectStream();
-                      return sendUserInput().then(markReceived);
-                  })
-                : sendUserInput().then(markReceived);
+            const deliver = (async () => {
+                await waitForPendingToolApprovalModeChange();
+                if (isWorkflowTerminalRef.current) {
+                    await client.agents.restart(agentRunId);
+                    reconnectStream();
+                }
+                await sendUserInput();
+                markReceived();
+            })();
 
             deliver
                 .catch((err) => {
@@ -2008,10 +2048,12 @@ function ModernAgentConversationInner({
             getAttachedDocs,
             getMessageContext,
             onAttachmentsSent,
+            clearProcessingFiles,
             reconnectStream,
             addOptimisticMessage,
             updateOptimisticMessageStatus,
             t,
+            waitForPendingToolApprovalModeChange,
         ],
     );
 
@@ -2040,12 +2082,16 @@ function ModernAgentConversationInner({
     const [mcpDisabled, setMcpDisabled] = useState<string[] | undefined>(undefined);
     useEffect(() => {
         let cancelled = false;
+        const requestVersion = toolApprovalModeChangeVersionRef.current;
         client.agents
             .retrieve(agentRunId)
             .then((run) => {
                 if (!cancelled) {
                     setMcpDisabled(run.disabled_mcp_collections);
-                    if (run.tool_approval_mode !== undefined || run.interactive !== undefined) {
+                    if (
+                        toolApprovalModeChangeVersionRef.current === requestVersion &&
+                        (run.tool_approval_mode !== undefined || run.interactive !== undefined)
+                    ) {
                         setToolApprovalMode(normalizeAgentToolApprovalMode(run.tool_approval_mode, run.interactive));
                     }
                 }
@@ -2081,10 +2127,14 @@ function ModernAgentConversationInner({
     const handleToolApprovalModeChange = useCallback(
         (mode: AgentToolApprovalMode) => {
             const nextMode = normalizeAgentToolApprovalMode(mode, interactive);
+            const previousMode = toolApprovalMode;
+            toolApprovalModeChangeVersionRef.current += 1;
             setToolApprovalMode(nextMode);
-            client.agents
+            const signalPromise = client.agents
                 .sendSignal(agentRunId, 'ToolApprovalModeChanged', { mode: nextMode })
+                .then(() => undefined)
                 .catch((err: unknown) => {
+                    setToolApprovalMode((currentMode) => (currentMode === nextMode ? previousMode : currentMode));
                     toast({
                         status: 'error',
                         title: t('agent.approvalMode.changeFailed'),
@@ -2092,8 +2142,14 @@ function ModernAgentConversationInner({
                         duration: 3000,
                     });
                 });
+            pendingToolApprovalModeChangeRef.current = signalPromise;
+            void signalPromise.finally(() => {
+                if (pendingToolApprovalModeChangeRef.current === signalPromise) {
+                    pendingToolApprovalModeChangeRef.current = null;
+                }
+            });
         },
-        [agentRunId, client, interactive, t, toast],
+        [agentRunId, client, interactive, t, toast, toolApprovalMode],
     );
 
     // Drag and drop handlers for full-panel file upload
@@ -2418,6 +2474,7 @@ function ModernAgentConversationInner({
             ) : (
                 <AllMessagesMixed
                     messages={displayedMessages}
+                    workstreamSourceMessages={messages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                     isCompleted={displayedIsCompleted}
                     plan={getActivePlan.plan}

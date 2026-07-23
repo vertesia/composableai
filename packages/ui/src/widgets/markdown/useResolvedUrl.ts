@@ -7,7 +7,31 @@ import {
     useArtifactUrlCache,
 } from '../../features/agent/chat/useArtifactUrlCache';
 
-export type UrlScheme = 'artifact' | 'image' | 'store' | 'document' | 'collection' | 'standard';
+export type UrlScheme =
+    | 'artifact'
+    | 'image'
+    | 'store'
+    | 'document'
+    | 'collection'
+    | 'interaction'
+    | 'prompt'
+    | 'agent'
+    | 'workflow'
+    | 'process'
+    | 'run'
+    | 'standard';
+
+const AGENT_RESOURCE_SCHEMES = new Set<UrlScheme>([
+    'store',
+    'document',
+    'collection',
+    'interaction',
+    'prompt',
+    'agent',
+    'workflow',
+    'process',
+    'run',
+]);
 
 export interface ResolvedUrlState {
     /** The resolved URL, or undefined if not yet resolved */
@@ -49,32 +73,14 @@ export function parseUrlScheme(rawUrl: string): { scheme: UrlScheme; path: strin
     if (rawUrl.startsWith('image:')) {
         return { scheme: 'image', path: rawUrl.slice(6).trim() };
     }
-    if (rawUrl.startsWith('store:')) {
-        return { scheme: 'store', path: stripSchemePath(rawUrl.slice(6)) };
-    }
-    if (rawUrl.startsWith('document:')) {
-        return { scheme: 'document', path: stripSchemePath(rawUrl.slice(9)) };
-    }
-    if (rawUrl.startsWith('collection:')) {
-        return { scheme: 'collection', path: stripSchemePath(rawUrl.slice(11)) };
+    const colonIndex = rawUrl.indexOf(':');
+    if (colonIndex > 0) {
+        const scheme = rawUrl.slice(0, colonIndex);
+        if (AGENT_RESOURCE_SCHEMES.has(scheme as UrlScheme)) {
+            return { scheme: scheme as UrlScheme, path: stripSchemePath(rawUrl.slice(colonIndex + 1)) };
+        }
     }
     return { scheme: 'standard', path: rawUrl };
-}
-
-/**
- * Maps internal URL schemes to application routes
- */
-export function mapSchemeToRoute(scheme: UrlScheme, path: string): string | null {
-    switch (scheme) {
-        case 'store':
-            return path ? `/store/objects/${path}` : null;
-        case 'document':
-            return path ? `/store/objects/${path}` : null;
-        case 'collection':
-            return path ? `/store/collections/${path}` : null;
-        default:
-            return null;
-    }
 }
 
 /**
@@ -95,19 +101,11 @@ export function useResolvedUrl({
     urlCacheRef.current = urlCache;
     const { scheme, path } = parseUrlScheme(rawUrl);
 
-    // For schemes that map to routes, resolve immediately
-    const mappedRoute = mapSchemeToRoute(scheme, path);
-
     const [state, setState] = useState<{
         url: string | undefined;
         isLoading: boolean;
         error: string | undefined;
     }>(() => {
-        // If it's a mapped route, use that immediately
-        if (mappedRoute) {
-            return { url: mappedRoute, isLoading: false, error: undefined };
-        }
-
         // If it's a standard URL, use as-is
         if (scheme === 'standard') {
             return { url: rawUrl, isLoading: false, error: undefined };
@@ -133,7 +131,7 @@ export function useResolvedUrl({
 
     const fetchUrl = useCallback(async () => {
         // Skip if already resolved or standard URL
-        if (mappedRoute || scheme === 'standard') {
+        if (scheme === 'standard') {
             return;
         }
 
@@ -203,7 +201,7 @@ export function useResolvedUrl({
             console.error('Failed to resolve URL:', path, err);
             setState({ url: undefined, isLoading: false, error: errorMessage });
         }
-    }, [scheme, path, artifactRunId, disposition, mappedRoute]);
+    }, [scheme, path, artifactRunId, disposition]);
 
     useEffect(() => {
         // Skip if already resolved

@@ -1,14 +1,16 @@
 import {
     type AgentMessage,
     AgentMessageType,
+    type AgentResourceReference,
     type AskUserMessageDetails,
     type BatchProgressDetails,
+    getResourcesFromMessage,
     type JSONSchema,
     type Plan,
 } from '@vertesia/common';
 import { Badge, Button, cn, VTooltip } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
-import { NavLink } from '@vertesia/ui/router';
+import { useRouterContext } from '@vertesia/ui/router';
 import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widgets';
 import type { Element } from 'hast';
 import {
@@ -37,10 +39,13 @@ import {
     getWorkstreamLaunchDetails,
     type WorkstreamLaunchDetails,
 } from '../workstreams.js';
+import { createAgentMarkdownAnchor } from './AgentMarkdownAnchor';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
 import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDeliveryStatus';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
+import { ResourceChangeSummary } from './ResourceChangeSummary';
+import { ResourceActivityLinkList } from './ResourceChip';
 import {
     getAnsweredRequestInputKeys,
     getAnsweredToolApprovalRequestInputKeys,
@@ -49,6 +54,7 @@ import {
     getRequestInputDisplayText,
     getRequestInputMessageKey,
     getResolvedToolApprovalKeys,
+    getToolApprovalResponseMetadata,
     hasRequestInputUx,
     isRequestInputAnswered,
     isToolApprovalAnswerHidden,
@@ -56,6 +62,12 @@ import {
     isToolApprovalRequestInputHidden,
     type RequestInputMessageWithUx,
 } from './requestInputMessages';
+import {
+    interleaveTurnSummaries,
+    isResourceSummaryReady,
+    type ResourceSummaryRenderItem,
+    segmentTurnResources,
+} from './resourceSummary';
 import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
 import {
     buildSummaryConversationItems,
@@ -651,6 +663,7 @@ function SummaryMessage({
     StoreLinkComponent,
     CollectionLinkComponent,
 }: SummaryMessageProps) {
+    const { router } = useRouterContext();
     const content =
         message.type === AgentMessageType.REQUEST_INPUT ? getRequestInputDisplayText(message) : getMessageText(message);
     const workstreamLaunchDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
@@ -664,51 +677,13 @@ function SummaryMessage({
     const markdownComponents = useMemo(
         () => ({
             ...DEFAULT_AGENT_MARKDOWN_COMPONENTS,
-            a: ({
-                node: _node,
-                ref: _ref,
-                ...props
-            }: {
-                node?: unknown;
-                ref?: unknown;
-                href?: string;
-                children?: React.ReactNode;
-            }) => {
-                const href = props.href || '';
-                if (href.includes('/store/objects')) {
-                    const documentId = href.split('/store/objects/')[1] || '';
-                    if (StoreLinkComponent) {
-                        return (
-                            <StoreLinkComponent href={href} documentId={documentId}>
-                                {props.children}
-                            </StoreLinkComponent>
-                        );
-                    }
-                    return (
-                        <NavLink href={href} topLevelNav>
-                            {props.children}
-                        </NavLink>
-                    );
-                }
-                if (href.includes('/store/collections')) {
-                    const collectionId = href.split('/store/collections/')[1] || '';
-                    if (CollectionLinkComponent) {
-                        return (
-                            <CollectionLinkComponent href={href} collectionId={collectionId}>
-                                {props.children}
-                            </CollectionLinkComponent>
-                        );
-                    }
-                    return (
-                        <NavLink href={href} topLevelNav>
-                            {props.children}
-                        </NavLink>
-                    );
-                }
-                return <a {...props} target="_blank" rel="noopener noreferrer" />;
-            },
+            a: createAgentMarkdownAnchor({
+                StoreLinkComponent,
+                CollectionLinkComponent,
+                addStickyParams: (href: string) => router.getTopRouter().navigator.addStickyParams(href),
+            }),
         }),
-        [StoreLinkComponent, CollectionLinkComponent],
+        [StoreLinkComponent, CollectionLinkComponent, router],
     );
 
     if (workstreamLaunchDetails) {
@@ -763,7 +738,9 @@ function SummaryMessage({
                     options={uxConfig.options}
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}
-                    onSelect={(optionId) => onSendMessage?.(optionId)}
+                    onSelect={(optionId) =>
+                        onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                    }
                     onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
                     allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
                     placeholder={uxConfig.free_response?.placeholder}
@@ -1025,6 +1002,8 @@ interface SummaryToolDetailItem {
     finishedAt?: number | string;
     status?: ToolExecutionStatus;
     decisionText?: string;
+    resources: AgentResourceReference[];
+    workflowRunId?: string;
     sections: SummaryToolDetailSection[];
 }
 
@@ -1040,6 +1019,7 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'collection_id',
     'document_id',
     'display_role',
+    'duration_ms',
     'event_class',
     'id',
     'object_id',
@@ -1057,6 +1037,7 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'tools',
     'message_to_human',
     'progress_messages',
+    'resources',
     'source',
     'token_usage',
     'checkpoint_at',
@@ -1391,7 +1372,12 @@ function getRenderableGroupKey(group: RenderableGroup): string {
     return ['group', group.toolRunId, group.firstTimestamp, firstKey, lastKey].filter(Boolean).join(':');
 }
 
-function getPreviousRenderableGroupTimestamp(groups: RenderableGroup[], index: number): number | string | undefined {
+// Accepts the augmented render list (which may contain interleaved resource_summary items); those
+// are skipped so the previous *group* timestamp is found regardless of inserted summaries.
+function getPreviousRenderableGroupTimestamp(
+    groups: Array<RenderableGroup | ResourceSummaryRenderItem>,
+    index: number,
+): number | string | undefined {
     for (let previousIndex = index - 1; previousIndex >= 0; previousIndex--) {
         const group = groups[previousIndex];
         if (group.type === 'single') return group.message.timestamp;
@@ -1509,6 +1495,8 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
         finishedAt: getTimestampDetail(details[SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY]) ?? message.timestamp,
         status: approvalDecisionTitle ? 'error' : (details.tool_status as ToolExecutionStatus | undefined),
         decisionText,
+        resources: getResourcesFromMessage(message),
+        workflowRunId: message.workflow_run_id,
         sections: getToolDetailSections(message),
     };
 }
@@ -1843,6 +1831,13 @@ function formatToolDetailCopyText(item: SummaryToolDetailItem): string {
     const metadata = getToolDetailMetadata(item).map((entry) => `${entry.label}: ${entry.value}`);
     if (metadata.length > 0) parts.push(metadata.join('\n'));
     if (item.text) parts.push(item.text);
+    if (item.resources.length > 0) {
+        parts.push(
+            `Resources\n${item.resources
+                .map((resource) => `${resource.label} (${resource.type}:${resource.id}) — ${resource.action}`)
+                .join('\n')}`,
+        );
+    }
 
     for (const section of item.sections) {
         parts.push(`${section.label}\n${formatToolSectionValue(section.value)}`);
@@ -1950,52 +1945,80 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
 }
 
 function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
+    const { t } = useUITranslation();
     const isDecision = Boolean(item.decisionText);
     const isAttention = !isDecision && (item.status === 'error' || item.status === 'warning');
     const hasMetadata = getToolDetailMetadata(item).length > 0;
     const hasDetails = Boolean(item.command || item.text || item.sections.length || hasMetadata);
+    const hasResources = item.resources.length > 0;
     const [isExpanded, setIsExpanded] = useState(false);
     const iconStatus = isDecision ? undefined : item.status;
+    const toggleDetailsLabel = isExpanded ? t('agent.hideDetails') : t('agent.showDetails');
+    const detailsSubject = hasResources ? item.resources.map((resource) => resource.label).join(', ') : item.title;
+
+    const icon = (
+        <span
+            className={cn(
+                'flex size-5 items-center justify-center pt-0.5',
+                isAttention ? 'text-attention' : 'text-muted',
+            )}
+        >
+            <ToolDetailIcon kind={item.kind} status={iconStatus} />
+        </span>
+    );
+
+    const chevron = (
+        <ChevronDown
+            className={cn('size-4 shrink-0 text-muted opacity-50 transition-transform', !isExpanded && '-rotate-90')}
+            aria-hidden="true"
+        />
+    );
 
     return (
         <div className="min-w-0">
-            <button
-                type="button"
-                className={cn(
-                    'grid w-full grid-cols-[1.5rem_1fr_auto] gap-2 text-start outline-none transition-colors',
-                    'focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4',
-                    hasDetails ? 'cursor-pointer hover:text-foreground' : 'cursor-default',
-                )}
-                onClick={() => hasDetails && setIsExpanded((current) => !current)}
-                aria-expanded={hasDetails ? isExpanded : undefined}
-                disabled={!hasDetails}
-            >
-                <span
-                    className={cn(
-                        'flex size-5 items-center justify-center pt-0.5',
-                        isAttention ? 'text-attention' : 'text-muted',
-                    )}
-                >
-                    <ToolDetailIcon kind={item.kind} status={iconStatus} />
-                </span>
-                <span className="min-w-0 text-sm text-muted">
-                    <span className="break-words">{item.title}</span>
-                    {item.decisionText ? (
-                        <Badge variant="destructive" className="ms-2 rounded-full shadow-sm shadow-destructive/10">
-                            {item.decisionText}
-                        </Badge>
+            {hasResources ? (
+                <div className="grid w-full grid-cols-[1.5rem_1fr_auto] items-center gap-2 text-start">
+                    {icon}
+                    <ResourceActivityLinkList resources={item.resources} workflowRunId={item.workflowRunId} />
+                    {hasDetails ? (
+                        <VTooltip description={toggleDetailsLabel} asChild>
+                            <Button
+                                variant="ghost"
+                                size="xs"
+                                className="size-6 p-0 text-muted"
+                                onClick={() => setIsExpanded((current) => !current)}
+                                aria-expanded={isExpanded}
+                                aria-label={`${toggleDetailsLabel}: ${detailsSubject}`}
+                            >
+                                {chevron}
+                            </Button>
+                        </VTooltip>
                     ) : null}
-                </span>
-                {hasDetails ? (
-                    <ChevronDown
-                        className={cn(
-                            'mt-0.5 size-4 shrink-0 text-muted opacity-50 transition-transform',
-                            !isExpanded && '-rotate-90',
-                        )}
-                        aria-hidden="true"
-                    />
-                ) : null}
-            </button>
+                </div>
+            ) : (
+                <button
+                    type="button"
+                    className={cn(
+                        'grid w-full grid-cols-[1.5rem_1fr_auto] gap-2 text-start outline-none transition-colors',
+                        'focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4',
+                        hasDetails ? 'cursor-pointer hover:text-foreground' : 'cursor-default',
+                    )}
+                    onClick={() => hasDetails && setIsExpanded((current) => !current)}
+                    aria-expanded={hasDetails ? isExpanded : undefined}
+                    disabled={!hasDetails}
+                >
+                    {icon}
+                    <span className="min-w-0 text-sm text-muted">
+                        <span className="break-words">{item.title}</span>
+                        {item.decisionText ? (
+                            <Badge variant="destructive" className="ms-2 rounded-full shadow-sm shadow-destructive/10">
+                                {item.decisionText}
+                            </Badge>
+                        ) : null}
+                    </span>
+                    {hasDetails ? chevron : null}
+                </button>
+            )}
             {hasDetails && isExpanded ? (
                 <div className="mt-1">
                     <SummaryToolDetailPanel item={item} />
@@ -2240,7 +2263,12 @@ function SummaryActivityRow({
                                                 options={uxConfig.options}
                                                 variant={uxConfig.variant}
                                                 multiSelect={uxConfig.multiSelect}
-                                                onSelect={(optionId) => onSendMessage?.(optionId)}
+                                                onSelect={(optionId) =>
+                                                    onSendMessage?.(
+                                                        optionId,
+                                                        getToolApprovalResponseMetadata(message, optionId),
+                                                    )
+                                                }
                                                 onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
                                                 allowFreeResponse={
                                                     !uxConfig.options?.length || !!uxConfig.free_response
@@ -2328,8 +2356,43 @@ class MessageErrorBoundary extends Component<{ children: ReactNode }, { hasError
     }
 }
 
+// Sort chronologically, drop document-panel events + hidden types, and dedupe adjacent
+// identical messages. Shared by the rendered transcript and the workstream tab derivation.
+function sortAndDedupeMessages(messages: AgentMessage[], hiddenMessageTypes?: AgentMessageType[]): AgentMessage[] {
+    const filtered = messages.filter(
+        (message) => !isDocumentPanelEventMessage(message) && !hiddenMessageTypes?.includes(message.type),
+    );
+
+    const sorted = [...filtered].sort((a, b) => {
+        const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+        const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
+        return timeA - timeB;
+    });
+
+    const deduped: AgentMessage[] = [];
+    for (const msg of sorted) {
+        const previous = deduped[deduped.length - 1];
+        if (previous && shouldCollapseAdjacentRenderedMessage(previous, msg)) {
+            continue;
+        }
+
+        if (previous && shouldDedupeAdjacentCompletedToolMessage(previous, msg)) {
+            continue;
+        }
+        deduped.push(msg);
+    }
+    return deduped;
+}
+
 interface AllMessagesMixedProps {
     messages: AgentMessage[];
+    /**
+     * Full, workstream-unfiltered message set used to derive the workstream tab list, per-tab
+     * counts, and completion status. Falls back to `messages` when omitted. The parent filters
+     * `messages` down to the active workstream, so deriving the tab list from `messages` alone
+     * makes the tabs collapse (and vanish once `main` is selected) as you navigate between them.
+     */
+    workstreamSourceMessages?: AgentMessage[];
     bottomRef: React.RefObject<HTMLDivElement>;
     viewMode?: 'stacked' | 'sliding';
     isCompleted?: boolean;
@@ -2397,6 +2460,7 @@ const SCROLL_THROTTLE_MS = 100; // Max 10 scrolls per second
 
 function AllMessagesMixedComponent({
     messages,
+    workstreamSourceMessages,
     bottomRef,
     viewMode = 'stacked',
     isCompleted = false,
@@ -2536,36 +2600,26 @@ function AllMessagesMixedComponent({
 
     // Sort all messages chronologically and dedupe adjacent identical messages
     // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
-    const sortedMessages = React.useMemo(() => {
-        const filtered = messages.filter(
-            (message) => !isDocumentPanelEventMessage(message) && !hiddenMessageTypes?.includes(message.type),
-        );
+    const sortedMessages = React.useMemo(
+        () => sortAndDedupeMessages(messages, hiddenMessageTypes),
+        [messages, hiddenMessageTypes],
+    );
 
-        const sorted = [...filtered].sort((a, b) => {
-            const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
-            const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
-            return timeA - timeB;
-        });
-
-        const deduped: AgentMessage[] = [];
-        for (const msg of sorted) {
-            const previous = deduped[deduped.length - 1];
-            if (previous && shouldCollapseAdjacentRenderedMessage(previous, msg)) {
-                continue;
-            }
-
-            if (previous && shouldDedupeAdjacentCompletedToolMessage(previous, msg)) {
-                continue;
-            }
-            deduped.push(msg);
-        }
-        return deduped;
-    }, [messages, hiddenMessageTypes]);
+    // The workstream tabs are navigation over the WHOLE conversation, so derive them from the
+    // unfiltered source rather than `messages` (which the parent filters to the active workstream).
+    // Falling back to `sortedMessages` keeps callers that don't pass the source working unchanged.
+    const workstreamSourceSorted = React.useMemo(
+        () =>
+            workstreamSourceMessages
+                ? sortAndDedupeMessages(workstreamSourceMessages, hiddenMessageTypes)
+                : sortedMessages,
+        [workstreamSourceMessages, hiddenMessageTypes, sortedMessages],
+    );
 
     const workstreams = React.useMemo(() => {
-        const extractedWorkstreams = extractWorkstreams(sortedMessages);
+        const extractedWorkstreams = extractWorkstreams(workstreamSourceSorted);
 
-        sortedMessages.forEach((message) => {
+        workstreamSourceSorted.forEach((message) => {
             const details = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
             if (!details) return;
             extractedWorkstreams.set(
@@ -2575,7 +2629,7 @@ function AllMessagesMixedComponent({
         });
 
         return extractedWorkstreams;
-    }, [sortedMessages]);
+    }, [workstreamSourceSorted]);
 
     const activeWorkstreamName = React.useMemo(() => {
         if (activeWorkstream === 'all') return undefined;
@@ -2616,17 +2670,17 @@ function AllMessagesMixedComponent({
         }
     }, [activeWorkstream, workstreams, setActiveWorkstream]);
 
-    // Count messages per workstream
+    // Count messages per workstream (from the full source so counts don't shrink to the active tab)
     const workstreamCounts = React.useMemo(() => {
         const counts = new Map<string, number>();
-        counts.set('all', sortedMessages.length);
+        counts.set('all', workstreamSourceSorted.length);
 
         // Count main messages
-        const mainMessages = filterMessagesByWorkstream(sortedMessages, 'main');
+        const mainMessages = filterMessagesByWorkstream(workstreamSourceSorted, 'main');
         counts.set('main', mainMessages.length);
 
         // Count other workstreams
-        sortedMessages.forEach((msg) => {
+        workstreamSourceSorted.forEach((msg) => {
             const workstreamId = getWorkstreamId(msg);
             if (workstreamId !== 'main') {
                 counts.set(workstreamId, (counts.get(workstreamId) || 0) + 1);
@@ -2634,7 +2688,7 @@ function AllMessagesMixedComponent({
         });
 
         return counts;
-    }, [sortedMessages]);
+    }, [workstreamSourceSorted]);
 
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
@@ -2733,6 +2787,36 @@ function AllMessagesMixedComponent({
         return isCompleted || !isInProgress(completionDisplayMessages);
     }, [completionDisplayMessages, hasLatestToolApprovalAllow, hasPendingToolApprovalRequest, isCompleted]);
 
+    // Per-turn resource summaries. Derived from the full source stream (not the active-tab view) so
+    // child-workstream resources are included, but CLIPPED to the playback cursor so scrubbing back
+    // never reveals resources created later in the turn. Gated on the MAIN workstream reaching either
+    // a terminal state or its final ANSWER, so a completed child tab can't surface a summary early while
+    // reusable interactive workflows can summarize a completed turn. Built from structured tool metadata
+    // (details.resources), never parsed from prose.
+    //
+    // Clip by the cursor message's POSITION in the ordered source, not by `timestamp <= cursor`:
+    // millisecond timestamps are not unique, so a later message sharing the cursor's timestamp would
+    // otherwise leak. indexOf works because sortAndDedupeMessages preserves message references; a
+    // timestamp compare is the fallback if the cursor can't be located (e.g. collapsed by dedup).
+    const clippedResourceSource = useMemo(() => {
+        if (workstreamSourceSorted.length === 0) return workstreamSourceSorted;
+        const cursorMessage = messages[messages.length - 1];
+        if (!cursorMessage) return [];
+        const cursorIndex = workstreamSourceSorted.indexOf(cursorMessage);
+        if (cursorIndex >= 0) {
+            return cursorIndex >= workstreamSourceSorted.length - 1
+                ? workstreamSourceSorted
+                : workstreamSourceSorted.slice(0, cursorIndex + 1);
+        }
+        const cursorTs = getTimestampMs(cursorMessage.timestamp);
+        return workstreamSourceSorted.filter((m) => getTimestampMs(m.timestamp) <= cursorTs);
+    }, [workstreamSourceSorted, messages]);
+    const isLatestResourceTurnComplete = useMemo(
+        () => isCompleted || isResourceSummaryReady(clippedResourceSource),
+        [isCompleted, clippedResourceSource],
+    );
+    const turnResourceSummaries = useMemo(() => segmentTurnResources(clippedResourceSource), [clippedResourceSource]);
+
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
     // - actively incomplete ones render at the end
@@ -2802,6 +2886,19 @@ function AllMessagesMixedComponent({
         [visibleSummaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp],
     );
 
+    // Interleave per-turn resource summaries into the sliding (summary) timeline, mirroring the
+    // stacked view. Turn boundaries are user QUESTION message items.
+    const slidingRenderItems = React.useMemo(
+        () =>
+            interleaveTurnSummaries(
+                summaryConversationItems,
+                (item) => item.type === 'message' && item.message.type === AgentMessageType.QUESTION,
+                turnResourceSummaries,
+                isLatestResourceTurnComplete,
+            ),
+        [summaryConversationItems, turnResourceSummaries, isLatestResourceTurnComplete],
+    );
+
     // Group messages with ONLY complete streaming interleaved for stacked view.
     // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk).
     // Assistant prose stays as its own timeline item so thoughts remain visible between tool calls.
@@ -2811,6 +2908,19 @@ function AllMessagesMixedComponent({
                 groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream),
             ),
         [displayMessages, completeStreaming, activeWorkstream],
+    );
+
+    // Interleave per-turn resource summaries into the stacked timeline. Turn boundaries are user
+    // QUESTION groups; turn N's resources come from the full-stream segmentation.
+    const stackedRenderItems = React.useMemo(
+        () =>
+            interleaveTurnSummaries(
+                groupedMessages,
+                (group) => group.type === 'single' && group.message.type === AgentMessageType.QUESTION,
+                turnResourceSummaries,
+                isLatestResourceTurnComplete,
+            ),
+        [groupedMessages, turnResourceSummaries, isLatestResourceTurnComplete],
     );
 
     // Show an activity indicator when the latest visible conversation state is not terminal.
@@ -2869,7 +2979,7 @@ function AllMessagesMixedComponent({
         // Group messages by workstream
         const workstreamMessages = new Map<string, AgentMessage[]>();
 
-        sortedMessages.forEach((message) => {
+        workstreamSourceSorted.forEach((message) => {
             const workstreamId = getWorkstreamId(message);
             if (!workstreamMessages.has(workstreamId)) {
                 workstreamMessages.set(workstreamId, []);
@@ -2905,7 +3015,7 @@ function AllMessagesMixedComponent({
         }
 
         return statusMap;
-    }, [sortedMessages]);
+    }, [workstreamSourceSorted]);
 
     return (
         <div
@@ -3220,18 +3330,16 @@ function AllMessagesMixedComponent({
                     {isSummaryView && activeWorkstream !== 'all' && activeWorkstreamName && (
                         <div className="sticky top-0 z-20 -mx-2 bg-background/95 px-2 pb-2 pt-1 backdrop-blur sm:-mx-4 sm:px-4">
                             <div className="mx-auto flex w-full max-w-3xl items-center gap-2 border-b border-border/70 pb-3">
-                                <VTooltip description={t('agent.backToMainAgent')} asChild>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-8 shrink-0 text-muted hover:text-foreground"
-                                        aria-label={t('agent.backToMainAgent')}
-                                        onClick={handleShowMainAgentChat}
-                                    >
-                                        <ArrowLeft className="size-4" aria-hidden="true" />
-                                    </Button>
-                                </VTooltip>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 shrink-0 text-muted hover:text-foreground"
+                                    title={t('agent.backToMainAgent')}
+                                    onClick={handleShowMainAgentChat}
+                                >
+                                    <ArrowLeft className="size-4" aria-hidden="true" />
+                                </Button>
                                 <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                                     {activeWorkstreamName}
                                 </div>
@@ -3267,8 +3375,19 @@ function AllMessagesMixedComponent({
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved
                         <>
-                            {groupedMessages.map((group, groupIndex) => {
-                                const isLastGroup = groupIndex === groupedMessages.length - 1;
+                            {stackedRenderItems.map((group, groupIndex) => {
+                                const isLastGroup = groupIndex === stackedRenderItems.length - 1;
+
+                                if (group.type === 'resource_summary') {
+                                    return (
+                                        <ResourceChangeSummary
+                                            key={group.key}
+                                            resources={group.resources}
+                                            workflowRunId={artifactRunId}
+                                            className="my-2"
+                                        />
+                                    );
+                                }
 
                                 if (group.type === 'tool_group') {
                                     // Render grouped tool calls
@@ -3341,7 +3460,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     startTimestamp={
                                                         getPreviousRenderableGroupTimestamp(
-                                                            groupedMessages,
+                                                            stackedRenderItems,
                                                             groupIndex,
                                                         ) ?? message.timestamp
                                                     }
@@ -3437,7 +3556,18 @@ function AllMessagesMixedComponent({
                     ) : (
                         // Summary view - conversation turns with per-turn work disclosure
                         <>
-                            {summaryConversationItems.map((item) => {
+                            {slidingRenderItems.map((item) => {
+                                if (item.type === 'resource_summary') {
+                                    return (
+                                        <ResourceChangeSummary
+                                            key={item.key}
+                                            resources={item.resources}
+                                            workflowRunId={artifactRunId}
+                                            className="my-2"
+                                        />
+                                    );
+                                }
+
                                 if (item.type === 'work') {
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     const isThinkingOnlyWork = isTransientThinkingWork(item.messages);

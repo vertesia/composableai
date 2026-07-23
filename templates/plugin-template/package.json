@@ -1,9 +1,9 @@
 {
     "name": "plugin-template",
-    "version": "1.3.0",
+    "version": "1.5.0-dev.20260714.072725Z",
     "description": "A unified template for building custom UI plugins and tool servers for Vertesia",
     "type": "module",
-    "main": "lib/server.js",
+    "main": "lib/tool-server/server.js",
     "files": [
         "dist",
         "lib"
@@ -14,19 +14,25 @@
         "dev": "vite dev --mode app",
         "lint": "biome lint src",
         "prebuild": "biome lint src && tsc --build --noEmit",
-        "build:server": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js",
+        "clean:lib": "rimraf ./lib ./tsconfig.tool-server.tsbuildinfo",
+        "build:server": "npm run clean:lib && tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js",
         "build:ui:app": "vite build --mode app",
         "build:ui:lib": "vite build --mode lib",
         "build:ui": "vite build --mode app && vite build --mode lib",
-        "build": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite build --mode app && vite build --mode lib",
-        "preview": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
-        "start": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
+        "build": "npm run build:server && npm run build:ui",
+        "preview": "npm run build:server && vite preview",
+        "start": "npm run build:server && vite preview",
         "start:vercel": "vercel dev",
-        "test": "echo \"(no tests in template scaffold)\""
+        "pretest": "pnpm test:codegen",
+        "test": "echo \"(no tests in template scaffold)\"",
+        "codegen:dev": "node codegen/dist/codegen.js --context codegen/dev-codegen-context.json",
+        "test:codegen": "node --test codegen/test/*.test.mjs",
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
     },
     "vertesia-build": {
         "libDir": "./lib",
-        "srcDir": "./src/tool-server",
+        "srcDir": "./src",
         "transformers": [
             "skill",
             "skills",
@@ -58,29 +64,30 @@
         "react-dom": "^19.2.7"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.0",
-        "@hono/vite-dev-server": "^0.26.0",
+        "@biomejs/biome": "2.5.2",
+        "@hono/vite-dev-server": "^0.26.1",
         "@tailwindcss/forms": "^0.5.11",
-        "@tailwindcss/vite": "^4.3.1",
+        "@tailwindcss/vite": "^4.3.2",
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "@vertesia/build-tools": "workspace:*",
         "@vertesia/plugin-builder": "workspace:*",
         "@vitejs/plugin-basic-ssl": "^2.3.0",
-        "@vitejs/plugin-react": "^6.0.2",
+        "@vitejs/plugin-react": "^6.0.3",
         "concurrently": "^10.0.3",
         "globals": "^17.7.0",
         "react": "catalog:",
         "react-dom": "catalog:",
-        "tailwindcss": "^4.3.1",
+        "tailwindcss": "^4.3.2",
+        "rimraf": "^6.1.3",
         "tslib": "^2.8.1",
         "typescript": "^6.0.3",
         "vite": "catalog:",
         "vite-plugin-serve-static": "^2.2.0"
     },
     "dependencies": {
-        "@hono/node-server": "^2.0.6",
+        "@hono/node-server": "^2.0.10",
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
@@ -88,7 +95,7 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
-        "hono": "^4.12.27",
-        "lucide-react": "^1.21.0"
+        "hono": "^4.12.30",
+        "lucide-react": "^1.24.0"
     }
 }

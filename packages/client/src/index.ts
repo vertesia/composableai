@@ -17,4 +17,5 @@ export type { ComputeRunFacetsResponse, FilterOption } from './RunsApi.js';
 export { default as SecretsApi } from './SecretsApi.js';
 export * from './StreamSource.js';
 export * from './store/index.js';
+export { default as ViewsApi } from './ViewsApi.js';
 export type { AsyncExecutionResult };

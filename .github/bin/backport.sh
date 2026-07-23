@@ -7,9 +7,12 @@
 # `main` (label `backport/main`). Also supports `main -> release/X.Y` and
 # `release/X.Y -> release/X.Z`.
 #
-#   Clean cherry-pick  -> a ready-to-merge PR into <target>.
-#   Conflicting pick   -> conflict markers are committed and a DRAFT PR is opened,
-#                         with resolution steps posted back on the original PR.
+#   Clean cherry-pick     -> a ready-to-merge PR into <target>.
+#   Gitlink-only conflict -> the submodule pointer is pinned to the target's OWN
+#                            commit (ours), never the source's, and a normal
+#                            (auto-merging) PR is opened.
+#   Real file conflict    -> conflict markers are committed and a DRAFT PR is opened,
+#                            with resolution steps posted back on the original PR.
 #
 # Required env:
 #   GH_TOKEN         App token with contents:write + pull-requests:write on REPO
@@ -83,9 +86,10 @@ Backport of #${PR_NUMBER} to \`${target}\`. :warning: **The cherry-pick had conf
 
 What was committed so the branch exists for you to fix:
 - **Regular-file conflicts** kept their \`<<<<<<<\` markers — resolve them.
-- **Submodule (gitlink) conflicts** were set to the submodule's \`${target}\` HEAD
-  (e.g. composableai \`main\`) — verify the pointer is the one you want (this
-  assumes the matching submodule change was already backported there).
+- **Submodule (gitlink) conflicts** were pinned to this branch's own \`${target}\`
+  pointer (ours); the source branch's submodule commit is intentionally discarded
+  so it can't leak in. If this backport actually needs a newer submodule commit,
+  backport that submodule change on its own line first.
 - **Structural conflicts** (renames/deletes) were auto-resolved to the incoming
   side — review the full diff, not just the markers.
 
@@ -203,32 +207,102 @@ finalize_pr() {
     return 0
 }
 
-# Resolve unmerged submodule gitlinks (mode 160000) at the index level — the
-# submodule isn't checked out, so they can't be `git add`ed. Point each at the
-# submodule's HEAD on the SAME branch as the backport target (e.g. composableai
-# `main` for a backport to main), so the pointer matches this branch's line rather
-# than carrying the source line's commit. Assumes the matching submodule change
-# was already backported there; the draft PR flags it for verification.
+# Resolve unmerged submodule gitlinks (mode 160000) by pinning each to OURS — the
+# pointer already recorded on the backport target branch. This is the guarantee
+# that a source-branch submodule commit can NEVER leak onto the backport branch:
+# main and release/X.Y legitimately track different composableai/llumiverse
+# commits, so a forward-port must not downgrade the target's pointer and a
+# back-port must not pull an unreleased one. The submodule isn't checked out, so
+# this is done at the index level (an unchecked-out submodule can't be `git add`ed);
+# stage 2 of the unmerged entry is "ours" (== HEAD:<gl>, since HEAD is still the
+# target tip mid-cherry-pick). If this backport genuinely needs a newer submodule
+# commit, that submodule change must be backported on its own line first.
+#
+# A gitlink with no "ours" pointer (a structural add/delete on the submodule path)
+# is left unmerged on purpose — the caller treats it as a manual conflict rather
+# than ever taking the source (theirs) pointer.
 resolve_gitlink_conflicts() {
-    local target="$1" gl name url sha
+    local target="$1" gl ours
     while IFS= read -r gl; do
         [ -n "$gl" ] || continue
-        name="$(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null \
-            | awk -v p="$gl" '$2==p{print $1}' | sed -E 's/^submodule\.(.+)\.path$/\1/' | head -1)"
-        url=""
-        [ -n "$name" ] && url="$(git config -f .gitmodules --get "submodule.${name}.url" 2>/dev/null)"
-        if [ -z "$url" ]; then
-            echo "::warning::No .gitmodules URL for gitlink '${gl}'; leaving it unmerged."
+        ours="$(git ls-files --unmerged -- "$gl" | awk '$3=="2"{print $2; exit}')"
+        [ -n "$ours" ] || ours="$(git rev-parse --verify --quiet "HEAD:${gl}" 2>/dev/null || true)"
+        if [ -z "$ours" ]; then
+            echo "::warning::Gitlink '${gl}' has no 'ours' pointer on ${target} (structural submodule conflict); leaving it unmerged."
             continue
         fi
-        sha="$(git ls-remote "$url" "refs/heads/${target}" 2>/dev/null | awk 'NR==1{print $1}')"
-        if [ -z "$sha" ]; then
-            echo "::warning::Could not read '${gl}' ${target} HEAD from ${url}; leaving it unmerged."
-            continue
-        fi
-        git update-index --cacheinfo "160000,${sha},${gl}"
-        echo "Set gitlink '${gl}' to its ${target} HEAD ${sha:0:12} (${url})."
+        git update-index --cacheinfo "160000,${ours},${gl}"
+        echo "Pinned gitlink '${gl}' to the ${target} pointer ${ours:0:12} (ours; source pointer discarded)."
     done < <(git ls-files --unmerged | awk '$1=="160000"{print $4}' | sort -u)
+}
+
+# Echo the commit recorded at <path> in <ref> IFF that path is a submodule there
+# (tree mode 160000); empty otherwise — a blob, a plain directory (tree), or absent.
+# Deliberately mode-aware, NOT `rev-parse <ref>:<path>`: rev-parse returns a SHA for
+# a directory or file too, which would hide a submodule replaced by a plain
+# directory (the gitlink is gone, but rev-parse still yields the directory's tree
+# SHA and the caller would think the submodule is still present).
+gitlink_at() {
+    git ls-tree "$1" -- "$2" 2>/dev/null | awk '$1=="160000"{print $3; exit}'
+}
+
+# Enforce the submodule invariant across the WHOLE tree, on EVERY cherry-pick path:
+# the backport's submodule set (which submodules exist, and the commit each points
+# at) MUST end up identical to the target branch's. A submodule change rides its own
+# line, never a file backport. This is needed because a gitlink can move with NO
+# conflict — when the target pointer equals the source commit's parent pointer, git
+# applies the source bump cleanly and `resolve_gitlink_conflicts` never sees it.
+#
+#   * repointed (a 160000 gitlink on BOTH sides, different sha) -> reset to ours.
+#   * added / removed / replaced (a 160000 gitlink on only ONE side — the other is
+#     absent, a file, or a plain directory) -> fail closed; a structural submodule
+#     change must be cherry-picked by hand, never auto-merged.
+#
+# Enumerates gitlinks from the tree of BOTH origin/<target> and HEAD (their union),
+# not from .gitmodules — a deletion/replacement drops the .gitmodules stanza too, so
+# a .gitmodules-only walk would miss it. Presence is decided mode-aware via
+# gitlink_at (see above). Amends HEAD when it resets a pointer (--allow-empty: a
+# source commit that only bumped a submodule normalizes to a no-op, then dropped by
+# the "no net change" check below). Every mutating git call is checked explicitly:
+# this runs under `if ! normalize_gitlinks_to_target`, which disables errexit inside
+# the whole function body, so a silent failure would otherwise slip through.
+normalize_gitlinks_to_target() {
+    local target="$1" gl ours cur corrected=0
+    while IFS= read -r gl; do
+        [ -n "$gl" ] || continue
+        cur="$(gitlink_at HEAD "$gl")"
+        ours="$(gitlink_at "origin/${target}" "$gl")"
+        [ "$cur" != "$ours" ] || continue               # same submodule pointer (or neither a gitlink here): fine
+        if [ -z "$ours" ] || [ -z "$cur" ]; then
+            # One side is not a 160000 gitlink at this path: the backport adds,
+            # removes, or REPLACES the submodule (e.g. with a plain directory).
+            # Never let a structural submodule change ride an auto-merge — hand off.
+            echo "::error::Backport to ${target} adds, removes, or replaces submodule '${gl}' (not a 160000 gitlink on both sides); refusing to auto-resolve a structural submodule change." >&2
+            comment_original ":x: Backport to \`${target}\` would add, remove, or replace submodule \`${gl}\`. Cherry-pick \`${MERGE_SHA}\` by hand. See ${RUN_URL}"
+            return 1
+        fi
+        if ! git update-index --cacheinfo "160000,${ours},${gl}"; then
+            echo "::error::Could not reset submodule '${gl}' to the ${target} pointer ${ours:0:12}." >&2
+            comment_original ":x: Backport to \`${target}\` could not reset submodule \`${gl}\` to the \`${target}\` pointer. Cherry-pick \`${MERGE_SHA}\` by hand. See ${RUN_URL}"
+            return 1
+        fi
+        corrected=1
+        echo "Reset gitlink '${gl}' to the ${target} pointer ${ours:0:12} (ours; source pointer discarded)."
+    done < <( { git ls-tree -r "origin/${target}"; git ls-tree -r HEAD; } 2>/dev/null \
+                | awk '$1=="160000"{print $4}' | sort -u )
+
+    if [ "$corrected" -eq 1 ]; then
+        # --allow-empty: if the source commit ONLY bumped the submodule, resetting
+        # it to ours leaves nothing — that's a no-op backport, not an error. The
+        # empty commit is then dropped by the "no net change vs target" check below
+        # (a submodule pointer moves on its own line, never as a backport side effect).
+        if ! git commit --amend --no-edit --quiet --allow-empty; then
+            echo "::error::Could not amend ${target} after resetting submodule pointer(s)." >&2
+            comment_original ":x: Backport to \`${target}\` could not re-commit after correcting a submodule pointer. See ${RUN_URL}"
+            return 1
+        fi
+    fi
+    return 0
 }
 
 # --- backport one target --------------------------------------------------
@@ -298,19 +372,43 @@ backport_one() {
             return 0
         fi
         if git diff --name-only --diff-filter=U | grep -q .; then
-            echo "Conflicts cherry-picking onto ${target}; preparing a draft PR."
+            # Partition the conflicts up front. A submodule (gitlink) conflict is
+            # EXPECTED and benign: main and release/X.Y legitimately track different
+            # composableai/llumiverse commits, so any source commit that also bumped
+            # the gitlink conflicts here even when every real file merged cleanly.
+            # Only a NON-gitlink conflict makes this a backport a human must inspect
+            # (a draft). Capture that set before we start resolving anything.
+            local nongitlink_conflicts
+            nongitlink_conflicts="$(git ls-files --unmerged | awk '$1!="160000"{print $4}' | sort -u)"
+            if [ -n "$nongitlink_conflicts" ]; then
+                echo "Real (non-gitlink) conflicts cherry-picking onto ${target}; preparing a draft PR."
+            else
+                echo "Only submodule gitlink conflicts onto ${target}; pinning to ours and opening a normal PR."
+            fi
+
             # Stage conflicted regular files (they keep their markers for manual
-            # resolution); resolve submodule gitlinks at the index level since an
+            # resolution); pin submodule gitlinks to OURS at the index level since an
             # unchecked-out submodule can't be `git add`ed. Avoid `git add -A`,
             # which chokes on the empty submodule directory.
-            git ls-files --unmerged | awk '$1!="160000"{print $4}' | sort -u | while IFS= read -r f; do
+            printf '%s\n' "$nongitlink_conflicts" | while IFS= read -r f; do
                 [ -n "$f" ] && git add -- "$f" 2>/dev/null || true
             done
             resolve_gitlink_conflicts "$target"
-            # Force-resolve anything still unmerged (modify/delete, rename, add/add)
-            # to the incoming side, so ANY conflict becomes a draft for a human to
-            # validate rather than hard-failing the backport.
-            git ls-files --unmerged | awk '{print $4}' | sort -u | while IFS= read -r p; do
+
+            # A gitlink left unmerged (structural submodule add/delete) is the one
+            # thing we must NEVER force to theirs — that would leak the source
+            # submodule pointer onto the backport branch. Bail for a hand cherry-pick.
+            if git ls-files --unmerged | awk '$1=="160000"{print $4}' | grep -q .; then
+                echo "::error::Unresolved submodule gitlink conflict onto ${target}; refusing to take the source pointer. Cherry-pick by hand." >&2
+                comment_original ":x: Backport to \`${target}\` has a submodule conflict that can't be safely auto-resolved without leaking the source pointer. Cherry-pick \`${MERGE_SHA}\` by hand. See ${RUN_URL}"
+                git cherry-pick --abort 2>/dev/null || true
+                return 1
+            fi
+            # Force-resolve any remaining NON-gitlink conflict (modify/delete, rename,
+            # add/add) to the incoming side, so those become a draft for a human to
+            # validate rather than hard-failing the backport. Gitlinks are settled
+            # above and are deliberately excluded here.
+            git ls-files --unmerged | awk '$1!="160000"{print $4}' | sort -u | while IFS= read -r p; do
                 [ -n "$p" ] || continue
                 git checkout --theirs -- "$p" 2>/dev/null && git add -- "$p" 2>/dev/null \
                     || git rm -q -- "$p" 2>/dev/null \
@@ -336,13 +434,28 @@ backport_one() {
                 git cherry-pick --abort 2>/dev/null || true
                 return 1
             fi
-            conflicted=1
+            # A gitlink-only conflict was pinned to ours (no net submodule change) and
+            # auto-merges like any clean backport; only a real file/structural conflict
+            # opens as a draft.
+            if [ -n "$nongitlink_conflicts" ]; then
+                conflicted=1
+            fi
         else
             git cherry-pick --abort 2>/dev/null || true
             echo "::error::Unexpected cherry-pick failure onto ${target}." >&2
             comment_original ":x: Backport to \`${target}\` failed unexpectedly: ${RUN_URL}"
             return 1
         fi
+    fi
+
+    # HARD INVARIANT: no source-branch submodule pointer may reach the backport.
+    # Run on EVERY path (clean pick included) since a gitlink can move with no
+    # conflict when the target pointer equals the source commit's parent. This
+    # comes before the empty-diff check so a clean, submodule-only bump normalizes
+    # to the target pointer and is then correctly skipped as "no net change".
+    if ! normalize_gitlinks_to_target "$target"; then
+        git cherry-pick --abort 2>/dev/null || true
+        return 1
     fi
 
     # Don't open an empty PR: if the result is identical to the target there is

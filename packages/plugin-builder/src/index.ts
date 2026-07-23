@@ -63,13 +63,15 @@ export function vertesiaPluginBuilder({ inlineCss, cssVar, input, output }: Vert
             if (keys.length === 1) {
                 const asset = bundle[jsOutput];
                 if (asset) {
-                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                    const cssContent = readFileSync(join(options.dir!, output), 'utf8');
+                    const outputDir = options.dir;
+                    if (!outputDir) {
+                        throw new Error('inlineCss requires Rollup output.dir to be set');
+                    }
+                    const cssContent = readFileSync(join(outputDir, output), 'utf8');
                     if (cssContent) {
                         const exportedContent = extractTailwindUtilitiesLayer(cssContent);
                         if (exportedContent) {
-                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                            const jsFile = join(options.dir!, jsOutput);
+                            const jsFile = join(outputDir, jsOutput);
                             const jsContent = readFileSync(jsFile, 'utf8');
                             writeFileSync(
                                 jsFile,

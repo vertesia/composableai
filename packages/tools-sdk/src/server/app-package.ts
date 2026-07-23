@@ -77,6 +77,9 @@ const builders: Record<
         }
         pkg.processes = allProcesses;
     },
+    async views(pkg: AppPackage, config: ToolServerConfig) {
+        pkg.views = [...(config.views ?? [])];
+    },
     async templates(pkg: AppPackage, config: ToolServerConfig) {
         const basePath = `${config.prefix || '/api'}/templates`;
         pkg.templates = (config.templates || []).flatMap((coll) =>
@@ -139,6 +142,7 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         await builders.interactions(pkg, config, c);
         await builders.types(pkg, config, c);
         await builders.processes(pkg, config, c);
+        await builders.views(pkg, config, c);
         await builders.templates(pkg, config, c);
         await builders.widgets(pkg, config, c);
         await builders.ui(pkg, config, c);
@@ -156,6 +160,9 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         }
         if (scopes.has('processes')) {
             await builders.processes(pkg, config, c);
+        }
+        if (scopes.has('views')) {
+            await builders.views(pkg, config, c);
         }
         if (scopes.has('templates')) {
             await builders.templates(pkg, config, c);

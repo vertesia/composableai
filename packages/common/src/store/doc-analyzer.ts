@@ -1,104 +1,42 @@
-import type { JSONObject } from '../json.js';
 import type { WorkflowExecutionPayload, WorkflowRunStatus } from './workflow.js';
 
-export interface PdfToRichtextOptions {
+export interface DocumentPrepOptions {
     features?: string[];
     debug?: boolean;
+    output_format?: DocProcessorOutputFormat;
     [key: string]: unknown;
 }
 
-export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayload, 'vars'> {
-    vars: PdfToRichtextOptions;
+export interface DocumentPrepWorkflowPayload extends Omit<WorkflowExecutionPayload, 'vars'> {
+    vars: DocumentPrepOptions;
 }
 
-export interface TransformTablesWorkflowPayload extends Omit<WorkflowExecutionPayload, 'vars'> {
-    vars: AdaptTablesParams;
-    environment?: string;
-}
-
-export interface TransformTablesWorkflowResult {
-    result_path: string;
-    status: string;
-    table_count: number;
-    item_count: number;
-}
-
-/**
- * Represents a image in a document that has been analyzed
- */
-export interface DocImage {
-    id?: string;
-    page_number?: number;
-    description?: string;
-    is_meaningful?: boolean;
-    width?: number;
-    height?: number;
-}
-
-/**
- * The export type formats for tables.
- */
-export type ExportTableFormats = 'json' | 'csv' | 'xml';
-
-/**
- * Represents a table in a document that has been analyzed
- */
-export interface DocTable {
-    page_number?: number;
-    table_number?: number;
-    title?: string;
-    format: 'application/csv' | 'application/json';
-}
-
-/**
- * Represents a table in a document that has been analyzed in CSV format
- */
-export interface DocTableCsv extends DocTable {
-    format: 'application/csv';
-    title?: string;
-    data: string;
-}
-
-/**
- * Represents a table in a document that has been analyzed in JSON format
- */
-export interface DocTableJson extends DocTable {
-    format: 'application/json';
-    title?: string;
-    data: JSONObject[];
-}
-
-export type DocTableResponse = DocTableCsv | DocTableJson;
+export type DocumentProcessingPhase = 'markdown' | 'grounded_extraction';
 
 /**
  * Output format for document processing workflows
  */
-export type DocProcessorOutputFormat = 'xml' | 'markdown';
+export type DocProcessorOutputFormat = 'markdown';
 
 /**
  * Represents a document analysis run status
  */
 export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
+    phase?: DocumentProcessingPhase;
     progress?: DocAnalyzerProgress;
-    /** The output format being used for processing (markdown or xml) */
+    /** The output format being used for processing. */
     output_format?: DocProcessorOutputFormat;
 }
 
-export interface DocAnalyzerResultResponse {
-    document?: string;
-    tables?: DocTableResponse[];
-    images?: DocImage[];
-    annotated?: string | null;
-}
-
 export interface DocAnalyzerProgress {
+    phase?: DocumentProcessingPhase;
     pages: DocAnalyzerProgressStatus;
     images: DocAnalyzerProgressStatus;
     tables: DocAnalyzerProgressStatus;
     visuals: DocAnalyzerProgressStatus;
     started_at?: number;
     percent: number;
-    /** The output format being used for processing (markdown or xml) */
+    /** The output format being used for processing. */
     output_format?: DocProcessorOutputFormat;
 }
 
@@ -176,7 +114,3 @@ export interface AdaptedTable {
 }
 
 export type AdaptedTableResponse = Record<string, AdaptedTable>;
-
-export interface AnnotatedPdfResponse {
-    url: string | null;
-}

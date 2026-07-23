@@ -1,7 +1,7 @@
 import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { getComposableToken, STSError, UserNotFoundError } from './auth/composable';
+import { getComposableToken, RestrictedEnvironmentError, STSError, UserNotFoundError } from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
@@ -85,6 +85,17 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     // Don't redirect to central auth for UserNotFoundError - let signup flow handle it
                     if (err instanceof UserNotFoundError) {
                         console.log('User not found - will trigger signup flow', err);
+                        session.isLoading = false;
+                        session.authError = err;
+                        setSession(session.clone());
+                        return;
+                    }
+
+                    // Restricted environment (preview/preprod without early-access): surface the
+                    // error so the sign-in screen shows the dedicated step. Redirecting to central
+                    // auth here would loop, since the identity is valid but the environment is gated.
+                    if (err instanceof RestrictedEnvironmentError) {
+                        console.warn('Restricted environment - user lacks early-access', err);
                         session.isLoading = false;
                         session.authError = err;
                         setSession(session.clone());
@@ -184,7 +195,12 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                                 error: err,
                             },
                         });
-                        if (!(err instanceof UserNotFoundError)) session.logout();
+                        // Keep the Firebase session for UserNotFoundError (signup flow) and
+                        // RestrictedEnvironmentError (identity is valid; the environment is gated).
+                        // Logging out would retrigger onAuthStateChanged and clear the authError.
+                        if (!(err instanceof UserNotFoundError) && !(err instanceof RestrictedEnvironmentError)) {
+                            session.logout();
+                        }
                         session.isLoading = false;
                         session.authError = err;
                         setSession(session.clone());

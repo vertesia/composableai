@@ -6,7 +6,7 @@ import {
 } from '@vertesia/common';
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { NavLink, useRouterContext } from '@vertesia/ui/router';
+import { useRouterContext } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import dayjs from 'dayjs';
@@ -32,9 +32,11 @@ import { AskUserWidget } from '../AskUserWidget';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
+import { createAgentMarkdownAnchor } from './AgentMarkdownAnchor';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
+import { getToolApprovalResponseMetadata } from './requestInputMessages';
 import { getWorkstreamId } from './utils';
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
@@ -359,55 +361,20 @@ function MessageItemComponent({
     // Check if message has exportable content (markdown text)
     const hasExportableContent = typeof messageContent === 'string' && messageContent.trim().length > 0;
 
+    // UX config for REQUEST_INPUT messages (narrowed const so it stays typed inside the JSX closures below)
+    const askUserUx =
+        message.type === AgentMessageType.REQUEST_INPUT ? (message.details as AskUserMessageDetails)?.ux : undefined;
+
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(
         () => ({
-            a: ({
-                node,
-                ref,
-                ...props
-            }: {
-                node?: unknown;
-                ref?: unknown;
-                href?: string;
-                children?: React.ReactNode;
-            }) => {
-                const href = props.href || '';
+            a: createAgentMarkdownAnchor({
+                StoreLinkComponent,
+                CollectionLinkComponent,
                 // Carry the active account (`a`) & project (`p`) params on internal routes so
                 // copy-link / open-in-new-tab preserve the current tenant.
-                const withParams = href.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(href) : href;
-                if (href.includes('/store/objects')) {
-                    if (StoreLinkComponent) {
-                        const documentId = href.split('/store/objects/')[1] || '';
-                        return (
-                            <StoreLinkComponent href={withParams} documentId={documentId}>
-                                {props.children}
-                            </StoreLinkComponent>
-                        );
-                    }
-                    return (
-                        <NavLink href={withParams} topLevelNav>
-                            {props.children}
-                        </NavLink>
-                    );
-                }
-                if (href.includes('/store/collections')) {
-                    if (CollectionLinkComponent) {
-                        const collectionId = href.split('/store/collections/')[1] || '';
-                        return (
-                            <CollectionLinkComponent href={withParams} collectionId={collectionId}>
-                                {props.children}
-                            </CollectionLinkComponent>
-                        );
-                    }
-                    return (
-                        <NavLink href={withParams} topLevelNav>
-                            {props.children}
-                        </NavLink>
-                    );
-                }
-                return <a {...props} target="_blank" rel="noopener noreferrer" />;
-            },
+                addStickyParams: (href: string) => router.getTopRouter().navigator.addStickyParams(href),
+            }),
             img: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; src?: string; alt?: string }) => {
                 return (
                     <Button
@@ -639,36 +606,34 @@ function MessageItemComponent({
                     )}
                 >
                     {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
-                    {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux
-                        ? (() => {
-                              // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                              const uxConfig = (message.details as AskUserMessageDetails).ux!;
-                              return (
-                                  <AskUserWidget
-                                      question={typeof messageContent === 'string' ? messageContent : ''}
-                                      options={uxConfig.options}
-                                      variant={uxConfig.variant}
-                                      multiSelect={uxConfig.multiSelect}
-                                      onSelect={(optionId) => onSendMessage?.(optionId)}
-                                      onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
-                                      allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
-                                      placeholder={uxConfig.free_response?.placeholder}
-                                      submitLabel={uxConfig.free_response?.submit_label}
-                                      onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
-                                      hideBorder
-                                      compact
-                                      answered={requestInputAnswered}
-                                  />
-                              );
-                          })()
-                        : visibleMessageContent && (
-                              <div
-                                  className="message-content break-words w-full"
-                                  style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-                              >
-                                  {renderContent(processedContent || visibleMessageContent)}
-                              </div>
-                          )}
+                    {askUserUx ? (
+                        <AskUserWidget
+                            question={typeof messageContent === 'string' ? messageContent : ''}
+                            options={askUserUx.options}
+                            variant={askUserUx.variant}
+                            multiSelect={askUserUx.multiSelect}
+                            onSelect={(optionId) =>
+                                onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                            }
+                            onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                            allowFreeResponse={!askUserUx.options?.length || !!askUserUx.free_response}
+                            placeholder={askUserUx.free_response?.placeholder}
+                            submitLabel={askUserUx.free_response?.submit_label}
+                            onSubmit={(value) => onSendMessage?.(value, askUserUx.free_response?.metadata)}
+                            hideBorder
+                            compact
+                            answered={requestInputAnswered}
+                        />
+                    ) : (
+                        visibleMessageContent && (
+                            <div
+                                className="message-content break-words w-full"
+                                style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                            >
+                                {renderContent(processedContent || visibleMessageContent)}
+                            </div>
+                        )
+                    )}
 
                     {messageAttachments.length > 0 && (
                         <AttachmentPreviewList

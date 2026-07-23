@@ -346,7 +346,11 @@ export default function MessageInput({
 
     const handleSend = () => {
         const message = value.trim();
-        if (!message || disabled || isSending) return;
+        // Mirror the send button's disabled condition so the keyboard (Enter) path can't
+        // dispatch a send that the parent will reject while files are still uploading —
+        // otherwise the text would be cleared below and lost. The disabled button + its
+        // "wait for files" tooltip already explain why Enter does nothing here.
+        if (!message || disabled || isSending || hasProcessingFiles) return;
 
         onSend(message);
         setValue('');
@@ -519,7 +523,6 @@ export default function MessageInput({
                                         variant="ghost"
                                         size="icon"
                                         className="size-8 rounded-full text-muted hover:bg-muted"
-                                        aria-label={t('agent.addAttachment')}
                                         title={t('agent.addAttachment')}
                                     >
                                         <PlusIcon className="size-4" />
@@ -650,7 +653,6 @@ export default function MessageInput({
                                 '[&_svg]:text-destructive disabled:[&_svg]:text-muted',
                             )}
                             title={t('agent.stopTooltip')}
-                            aria-label={t('agent.stopTooltip')}
                         >
                             {isStopping ? (
                                 <Spinner size="sm" />

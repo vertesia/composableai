@@ -17,6 +17,11 @@ export interface NodeUpdate {
     isRequired?: boolean;
     editor?: string | null; // use null to force remove editor
     description?: string;
+    /**
+     * When false, the property is marked `"x-extract": false` and is omitted from
+     * extraction result_schema. Default / true = extractable.
+     */
+    extractable?: boolean;
 }
 
 interface SchemaLoader {
@@ -58,8 +63,7 @@ export class ManagedSchema implements SchemaLoader {
     }
 
     get children() {
-        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-        return this.root.children!;
+        return this.root.children ?? [];
     }
 
     reload() {
@@ -140,6 +144,19 @@ export class SchemaNode {
 
     set description(value: string | undefined) {
         this.schema.description = value;
+    }
+
+    /** Whether extraction models may fill this field. Default true. */
+    get extractable(): boolean {
+        return (this.schema as Record<string, unknown>)['x-extract'] !== false;
+    }
+
+    set extractable(value: boolean) {
+        if (value) {
+            delete (this.schema as Record<string, unknown>)['x-extract'];
+        } else {
+            (this.schema as Record<string, unknown>)['x-extract'] = false;
+        }
     }
 
     get isParent() {
@@ -299,6 +316,10 @@ export class SchemaNode {
         }
         if (data.description !== this.description) {
             this.description = data.description;
+            updated = true;
+        }
+        if (data.extractable != null && this.extractable !== data.extractable) {
+            this.extractable = data.extractable;
             updated = true;
         }
 

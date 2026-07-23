@@ -33,8 +33,8 @@ Additional packages and templates live under `packages/`, `libraries/`, and `tem
 
 ## Requirements
 
-- Node.js 24
-- pnpm 11.3.0
+- Node.js 24.x
+- pnpm 11.8.0 through Corepack
 
 ## Setup
 

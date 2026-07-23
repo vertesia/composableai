@@ -100,12 +100,9 @@ export function InputList({
             {value &&
                 value.length > 0 &&
                 value.map((v, index) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                    <VTooltip description={'click to remove'} key={index}>
+                    <VTooltip description={'click to remove'} key={`item-${index}`}>
                         <Badge
                             variant={'secondary'}
-                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                            key={index}
                             onClick={() => _onClick(index)}
                             className={clsx(
                                 'flex-shrink-0 transition-colors',

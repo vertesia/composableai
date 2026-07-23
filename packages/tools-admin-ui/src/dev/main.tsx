@@ -11,8 +11,12 @@ import { AdminApp } from '../AdminApp.js';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-// biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-const root = createRoot(document.getElementById('root')!);
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+    throw new Error('Missing #root element');
+}
+
+const root = createRoot(rootElement);
 
 /**
  * In dev mode we wrap with RouterProvider since there's no parent router.

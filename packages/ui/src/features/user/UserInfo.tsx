@@ -140,7 +140,7 @@ function EmailAgentAvatar({ email, showTitle = false, size = 'md' }: EmailAgentA
 
     const description = (
         <>
-            <div>{t('user.serviceAccountDescription')}</div>
+            <div>{t('user.agentOnBehalfOf')}</div>
             <div className="text-muted text-sm">
                 <span className="font-semibold">Email:</span> {email}
             </div>
@@ -158,11 +158,7 @@ function EmailAgentAvatar({ email, showTitle = false, size = 'md' }: EmailAgentA
                     />
                     <Avatar name={email} size={size} className="border-2 border-white dark:border-gray-800" />
                 </div>
-                {showTitle && (
-                    <div className="text-sm font-semibold truncate">
-                        {t('user.agentOnBehalfOf')} : {email}
-                    </div>
-                )}
+                {showTitle && <div className="text-sm font-semibold truncate">Agent&#8194;({email})</div>}
             </div>
         </UserPopoverPanel>
     );
@@ -260,7 +256,11 @@ function AgentAvatar({
                 </div>
                 {showTitle && (
                     <div className="text-sm font-semibold truncate">
-                        {user ? `Agent      (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : title}
+                        {user
+                            ? `Agent${'\u2003'}(${user.name || user.email})`
+                            : apiKey
+                              ? `Agent (${apiKey.name})`
+                              : title}
                     </div>
                 )}
             </div>

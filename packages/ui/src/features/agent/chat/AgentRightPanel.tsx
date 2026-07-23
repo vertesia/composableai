@@ -226,6 +226,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                         ws.deadline_ms > 0 ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100)) : 0;
                     const browserUse = browserUseByWorkstream.get(ws.workstream_id);
                     const hasDeadline = ws.deadline_ms > 0;
+                    const childRunId = ws.child_workflow_run_id;
                     const meta = [
                         ws.phase ? formatWorkstreamName(ws.phase) : undefined,
                         elapsed > 0 ? t('agent.elapsed', { seconds: elapsed }) : undefined,
@@ -313,14 +314,13 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                             </RightPanelErrorBoundary>
                                         )}
 
-                                        {ws.child_workflow_run_id && (
+                                        {childRunId && (
                                             <div className="mt-2 flex flex-wrap gap-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-7 px-2 text-xs text-muted hover:text-foreground"
-                                                    // biome-ignore lint/style/noNonNullAssertion: TS can't prove narrowing here.
-                                                    onClick={() => copyRunId(ws.child_workflow_run_id!)}
+                                                    onClick={() => copyRunId(childRunId)}
                                                 >
                                                     <ClipboardCopyIcon className="size-3 me-1" />
                                                     {t('agent.copyRunId')}
@@ -329,8 +329,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-7 px-2 text-xs text-muted hover:text-foreground"
-                                                    // biome-ignore lint/style/noNonNullAssertion: TS can't prove narrowing here.
-                                                    onClick={() => downloadConversation(ws.child_workflow_run_id!)}
+                                                    onClick={() => downloadConversation(childRunId)}
                                                 >
                                                     <DownloadCloudIcon className="size-3 me-1" />
                                                     {t('agent.download')}

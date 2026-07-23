@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { type DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider.js';
 import { DocumentUploadModal } from '../upload/DocumentUploadModal.js';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
+import { StartWorkflowButton } from './actions/StartWorkflowButton';
 import { ObjectsActionContextProvider } from './ObjectsActionContext';
 import { useObjectsActionContext } from './ObjectsActionHooks';
 import type { ObjectsActionSpec } from './ObjectsActionSpec';
@@ -15,8 +16,18 @@ interface SelectionActionsProps {
     type?: ContentObjectTypeItem;
     allowMutations?: boolean;
     allowDelete?: boolean;
+    /**
+     * Opt-in: shows the "Start Workflow" action. Defaults to `false` so it never leaks to read-only
+     * surfaces — callers must pass a permission-gated value (e.g. `canRunWorkflow(perms)`).
+     */
+    allowWorkflowRun?: boolean;
 }
-export function SelectionActions({ type, allowMutations = true, allowDelete = true }: SelectionActionsProps) {
+export function SelectionActions({
+    type,
+    allowMutations = true,
+    allowDelete = true,
+    allowWorkflowRun = false,
+}: SelectionActionsProps) {
     const selection = useDocumentSelection();
     const size = selection.size();
     const plural = size > 1 ? 's' : '';
@@ -41,6 +52,7 @@ export function SelectionActions({ type, allowMutations = true, allowDelete = tr
                         </Button>
                     </div>
                 )}
+                {allowWorkflowRun && <StartWorkflowButton />}
                 <SelectionActionsPopover
                     selection={selection}
                     allowMutations={allowMutations}
@@ -48,7 +60,7 @@ export function SelectionActions({ type, allowMutations = true, allowDelete = tr
                 >
                     {(actions) =>
                         actions.length > 0 ? (
-                            <Button variant="ghost" alt="More action" size="sm">
+                            <Button variant="ghost" title="More action" size="sm">
                                 <EllipsisVertical size={16} />
                             </Button>
                         ) : null

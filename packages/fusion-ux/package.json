@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/fusion-ux",
-    "version": "1.5.0-dev",
+    "version": "1.5.0-dev.20260714.072725Z",
     "description": "Dynamic model-generated UI components for Vertesia",
     "type": "module",
     "main": "./lib/index.js",
@@ -22,7 +22,7 @@
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rollup -c",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "lint": "biome lint src",
         "lint:fix": "biome lint --write src",
         "test": "vitest run",
@@ -34,16 +34,17 @@
         "react": "catalog:"
     },
     "devDependencies": {
+        "@types/node": "catalog:",
+        "@types/react": "catalog:",
+        "react": "19.2.7",
         "@rollup/plugin-commonjs": "^29.0.3",
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-replace": "^6.0.3",
         "@rollup/plugin-terser": "^1.0.0",
-        "@types/node": "catalog:",
-        "@types/react": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.62.2",
+        "rolldown": "catalog:",
         "typescript": "^6.0.3",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     },
     "exports": {
         ".": {
