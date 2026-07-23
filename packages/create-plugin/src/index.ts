@@ -21,6 +21,7 @@ import {
     applyDevModeAnswers,
     applyDevModePackageManagerConfig,
     handleConditionalRemoves,
+    normalizePackageManagerScripts,
     removeMetaFiles,
     renameFiles,
     replaceVariables,
@@ -186,6 +187,11 @@ Documentation: ${config.docsUrl}
             },
         };
         runTemplateCodegen(projectName, templateConfig, scaffoldContext);
+
+        const scriptReplacements = normalizePackageManagerScripts(projectName, packageManager);
+        if (scriptReplacements > 0) {
+            console.log(chalk.gray(`   Updated ${scriptReplacements} scripts for ${packageManager}\n`));
+        }
 
         // Step 10: Remove meta files
         removeMetaFiles(projectName, templateConfig);

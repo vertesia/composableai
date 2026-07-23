@@ -15,7 +15,7 @@
         "build": "tsc -p tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "dev": "tsc --watch",
-        "test": "node ./scripts/run-smoke-test.mjs",
+        "test": "node --test ./scripts/*.test.mjs && node ./scripts/run-smoke-test.mjs",
         "prepublishOnly": "pnpm run build"
     },
     "keywords": [

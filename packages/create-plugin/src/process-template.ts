@@ -56,15 +56,40 @@ function rewritePackageManagerScripts(
 
     let replacements = 0;
     const runCommand = `${packageManager} run`;
+    const commandPrefix = String.raw`(^|(?:&&|\|\||[;|])\s*)`;
+    const scriptNames = Object.keys(packageJson.scripts).filter((name) => name !== 'run');
 
     for (const [scriptName, scriptCommand] of Object.entries(packageJson.scripts)) {
-        const updatedCommand = scriptCommand.replace(/\bpnpm run\b/g, runCommand);
+        let updatedCommand = scriptCommand;
+        for (const targetScript of scriptNames) {
+            const directScriptPattern = new RegExp(
+                `${commandPrefix}(?:npm|pnpm)\\s+${escapeRegex(targetScript)}(?=\\s|$)`,
+                'g',
+            );
+            updatedCommand = updatedCommand.replace(directScriptPattern, `$1${runCommand} ${targetScript}`);
+        }
+        const explicitRunPattern = new RegExp(`${commandPrefix}(?:npm|pnpm)\\s+run\\b`, 'g');
+        updatedCommand = updatedCommand.replace(explicitRunPattern, `$1${runCommand}`);
         if (updatedCommand !== scriptCommand) {
             packageJson.scripts[scriptName] = updatedCommand;
             replacements++;
         }
     }
 
+    return replacements;
+}
+
+export function normalizePackageManagerScripts(projectName: string, packageManager: string): number {
+    const packageJsonPath = path.join(projectName, 'package.json');
+    if (!fs.existsSync(packageJsonPath)) return 0;
+
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as {
+        scripts?: Record<string, string>;
+    };
+    const replacements = rewritePackageManagerScripts(packageJson, packageManager);
+    if (replacements > 0) {
+        fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+    }
     return replacements;
 }
 
@@ -321,11 +346,6 @@ export function adjustPackageJson(
         if (answers.PM_VERSION) {
             packageJson.packageManager = `${packageManager}@${answers.PM_VERSION}`;
             console.log(chalk.gray(`   Set packageManager to "${packageJson.packageManager}"`));
-        }
-
-        const scriptReplacements = rewritePackageManagerScripts(packageJson, packageManager);
-        if (scriptReplacements > 0) {
-            console.log(chalk.gray(`   Updated ${scriptReplacements} scripts for ${packageManager}`));
         }
 
         // 2. Replace catalog: specs with concrete versions for package managers that do not support pnpm catalogs.
