@@ -26,9 +26,28 @@ export function getConfigFile(path?: string) {
     }
 }
 
-export type Region = 'us1' | 'eu1' | 'jp1';
+export type Region = 'us1' | 'eu1' | 'jp1' | 'dev1';
 export const DEFAULT_REGION: Region = 'us1';
-export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
+
+/** Customer-facing regions. */
+const PUBLIC_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
+
+/**
+ * `~/.vertesia/dev` marks a Vertesia developer's machine. It gates `dev1`, which is our own
+ * cluster rather than a customer deployment — listing it for everyone would offer a region
+ * nobody outside Vertesia can reach.
+ */
+export function isVertesiaDeveloper(): boolean {
+    return existsSync(getConfigFile('dev'));
+}
+
+/**
+ * Regions the CLI offers and accepts: the public set, plus `dev1` on a Vertesia developer's
+ * machine. Used for the help text, the interactive prompt, and `--region` validation alike, so
+ * what is advertised and what is accepted never drift apart. The URL templates below already
+ * resolve `dev1` correctly (`cloud.dev1`, `api.dev1`, `sts.dev1`).
+ */
+export const AVAILABLE_REGIONS: Region[] = isVertesiaDeveloper() ? [...PUBLIC_REGIONS, 'dev1'] : PUBLIC_REGIONS;
 
 export type ConfigUrlRef = 'local' | 'dev-main' | 'dev-preview' | 'preview' | 'prod' | string;
 export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGION): string {
