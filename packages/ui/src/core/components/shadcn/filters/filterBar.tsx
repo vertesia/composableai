@@ -318,6 +318,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
+                    aria-label={t('filter.filter')}
                     size="md"
                     className={cn('transition group flex gap-1.5', className)}
                 >
