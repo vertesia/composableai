@@ -63,7 +63,7 @@ function rewritePackageManagerScripts(
         let updatedCommand = scriptCommand;
         for (const targetScript of scriptNames) {
             const directScriptPattern = new RegExp(
-                `${commandPrefix}(?:npm|pnpm)\\s+${escapeRegex(targetScript)}(?=\\s|$)`,
+                `${commandPrefix}pnpm\\s+${escapeRegex(targetScript)}(?=\\s|$)`,
                 'g',
             );
             updatedCommand = updatedCommand.replace(directScriptPattern, `$1${runCommand} ${targetScript}`);

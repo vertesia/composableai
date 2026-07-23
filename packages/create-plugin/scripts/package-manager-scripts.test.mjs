@@ -22,6 +22,7 @@ test('normalizes npm and pnpm script invocations to npm', () => {
         'test:codegen': 'node --test codegen/test/*.test.mjs',
         lint: 'biome check src',
         documentation: 'echo "Use pnpm test:codegen locally"',
+        invalid: 'npm test:codegen',
     });
     try {
         assert.equal(normalizePackageManagerScripts(root, 'npm'), 2);
@@ -31,6 +32,7 @@ test('normalizes npm and pnpm script invocations to npm', () => {
             'test:codegen': 'node --test codegen/test/*.test.mjs',
             lint: 'biome check src',
             documentation: 'echo "Use pnpm test:codegen locally"',
+            invalid: 'npm test:codegen',
         });
     } finally {
         rmSync(root, { recursive: true, force: true });
@@ -40,10 +42,11 @@ test('normalizes npm and pnpm script invocations to npm', () => {
 test('normalizes npm and pnpm script invocations to pnpm', () => {
     const root = testProject({
         build: 'npm run build:ui && pnpm run build:server',
-        pretest: 'npm test:codegen',
+        pretest: 'pnpm test:codegen',
         'test:codegen': 'node --test codegen/test/*.test.mjs',
         lint: 'biome check src',
         documentation: 'echo "Use npm test:codegen locally"',
+        invalid: 'npm test:codegen',
     });
     try {
         assert.equal(normalizePackageManagerScripts(root, 'pnpm'), 2);
@@ -53,6 +56,7 @@ test('normalizes npm and pnpm script invocations to pnpm', () => {
             'test:codegen': 'node --test codegen/test/*.test.mjs',
             lint: 'biome check src',
             documentation: 'echo "Use npm test:codegen locally"',
+            invalid: 'npm test:codegen',
         });
     } finally {
         rmSync(root, { recursive: true, force: true });
