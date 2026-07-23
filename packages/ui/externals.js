@@ -60,7 +60,6 @@ export const EXTERNALS = [
     'tailwind-merge',
     'debounce',
     'fast-xml-parser',
-    'fast-xml-validator',
     // verteisa deps
     '@llumiverse/common',
     '@vertesia/client',
