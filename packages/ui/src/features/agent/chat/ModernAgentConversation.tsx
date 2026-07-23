@@ -52,6 +52,7 @@ import type {
     AgentInitialRequestTemplateContext,
 } from './ModernAgentOutput/AllMessagesMixed';
 import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
+import { collectDeliveredArtifactRefs } from './ModernAgentOutput/AttachmentPreview';
 import type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProgressPanel';
 import Header from './ModernAgentOutput/Header';
 import MessageInput, {
@@ -1358,8 +1359,9 @@ function ModernAgentConversationInner({
         updateDocumentTitle,
     } = useDocumentPanel(messages);
 
+    const deliveredArtifactRefs = useMemo(() => collectDeliveredArtifactRefs(messages), [messages]);
     const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles } =
-        useFileProcessing(client, agentRunId, serverFileUpdates, toast);
+        useFileProcessing(client, agentRunId, serverFileUpdates, toast, deliveredArtifactRefs);
     const canUploadFiles = interactive && !hideFileUpload;
 
     const handleRemoveProcessingFile = useCallback(

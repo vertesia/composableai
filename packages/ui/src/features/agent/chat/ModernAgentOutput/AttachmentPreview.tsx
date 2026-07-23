@@ -1,3 +1,4 @@
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { Button, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { UserSessionContext } from '@vertesia/ui/session';
@@ -425,4 +426,21 @@ export function parseUserMessageAttachments(content: string): ParsedUserAttachme
         body: bodyLines.join('\n').trim(),
         attachments,
     };
+}
+
+/**
+ * Collect the artifact references (`artifact:...` hrefs and bare artifact paths) embedded in
+ * sent user messages. A file whose reference appears here has already been delivered to the
+ * agent, so the composer must not offer it as a pending attachment again (e.g. after a reload).
+ */
+export function collectDeliveredArtifactRefs(messages: AgentMessage[]): Set<string> {
+    const refs = new Set<string>();
+    for (const message of messages) {
+        if (message.type !== AgentMessageType.QUESTION || typeof message.message !== 'string') continue;
+        for (const attachment of parseUserMessageAttachments(message.message).attachments) {
+            if (attachment.href) refs.add(attachment.href);
+            if (attachment.artifactPath) refs.add(attachment.artifactPath);
+        }
+    }
+    return refs;
 }
