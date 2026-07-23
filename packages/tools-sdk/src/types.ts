@@ -9,6 +9,7 @@ import type {
     ToolExecutionMetadata,
     ToolResult,
     ToolResultContent,
+    ToolResultMeta,
 } from '@vertesia/common';
 
 export type { ToolExecutionMetadata };
@@ -57,7 +58,7 @@ export interface ToolExecutionResult extends ToolResultContent {
     /**
      * Medata can be used to return more info on the tool execution like stats or user messages.
      */
-    meta?: Record<string, unknown>;
+    meta?: ToolResultMeta;
 }
 
 export interface ToolExecutionResponse extends ToolExecutionResult, ToolResult {

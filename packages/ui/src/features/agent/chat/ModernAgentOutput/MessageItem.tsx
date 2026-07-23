@@ -6,7 +6,7 @@ import {
 } from '@vertesia/common';
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { NavLink, useRouterContext } from '@vertesia/ui/router';
+import { useRouterContext } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import dayjs from 'dayjs';
@@ -32,6 +32,7 @@ import { AskUserWidget } from '../AskUserWidget';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
+import { createAgentMarkdownAnchor } from './AgentMarkdownAnchor';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
@@ -367,52 +368,13 @@ function MessageItemComponent({
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(
         () => ({
-            a: ({
-                node,
-                ref,
-                ...props
-            }: {
-                node?: unknown;
-                ref?: unknown;
-                href?: string;
-                children?: React.ReactNode;
-            }) => {
-                const href = props.href || '';
+            a: createAgentMarkdownAnchor({
+                StoreLinkComponent,
+                CollectionLinkComponent,
                 // Carry the active account (`a`) & project (`p`) params on internal routes so
                 // copy-link / open-in-new-tab preserve the current tenant.
-                const withParams = href.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(href) : href;
-                if (href.includes('/store/objects')) {
-                    if (StoreLinkComponent) {
-                        const documentId = href.split('/store/objects/')[1] || '';
-                        return (
-                            <StoreLinkComponent href={withParams} documentId={documentId}>
-                                {props.children}
-                            </StoreLinkComponent>
-                        );
-                    }
-                    return (
-                        <NavLink href={withParams} topLevelNav>
-                            {props.children}
-                        </NavLink>
-                    );
-                }
-                if (href.includes('/store/collections')) {
-                    if (CollectionLinkComponent) {
-                        const collectionId = href.split('/store/collections/')[1] || '';
-                        return (
-                            <CollectionLinkComponent href={withParams} collectionId={collectionId}>
-                                {props.children}
-                            </CollectionLinkComponent>
-                        );
-                    }
-                    return (
-                        <NavLink href={withParams} topLevelNav>
-                            {props.children}
-                        </NavLink>
-                    );
-                }
-                return <a {...props} target="_blank" rel="noopener noreferrer" />;
-            },
+                addStickyParams: (href: string) => router.getTopRouter().navigator.addStickyParams(href),
+            }),
             img: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; src?: string; alt?: string }) => {
                 return (
                     <Button

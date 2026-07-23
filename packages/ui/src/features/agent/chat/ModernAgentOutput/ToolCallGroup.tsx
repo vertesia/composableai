@@ -1,4 +1,9 @@
-import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import {
+    type AgentMessage,
+    AgentMessageType,
+    type AgentResourceReference,
+    getResourcesFromMessage,
+} from '@vertesia/common';
 import { Button, cn, onActivateKey, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -9,6 +14,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
+import { ResourceChipList } from './ResourceChip';
 import type { ToolExecutionStatus } from './utils';
 
 /** Keys that are internal metadata and not interesting to display */
@@ -27,8 +33,10 @@ const META_KEYS = new Set([
     'files',
     'outputFiles',
     'display_role',
+    'duration_ms',
     'observation',
     'progress_messages',
+    'resources',
     'browseruse',
     'browser_use',
 ]);
@@ -797,6 +805,23 @@ function ToolCallGroupComponent({
     // Extract workflow_run_id from messages (any message in the group should have it)
     const artifactRunId = messages.find((m) => m.workflow_run_id)?.workflow_run_id ?? messages[0]?.workflow_run_id;
 
+    // Aggregate resource references across the whole group so deep links stay visible even when the
+    // group is collapsed (mirrors how group images/files are surfaced at the group level).
+    const groupResources = useMemo(() => {
+        const seen = new Set<string>();
+        const out: AgentResourceReference[] = [];
+        for (const m of messages) {
+            for (const ref of getResourcesFromMessage(m)) {
+                const key = `${ref.type}:${ref.id}:${ref.action}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    out.push(ref);
+                }
+            }
+        }
+        return out;
+    }, [messages]);
+
     // Render status indicator based on tool execution status
     const renderStatusIndicator = () => {
         // Only pulse for the currently active/latest group
@@ -965,6 +990,13 @@ function ToolCallGroupComponent({
 
             {/* Show all images from the group prominently at the top */}
             <GroupImageDisplay messages={messages} artifactRunId={artifactRunId} />
+
+            {/* Deep links to resources created/updated/deleted in this group, independent of expansion state. */}
+            {groupResources.length > 0 && (
+                <div className="px-4 pt-1 pb-2">
+                    <ResourceChipList resources={groupResources} workflowRunId={artifactRunId} />
+                </div>
+            )}
 
             {/* Collapsed summary - show tool calls as single-line rows with expand option */}
             {isCollapsed && (
