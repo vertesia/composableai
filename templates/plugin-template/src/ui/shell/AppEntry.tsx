@@ -27,7 +27,7 @@ const routes: Route[] = [
 
 export function AppEntry() {
     return (
-        <VertesiaShell>
+        <VertesiaShell preserveSignInPath>
             <OrgGate>
                 <RouterProvider routes={routes} />
             </OrgGate>
