@@ -9,6 +9,13 @@ describe('parseXML', () => {
         expect(result.json).not.toBeNull();
     });
 
+    it('allows parsererror elements in valid XML content', () => {
+        const result = parseXML('<root><parsererror>expected content</parsererror></root>');
+
+        expect(result.valid).toBe(true);
+        expect(result.json).not.toBeNull();
+    });
+
     it('rejects invalid XML', () => {
         const result = parseXML('<root><item></root>');
 

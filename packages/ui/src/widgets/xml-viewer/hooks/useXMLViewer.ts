@@ -15,7 +15,10 @@ const parser = new XMLParser({
 export function parseXML(xml: string) {
     try {
         const validationDocument = new DOMParser().parseFromString(xml, 'application/xml');
-        const parserError = validationDocument.querySelector('parsererror');
+        const parserError =
+            validationDocument.documentElement.localName === 'parsererror'
+                ? validationDocument.documentElement
+                : undefined;
         if (parserError) {
             throw new Error(parserError.textContent?.trim() || 'Invalid XML!');
         }
