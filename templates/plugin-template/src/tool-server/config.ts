@@ -5,6 +5,8 @@ import settingsSchema from './settings.js';
 import uiNavItems from './ui-nav-items.js';
 
 const CONFIG__SERVER_TITLE = 'Tool Server Template';
+// how the host renders the plugin (set at scaffold time): 'shadow' = shadow root, 'css' = shared host page
+const CONFIG__isolation = 'shadow';
 export const ServerConfig = {
     disableHtml: true,
     title: CONFIG__SERVER_TITLE,
@@ -21,7 +23,7 @@ export const ServerConfig = {
     views,
     mcpProviders,
     uiConfig: {
-        isolation: 'shadow',
+        isolation: CONFIG__isolation,
         src: '/lib/plugin.js',
         available_in: ['app_portal', 'composite_app'],
         navigation: uiNavItems, // optional navigation configuration for the Composite App sidebar

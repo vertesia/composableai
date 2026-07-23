@@ -28,11 +28,6 @@ function isExternal(id: string) {
  */
 const VERTESIA_UI_PATH = '';
 
-/**
- * Set to true to extract the css utility layer and inject it in the plugin js file.
- * If you use shadow dom isolation for the plugin you must set this to false.
- */
-const CONFIG__inlineCss = false;
 const REACT_IMPORT_MAP_PLACEHOLDER = '<!-- vertesia-react-importmap -->';
 const STALE_ASSET_RECOVERY_PLACEHOLDER = '<!-- vertesia-stale-asset-recovery -->';
 const nodeRequire = createRequire(import.meta.url);
@@ -171,11 +166,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
         throw new Error("Library config is only available in 'build' mode. Please use 'lib' mode for library builds.");
     }
     return {
-        plugins: [
-            tailwindcss(),
-            react(),
-            vertesiaPluginBuilder({ inlineCss: CONFIG__inlineCss, input: 'src/ui/index.css' }),
-        ],
+        plugins: [tailwindcss(), react(), vertesiaPluginBuilder({ input: 'src/ui/index.css' })],
         build: {
             outDir: 'dist/lib', // the plugin will be generated in the `dist/lib` directory
             lib: {

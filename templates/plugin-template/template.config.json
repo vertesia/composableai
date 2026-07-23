@@ -74,19 +74,19 @@
     },
     {
       "type": "select",
-      "name": "inlineCss",
+      "name": "isolation",
       "message": "CSS isolation strategy",
       "initial": 0,
       "choices": [
         {
           "title": "Shadow DOM",
           "description": "Shadow DOM will be used to fully isolate the plugin.",
-          "value": false
+          "value": "shadow"
         },
         {
           "title": "CSS-only isolation",
-          "description": "Injects Tailwind utilities into host DOM; not fully isolated. Lighter but may generate conflicts.",
-          "value": true
+          "description": "The host injects the plugin styles (minus the preflight) into its page. Lighter, but styles may conflict.",
+          "value": "css"
         }
       ]
     },
@@ -148,7 +148,6 @@
     }
   },
   "files": [
-    "vite.config.ts",
     "index.html",
     "src/tool-server/config.ts",
     "src/modules/content-app/resources/processes/review-workflow.ts",
