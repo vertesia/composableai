@@ -964,6 +964,52 @@ interface ResumeConversationPayload {
     asyncCompletion?: AsyncCompletionOptions;
 }
 
+/**
+ * The kinds of Vertesia resource an agent tool can report having created, updated, or deleted.
+ * Restricted to resources that have a real detail route to navigate to — do not emit a reference
+ * for a mutation with no meaningful navigation target. Add new kinds only once their route exists.
+ */
+export type AgentResourceType =
+    | 'document'
+    | 'collection'
+    | 'content_type'
+    | 'interaction'
+    | 'prompt'
+    | 'agent'
+    | 'workflow'
+    | 'process'
+    | 'process_run'
+    | 'interaction_run'
+    | 'view';
+
+export type AgentResourceAction = 'created' | 'updated' | 'deleted';
+
+/**
+ * A navigable reference to a resource an agent tool mutated. Tools return these as tool-result
+ * metadata (see {@link ToolResultMeta.resources}); the conversation runtime promotes them onto the
+ * tool's completed lifecycle message so the UI can render deterministic deep links and an
+ * end-of-turn "resources changed" summary — independent of any link the model writes in prose.
+ */
+export interface AgentResourceReference {
+    type: AgentResourceType;
+    /** The resource id used to build its detail route. */
+    id: string;
+    /** Human-readable label captured at mutation time (e.g. the document name). */
+    label: string;
+    action: AgentResourceAction;
+    /** Set when the mutation produced a new revision, enabling a "view changes" affordance. */
+    revision_id?: string;
+}
+
+/**
+ * Metadata a tool executor may attach to its result. Kept as an open record for forward
+ * compatibility while typing the fields the runtime interprets.
+ */
+export interface ToolResultMeta extends Record<string, unknown> {
+    /** Resources this tool created/updated/deleted, surfaced as deep links in the UI. */
+    resources?: AgentResourceReference[];
+}
+
 export interface ToolResultContent {
     content: string;
     is_error: boolean;
@@ -977,7 +1023,54 @@ export interface ToolResultContent {
     /**
      * Can contain metadata returned by the tool executor.
      */
-    meta?: Record<string, unknown>;
+    meta?: ToolResultMeta;
+}
+
+const AGENT_RESOURCE_TYPES: readonly AgentResourceType[] = [
+    'document',
+    'collection',
+    'content_type',
+    'interaction',
+    'prompt',
+    'agent',
+    'workflow',
+    'process',
+    'process_run',
+    'interaction_run',
+    'view',
+];
+
+const AGENT_RESOURCE_ACTIONS: readonly AgentResourceAction[] = ['created', 'updated', 'deleted'];
+
+/**
+ * Validate and normalize an untrusted value into a clean list of resource references. References
+ * cross the wire and may originate from external/MCP tools, so malformed entries are dropped
+ * rather than throwing, and an empty/absent label falls back to the id.
+ */
+export function normalizeAgentResources(value: unknown): AgentResourceReference[] {
+    if (!Array.isArray(value)) return [];
+    const result: AgentResourceReference[] = [];
+    for (const entry of value) {
+        if (!entry || typeof entry !== 'object') continue;
+        const ref = entry as Record<string, unknown>;
+        const { type, id, label, action, revision_id } = ref;
+        if (typeof type !== 'string' || !AGENT_RESOURCE_TYPES.includes(type as AgentResourceType)) continue;
+        if (typeof id !== 'string' || id.length === 0) continue;
+        if (typeof action !== 'string' || !AGENT_RESOURCE_ACTIONS.includes(action as AgentResourceAction)) continue;
+        result.push({
+            type: type as AgentResourceType,
+            id,
+            label: typeof label === 'string' && label.length > 0 ? label : id,
+            action: action as AgentResourceAction,
+            ...(typeof revision_id === 'string' && revision_id.length > 0 ? { revision_id } : {}),
+        });
+    }
+    return result;
+}
+
+/** Extract the normalized resource references a tool declared in its result metadata. */
+export function getResourcesFromToolResult(result: Pick<ToolResultContent, 'meta'>): AgentResourceReference[] {
+    return normalizeAgentResources(result.meta?.resources);
 }
 
 export interface ToolResult extends ToolResultContent {
