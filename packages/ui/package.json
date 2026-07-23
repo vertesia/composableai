@@ -121,7 +121,7 @@
         "i18next-cli": "^1.66.0",
         "jsdom": "^29.1.1",
         "rolldown": "catalog:",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vitest": "^4.1.10",
         "vitest-axe": "^0.1.0",
         "wcag-contrast": "^3.0.0"

@@ -36,7 +36,7 @@
         "@types/js-yaml": "^4.0.9",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vite": "catalog:",
         "vitest": "^4.1.10"
     },
