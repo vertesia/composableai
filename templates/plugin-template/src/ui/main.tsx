@@ -13,6 +13,19 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
     <StrictMode>
+<<<<<<< HEAD
         <AppEntry />
+=======
+        {/*
+          preserveSignInPath keeps deep links working: without it the sign-in screen resets the
+          URL to "/" while the session boots, so /app/<route> — and the ?a=/?p= and #token= the
+          Central Auth handoff arrives with — are lost before the router ever sees them.
+        */}
+        <VertesiaShell preserveSignInPath>
+            <OrgGate>
+                <RouterProvider routes={routes} />
+            </OrgGate>
+        </VertesiaShell>
+>>>>>>> 826002c5 (fix(ui): keep XML parsing and plugin deep links browser-safe (#1798))
     </StrictMode>,
 );
