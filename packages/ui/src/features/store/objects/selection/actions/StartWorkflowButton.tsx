@@ -71,7 +71,7 @@ function StartWorkflowModal({ objectIds, onClose }: StartWorkflowModalProps) {
     };
 
     return (
-        <Modal isOpen onClose={onClose}>
+        <Modal isOpen onClose={onClose} size="lg">
             <ModalTitle>{t('store.actions.startWorkflowByRule')}</ModalTitle>
             <ModalBody>
                 <div className="pb-2">{t('store.actions.chooseWorkflowRule')}</div>
@@ -82,7 +82,7 @@ function StartWorkflowModal({ objectIds, onClose }: StartWorkflowModalProps) {
                 ) : (
                     <div className="max-h-[420px] overflow-y-auto border-border border rounded-md">
                         <SelectList
-                            className="text-start"
+                            className="text-start w-full"
                             options={rules ?? []}
                             value={selected}
                             onChange={setSelected}
