@@ -43,7 +43,7 @@
         "@rollup/plugin-terser": "^1.0.0",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vitest": "^4.1.10"
     },
     "exports": {

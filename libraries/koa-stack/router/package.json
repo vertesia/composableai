@@ -38,7 +38,7 @@
         "@types/koa-send": "^4.1.6",
         "@types/statuses": "^2.0.6",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vitest": "^4.1.10"
     },
     "main": "./lib/index.js",

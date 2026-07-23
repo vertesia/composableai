@@ -33,7 +33,7 @@
     "devDependencies": {
         "@types/koa": "^3.0.3",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3"
+        "typescript": "^7.0.2"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
