@@ -865,11 +865,8 @@ importers:
         specifier: ^3.4.11
         version: 3.4.11
       fast-xml-parser:
-        specifier: ^5.8.0
+        specifier: 5.8.0
         version: 5.8.0
-      fast-xml-validator:
-        specifier: ^1.1.0
-        version: 1.1.0
       firebase:
         specifier: ^12.14.0
         version: 12.14.0
@@ -4608,9 +4605,6 @@ packages:
     resolution: {integrity: sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==}
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
 
-  detailed-xml-validator@2.1.0:
-    resolution: {integrity: sha512-BhnTxmkOhDXS5V6yQFxTYItZa9Fk4gKKQNNDNXWLNolnsIdP/7wuyL0vlrfNqjgKbH8hsq+QFlFL6tpHvRNiAw==}
-
   detect-element-overflow@2.0.0:
     resolution: {integrity: sha512-DETEHRGdIdQowMR1Fb5hG4WXUJhlLId/IRQgAi5GVqCnHwnb0SKf9V/teyEVDX0+iClPeOPiNvlE6fSiECz65w==}
 
@@ -4819,9 +4813,6 @@ packages:
   fast-xml-parser@5.8.0:
     resolution: {integrity: sha512-6bIM7fsJxeo3uXv7OncQYsBAMPJ7V16Slahl/6M98C/i2q+vB1+4a0MtrvYwDFEUrwDSbAmeLDRXsOBwrL7yAg==}
     hasBin: true
-
-  fast-xml-validator@1.1.0:
-    resolution: {integrity: sha512-q1bKyEhrF+p0e9eFvDUEOBjoA2QXM6A7rUnAG9bsGIADw7tT7tfMXS83eMGnSZH8oz1sOyAuM2K4++IebyUKhw==}
 
   faye-websocket@0.11.4:
     resolution: {integrity: sha512-CzbClwlXAuiRQAlUyfqPgvPoNKTckTPGfwZV4ZdAhVcP2lh9KUxJg2b5GkE7XbjKQ3YJnQ9z6D9ntLAlB+tP8g==}
@@ -10377,10 +10368,6 @@ snapshots:
 
   destroy@1.2.0: {}
 
-  detailed-xml-validator@2.1.0:
-    dependencies:
-      fast-xml-parser: 5.8.0
-
   detect-element-overflow@2.0.0: {}
 
   detect-libc@2.1.2: {}
@@ -10588,11 +10575,6 @@ snapshots:
       fast-xml-builder: 1.2.0
       path-expression-matcher: 1.5.0
       strnum: 2.3.0
-      xml-naming: 0.1.0
-
-  fast-xml-validator@1.1.0:
-    dependencies:
-      detailed-xml-validator: 2.1.0
       xml-naming: 0.1.0
 
   faye-websocket@0.11.4:
