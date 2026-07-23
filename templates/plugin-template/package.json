@@ -87,7 +87,7 @@
         "vite-plugin-serve-static": "^2.2.0"
     },
     "dependencies": {
-        "@hono/node-server": "^2.0.9",
+        "@hono/node-server": "^2.0.10",
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
