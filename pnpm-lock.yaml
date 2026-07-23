@@ -810,16 +810,8 @@ importers:
         specifier: ^3.4.12
         version: 3.4.12
       fast-xml-parser:
-<<<<<<< HEAD
         specifier: ^5.10.1
         version: 5.10.1
-      fast-xml-validator:
-        specifier: ^1.2.0
-        version: 1.2.0
-=======
-        specifier: 5.8.0
-        version: 5.8.0
->>>>>>> 826002c5 (fix(ui): keep XML parsing and plugin deep links browser-safe (#1798))
       firebase:
         specifier: ^12.16.0
         version: 12.16.0
@@ -4844,12 +4836,6 @@ packages:
     resolution: {integrity: sha512-IEMIf7298kXuZSRFoGfMYrl7is8LpavODgbNz1cwIudv7KwVFnuU+UsMporfq6PD6aXSlawZlARiA3UywCTfMw==}
     hasBin: true
 
-<<<<<<< HEAD
-  fast-xml-validator@1.2.0:
-    resolution: {integrity: sha512-KX77kkGs/opIi11o+6BJ6AtwI6kZjBVOOT2qqQhsS6hzoqC3a3Z0bZqjy9tlttefmSSKGbNfxT4eJfF9m8Qcnw==}
-
-=======
->>>>>>> 826002c5 (fix(ui): keep XML parsing and plugin deep links browser-safe (#1798))
   faye-websocket@0.11.4:
     resolution: {integrity: sha512-CzbClwlXAuiRQAlUyfqPgvPoNKTckTPGfwZV4ZdAhVcP2lh9KUxJg2b5GkE7XbjKQ3YJnQ9z6D9ntLAlB+tP8g==}
     engines: {node: '>=0.8.0'}
@@ -10475,13 +10461,6 @@ snapshots:
 
   destroy@1.2.0: {}
 
-<<<<<<< HEAD
-  detailed-xml-validator@2.1.0:
-    dependencies:
-      fast-xml-parser: 5.10.1
-
-=======
->>>>>>> 826002c5 (fix(ui): keep XML parsing and plugin deep links browser-safe (#1798))
   detect-element-overflow@2.0.0: {}
 
   detect-libc@2.1.2: {}
@@ -10692,14 +10671,6 @@ snapshots:
       strnum: 2.4.1
       xml-naming: 0.3.0
 
-<<<<<<< HEAD
-  fast-xml-validator@1.2.0:
-    dependencies:
-      detailed-xml-validator: 2.1.0
-      xml-naming: 0.3.0
-
-=======
->>>>>>> 826002c5 (fix(ui): keep XML parsing and plugin deep links browser-safe (#1798))
   faye-websocket@0.11.4:
     dependencies:
       websocket-driver: 0.7.5
