@@ -106,10 +106,13 @@ describe('AppsApi', () => {
 
         expect(result.commit).toBe('2'.repeat(40));
         const request = requests[0];
-        expect(request?.url).toBe('https://studio.example.com/api/v1/apps/sample-app/repo/documents');
-        expect(request?.headers.get('content-type')).toContain('multipart/form-data; boundary=');
-        const form = await request?.formData();
-        expect(JSON.parse(String(form?.get('metadata')))).toEqual({
+        if (!request) {
+            throw new Error('Expected a multipart document request');
+        }
+        expect(request.url).toBe('https://studio.example.com/api/v1/apps/sample-app/repo/documents');
+        expect(request.headers.get('content-type')).toContain('multipart/form-data; boundary=');
+        const form = await request.formData();
+        expect(JSON.parse(String(form.get('metadata')))).toEqual({
             ref: 'main',
             expected_head: '1'.repeat(40),
             message: 'Add docs',
@@ -118,7 +121,12 @@ describe('AppsApi', () => {
                 { field: 'file_1', path: 'docs/diagram.png' },
             ],
         });
-        expect((form?.get('file_0') as File).name).toBe('guide.md');
-        expect((form?.get('file_1') as File).size).toBe(3);
+        const guideFile = form.get('file_0');
+        const diagramFile = form.get('file_1');
+        if (!(guideFile instanceof File) || !(diagramFile instanceof File)) {
+            throw new Error('Expected multipart file entries');
+        }
+        expect(guideFile.name).toBe('guide.md');
+        expect(diagramFile.size).toBe(3);
     });
 });
