@@ -6,6 +6,8 @@ const DOCUMENT_ROOT_TAG_PREFIX = 'document-root:';
 const LEGACY_DOCUMENT_TAG_PREFIX = 'document:';
 export const DOCUMENT_EDITING_DEFAULT_INTERACTION = 'sys:GeneralAgent';
 const openDocumentEditingScopes = new Set<string>();
+const MARKDOWN_CONTENT_TYPES = new Set(['text/markdown', 'text/x-markdown']);
+const DOCUMENT_EDITING_CONTENT_TYPES = new Set([...MARKDOWN_CONTENT_TYPES, 'text/plain']);
 
 export type DocumentEditingRunProperties = {
     resource_kind: 'store_document';
@@ -67,6 +69,20 @@ export function getDocumentTextActionAccess(canEdit: boolean, canCollaborate: bo
         canEdit,
         canCollaborate,
     };
+}
+
+function normalizedContentType(contentType: string | undefined): string | undefined {
+    return contentType?.split(';', 1)[0]?.trim().toLowerCase() || undefined;
+}
+
+export function isMarkdownContentType(contentType: string | undefined): boolean {
+    const normalized = normalizedContentType(contentType);
+    return normalized !== undefined && MARKDOWN_CONTENT_TYPES.has(normalized);
+}
+
+export function isDocumentEditingContentType(contentType: string | undefined): boolean {
+    const normalized = normalizedContentType(contentType);
+    return normalized !== undefined && DOCUMENT_EDITING_CONTENT_TYPES.has(normalized);
 }
 
 export function isDocumentEditingRun(

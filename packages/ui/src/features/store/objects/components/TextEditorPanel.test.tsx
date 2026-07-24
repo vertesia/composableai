@@ -22,11 +22,14 @@ vi.mock('@vertesia/ui/session', () => ({
 }));
 
 describe('TextEditorPanel', () => {
-    it('uses the full rich-text document editor for Markdown content', async () => {
+    it.each([
+        'text/markdown',
+        'text/x-markdown',
+    ])('uses the full rich-text document editor for %s content', async (contentType) => {
         const object = {
             id: 'document-1',
             content: {
-                type: 'text/markdown',
+                type: contentType,
                 name: 'document.md',
                 etag: 'etag-1',
             },

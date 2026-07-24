@@ -6,6 +6,7 @@ import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { type IEditorApi, MonacoEditor } from '@vertesia/ui/widgets';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isMarkdownContentType } from './documentEditingRun.js';
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
 
 interface TextEditorPanelProps {
@@ -18,6 +19,7 @@ interface TextEditorPanelProps {
 function getMonacoLanguage(contentType?: string): string {
     switch (contentType) {
         case 'text/markdown':
+        case 'text/x-markdown':
             return 'markdown';
         case 'application/json':
             return 'json';
@@ -42,7 +44,7 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
     const [showConfirmation, setShowConfirmation] = useState(false);
 
     const language = getMonacoLanguage(object.content?.type);
-    const isMarkdown = object.content?.type === 'text/markdown';
+    const isMarkdown = isMarkdownContentType(object.content?.type);
 
     useEffect(() => {
         setEditorText(text);

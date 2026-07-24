@@ -56,6 +56,7 @@ import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
 import { fetchSignedUrl } from './signed-url.js';
+import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
 type ContentObjectWritePayload = Omit<CreateContentObjectPayload, 'content'> & {
     content?: ContentSource | File | StreamSource;
@@ -259,9 +260,9 @@ export class ObjectsApi extends ApiTopic {
         const { url, id, mime_type } = await this.getUploadUrl({
             id: isStream ? source.id : undefined,
             name: source.name,
-            mime_type: source.type,
+            mime_type: getUploadMimeTypeHint(source.type),
         });
-        const sourceMimeType = source.type || mime_type;
+        const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
 
         // upload the file content to the signed URL
         const res = await fetchSignedUrl(url, {

@@ -1,5 +1,5 @@
 import type { VertesiaClient, ZenoClient } from '@vertesia/client';
-import type { MarkdownRenditionFormat, RenderMarkdownPayload } from '@vertesia/common';
+import type { ContentObject, MarkdownRenditionFormat, RenderMarkdownPayload } from '@vertesia/common';
 import type { ToastFn } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useCallback, useState } from 'react';
@@ -35,6 +35,10 @@ export interface UseDownloadFileResult {
     renderContent: (content: string, options: RenderAndDownloadOptions) => Promise<void>;
     /** Whether a download is currently in progress */
     isDownloading: boolean;
+}
+
+export function getContentObjectDownloadName(object: Pick<ContentObject, 'name' | 'content'>): string | undefined {
+    return object.content?.name || object.name;
 }
 
 /**

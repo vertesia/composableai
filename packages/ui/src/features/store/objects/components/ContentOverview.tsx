@@ -45,7 +45,9 @@ import { DocumentEditingPanel } from './DocumentEditingPanel.js';
 import {
     createDocumentEditingScopeKey,
     getDocumentTextActionAccess,
+    isDocumentEditingContentType,
     isDocumentEditingScopeOpen,
+    isMarkdownContentType,
     setDocumentEditingScopeOpen,
 } from './documentEditingRun.js';
 import { PropertiesEditorModal } from './PropertiesEditorModal';
@@ -804,7 +806,8 @@ function TextActions({
     );
     const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
 
-    const isMarkdown = content?.type && content.type === 'text/markdown';
+    const isMarkdown = isMarkdownContentType(content?.type);
+    const isDocumentEditingContent = isDocumentEditingContentType(content?.type);
 
     const handleExportDocument = async (format: MarkdownRenditionFormat, useDefaultTemplate?: boolean) => {
         // Prevent multiple concurrent exports
@@ -949,7 +952,7 @@ function TextActions({
                                 <SquarePen className="size-4" />
                             </SecureButton>
                         )}
-                        {canCollaborate && onToggleCollaborate && isMarkdown && (
+                        {canCollaborate && onToggleCollaborate && isDocumentEditingContent && (
                             <Button
                                 variant={isCollaborating ? 'primary' : 'ghost'}
                                 size="sm"
@@ -976,7 +979,7 @@ const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextP
     const isXml = content?.type === 'application/xml' || content?.type === 'text/xml';
 
     // Check if content type is markdown or plain text
-    const isMarkdownOrText = content?.type && (content.type === 'text/markdown' || content.type === 'text/plain');
+    const isMarkdownOrText = isDocumentEditingContentType(content?.type);
 
     // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
     const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || looksLikeMarkdown(text));
