@@ -203,10 +203,10 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
     const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
     // Build with a RELATIVE base so asset URLs are mount-agnostic (`./assets/x.js`, not `/app/...`).
     // The serving layer is the only thing that knows the real mount path — which for appgen is a
-    // version-stamped deep path assigned at publish time (`/tenants/<t>/apps/<a>/versions/<v>/app/`),
+    // version-stamped deep path assigned at version-build time (`/tenants/<t>/apps/<a>/versions/<v>/app/`),
     // unknowable at build time. The app-gateway injects a matching `<base href="<mount>/">` into the
     // served index.html, so relative asset refs resolve under whatever mount the app is served at
-    // (published, version-pinned, or live preview). Dev still serves at `/`.
+    // (promoted, version-pinned, or live preview). Dev still serves at `/`.
     // TODO(appgen): verify this does not break regular non-appgen/Vercel app builds. If it does,
     // keep `./` only for appgen builds and restore `/app/` for the default plugin template build.
     const base = command === 'build' ? './' : '/';

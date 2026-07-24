@@ -30,25 +30,25 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 ## Build & Dev Commands
 
 ```bash
-pnpm build                 # Full build (server + UI), lint runs as prebuild
-pnpm build:server          # Rolldown: tool server only → lib/
-pnpm build:ui:lib          # Vite: plugin library → dist/lib/plugin.js
-pnpm build:ui:app          # Vite: standalone app → dist/ui/
-pnpm service:build         # Vertesia service build: UI + service runtime + app package metadata
-pnpm service:build:server  # Vertesia service runtime and package metadata only
+{{PM_RUN}} build                 # Full build (server + UI), lint runs as prebuild
+{{PM_RUN}} build:server          # Vertesia build tools: tool server only → lib/
+{{PM_RUN}} build:ui:lib          # Vite: plugin library → dist/lib/plugin.js
+{{PM_RUN}} build:ui:app          # Vite: standalone app → dist/app/
+{{PM_RUN}} service:build         # Vertesia service build: UI + service runtime + app package metadata
+{{PM_RUN}} service:build:server  # Vertesia service runtime and package metadata only
 
-pnpm dev                   # Vite dev server with API middleware (https://localhost:5173)
-pnpm start                 # Preview production build (build:server + vite preview)
+{{PM_RUN}} dev                   # Vite dev server with API middleware (https://localhost:5173)
+{{PM_RUN}} start                 # Preview production build (build:server + vite preview)
 ```
 
 ## Dual Build System
 
-| Component   | Bundler | Entry                       | tsconfig                    | Output                |
-|-------------|---------|-----------------------------|-----------------------------|-----------------------|
-| Tool Server | Rolldown | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/tool-server/*.js` |
-| UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js`  |
-| UI App      | Vite    | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/ui/`            |
-| Widgets     | Rolldown | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |
+| Component   | Build path           | Entry                       | tsconfig                    | Output               |
+| ----------- | -------------------- | --------------------------- | --------------------------- | -------------------- |
+| Tool Server | Vertesia build tools | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/`               |
+| UI Plugin   | Vite                 | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js` |
+| UI App      | Vite                 | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/app/`          |
+| Widgets     | Vertesia build tools | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`      |
 
 ## Key Files
 
@@ -120,11 +120,11 @@ and the `app:<name>:` namespace used for app-owned ids.
 - For interactions and activities, use the full id `app:<app-name>:<collection>:<name>`. Prefer a `main` collection unless there is a real reason to split collections.
 - Do not name a collection after the app; that creates confusing ids like `app:<app-name>:<app-name>:<name>`.
 
-## Publish Target And Seeding
+## Version Build Target And Seeding
 
-If the app registers backend resources under `src/modules/app/resources` or another active module, publish as
-`service`. A `static` publish ships only UI assets, so app-owned types, interactions, activities, tools, skills,
-templates, and processes will not resolve.
+If the app registers backend resources under `src/modules/app/resources` or another active module, build the
+version with target `service`. A `static` version contains only UI assets, so app-owned types, interactions,
+activities, tools, skills, templates, and processes will not resolve.
 
 Seed demo or test content from standalone scripts launched during development, not from the app UI or app API.
 Do not add visible "Seed" buttons, auto-seed on UI load, or create `/api/seed` routes. App runtime code should

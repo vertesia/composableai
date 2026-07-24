@@ -1,7 +1,12 @@
 import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
 import type { AppDashboardDefinition } from './data-platform.js';
 import type { CatalogInteractionRef } from './interaction.js';
-import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
+import type {
+    AgentRunSearchHit,
+    DSLActivityOptions,
+    InCodeProcessDefinition,
+    InCodeTypeDefinition,
+} from './store/index.js';
 import type { InCodeViewDefinition } from './views.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
@@ -552,6 +557,8 @@ export interface AppVersionRecord {
     promoted?: boolean;
     target?: AppVersionTarget;
     agent_run_id?: string;
+    /** Development task that produced this version, when built by the app assistant. */
+    development_task_id?: string;
     /** Temporal workflow that produced this version. */
     build_workflow_id?: string;
     /** Temporal run that produced this version. */
@@ -597,6 +604,8 @@ export interface UpsertAppVersionRequest {
     state?: AppVersionState;
     target?: AppVersionTarget;
     agent_run_id?: string;
+    /** Development task that produced this version, when built by the app assistant. */
+    development_task_id?: string;
     build_workflow_id?: string;
     build_workflow_run_id?: string;
     sandbox_id?: string;
@@ -1063,6 +1072,31 @@ export interface AppRepoRefs {
     default_branch?: string;
     branches: AppRepoRef[];
     tags: AppRepoRef[];
+}
+
+/** A mutable app development task represented by an `agent/*` Git branch. */
+export interface AppDevelopmentTask {
+    /** Task slug derived from the branch name. */
+    id: string;
+    /** Complete Git branch name. */
+    branch: string;
+    /** Commit currently at the branch head. */
+    source_commit: string;
+    /** Branch-head commit date, when available. */
+    commit_date?: string;
+}
+
+/** Git-backed development tasks and the branch used for new tasks by default. */
+export interface AppDevelopmentTaskList {
+    /** Repository default branch, when resolvable. */
+    default_branch?: string;
+    tasks: AppDevelopmentTask[];
+}
+
+/** Development task details, including the latest parent assistant run when one exists. */
+export interface AppDevelopmentTaskDetails extends AppDevelopmentTask {
+    /** Latest Studio Assistant run started for this task branch. */
+    agent_run?: AgentRunSearchHit;
 }
 
 /** Request to create a branch from an existing branch, tag, or commit. */

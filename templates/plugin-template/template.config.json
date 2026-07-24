@@ -165,7 +165,8 @@
     "src/ui/env.ts",
     "src/ui/plugin.tsx",
     ".env.app.template",
-    "README.md"
+    "README.md",
+    "AGENTS.md"
   ],
   "renameFiles": {
     "biome.json.template": "biome.json",

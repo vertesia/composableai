@@ -39,6 +39,9 @@ change module route/provider/resource exports instead.
 
 Your plugin must be registered as an app in Vertesia and installed in a project before users can access it. Use the CLI to create and install in one step:
 
+Apps created through App Builder are already registered, installed in the current project, and connected to
+Vertesia Git. The CLI steps below apply when scaffolding and managing an app manually.
+
 ```bash
 vertesia apps create --install -f manifest.json
 ```
@@ -78,9 +81,9 @@ that string directly to `client.objects.create({ type, ... })` instead of resolv
 Interactions and activities include the collection name, for example `app:<app-name>:main:summarize_guide`.
 Prefer `main` as the default collection unless multiple collections are genuinely useful.
 
-If the app registers backend resources under `src/modules/app/resources` or another active module, publish as
-`service`; a `static` publish ships only UI assets. Seed demo content from standalone scripts during development,
-not from app UI buttons, automatic page-load effects, or `/api/seed` routes.
+If the app registers backend resources under `src/modules/app/resources` or another active module, build its
+versions with target `service`; a `static` version contains only UI assets. Seed demo content from standalone
+scripts during development, not from app UI buttons, automatic page-load effects, or `/api/seed` routes.
 
 ## Quick Start
 
@@ -96,15 +99,15 @@ Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API 
 | Script              | Runs                           | Description                                                 |
 | ------------------- | ------------------------------ | ----------------------------------------------------------- |
 | `{{PM_RUN}} dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
-| `{{PM_RUN}} build`        | `rollup -c && vite build (app + lib)` | Full production build (lint runs as prebuild)        |
-| `{{PM_RUN}} build:server` | `rollup -c`                    | Compile tool server to `lib/`                               |
+| `{{PM_RUN}} build`        | `tsc + Vertesia build tools + Vite` | Full production build (lint runs as prebuild)         |
+| `{{PM_RUN}} build:server` | `tsc + Vertesia build tools`   | Compile tool server and resources to `lib/`                  |
 | `{{PM_RUN}} build:ui`     | `vite build (app + lib)`       | Build both UI targets                                       |
 | `{{PM_RUN}} build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
 | `{{PM_RUN}} build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
 | `{{PM_RUN}} service:build` | `service:build:ui + lib + service:build:server` | Build Vertesia service deployment artifacts |
 | `{{PM_RUN}} service:build:ui` | `vite build --mode app` | Build service UI assets to `dist/app/` |
 | `{{PM_RUN}} service:build:server` | `build-server-esbuild + write-app-package` | Build bundled service runtime and app package metadata |
-| `{{PM_RUN}} start`        | `rollup -c && vite preview`    | Preview production build locally                            |
+| `{{PM_RUN}} start`        | `build:server + vite preview`  | Preview production build locally                            |
 | `{{PM_RUN}} start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
 
 ## Project Structure
@@ -151,12 +154,12 @@ Builds the tool server first, then runs `vite preview` which loads the compiled 
 
 ### Production Build
 
-| Component   | Bundler | Entry                       | Output               |
-| ----------- | ------- | --------------------------- | -------------------- |
-| Tool Server | Rollup  | `src/tool-server/server.ts` | `lib/`               |
-| UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `dist/lib/plugin.js` |
-| UI App      | Vite    | `src/ui/main.tsx`           | `dist/app/`          |
-| Widgets     | Rollup  | `skills/**/*.tsx`           | `dist/widgets/`      |
+| Component   | Build path           | Entry                       | Output               |
+| ----------- | -------------------- | --------------------------- | -------------------- |
+| Tool Server | Vertesia build tools | `src/tool-server/server.ts` | `lib/`               |
+| UI Plugin   | Vite                 | `src/ui/plugin.tsx`         | `dist/lib/plugin.js` |
+| UI App      | Vite                 | `src/ui/main.tsx`           | `dist/app/`          |
+| Widgets     | Vertesia build tools | `skills/**/*.tsx`           | `dist/widgets/`      |
 
 ## Creating Resources
 
@@ -554,7 +557,7 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 
 **Must export from the module resource index**: Creating a collection file without adding it to the appropriate `src/modules/app/resources/<type>/index.ts` array means it won't be served.
 
-**Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` only work in tool server code (compiled by Rollup). They are not available in UI code (compiled by Vite).
+**Import hooks are server-build only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` only work in tool server code processed by Vertesia build tools. They are not available in UI code compiled by Vite.
 
 **HTTPS required for dev**: `{{PM_RUN}} dev` uses HTTPS via `@vitejs/plugin-basic-ssl`. Use `-k` flag with curl to skip certificate verification.
 

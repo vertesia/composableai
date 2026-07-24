@@ -152,7 +152,7 @@ function wrapAppScopeError(error) {
                 'Content app setup could not create app-owned Store objects.',
                 `App: ${APP_NAME}`,
                 `Types: ${GUIDE_TYPE}, ${LOCATION_TYPE}, ${REVIEW_TASK_TYPE}`,
-                'Verify the app was published or is running in preview, is installed/visible to the project,',
+                'Verify a successful version was promoted or the app is running in live preview, and that it is installed/visible to the project,',
                 'and the token has an app scope that includes this app. Do not work around this by creating API keys.',
                 `Original error: ${message}`,
             ].join('\n'),

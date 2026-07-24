@@ -5,8 +5,8 @@ const CONFIG__PLUGIN_TITLE = 'Ui Plugin Template';
 document.title = CONFIG__PLUGIN_TITLE;
 
 // Endpoints must be supplied by the build environment via VITE_VERTESIA_*_URL.
-// The appgen preview/publish pipeline injects these — see
-// packages/workflows/src/tools/builtins/app_workspace/publish-activities.ts
+// The appgen live-preview/version-build pipeline injects these — see
+// packages/workflows/src/tools/builtins/app_workspace/version-build-activities.ts
 // and scripts/app-preview.sh. Falling back to hardcoded production URLs would
 // silently route a dev/branch app at the wrong cluster (CORS or 401 in the
 // browser); fail fast instead so misconfiguration is caught at bootstrap.
@@ -15,7 +15,7 @@ function requiredEnv(name: 'VITE_VERTESIA_STUDIO_URL' | 'VITE_VERTESIA_ZENO_URL'
     if (!value) {
         throw new Error(
             `${name} is required at build time. ` +
-                'For dev preview / publish this is set automatically by the appgen pipeline; ' +
+                'For live preview and version builds this is set automatically by the appgen pipeline; ' +
                 'for local builds, set it in .env.app or .env.app.local.',
         );
     }

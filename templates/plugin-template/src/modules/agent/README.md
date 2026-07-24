@@ -7,7 +7,7 @@ generated project so the agent can import and adapt them while building the app.
 UI helpers live in `ui/`:
 
 - `PageShell.tsx`: simple page container with a title, optional description, optional action area, and scrollable content.
-- `api-base.ts`: computes the correct same-origin app API base for local, live preview, latest published, and version-pinned app-gateway mounts.
+- `api-base.ts`: computes the correct same-origin app API base for local, live preview, promoted, and version-pinned app-gateway mounts.
 - `CommandPalette.tsx`: reusable cmd-K navigation/search palette. Pass it a route list with optional `label`, `icon`, and `hideFromNav` metadata.
 - `PersistentAssistant.tsx`: floating assistant launcher and side panel backed by `ModernAgentConversation`.
 - `assistantEvents.ts`: tiny browser event helper for opening `PersistentAssistant` from any UI code.

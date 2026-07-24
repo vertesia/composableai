@@ -2,6 +2,8 @@ import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch
 import type {
     AppBuildProgress,
     AppDeleteSummary,
+    AppDevelopmentTaskDetails,
+    AppDevelopmentTaskList,
     AppInspectionResult,
     AppInstallation,
     AppInstallationKind,
@@ -218,6 +220,16 @@ export default class AppsApi extends ApiTopic {
      */
     getRepoRefs(appIdOrName: string): Promise<AppRepoRefs> {
         return this.get(`/${encodeURIComponent(appIdOrName)}/repo/refs`);
+    }
+
+    /** List mutable development tasks represented by `agent/*` repository branches. */
+    listDevelopmentTasks(appIdOrName: string): Promise<AppDevelopmentTaskList> {
+        return this.get(`/${encodeURIComponent(appIdOrName)}/development-tasks`);
+    }
+
+    /** Get a development task and its latest parent Studio Assistant run, when started. */
+    getDevelopmentTask(appIdOrName: string, taskId: string): Promise<AppDevelopmentTaskDetails> {
+        return this.get(`/${encodeURIComponent(appIdOrName)}/development-tasks/${encodeURIComponent(taskId)}`);
     }
 
     /** Create a repository branch from an existing branch, tag, or commit. */

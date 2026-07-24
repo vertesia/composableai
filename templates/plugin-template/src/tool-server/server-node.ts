@@ -32,7 +32,7 @@ function shouldServeAppShell(c: Context): boolean {
 }
 
 // Hono's SDK notFound handler returns API-shaped JSON. Keep API misses on that path,
-// but serve the SPA shell for deep links so published app routes work directly.
+// but serve the SPA shell for deep links so deployed app routes work directly.
 server.all('*', async (c: Context, next: Next) => {
     if (c.req.path.startsWith('/api')) {
         return next();

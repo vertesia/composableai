@@ -10,7 +10,7 @@ It installs:
 - Store-backed UI screens for library, detail, review queue, process start, and ideas
 - project setup and capability exercise scripts
 
-Run after publishing or while using an authenticated preview token:
+Run after promoting a successfully built version or while using an authenticated live-preview token:
 
 ```bash
 VERTESIA_TOKEN="$(vertesia auth token)" pnpm seed:content
