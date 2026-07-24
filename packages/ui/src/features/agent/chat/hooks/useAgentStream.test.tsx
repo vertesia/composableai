@@ -124,6 +124,101 @@ describe('useAgentStream', () => {
         });
     });
 
+    it('retains resource-bearing lifecycle messages loaded from history even when their text is empty', async () => {
+        const resourceMessage: AgentMessage = {
+            ...createMessage(AgentMessageType.THOUGHT, 1_000, ''),
+            details: {
+                event_class: 'activity',
+                tool: 'create_document',
+                tool_event: 'completed',
+                resources: [{ type: 'document', id: 'doc-1', label: 'Doc One', action: 'created' }],
+            },
+        };
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([resourceMessage]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.messages).toEqual([resourceMessage]);
+        });
+    });
+
+    it('retains resource-bearing lifecycle messages received from the live stream', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const resourceMessage: AgentMessage = {
+            ...createMessage(AgentMessageType.THOUGHT, 1_000, ''),
+            details: {
+                event_class: 'activity',
+                tool: 'create_interaction',
+                tool_event: 'completed',
+                resources: [{ type: 'interaction', id: 'interaction-1', label: 'Daily News Agent', action: 'created' }],
+            },
+        };
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            onStreamMessage?.(resourceMessage);
+        });
+
+        await waitFor(() => {
+            expect(result.current.messages).toEqual([resourceMessage]);
+        });
+    });
+
+    it('continues to discard empty housekeeping messages without resources', async () => {
+        const emptyThought = createMessage(AgentMessageType.THOUGHT, 1_000, '');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([emptyThought]);
+            onMessage?.(emptyThought);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('has_messages');
+        });
+        expect(result.current.messages).toEqual([]);
+    });
+
     it('marks initial history as errored when the history fetch fails', async () => {
         const streamMessages = vi.fn<
             (

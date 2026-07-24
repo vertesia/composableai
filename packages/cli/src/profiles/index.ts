@@ -26,9 +26,17 @@ export function getConfigFile(path?: string) {
     }
 }
 
-export type Region = 'us1' | 'eu1' | 'jp1';
+export type Region = 'us1' | 'eu1' | 'jp1' | 'dev1';
 export const DEFAULT_REGION: Region = 'us1';
 export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
+
+/**
+ * Adds `dev1`, our own cluster rather than a customer deployment. Offered only in dev mode
+ * (`Config.isDevMode`, set from the `~/.vertesia/dev` marker), the same gate the dev target
+ * choices use. The URL templates below already resolve it (`cloud.dev1`, `api.dev1`,
+ * `sts.dev1`).
+ */
+export const DEV_REGIONS: Region[] = [...AVAILABLE_REGIONS, 'dev1'];
 
 export type ConfigUrlRef = 'local' | 'dev-main' | 'dev-preview' | 'preview' | 'prod' | string;
 export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGION): string {

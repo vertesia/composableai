@@ -1,9 +1,22 @@
-const CUSTOM_SCHEME_PREFIXES = ['artifact:', 'image:', 'store:', 'document://', 'collection:'];
+const CUSTOM_SCHEME_PREFIXES = [
+    'artifact:',
+    'image:',
+    'store:',
+    'document://',
+    'collection:',
+    'interaction:',
+    'prompt:',
+    'agent:',
+    'workflow:',
+    'process:',
+    'run:',
+];
 
 // Excludes `[` from the link-text and destination classes: a long run of `[` (or
 // `[](image:` groups) with no closing delimiter would otherwise be re-scanned at every
 // start position, giving polynomial backtracking (CodeQL js/polynomial-redos).
-const CUSTOM_LINK_REGEX = /(!?\[[^[\]\n]*\]\()((?:artifact:|image:|store:|document:\/\/|collection:)[^)[\n]+)(\))/g;
+const CUSTOM_LINK_REGEX =
+    /(!?\[[^[\]\n]*\]\()((?:artifact:|image:|store:|document:\/\/|collection:|interaction:|prompt:|agent:|workflow:|process:|run:)[^)[\n]+)(\))/g;
 const INLINE_CODE_REGEX = /`[^`\n]*`/g;
 const FENCED_CODE_BLOCK_REGEX = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)/g;
 const LINK_TITLE_SUFFIX_REGEX = /\s+("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\([^)]*\))\s*$/;

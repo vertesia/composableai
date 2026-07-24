@@ -85,50 +85,61 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
     },
 }));
 
-vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
-    default: ({
-        messages,
-        streamingMessages,
-        isCompleted,
-        bottomRef,
-        onSendMessage,
-        showInitialRequest,
-        renderRequestInputControls,
-        activeWorkstream,
-        onActiveWorkstreamChange,
-    }: {
-        messages: AgentMessage[];
-        streamingMessages: Map<string, unknown>;
-        isCompleted?: boolean;
-        bottomRef: React.RefObject<HTMLDivElement>;
-        onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
-        showInitialRequest?: boolean;
-        renderRequestInputControls?: boolean;
-        activeWorkstream?: string;
-        onActiveWorkstreamChange?: (workstreamId: string) => void;
-    }) => {
-        mocks.allMessagesMixedProps({
+vi.mock('./ModernAgentOutput/AllMessagesMixed', async () => {
+    const { useAgentResourceResolver } = await import('@vertesia/ui/widgets');
+    return {
+        default: ({
             messages,
             streamingMessages,
             isCompleted,
+            bottomRef,
             onSendMessage,
             showInitialRequest,
             renderRequestInputControls,
             activeWorkstream,
             onActiveWorkstreamChange,
-        });
-        return (
-            <div>
-                <div data-testid="rendered-message-count">{messages.length}</div>
-                <div data-testid="rendered-streaming-count">{streamingMessages.size}</div>
-                <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
-                    inline send
-                </button>
-                <div ref={bottomRef} data-testid="bottom-sentinel" />
-            </div>
-        );
-    },
-}));
+        }: {
+            messages: AgentMessage[];
+            streamingMessages: Map<string, unknown>;
+            isCompleted?: boolean;
+            bottomRef: React.RefObject<HTMLDivElement>;
+            onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+            showInitialRequest?: boolean;
+            renderRequestInputControls?: boolean;
+            activeWorkstream?: string;
+            onActiveWorkstreamChange?: (workstreamId: string) => void;
+        }) => {
+            const resolveResource = useAgentResourceResolver();
+            const resourceTarget = resolveResource(
+                { type: 'document', id: 'document-1' },
+                { source: 'structured', workflowRunId: 'agent-run-1' },
+            );
+            mocks.allMessagesMixedProps({
+                messages,
+                streamingMessages,
+                isCompleted,
+                onSendMessage,
+                showInitialRequest,
+                renderRequestInputControls,
+                activeWorkstream,
+                onActiveWorkstreamChange,
+            });
+            return (
+                <div>
+                    <div data-testid="rendered-message-count">{messages.length}</div>
+                    <div data-testid="rendered-streaming-count">{streamingMessages.size}</div>
+                    <div data-testid="resource-target">
+                        {resourceTarget.kind === 'navigate' ? resourceTarget.href : resourceTarget.kind}
+                    </div>
+                    <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
+                        inline send
+                    </button>
+                    <div ref={bottomRef} data-testid="bottom-sentinel" />
+                </div>
+            );
+        },
+    };
+});
 
 vi.mock('./AgentRightPanel.js', () => ({
     AgentRightPanel: (props: { activeWorkstreams?: Array<{ workstream_id: string; status: string }> }) => {
@@ -253,6 +264,16 @@ describe('ModernAgentConversation send handling', () => {
         vi.restoreAllMocks();
     });
 
+    it('provides its resourceResolver prop to conversation content', () => {
+        mockStreamState({ messages: [createMessage(AgentMessageType.COMPLETE, 'done')] });
+
+        renderConversation({
+            resourceResolver: (resource) => ({ kind: 'navigate', href: `/host/documents/${resource.id}` }),
+        });
+
+        expect(screen.getByTestId('resource-target').textContent).toBe('/host/documents/document-1');
+    });
+
     it('restarts a terminal continuable run before sending the follow-up message', async () => {
         mockStreamState({
             messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
@@ -325,9 +346,8 @@ describe('ModernAgentConversation send handling', () => {
         });
 
         const userInputCall = mocks.sendSignal.mock.calls.find((call) => call[1] === 'UserInput');
-        expect((userInputCall?.[2] as { message: string }).message).toContain(
-            '[report.pdf](artifact:files/report.pdf)',
-        );
+        const userInputPayload = userInputCall?.[2] as { message: string } | undefined;
+        expect(userInputPayload?.message).toContain('[report.pdf](artifact:files/report.pdf)');
         await waitFor(() => {
             expect(clearProcessingFiles).toHaveBeenCalledTimes(1);
         });

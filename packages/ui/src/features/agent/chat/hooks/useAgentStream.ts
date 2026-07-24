@@ -5,6 +5,7 @@ import {
     AgentMessageType,
     type ConversationFile,
     type FileProcessingDetails,
+    getResourcesFromMessage,
 } from '@vertesia/common';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -103,7 +104,7 @@ function shouldStoreTimelineMessage(message: AgentMessage): boolean {
         if (details?.system_type === 'file_processing' && details.files) return false;
     }
 
-    return Boolean(message.message) || isTimelineStateMessage(message);
+    return Boolean(message.message) || isTimelineStateMessage(message) || getResourcesFromMessage(message).length > 0;
 }
 
 function summarizeMessage(message: AgentMessage | undefined): Record<string, unknown> | undefined {

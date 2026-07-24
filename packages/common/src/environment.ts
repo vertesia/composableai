@@ -91,6 +91,8 @@ export interface TextFallbackOptions {
 export interface ExecutionEnvironmentSettings {
     [key: string]: unknown;
     bucket_access_principal?: string;
+    /** Custom HTTP headers sent by OpenAI-compatible environments. */
+    default_headers?: Record<string, string>;
 }
 
 /**
