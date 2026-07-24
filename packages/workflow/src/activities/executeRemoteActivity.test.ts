@@ -74,7 +74,8 @@ describe('executeRemoteActivity', () => {
             Accept: 'application/json',
         });
         // Verify the auth header is forwarded
-        expect((opts?.headers as Record<string, string>).Authorization).toMatch(/^Bearer /);
+        const headers = opts?.headers as Record<string, string> | undefined;
+        expect(headers?.Authorization).toMatch(/^Bearer /);
 
         // Verify the body structure
         const body = JSON.parse(opts?.body as string);

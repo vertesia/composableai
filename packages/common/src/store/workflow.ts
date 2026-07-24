@@ -1,10 +1,12 @@
 import type { ExecutionTokenUsage, HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
 import type {
+    AgentResourceReference,
     ConversationVisibility,
     InteractionExecutionConfiguration,
     InteractionRef,
     UserChannel,
 } from '../interaction.js';
+import { normalizeAgentResources } from '../interaction.js';
 import type { JSONObject, JSONValue } from '../json.js';
 import type { JSONSchema } from '../json-schema.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
@@ -770,6 +772,8 @@ export interface AgentMessageDetails extends Record<string, unknown> {
     outputFiles?: string[];
     files?: ConversationFile[] | string[];
     plan?: PlanTask[];
+    /** Deep-linkable references to resources a tool created/updated/deleted (see AgentResourceReference). */
+    resources?: AgentResourceReference[];
     streaming_id?: string;
     streaming_id_scope?: 'workflow_run' | 'workstream';
     chunk_index?: number;
@@ -844,6 +848,11 @@ export function isToolCallMessage(msg: AgentMessage): msg is AgentMessage & { de
         typeof details === 'object' &&
         typeof details.tool === 'string'
     );
+}
+
+/** Extract the normalized resource references carried on a message's details, if any. */
+export function getResourcesFromMessage(msg: AgentMessage): AgentResourceReference[] {
+    return normalizeAgentResources((msg.details as AgentMessageDetails | undefined)?.resources);
 }
 
 export function isDocumentEventMessage(msg: AgentMessage): msg is AgentMessage & { details: DocumentEventDetails } {
