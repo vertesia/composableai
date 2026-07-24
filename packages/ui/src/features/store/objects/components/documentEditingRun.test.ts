@@ -48,22 +48,19 @@ describe('document editing run identity', () => {
         });
     });
 
-    it.each([
-        'text/markdown',
-        'text/x-markdown',
-        'text/plain',
-        'TEXT/MARKDOWN; charset=utf-8',
-    ])('allows AI document editing for %s', (contentType) => {
-        expect(isDocumentEditingContentType(contentType)).toBe(true);
-    });
+    it.each(['text/markdown', 'text/x-markdown', 'text/plain', 'TEXT/MARKDOWN; charset=utf-8'])(
+        'allows AI document editing for %s',
+        (contentType) => {
+            expect(isDocumentEditingContentType(contentType)).toBe(true);
+        },
+    );
 
-    it.each([
-        'application/octet-stream',
-        'application/json',
-        undefined,
-    ])('does not treat %s as AI-editable text', (contentType) => {
-        expect(isDocumentEditingContentType(contentType)).toBe(false);
-    });
+    it.each(['application/octet-stream', 'application/json', undefined])(
+        'does not treat %s as AI-editable text',
+        (contentType) => {
+            expect(isDocumentEditingContentType(contentType)).toBe(false);
+        },
+    );
 
     it('recognizes canonical and legacy Markdown MIME types', () => {
         expect(isMarkdownContentType('text/markdown')).toBe(true);

@@ -22,27 +22,27 @@ vi.mock('@vertesia/ui/session', () => ({
 }));
 
 describe('TextEditorPanel', () => {
-    it.each([
-        'text/markdown',
-        'text/x-markdown',
-    ])('uses the full rich-text document editor for %s content', async (contentType) => {
-        const object = {
-            id: 'document-1',
-            content: {
-                type: contentType,
-                name: 'document.md',
-                etag: 'etag-1',
-            },
-        } as unknown as ContentObject;
+    it.each(['text/markdown', 'text/x-markdown'])(
+        'uses the full rich-text document editor for %s content',
+        async (contentType) => {
+            const object = {
+                id: 'document-1',
+                content: {
+                    type: contentType,
+                    name: 'document.md',
+                    etag: 'etag-1',
+                },
+            } as unknown as ContentObject;
 
-        render(
-            <I18nProvider lng="en">
-                <TextEditorPanel object={object} text="# Editable document" onClose={vi.fn()} onSaved={vi.fn()} />
-            </I18nProvider>,
-        );
+            render(
+                <I18nProvider lng="en">
+                    <TextEditorPanel object={object} text="# Editable document" onClose={vi.fn()} onSaved={vi.fn()} />
+                </I18nProvider>,
+            );
 
-        expect(await screen.findByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
-        expect(screen.getByRole('heading', { name: 'Editable document' })).not.toBeNull();
-        expect(await screen.findByRole('toolbar')).not.toBeNull();
-    });
+            expect(await screen.findByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
+            expect(screen.getByRole('heading', { name: 'Editable document' })).not.toBeNull();
+            expect(await screen.findByRole('toolbar')).not.toBeNull();
+        },
+    );
 });
