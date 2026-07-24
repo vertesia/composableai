@@ -325,9 +325,8 @@ describe('ModernAgentConversation send handling', () => {
         });
 
         const userInputCall = mocks.sendSignal.mock.calls.find((call) => call[1] === 'UserInput');
-        expect((userInputCall?.[2] as { message: string }).message).toContain(
-            '[report.pdf](artifact:files/report.pdf)',
-        );
+        const userInputPayload = userInputCall?.[2] as { message: string } | undefined;
+        expect(userInputPayload?.message).toContain('[report.pdf](artifact:files/report.pdf)');
         await waitFor(() => {
             expect(clearProcessingFiles).toHaveBeenCalledTimes(1);
         });

@@ -21,6 +21,15 @@ minimumReleaseAgeExclude:
   - "@llumiverse/*"
   # Additional excludes, due to CVEs etc.
   # Nothing for now
+  - "@biomejs/biome@2.5.5"
+  - "@biomejs/cli-darwin-arm64@2.5.5"
+  - "@biomejs/cli-darwin-x64@2.5.5"
+  - "@biomejs/cli-linux-arm64-musl@2.5.5"
+  - "@biomejs/cli-linux-arm64@2.5.5"
+  - "@biomejs/cli-linux-x64-musl@2.5.5"
+  - "@biomejs/cli-linux-x64@2.5.5"
+  - "@biomejs/cli-win32-arm64@2.5.5"
+  - "@biomejs/cli-win32-x64@2.5.5"  
 catalog:
   react: "19.2.7"
   react-dom: "19.2.7"
