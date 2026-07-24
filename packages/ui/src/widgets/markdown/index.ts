@@ -1,4 +1,13 @@
 export {
+    type AgentResourceLinkReference,
+    type AgentResourceResolver,
+    AgentResourceResolverProvider,
+    type AgentResourceTarget,
+    parseAgentResourceHref,
+    type ResourceResolveContext,
+    useAgentResourceResolver,
+} from './AgentResourceResolver';
+export {
     ArtifactContentRenderer,
     type ArtifactContentRendererProps,
     type ExpandRenderType,
@@ -39,7 +48,6 @@ export {
     useArtifactContent,
 } from './useArtifactContent';
 export {
-    mapSchemeToRoute,
     parseUrlScheme,
     type ResolvedUrlState,
     type UrlScheme,

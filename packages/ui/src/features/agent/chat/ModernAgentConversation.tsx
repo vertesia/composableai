@@ -30,6 +30,7 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { type AgentResourceResolver, AgentResourceResolverProvider } from '@vertesia/ui/widgets';
 import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -533,6 +534,12 @@ function downloadJsonFile(filename: string, payload: unknown) {
 export interface ModernAgentConversationProps {
     /** Stable AgentRun ID — the primary identifier for all runtime operations. */
     agentRunId?: string;
+    /**
+     * Optional override for mapping agent resource references (documents, collections, interactions,
+     * ...) to navigation or activation targets in the chat. This overrides an inherited
+     * AgentResourceResolverProvider; without either, resources remain non-interactive.
+     */
+    resourceResolver?: AgentResourceResolver;
     title?: string;
     interactive?: boolean;
     onClose?: () => void;
@@ -708,13 +715,18 @@ export interface ModernAgentConversationProps {
 }
 
 export function ModernAgentConversation(props: ModernAgentConversationProps) {
-    const { agentRunId, startWorkflow } = props;
+    const { agentRunId, startWorkflow, resourceResolver } = props;
 
     if (agentRunId) {
-        return (
+        const conversation = (
             <SkillWidgetProvider>
                 <ModernAgentConversationInner {...props} agentRunId={agentRunId} />
             </SkillWidgetProvider>
+        );
+        return resourceResolver ? (
+            <AgentResourceResolverProvider value={resourceResolver}>{conversation}</AgentResourceResolverProvider>
+        ) : (
+            conversation
         );
     } else if (startWorkflow) {
         // If we have startWorkflow capability but no agentRunId yet

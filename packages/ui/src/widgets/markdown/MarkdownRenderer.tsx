@@ -26,7 +26,20 @@ type MarkdownParent = { children?: unknown[] };
 type RemarkPluginList = NonNullable<React.ComponentProps<typeof Markdown>['remarkPlugins']>;
 
 // Custom URL schemes that we handle in our components
-const ALLOWED_CUSTOM_SCHEMES = ['artifact:', 'image:', 'store:', 'document:', 'document://', 'collection:'];
+const ALLOWED_CUSTOM_SCHEMES = [
+    'artifact:',
+    'image:',
+    'store:',
+    'document:',
+    'document://',
+    'collection:',
+    'interaction:',
+    'prompt:',
+    'agent:',
+    'workflow:',
+    'process:',
+    'run:',
+];
 
 /**
  * Custom URL transform that allows our custom schemes while using

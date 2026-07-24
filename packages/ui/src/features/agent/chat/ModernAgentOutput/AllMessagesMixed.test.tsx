@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import React from 'react';
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../../../i18n/index.js';
 import { ReactRouterContext, type RouterContext } from '../../../../router/index.js';
 import { UserSession, UserSessionContext } from '../../../../session/index.js';
+import { AgentResourceResolverProvider } from '../../../../widgets/markdown/AgentResourceResolver';
 import AllMessagesMixed from './AllMessagesMixed';
 import type { StreamingData } from './utils';
 
@@ -20,41 +21,8 @@ function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
     };
 }
 
-function renderSummary(
-    messages: AgentMessage[],
-    isCompleted = false,
-    streamingMessages = new Map<string, StreamingData>(),
-    props: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
-) {
-    const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
-
-    return render(
-        <I18nProvider lng="en">
-            <AllMessagesMixed
-                messages={messages}
-                bottomRef={bottomRef}
-                viewMode="sliding"
-                isCompleted={isCompleted}
-                artifactRunId="run-1"
-                streamingMessages={streamingMessages}
-                {...props}
-            />
-        </I18nProvider>,
-    );
-}
-
-function renderStacked(
-    messages: AgentMessage[],
-    isCompleted = true,
-    props: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
-) {
-    const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
-    const session = new UserSession({
-        files: {
-            getArtifactDownloadUrl: vi.fn(),
-        },
-    } as unknown as VertesiaClient);
-    const routerContext = {
+function makeRouterContext(): RouterContext {
+    return {
         location: window.location,
         route: { path: '/', Component: () => null },
         params: {},
@@ -70,19 +38,67 @@ function renderStacked(
             }),
         },
     } as unknown as RouterContext;
+}
+
+const testResourceResolver = (resource: { type: string; id: string }) => ({
+    kind: 'navigate' as const,
+    href: `/resources/${resource.type}/${encodeURIComponent(resource.id)}`,
+});
+
+function renderSummary(
+    messages: AgentMessage[],
+    isCompleted = false,
+    streamingMessages = new Map<string, StreamingData>(),
+    props: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
+) {
+    const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
+
+    return render(
+        <I18nProvider lng="en">
+            <ReactRouterContext.Provider value={makeRouterContext()}>
+                <AgentResourceResolverProvider value={testResourceResolver}>
+                    <AllMessagesMixed
+                        messages={messages}
+                        bottomRef={bottomRef}
+                        viewMode="sliding"
+                        isCompleted={isCompleted}
+                        artifactRunId="run-1"
+                        streamingMessages={streamingMessages}
+                        {...props}
+                    />
+                </AgentResourceResolverProvider>
+            </ReactRouterContext.Provider>
+        </I18nProvider>,
+    );
+}
+
+function renderStacked(
+    messages: AgentMessage[],
+    isCompleted = true,
+    props: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
+) {
+    const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
+    const session = new UserSession({
+        files: {
+            getArtifactDownloadUrl: vi.fn(),
+        },
+    } as unknown as VertesiaClient);
+    const routerContext = makeRouterContext();
 
     return render(
         <I18nProvider lng="en">
             <ReactRouterContext.Provider value={routerContext}>
                 <UserSessionContext.Provider value={session}>
-                    <AllMessagesMixed
-                        messages={messages}
-                        bottomRef={bottomRef}
-                        viewMode="stacked"
-                        isCompleted={isCompleted}
-                        artifactRunId="run-1"
-                        {...props}
-                    />
+                    <AgentResourceResolverProvider value={testResourceResolver}>
+                        <AllMessagesMixed
+                            messages={messages}
+                            bottomRef={bottomRef}
+                            viewMode="stacked"
+                            isCompleted={isCompleted}
+                            artifactRunId="run-1"
+                            {...props}
+                        />
+                    </AgentResourceResolverProvider>
                 </UserSessionContext.Provider>
             </ReactRouterContext.Provider>
         </I18nProvider>,
@@ -213,6 +229,58 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('web_search_serper')).not.toBeNull();
         expect(screen.getByText('Time')).not.toBeNull();
         expect(screen.getByText('Found 5 results')).not.toBeNull();
+    });
+
+    it('replaces a completed tool’s progress title with an immediately visible resource deep link', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Create a market news agent.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Creating the Market Impact News agent...',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'create_interaction',
+                        tool_status: 'completed',
+                        tool_event: 'completed',
+                        tool_run_id: 'tool-1',
+                        duration_ms: 1_032,
+                        resources: [
+                            {
+                                type: 'interaction',
+                                id: 'interaction-1',
+                                label: 'Daily Market Impact News Agent',
+                                action: 'created',
+                            },
+                        ],
+                    },
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+
+        const resourceActivity = document.querySelector('[data-agent-resource-activity]');
+        expect(resourceActivity).not.toBeNull();
+        expect(within(resourceActivity as HTMLElement).getByText('Created')).not.toBeNull();
+        const resourceLink = within(resourceActivity as HTMLElement).getByRole('link', {
+            name: /Daily Market Impact News Agent/,
+        });
+        expect(resourceLink.getAttribute('href')).toContain('/resources/interaction/interaction-1');
+        expect(resourceLink.textContent).toBe('Daily Market Impact News Agent');
+        expect(screen.queryByText('Creating the Market Impact News agent...')).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /Show details: Daily Market Impact News Agent/ }));
+        expect(screen.getByText('create_interaction')).not.toBeNull();
+        expect(document.querySelector('[data-agent-tool-resources]')).toBeNull();
+        expect(screen.queryByText(/"type":\s*"interaction"/)).toBeNull();
+        expect(screen.queryByText(/"duration_ms":\s*1032/)).toBeNull();
+        expect(screen.queryByText('Details')).toBeNull();
     });
 
     it('keeps same-iteration tool detail panels matched to their own tool identity', () => {
@@ -2241,5 +2309,133 @@ describe('AllMessagesMixed summary view', () => {
         fireEvent.click(writeRow);
 
         expect(screen.getByText('Prepared and saved artifact to files/US_News_Report_2026-06-22.md')).not.toBeNull();
+    });
+});
+
+describe('AllMessagesMixed resource summary — playback clipping', () => {
+    const resourceMsg = (id: string, label: string, ts: number) =>
+        makeMessage({
+            timestamp: ts,
+            type: AgentMessageType.THOUGHT,
+            details: {
+                event_class: 'activity',
+                tool: 'create_document',
+                tool_status: 'completed',
+                tool_event: 'completed',
+                resources: [{ type: 'document', id, label, action: 'created' }],
+            },
+        });
+
+    const fullHistory = [
+        makeMessage({ timestamp: 1000, type: AgentMessageType.QUESTION, message: 'first' }),
+        resourceMsg('doc-a', 'Doc A', 2000),
+        makeMessage({ timestamp: 3000, type: AgentMessageType.COMPLETE, message: '' }),
+        makeMessage({ timestamp: 4000, type: AgentMessageType.QUESTION, message: 'second' }),
+        resourceMsg('doc-b', 'Doc B', 5000),
+        makeMessage({ timestamp: 6000, type: AgentMessageType.COMPLETE, message: '' }),
+    ];
+
+    it('shows resources up to the playback cursor but hides ones created later', () => {
+        // Scrubbed to the end of the first turn: clipped view stops at t=3000; full history has more.
+        renderStacked(fullHistory.slice(0, 3), false, { workstreamSourceMessages: fullHistory });
+
+        expect(screen.getByText('Doc A')).not.toBeNull();
+        expect(screen.queryByText('Doc B')).toBeNull();
+    });
+
+    it('shows all completed turns’ resources when live/at-latest', () => {
+        renderStacked(fullHistory, true, { workstreamSourceMessages: fullHistory });
+
+        expect(screen.getByText('Doc A')).not.toBeNull();
+        expect(screen.getByText('Doc B')).not.toBeNull();
+    });
+
+    it('shows the latest turn summary after a final answer while the workflow remains interactive', () => {
+        const answerEndedTurn = [
+            makeMessage({ timestamp: 1000, type: AgentMessageType.QUESTION, message: 'Create a document.' }),
+            resourceMsg('doc-a', 'Doc A', 2000),
+            makeMessage({ timestamp: 3000, type: AgentMessageType.ANSWER, message: 'The document is ready.' }),
+        ];
+
+        renderStacked(answerEndedTurn, false);
+
+        expect(screen.getByText('Doc A')).not.toBeNull();
+    });
+});
+
+describe('AllMessagesMixed — stopped duration with interleaved resource summary', () => {
+    it('computes the stopped duration from the previous group, not the inserted summary', () => {
+        const resourceMsg = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            details: {
+                event_class: 'activity',
+                tool: 'create_document',
+                tool_status: 'completed',
+                tool_event: 'completed',
+                resources: [{ type: 'document', id: 'doc-a', label: 'Doc A', action: 'created' }],
+            },
+        });
+        const messages = [
+            makeMessage({ timestamp: 1000, type: AgentMessageType.QUESTION, message: 'first' }),
+            resourceMsg,
+            makeMessage({ timestamp: 4000, type: AgentMessageType.QUESTION, message: 'second' }),
+            makeMessage({
+                timestamp: 5000,
+                type: AgentMessageType.THOUGHT,
+                details: { event_class: 'activity', tool: 'search', tool_status: 'completed', tool_event: 'completed' },
+            }),
+            makeMessage({
+                timestamp: 8000,
+                type: AgentMessageType.IDLE,
+                message: 'Stopped.',
+                details: { status_reason: 'user_stopped' },
+            }),
+        ];
+
+        renderStacked(messages, true);
+
+        // Turn 1's summary is interleaved before turn 2, but the stopped duration must still be
+        // measured from the previous *group* (the search tool at t=5000 → 3s), not the summary.
+        expect(screen.getByText('Doc A')).not.toBeNull();
+        expect(screen.getByText('You stopped after 3s')).not.toBeNull();
+    });
+});
+
+describe('AllMessagesMixed resource summary — same-timestamp cursor clipping', () => {
+    it('excludes a later message sharing the cursor timestamp (position-based clip)', () => {
+        const docA = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            details: {
+                event_class: 'activity',
+                tool: 'create_document',
+                tool_status: 'completed',
+                resources: [{ type: 'document', id: 'doc-a', label: 'Doc A', action: 'created' }],
+            },
+        });
+        const cursor = makeMessage({ timestamp: 2000, type: AgentMessageType.COMPLETE, message: 'c1' });
+        const docB = makeMessage({
+            timestamp: 2000, // same millisecond as the cursor, but ordered AFTER it
+            type: AgentMessageType.THOUGHT,
+            details: {
+                event_class: 'activity',
+                tool: 'create_document',
+                tool_status: 'completed',
+                resources: [{ type: 'document', id: 'doc-b', label: 'Doc B', action: 'created' }],
+            },
+        });
+        const fullHistory = [
+            makeMessage({ timestamp: 1000, type: AgentMessageType.QUESTION, message: 'first' }),
+            docA,
+            cursor,
+            docB,
+        ];
+
+        // Scrubbed so the clipped view ends at the cursor (shares its timestamp with the later Doc B).
+        renderStacked(fullHistory.slice(0, 3), false, { workstreamSourceMessages: fullHistory });
+
+        expect(screen.getByText('Doc A')).not.toBeNull();
+        expect(screen.queryByText('Doc B')).toBeNull();
     });
 });
