@@ -1,4 +1,4 @@
-import type { ContentObject, CreateAgentRunPayload } from '@vertesia/common';
+import type { ContentObject, CreateAgentRunPayload, InteractionExecutionConfiguration } from '@vertesia/common';
 import {
     Button,
     Center,
@@ -63,12 +63,24 @@ import {
 import { resolveDocumentEditingTarget } from './documentEditingTarget.js';
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
 
-interface DocumentEditingPanelProps {
+type ModelOptions = NonNullable<InteractionExecutionConfiguration['model_options']>;
+
+export interface DocumentEditingModelConfiguration {
+    env: string;
+    model: string;
+    options?: ModelOptions;
+}
+
+export interface DocumentEditingPanelProps {
     object: ContentObject;
     initialContent: string;
     onClose: () => void;
     onDocumentUpdated: (updatedDocumentId: string, createdVersion: boolean) => void;
     sendMessageRef: React.MutableRefObject<SendAgentMessageFn | null>;
+    /** Model configuration for new editing runs. Overrides the project default when supplied. */
+    model?: DocumentEditingModelConfiguration;
+    /** Start a new run once the document target and existing-run lookup are resolved. */
+    startImmediately?: boolean;
 }
 
 export interface DocumentEditingWorkspaceProps {
@@ -82,6 +94,10 @@ export interface DocumentEditingWorkspaceProps {
     onClose?: () => void;
     /** Optional external handle to send chat messages programmatically. */
     sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
+    /** Model configuration for new editing runs. Overrides the project default when supplied. */
+    model?: DocumentEditingModelConfiguration;
+    /** Start a new run once the document target and existing-run lookup are resolved. Defaults to false. */
+    startImmediately?: boolean;
 }
 
 function shortenRunId(id: string): string {
@@ -220,6 +236,8 @@ export function DocumentEditingWorkspace({
     onDocumentUpdated,
     onClose,
     sendMessageRef,
+    model,
+    startImmediately = false,
 }: DocumentEditingWorkspaceProps) {
     const { client, project, store, user } = useUserSession();
     const { t } = useUITranslation();
@@ -234,7 +252,21 @@ export function DocumentEditingWorkspace({
     const [targetResolutionFailed, setTargetResolutionFailed] = useState(false);
     const [targetResolutionAttempt, setTargetResolutionAttempt] = useState(0);
     const [showNewSessionConfirm, setShowNewSessionConfirm] = useState(false);
-    const [isLoadingConfiguration, setIsLoadingConfiguration] = useState(true);
+    const providedConfigurationKey = JSON.stringify(
+        model
+            ? {
+                  environment: model.env,
+                  model: model.model,
+                  model_options: model.options,
+              }
+            : {},
+    );
+    const hasProvidedConfiguration = model !== undefined;
+    const providedConfiguration = useMemo<DocumentEditingConfiguration>(
+        () => JSON.parse(providedConfigurationKey) as DocumentEditingConfiguration,
+        [providedConfigurationKey],
+    );
+    const [isLoadingConfiguration, setIsLoadingConfiguration] = useState(!hasProvidedConfiguration);
     const [isSaving, setIsSaving] = useState(false);
     const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
     const [isSendingChanges, setIsSendingChanges] = useState(false);
@@ -257,8 +289,12 @@ export function DocumentEditingWorkspace({
         key: string;
         interaction: string;
     }>();
-    const [executionConfiguration, setExecutionConfiguration] = useState<DocumentEditingConfiguration>({});
-    const configurationSourceRef = useRef<'none' | 'project' | 'run' | 'user'>('none');
+    const [executionConfiguration, setExecutionConfiguration] =
+        useState<DocumentEditingConfiguration>(providedConfiguration);
+    const configurationSourceRef = useRef<'none' | 'host' | 'project' | 'run' | 'user'>(
+        hasProvidedConfiguration ? 'host' : 'none',
+    );
+    const automaticStartKeyRef = useRef<string | undefined>(undefined);
     const seenUpdatesRef = useRef(new Set<string>());
     const artifactGenerationRef = useRef<string | undefined>(undefined);
     const agentWorkingRef = useRef(false);
@@ -286,8 +322,9 @@ export function DocumentEditingWorkspace({
     useEffect(() => {
         if (editingScopeRef.current === editingScopeKey) return;
         editingScopeRef.current = editingScopeKey;
-        configurationSourceRef.current = 'none';
-        setExecutionConfiguration({});
+        configurationSourceRef.current = hasProvidedConfiguration ? 'host' : 'none';
+        setExecutionConfiguration(providedConfiguration);
+        setIsLoadingConfiguration(!hasProvidedConfiguration);
         seenUpdatesRef.current.clear();
         setArtifactContent(initialContent);
         setOriginalContent(initialContent);
@@ -300,7 +337,14 @@ export function DocumentEditingWorkspace({
         setWorkspaceView('document');
         setTargetDocumentId(object.id);
         setTargetEtag(object.content?.etag);
-    }, [editingScopeKey, initialContent, object.content?.etag, object.id]);
+    }, [
+        editingScopeKey,
+        hasProvidedConfiguration,
+        initialContent,
+        object.content?.etag,
+        object.id,
+        providedConfiguration,
+    ]);
 
     useEffect(() => {
         let cancelled = false;
@@ -368,6 +412,24 @@ export function DocumentEditingWorkspace({
     }, [client, editingPolicyKey, object.type?.id]);
 
     useEffect(() => {
+        if (agentRunId || configurationSourceRef.current === 'run') return;
+
+        if (hasProvidedConfiguration) {
+            configurationSourceRef.current = 'host';
+            setExecutionConfiguration(providedConfiguration);
+            setIsLoadingConfiguration(false);
+        } else if (configurationSourceRef.current === 'host') {
+            configurationSourceRef.current = 'none';
+            setExecutionConfiguration({});
+        }
+    }, [agentRunId, hasProvidedConfiguration, providedConfiguration]);
+
+    useEffect(() => {
+        if (hasProvidedConfiguration) {
+            setIsLoadingConfiguration(false);
+            return;
+        }
+
         if (!project) {
             setIsLoadingConfiguration(false);
             return;
@@ -399,7 +461,7 @@ export function DocumentEditingWorkspace({
         return () => {
             cancelled = true;
         };
-    }, [client, editingScopeKey, project]);
+    }, [client, editingScopeKey, hasProvidedConfiguration, project]);
 
     useEffect(() => {
         setAgentRunId(undefined);
@@ -422,7 +484,11 @@ export function DocumentEditingWorkspace({
                 setAgentRunId(run.id);
                 if (run.config?.environment && run.config.model) {
                     configurationSourceRef.current = 'run';
-                    setExecutionConfiguration({ environment: run.config.environment, model: run.config.model });
+                    setExecutionConfiguration({
+                        environment: run.config.environment,
+                        model: run.config.model,
+                        model_options: run.config.model_options,
+                    });
                 }
             })
             .catch((error: unknown) => {
@@ -522,6 +588,7 @@ export function DocumentEditingWorkspace({
                     config: {
                         environment: executionConfiguration.environment,
                         model: executionConfiguration.model,
+                        model_options: executionConfiguration.model_options,
                     },
                     started_by: startedBy,
                     tags: identity.tags,
@@ -569,6 +636,50 @@ export function DocumentEditingWorkspace({
         setArtifactContent(content);
         setArtifactLoaded(true);
     }, []);
+
+    useEffect(() => {
+        if (
+            !startImmediately ||
+            agentRunId ||
+            !project ||
+            !editingInteraction ||
+            isResolvingRun ||
+            isResolvingTarget ||
+            targetResolutionFailed ||
+            isStarting ||
+            isLoadingConfiguration ||
+            !executionConfiguration.environment ||
+            !executionConfiguration.model
+        ) {
+            return;
+        }
+
+        const automaticStartKey = JSON.stringify({
+            scope: editingScopeKey,
+            interaction: editingInteraction,
+            document: targetDocumentId,
+            configuration: executionConfiguration,
+        });
+        if (automaticStartKeyRef.current === automaticStartKey) return;
+        automaticStartKeyRef.current = automaticStartKey;
+
+        void startWorkflow(t('agent.documentEditingStartRequest'), { tool_approval_mode: 'full_control' });
+    }, [
+        agentRunId,
+        editingInteraction,
+        editingScopeKey,
+        executionConfiguration,
+        isLoadingConfiguration,
+        isResolvingRun,
+        isResolvingTarget,
+        isStarting,
+        project,
+        startImmediately,
+        startWorkflow,
+        t,
+        targetDocumentId,
+        targetResolutionFailed,
+    ]);
 
     const handleAgentWorkingChange = useCallback((isWorking: boolean) => {
         const wasWorking = agentWorkingRef.current;
@@ -1097,6 +1208,8 @@ export function DocumentEditingPanel({
     onClose,
     onDocumentUpdated,
     sendMessageRef,
+    model,
+    startImmediately,
 }: DocumentEditingPanelProps) {
     const { t } = useUITranslation();
     return (
@@ -1115,6 +1228,8 @@ export function DocumentEditingPanel({
                 onClose={onClose}
                 onDocumentUpdated={onDocumentUpdated}
                 sendMessageRef={sendMessageRef}
+                model={model}
+                startImmediately={startImmediately}
             />
         </Modal>
     );

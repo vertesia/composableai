@@ -1,4 +1,4 @@
-import type { ExecutionEnvironmentRef, Project } from '@vertesia/common';
+import type { ExecutionEnvironmentRef, InteractionExecutionConfiguration, Project } from '@vertesia/common';
 import { Button, Popover, PopoverContent, PopoverTrigger, SelectBox, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 export interface DocumentEditingConfiguration {
     environment?: string;
     model?: string;
+    model_options?: InteractionExecutionConfiguration['model_options'];
 }
 
 interface ModelOption {
