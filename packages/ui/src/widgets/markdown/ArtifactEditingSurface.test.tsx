@@ -276,7 +276,8 @@ describe('ArtifactEditingSurface', () => {
 
         await waitFor(
             () => {
-                expect(mocks.updateArtifactContent).toHaveBeenCalledWith('run-1', 'drafts/document.md', {
+                expect(mocks.updateArtifactContent).toHaveBeenCalledTimes(1);
+                expect(mocks.updateArtifactContent).toHaveBeenLastCalledWith('run-1', 'drafts/document.md', {
                     content: expect.stringContaining('local edit'),
                     generation: 'generation-1',
                 });

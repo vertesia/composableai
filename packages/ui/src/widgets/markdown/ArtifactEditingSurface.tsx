@@ -659,6 +659,17 @@ export function ArtifactEditingSurface({
     const handleDocumentChange = useCallback(
         (nextContent: string) => {
             if (nextContent === contentRef.current) return;
+            // A focused editor intentionally keeps its local document mounted while an agent
+            // refresh updates the backing artifact. Ignore the editor's stale base-content
+            // emission so it cannot be mistaken for a user edit and saved over the refresh.
+            if (
+                documentEditorFocusedRef.current &&
+                pendingDocumentContentRef.current === undefined &&
+                !documentSaveInFlightRef.current &&
+                nextContent === documentBaseContentRef.current
+            ) {
+                return;
+            }
             // The editor normalizes loaded Markdown on mount, firing onChange before the user has
             // touched it. Adopt that serialization as the baseline silently — no save, no message.
             if (!documentEditorInteractedRef.current) {
