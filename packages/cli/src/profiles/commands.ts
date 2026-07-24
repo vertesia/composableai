@@ -96,7 +96,7 @@ export async function listProfiles() {
             message: 'Do you want to create a profile now?',
         });
         if (r.create) {
-            return createProfile();
+            return await createProfile();
         }
     }
 }
@@ -404,7 +404,7 @@ export async function loginProfile(name?: string, options: CreateProfileOptions 
         return profile.name;
     }
 
-    return createProfile(name, options);
+    return await createProfile(name, options);
 }
 
 export async function updateProfile(name?: string, onResult?: OnResultCallback, signal?: AbortSignal) {
