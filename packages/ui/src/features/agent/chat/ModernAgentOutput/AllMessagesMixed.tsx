@@ -31,6 +31,7 @@ import {
 import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
+import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
     formatWorkstreamName,
@@ -42,6 +43,12 @@ import {
 import { createAgentMarkdownAnchor } from './AgentMarkdownAnchor';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
+import {
+    AGENT_LINE_CLAMP_CLASS,
+    AGENT_PROSE_CLASS as SUMMARY_PROSE_CLASS,
+    AGENT_COLLAPSE_LINES as SUMMARY_THOUGHT_COLLAPSE_LINES,
+    AGENT_COLLAPSE_THRESHOLD as SUMMARY_THOUGHT_COLLAPSE_THRESHOLD,
+} from './CollapsibleAgentMarkdown.js';
 import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDeliveryStatus';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import { ResourceChangeSummary } from './ResourceChangeSummary';
@@ -294,6 +301,7 @@ function getMessageText(message: AgentMessage): string {
 interface SummaryMessageProps {
     message: AgentMessage;
     onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    onOpenArtifact?: (path: string) => void;
     onSelectWorkstream?: (workstreamId: string) => void;
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
@@ -341,17 +349,7 @@ function SummaryWorkstreamLaunchMessage({
     );
 }
 
-const SUMMARY_PROSE_CLASS = [
-    'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/80',
-    'prose-p:my-2 prose-p:leading-6 prose-li:my-0.5 prose-pre:my-3 prose-headings:tracking-normal',
-    'prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground',
-    'prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4',
-    '[&_p]:text-foreground/80 [&_li]:text-foreground/80 [&_li::marker]:text-muted',
-].join(' ');
-
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
-const SUMMARY_THOUGHT_COLLAPSE_LINES = 6;
-const SUMMARY_THOUGHT_COLLAPSE_THRESHOLD = 520;
 const STORE_LINK_MARKDOWN_RE =
     /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
 const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
@@ -572,6 +570,7 @@ function SummaryUserBubble({
     workstreamId,
     className,
     artifactRunId,
+    onOpenArtifact,
     markdownComponents,
 }: {
     children: React.ReactNode;
@@ -579,6 +578,7 @@ function SummaryUserBubble({
     workstreamId?: string;
     className?: string;
     artifactRunId?: string;
+    onOpenArtifact?: (path: string) => void;
     markdownComponents?: MarkdownRendererProps['components'];
 }) {
     const { t } = useUITranslation();
@@ -618,6 +618,7 @@ function SummaryUserBubble({
                     {shouldRenderMarkdown ? (
                         <MarkdownRenderer
                             artifactRunId={artifactRunId}
+                            onArtifactOpen={onOpenArtifact}
                             components={markdownComponents}
                             className={cn(
                                 'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/90',
@@ -658,6 +659,7 @@ function SummaryUserBubble({
 function SummaryMessage({
     message,
     onSendMessage,
+    onOpenArtifact,
     onSelectWorkstream,
     requestInputAnswered = false,
     StoreLinkComponent,
@@ -672,6 +674,13 @@ function SummaryMessage({
     const parsedQuestion = useMemo(
         () => (message.type === AgentMessageType.QUESTION ? parseUserMessageAttachments(content) : null),
         [content, message.type],
+    );
+    const editingAction = useMemo(
+        () =>
+            message.type === AgentMessageType.QUESTION
+                ? parseMarkdownEditingAction(message.details?.editing_action)
+                : undefined,
+        [message.details, message.type],
     );
 
     const markdownComponents = useMemo(
@@ -707,6 +716,7 @@ function SummaryMessage({
                         <AttachmentPreviewList
                             items={attachments}
                             artifactRunId={runId}
+                            onOpenArtifact={onOpenArtifact}
                             align="end"
                             variant="message"
                             StoreLinkComponent={StoreLinkComponent}
@@ -719,9 +729,13 @@ function SummaryMessage({
                         message={message}
                         workstreamId={workstreamId}
                         artifactRunId={runId}
+                        onOpenArtifact={onOpenArtifact}
                         markdownComponents={markdownComponents}
+                        // Comments/edits are user actions: keep the user-message background and end
+                        // alignment, just give the card a little more room for tables and diffs.
+                        className={editingAction ? 'max-w-[min(44rem,90%)]' : undefined}
                     >
-                        {questionBody}
+                        {editingAction ? <DocumentEditingActionCard action={editingAction} /> : questionBody}
                     </SummaryUserBubble>
                 )}
             </>
@@ -773,6 +787,7 @@ function SummaryMessage({
                 >
                     <MarkdownRenderer
                         artifactRunId={runId}
+                        onArtifactOpen={onOpenArtifact}
                         onProposalSelect={(optionId) => onSendMessage?.(optionId)}
                         onProposalSubmit={(text) => onSendMessage?.(text)}
                         components={markdownComponents}
@@ -2051,13 +2066,7 @@ function SummaryThoughtProseItem({
         <div className="min-w-0 py-1">
             <div
                 data-testid="summary-thought-prose"
-                className={cn(
-                    SUMMARY_PROSE_CLASS,
-                    isLong &&
-                        !disableCollapse &&
-                        !isExpanded &&
-                        '[display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:6]',
-                )}
+                className={cn(SUMMARY_PROSE_CLASS, isLong && !disableCollapse && !isExpanded && AGENT_LINE_CLAMP_CLASS)}
                 style={{ overflowWrap: 'anywhere' }}
             >
                 <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
@@ -2156,9 +2165,9 @@ function SummaryStoppedMessage({
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)} data-testid="summary-stopped-message">
-            <div className="flex items-center justify-end gap-2 text-lg font-medium text-muted sm:text-xl">
+            <div className="flex items-center justify-end gap-2 text-sm font-medium text-muted">
                 <span>{t('agent.youStoppedAfter', { duration })}</span>
-                <MessageDeliveryStatus message={message} className="h-5 w-5" />
+                <MessageDeliveryStatus message={message} className="h-4 w-4" />
             </div>
             <div className="mt-5 border-b border-border/70" />
         </div>
@@ -2407,6 +2416,8 @@ interface AllMessagesMixedProps {
     streamingMessages?: Map<string, StreamingData>; // Real-time streaming chunks
     /** Callback when user sends a message (e.g., from proposal selection) */
     onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    /** Open a Markdown artifact in the surrounding agent panel. */
+    onOpenArtifact?: (path: string) => void;
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
     /** className overrides passed to every MessageItem */
@@ -2466,6 +2477,7 @@ function AllMessagesMixedComponent({
     isCompleted = false,
     streamingMessages = new Map(),
     onSendMessage,
+    onOpenArtifact,
     messageItemClassNames,
     messageStyleOverrides,
     toolCallGroupClassNames,
@@ -3496,6 +3508,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     showPulsatingCircle={isLatestMessage}
                                                     onSendMessage={onSendMessage}
+                                                    onOpenArtifact={onOpenArtifact}
                                                     requestInputAnswered={isRequestInputAnswered(
                                                         message,
                                                         answeredRequestInputKeys,
@@ -3627,6 +3640,7 @@ function AllMessagesMixedComponent({
                                         <SummaryMessage
                                             message={message}
                                             onSendMessage={onSendMessage}
+                                            onOpenArtifact={onOpenArtifact}
                                             onSelectWorkstream={handleSelectWorkstream}
                                             requestInputAnswered={isRequestInputAnswered(
                                                 message,
