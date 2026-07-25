@@ -55,6 +55,19 @@ export const DONE_STATES = [
     AgentMessageType.TERMINATED,
 ];
 
+/**
+ * Passive artifact working-copy saves (e.g. the user autosaving their edits in the collaborative
+ * editor) arrive as UPDATE messages with an `artifact_updated` event class. They are not agent
+ * activity: they must not flip the conversation back to "Working" and must not render as tool-call
+ * cards in the timeline.
+ */
+export function isPassiveArtifactUpdate(message: AgentMessage): boolean {
+    return (
+        message.type === AgentMessageType.UPDATE &&
+        (message.details as { event_class?: string } | undefined)?.event_class === 'artifact_updated'
+    );
+}
+
 export function isInProgress(messages: AgentMessage[]) {
     if (!messages.length) return true;
 
@@ -63,7 +76,7 @@ export function isInProgress(messages: AgentMessage[]) {
         message.details?._deliveryStatus === 'failed' &&
         DONE_STATES.includes(message.type);
 
-    const progressMessages = messages.filter((m) => !isTerminalOptimisticFailure(m));
+    const progressMessages = messages.filter((m) => !isTerminalOptimisticFailure(m) && !isPassiveArtifactUpdate(m));
 
     // Only the main workstream determines whether the conversation is in progress.
     // Child workstream COMPLETE/IDLE messages must not flip this flag.

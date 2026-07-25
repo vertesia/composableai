@@ -1034,6 +1034,26 @@ export interface ContentTypeIntakePolicy {
     default_view?: 'auto' | 'text' | 'pdf' | 'image' | 'properties';
 }
 
+/** Per-content-type policy for collaborative document editing. */
+export interface ContentTypeEditingPolicy {
+    /** Agent interaction used for new document-editing sessions. Defaults to sys:GeneralAgent. */
+    interaction?: string;
+}
+
+export const ContentTypeEditingPolicySchema: JSONSchemaType<ContentTypeEditingPolicy> = {
+    type: 'object',
+    description: 'Per-content-type policy for collaborative document editing.',
+    required: [],
+    additionalProperties: false,
+    properties: {
+        interaction: {
+            type: 'string',
+            description: 'Agent interaction used for new document-editing sessions. Omit to use sys:GeneralAgent.',
+            nullable: true,
+        },
+    },
+};
+
 /** Reusable sub-schema for IntakePageScope ('all' | 'located'). */
 const IntakePageScopeSchema = {
     type: 'string',
@@ -1494,6 +1514,7 @@ export interface ContentObjectTypeItem extends BaseObject {
     status?: ContentObjectTypeStatus;
     is_chunkable?: boolean;
     intake?: ContentTypeIntakePolicy;
+    editing?: ContentTypeEditingPolicy;
     /**
      * This is only included in ContentObjectTypeItem if explicitly requested
      * It is always included in ContentObjectType
@@ -1522,6 +1543,7 @@ export type InCodeTypeDefinition = Pick<
     | 'strict_mode'
     | 'status'
     | 'intake'
+    | 'editing'
 >;
 export interface ContentObjectTypeCatalogEntry extends InCodeTypeDefinition {
     updated_by?: string;

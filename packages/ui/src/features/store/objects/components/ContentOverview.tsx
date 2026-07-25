@@ -24,11 +24,12 @@ import {
     useToast,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { NavLink } from '@vertesia/ui/router';
+import { NavLink, useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui/widgets';
-import { AlertTriangle, Copy, Download, FileSearch, ScanSearch, SquarePen } from 'lucide-react';
-import { memo, type RefObject, useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Copy, Download, FileSearch, ScanSearch, Sparkles, SquarePen } from 'lucide-react';
+import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import type { SendAgentMessageFn } from '../../../agent/chat/ModernAgentConversation.js';
 import { MagicPdfView } from '../../../magic-pdf';
 import {
     GroundedExtractionView,
@@ -40,6 +41,15 @@ import { SimplePdfViewer } from '../../../pdf-viewer';
 import { SecureButton } from '../../../permissions/SecureButton.js';
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from '../../../utils/index.js';
 import { resolveTypeCached } from '../../types/typeCatalogCache.js';
+import { DocumentEditingPanel } from './DocumentEditingPanel.js';
+import {
+    createDocumentEditingScopeKey,
+    getDocumentTextActionAccess,
+    isDocumentEditingContentType,
+    isDocumentEditingScopeOpen,
+    isMarkdownContentType,
+    setDocumentEditingScopeOpen,
+} from './documentEditingRun.js';
 import { PropertiesEditorModal } from './PropertiesEditorModal';
 import { TextEditorPanel } from './TextEditorPanel.js';
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from './useContentPanelHooks.js';
@@ -56,6 +66,9 @@ interface TextActionsProps {
     isEditing?: boolean;
     onToggleEdit?: () => void;
     canEdit?: boolean;
+    isCollaborating?: boolean;
+    onToggleCollaborate?: () => void;
+    canCollaborate?: boolean;
 }
 
 interface TextPanelProps {
@@ -173,10 +186,87 @@ interface ContentOverviewProps {
     loadText?: boolean;
     refetch?: () => Promise<unknown>;
     canEditProperties?: boolean;
+    canCollaborate?: boolean;
 }
-export function ContentOverview({ object, loadText, refetch, canEditProperties = true }: ContentOverviewProps) {
+export function ContentOverview({
+    object,
+    loadText,
+    refetch,
+    canEditProperties = true,
+    canCollaborate = false,
+}: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
+    const { project, store } = useUserSession();
+    const navigate = useNavigate();
+    const documentRootId = object.revision?.root || object.id;
+    const editingScopeKey = project?.id ? createDocumentEditingScopeKey(project.id, documentRootId) : undefined;
+    const [activeObject, setActiveObject] = useState(object);
+    const [isCollaborating, setIsCollaborating] = useState(() =>
+        editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false,
+    );
+    const sendMessageRef = useRef<SendAgentMessageFn | null>(null);
+    const latestDocumentIdRef = useRef(object.id);
+    const sourceObjectIdRef = useRef(object.id);
+    const editingScopeKeyRef = useRef(editingScopeKey);
+
+    useEffect(() => {
+        if (editingScopeKeyRef.current === editingScopeKey) return;
+        editingScopeKeyRef.current = editingScopeKey;
+        setIsCollaborating(editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false);
+    }, [editingScopeKey]);
+
+    const toggleCollaboration = useCallback(() => {
+        setIsCollaborating((current) => {
+            const next = !current;
+            if (editingScopeKey) setDocumentEditingScopeOpen(editingScopeKey, next);
+            return next;
+        });
+    }, [editingScopeKey]);
+
+    const closeCollaboration = useCallback(() => {
+        if (editingScopeKey) setDocumentEditingScopeOpen(editingScopeKey, false);
+        setIsCollaborating(false);
+    }, [editingScopeKey]);
+
+    useEffect(() => {
+        const sourceObjectChanged = sourceObjectIdRef.current !== object.id;
+        sourceObjectIdRef.current = object.id;
+        setActiveObject((current) => {
+            if (!sourceObjectChanged && current.id !== object.id) return current;
+            latestDocumentIdRef.current = object.id;
+            return current.id === object.id && current.text && !object.text
+                ? { ...object, text: current.text }
+                : object;
+        });
+    }, [object]);
+
+    const handleDocumentUpdated = useCallback(
+        async (updatedDocumentId: string, createdVersion: boolean) => {
+            latestDocumentIdRef.current = updatedDocumentId;
+
+            try {
+                const [updatedObject, updatedText] = await Promise.all([
+                    store.objects.retrieve(updatedDocumentId),
+                    store.objects.getObjectText(updatedDocumentId),
+                ]);
+                if (latestDocumentIdRef.current === updatedDocumentId) {
+                    setActiveObject({ ...updatedObject, text: updatedText.text });
+                }
+            } catch (err: unknown) {
+                console.error('Failed to load the updated document revision', err);
+                toast({
+                    status: 'error',
+                    title: t('agent.failedToLoadDocument'),
+                    description: err instanceof Error ? err.message : undefined,
+                    duration: 5000,
+                });
+            } finally {
+                if (createdVersion) navigate(`/objects/${updatedDocumentId}`);
+            }
+        },
+        [navigate, store.objects, t, toast],
+    );
 
     const handleCopyContent = async (content: string, type: 'text' | 'properties') => {
         try {
@@ -201,25 +291,41 @@ export function ContentOverview({ object, loadText, refetch, canEditProperties =
     };
 
     return (
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel defaultSize={67} className="min-w-[100px]">
-                <DataPanel
-                    object={object}
-                    loadText={loadText ?? false}
-                    handleCopyContent={handleCopyContent}
-                    refetch={refetch}
+        <>
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+                <ResizablePanel defaultSize={67} className="min-w-[100px]">
+                    <DataPanel
+                        object={activeObject}
+                        loadText={loadText ?? false}
+                        handleCopyContent={handleCopyContent}
+                        refetch={refetch}
+                        canCollaborate={canCollaborate}
+                        isCollaborating={isCollaborating}
+                        onToggleCollaborate={toggleCollaboration}
+                    />
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={33} className="min-w-[100px]">
+                    <PropertiesPanel
+                        object={activeObject}
+                        refetch={refetch ?? (() => Promise.resolve())}
+                        handleCopyContent={handleCopyContent}
+                        canEditProperties={canEditProperties}
+                    />
+                </ResizablePanel>
+            </ResizablePanelGroup>
+            {isCollaborating ? (
+                <DocumentEditingPanel
+                    object={activeObject}
+                    initialContent={activeObject.text ?? ''}
+                    onClose={closeCollaboration}
+                    onDocumentUpdated={(updatedDocumentId, createdVersion) =>
+                        void handleDocumentUpdated(updatedDocumentId, createdVersion)
+                    }
+                    sendMessageRef={sendMessageRef}
                 />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={33} className="min-w-[100px]">
-                <PropertiesPanel
-                    object={object}
-                    refetch={refetch ?? (() => Promise.resolve())}
-                    handleCopyContent={handleCopyContent}
-                    canEditProperties={canEditProperties}
-                />
-            </ResizablePanel>
-        </ResizablePanelGroup>
+            ) : null}
+        </>
     );
 }
 
@@ -344,6 +450,9 @@ interface DataPanelProps {
     loadText: boolean;
     handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
     refetch?: () => Promise<unknown>;
+    canCollaborate: boolean;
+    isCollaborating: boolean;
+    onToggleCollaborate: () => void;
 }
 
 /**
@@ -381,6 +490,9 @@ function DataPanelContent({
     handleCopyContent,
     refetch,
     defaultView,
+    canCollaborate,
+    isCollaborating,
+    onToggleCollaborate,
 }: DataPanelProps & { defaultView?: IntakeDefaultView }) {
     const { t } = useUITranslation();
     const isImage = object?.metadata?.type === ContentNature.Image;
@@ -433,15 +545,14 @@ function DataPanelContent({
     // Text editing state
     const [isEditing, setIsEditing] = useState(false);
     const canEdit = !!(
-        object.content?.source &&
         object.content?.type &&
-        !isCreatedOrProcessing &&
         !object.is_locked &&
         object.user_permissions?.can_write !== false &&
         (object.content.type.startsWith('text/') ||
             object.content.type === 'application/json' ||
             object.content.type === 'application/xml')
     );
+    const textActionAccess = getDocumentTextActionAccess(canEdit, canCollaborate);
 
     // Use custom hooks for text loading, PDF processing, and Office conversion
     const {
@@ -450,7 +561,7 @@ function DataPanelContent({
         isLoading: isLoadingText,
         isCropped: isTextCropped,
         loadText: reloadText,
-    } = useObjectText(object.id, object.text, loadText);
+    } = useObjectText(object.id, object.text, loadText, object.revision?.root || object.id);
 
     // Only poll while the active panel can actually surface processing progress.
     const shouldPollProgress =
@@ -586,7 +697,10 @@ function DataPanelContent({
                         textContainerRef={textContainerRef}
                         isEditing={isEditing}
                         onToggleEdit={() => setIsEditing(true)}
-                        canEdit={canEdit}
+                        canEdit={textActionAccess.canEdit}
+                        isCollaborating={isCollaborating}
+                        onToggleCollaborate={onToggleCollaborate}
+                        canCollaborate={textActionAccess.canCollaborate}
                     />
                 )}
                 {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (pdfRendition || officePdfUrl) && (
@@ -634,23 +748,26 @@ function DataPanelContent({
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} />
                 </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && isLoadingText && (
+            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && isLoadingText && !displayText && (
                 <div className={getPanelVisibility(true)}>
                     <div className="flex justify-center items-center flex-1">
                         <Spinner size="lg" />
                     </div>
                 </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && !isLoadingText && (
-                <div className={getPanelVisibility(true)}>
-                    <TextPanel
-                        object={object}
-                        text={displayText}
-                        isTextCropped={isTextCropped}
-                        textContainerRef={textContainerRef}
-                    />
-                </div>
-            )}
+            {currentPanel === PanelView.Text &&
+                !showProcessingPanel &&
+                !isEditing &&
+                (!isLoadingText || displayText) && (
+                    <div className={getPanelVisibility(true)}>
+                        <TextPanel
+                            object={object}
+                            text={displayText}
+                            isTextCropped={isTextCropped}
+                            textContainerRef={textContainerRef}
+                        />
+                    </div>
+                )}
             {isEditing && currentPanel === PanelView.Text && fullText != null && (
                 <TextEditorPanel
                     object={object}
@@ -667,7 +784,17 @@ function DataPanelContent({
     );
 }
 
-function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, canEdit }: TextActionsProps) {
+function TextActions({
+    object,
+    text,
+    fullText,
+    handleCopyContent,
+    onToggleEdit,
+    canEdit,
+    isCollaborating,
+    onToggleCollaborate,
+    canCollaborate,
+}: TextActionsProps) {
     const { client, project } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
@@ -679,7 +806,8 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
     );
     const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
 
-    const isMarkdown = content?.type && content.type === 'text/markdown';
+    const isMarkdown = isMarkdownContentType(content?.type);
+    const isDocumentEditingContent = isDocumentEditingContentType(content?.type);
 
     const handleExportDocument = async (format: MarkdownRenditionFormat, useDefaultTemplate?: boolean) => {
         // Prevent multiple concurrent exports
@@ -742,31 +870,24 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
         <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
             <div className="flex items-center gap-2">
                 {fullText && (
-                    <>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Copy text"
-                            onClick={() => handleCopyContent(fullText, 'text')}
-                        >
-                            <Copy className="size-4" />
-                        </Button>
-                        {canEdit && onToggleEdit && (
-                            <SecureButton
-                                permission={Permission.content_write}
-                                variant="ghost"
-                                size="sm"
-                                onClick={onToggleEdit}
-                                title={t('store.editText')}
-                                className="flex items-center gap-2"
-                            >
-                                <SquarePen className="size-4" />
-                            </SecureButton>
-                        )}
-                    </>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Copy text"
+                        onClick={() => handleCopyContent(fullText, 'text')}
+                    >
+                        <Copy className="size-4" />
+                    </Button>
                 )}
                 {isDownloading ? (
-                    <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" title="download">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled
+                        className="h-8 w-8 p-0"
+                        title={t('agent.download')}
+                        aria-label={t('agent.download')}
+                    >
                         <Spinner size="sm" />
                     </Button>
                 ) : (
@@ -776,8 +897,9 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                                 variant="ghost"
                                 size="sm"
                                 disabled={!text}
-                                className="flex items-center gap-2"
-                                title="download"
+                                className="h-8 w-8 p-0"
+                                title={t('agent.download')}
+                                aria-label={t('agent.download')}
                             >
                                 <Download className="size-4" />
                             </Button>
@@ -815,6 +937,35 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                         )}
                     </Dropdown>
                 )}
+                {fullText && (
+                    <>
+                        {canEdit && onToggleEdit && (
+                            <SecureButton
+                                permission={Permission.content_write}
+                                variant="ghost"
+                                size="sm"
+                                onClick={onToggleEdit}
+                                title={t('store.editText')}
+                                aria-label={t('store.editText')}
+                                className="h-8 w-8 p-0"
+                            >
+                                <SquarePen className="size-4" />
+                            </SecureButton>
+                        )}
+                        {canCollaborate && onToggleCollaborate && isDocumentEditingContent && (
+                            <Button
+                                variant={isCollaborating ? 'primary' : 'ghost'}
+                                size="sm"
+                                onClick={onToggleCollaborate}
+                                title={t('agent.editWithAI')}
+                                aria-label={t('agent.editWithAI')}
+                                className="h-8 w-8 p-0"
+                            >
+                                <Sparkles className="size-4" />
+                            </Button>
+                        )}
+                    </>
+                )}
             </div>
         </div>
     );
@@ -828,7 +979,7 @@ const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextP
     const isXml = content?.type === 'application/xml' || content?.type === 'text/xml';
 
     // Check if content type is markdown or plain text
-    const isMarkdownOrText = content?.type && (content.type === 'text/markdown' || content.type === 'text/plain');
+    const isMarkdownOrText = isDocumentEditingContentType(content?.type);
 
     // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
     const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || looksLikeMarkdown(text));

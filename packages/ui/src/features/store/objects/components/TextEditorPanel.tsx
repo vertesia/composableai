@@ -1,10 +1,12 @@
 import type { ContentObject } from '@vertesia/common';
 import { Button, errorMessage, useTheme, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { VertesiaMarkdownDocumentEditor } from '@vertesia/ui/rich-text';
 import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { type IEditorApi, MonacoEditor } from '@vertesia/ui/widgets';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { isMarkdownContentType } from './documentEditingRun.js';
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
 
 interface TextEditorPanelProps {
@@ -17,6 +19,7 @@ interface TextEditorPanelProps {
 function getMonacoLanguage(contentType?: string): string {
     switch (contentType) {
         case 'text/markdown':
+        case 'text/x-markdown':
             return 'markdown';
         case 'application/json':
             return 'json';
@@ -35,34 +38,48 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
     const { theme } = useTheme();
     const navigate = useNavigate();
     const editorRef = useRef<IEditorApi | undefined>(undefined);
+    const [editorText, setEditorText] = useState(text);
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
 
     const language = getMonacoLanguage(object.content?.type);
-    console.log('Determined language for Monaco Editor:', language);
-    console.log('TextEditorPanel rendered with object:', object, text);
+    const isMarkdown = isMarkdownContentType(object.content?.type);
+
+    useEffect(() => {
+        setEditorText(text);
+        setIsDirty(false);
+    }, [text]);
 
     const handleEditorChange = useCallback(() => {
         if (!isDirty) setIsDirty(true);
     }, [isDirty]);
 
+    const handleMarkdownChange = useCallback(
+        (markdown: string) => {
+            setEditorText(markdown);
+            setIsDirty(markdown !== text);
+        },
+        [text],
+    );
+
     function handleSave() {
-        if (!editorRef.current) return;
+        if (!isMarkdown && !editorRef.current) return;
         setShowConfirmation(true);
     }
 
     async function saveText(createVersion: boolean, versionLabel?: string) {
-        if (!editorRef.current) return;
+        if (!isMarkdown && !editorRef.current) return;
 
-        const editorText = editorRef.current.getValue();
+        const content = isMarkdown ? editorText : editorRef.current?.getValue();
+        if (content === undefined) return;
         const contentType = object.content?.type || 'text/plain';
         const fileName = object.content?.name || 'content.txt';
 
         try {
             setIsSaving(true);
 
-            const blob = new Blob([editorText], { type: contentType });
+            const blob = new Blob([content], { type: contentType });
             const file = new File([blob], fileName, { type: contentType });
 
             const response = await store.objects.update(
@@ -121,19 +138,23 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
                 </Button>
             </div>
             <div className="flex-1 min-h-0 border rounded-md overflow-hidden mx-2 mb-2">
-                <MonacoEditor
-                    value={text}
-                    language={language}
-                    editorRef={editorRef}
-                    onChange={handleEditorChange}
-                    theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-                    options={{
-                        wordWrap: 'on',
-                        minimap: { enabled: false },
-                        lineNumbers: 'on',
-                        scrollBeyondLastLine: false,
-                    }}
-                />
+                {isMarkdown ? (
+                    <VertesiaMarkdownDocumentEditor value={editorText} onChange={handleMarkdownChange} />
+                ) : (
+                    <MonacoEditor
+                        value={text}
+                        language={language}
+                        editorRef={editorRef}
+                        onChange={handleEditorChange}
+                        theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                        options={{
+                            wordWrap: 'on',
+                            minimap: { enabled: false },
+                            lineNumbers: 'on',
+                            scrollBeyondLastLine: false,
+                        }}
+                    />
+                )}
             </div>
 
             <SaveVersionConfirmModal

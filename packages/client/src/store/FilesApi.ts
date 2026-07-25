@@ -17,6 +17,7 @@ import type {
 } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
 import { fetchSignedUrl } from './signed-url.js';
+import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
 export const MEMORIES_PREFIX = 'memories';
 export const ARTIFACTS_PREFIX = 'agents';
@@ -130,7 +131,7 @@ export class FilesApi extends ApiTopic {
     ): Promise<{ source: string; name: string; type?: string; etag?: string }[]> {
         const fileDescriptors = sources.map((s) => ({
             name: s.name,
-            mime_type: s.type,
+            mime_type: getUploadMimeTypeHint(s.type),
             id: s instanceof StreamSource ? s.id : undefined,
         }));
 
@@ -146,7 +147,7 @@ export class FilesApi extends ApiTopic {
                     const idx = i + j;
                     const { url, id, mime_type } = files[idx];
                     const isStream = source instanceof StreamSource;
-                    const sourceMimeType = source.type || mime_type;
+                    const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
 
                     const res = await fetchSignedUrl(url, {
                         method: 'PUT',
@@ -186,13 +187,18 @@ export class FilesApi extends ApiTopic {
      */
     async uploadFileWithPath(source: StreamSource | File): Promise<{ id: string; path: string }> {
         const isStream = source instanceof StreamSource;
-        const { url, id, path } = await this.getUploadUrl(source);
+        const { url, id, path, mime_type } = await this.getUploadUrl({
+            id: isStream ? source.id : undefined,
+            name: source.name,
+            mime_type: getUploadMimeTypeHint(source.type),
+        });
+        const sourceMimeType = resolveUploadMimeType(source.type, mime_type) || 'application/gzip';
 
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
             body: isStream ? source.stream : source,
             headers: {
-                'Content-Type': source.type || 'application/gzip',
+                'Content-Type': sourceMimeType,
             },
         }).catch((err) => {
             console.error('Failed to upload file', { err, url, id, path });

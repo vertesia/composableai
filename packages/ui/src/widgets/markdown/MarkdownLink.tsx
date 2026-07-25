@@ -11,6 +11,8 @@ export interface MarkdownLinkProps {
     children?: React.ReactNode;
     className?: string;
     artifactRunId?: string;
+    /** Open a Markdown artifact in the host artifact viewer instead of downloading it. */
+    onArtifactOpen?: (path: string) => void;
     /** Existing link component to delegate to for standard URLs */
     ExistingLink?: React.ComponentType<MarkdownLinkProps>;
 }
@@ -25,6 +27,7 @@ export function MarkdownLink({
     children,
     className,
     artifactRunId,
+    onArtifactOpen,
     ExistingLink,
     ...rest
 }: MarkdownLinkProps) {
@@ -45,7 +48,7 @@ export function MarkdownLink({
         );
     }
 
-    const { scheme } = parseUrlScheme(rawHref);
+    const { scheme, path } = parseUrlScheme(rawHref);
 
     // For standard URLs, delegate to existing component or render directly
     if (scheme === 'standard') {
@@ -65,7 +68,14 @@ export function MarkdownLink({
 
     // For artifact: and image: URLs, use the resolver
     return (
-        <ResolvedLink rawHref={rawHref} artifactRunId={artifactRunId} className={className} rest={rest}>
+        <ResolvedLink
+            rawHref={rawHref}
+            artifactRunId={artifactRunId}
+            artifactPath={scheme === 'artifact' ? path : undefined}
+            onArtifactOpen={onArtifactOpen}
+            className={className}
+            rest={rest}
+        >
             {children}
         </ResolvedLink>
     );
@@ -127,12 +137,16 @@ function AgentResourceMarkdownLink({
 function ResolvedLink({
     rawHref,
     artifactRunId,
+    artifactPath,
+    onArtifactOpen,
     className,
     children,
     rest,
 }: {
     rawHref: string;
     artifactRunId?: string;
+    artifactPath?: string;
+    onArtifactOpen?: (path: string) => void;
     className?: string;
     children?: React.ReactNode;
     rest: Record<string, unknown>;
@@ -160,7 +174,27 @@ function ResolvedLink({
     }
 
     return (
-        <a href={url || '#'} {...rest} className={className} target="_blank" rel="noopener noreferrer">
+        <a
+            href={url || '#'}
+            {...rest}
+            className={className}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(event) => {
+                if (
+                    artifactPath &&
+                    /\.md$/i.test(artifactPath) &&
+                    onArtifactOpen &&
+                    !event.metaKey &&
+                    !event.ctrlKey &&
+                    !event.shiftKey &&
+                    event.button === 0
+                ) {
+                    event.preventDefault();
+                    onArtifactOpen(artifactPath);
+                }
+            }}
+        >
             {children}
         </a>
     );

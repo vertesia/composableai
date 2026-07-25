@@ -633,6 +633,10 @@ export interface AgentRightPanelProps {
     /** Show the Artifacts tab (opt-in, default false) */
     showArtifacts?: boolean;
     artifactRefreshKey?: number;
+    artifactRefreshDetails?: Record<string, unknown>;
+    selectedArtifactPath?: string | null;
+    onSelectedArtifactPathChange?: (path: string | null) => void;
+    onSendMessage?: (message: string, inputMetadata?: Record<string, unknown>) => void;
 
     // Panel control
     onClose: () => void;
@@ -672,6 +676,10 @@ function AgentRightPanelComponent({
     // Artifacts
     showArtifacts = false,
     artifactRefreshKey = 0,
+    artifactRefreshDetails,
+    selectedArtifactPath,
+    onSelectedArtifactPathChange,
+    onSendMessage,
 
     // Payload
     payloadContent,
@@ -811,7 +819,14 @@ function AgentRightPanelComponent({
             label: t('agent.artifacts'),
             content: withTabBoundary(
                 t('agent.artifacts'),
-                <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />,
+                <ArtifactsTab
+                    runId={runId}
+                    refreshKey={artifactRefreshKey}
+                    refreshDetails={artifactRefreshDetails}
+                    selectedPath={selectedArtifactPath}
+                    onSelectedPathChange={onSelectedArtifactPathChange}
+                    onSendMessage={onSendMessage}
+                />,
             ),
             is_allowed: showArtifacts,
         },

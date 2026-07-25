@@ -154,6 +154,23 @@ describe('ModernAgentOutput utils - progress state', () => {
 
         expect(isInProgress([idle, question])).toBe(true);
     });
+
+    it('ignores passive artifact working-copy saves after the agent goes idle', () => {
+        const idle = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.IDLE,
+            message: 'Waiting for your command...',
+        });
+        const userAutosave = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.UPDATE,
+            message: 'Updated working copy files/blog_post_draft.md',
+            details: { event_class: 'artifact_updated', source: 'user_edit', generation: '1784609448394436' },
+        });
+
+        // The user editing their artifact while the agent is idle must not resurrect "Working".
+        expect(isInProgress([idle, userAutosave])).toBe(false);
+    });
 });
 
 describe('ModernAgentOutput utils - sliding view thinking', () => {

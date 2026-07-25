@@ -1,6 +1,7 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
     type ActiveWorkstreamsQueryResult,
+    type AgentArtifactContentResponse,
     type AgentArtifactUrlResponse,
     type AgentEvent,
     type AgentMessage,
@@ -41,6 +42,8 @@ import {
     type ToolParameterAnalyticsResponse,
     type TopPrincipalsAnalyticsResponse,
     toAgentMessage,
+    type UpdateAgentArtifactContentPayload,
+    type UpdateAgentArtifactContentResponse,
     type UpdateAgentRunStatusPayload,
     type WorkflowAnalyticsFilterOptionsResponse,
     type WorkflowAnalyticsSummaryQuery,
@@ -681,6 +684,20 @@ export class AgentsApi extends ApiTopic {
     listArtifacts(id: string, options?: { visibility?: 'user' | 'internal' | 'all' }): Promise<string[]> {
         const query = options?.visibility ? { visibility: options.visibility } : undefined;
         return this.get(`/${id}/artifacts`, { query });
+    }
+
+    /** Read a text artifact together with its conditional-write generation token. */
+    getArtifactContent(id: string, path: string): Promise<AgentArtifactContentResponse> {
+        return this.get(`/${id}/artifact-content/${path}`);
+    }
+
+    /** Conditionally replace the text content of an agent artifact. */
+    updateArtifactContent(
+        id: string,
+        path: string,
+        payload: UpdateAgentArtifactContentPayload,
+    ): Promise<UpdateAgentArtifactContentResponse> {
+        return this.put(`/${id}/artifact-content/${path}`, { payload });
     }
 
     /**

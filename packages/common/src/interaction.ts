@@ -717,6 +717,21 @@ export {
 } from './email.js';
 // ================= end user communication channels ====================
 
+/**
+ * A tool invocation executed before the first model turn of a conversation.
+ * Results are injected into the initial context so the agent starts with them in hand.
+ */
+export interface InitialToolCall {
+    /** Stable identifier used to make initialization replay-safe. */
+    id: string;
+    /** Read-only builtin activity tool name. Skills are configured separately through initial_skills. */
+    tool: string;
+    /** Tool input parameters. */
+    input?: Record<string, unknown>;
+    /** Whether a failed initialization call aborts the conversation start. */
+    on_error?: 'fail' | 'continue';
+}
+
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: 'conversation';
 
@@ -734,6 +749,28 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * You can use + and - to add or remove from default, if no sign, then list replaces default
      */
     tool_names?: string[];
+
+    /**
+     * Builtin system skills to activate at conversation start. Their related tools are
+     * exposed from the first turn and their instructions are injected into the initial
+     * context, replacing the learn_<skill> round-trip.
+     */
+    initial_skills?: string[];
+
+    /**
+     * Tool calls executed before the first model turn. Results are injected into the
+     * initial context. These run sequentially with the caller's authority before the
+     * first model turn. Only a bounded set of read/hydration tools is accepted.
+     */
+    initial_tool_calls?: InitialToolCall[];
+
+    /**
+     * Hard denylist of tool names for this conversation. Excluded tools are never
+     * exposed to the model and are refused at execution time, even when a skill or
+     * tool refresh would otherwise unlock them. Takes precedence over tool_names,
+     * initial_skills, and skill-based tool activation.
+     */
+    excluded_tools?: string[];
 
     /**
      * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
