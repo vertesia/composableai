@@ -295,7 +295,7 @@ for (const file of uiFiles) {
         );
     }
 
-    if (/https:\/\/api(?:[.-][a-z0-9-]+)*\.vertesia\.io\/api\/v1/i.test(text)) {
+    if (/https:\/\/api[a-z0-9.-]*\.vertesia\.io\/api\/v1/i.test(text)) {
         add(
             'errors',
             'no-hardcoded-vertesia-api-base',
