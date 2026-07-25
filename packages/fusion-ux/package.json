@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/fusion-ux",
-    "version": "1.5.0-dev.20260722.120446Z",
+    "version": "1.5.0-dev.20260725.083715Z",
     "description": "Dynamic model-generated UI components for Vertesia",
     "type": "module",
     "main": "./lib/index.js",
@@ -57,5 +57,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/fusion-ux"
     },
-    "gitHead": "203c30e5a8ddc583ac9f1acce0f5445eb38a9551"
+    "gitHead": "57bcc2f27dd17b3387f27c18e89329c4c37f98ac"
 }
