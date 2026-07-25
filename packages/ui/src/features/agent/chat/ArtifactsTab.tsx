@@ -1,4 +1,4 @@
-import { Button, Center, cn, ErrorBox, Input, VTooltip } from '@vertesia/ui/core';
+import { Button, Center, cn, ErrorBox, Input, Modal, ModalBody, ModalTitle, Switch, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { ArtifactEditingSurface, type ArtifactSaveStatus, type MarkdownEditingAction } from '@vertesia/ui/widgets';
@@ -18,7 +18,13 @@ import {
     Rows3Icon,
 } from 'lucide-react';
 import React, { useCallback, useId, useMemo, useState } from 'react';
+import type { UniversalDocumentSource } from '../../document-viewer/UniversalDocumentViewer.js';
 import { type ArtifactTreeNode, useArtifacts } from './hooks/useArtifacts.js';
+
+const UniversalDocumentViewer = React.lazy(async () => {
+    const module = await import('../../document-viewer/UniversalDocumentViewer.js');
+    return { default: module.UniversalDocumentViewer };
+});
 
 /** Artifact file extensions that open in the Markdown editor rather than downloading. */
 const EDITABLE_ARTIFACT_EXTENSIONS = new Set(['md', 'markdown', 'mdx', 'txt']);
@@ -167,6 +173,42 @@ function downloadUrl(url: string, filename: string) {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+}
+
+function getArtifactContentType(path: string): string | undefined {
+    const extension = path.split('.').pop()?.toLowerCase();
+    switch (extension) {
+        case 'css':
+            return 'text/css';
+        case 'gif':
+            return 'image/gif';
+        case 'htm':
+        case 'html':
+            return 'text/html';
+        case 'jpeg':
+        case 'jpg':
+            return 'image/jpeg';
+        case 'json':
+            return 'application/json';
+        case 'md':
+        case 'markdown':
+            return 'text/markdown';
+        case 'pdf':
+            return 'application/pdf';
+        case 'png':
+            return 'image/png';
+        case 'svg':
+            return 'image/svg+xml';
+        case 'ts':
+        case 'tsx':
+            return 'text/typescript';
+        case 'txt':
+            return 'text/plain';
+        case 'webp':
+            return 'image/webp';
+        default:
+            return undefined;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -328,8 +370,15 @@ function ArtifactsTabComponent({
 }: ArtifactsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
-    const { tree, flatFiles, isLoading, error, refresh } = useArtifacts(client, runId, refreshKey);
+    const [showSystem, setShowSystem] = useState(false);
+    const { tree, flatFiles, totalCount, systemHiddenCount, isLoading, error, refresh } = useArtifacts(
+        client,
+        runId,
+        refreshKey,
+        showSystem,
+    );
     const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
+    const [previewPath, setPreviewPath] = useState<string | null>(null);
     const [filterValue, setFilterValue] = useState('');
     const [internalSelectedPath, setInternalSelectedPath] = useState<string | null>(null);
     const activeSelectedPath = selectedPath === undefined ? internalSelectedPath : selectedPath;
@@ -367,16 +416,29 @@ function ArtifactsTabComponent({
                 setSelectedPath(relativePath);
                 return;
             }
-            void handleDownload(relativePath);
+            setPreviewPath(relativePath);
         },
-        [handleDownload, setSelectedPath],
+        [setSelectedPath],
     );
+
+    const previewSource: UniversalDocumentSource | null =
+        runId && previewPath
+            ? {
+                  title: previewPath.split('/').pop() || previewPath,
+                  fileName: previewPath.split('/').pop() || previewPath,
+                  contentType: getArtifactContentType(previewPath),
+                  artifact: {
+                      runId,
+                      path: previewPath,
+                  },
+              }
+            : null;
 
     if (!runId) {
         return <ArtifactEmptyState icon={<PackageIcon className="mb-2 size-8" />}>No run selected</ArtifactEmptyState>;
     }
 
-    if (isLoading && flatFiles.length === 0) {
+    if (isLoading && totalCount === 0) {
         return (
             <ArtifactEmptyState icon={<Loader2Icon className="mb-2 size-6 animate-spin" />}>
                 {t('agent.loadingArtifacts')}
@@ -404,7 +466,7 @@ function ArtifactsTabComponent({
         );
     }
 
-    if (flatFiles.length === 0) {
+    if (totalCount === 0) {
         return (
             <ArtifactEmptyState
                 icon={<PackageIcon className="mb-2 size-8" />}
@@ -437,16 +499,28 @@ function ArtifactsTabComponent({
     return (
         <div className="flex flex-col h-full">
             {/* Top bar */}
-            <div className="flex shrink-0 flex-col gap-2 px-3 py-2">
+            <div className="flex shrink-0 flex-col gap-2 border-b px-3 py-2">
                 <div className="flex items-center justify-between gap-2 text-xs text-muted">
                     <span>
                         {normalizedFilterValue
                             ? `${visibleFileCount} of ${flatFiles.length} file${flatFiles.length !== 1 ? 's' : ''}`
                             : `${flatFiles.length} file${flatFiles.length !== 1 ? 's' : ''}`}
+                        {!showSystem && systemHiddenCount > 0 ? ` · ${systemHiddenCount} hidden` : ''}
                     </span>
-                    <Button variant="ghost" size="sm" onClick={refresh} disabled={isLoading} className="h-6 w-6 p-0">
-                        <RefreshCwIcon className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Switch size="sm" value={showSystem} onChange={setShowSystem}>
+                            <span className="text-xs text-muted">{t('agent.showSystemArtifacts')}</span>
+                        </Switch>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={refresh}
+                            disabled={isLoading}
+                            className="h-6 w-6 p-0"
+                        >
+                            <RefreshCwIcon className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </div>
                 </div>
                 <label htmlFor={filterInputId} className="sr-only">
                     {t('form.filter')}
@@ -464,7 +538,7 @@ function ArtifactsTabComponent({
             </div>
 
             {/* Tree */}
-            <div className="flex-1 overflow-y-auto px-3 pb-2">
+            <div className="flex-1 overflow-y-auto px-3 py-2">
                 {filteredTree.length > 0 ? (
                     <div className="min-w-0">
                         {filteredTree.map((node) => (
@@ -481,9 +555,39 @@ function ArtifactsTabComponent({
                         ))}
                     </div>
                 ) : (
-                    <div className="px-1 py-6 text-sm text-muted">{t('agent.noContentAvailable')}</div>
+                    <div className="px-1 py-6 text-sm text-muted">
+                        {!showSystem && systemHiddenCount > 0
+                            ? t('agent.onlySystemArtifacts')
+                            : t('agent.noContentAvailable')}
+                    </div>
                 )}
             </div>
+            {previewSource && (
+                <Modal
+                    isOpen={!!previewPath}
+                    onClose={() => setPreviewPath(null)}
+                    size="xl"
+                    className="h-[90vh] p-0"
+                    description="Artifact preview"
+                >
+                    <ModalTitle show={false}>{previewSource.fileName}</ModalTitle>
+                    <ModalBody className="h-full max-h-none p-0">
+                        <React.Suspense
+                            fallback={
+                                <Center className="h-full">
+                                    <Loader2Icon className="size-6 animate-spin text-muted" />
+                                </Center>
+                            }
+                        >
+                            <UniversalDocumentViewer
+                                source={previewSource}
+                                className="h-full"
+                                onDownload={() => previewPath && void handleDownload(previewPath)}
+                            />
+                        </React.Suspense>
+                    </ModalBody>
+                </Modal>
+            )}
         </div>
     );
 }

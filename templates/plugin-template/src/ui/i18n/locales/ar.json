@@ -2,7 +2,7 @@
   "access.account": "الحساب",
   "access.denied": "تم رفض الوصول",
   "access.noPermission": "ليس لديك إذن لعرض تطبيق {{name}} في المشروع: «{{project}}».",
-  "access.orgNotAuthorized": "المؤسسة <strong>{{name}}</strong> غير مصرح لها بالوصول إلى هذا التطبيق.",
+  "access.orgNotAuthorized": "المؤسسة {{name}} غير مصرح لها بالوصول إلى هذا التطبيق.",
   "access.project": "المشروع",
   "access.selectAccount": "اختر حسابًا",
   "access.selectProject": "اختر مشروعًا",

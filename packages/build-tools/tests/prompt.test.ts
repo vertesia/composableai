@@ -180,6 +180,18 @@ Some content`;
         }).rejects.toThrow(/Invalid frontmatter/);
     });
 
+    it('should throw for an unregistered handlebars helper', async () => {
+        const content = `---
+role: user
+content_type: handlebars
+---
+Tactics: {{join mitre_tactics ", "}}`;
+
+        await expect(async () => {
+            await promptTransformer.transform(content, 'rca-generator.hbs');
+        }).rejects.toThrow(/Invalid Handlebars prompt.*Missing helper: "join"/s);
+    });
+
     it('should support all valid roles', async () => {
         const roles: PromptRole[] = [
             PromptRole.safety,

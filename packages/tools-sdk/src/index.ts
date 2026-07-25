@@ -5,6 +5,8 @@ export { copyRuntimeAssets } from './copy-assets.js';
 export * from './InteractionCollection.js';
 export * from './RenderingTemplateCollection.js';
 export * from './SkillCollection.js';
+export type { BuildAppPackageOptions } from './server/app-package.js';
+export { buildAppPackage } from './server/app-package.js';
 export * from './server/types.js';
 export * from './server.js';
 export * from './site/templates.js';

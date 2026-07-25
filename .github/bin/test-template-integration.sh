@@ -159,15 +159,33 @@ publish_to_verdaccio() {
   echo "Published ${count} packages to verdaccio"
 }
 
+align_template_versions_for_verdaccio() {
+  echo ""
+  echo "=== Aligning create-plugin template versions for verdaccio ==="
+
+  node <<'NODE'
+const fs = require('fs');
+const pkgPath = 'packages/create-plugin/package.json';
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+pkg.templateVersions = {
+  ...(pkg.templateVersions || {}),
+  '@vertesia': pkg.version,
+};
+fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+console.log(`  @vertesia template version: ${pkg.version}`);
+NODE
+}
+
 workspace_package_dirs() {
   local repo_root
   repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
   # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
-  # Publish llumiverse/common first because several @vertesia packages depend on it.
-  pnpm -r --filter "./llumiverse/common" --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
+  # Keep this in sync with publish-all-packages.sh so Verdaccio tests expose the
+  # same package graph as a snapshot publish.
+  pnpm -r --filter "./llumiverse/common" --filter "./libraries/jst" --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
     case "$pkg_dir" in
-      "${repo_root}"/llumiverse/common|"${repo_root}"/packages/*)
+      "${repo_root}"/llumiverse/common|"${repo_root}"/libraries/jst|"${repo_root}"/packages/*)
         [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
         ;;
     esac
@@ -208,6 +226,7 @@ derive_tag_and_branch
 
 print_config "Template Integration Test"
 
+align_template_versions_for_verdaccio
 start_verdaccio
 publish_to_verdaccio
 
@@ -221,6 +240,9 @@ export pnpm_config_registry="${VERDACCIO_URL}"
 TEMPLATES_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)/templates"
 EXTRA_CREATE_ARGS="--local-templates ${TEMPLATES_PATH}"
 
+# Minimal scaffold (default) built with pnpm.
+echo ""
+echo "--- Mode: minimal (default scaffold, pnpm) ---"
 bootstrap_template "integration-test-plugin"
 
 echo ""
@@ -229,10 +251,13 @@ cat "${TEST_PROJECT_DIR}/package.json"
 
 build_project
 
+# Dev scaffold (module-selected examples and UI modules) built with npm.
+echo ""
+echo "--- Mode: dev (--module dev scaffold, npm) ---"
 TEST_PROJECT_DIR_NPM=""
-bootstrap_template "integration-test-plugin-npm" npm
+EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS} --module dev" bootstrap_template "integration-test-plugin-npm" npm
 TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
 build_project_npm
 
 echo ""
-echo "✅ Template integration test passed!"
+echo "Template integration test passed (minimal + dev)!"

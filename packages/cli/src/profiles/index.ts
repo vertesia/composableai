@@ -62,6 +62,10 @@ export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGIO
             }
     }
 }
+
+function isDevDeploymentTarget(value: string): boolean {
+    return value.startsWith('dev-');
+}
 export function getServerUrls(
     value: ConfigUrlRef,
     region: Region = DEFAULT_REGION,
@@ -110,10 +114,6 @@ export function getServerUrls(
     }
 }
 
-function isDevDeploymentTarget(value: string): boolean {
-    return value.startsWith('dev-');
-}
-
 export function getCloudTypeFromConfigUrl(url: string) {
     let parsedUrl: URL;
     try {
@@ -123,7 +123,7 @@ export function getCloudTypeFromConfigUrl(url: string) {
     }
 
     const { hostname, protocol } = parsedUrl;
-    if (protocol === 'https:' && hostname === 'localhost') {
+    if ((protocol === 'http:' || protocol === 'https:') && hostname === 'localhost') {
         return 'staging';
     } else if (hostname.endsWith('.ui.dev1.vertesia.io')) {
         return 'staging';
@@ -203,16 +203,24 @@ export class ConfigureProfile {
         if (result.oauth_server_url) {
             this.data.oauth_server_url = result.oauth_server_url;
         }
-        delete this.data.apikey;
-        writeAuthBundle(result.profile, {
-            accessToken: result.token,
-            accessTokenExpiresAt: readResultAccessTokenExpiry(result),
-            idToken: result.id_token || previousBundle?.idToken,
-            refreshToken: result.refresh_token || previousBundle?.refreshToken,
-            refreshTokenExpiresAt: result.refresh_token_expires_at || previousBundle?.refreshTokenExpiresAt,
-            oauthClientId: result.oauth_client_id || previousBundle?.oauthClientId,
-            oauthResource: result.oauth_resource || previousBundle?.oauthResource,
-        });
+        try {
+            writeAuthBundle(result.profile, {
+                accessToken: result.token,
+                accessTokenExpiresAt: readResultAccessTokenExpiry(result),
+                idToken: result.id_token || previousBundle?.idToken,
+                refreshToken: result.refresh_token || previousBundle?.refreshToken,
+                refreshTokenExpiresAt: result.refresh_token_expires_at || previousBundle?.refreshTokenExpiresAt,
+                oauthClientId: result.oauth_client_id || previousBundle?.oauthClientId,
+                oauthResource: result.oauth_resource || previousBundle?.oauthResource,
+            });
+            delete this.data.apikey;
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.warn(
+                `Unable to store credentials in the native keychain; falling back to profile file storage: ${message}`,
+            );
+            this.data.apikey = result.token;
+        }
         if (oldName && oldName !== result.profile) {
             deleteAuthBundle(oldName);
         }
@@ -288,6 +296,7 @@ export class Config {
     current?: Profile;
     profiles: Profile[];
     isDevMode = false;
+    explicitProfile = false;
 
     constructor(data?: ProfilesData) {
         this.profiles = data?.profiles || [];
@@ -304,12 +313,13 @@ export class Config {
         return this.profiles.find((p) => p.name === name);
     }
 
-    use(name: string) {
+    use(name: string, options: { explicit?: boolean } = {}) {
         this.current = this.profiles.find((p) => p.name === name);
         if (!this.current) {
             console.error(`No configuration named ${name} found`);
             process.exit(1);
         }
+        this.explicitProfile = Boolean(options.explicit);
         return this;
     }
 
@@ -428,12 +438,16 @@ export class Config {
                     }
                     const existingBundle = readAuthBundle(profile.name);
                     if (!existingBundle?.accessToken) {
-                        writeAuthBundle(profile.name, {
-                            accessToken: profile.apikey,
-                            accessTokenExpiresAt: readInlineTokenExpiry(profile.apikey),
-                            refreshToken: existingBundle?.refreshToken,
-                            refreshTokenExpiresAt: existingBundle?.refreshTokenExpiresAt,
-                        });
+                        try {
+                            writeAuthBundle(profile.name, {
+                                accessToken: profile.apikey,
+                                accessTokenExpiresAt: readInlineTokenExpiry(profile.apikey),
+                                refreshToken: existingBundle?.refreshToken,
+                                refreshTokenExpiresAt: existingBundle?.refreshTokenExpiresAt,
+                            });
+                        } catch {
+                            continue;
+                        }
                     }
                     delete profile.apikey;
                     needsSave = true;

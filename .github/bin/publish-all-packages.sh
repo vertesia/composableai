@@ -72,6 +72,16 @@ update_package_versions() {
 
   # Update all workspace packages (excluding llumiverse and libraries/koa-stack/*)
   pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec npm version "${new_version}" --no-git-tag-version
+
+  # Stamp the source commit so a published @vertesia version can be mapped back to its
+  # composableai source. `pnpm publish` (unlike `npm publish`) does not set `gitHead`, so
+  # without this a consumer of the published SDK has no precise way to fetch the source that
+  # matches the installed version. HEAD is the committed source the package is built from;
+  # the version bump above is intentionally uncommitted and is just a label.
+  git_head=$(git rev-parse HEAD)
+  echo "Stamping gitHead ${git_head} on all packages"
+  npm pkg set gitHead="${git_head}" --workspaces=false
+  pnpm -r --filter "./packages/**" exec npm pkg set gitHead="${git_head}"
 }
 
 publish_packages() {
@@ -91,11 +101,14 @@ publish_packages() {
 
     echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
 
-    # Publish
+    # Publish. Don't let one package's failure (e.g. a new package whose npm OIDC
+    # trusted-publisher isn't configured yet) abort the whole run and strand the
+    # packages after it in the loop. Collect failures and report at the end; the
+    # caller fails the run so the gap is visible, but every package is attempted.
     if [ -n "$DRY_RUN_FLAG" ]; then
-      pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG}
+      pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG} || PUBLISH_FAILURES="${PUBLISH_FAILURES} ${pkg_name}"
     else
-      pnpm publish --access public --tag "${npm_tag}" --no-git-checks
+      pnpm publish --access public --tag "${npm_tag}" --no-git-checks || PUBLISH_FAILURES="${PUBLISH_FAILURES} ${pkg_name}"
     fi
 
     cd "$(git rev-parse --show-toplevel)"
@@ -134,19 +147,19 @@ update_template_versions() {
     fs.writeFileSync(pkgPath, JSON.stringify(p, null, 2) + '\n');
   "
 
-  echo "  ✓ Updated packages/create-plugin/package.json templateVersions"
+  echo "  Updated packages/create-plugin/package.json templateVersions"
 
   # Update version in each template's package.json (except worker-template)
   for tpl_dir in templates/*; do
     if [ -d "$tpl_dir" ] && [ -f "$tpl_dir/package.json" ]; then
       tpl_name=$(basename "$tpl_dir")
       if [ "$tpl_name" = "worker-template" ]; then
-        echo "  ⏭ Skipping ${tpl_dir} (independent versioning)"
+        echo "  Skipping ${tpl_dir} (independent versioning)"
         continue
       fi
       cd "$tpl_dir"
       npm version "${new_version}" --no-git-tag-version
-      echo "  ✓ Updated ${tpl_dir}/package.json version to ${new_version}"
+      echo "  Updated ${tpl_dir}/package.json version to ${new_version}"
       cd ../..
     fi
   done
@@ -195,9 +208,9 @@ write_github_summary() {
 
   # Determine title based on dry run mode
   if [ "$DRY_RUN" = "true" ]; then
-    title="## 🧪 Dry Run Summary"
+    title="## Dry Run Summary"
   else
-    title="## 📦 Published Packages"
+    title="## Published Packages"
   fi
 
   # Write summary table
@@ -228,6 +241,8 @@ REF=""
 DRY_RUN=false
 RELEASE_TYPE=""
 BUMP_TYPE=""
+# Space-separated list of packages whose publish failed (collected in publish_packages).
+PUBLISH_FAILURES=""
 
 # Parse named arguments
 while [[ $# -gt 0 ]]; do
@@ -328,12 +343,30 @@ update_template_versions
 echo "=== Building all packages ==="
 pnpm build
 
-if [ "$DRY_RUN" = "false" ]; then
+# For a RELEASE, keep the strict commit-then-publish order so a release is never
+# published without its version-bump commit + tag.
+if [ "$DRY_RUN" = "false" ] && [ "$RELEASE_TYPE" = "release" ]; then
   commit_and_push
 fi
 
 publish_packages
 
+# For a SNAPSHOT (dev) build the published npm artifact is the goal; pushing the
+# version bump back to the branch is bookkeeping. Publish first (above) so a
+# branch-push failure — e.g. a deploy key without write access to a feature
+# branch — cannot block the npm publish, and treat the push as best-effort.
+if [ "$DRY_RUN" = "false" ] && [ "$RELEASE_TYPE" = "snapshot" ]; then
+  commit_and_push || echo "[WARN] snapshot version-bump push to ${REF} failed; packages were published, update create-plugin templateVersions on the branch manually."
+fi
+
 write_github_summary
+
+# Surface any per-package publish failures (loop above continued past them so the
+# rest still publish). Fail the run so the gap is visible, after attempting all.
+if [ -n "${PUBLISH_FAILURES// /}" ]; then
+  echo "=== Packages that FAILED to publish:${PUBLISH_FAILURES} ==="
+  echo "The remaining packages WERE published. A common cause is a package whose npm OIDC trusted-publisher is not configured yet — set it up on npm and re-run."
+  exit 1
+fi
 
 echo "=== Done ==="

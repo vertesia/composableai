@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from 'react';
 import { HistoryNavigator, type LocationChangeEvent, type NavigateOptions } from './HistoryNavigator';
 import { type PathMatch, PathMatcher } from './PathMatcher';
-import { isRootPath, joinPath, type PathMatchParams } from './path';
+import { getMountBasename, isRootPath, joinPath, type PathMatchParams, stripMountBasename } from './path';
 
 export type RouteComponentProps = PathMatchParams;
 export type LazyRouteModule = { default: React.ComponentType<Record<string, never>> };
@@ -61,7 +61,8 @@ export class Router extends BaseRouter {
             }
             // only process afterChange events
             if (event.name === 'afterChange') {
-                const match = this.match(event.location.pathname);
+                // Match app-relative: strip the served `<base href>` mount prefix (no-op when origin-served).
+                const match = this.match(stripMountBasename(event.location.pathname));
                 if (match?.value) {
                     updateState({
                         ...match,
@@ -184,8 +185,21 @@ export function useNavigate() {
 }
 
 export function useRouterBasePath() {
-    const { matchedRoutePath, router } = useRouterContext();
-    return router instanceof NestedRouter ? router.basePath : matchedRoutePath;
+    const { router } = useRouterContext();
+    // The base path apps prepend to build absolute in-app links (e.g. `${base}/items/${id}`). It MUST
+    // include the served `<base href>` mount so links stay on the mount and match the full
+    // `useLocation().pathname` (which carries the mount). `getMountBasename()` is '' for the
+    // origin-served Studio UI and the mount (no trailing slash) for gateway-served apps.
+    const mount = getMountBasename();
+    if (router instanceof NestedRouter) {
+        // NestedRouter.basePath is relative to the parent router, which sits at the mount, so it must
+        // be mount-prefixed too. A bare nested base of '/' (an app whose NestedRouterProvider has no
+        // basePath) would otherwise make `${base}/items` resolve to `//items` — a protocol-relative
+        // URL that escapes the app. Origin-served Studio (mount '') keeps the raw nested basePath.
+        if (!mount) return router.basePath;
+        return router.basePath === '/' ? mount : joinPath(mount, router.basePath);
+    }
+    return mount;
 }
 
 type UseParamsReturn<T> = T extends string ? string : Record<string, string>;

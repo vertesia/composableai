@@ -1,6 +1,6 @@
 {
     "name": "plugin-template",
-    "version": "1.5.0-dev.20260714.072725Z",
+    "version": "1.5.0-dev.20260725.083715Z",
     "description": "A unified template for building custom UI plugins and tool servers for Vertesia",
     "type": "module",
     "main": "lib/tool-server/server.js",
@@ -12,7 +12,9 @@
     "license": "Apache-2.0",
     "scripts": {
         "dev": "vite dev --mode app",
+        "typecheck": "node scripts/typecheck.mjs",
         "lint": "biome lint src",
+        "check": "pnpm run lint && pnpm run typecheck",
         "prebuild": "biome lint src && tsc --build --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tool-server.tsbuildinfo",
         "build:server": "npm run clean:lib && tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js",
@@ -76,6 +78,7 @@
         "@vitejs/plugin-basic-ssl": "^2.3.0",
         "@vitejs/plugin-react": "^6.0.3",
         "concurrently": "^10.0.3",
+        "esbuild": "^0.28.0",
         "globals": "^17.7.0",
         "react": "catalog:",
         "react-dom": "catalog:",
@@ -96,6 +99,12 @@
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
         "hono": "^4.12.30",
-        "lucide-react": "^1.24.0"
+        "html-parse-stringify": "^3.0.1",
+        "lucide-react": "^1.24.0",
+        "react-vega": "^8.0.0",
+        "use-sync-external-store": "^1.6.0",
+        "vega": "^6.2.0",
+        "vega-embed": "^7.1.0",
+        "vega-lite": "^6.4.3"
     }
 }

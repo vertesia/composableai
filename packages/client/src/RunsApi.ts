@@ -115,9 +115,14 @@ export class RunsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    sendToolResults(payload: ToolResultsPayload): Promise<ExecutionResponse> {
+    sendToolResults(
+        payload: ToolResultsPayload,
+        options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
+    ): Promise<ExecutionResponse> {
         return this.post(`/tool-results`, {
             payload,
+            timeoutMs: options?.timeoutMs,
+            signal: options?.signal,
         });
     }
 
@@ -126,9 +131,14 @@ export class RunsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    sendUserMessage(payload: UserMessagePayload): Promise<ExecutionResponse> {
+    sendUserMessage(
+        payload: UserMessagePayload,
+        options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
+    ): Promise<ExecutionResponse> {
         return this.post(`/user-message`, {
             payload,
+            timeoutMs: options?.timeoutMs,
+            signal: options?.signal,
         });
     }
 

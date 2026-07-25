@@ -463,6 +463,8 @@ export interface UpdateAgentRunStatusPayload {
     title?: string;
     topic?: string;
     lessons_learned?: string[];
+    /** Shallow-merged into the run's existing properties. */
+    properties?: Record<string, unknown>;
     /** ES-only: conversation content text (not stored in MongoDB) */
     content?: string;
     /**

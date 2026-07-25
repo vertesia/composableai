@@ -1,6 +1,12 @@
 import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
+import type { AppDashboardDefinition } from './data-platform.js';
 import type { CatalogInteractionRef } from './interaction.js';
-import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
+import type {
+    AgentRunSearchHit,
+    DSLActivityOptions,
+    InCodeProcessDefinition,
+    InCodeTypeDefinition,
+} from './store/index.js';
 import type { InCodeViewDefinition } from './views.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
@@ -383,8 +389,376 @@ export interface RemoteActivityDefinition {
     options?: DSLActivityOptions;
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'views' | 'templates';
+/**
+ * Canonical app capabilities Studio renders/supports. The public type is derived from
+ * this list so runtime validation and TypeScript cannot drift.
+ */
+export const APP_CAPABILITIES = [
+    'ui',
+    'tools',
+    'interactions',
+    'types',
+    'processes',
+    'views',
+    'templates',
+    'dashboards',
+] as const;
+
+export type AppCapabilities = (typeof APP_CAPABILITIES)[number];
+
+/**
+ * Header carrying the app version a generated-app UI is running, so studio/zeno resolve app-owned
+ * capability refs (`app:<app>:...`) against that exact version instead of the promoted version.
+ * Resolution-time only; never persisted. Set by the generated app template via client.withAppVersion.
+ */
+export const APP_VERSION_HEADER = 'x-vertesia-app-version';
+/**
+ * The platform-artifact types an app build can be required to create. A finer-grained
+ * counterpart to {@link AppCapabilities}: a single `interactions` capability may comprise
+ * several `interaction` artifacts plus `agent`, `activity`, and `tool` artifacts that
+ * {@link AppCapabilities} folds together. Used by the App Solution Architect manifest and
+ * the publish-time capability gate.
+ */
+export const APP_ARTIFACT_TYPES = [
+    'interaction',
+    'agent',
+    'type',
+    'process',
+    'view',
+    'template',
+    'dashboard',
+    'activity',
+    'tool',
+] as const;
+
+export type AppArtifactType = (typeof APP_ARTIFACT_TYPES)[number];
+
+/**
+ * A single platform artifact the App Solution Architect requires the build to create.
+ * `id` is the app-owned in-code id the implementation must register and reference
+ * (e.g. `app:<name>:main:extract-item` for interactions/agents, `app:<name>:<type>` for
+ * types, `app:<name>:<process>` for processes).
+ */
+/**
+ * Build progress for one artifact, maintained by the developer agent as a living checklist:
+ *  - `pending` — defined by the architect, not yet built.
+ *  - `built`   — registered in the package, not yet successfully exercised.
+ *  - `done`    — built AND successfully exercised against real data.
+ * This is the agent's self-reported claim for tracking/handoff; the capability gate verifies
+ * the truth independently via package registration + run/data telemetry and does not trust it.
+ */
+export type AppArtifactStatus = 'pending' | 'built' | 'done';
+
+export const APP_ARTIFACT_STATUSES: readonly AppArtifactStatus[] = ['pending', 'built', 'done'];
+
+export interface AppPlannedArtifact {
+    /** App-owned in-code id the build must register and reference. */
+    id: string;
+    type: AppArtifactType;
+    /** Short human label. */
+    name?: string;
+    /** Why this artifact exists / what it does — carried into the build checklist. */
+    purpose?: string;
+    /**
+     * When false, the artifact is planned but optional: the capability gate warns rather
+     * than blocks if it is missing or never exercised. Defaults to required (true).
+     */
+    required?: boolean;
+    /** Build progress, updated by the developer agent. Defaults to `pending`. */
+    status?: AppArtifactStatus;
+}
+
+/**
+ * Structured result the App Solution Architect emits alongside its prose artifacts — the
+ * machine-readable contract for the build. The implementation MUST create and successfully
+ * exercise every required artifact before building a deployable version. Persisted into the app repo as
+ * {@link APP_CAPABILITY_MANIFEST_PATH} so it survives across runs and the version-build
+ * capability gate can verify against it deterministically. If the builder finds the plan
+ * wrong or insufficient, the orchestrator relaunches the architect to revise the manifest;
+ * the gate always checks against the latest committed copy.
+ */
+export interface AppCapabilityManifest {
+    /** Artifact-storage ref to the prose architecture spec (e.g. the architecture `.md`). */
+    spec_artifact: string;
+    /** Platform artifacts the build must create. */
+    artifacts: AppPlannedArtifact[];
+    /**
+     * Monotonic revision, starting at 1, bumped each time the architect evolves the manifest for
+     * the SAME app on a later iteration (read the committed manifest, preserve untouched artifacts,
+     * add/modify/remove, then bump). Lets downstream agents tell which contract they are building to.
+     */
+    revision?: number;
+    /**
+     * Newest-first change notes, one entry per revision (what was added/modified/removed and why).
+     * How manifest changes are communicated to downstream agents across iterations.
+     */
+    changelog?: string[];
+    /** Optional free-form notes the architect wants the builder to honor. */
+    notes?: string;
+}
+
+/** Repo-relative path the capability manifest is committed to, read by version-build gates. */
+export const APP_CAPABILITY_MANIFEST_PATH = 'docs/app-capability-manifest.json';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
+
+export type AppVersionKind = 'design' | 'version';
+export type AppVersionState = 'ready' | 'failed' | 'expired';
+export type AppVersionTarget = 'static' | 'service';
+export type AppVersionGitRefType = 'branch' | 'tag' | 'commit' | 'detached';
+export type AppBuildTrigger = 'ui' | 'git_push' | 'agent' | 'api';
+
+export interface AppVersionStorage {
+    tenant_id?: string;
+    app_prefix?: string;
+    artifacts_prefix?: string;
+    source_archive?: string;
+    source_git?: AppVersionGitSource;
+    build_prefix?: string;
+    manifest_path?: string;
+    service_archive?: string;
+    live_metadata_path?: string;
+}
+
+export interface AppVersionGitSource {
+    url?: string;
+    remote?: string;
+    /**
+     * The source ref that should be used to reproduce this version. Immutable
+     * app versions use the exact commit SHA rather than a mutable branch or tag.
+     */
+    ref?: string;
+    ref_type?: AppVersionGitRefType;
+    branch?: string;
+    tag?: string;
+    commit?: string;
+    dirty?: boolean;
+    pushed?: boolean;
+    push_warning?: string;
+}
+
+export interface AppVersionUrls {
+    live_url?: string;
+    app_url?: string;
+    plugin_url?: string;
+    package_url?: string;
+    internal_preview_url?: string;
+}
+
+export interface AppVersionRecord {
+    id: string;
+    account: string;
+    project: string;
+    app?: string;
+    app_id: string;
+    app_name: string;
+    version_id: string;
+    kind: AppVersionKind;
+    state: AppVersionState;
+    promoted?: boolean;
+    target?: AppVersionTarget;
+    agent_run_id?: string;
+    /** Development task that produced this version, when built by the app assistant. */
+    development_task_id?: string;
+    /** Temporal workflow that produced this version. */
+    build_workflow_id?: string;
+    /** Temporal run that produced this version. */
+    build_workflow_run_id?: string;
+    sandbox_id?: string;
+    title?: string;
+    description?: string;
+    storage?: AppVersionStorage;
+    /** Exact Git commit used to build this immutable version. */
+    source_commit?: string;
+    urls?: AppVersionUrls;
+    manifest?: Record<string, unknown>;
+    files?: string[];
+    file_count?: number;
+    source_file_count?: number;
+    screenshot_artifact?: string;
+    checks?: string[];
+    created_by?: string;
+    created_at: string;
+    updated_at: string;
+    built_at?: string;
+    checked_at?: string;
+    expires_at?: string;
+}
+
+export interface DeleteAppVersionResponse {
+    id: string;
+    app_id: string;
+    version_id: string;
+    storage_prefix?: string;
+    deleted: boolean;
+    warnings: string[];
+}
+
+export interface UpsertAppVersionRequest {
+    /** Existing version record to update in place, used by reproducible rebuilds. */
+    record_id?: string;
+    app?: string;
+    app_id: string;
+    app_name?: string;
+    version_id: string;
+    kind: AppVersionKind;
+    state?: AppVersionState;
+    target?: AppVersionTarget;
+    agent_run_id?: string;
+    /** Development task that produced this version, when built by the app assistant. */
+    development_task_id?: string;
+    build_workflow_id?: string;
+    build_workflow_run_id?: string;
+    sandbox_id?: string;
+    title?: string;
+    description?: string;
+    storage?: AppVersionStorage;
+    /** Exact Git commit used to build this immutable version. */
+    source_commit?: string;
+    urls?: AppVersionUrls;
+    manifest?: Record<string, unknown>;
+    files?: string[];
+    file_count?: number;
+    source_file_count?: number;
+    screenshot_artifact?: string;
+    checks?: string[];
+    built_at?: string;
+    checked_at?: string;
+    expires_at?: string;
+}
+
+export interface AppVersionListQuery {
+    app_id?: string;
+    kind?: AppVersionKind;
+    include_expired?: boolean;
+    limit?: number;
+}
+
+export interface PromoteAppVersionResponse {
+    version: AppVersionRecord;
+    app?: AppManifest;
+}
+
+export interface StartAppBuildRequest {
+    /**
+     * Source branch, tag, or commit to build. When omitted, the app source
+     * configuration chooses its default branch.
+     */
+    source_ref?: string;
+    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
+    trigger?: AppBuildTrigger;
+    target?: AppVersionTarget;
+    title?: string;
+    description?: string;
+}
+
+export interface StartAppBuildResponse {
+    workflow_id: string;
+    run_id: string;
+    app_id: string;
+    version_id?: string;
+    rebuild_version_record_id?: string;
+    source_ref?: string;
+    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
+}
+
+export interface AppBuildWorkflowInput extends StartAppBuildRequest {
+    app_id: string;
+    app_record_id?: string;
+    /** Rebuild this persisted version record at its original commit and target. */
+    rebuild_version_record_id?: string;
+    app_title?: string;
+    app_description?: string;
+    source_git_url?: string;
+}
+
+export interface AppBuildWorkflowResult {
+    app_id: string;
+    version_id: string;
+    kind: Extract<AppVersionKind, 'version'>;
+    state: AppVersionState;
+    source_commit: string;
+    source_git?: AppVersionGitSource;
+    urls?: AppVersionUrls;
+    file_count?: number;
+}
+
+export type AppBuildProgressStatus = 'queued' | 'resolving' | 'building' | 'completed' | 'failed';
+
+export interface AppBuildProgress {
+    status: AppBuildProgressStatus;
+    step: string;
+    app_id?: string;
+    version_id?: string;
+    source_ref?: string;
+    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
+    source_commit?: string;
+    file_count?: number;
+    app_url?: string;
+    error?: string;
+    updated_at: string;
+}
+
+export type AppScaffoldModule = 'service' | 'assistant' | 'content-app' | 'examples';
+
+export interface StartAppScaffoldRequest {
+    /**
+     * App id / package name to create. It is normalized to the same slug rules
+     * used by @vertesia/create-plugin.
+     */
+    app_id: string;
+    title?: string;
+    description?: string;
+    modules?: AppScaffoldModule[];
+    /**
+     * Start an initial app version build after the source has been pushed.
+     * Defaults to true.
+     */
+    create_version?: boolean;
+}
+
+export interface StartAppScaffoldResponse {
+    workflow_id: string;
+    run_id: string;
+    app_id: string;
+    app_record_id?: string;
+    git_url?: string;
+    create_version: boolean;
+}
+
+export interface AppScaffoldWorkflowInput extends StartAppScaffoldRequest {}
+
+export interface AppScaffoldWorkflowResult {
+    app_id: string;
+    app_record_id?: string;
+    installation_id?: string;
+    git_url?: string;
+    source_git?: AppVersionGitSource;
+    files?: number;
+    initial_version_build?: StartAppBuildResponse;
+}
+
+export type AppScaffoldProgressStatus =
+    | 'queued'
+    | 'reserving'
+    | 'scaffolding'
+    | 'pushing'
+    | 'building'
+    | 'completed'
+    | 'failed';
+
+export interface AppScaffoldProgress {
+    status: AppScaffoldProgressStatus;
+    step: string;
+    app_id?: string;
+    app_record_id?: string;
+    installation_id?: string;
+    git_url?: string;
+    files?: number;
+    initial_version_build?: StartAppBuildResponse;
+    error?: string;
+    error_details?: string[];
+    updated_at: string;
+}
 
 /**
  * Access control policy for an app installation.
@@ -446,6 +820,18 @@ export interface AppManifestData {
      */
     color?: string;
 
+    /**
+     * Optional preview screenshot for the app-management UI, captured by the builder during a
+     * build/QA run. Resolved client-side from the owning agent run's artifact storage, so it
+     * carries both the run id and the artifact path.
+     */
+    preview_screenshot?: {
+        /** Agent run id whose artifact storage holds the screenshot. */
+        agent_run_id: string;
+        /** Artifact path within that storage, e.g. "preview-checks/app-preview-<ts>.png". */
+        artifact: string;
+    };
+
     status: 'beta' | 'stable' | 'deprecated';
 
     /**
@@ -502,6 +888,8 @@ export interface AppManifestData {
      * - interactions
      * - types
      * - processes
+     * - templates
+     * - dashboards
      * - settings
      * - all (the default if no scope is provided)
      *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
@@ -525,6 +913,14 @@ export interface AppManifestData {
     version?: string;
 
     /**
+     * Source repository configuration for apps generated and maintained through
+     * AppGen. Branches are mutable development lanes; immutable app versions
+     * record their exact source commit in AppVersionRecord.source_commit and
+     * AppVersionRecord.storage.source_git.
+     */
+    source?: AppSourceConfig;
+
+    /**
      * Free-form tags used for classification and filtering. Platform apps
      * carry `"system"` so UIs can skip install/uninstall/manage-permission
      * controls that don't apply to synthetic installations.
@@ -539,20 +935,16 @@ export interface AppManifestData {
     access_control?: AppAccessControl;
 }
 
-/**
- * Reserved deployment environment names that may never be used as endpoint
- * override keys. Reserving them prevents a manifest from hijacking auto-resolution
- * on a shared production studio-server (whose `Env.environment` is one of these).
- */
-const RESERVED_ENDPOINT_OVERRIDE_ENVS = new Set(['production', 'preview', 'staging']);
+export interface AppGitSourceConfig {
+    url?: string;
+    default_branch?: string;
+    production_branch?: string;
+    development_branch?: string;
+}
 
-/**
- * Returns true if the given environment name is allowed as an endpoint override key.
- * Any non-empty name is accepted except the reserved shared-deployment names.
- */
-export function isValidEndpointOverrideEnv(envName: string): boolean {
-    if (!envName) return false;
-    return !RESERVED_ENDPOINT_OVERRIDE_ENVS.has(envName.toLowerCase());
+export interface AppSourceConfig {
+    kind: 'git';
+    git?: AppGitSourceConfig;
 }
 
 /**
@@ -570,6 +962,10 @@ export interface Endpoints {
     token?: string;
     /** The browser-facing Studio UI (composable-ui) base URL */
     ui?: string;
+    /** The Smart HTTP app source git server base URL */
+    git?: string;
+    /** The appgen app-gateway base URL (serves promoted app bundles + their `/api` runtime). */
+    gateway?: string;
 }
 
 /**
@@ -578,7 +974,7 @@ export interface Endpoints {
  * with the unresolved placeholder visible, rather than silently pointing nowhere).
  * Trailing slashes on replacement values are stripped to avoid `//api/...` joins.
  */
-export function substituteEndpoints(url: string, endpoints?: Endpoints): string {
+function substituteEndpoints(url: string, endpoints?: Endpoints): string {
     if (!url || !endpoints) return url;
     return url.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key: string) => {
         const value = (endpoints as Record<string, string | undefined>)[key];
@@ -595,86 +991,147 @@ function trimTrailingSlashes(value: string): string {
     return end === value.length ? value : value.slice(0, end);
 }
 
-/**
- * Resolves the effective endpoint for an app.
- *
- * Order of resolution:
- * 1. If `requestedOverride` matches an `endpoint_overrides` key, use that URL
- *    (caller must verify the user is allowed to use the override).
- * 2. Else if `envName` matches an `endpoint_overrides` key, use that URL
- *    (auto-resolution from the studio-server's deployment env).
- * 3. Otherwise use the main `endpoint`.
- * 4. Apply `{{var}}` substitution using `vars`.
- */
-export function resolveAppEndpoint(
-    manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
-    envName?: string,
-    vars?: Endpoints,
-    requestedOverride?: string,
-): string | undefined {
-    let raw: string | undefined;
-    if (
-        requestedOverride &&
-        manifest.endpoint_overrides?.[requestedOverride] &&
-        isValidEndpointOverrideEnv(requestedOverride)
-    ) {
-        raw = manifest.endpoint_overrides[requestedOverride];
-    } else if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
-        raw = manifest.endpoint_overrides[envName];
-    } else {
-        raw = manifest.endpoint;
-    }
-    return raw ? substituteEndpoints(raw, vars) : raw;
+/** One entry in an app git-repo directory listing (see {@link AppRepoTree}). */
+export interface AppRepoTreeEntry {
+    /** File or directory name (last path segment). */
+    name: string;
+    /** Path relative to the repo root. */
+    path: string;
+    /** Whether the entry is a file (`blob`) or a directory (`tree`). */
+    type: 'blob' | 'tree';
+}
+
+/** A non-recursive listing of an app git repo directory at a given ref. */
+export interface AppRepoTree {
+    /** The ref the listing was read at (empty/undefined = default branch / HEAD). */
+    ref?: string;
+    /** The directory prefix that was listed (empty = repo root). */
+    prefix?: string;
+    entries: AppRepoTreeEntry[];
+}
+
+/** Browser-side limits mirrored by the app Git service document endpoint. */
+export const APP_REPO_DOCUMENT_UPLOAD_MAX_FILE_BYTES = 20 * 1024 * 1024;
+export const APP_REPO_DOCUMENT_UPLOAD_MAX_TOTAL_BYTES = 80 * 1024 * 1024;
+export const APP_REPO_DOCUMENT_UPLOAD_MAX_FILES = 20;
+export const APP_REPO_DOCUMENT_UPLOAD_PREFIX = 'docs/';
+
+/** Result of committing one or more uploaded documents to an app repository. */
+export interface AppRepoDocumentCommit {
+    /** Updated branch name. */
+    ref: string;
+    /** Branch HEAD before the commit. */
+    previous_commit: string;
+    /** Newly created commit SHA. */
+    commit: string;
+    /** Repository paths changed by the commit. */
+    paths: string[];
+}
+
+/** One commit that inserted or changed a file in an app git repository. */
+export interface AppRepoCommit {
+    /** Full commit SHA. */
+    commit: string;
+    /** Complete commit message. */
+    message: string;
+    /** Commit author name, when available. */
+    author?: string;
+    /** Commit author date as an ISO-8601 string, when available. */
+    date?: string;
+}
+
+/** Commit history in an app git repository, optionally filtered to a file. */
+export interface AppRepoCommits {
+    /** Ref from which history traversal started (empty/undefined = default branch / HEAD). */
+    ref?: string;
+    /** File path relative to the repository root, when history was filtered to a file. */
+    path?: string;
+    /** Commits ordered newest first. */
+    commits: AppRepoCommit[];
+    /** Pass this cursor to retrieve the next page. Absent when history is exhausted. */
+    next_cursor?: string;
+}
+
+/** A branch or tag in an app git repo, resolved to its latest commit. */
+export interface AppRepoRef {
+    /** Short ref name (e.g. `main`, `v1.0.0`). */
+    name: string;
+    /** Commit hash the ref points at (annotated tags are peeled to their commit). */
+    commit: string;
+    /** First line of the commit message, when available. */
+    commit_subject?: string;
+    /** Commit date as an ISO-8601 string, when available. */
+    commit_date?: string;
+    /** Commit author name, when available. */
+    commit_author?: string;
+}
+
+/** The branches and tags of an app git repo (see {@link AppRepoRef}). */
+export interface AppRepoRefs {
+    /** The repository's default branch (HEAD target), when resolvable. */
+    default_branch?: string;
+    branches: AppRepoRef[];
+    tags: AppRepoRef[];
+}
+
+/** A mutable app development task represented by an `agent/*` Git branch. */
+export interface AppDevelopmentTask {
+    /** Task slug derived from the branch name. */
+    id: string;
+    /** Complete Git branch name. */
+    branch: string;
+    /** Commit currently at the branch head. */
+    source_commit: string;
+    /** Branch-head commit date, when available. */
+    commit_date?: string;
+}
+
+/** Git-backed development tasks and the branch used for new tasks by default. */
+export interface AppDevelopmentTaskList {
+    /** Repository default branch, when resolvable. */
+    default_branch?: string;
+    tasks: AppDevelopmentTask[];
+}
+
+/** Development task details, including the latest parent assistant run when one exists. */
+export interface AppDevelopmentTaskDetails extends AppDevelopmentTask {
+    /** Latest Studio Assistant run started for this task branch. */
+    agent_run?: AgentRunSearchHit;
+}
+
+/** Request to create a branch from an existing branch, tag, or commit. */
+export interface CreateAppRepoBranchRequest {
+    name: string;
+    source_ref: string;
+}
+
+/** A newly created app repository branch. */
+export interface AppRepoBranch {
+    name: string;
+    commit: string;
+    source_ref: string;
 }
 
 /**
- * Resolves all URL placeholders in a manifest in place (both `endpoint` and
- * `tool_collections[].url`). Intended for server-side serialization — clients and
- * downstream workers receive already-substituted URLs so they don't need to know
- * about deployment-time vars.
- *
- * Mutates the manifest rather than returning a copy so it works cleanly with
- * Mongoose populated subdocs.
+ * Canonical package scopes, including the catch-all `all`. The public type is derived
+ * from this list so request parsing and TypeScript cannot drift.
  */
-export function resolveManifestUrls(
-    manifest: Partial<AppManifestData> | null | undefined,
-    envName?: string,
-    vars?: Endpoints,
-    requestedOverride?: string,
-): void {
-    if (!manifest) return;
+export const APP_PACKAGE_SCOPES = [
+    'ui',
+    'tools',
+    'interactions',
+    'types',
+    'processes',
+    'views',
+    'templates',
+    'dashboards',
+    'settings',
+    'widgets',
+    'activities',
+    'all',
+] as const;
 
-    if (manifest.endpoint) {
-        const resolved = resolveAppEndpoint(manifest, envName, vars, requestedOverride);
-        if (resolved && resolved !== manifest.endpoint) {
-            manifest.endpoint = resolved;
-        }
-    }
-
-    const toolCollections = manifest.tool_collections as ToolCollectionObject[] | undefined;
-    if (toolCollections && Array.isArray(toolCollections)) {
-        for (let i = 0; i < toolCollections.length; i++) {
-            const item = toolCollections[i];
-            if (item && typeof item === 'object' && item.url) {
-                const sub = substituteEndpoints(item.url, vars);
-                if (sub !== item.url) item.url = sub;
-            }
-        }
-    }
-}
-
-export type AppPackageScope =
-    | 'ui'
-    | 'tools'
-    | 'interactions'
-    | 'types'
-    | 'processes'
-    | 'views'
-    | 'templates'
-    | 'settings'
-    | 'widgets'
-    | 'activities'
-    | 'all';
+export type AppPackageScope = (typeof APP_PACKAGE_SCOPES)[number];
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -720,6 +1177,11 @@ export interface AppPackage {
     templates?: RenderingTemplateDefinitionRef[];
 
     /**
+     * Dashboards provided by the app.
+     */
+    dashboards?: AppDashboardDefinition[];
+
+    /**
      * Widgets provided by the app.
      */
     widgets?: Record<string, AppWidgetInfo>;
@@ -735,6 +1197,61 @@ export interface AppPackage {
      * A JSON chema for the app installation settings.
      */
     settings_schema?: JSONSchema;
+}
+
+/**
+ * A single diagnostic produced while inspecting an app's registration state.
+ */
+export interface AppInspectionIssue {
+    severity: 'error' | 'warning';
+    /** The capability this issue relates to, when applicable (e.g. 'types'). */
+    capability?: AppPackageScope;
+    /** Stable machine code, e.g. 'capability_declared_but_empty', 'endpoint_unreachable', 'not_installed'. */
+    code: string;
+    /** Human-readable explanation, safe to surface to the model and the UI. */
+    message: string;
+}
+
+/**
+ * Per-capability report of what an app's promoted package actually exposes,
+ * compared against what its manifest declares.
+ */
+export interface AppInspectionCapabilityReport {
+    capability: AppPackageScope;
+    /** True when the manifest's `capabilities` array declares this capability. */
+    declared: boolean;
+    /** The local ids the promoted package actually serves for this capability. */
+    exposed_ids: string[];
+    /** Convenience count of `exposed_ids`. */
+    exposed_count: number;
+}
+
+/**
+ * Result of inspecting an app's registration: the resolved manifest state, what
+ * the promoted package actually exposes per capability, and diagnostics. This
+ * is the ground truth used by the `app_inspect_registration` agent tool and the
+ * Build › App inspection UI to verify what is registered vs declared, instead of
+ * inferring it from failed object/import calls.
+ */
+export interface AppInspectionResult {
+    app_id: string;
+    name: string;
+    version?: string;
+    /** The resolved package endpoint for the current environment, if any. */
+    endpoint?: string;
+    /** True when the package endpoint responded to the capability probe. */
+    endpoint_reachable: boolean;
+    /** True when the app is installed in the current project. */
+    installed: boolean;
+    access_control?: string;
+    /** The capabilities declared on the manifest. */
+    capabilities: AppPackageScope[];
+    /** What the promoted package exposes, per capability. */
+    package: AppInspectionCapabilityReport[];
+    /** Diagnostics — errors and warnings about the registration state. */
+    issues: AppInspectionIssue[];
+    /** Populated when the package probe itself failed (endpoint error/unreachable). */
+    probe_error?: string;
 }
 
 export interface AppWidgetInfo {
@@ -782,6 +1299,7 @@ export interface AppManifestSource {
     git: {
         url: string;
         default_branch?: string;
+        production_branch?: string;
         development_branch?: string;
     };
 }
@@ -1328,4 +1846,21 @@ export interface ValidateUrlRequest {
 
 export interface ValidateUrlResponse {
     valid: true;
+}
+
+/**
+ * Result of DELETE /api/v1/apps/:id. With `?confirm=true` the cascade runs and
+ * `deleted: true` is set; without it the endpoint returns a dry-run summary so
+ * the UI can show what would be removed.
+ */
+export interface AppDeleteSummary {
+    confirmed: boolean;
+    app_id: string;
+    app_name: string;
+    versions: number;
+    installations: number;
+    storage_prefix: string;
+    git_repo_url?: string;
+    deleted: boolean;
+    warnings: string[];
 }

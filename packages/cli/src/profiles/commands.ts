@@ -291,10 +291,10 @@ export async function createProfile(name?: string, options: CreateProfileOptions
         });
     }
     if (!options.target) {
-        // only show dev environments in dev mode
+        // Branch/dev deployments are custom URLs so profile config is explicit.
         const choices = config.isDevMode
             ? ['local', 'dev-main', 'dev-preview', 'preview', 'prod', 'custom']
-            : ['preview', 'prod'];
+            : ['preview', 'prod', 'custom'];
         questions.push({
             type: 'select',
             name: 'target',

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const SERVER_RESOURCES = [
     'activities',
+    'dashboards',
     'interactions',
     'processes',
     'skills',

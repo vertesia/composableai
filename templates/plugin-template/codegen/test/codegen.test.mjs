@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const templateRoot = path.resolve(testDir, '../..');
@@ -77,16 +77,21 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(packageJson.scripts.test, 'echo "(no tests in template scaffold)"');
         assert.equal(packageJson.scripts['seed:content'], undefined);
         assert.equal(packageJson.scripts['exercise:content'], undefined);
+        assert.equal(packageJson.scripts['service:quality'], undefined);
+        assert.equal(packageJson.scripts['service:build'], undefined);
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
+        const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
+        assert.doesNotMatch(appRoutes, /Document Library/);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/views/document-library.ts')), false);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
 });
 
-test('app-gateway module selects app-gateway entry and cleans inactive modules', () => {
+test('service module selects service entry and cleans inactive modules', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
         copyTemplateInputs(tmpRoot);
@@ -95,19 +100,84 @@ test('app-gateway module selects app-gateway entry and cleans inactive modules',
         const uiEntry = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-entry.tsx'), 'utf8');
         const uiModules = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-modules.tsx'), 'utf8');
         const serverModules = fs.readFileSync(path.join(tmpRoot, 'src/tool-server/app-server-modules.ts'), 'utf8');
+        const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
 
-        assert.equal(uiEntry, `${generatedHeader}export { AppEntry } from '../modules/app-gateway/ui/AppEntry';\n`);
+        assert.equal(uiEntry, `${generatedHeader}export { AppEntry } from '../modules/service/ui/AppEntry';\n`);
         assert.match(uiModules, /modules\/app\/ui\/routes/);
         assert.match(uiModules, /modules\/assistant\/ui\/routes/);
         assert.doesNotMatch(uiModules, /modules\/examples/);
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.doesNotMatch(serverModules, /modules\/examples/);
+        assert.equal(packageJson.scripts['service:quality'], 'node src/modules/service/scripts/app-quality-check.mjs');
+        assert.equal(
+            packageJson.scripts['service:build:server'],
+            'pnpm run service:quality && node src/modules/service/scripts/build-server-esbuild.mjs && node src/modules/service/scripts/write-app-package.mjs',
+        );
+        assert.equal(
+            packageJson.scripts['service:build:ui'],
+            'pnpm run typecheck && vite build --mode app --outDir dist/app --emptyOutDir --minify false',
+        );
+        assert.equal(
+            packageJson.scripts['service:build'],
+            'pnpm run service:build:ui && vite build --mode lib && pnpm run service:build:server',
+        );
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/agent')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), true);
-        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app-gateway')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/service')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
+        const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
+        assert.doesNotMatch(appRoutes, /Document Library/);
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('examples module contributes optional UI routes and views', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['examples']);
+
+        const uiModules = fs.readFileSync(path.join(tmpRoot, 'src/ui/app-ui-modules.tsx'), 'utf8');
+        const serverModules = fs.readFileSync(path.join(tmpRoot, 'src/tool-server/app-server-modules.ts'), 'utf8');
+        const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
+        const exampleRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/examples/ui/routes.tsx'), 'utf8');
+        const exampleResources = fs.readFileSync(
+            path.join(tmpRoot, 'src/modules/examples/resources/views/index.ts'),
+            'utf8',
+        );
+
+        assert.match(uiModules, /modules\/examples\/ui\/routes/);
+        assert.match(serverModules, /modules\/examples\/resources\/index\.js/);
+        assert.doesNotMatch(appRoutes, /Document Library/);
+        assert.match(exampleRoutes, /Document Library/);
+        assert.match(exampleResources, /DocumentLibraryView/);
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('service quality accepts an intentionally selected examples module', async () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['appgen', 'examples']);
+
+        const packageJsonPath = path.join(tmpRoot, 'package.json');
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        packageJson.name = 'generated-examples-app';
+        fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+
+        const policyPath = path.join(tmpRoot, 'src/modules/service/scripts/template-example-policy.mjs');
+        const { shouldRejectTemplateExampleIds } = await import(pathToFileURL(policyPath).href);
+        assert.equal(shouldRejectTemplateExampleIds(packageJson.name, tmpRoot), false);
+
+        execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
+            cwd: tmpRoot,
+            stdio: 'pipe',
+        });
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
@@ -128,6 +198,7 @@ test('content-app module composes app routes and contributes resources', () => {
         assert.match(uiModules, /modules\/content-app\/ui\/routes/);
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.match(serverModules, /modules\/content-app\/resources\/index\.js/);
+        assert.match(serverModules, /export const dashboards = \[/);
         assert.match(serverModules, /export const processes = \[/);
         assert.equal(packageJson.scripts['seed:content'], 'node src/modules/content-app/scripts/seed-content-app.mjs');
         assert.equal(

@@ -2,7 +2,7 @@
   "access.account": "Conta",
   "access.denied": "Acesso negado",
   "access.noPermission": "Você não tem permissão para visualizar o app {{name}} no projeto: «{{project}}».",
-  "access.orgNotAuthorized": "A organização <strong>{{name}}</strong> não está autorizada a acessar este aplicativo.",
+  "access.orgNotAuthorized": "A organização {{name}} não está autorizada a acessar este aplicativo.",
   "access.project": "Projeto",
   "access.selectAccount": "Selecionar conta",
   "access.selectProject": "Selecionar projeto",

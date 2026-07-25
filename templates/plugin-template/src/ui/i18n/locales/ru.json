@@ -2,7 +2,7 @@
   "access.account": "Аккаунт",
   "access.denied": "Доступ запрещён",
   "access.noPermission": "У вас нет разрешения для просмотра приложения {{name}} в проекте: «{{project}}».",
-  "access.orgNotAuthorized": "Организация <strong>{{name}}</strong> не авторизована для доступа к этому приложению.",
+  "access.orgNotAuthorized": "Организация {{name}} не авторизована для доступа к этому приложению.",
   "access.project": "Проект",
   "access.selectAccount": "Выбрать аккаунт",
   "access.selectProject": "Выбрать проект",

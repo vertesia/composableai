@@ -6,7 +6,7 @@ import type { InCodeViewDefinition } from '@vertesia/common';
  * When the plugin is installed, Studio contributes this View as
  * `app:<app-name>:document-library`, where `<app-name>` is your plugin's
  * registered app name. Render it with the generic `/view/<id>` route or the
- * `<ViewExperience>` component — see src/modules/app/ui/pages/ViewExamplePage.tsx.
+ * `<ViewExperience>` component; see modules/examples/ui/pages/ViewExamplePage.tsx.
  *
  * Edit `definition` to match your content: change the navigation `field` to a
  * real property/facet, the search `fields`, and the result `displays`.

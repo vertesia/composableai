@@ -17,6 +17,44 @@ interface ComposableTokenResponse {
     message?: string;
 }
 
+function normalizeIssuer(value: string | undefined): string | undefined {
+    return value?.replace(/\/+$/, '');
+}
+
+function decodeToken(token: string): AuthTokenPayload {
+    return jwtDecode(token) as AuthTokenPayload;
+}
+
+function isVertesiaIssuedToken(token: string | undefined): token is string {
+    if (!token) return false;
+    try {
+        const decoded = decodeToken(token) as AuthTokenPayload & { iss?: string };
+        return normalizeIssuer(decoded.iss) === normalizeIssuer(Env.endpoints.sts);
+    } catch {
+        return false;
+    }
+}
+
+function canUseVertesiaTokenDirectly(token: string, accountId?: string, projectId?: string): boolean {
+    const decoded = decodeToken(token);
+    const hasAuthorizationClaims = Boolean(
+        decoded.permissions?.length ||
+            decoded.account_roles?.length ||
+            decoded.project_roles?.length ||
+            decoded.apps?.length,
+    );
+    if (!hasAuthorizationClaims) {
+        return false;
+    }
+    if (accountId && decoded.account?.id !== accountId) {
+        return false;
+    }
+    if (projectId && decoded.project?.id !== projectId) {
+        return false;
+    }
+    return true;
+}
+
 export async function fetchComposableToken(
     getIdToken: () => Promise<string | null | undefined>,
     accountId?: string,
@@ -319,23 +357,40 @@ export async function getComposableToken(
     const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
     const selectedProject =
         projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined;
+    const devAuthToken = Env.isLocalDev ? Env.devAuthToken : undefined;
+    const suppliedToken = devAuthToken ?? initToken ?? AUTH_TOKEN_RAW;
 
     //token is still valid for more than 5 minutes
     if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > Date.now() / 1000 + 300) {
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
+    if (
+        !forceRefresh &&
+        isVertesiaIssuedToken(suppliedToken) &&
+        canUseVertesiaTokenDirectly(suppliedToken, selectedAccount, selectedProject)
+    ) {
+        AUTH_TOKEN_RAW = suppliedToken;
+        AUTH_TOKEN = decodeToken(AUTH_TOKEN_RAW);
+        if (!AUTH_TOKEN.exp) {
+            throw new Error('Invalid composable token');
+        }
+        return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
+    }
+
     //token is close to expire, refresh it
-    if (!useInternalAuth && getFirebaseAuth().currentUser) {
+    if (!devAuthToken && !useInternalAuth && getFirebaseAuth().currentUser) {
         //we have a firebase user, get the token from there
         AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
-    } else if (initToken || AUTH_TOKEN_RAW) {
+    } else if (!devAuthToken && (initToken || AUTH_TOKEN_RAW)) {
         // we have a token already and no firebase user, refresh it
         AUTH_TOKEN_RAW = await fetchComposableToken(
             () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
             selectedAccount,
             selectedProject,
         );
+    } else if (devAuthToken) {
+        AUTH_TOKEN_RAW = devAuthToken;
     }
 
     if (!AUTH_TOKEN_RAW) {
@@ -348,7 +403,7 @@ export async function getComposableToken(
         throw new Error('Cannot acquire a composable token');
     }
 
-    AUTH_TOKEN = jwtDecode(AUTH_TOKEN_RAW) as AuthTokenPayload;
+    AUTH_TOKEN = decodeToken(AUTH_TOKEN_RAW);
 
     if (!AUTH_TOKEN?.exp || !AUTH_TOKEN_RAW) {
         console.error('Invalid composable token', AUTH_TOKEN);

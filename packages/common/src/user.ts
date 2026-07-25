@@ -116,9 +116,53 @@ export function quotaTierForAccountType(accountType: AccountType | undefined | n
     }
 }
 
+export const ACCOUNT_NAMESPACE_MAX_LENGTH = 63;
+export const ACCOUNT_APP_ACCESS_MESSAGE_MAX_LENGTH = 1000;
+export const RESERVED_ACCOUNT_NAMESPACES = [
+    'admin',
+    'api',
+    'apps',
+    'auth',
+    'cdn',
+    'docs',
+    'internal-auth',
+    'mcp',
+    'status',
+    'sts',
+    'www',
+] as const;
+
+const ACCOUNT_NAMESPACE_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+export function normalizeAccountNamespace(namespace: string): string {
+    return namespace.trim().toLowerCase();
+}
+
+export function getAccountNamespaceValidationError(namespace: string): string | undefined {
+    if (!namespace) {
+        return 'Account namespace is required';
+    }
+    if (namespace.length > ACCOUNT_NAMESPACE_MAX_LENGTH || !ACCOUNT_NAMESPACE_PATTERN.test(namespace)) {
+        return 'Account namespace must be a lowercase DNS label containing only letters, numbers, and hyphens';
+    }
+    if ((RESERVED_ACCOUNT_NAMESPACES as readonly string[]).includes(namespace)) {
+        return `Account namespace '${namespace}' is reserved`;
+    }
+    return undefined;
+}
+
 export interface Account {
     id: string;
     name: string;
+
+    /** Public DNS-label-compatible identifier used by organization app domains. */
+    namespace?: string;
+
+    /**
+     * Plain-text instructions shown when a signed-in user has no application access.
+     * @maxLength 1000
+     */
+    app_access_message?: string;
 
     email_domains: string[];
 
@@ -144,6 +188,8 @@ export interface Account {
 
 export interface UpdateAccountPayload {
     name?: string;
+    /** @maxLength 1000 */
+    app_access_message?: string;
     email_domains?: string[];
     billing?: AccountBilling;
     quota_tier?: QuotaTier;

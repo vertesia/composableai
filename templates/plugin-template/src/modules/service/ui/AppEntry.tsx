@@ -16,11 +16,6 @@ const devAuthToken = import.meta.env.DEV ? import.meta.env.VITE_VERTESIA_AUTH_TO
 const browserAuthToken = (globalThis as { __VERTESIA_AUTH_TOKEN__?: string }).__VERTESIA_AUTH_TOKEN__;
 const appAuthToken = devAuthToken ?? browserAuthToken;
 
-// TODO(feat-appgen merge): remove this shim once client/store types include `withAppVersion`.
-type VersionedApi = {
-    withAppVersion?: (version: string) => void;
-};
-
 const AppRoot = () => (
     <PluginLayout>
         <App />
@@ -48,8 +43,8 @@ function AppVersionScope({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (!appVersion) return;
-        (client as VersionedApi).withAppVersion?.(appVersion);
-        (store as VersionedApi).withAppVersion?.(appVersion);
+        client.withAppVersion(appVersion);
+        store.withAppVersion(appVersion);
     }, [client, store]);
 
     return <>{children}</>;

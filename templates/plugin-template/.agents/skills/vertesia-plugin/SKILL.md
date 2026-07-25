@@ -106,11 +106,26 @@ To create tools, skills, interactions, content types, or templates, use the **ve
 
 Each user resource follows the same pattern: create files under `src/modules/app/resources/<type>/<collection>/`, export from the collection, then add the collection to `src/modules/app/resources/<type>/index.ts`. `src/tool-server/config.ts` imports the generated `app-server-modules.ts` arrays.
 
+## App Identity And Portable IDs
+
+Keep the app name aligned across `package.json` `name`, `VITE_APP_NAME`, the app manifest name, and all
+`app:<name>:` ids. Do not hardcode a second app name in resource references.
+
+- Content type refs are `app:<app-name>:<type-name>`; the type collection name is not part of the public id.
+- Interactions and activities are `app:<app-name>:<collection>:<name>`.
+- Prefer `main` as the default interaction/activity collection name.
+- Do not resolve app-owned types to project-local ObjectIds; pass the in-code app type string directly to `client.objects.create`.
+- If the app registers backend resources, publish as `service`; `static` ships only UI assets.
+
 ## UI Plugin
 
 For UI component APIs, routing, layout, styling, and agent conversation patterns, use the **vertesia-ui** skill.
 
 When the task includes UI work, do not stop at "it renders". The UI pass should start with a `@vertesia/ui` component inventory and end with a conformance check for duplicated primitives such as raw tables, native selects, local page headers, and inline styles.
+
+Generated apps should feel like compact Vertesia Studio product surfaces: use light operational layouts, semantic
+tokens, tables/queues/detail pages, restrained typography, and small brand accents. Avoid dark-first, neon, oversized
+hero, or presentation-style layouts unless the user explicitly asks for them.
 
 Key entry points:
 - `src/ui/plugin.tsx` — Library entry for Vertesia host (exports default component receiving `{ slot }`)

@@ -627,6 +627,8 @@ export interface ModernAgentConversationProps {
     hideHeader?: boolean;
     /** Header density. Use compact when the surrounding page already identifies the run. */
     headerVariant?: 'full' | 'compact';
+    /** Start-screen layout. Compact removes empty history; expanded-composer gives that space to the first input. */
+    startViewVariant?: 'default' | 'compact' | 'expanded-composer';
     /** Hide the internal message input (for apps that render their own) */
     hideMessageInput?: boolean;
     /** Custom action shown in place of the input box when the run status is FAILED.
@@ -663,6 +665,8 @@ export interface ModernAgentConversationProps {
     inputContainerClassName?: string;
     /** Additional className for the input field */
     inputClassName?: string;
+    /** Read-only context rendered immediately above the live conversation composer. */
+    composerContext?: React.ReactNode;
 
     /** Additional className for the root container */
     className?: string;
@@ -783,6 +787,7 @@ function StartWorkflowView({
     hideFileUpload = false,
     hideObjectLinking,
     headerVariant,
+    startViewVariant = 'default',
     inputContainerClassName,
     inputClassName,
     className,
@@ -791,6 +796,8 @@ function StartWorkflowView({
     onAgentWorkingChange,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
+    const isCompactStartView = startViewVariant !== 'default';
+    const isExpandedStartComposer = startViewVariant === 'expanded-composer';
     const canStageFiles = !hideFileUpload;
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
     const resolvedStartButtonText = startButtonText ?? t('agent.startAgent');
@@ -955,71 +962,68 @@ function StartWorkflowView({
                 ].join('\n');
             }
 
+            const newRun = await startWorkflow(messageContent, { tool_approval_mode: toolApprovalMode });
+            if (!newRun) {
+                setPendingStartMessage(null);
+                setPendingStartTimestamp(null);
+                return;
+            }
+
             setPendingStartMessage(messageContent);
             setPendingStartTimestamp(Date.now());
 
-            const newRun = await startWorkflow(messageContent, { tool_approval_mode: toolApprovalMode });
-            if (newRun) {
-                const agentId = newRun.agent_run_id;
+            const agentId = newRun.agent_run_id;
 
-                // Upload staged files to the new run's artifact space and signal agent
-                const uploadedFiles: string[] = [];
-                if (canStageFiles && stagedFiles.length > 0) {
-                    for (const file of stagedFiles) {
-                        try {
-                            const artifactPath = `files/${file.name}`;
-                            await client.agents.uploadArtifact(agentId, artifactPath, file);
+            // Upload staged files to the new run's artifact space and signal agent
+            const uploadedFiles: string[] = [];
+            if (canStageFiles && stagedFiles.length > 0) {
+                for (const file of stagedFiles) {
+                    try {
+                        const artifactPath = `files/${file.name}`;
+                        await client.agents.uploadArtifact(agentId, artifactPath, file);
 
-                            // Signal agent that file was uploaded
-                            await client.agents.sendSignal(agentId, 'FileUploaded', {
-                                id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                                name: file.name,
-                                content_type: file.type || 'application/octet-stream',
-                                reference: `artifact:${artifactPath}`,
-                                artifact_path: artifactPath,
-                            } as ConversationFileRef);
-                            uploadedFiles.push(file.name);
-                        } catch (uploadErr) {
-                            console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
-                            // Continue with other files
-                        }
+                        // Signal agent that file was uploaded
+                        await client.agents.sendSignal(agentId, 'FileUploaded', {
+                            id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            name: file.name,
+                            content_type: file.type || 'application/octet-stream',
+                            reference: `artifact:${artifactPath}`,
+                            artifact_path: artifactPath,
+                        } as ConversationFileRef);
+                        uploadedFiles.push(file.name);
+                    } catch (uploadErr) {
+                        console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
+                        // Continue with other files
                     }
-
-                    // Send a follow-up message to notify the agent that all files are ready
-                    if (uploadedFiles.length > 0) {
-                        try {
-                            await client.agents.sendSignal(agentId, 'UserInput', {
-                                message: `[Files Ready] All ${uploadedFiles.length} file(s) have been uploaded and are now available: ${uploadedFiles.join(', ')}. You can now process them.`,
-                                metadata: {
-                                    type: 'files_ready',
-                                    files: uploadedFiles,
-                                },
-                            } as UserInputSignal);
-                        } catch (signalErr) {
-                            console.error('Failed to send files ready signal:', signalErr);
-                        }
-                    }
-
-                    setStagedFiles([]);
                 }
 
-                // Clear attachments after successful start
-                onAttachmentsSent?.();
-                setStartedAgentRunId(agentId);
-                setInputValue('');
-                toast({
-                    title: t('agent.agentStarted'),
-                    status: 'success',
-                    duration: 3000,
-                });
-            } else {
-                // startWorkflow declined to start (it surfaced its own error or a
-                // validation failure) — drop the optimistic first message so the
-                // conversation doesn't stay in the preparing state forever. The
-                // composed text is kept in the input for a retry.
-                setPendingStartMessage(null);
-                setPendingStartTimestamp(null);
+                // Send a follow-up message to notify the agent that all files are ready
+                if (uploadedFiles.length > 0) {
+                    try {
+                        await client.agents.sendSignal(agentId, 'UserInput', {
+                            message: `[Files Ready] All ${uploadedFiles.length} file(s) have been uploaded and are now available: ${uploadedFiles.join(', ')}. You can now process them.`,
+                            metadata: {
+                                type: 'files_ready',
+                                files: uploadedFiles,
+                            },
+                        } as UserInputSignal);
+                    } catch (signalErr) {
+                        console.error('Failed to send files ready signal:', signalErr);
+                    }
+                }
+
+                setStagedFiles([]);
             }
+
+            // Clear attachments after successful start
+            onAttachmentsSent?.();
+            setStartedAgentRunId(agentId);
+            setInputValue('');
+            toast({
+                title: t('agent.agentStarted'),
+                status: 'success',
+                duration: 3000,
+            });
         } catch (err: unknown) {
             setPendingStartMessage(null);
             setPendingStartTimestamp(null);
@@ -1054,10 +1058,14 @@ function StartWorkflowView({
     const adjustTextareaHeight = useCallback(() => {
         const textarea = inputRef.current;
         if (textarea) {
+            if (isExpandedStartComposer) {
+                textarea.style.height = '100%';
+                return;
+            }
             textarea.style.height = 'auto';
             textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
         }
-    }, []);
+    }, [isExpandedStartComposer]);
 
     useEffect(() => {
         void inputValue;
@@ -1094,11 +1102,18 @@ function StartWorkflowView({
     }
 
     return (
-        <div className={cn('flex h-full flex-col items-center bg-background', className)}>
+        <div
+            className={cn(
+                'flex flex-col items-center bg-background',
+                isCompactStartView && !isExpandedStartComposer ? '' : 'h-full',
+                className,
+            )}
+        >
             {/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button. */}
             <div
                 className={cn(
-                    'relative flex h-full w-full flex-col overflow-hidden border-0',
+                    'relative flex w-full flex-col overflow-hidden border-0',
+                    isCompactStartView && !isExpandedStartComposer ? '' : 'h-full',
                     fullWidth ? '' : 'max-w-4xl',
                 )}
                 onDragEnter={canStageFiles ? handleDragEnter : undefined}
@@ -1154,11 +1169,21 @@ function StartWorkflowView({
                 )}
 
                 {/* Empty conversation area with instructions */}
-                <div className="flex flex-1 flex-col items-center justify-end overflow-y-auto bg-background px-4">
+                <div
+                    className={cn(
+                        'flex flex-col items-center justify-end bg-background px-4',
+                        isCompactStartView ? 'shrink-0 pt-3' : 'flex-1 overflow-y-auto',
+                    )}
+                >
                     {pendingStartMessage && pendingStartTimestamp ? (
                         <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
                     ) : (
-                        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end py-8">
+                        <div
+                            className={cn(
+                                'mx-auto flex w-full max-w-3xl flex-col justify-end',
+                                isCompactStartView ? '' : 'min-h-full py-8',
+                            )}
+                        >
                             {initialMessage && (
                                 <div className="text-[15px] leading-relaxed text-foreground/80">{initialMessage}</div>
                             )}
@@ -1167,10 +1192,16 @@ function StartWorkflowView({
                 </div>
 
                 {/* Input Area */}
-                <div className="shrink-0 bg-background px-4 pb-safe-area-4 pt-2">
+                <div
+                    className={cn(
+                        'bg-background px-4 pb-safe-area-4 pt-2',
+                        isExpandedStartComposer ? 'flex min-h-0 flex-1 flex-col' : 'shrink-0',
+                    )}
+                >
                     <div
                         className={cn(
                             'mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-border/70 bg-mixer-muted/15 p-3 shadow-lg shadow-black/5',
+                            isExpandedStartComposer && 'min-h-0 w-full flex-1',
                             inputContainerClassName,
                         )}
                     >
@@ -1210,9 +1241,14 @@ function StartWorkflowView({
                             rows={2}
                             className={cn(
                                 'min-h-[72px] resize-none overflow-hidden border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
+                                isExpandedStartComposer && 'min-h-0 flex-1',
                                 inputClassName,
                             )}
-                            style={{ minHeight: '72px', maxHeight: '200px' }}
+                            style={
+                                isExpandedStartComposer
+                                    ? { minHeight: '72px', maxHeight: 'none' }
+                                    : { minHeight: '72px', maxHeight: '200px' }
+                            }
                         />
 
                         <div className="flex items-center justify-between gap-3">
@@ -1308,6 +1344,7 @@ function ModernAgentConversationInner({
     className,
     inputContainerClassName,
     inputClassName,
+    composerContext,
     // Fusion fragment data
     fusionData,
     // External file upload API
@@ -2679,56 +2716,59 @@ function ModernAgentConversationInner({
                             )
                         ) : (
                             (showInput || canContinueConversation) && (
-                                <MessageInput
-                                    onSend={handleSendMessage}
-                                    onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
-                                    approvalModeSlot={
-                                        interactive && toolApprovalMode ? (
-                                            <AgentApprovalModeSelector
-                                                mode={toolApprovalMode}
-                                                onChange={handleToolApprovalModeChange}
-                                                disabled={
-                                                    !isPlaybackLive || isWorkflowTerminal || !allowWorkflowControl
-                                                }
+                                <>
+                                    {composerContext}
+                                    <MessageInput
+                                        onSend={handleSendMessage}
+                                        onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                                        approvalModeSlot={
+                                            interactive && toolApprovalMode ? (
+                                                <AgentApprovalModeSelector
+                                                    mode={toolApprovalMode}
+                                                    onChange={handleToolApprovalModeChange}
+                                                    disabled={
+                                                        !isPlaybackLive || isWorkflowTerminal || !allowWorkflowControl
+                                                    }
+                                                />
+                                            ) : undefined
+                                        }
+                                        mcpSlot={
+                                            <McpConnectionsActionMenu
+                                                disabledCollections={mcpDisabled}
+                                                onChange={handleMcpDisabledChange}
+                                                onConnectionChange={handleMcpConnectionChange}
                                             />
-                                        ) : undefined
-                                    }
-                                    mcpSlot={
-                                        <McpConnectionsActionMenu
-                                            disabledCollections={mcpDisabled}
-                                            onChange={handleMcpDisabledChange}
-                                            onConnectionChange={handleMcpConnectionChange}
-                                        />
-                                    }
-                                    disabled={isUploading || !isPlaybackLive}
-                                    isSending={isSending || isUploading}
-                                    isStopping={isStopping}
-                                    isStreaming={!effectiveIsCompleted}
-                                    isCompleted={effectiveIsCompleted}
-                                    contextWindowUsage={canCompactContext ? contextWindowUsage : undefined}
-                                    onCompactContext={canCompactContext ? handleCompactContext : undefined}
-                                    isCompactingContext={isCompactingContext}
-                                    activeTaskCount={activeTaskCount}
-                                    activeWorkstreams={composerActiveWorkstreams}
-                                    placeholder={composerPlaceholder}
-                                    onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
-                                    uploadedFiles={uploadedFiles}
-                                    onRemoveFile={onRemoveFile}
-                                    onRemoveProcessingFile={handleRemoveProcessingFile}
-                                    acceptedFileTypes={acceptedFileTypes}
-                                    maxFiles={maxFiles}
-                                    processingFiles={processingFiles}
-                                    artifactRunId={agentRunId}
-                                    hasProcessingFiles={hasProcessingFiles}
-                                    renderDocumentSearch={renderDocumentSearch}
-                                    selectedDocuments={selectedDocuments}
-                                    onRemoveDocument={onRemoveDocument}
-                                    hideObjectLinking={hideObjectLinking}
-                                    hideFileUpload={!canUploadFiles}
-                                    disableDropZone={canUploadFiles}
-                                    className={inputContainerClassName}
-                                    inputClassName={inputClassName}
-                                />
+                                        }
+                                        disabled={isUploading || !isPlaybackLive}
+                                        isSending={isSending || isUploading}
+                                        isStopping={isStopping}
+                                        isStreaming={!effectiveIsCompleted}
+                                        isCompleted={effectiveIsCompleted}
+                                        contextWindowUsage={canCompactContext ? contextWindowUsage : undefined}
+                                        onCompactContext={canCompactContext ? handleCompactContext : undefined}
+                                        isCompactingContext={isCompactingContext}
+                                        activeTaskCount={activeTaskCount}
+                                        activeWorkstreams={composerActiveWorkstreams}
+                                        placeholder={composerPlaceholder}
+                                        onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
+                                        uploadedFiles={uploadedFiles}
+                                        onRemoveFile={onRemoveFile}
+                                        onRemoveProcessingFile={handleRemoveProcessingFile}
+                                        acceptedFileTypes={acceptedFileTypes}
+                                        maxFiles={maxFiles}
+                                        processingFiles={processingFiles}
+                                        artifactRunId={agentRunId}
+                                        hasProcessingFiles={hasProcessingFiles}
+                                        renderDocumentSearch={renderDocumentSearch}
+                                        selectedDocuments={selectedDocuments}
+                                        onRemoveDocument={onRemoveDocument}
+                                        hideObjectLinking={hideObjectLinking}
+                                        hideFileUpload={!canUploadFiles}
+                                        disableDropZone={canUploadFiles}
+                                        className={inputContainerClassName}
+                                        inputClassName={inputClassName}
+                                    />
+                                </>
                             )
                         )}
                     </div>

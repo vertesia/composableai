@@ -2,7 +2,7 @@
   "access.account": "帳號",
   "access.denied": "拒絕存取",
   "access.noPermission": "您沒有權限在專案「{{project}}」中檢視 {{name}} 應用程式。",
-  "access.orgNotAuthorized": "組織 <strong>{{name}}</strong> 未獲授權存取此應用程式。",
+  "access.orgNotAuthorized": "組織 {{name}} 未獲授權存取此應用程式。",
   "access.project": "專案",
   "access.selectAccount": "選擇帳號",
   "access.selectProject": "選擇專案",

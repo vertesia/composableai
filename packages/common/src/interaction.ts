@@ -26,7 +26,7 @@ import type {
 } from './prompt.js';
 import type { ExecutionRunDocRef } from './runs.js';
 import type { AgentToolApprovalMode } from './store/agent-approval.js';
-import type { ConversationState } from './store/conversation-state.js';
+import type { ConversationState, TextArtifactReference } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 import type { LlmCallType } from './workflow-analytics.js';
 
@@ -932,6 +932,8 @@ export interface ResultStorageOptions {
     // - Otherwise → text/markdown or text/plain
 }
 
+export type AsyncCompletionMode = 'conversation_state' | 'text';
+
 /**
  * Streaming-specific options (only needed when stream=true)
  */
@@ -987,6 +989,13 @@ export interface AsyncCompletionOptions {
      * after inference completes (before completing the Temporal activity).
      */
     result_storage?: ResultStorageOptions;
+    /**
+     * Controls the value used to complete the Temporal activity.
+     * Defaults to `conversation_state` for agent resume/continuation calls.
+     * Use `text` for one-shot helper calls, such as checkpoint summaries,
+     * that need the model's text result instead of merged conversation state.
+     */
+    completion_mode?: AsyncCompletionMode;
 }
 
 interface ResumeConversationPayload {
@@ -1049,6 +1058,12 @@ export interface ToolResultMeta extends Record<string, unknown> {
 
 export interface ToolResultContent {
     content: string;
+    /**
+     * Reference to text content stored outside Temporal/API payloads. Servers that
+     * execute the next model turn should resolve this before constructing the
+     * provider prompt.
+     */
+    content_ref?: TextArtifactReference;
     is_error: boolean;
     files?: string[];
     /**

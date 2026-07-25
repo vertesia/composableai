@@ -14,6 +14,34 @@ export interface ToolReference {
     stored_at: string;
 }
 
+/** Reference to text content externalized to agent artifact storage. */
+export interface TextArtifactReference {
+    storage_id: string;
+    artifact_path: string;
+    display_ref: string;
+    sha256: string;
+    size_bytes: number;
+    content_type: string;
+}
+
+/**
+ * Sidecar metadata for generated tool input fields that were stored outside
+ * model-visible tool_input. Keyed by tool_use.id on ConversationState.
+ */
+export interface ExternalizedToolInputRef {
+    tool_name: string;
+    input_path: ['content'];
+    ref: TextArtifactReference;
+}
+
+export interface ExternalizedToolInputRefs {
+    [toolUseId: string]: ExternalizedToolInputRef[];
+}
+
+export function toolInputRefsArtifactPath(storageId: string): string {
+    return `agents/${storageId}/tool-input-refs.json`;
+}
+
 /**
  * Conversation state passed between workflow activities.
  * Contains all context needed to continue a multi-turn agent conversation.
@@ -50,6 +78,15 @@ export interface ConversationState {
 
     /** Compact, redacted latest user intent for reviewer-style system interactions. */
     latest_user_message?: string;
+
+    /**
+     * Transport sidecar for large generated tool input fields.
+     *
+     * These refs are intentionally kept out of tool_use.tool_input so they are
+     * not shown to the model. Tool execution hydrates them from artifact storage
+     * immediately before activity validation.
+     */
+    tool_input_refs?: ExternalizedToolInputRefs;
 
     /**
      * The output of the this conversation step
@@ -207,6 +244,16 @@ export interface ConversationState {
      * to consolidate all artifacts under the parent agent run.
      */
     launch_id?: string;
+
+    /**
+     * The exact app version this run is pinned to, derived from the `@version` on the
+     * started interaction ref / the `x-vertesia-app-version` header at start. Persisted on the state
+     * so it survives resume, and applied to the activity client (`withAppVersion`) so every app-owned
+     * ref the run resolves — interactions, types, processes, tools — targets this version instead of
+     * the current/promoted one. Undefined → current/promoted. Resolution-time only; never a stored
+     * capability-ref version.
+     */
+    app_version?: string;
 }
 
 /**

@@ -12,7 +12,7 @@ export function resolveAppApiBaseUrl() {
     if (parts[0] === 'tenants' && parts[2] === 'apps' && parts[4] === 'versions' && parts[5]) {
         return `/${parts.slice(0, 6).join('/')}/api`;
     }
-    // Latest published mount: /tenants/<t>/apps/<id>/app/... (no version segment). The
+    // Promoted mount: /tenants/<t>/apps/<id>/app/... (no version segment). The
     // service API is the sibling /tenants/<t>/apps/<id>/api.
     if (parts[0] === 'tenants' && parts[2] === 'apps' && parts[3] && parts[4] !== 'versions') {
         return `/${parts.slice(0, 4).join('/')}/api`;

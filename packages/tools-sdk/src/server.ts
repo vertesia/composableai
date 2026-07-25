@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { createActivitiesRoute } from './server/activities.js';
 import { createPackageRoute } from './server/app-package.js';
 import { createContentTypesRoute } from './server/content-types.js';
+import { createDashboardsRoute } from './server/dashboards.js';
 import { createInteractionsRoute } from './server/interactions.js';
 import { createMcpRoute } from './server/mcp.js';
 import { createProcessesRoute } from './server/processes.js';
@@ -50,6 +51,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
         skills = [],
         templates = [],
         activities = [],
+        dashboards = [],
         mcpProviders = [],
         disableHtml = false,
     } = config;
@@ -101,6 +103,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
                 interactions: interactions.map((col) => `${prefix}/interactions/${col.name}`),
                 templates: templates.map((col) => `${prefix}/templates/${col.name}`),
                 processes: `${prefix}/processes`,
+                dashboards: dashboards.length > 0 ? `${prefix}/dashboards` : undefined,
                 views: `${prefix}/views`,
                 activities: activities.map((col) => `${prefix}/activities/${col.name}`),
                 mcp: mcpProviders.map((p) => `${prefix}/mcp/${p.name}`),
@@ -117,6 +120,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createTemplatesRoute(app, `${prefix}/templates`, config);
     createContentTypesRoute(app, `${prefix}/types`, config);
     createProcessesRoute(app, `${prefix}/processes`, config);
+    createDashboardsRoute(app, `${prefix}/dashboards`, config);
     createViewsRoute(app, `${prefix}/views`, config);
     createMcpRoute(app, `${prefix}/mcp`, config);
 
