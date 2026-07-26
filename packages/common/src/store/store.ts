@@ -987,6 +987,13 @@ export interface ContentTypeIntakePolicy {
         scope?: IntakePageScope;
         /** Static page ranges to convert (wins over `scope` when set). */
         page_ranges?: IntakePageRanges;
+        /**
+         * DPI at which each page is rendered to the image the LLM converts. Default 150 — the
+         * accuracy/cost sweet spot: higher resolutions balloon input tokens (some providers tile the
+         * page) for no quality gain, below ~150 dense tables start to misread. Raise only for very fine
+         * print.
+         */
+        render_dpi?: number;
     };
     /** Controls schema-property extraction after type assignment. */
     extraction?: {
