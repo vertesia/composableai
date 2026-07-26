@@ -19,6 +19,8 @@ minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
   - "@vertesia/*"
   - "@llumiverse/*"
+  # Renovate security update: js-yaml@5.2.2
+  - js-yaml@5.2.2
 catalog:
   react: "19.2.7"
   react-dom: "19.2.7"
@@ -38,7 +40,6 @@ overrides:
   "@types/node": "catalog:"
   "@types/react": "catalog:"
   "@types/react-dom": "catalog:"
-
 
   # Safety net: if a transitive dep ever pulls in koa 2, force it to 3.
   # Packages directly declare koa@^3.2.0 — this guards against regressions.
