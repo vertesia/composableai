@@ -108,6 +108,7 @@ title: My Skill
 description: A helpful skill
 content_type: md
 tools: [tool_one, tool_two]
+supporting_tools: [tool_three]
 context_triggers:
     keywords: [skill, helper]
 ---
@@ -119,6 +120,11 @@ The instructions the model receives.
 
 Frontmatter is validated with a **strict** Zod schema — an unknown key is a build error, not a
 silently ignored one. `name` and `description` are required; `content_type` defaults to `md`.
+
+`supporting_tools` unlock exactly as `tools` do — the two are merged into `tools` on output, so no
+runtime path sees the distinction. The split exists for validation: consumers that check whether a
+skill documents what it unlocks skip the supporting list, which is meant for grants that carry their
+own description and need no usage guidance.
 
 `context_triggers` and `execution` each accept a nested form (as above) or a flat legacy form
 (`keywords:`, `tools:`, `data_patterns:` / `language:`, `packages:`, `system_packages:` at the top
@@ -135,7 +141,7 @@ level). When `execution` is present, the first fenced code block in the body is 
     instructions: '# My Skill\n\nThe instructions the model receives.',
     content_type: 'md',
     context_triggers: { keywords: ['skill', 'helper'] },
-    tools: ['tool_one', 'tool_two'],
+    tools: ['tool_one', 'tool_two', 'tool_three'],
     scripts: ['helper.js'],   // present only if discovered
     widgets: ['chart'],       // present only if discovered
 }

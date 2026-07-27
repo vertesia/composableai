@@ -83,6 +83,7 @@ const SkillFrontmatterSchema = z
         // Flat structure fields (legacy)
         keywords: z.array(z.string()).optional(),
         tools: z.array(z.string()).optional(),
+        supporting_tools: z.array(z.string()).optional(),
         data_patterns: z.array(z.string()).optional(),
         language: z.string().optional(),
         packages: z.array(z.string()).optional(),
@@ -239,9 +240,12 @@ function buildSkillDefinition(
         }
     }
 
-    // Tools unlocked by this skill (from frontmatter `tools:` key)
-    if (frontmatter.tools) {
-        skill.tools = frontmatter.tools;
+    // Tools unlocked by this skill. `supporting_tools` unlock identically — the split exists only
+    // so validation knows which grants the author owes the reader an explanation for. Merged here so
+    // no runtime path has to know about the distinction.
+    const unlocked = [...(frontmatter.tools ?? []), ...(frontmatter.supporting_tools ?? [])];
+    if (unlocked.length > 0) {
+        skill.tools = unlocked;
     }
 
     // Input schema from frontmatter
