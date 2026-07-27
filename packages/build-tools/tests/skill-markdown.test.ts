@@ -472,11 +472,80 @@ describe('field references', () => {
         expect(result.markdown).toBe('Pass {@param search_documents}.');
     });
 
-    it('takes the field on trust when the catalog supplies no field validator', () => {
+    // The construct exists only to be checked; a catalog without a validator would turn every
+    // {@param …} in the tree into decoration, and nothing else would report it.
+    it('rejects the construct when the catalog supplies no field validator', () => {
         const result = preprocessSkillMarkdown('Pass {@param search_documents.anything}.', catalog);
 
-        expect(result.errors).toEqual([]);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]).toContain('supplies no validateField');
         expect(result.markdown).toBe('Pass `anything`.');
+    });
+
+    // The preprocessor resolves the name against `tools` first, so reaching the validator with an
+    // unknown name means the catalog's names and its schema entries disagree. Passing there would
+    // silently exempt a whole provider -- every apps/tools local tool, in practice.
+    it('reports a tool that the catalog names but supplies no entry for', () => {
+        const result = preprocessSkillMarkdown('Pass {@param batch_execute.tool_name}.', {
+            ...catalog,
+            validateField: createSchemaFieldValidator([{ name: 'search_documents', params: schema }]),
+        });
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]).toContain("'batch_execute' is absent from this build's schema entries");
+    });
+
+    describe('references', () => {
+        const withDefs = {
+            type: 'object',
+            properties: {
+                // A whole embedded resource, as create_view.configuration is: its own $id and
+                // $defs, so `#/$defs/…` inside it means *its* definitions, not the tool's.
+                configuration: {
+                    $id: 'https://schemas.vertesia.com/view.v1.schema.json',
+                    type: 'object',
+                    properties: { layout: { $ref: '#/$defs/layout' } },
+                    $defs: {
+                        layout: { type: 'object', properties: { mode: { type: 'string' } } },
+                    },
+                },
+                broken: { $ref: 'https://example.com/other.schema.json#/$defs/thing' },
+                node: { $ref: '#/$defs/node' },
+            },
+            $defs: {
+                node: {
+                    type: 'object',
+                    properties: { label: { type: 'string' }, child: { $ref: '#/$defs/node' } },
+                },
+            },
+        };
+        const refs = {
+            ...catalog,
+            validateField: createSchemaFieldValidator([{ name: 'search_documents', params: withDefs }]),
+        };
+
+        it('resolves a field behind a local $ref, against the innermost resource', () => {
+            const result = preprocessSkillMarkdown('Set {@param search_documents.configuration.layout.mode}.', refs);
+
+            expect(result.errors).toEqual([]);
+            expect(result.markdown).toBe('Set `configuration.layout.mode`.');
+        });
+
+        it('reports an unresolvable reference as uncheckable, not as a missing field', () => {
+            const result = preprocessSkillMarkdown('Set {@param search_documents.broken.thing}.', refs);
+
+            expect(result.errors[0]).toContain('unresolvable reference');
+            expect(result.errors[0]).toContain('https://example.com/other.schema.json');
+            expect(result.errors[0]).not.toContain('does not declare');
+        });
+
+        it('terminates on a recursive $ref', () => {
+            const good = preprocessSkillMarkdown('{@param search_documents.node.child.label}', refs);
+            expect(good.errors).toEqual([]);
+
+            const bad = preprocessSkillMarkdown('{@param search_documents.node.child.ghost}', refs);
+            expect(bad.errors[0]).toContain('does not declare');
+        });
     });
 
     it('resolves a field declared only inside a composition branch', () => {

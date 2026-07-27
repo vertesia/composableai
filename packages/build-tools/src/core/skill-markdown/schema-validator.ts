@@ -91,47 +91,121 @@ export function schemaNodeAtPath(schema: unknown, path: string): Record<string, 
 }
 
 /**
- * The branches a schema node offers, for a walk that must not stop at a composed node.
+ * A schema node together with the resource roots a local `$ref` inside it resolves against.
  *
- * `query` may be declared as `anyOf: [{properties: {full_text: …}}, …]`, in which case the node
- * itself has no `properties` at all. Walking only the node would report a field that plainly
- * exists as missing, which for a fail-closed check is worse than not checking.
+ * Roots are innermost-first. A `$defs` block belongs to the schema that declares it, and these
+ * schemas embed whole resources — `create_view.configuration` carries its own `$id` and `$defs` —
+ * so `#/$defs/layout` inside it means *its* definitions, not the tool's.
  */
-function branchesOf(node: unknown): Record<string, unknown>[] {
-    if (typeof node !== 'object' || node === null) {
-        return [];
-    }
-    const record = node as Record<string, unknown>;
-    const composed = [record.anyOf, record.oneOf, record.allOf].flatMap((group) =>
-        Array.isArray(group) ? (group as Record<string, unknown>[]) : [],
-    );
-    return [record, ...composed.flatMap((branch) => branchesOf(branch))];
+interface SchemaCursor {
+    node: Record<string, unknown>;
+    roots: readonly Record<string, unknown>[];
 }
 
-/** One step of a dotted/`[]` path through a schema, across composition branches. */
-function stepInto(nodes: readonly Record<string, unknown>[], segment: string): Record<string, unknown>[] {
+/** `~1` and `~0` are the JSON Pointer escapes for `/` and `~`. */
+function unescapePointer(segment: string): string {
+    return segment.replace(/~1/g, '/').replace(/~0/g, '~');
+}
+
+function isSchemaObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+}
+
+/** Enter a node, making it a resolution root when it declares definitions or its own identity. */
+function descend(node: Record<string, unknown>, roots: readonly Record<string, unknown>[]): SchemaCursor {
+    const isResource = node.$defs !== undefined || node.definitions !== undefined || node.$id !== undefined;
+    return { node, roots: isResource ? [node, ...roots] : roots };
+}
+
+/**
+ * Follow a local `$ref` to the node it names.
+ *
+ * Only same-document pointers are resolved. An external or remote reference is *not* guessed at:
+ * the caller reports it, because silently treating an unresolved reference as "field absent" would
+ * blame the author for the schema's shape.
+ */
+function followRef(ref: string, roots: readonly Record<string, unknown>[]): Record<string, unknown> | undefined {
+    if (ref === '#') {
+        return roots[0];
+    }
+    if (!ref.startsWith('#/')) {
+        return undefined;
+    }
+    const segments = ref.slice(2).split('/').map(unescapePointer);
+    for (const root of roots) {
+        let node: unknown = root;
+        for (const segment of segments) {
+            node = isSchemaObject(node) ? node[segment] : undefined;
+        }
+        if (isSchemaObject(node)) {
+            return node;
+        }
+    }
+    return undefined;
+}
+
+/**
+ * The branches a schema node offers: itself, its composition branches, and whatever its `$ref`
+ * points at, all flattened.
+ *
+ * A walk that stopped at a composed or referenced node would report a field that plainly exists as
+ * missing, which for a fail-closed check is worse than not checking. Unresolvable references are
+ * collected rather than ignored, so the caller can say so instead of blaming the field.
+ */
+function branchesOf(cursor: SchemaCursor, unresolved: string[], seen = new Set<unknown>()): SchemaCursor[] {
+    if (seen.has(cursor.node)) {
+        // A recursive `$ref` (a tree node whose children are the same type) would loop forever.
+        return [];
+    }
+    seen.add(cursor.node);
+
+    const here = descend(cursor.node, cursor.roots);
+    const out: SchemaCursor[] = [here];
+
+    const ref = here.node.$ref;
+    if (typeof ref === 'string') {
+        const target = followRef(ref, here.roots);
+        if (target) {
+            out.push(...branchesOf({ node: target, roots: here.roots }, unresolved, seen));
+        } else {
+            unresolved.push(ref);
+        }
+    }
+
+    for (const group of [here.node.anyOf, here.node.oneOf, here.node.allOf]) {
+        for (const branch of Array.isArray(group) ? group : []) {
+            if (isSchemaObject(branch)) {
+                out.push(...branchesOf({ node: branch, roots: here.roots }, unresolved, seen));
+            }
+        }
+    }
+    return out;
+}
+
+/** One step of a dotted/`[]` path, across composition branches and local references. */
+function stepInto(cursors: readonly SchemaCursor[], segment: string, unresolved: string[]): SchemaCursor[] {
     const isArray = segment.endsWith('[]');
     const key = isArray ? segment.slice(0, -2) : segment;
-    const found: Record<string, unknown>[] = [];
-    for (const branch of nodes.flatMap((node) => branchesOf(node))) {
-        const properties = branch.properties as Record<string, unknown> | undefined;
+    const found: SchemaCursor[] = [];
+    for (const branch of cursors.flatMap((cursor) => branchesOf(cursor, unresolved))) {
+        const properties = branch.node.properties as Record<string, unknown> | undefined;
         const child = properties?.[key];
-        if (child === undefined) {
+        if (!isSchemaObject(child)) {
             continue;
         }
-        const target = isArray ? (child as Record<string, unknown>).items : child;
-        if (target && typeof target === 'object') {
-            found.push(target as Record<string, unknown>);
+        const target = isArray ? child.items : child;
+        if (isSchemaObject(target)) {
+            found.push({ node: target, roots: branch.roots });
         }
     }
     return found;
 }
 
-/** Property names declared at a node, across composition branches, for a "did you mean" list. */
-function propertyNamesOf(nodes: readonly Record<string, unknown>[]): string[] {
+/** Property names declared at a node, across branches and references, for a "did you mean" list. */
+function propertyNamesOf(cursors: readonly SchemaCursor[]): string[] {
     const names = new Set<string>();
-    for (const branch of nodes.flatMap((node) => branchesOf(node))) {
-        for (const name of Object.keys((branch.properties as Record<string, unknown>) ?? {})) {
+    for (const branch of cursors.flatMap((cursor) => branchesOf(cursor, []))) {
+        for (const name of Object.keys((branch.node.properties as Record<string, unknown>) ?? {})) {
             names.add(name);
         }
     }
@@ -145,9 +219,10 @@ function propertyNamesOf(nodes: readonly Record<string, unknown>[]): string[] {
  * schema, and it is exactly the claim that rots when a parameter is renamed. `{@param …}` states
  * the claim so this can check it.
  *
- * Fails closed on a tool with no visible schema: reporting nothing would make the construct look
- * checked while checking nothing, which is the failure mode a `tool=` tag on an unvalidatable tool
- * is already rejected for.
+ * Every path that cannot be judged is reported rather than passed: a tool absent from these
+ * entries, a tool with no visible schema, a reference that does not resolve. A construct that
+ * looks checked while checking nothing is the failure mode a `tool=` tag on an unvalidatable tool
+ * is already rejected for, and it is worse here — `{@param …}` exists only to be checked.
  */
 export function createSchemaFieldValidator(
     tools: readonly ToolSchemaEntry[],
@@ -157,27 +232,37 @@ export function createSchemaFieldValidator(
     return ({ tool: toolName, path }) => {
         const tool = byName.get(toolName);
         if (!tool) {
-            // The preprocessor already reports an unknown tool name; nothing to add.
-            return [];
+            // The preprocessor resolves the name against the catalog before calling this, so
+            // reaching here means the catalog's names and its schema entries disagree.
+            return [`cannot be checked: '${toolName}' is absent from this build's schema entries`];
         }
         if (!tool.params) {
             return [`cannot be checked: '${toolName}' exposes no schema to this build`];
         }
 
-        let nodes = [tool.params as Record<string, unknown>];
+        let cursors: SchemaCursor[] = [{ node: tool.params as Record<string, unknown>, roots: [] }];
         const walked: string[] = [];
         for (const segment of path.split('.')) {
-            const next = stepInto(nodes, segment);
+            const unresolved: string[] = [];
+            const next = stepInto(cursors, segment, unresolved);
             if (next.length === 0) {
-                const available = propertyNamesOf(nodes);
                 const where = walked.length > 0 ? `'${walked.join('.')}' of ` : '';
+                if (unresolved.length > 0) {
+                    // Reporting "does not declare" here would blame the author for the schema's
+                    // shape — the field may well exist behind the reference.
+                    return [
+                        `cannot be checked: reaching '${segment}' crosses ${where}'${toolName}' at ` +
+                            `an unresolvable reference ('${unresolved[0]}')`,
+                    ];
+                }
+                const available = propertyNamesOf(cursors);
                 return [
                     `names '${segment}', which ${where}'${toolName}' does not declare` +
                         (available.length > 0 ? ` (declared: ${available.join(', ')})` : ''),
                 ];
             }
             walked.push(segment);
-            nodes = next;
+            cursors = next;
         }
         return [];
     };

@@ -248,7 +248,11 @@ export const exampleLanguages = new Set(['json']);   // default
 tool's AJV schema, and additionally resolves *dispatcher* fields — a `string` parameter that carries
 another tool's name, such as `batch_execute.tool_name` — which JSON Schema alone cannot check.
 `createSchemaFieldValidator` walks a `{@param …}` path through the same schemas, descending into
-`anyOf`/`oneOf`/`allOf` branches, and reports the declared fields alongside an unknown one.
+`anyOf`/`oneOf`/`allOf` branches and following local `$ref`s (resolved against the innermost
+embedded resource, so a nested `$defs` block wins), and reports the declared fields alongside an
+unknown one. A tool with no schema, a tool absent from the entries, and a path crossing an
+unresolvable reference are all errors rather than passes; so is a catalog that omits
+`validateField` while a skill uses `{@param …}`.
 
 If `skillCatalog` is configured but `skill` is not among the `transformers`, the build fails. If a
 skill body uses any of the constructs while **no** catalog is configured, the build also

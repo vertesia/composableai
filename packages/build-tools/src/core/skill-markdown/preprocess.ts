@@ -89,8 +89,10 @@ export interface PreprocessSkillMarkdownOptions {
      * declare that field? Returns human-readable problems; empty means the field exists.
      * Exceptions it throws are captured as errors, never propagated.
      *
-     * `createSchemaFieldValidator` in this package is the usual implementation. Absent, the
-     * construct still checks that the tool exists, and the field is taken on trust.
+     * `createSchemaFieldValidator` in this package is the usual implementation. A catalog that
+     * omits it makes every `{@param …}` an error rather than taking the field on trust: the
+     * construct's only purpose is to be checked, so a misconfigured consumer must not quietly
+     * turn the whole tree into decoration.
      */
     validateField?: (ref: { tool: string; path: string }) => string[];
     /** Override the `learn_` prefix if the runtime convention ever changes. */
@@ -176,7 +178,14 @@ function renderParam(
         );
     } else if (!options.tools.has(name)) {
         errors.push(`line ${line}: '${whole}' refers to a tool no provider registers`);
-    } else if (options.validateField) {
+    } else if (!options.validateField) {
+        // The construct exists only to be checked. A catalog that supplies no field validator
+        // would turn every `{@param …}` in the tree into decoration, and nothing would say so.
+        errors.push(
+            `line ${line}: '${whole}' cannot be checked: this build's catalog supplies no ` +
+                'validateField. Add one (createSchemaFieldValidator), or write the field as prose.',
+        );
+    } else {
         let problems: string[];
         try {
             problems = options.validateField({ tool: name, path });
@@ -187,8 +196,6 @@ function renderParam(
         }
         errors.push(...problems.map((problem) => `line ${line}: '${whole}' ${problem}`));
         resolved = problems.length === 0;
-    } else {
-        resolved = true;
     }
 
     references.push({ kind: 'param', name, path, rendered, line, resolved });
