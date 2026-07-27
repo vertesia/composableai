@@ -1,5 +1,6 @@
 import type { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
+import { ServerError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -78,6 +79,18 @@ describe('executeInteraction retryability', () => {
             nonRetryable: false,
         } satisfies Partial<ApplicationFailure>);
         expect(executeByName).not.toHaveBeenCalled();
+    });
+
+    it('preserves typed API 429 metadata for the activity retry interceptor', async () => {
+        const error = new ServerError('quota reached', new Request('https://studio.test/api'), 429, {}, true, {
+            reason: 'quota',
+            retryAfterMs: 12_345,
+            resource: 'genai',
+            window: 'quota',
+        });
+        await mockInteractionError(error);
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toBe(error);
     });
 
     it('should forward the execution config object to interaction execution', async () => {

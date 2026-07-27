@@ -7,6 +7,7 @@ import {
     type ModelOptions,
 } from '@llumiverse/common';
 import { ApplicationFailure, activityInfo, log } from '@temporalio/activity';
+import type { RateLimitMetadata } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import {
@@ -70,6 +71,23 @@ const _JSON: DSLActivitySpec = {
         },
     },
 };
+
+interface ApiRateLimitedRequestError extends Error {
+    status: number;
+    rateLimit: RateLimitMetadata;
+}
+
+function isApiRateLimitedRequestError(error: unknown): error is ApiRateLimitedRequestError {
+    if (!(error instanceof Error)) return false;
+    const candidate = error as Partial<ApiRateLimitedRequestError>;
+    return (
+        candidate.status === 429 &&
+        candidate.rateLimit !== undefined &&
+        (candidate.rateLimit.reason === 'pacing' || candidate.rateLimit.reason === 'quota') &&
+        Number.isFinite(candidate.rateLimit.retryAfterMs) &&
+        candidate.rateLimit.retryAfterMs >= 0
+    );
+}
 export interface InteractionExecutionParams {
     /**
      * Execution configuration shared across workflow-driven interaction calls.
@@ -216,6 +234,11 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         });
     } catch (error: unknown) {
         if (error instanceof ApplicationFailure && error.type === 'InteractionRateLimitRetry') {
+            throw error;
+        }
+        // Preserve the API client's typed 429 so the worker inbound interceptor can turn its exact
+        // pacing/reset metadata into a durable Temporal retry timer. Provider 429s carry no metadata.
+        if (isApiRateLimitedRequestError(error)) {
             throw error;
         }
         const executionError = toExecutionError(error);
