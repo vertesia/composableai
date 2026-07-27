@@ -3,11 +3,12 @@
  *
  * Markdown gives syntax but no semantics: in "Use `execute_parallel_work_streams` with
  * `customer_orders`", nothing distinguishes the tool from the sample data. Rather than guess,
- * this preprocessor recognises exactly three explicit constructs and leaves every other byte of
+ * this preprocessor recognises exactly four explicit constructs and leaves every other byte of
  * prose untouched:
  *
- *   - `{@tool search_documents}`   → renders as `` `search_documents` ``
- *   - `{@skill workstreams}`       → renders as `` `learn_workstreams` ``
+ *   - `{@tool search_documents}`        → renders as `` `search_documents` ``
+ *   - `{@skill workstreams}`            → renders as `` `learn_workstreams` ``
+ *   - `{@param search_documents.query}` → renders as `` `query` ``, checked against the schema
  *   - ```` ```json tool=batch_execute ```` → validated against that tool, tag stripped on render
  *
  * What that buys is *fail-closed validation and consistent rendering*, not centralised naming —
@@ -24,12 +25,14 @@
 /** The runtime convention: a skill named `x` is offered to the model as the tool `learn_x`. */
 export const DEFAULT_SKILL_TOOL_PREFIX = 'learn_';
 
-export type SkillReferenceKind = 'tool' | 'skill';
+export type SkillReferenceKind = 'tool' | 'skill' | 'param';
 
 export interface SkillReference {
     kind: SkillReferenceKind;
-    /** Name exactly as written in the source. */
+    /** Name exactly as written in the source. For a `param`, the tool the field belongs to. */
     name: string;
+    /** Dotted/`[]` path into the tool's params schema. Only on a `param` reference. */
+    path?: string;
     /** Text substituted into the rendered Markdown. */
     rendered: string;
     /** 1-based line of the construct, for error messages. */
@@ -81,6 +84,15 @@ export interface PreprocessSkillMarkdownOptions {
      * `createSchemaExampleValidator` in this package is the usual implementation.
      */
     validateExample?: (example: { tool: string; value: unknown }) => string[];
+    /**
+     * Consumer-supplied validation for a `{@param tool.field}` reference: does that tool's schema
+     * declare that field? Returns human-readable problems; empty means the field exists.
+     * Exceptions it throws are captured as errors, never propagated.
+     *
+     * `createSchemaFieldValidator` in this package is the usual implementation. Absent, the
+     * construct still checks that the tool exists, and the field is taken on trust.
+     */
+    validateField?: (ref: { tool: string; path: string }) => string[];
     /** Override the `learn_` prefix if the runtime convention ever changes. */
     skillToolPrefix?: string;
     /**
@@ -109,11 +121,11 @@ const NAME = /^[a-z][a-z0-9_-]*$/;
 const CONSTRUCT = /\{@([A-Za-z][A-Za-z0-9_]*)([^}]*)\}/g;
 
 /**
- * The same construct, restricted to the two real keywords, for use inside fenced blocks. The loose
+ * The same construct, restricted to the real keywords, for use inside fenced blocks. The loose
  * form would flag template syntax that fenced examples legitimately contain — Handlebars
  * `{{@index}}`, for one — which the renderer only ever sees in prose.
  */
-const FENCED_CONSTRUCT = /\{@(?:tool|skill)\b[^}]*\}/g;
+const FENCED_CONSTRUCT = /\{@(?:tool|skill|param)\b[^}]*\}/g;
 
 /** A code fence line: up to 3 spaces of indent, a run of markers, then the info string. */
 const FENCE = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*(.*)$/;
@@ -128,6 +140,60 @@ const MASK_CLOSE = '\u0001';
 const TAG_PREFIX = 'tool=';
 
 const DEFAULT_EXAMPLE_LANGUAGES: ReadonlySet<string> = new Set(['json']);
+
+/**
+ * `{@param tool.field}`: a tool name, then a dotted/`[]` path into its params schema.
+ *
+ * The path uses the same spelling as a `dispatch` descriptor — `inputs[].input` — so one path
+ * syntax covers both, and renders as the path alone: the tool is usually named in the same
+ * sentence, and repeating it reads worse than the prose the construct replaces.
+ */
+const PARAM = /^([a-z][a-z0-9_-]*)\.([A-Za-z_][A-Za-z0-9_]*(?:\[\])*(?:\.[A-Za-z_][A-Za-z0-9_]*(?:\[\])*)*)$/;
+
+function renderParam(
+    whole: string,
+    args: string[],
+    line: number,
+    options: PreprocessSkillMarkdownOptions,
+    references: SkillReference[],
+    errors: string[],
+): string {
+    const match = args.length === 1 ? PARAM.exec(args[0]) : null;
+    if (!match) {
+        errors.push(`line ${line}: '${whole}' must be written {@param tool.field}, with one dotted path`);
+        return whole;
+    }
+
+    const [, name, path] = match;
+    const rendered = `\`${path}\``;
+    const ambiguous = options.ambiguousTools?.has(name) ?? false;
+    let resolved = false;
+
+    if (ambiguous) {
+        errors.push(
+            `line ${line}: '${whole}' is ambiguous — more than one provider defines the tool ` +
+                `'${name}'. Resolve the collision at the source before referencing it.`,
+        );
+    } else if (!options.tools.has(name)) {
+        errors.push(`line ${line}: '${whole}' refers to a tool no provider registers`);
+    } else if (options.validateField) {
+        let problems: string[];
+        try {
+            problems = options.validateField({ tool: name, path });
+        } catch (err) {
+            // Same contract as validateExample: a broken validator is a finding, not an exception
+            // thrown from an unrelated frame.
+            problems = [`could not be checked: ${(err as Error).message}`];
+        }
+        errors.push(...problems.map((problem) => `line ${line}: '${whole}' ${problem}`));
+        resolved = problems.length === 0;
+    } else {
+        resolved = true;
+    }
+
+    references.push({ kind: 'param', name, path, rendered, line, resolved });
+    return rendered;
+}
 
 /** Substitute constructs on a single line, leaving inline code spans verbatim. */
 function renderLine(
@@ -156,9 +222,14 @@ function renderLine(
         consumed.add(offset);
         const args = rest.trim().split(/\s+/).filter(Boolean);
 
-        if (keyword !== 'tool' && keyword !== 'skill') {
-            errors.push(`line ${line}: unknown construct '{@${keyword} …}' (expected {@tool …} or {@skill …})`);
+        if (keyword !== 'tool' && keyword !== 'skill' && keyword !== 'param') {
+            errors.push(
+                `line ${line}: unknown construct '{@${keyword} …}' (expected {@tool …}, {@skill …} or {@param …})`,
+            );
             return whole;
+        }
+        if (keyword === 'param') {
+            return renderParam(whole, args, line, options, references, errors);
         }
         if (args.length !== 1 || !NAME.test(args[0])) {
             errors.push(`line ${line}: '${whole}' must name exactly one ${keyword}`);

@@ -60,6 +60,7 @@ export {
 export {
     checkDispatchDescriptor,
     createSchemaExampleValidator,
+    createSchemaFieldValidator,
     type DispatchResolution,
     nodesAtPath,
     pairDispatchedInputs,

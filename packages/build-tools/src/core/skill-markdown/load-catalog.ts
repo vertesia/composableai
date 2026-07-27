@@ -63,6 +63,7 @@ export async function loadSkillCatalog(modulePath: string): Promise<PreprocessSk
         ambiguousSkills: source.ambiguousSkills ? new Set(source.ambiguousSkills) : undefined,
         unvalidatableTools: source.unvalidatableTools ? new Set(source.unvalidatableTools) : undefined,
         validateExample: source.validateExample,
+        validateField: source.validateField,
         skillToolPrefix: source.skillToolPrefix,
         exampleLanguages: source.exampleLanguages ? new Set(source.exampleLanguages) : undefined,
     };

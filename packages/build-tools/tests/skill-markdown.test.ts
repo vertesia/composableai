@@ -1,14 +1,18 @@
 /**
  * Tests for the skill Markdown preprocessor.
  *
- * The contract is narrow on purpose: three constructs are recognised, everything else is prose
+ * The contract is narrow on purpose: four constructs are recognised, everything else is prose
  * and must survive byte-for-byte. Most of these tests are about what the preprocessor must
  * *not* touch — that is where a "small semantic resolver" turns into a template engine.
  */
 
 import { describe, expect, it } from 'vitest';
 import { assertSkillMarkdown, preprocessSkillMarkdown } from '../src/core/skill-markdown/preprocess.js';
-import { checkDispatchDescriptor, createSchemaExampleValidator } from '../src/core/skill-markdown/schema-validator.js';
+import {
+    checkDispatchDescriptor,
+    createSchemaExampleValidator,
+    createSchemaFieldValidator,
+} from '../src/core/skill-markdown/schema-validator.js';
 
 const catalog = {
     tools: new Set(['search_documents', 'batch_execute', 'fetch_document']),
@@ -367,5 +371,131 @@ describe('dispatch descriptor coherence', () => {
 
         expect(result.errors).toEqual([]);
         expect(result.markdown).toContain('learn_web_search');
+    });
+});
+
+/**
+ * Field references. A skill saying a tool "takes `query` as an object" is asserting something
+ * about that tool's schema, and it is the assertion that rots when a parameter is renamed.
+ */
+describe('field references', () => {
+    const schema = {
+        type: 'object',
+        properties: {
+            query: {
+                type: 'object',
+                properties: { full_text: { type: 'string' }, match: { type: 'object' } },
+            },
+            limit: { type: 'number' },
+        },
+    };
+    const nested = {
+        type: 'object',
+        properties: {
+            tool_name: { type: 'string' },
+            inputs: {
+                type: 'array',
+                items: { type: 'object', properties: { id: { type: 'string' }, input: { type: 'object' } } },
+            },
+        },
+    };
+    const options = {
+        ...catalog,
+        validateField: createSchemaFieldValidator([
+            { name: 'search_documents', params: schema },
+            { name: 'batch_execute', params: nested },
+            { name: 'fetch_document' },
+        ]),
+    };
+
+    it('renders the path alone and records the tool it belongs to', () => {
+        const result = preprocessSkillMarkdown(
+            '{@tool search_documents} takes {@param search_documents.query}.',
+            options,
+        );
+
+        expect(result.markdown).toBe('`search_documents` takes `query`.');
+        expect(result.errors).toEqual([]);
+        expect(result.references[1]).toEqual({
+            kind: 'param',
+            name: 'search_documents',
+            path: 'query',
+            rendered: '`query`',
+            line: 1,
+            resolved: true,
+        });
+    });
+
+    it('walks nested and array segments', () => {
+        const result = preprocessSkillMarkdown(
+            'Each {@param batch_execute.inputs[].id} labels an {@param batch_execute.inputs[].input}.',
+            options,
+        );
+
+        expect(result.errors).toEqual([]);
+        expect(result.markdown).toBe('Each `inputs[].id` labels an `inputs[].input`.');
+    });
+
+    it('reports a field the schema does not declare, listing what it does', () => {
+        const result = preprocessSkillMarkdown('Pass {@param search_documents.text}.', options);
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]).toContain("names 'text', which 'search_documents' does not declare");
+        expect(result.errors[0]).toContain('declared: limit, query');
+        expect(result.references[0].resolved).toBe(false);
+    });
+
+    it('names the level a nested field is missing from', () => {
+        const result = preprocessSkillMarkdown('Pass {@param search_documents.query.exact}.', options);
+
+        expect(result.errors[0]).toContain("names 'exact', which 'query' of 'search_documents' does not declare");
+        expect(result.errors[0]).toContain('declared: full_text, match');
+    });
+
+    it('rejects a field on a tool no provider registers', () => {
+        const result = preprocessSkillMarkdown('Pass {@param ghost_tool.query}.', options);
+
+        expect(result.errors).toEqual(["line 1: '{@param ghost_tool.query}' refers to a tool no provider registers"]);
+    });
+
+    it('fails closed on a tool whose schema this build cannot see', () => {
+        const result = preprocessSkillMarkdown('Pass {@param fetch_document.id}.', options);
+
+        expect(result.errors[0]).toContain("cannot be checked: 'fetch_document' exposes no schema");
+    });
+
+    it('rejects a reference with no field path', () => {
+        const result = preprocessSkillMarkdown('Pass {@param search_documents}.', options);
+
+        expect(result.errors[0]).toContain('must be written {@param tool.field}');
+        // Left verbatim, so the author sees what they wrote.
+        expect(result.markdown).toBe('Pass {@param search_documents}.');
+    });
+
+    it('takes the field on trust when the catalog supplies no field validator', () => {
+        const result = preprocessSkillMarkdown('Pass {@param search_documents.anything}.', catalog);
+
+        expect(result.errors).toEqual([]);
+        expect(result.markdown).toBe('Pass `anything`.');
+    });
+
+    it('resolves a field declared only inside a composition branch', () => {
+        const composed = createSchemaFieldValidator([
+            {
+                name: 'search_documents',
+                params: {
+                    type: 'object',
+                    properties: {
+                        query: { anyOf: [{ type: 'string' }, { properties: { full_text: { type: 'string' } } }] },
+                    },
+                },
+            },
+        ]);
+        const result = preprocessSkillMarkdown('Pass {@param search_documents.query.full_text}.', {
+            ...catalog,
+            validateField: composed,
+        });
+
+        expect(result.errors).toEqual([]);
     });
 });

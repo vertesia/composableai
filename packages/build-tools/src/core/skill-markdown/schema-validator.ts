@@ -90,6 +90,99 @@ export function schemaNodeAtPath(schema: unknown, path: string): Record<string, 
     return node;
 }
 
+/**
+ * The branches a schema node offers, for a walk that must not stop at a composed node.
+ *
+ * `query` may be declared as `anyOf: [{properties: {full_text: …}}, …]`, in which case the node
+ * itself has no `properties` at all. Walking only the node would report a field that plainly
+ * exists as missing, which for a fail-closed check is worse than not checking.
+ */
+function branchesOf(node: unknown): Record<string, unknown>[] {
+    if (typeof node !== 'object' || node === null) {
+        return [];
+    }
+    const record = node as Record<string, unknown>;
+    const composed = [record.anyOf, record.oneOf, record.allOf].flatMap((group) =>
+        Array.isArray(group) ? (group as Record<string, unknown>[]) : [],
+    );
+    return [record, ...composed.flatMap((branch) => branchesOf(branch))];
+}
+
+/** One step of a dotted/`[]` path through a schema, across composition branches. */
+function stepInto(nodes: readonly Record<string, unknown>[], segment: string): Record<string, unknown>[] {
+    const isArray = segment.endsWith('[]');
+    const key = isArray ? segment.slice(0, -2) : segment;
+    const found: Record<string, unknown>[] = [];
+    for (const branch of nodes.flatMap((node) => branchesOf(node))) {
+        const properties = branch.properties as Record<string, unknown> | undefined;
+        const child = properties?.[key];
+        if (child === undefined) {
+            continue;
+        }
+        const target = isArray ? (child as Record<string, unknown>).items : child;
+        if (target && typeof target === 'object') {
+            found.push(target as Record<string, unknown>);
+        }
+    }
+    return found;
+}
+
+/** Property names declared at a node, across composition branches, for a "did you mean" list. */
+function propertyNamesOf(nodes: readonly Record<string, unknown>[]): string[] {
+    const names = new Set<string>();
+    for (const branch of nodes.flatMap((node) => branchesOf(node))) {
+        for (const name of Object.keys((branch.properties as Record<string, unknown>) ?? {})) {
+            names.add(name);
+        }
+    }
+    return [...names].sort();
+}
+
+/**
+ * Build a `validateField` callback over a set of tools.
+ *
+ * A skill that says a tool "takes `query` as an object" is making a claim about that tool's
+ * schema, and it is exactly the claim that rots when a parameter is renamed. `{@param …}` states
+ * the claim so this can check it.
+ *
+ * Fails closed on a tool with no visible schema: reporting nothing would make the construct look
+ * checked while checking nothing, which is the failure mode a `tool=` tag on an unvalidatable tool
+ * is already rejected for.
+ */
+export function createSchemaFieldValidator(
+    tools: readonly ToolSchemaEntry[],
+): (ref: { tool: string; path: string }) => string[] {
+    const byName = new Map(tools.map((t) => [t.name, t]));
+
+    return ({ tool: toolName, path }) => {
+        const tool = byName.get(toolName);
+        if (!tool) {
+            // The preprocessor already reports an unknown tool name; nothing to add.
+            return [];
+        }
+        if (!tool.params) {
+            return [`cannot be checked: '${toolName}' exposes no schema to this build`];
+        }
+
+        let nodes = [tool.params as Record<string, unknown>];
+        const walked: string[] = [];
+        for (const segment of path.split('.')) {
+            const next = stepInto(nodes, segment);
+            if (next.length === 0) {
+                const available = propertyNamesOf(nodes);
+                const where = walked.length > 0 ? `'${walked.join('.')}' of ` : '';
+                return [
+                    `names '${segment}', which ${where}'${toolName}' does not declare` +
+                        (available.length > 0 ? ` (declared: ${available.join(', ')})` : ''),
+                ];
+            }
+            walked.push(segment);
+            nodes = next;
+        }
+        return [];
+    };
+}
+
 /** A string, or an array of strings. Anything else cannot carry a tool name. */
 function carriesToolName(node: Record<string, unknown> | undefined): boolean {
     if (!node) {

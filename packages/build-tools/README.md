@@ -187,21 +187,26 @@ Skill bodies routinely name tools and other skills, and embed example payloads. 
 those drift out of sync with the tool definitions they describe and nothing catches it. The
 preprocessor makes the references explicit so the build can verify them.
 
-Three constructs, all optional:
+Four constructs, all optional:
 
 | Written | Rendered | Verified |
 | ------- | -------- | -------- |
 | `{@tool fetch_document}` | `` `fetch_document` `` | tool exists, name unambiguous |
 | `{@skill web_search}` | `` `learn_web_search` `` | skill exists, name unambiguous |
+| `{@param fetch_document.format}` | `` `format` `` | that tool's schema declares the field |
 | ` ```json tool=fetch_document ` | plain ` ```json ` fence | payload validates against the tool's schema |
 
 ````markdown
-Call {@tool fetch_document} to load the object, then read it with {@skill artifacts}.
+Call {@tool fetch_document} to load the object — {@param fetch_document.format} selects the
+representation — then read it with {@skill artifacts}.
 
 ```json tool=fetch_document
 { "id": "abc123", "format": "text" }
 ```
 ````
+
+A `{@param …}` path is spelled like a `dispatch` descriptor: dots nest and `[]` walks an array, so
+`{@param batch_execute.inputs[].input}` resolves. Only the path is rendered.
 
 Everything fails closed: an unknown tool, an ambiguous name, an unterminated `{@`, a `tool=` tag on
 a non-JSON fence, a duplicate tag, or a payload the schema rejects all stop the build with the file
@@ -234,6 +239,7 @@ export const ambiguousTools = new Set<string>();     // names with >1 provider �
 export const ambiguousSkills = new Set<string>();
 export const unvalidatableTools = new Set<string>(); // known, but no schema available here
 export const validateExample = createSchemaExampleValidator(entries); // returns string[] of errors
+export const validateField = createSchemaFieldValidator(entries);     // resolves {@param …} paths
 export const skillToolPrefix = 'learn_';             // default
 export const exampleLanguages = new Set(['json']);   // default
 ```
@@ -241,9 +247,11 @@ export const exampleLanguages = new Set(['json']);   // default
 `createSchemaExampleValidator` (also exported from this package) validates a payload against the
 tool's AJV schema, and additionally resolves *dispatcher* fields — a `string` parameter that carries
 another tool's name, such as `batch_execute.tool_name` — which JSON Schema alone cannot check.
+`createSchemaFieldValidator` walks a `{@param …}` path through the same schemas, descending into
+`anyOf`/`oneOf`/`allOf` branches, and reports the declared fields alongside an unknown one.
 
 If `skillCatalog` is configured but `skill` is not among the `transformers`, the build fails. If a
-skill body uses any of the three constructs while **no** catalog is configured, the build also
+skill body uses any of the constructs while **no** catalog is configured, the build also
 fails, rather than shipping a raw `{@tool …}` to the model.
 
 ## Configuration reference
