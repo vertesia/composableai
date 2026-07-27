@@ -338,4 +338,34 @@ describe('dispatch descriptor coherence', () => {
         const validate = createSchemaExampleValidator(withDescriptor({ field: 'tool_nmae' }));
         expect(validate({ tool: 'batch_execute', value: { tool_name: 'x' } })[0]).toContain('cannot be checked');
     });
+
+    // A construct inside a fence is passed through unrendered and is not a reference either, so
+    // nothing else would report it -- it simply reaches the model verbatim. Found by shipping one.
+    it('reports a construct written inside a code fence', () => {
+        const md = ['```yaml', '# see {@skill web_search} for details', '```'].join('\n');
+        const result = preprocessSkillMarkdown(md, { tools: new Set(), skills: new Set(['web_search']) });
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]).toContain('inside a code fence');
+        expect(result.errors[0]).toContain('line 2');
+        // Still passed through untouched: the fence body is never rewritten.
+        expect(result.markdown).toContain('{@skill web_search}');
+    });
+
+    // Template syntax in fenced examples is not a construct: the renderer never sees fence bodies,
+    // so flagging `{{@index}}` would reject documentation that was always correct.
+    it('does not report template syntax inside a fence', () => {
+        const md = ['```handlebars', '{{#each docs}}', '### Document {{@index}}', '{{/each}}', '```'].join('\n');
+        const result = preprocessSkillMarkdown(md, { tools: new Set(), skills: new Set() });
+
+        expect(result.errors).toEqual([]);
+    });
+
+    it('does not report constructs in prose next to a fence', () => {
+        const md = ['See {@skill web_search}.', '', '```yaml', 'key: value', '```'].join('\n');
+        const result = preprocessSkillMarkdown(md, { tools: new Set(), skills: new Set(['web_search']) });
+
+        expect(result.errors).toEqual([]);
+        expect(result.markdown).toContain('learn_web_search');
+    });
 });

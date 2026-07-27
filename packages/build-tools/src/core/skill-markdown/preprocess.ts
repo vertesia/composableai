@@ -108,6 +108,13 @@ const NAME = /^[a-z][a-z0-9_-]*$/;
 /** `{@word …}`. The keyword is matched loosely so `{@tolo x}` is a reported typo, not prose. */
 const CONSTRUCT = /\{@([A-Za-z][A-Za-z0-9_]*)([^}]*)\}/g;
 
+/**
+ * The same construct, restricted to the two real keywords, for use inside fenced blocks. The loose
+ * form would flag template syntax that fenced examples legitimately contain — Handlebars
+ * `{{@index}}`, for one — which the renderer only ever sees in prose.
+ */
+const FENCED_CONSTRUCT = /\{@(?:tool|skill)\b[^}]*\}/g;
+
 /** A code fence line: up to 3 spaces of indent, a run of markers, then the info string. */
 const FENCE = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*(.*)$/;
 
@@ -246,6 +253,18 @@ export function preprocessSkillMarkdown(
             // An unterminated tagged fence swallows the rest of the document into its "payload",
             // so the tag validates nonsense and the prose below it is never rendered.
             errors.push(`line ${openLine}: fence tagged '${TAG_PREFIX}${tag}' is never closed`);
+        }
+
+        // Fence bodies are passed through untouched, so a construct written inside one is never
+        // rendered and reaches the model verbatim — and, because it is not a reference either, no
+        // other check sees it. Silence is the whole danger, so report it here.
+        for (const [offset, line] of body.entries()) {
+            for (const found of line.matchAll(FENCED_CONSTRUCT)) {
+                errors.push(
+                    `line ${openLine + 1 + offset}: '${found[0]}' is inside a code fence, where it ` +
+                        'is passed through unrendered; move it into prose or write the rendered form',
+                );
+            }
         }
 
         // Rewrite the opening line only when there is a tag to remove, so untagged fences keep
