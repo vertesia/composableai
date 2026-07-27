@@ -40,11 +40,22 @@ export interface WorkflowAncestor {
     run_depth: number;
 }
 
+/** Identifies HTTP requests made on behalf of durable event-bus delivery work. */
+export const EVENT_BUS_REQUEST_ORIGIN = 'event_bus' as const;
+export const REQUEST_ORIGIN_HEADER = 'x-vertesia-request-origin' as const;
+export type WorkflowRequestOrigin = typeof EVENT_BUS_REQUEST_ORIGIN;
+
 export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
     /**
      * The ref of the user who initiated the workflow.
      */
     initiated_by?: string;
+
+    /**
+     * Propagated to workflow-created API clients so event-delivered work is
+     * enforced against the event-bus share of the tenant's API limits.
+     */
+    request_origin?: WorkflowRequestOrigin;
 
     /**
      * The account ID of the user who created the activity.

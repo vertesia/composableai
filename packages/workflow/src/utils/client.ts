@@ -2,8 +2,9 @@
  * get a zeno client for a given token
  */
 
+import { activityInfo } from '@temporalio/activity';
 import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
-import type { WorkflowExecutionBaseParams } from '@vertesia/common';
+import { EVENT_BUS_REQUEST_ORIGIN, REQUEST_ORIGIN_HEADER, type WorkflowExecutionBaseParams } from '@vertesia/common';
 import { WorkflowParamNotFoundError } from '../errors.js';
 
 // Short default timeout for ordinary workflow -> server/store calls (object GETs, status updates,
@@ -38,12 +39,36 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
 
     const token = decodeJWT(payload.auth_token);
 
+    let eventRequestSequence = 0;
+    let eventRequestPrefix: string | undefined;
+    if (payload.request_origin === EVENT_BUS_REQUEST_ORIGIN) {
+        try {
+            const info = activityInfo();
+            const execution = info.workflowExecution;
+            if (execution) {
+                eventRequestPrefix = `event:${execution.workflowId}:${execution.runId}:${info.activityId}`;
+            }
+        } catch {
+            // Option construction is also used by unit tests outside an activity.
+        }
+    }
+
     return {
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
         tokenServerUrl: token.iss,
         apikey: payload.auth_token,
         timeout: parseWorkflowFetchTimeoutMs(),
+        ...(payload.request_origin === EVENT_BUS_REQUEST_ORIGIN
+            ? {
+                  onRequest: (request: Request) => {
+                      request.headers.set(REQUEST_ORIGIN_HEADER, EVENT_BUS_REQUEST_ORIGIN);
+                      if (eventRequestPrefix) {
+                          request.headers.set('x-request-id', `${eventRequestPrefix}:${eventRequestSequence++}`);
+                      }
+                  },
+              }
+            : {}),
     };
 }
 
