@@ -16,6 +16,12 @@ export interface UserGroup {
     clearance?: number;
     /** Compartments — merged with user compartments using array union */
     compartments?: string[];
+    /**
+     * Projects this group is restricted to. When empty or absent the group is
+     * org-wide (usable in any project). When set, the group may only be used to
+     * grant permissions in the listed projects.
+     */
+    restricted_projects?: string[];
 }
 
 export interface PopulatesUserGroup extends UserGroup {
@@ -26,6 +32,8 @@ export interface CreateUserGroupPayload {
     name: string;
     description?: string;
     tags?: string[];
+    /** Restrict the new group to the given projects (empty/absent = org-wide). */
+    restricted_projects?: string[];
 }
 
 export interface UpdateUserGroupPayload {
@@ -35,6 +43,7 @@ export interface UpdateUserGroupPayload {
     properties?: Record<string, unknown>;
     clearance?: number;
     compartments?: string[];
+    restricted_projects?: string[];
 }
 
 export interface UserGroupRef {
@@ -44,8 +53,9 @@ export interface UserGroupRef {
     properties?: Record<string, unknown>;
     clearance?: number;
     compartments?: string[];
+    restricted_projects?: string[];
 }
 
-export const UserGroupRefPopulate = 'id name tags description properties clearance compartments';
+export const UserGroupRefPopulate = 'id name tags description properties clearance compartments restricted_projects';
 
 export const MEMBERS_GROUP_NAME = 'members';
