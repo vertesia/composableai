@@ -40,8 +40,34 @@ export {
 } from './core/compilers/widget.js';
 // Parsers
 export { type FrontmatterResult, parseFrontmatter } from './core/parsers/frontmatter.js';
+// Skill markdown preprocessor: `{@tool …}` / `{@skill …}` resolution and tagged-example
+// validation. Pure — the consuming build supplies the catalog and the schema validator.
+export {
+    assertSkillMarkdown,
+    DEFAULT_SKILL_TOOL_PREFIX,
+    type PreprocessSkillMarkdownOptions,
+    type PreprocessSkillMarkdownResult,
+    preprocessSkillMarkdown,
+    type SkillExample,
+    type SkillReference,
+    type SkillReferenceKind,
+} from './core/skill-markdown/preprocess.js';
+export {
+    checkDispatchDescriptor,
+    createSchemaExampleValidator,
+    type DispatchResolution,
+    nodesAtPath,
+    pairDispatchedInputs,
+    resolveDispatchedNames,
+    schemaNodeAtPath,
+    type ToolDispatchDescriptor,
+    type ToolSchemaEntry,
+    toolNamesAtPath,
+} from './core/skill-markdown/schema-validator.js';
 // Transformers (the pure transformation functions)
 export {
+    createSkillTransformer,
+    isSkillTransformer,
     type PromptContentType,
     type PromptDefinition,
     PromptDefinitionSchema,
@@ -54,6 +80,7 @@ export {
     type SkillDefinition,
     SkillDefinitionSchema,
     SkillPropertiesSchema,
+    type SkillTransformerConfig,
     skillCollectionTransformer,
     skillTransformer,
     TemplateType,

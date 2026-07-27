@@ -12,10 +12,13 @@ export {
 } from './prompt.js';
 export { rawTransformer } from './raw.js';
 export {
+    createSkillTransformer,
+    isSkillTransformer,
     type SkillContentType,
     type SkillDefinition,
     SkillDefinitionSchema,
     SkillPropertiesSchema,
+    type SkillTransformerConfig,
     skillTransformer,
 } from './skill.js';
 export { skillCollectionTransformer } from './skill-collection.js';
