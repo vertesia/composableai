@@ -27,21 +27,21 @@
         "react-dom": "^19.2.7"
     },
     "devDependencies": {
-        "@tailwindcss/vite": "^4.3.2",
+        "@tailwindcss/vite": "^4.3.3",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "@vitejs/plugin-react": "^6.0.3",
         "react": "catalog:",
         "react-dom": "catalog:",
-        "tailwindcss": "^4.3.2",
+        "tailwindcss": "^4.3.3",
         "typescript": "^6.0.3",
         "vite": "catalog:"
     },
     "dependencies": {
         "@vertesia/common": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "lucide-react": "^1.24.0"
+        "lucide-react": "^1.25.0"
     },
     "repository": {
         "type": "git",
