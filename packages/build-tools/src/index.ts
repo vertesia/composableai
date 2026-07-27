@@ -20,12 +20,13 @@
  *
  * @example
  * ```typescript
- * import { transformImports } from '@vertesia/build-tools';
+ * import { resolveTransformerNames, transformImports } from '@vertesia/build-tools';
  *
  * await transformImports({
  *   libDir: './lib',
  *   srcDir: './src',
- *   transformers: ['skill', 'raw'],
+ *   // Resolved rules, not names — use resolveTransformerNames to go from one to the other.
+ *   transformers: resolveTransformerNames(['skill', 'raw']),
  *   assetsDir: './dist',
  * });
  * ```

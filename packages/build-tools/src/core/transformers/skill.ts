@@ -366,8 +366,9 @@ function transformSkill(content: string, filePath: string, config: SkillTransfor
     const propertiesPath = path.join(skillDir, 'properties.ts');
     const hasProperties = existsSync(propertiesPath);
 
-    // If properties.ts exists, generate custom code with import and merge
-    // Rollup will handle transpiling properties.ts to properties.js
+    // If properties.ts exists, generate custom code with import and merge.
+    // `tsc` has already emitted properties.js beside this chunk — the pipeline runs after it and
+    // never compiles TypeScript itself — so the generated module can import './properties.js'.
     if (hasProperties) {
         const skillDataJson = JSON.stringify(skillData, null, 2);
         const code = `import properties from './properties.js';
