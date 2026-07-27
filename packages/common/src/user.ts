@@ -180,6 +180,14 @@ export interface Account {
     /** Quota/rate-limit tier. Unset → the deployment default tier (env `QUOTA_BASE_TIER`). */
     quota_tier?: QuotaTier;
 
+    /**
+     * Ops-managed per-account feature flags. Untyped by design so operators can add / remove
+     * temporary rollout gates without a schema change. Keys are enumerated in the admin UI
+     * from a hardcoded registry (studio-server) — flags not in that registry are ignored.
+     * Not modifiable through the public account API; admin API only.
+     */
+    feature_flags?: Record<string, unknown>;
+
     created_by: string;
     updated_by: string;
     created_at: string;
