@@ -270,6 +270,71 @@ describe('createSchemaExampleValidator', () => {
         expect(validate({ tool: 'fetch_document', value: { id: 'a' } })).toEqual([]);
     });
 
+    /**
+     * `allowed_tools` entries may carry the `+`/`-` selection prefixes, which the runtime strips
+     * before resolving. Without the same courtesy here, the documented `+learn_x` form — the one
+     * that keeps the default toolset — reads as a phantom tool.
+     */
+    describe('selection prefixes', () => {
+        const LAUNCH = {
+            name: 'launch_workstream',
+            params: {
+                type: 'object',
+                properties: { allowed_tools: { type: 'array', items: { type: 'string' } } },
+            },
+            dispatch: { field: 'allowed_tools[]', stripsSelectionPrefix: true },
+        };
+        const strict = { ...LAUNCH, dispatch: { field: 'allowed_tools[]' } };
+
+        it('resolves a prefixed name against the registry', () => {
+            const validate = createSchemaExampleValidator([LAUNCH, FETCH]);
+
+            expect(validate({ tool: 'launch_workstream', value: { allowed_tools: ['+fetch_document'] } })).toEqual([]);
+        });
+
+        it('still reports the name as written when it resolves to nothing', () => {
+            const validate = createSchemaExampleValidator([LAUNCH]);
+            const errors = validate({ tool: 'launch_workstream', value: { allowed_tools: ['+nope'] } });
+
+            expect(errors).toEqual(["names '+nope', which is not a registered tool"]);
+        });
+
+        it('leaves the prefix in place for a dispatcher that does not strip it', () => {
+            const validate = createSchemaExampleValidator([strict, FETCH]);
+            const errors = validate({ tool: 'launch_workstream', value: { allowed_tools: ['+fetch_document'] } });
+
+            expect(errors).toEqual(["names '+fetch_document', which is not a registered tool"]);
+        });
+    });
+
+    /**
+     * The failure a tag is supposed to make impossible, and the one it caused: a permissive schema
+     * accepts another tool's payload, so the example reads as verified while nothing about it was.
+     * A real `batch_execute` call sat under a `list_artifacts` tag exactly this way.
+     */
+    describe('binding', () => {
+        const LIST = { name: 'list_artifacts', params: { type: 'object', properties: { prefix: { type: 'string' } } } };
+        const bind = createSchemaExampleValidator([LIST, BATCH]);
+
+        it('rejects a payload sharing no field with the tool it is tagged for', () => {
+            const errors = bind({ tool: 'list_artifacts', value: { tool_name: 'x', inputs: [] } });
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toContain("declares none of the payload's fields (tool_name, inputs)");
+        });
+
+        it('accepts any overlap, so an optional subset is not second-guessed', () => {
+            expect(bind({ tool: 'list_artifacts', value: { prefix: 'files/' } })).toEqual([]);
+        });
+
+        it('stays quiet on an empty payload and on a schema that declares nothing', () => {
+            const open = createSchemaExampleValidator([{ name: 'anything', params: { type: 'object' } }]);
+
+            expect(bind({ tool: 'list_artifacts', value: {} })).toEqual([]);
+            expect(open({ tool: 'anything', value: { whatever: 1 } })).toEqual([]);
+        });
+    });
+
     it('reports the offending key for an unexpected property', () => {
         const errors = validate({ tool: 'fetch_document', value: { document_id: 'a' } });
         expect(errors[0]).toContain("required property 'id'");

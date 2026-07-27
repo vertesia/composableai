@@ -25,6 +25,12 @@ export interface ToolDispatchDescriptor {
     inputField?: string;
     /** Tool names the dispatcher refuses at runtime. */
     deny?: readonly string[];
+    /**
+     * True when the runtime strips a leading `+` or `-` before resolving the name — the selection
+     * prefixes that add to, or remove from, the default toolset. Without this the documented
+     * `+learn_web_search` form reads as an unregistered tool.
+     */
+    stripsSelectionPrefix?: boolean;
 }
 
 export interface ToolSchemaEntry {
@@ -332,12 +338,18 @@ export function resolveDispatchedNames(
         return [];
     }
     const deny = new Set(dispatch.deny ?? []);
-    return toolNamesAtPath(value, dispatch.field).map((name) => {
+    return toolNamesAtPath(value, dispatch.field).map((written) => {
+        const name =
+            dispatch.stripsSelectionPrefix && (written.startsWith('+') || written.startsWith('-'))
+                ? written.slice(1)
+                : written;
         if (deny.has(name)) {
-            return { name, problem: `names '${name}', which this dispatcher refuses at runtime` };
+            return { name, problem: `names '${written}', which this dispatcher refuses at runtime` };
         }
         const target = lookup(name);
-        return target ? { name, tool: target } : { name, problem: `names '${name}', which is not a registered tool` };
+        return target
+            ? { name, tool: target }
+            : { name, problem: `names '${written}', which is not a registered tool` };
     });
 }
 
@@ -374,6 +386,34 @@ export function pairDispatchedInputs(
 }
 
 /** Mirrors the agent runtime's AJV configuration, so the build judges what the runtime judges. */
+/**
+ * Catch a tag that names the wrong tool.
+ *
+ * A tag is a claim that the payload below is *this tool's* payload, but schema validation only
+ * enforces that claim for schemas that close over their properties. Against a permissive one, a
+ * payload meant for some other tool sails through: a `batch_execute` call tagged `list_artifacts`
+ * passed for months, and with it a dispatched tool name that does not exist — the tag had moved
+ * the example out of reach of the very check that would have caught it.
+ *
+ * Sharing not one key with the tool's schema is the signal. It is deliberately weak: any overlap
+ * at all is accepted, so a payload that merely uses an optional subset stays quiet, and a schema
+ * that declares nothing is skipped rather than guessed at.
+ */
+function checkBinding(toolName: string, tool: ToolSchemaEntry, value: unknown): string[] {
+    if (!isSchemaObject(tool.params) || Array.isArray(value) || !isSchemaObject(value)) {
+        return [];
+    }
+    const declared = new Set(propertyNamesOf([descend(tool.params, [tool.params])]));
+    const keys = Object.keys(value);
+    if (declared.size === 0 || keys.length === 0 || keys.some((key) => declared.has(key))) {
+        return [];
+    }
+    return [
+        `is tagged for '${toolName}', which declares none of the payload's fields ` +
+            `(${keys.join(', ')}); the tag names the wrong tool`,
+    ];
+}
+
 function createAjv(): Ajv {
     return new Ajv({ allErrors: true, coerceTypes: true, strict: false });
 }
@@ -438,6 +478,7 @@ export function createSchemaExampleValidator(
             value,
             (detail) => `does not satisfy the schema of '${toolName}': ${detail}`,
         );
+        errors.push(...checkBinding(toolName, tool, value));
 
         if (!tool.dispatch) {
             return errors;
