@@ -994,6 +994,13 @@ export interface ContentTypeIntakePolicy {
          * print.
          */
         render_dpi?: number;
+        /**
+         * Model execution config for the page-conversion interaction (method 'llm'/'auto' ->
+         * sys:ConvertPageToMarkdown, method 'custom' -> the custom interaction). Lets the visual
+         * conversion run on a cheaper/faster model (e.g. a flash model) than extraction. When
+         * unset, conversion uses the run's model config or the project default model.
+         */
+        config?: InteractionExecutionConfiguration;
     };
     /** Controls schema-property extraction after type assignment. */
     extraction?: {
@@ -1001,6 +1008,13 @@ export interface ContentTypeIntakePolicy {
         source?: 'auto' | 'text' | 'vision' | 'mixed';
         instructions?: string;
         interaction?: string;
+        /**
+         * Model execution config for the standard property-extraction interaction
+         * (sys:ExtractInformation). Lets extraction run on a different model/environment than the
+         * visual page conversion. When unset, extraction uses the run's model config or the project
+         * default model. (Grounded extraction is configured separately via grounding.config.)
+         */
+        config?: InteractionExecutionConfiguration;
         /** Which pages extraction sees: everything or the locate result. */
         scope?: IntakePageScope;
         /** Static page ranges extraction sees (wins over `scope` when set). */
@@ -1354,6 +1368,15 @@ export const ContentTypeIntakePolicySchema = {
                 },
                 scope: IntakePageScopeSchema,
                 page_ranges: IntakePageRangesSchema,
+                render_dpi: {
+                    type: 'integer',
+                    minimum: 72,
+                    description:
+                        'DPI at which each page is rendered to the image the LLM converts. Default 150 — the ' +
+                        'accuracy/cost sweet spot. Raise only for very fine print.',
+                    nullable: true,
+                },
+                config: IntakeExecutionConfigurationSchema,
             },
         },
         extraction: {
@@ -1385,6 +1408,7 @@ export const ContentTypeIntakePolicySchema = {
                     description: 'Interaction id used for extraction. Omit to use the system extractor.',
                     nullable: true,
                 },
+                config: IntakeExecutionConfigurationSchema,
                 scope: IntakePageScopeSchema,
                 page_ranges: IntakePageRangesSchema,
                 max_pages: {
