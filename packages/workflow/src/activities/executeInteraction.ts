@@ -215,6 +215,9 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             result: completionResult,
         });
     } catch (error: unknown) {
+        if (error instanceof ApplicationFailure && error.type === 'InteractionRateLimitRetry') {
+            throw error;
+        }
         const executionError = toExecutionError(error);
         log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
         if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
@@ -331,6 +334,24 @@ export async function executeInteractionFromActivity(
     };
 
     const result_schema = params.result_schema;
+
+    const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
+    const slot = await client.interactions.requestSlot({
+        interaction: interactionName,
+        environment_id: config.environment,
+        model_id: config.model,
+        rate_limit_id: rateLimitId,
+    });
+    if (slot.delay_ms > 0) {
+        throw ApplicationFailure.create({
+            message: `Interaction admission delayed for ${slot.delay_ms}ms`,
+            type: 'InteractionRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: slot.delay_ms,
+            details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
+        });
+    }
+    workflow.rate_limit_id = rateLimitId;
 
     log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags, workflow });
 

@@ -1239,6 +1239,8 @@ export interface PopulatedExecutionRun<P = unknown> extends BaseExecutionRun<P> 
 }
 
 export interface ExecutionRunWorkflow {
+    /** Stable identifier pairing an interaction rate-limit admission with its completion feedback. */
+    rate_limit_id?: string;
     /**
      * The Temporal Workflow Run ID related to this Interaction Run.
      *
@@ -1391,7 +1393,10 @@ export interface RateLimitRequestPayload {
     interaction: string;
     environment_id?: string;
     model_id?: string;
+    /** @deprecated Use rate_limit_id for admission/completion correlation. */
     workflow_run_id?: string;
+    /** Stable per-execution admission identifier. Preferred over the legacy workflow_run_id. */
+    rate_limit_id?: string;
     modalities?: PromptModalities;
 }
 

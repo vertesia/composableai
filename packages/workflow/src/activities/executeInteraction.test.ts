@@ -44,6 +44,7 @@ async function mockInteractionError(
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const mockClient = {
         interactions: {
+            requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }),
             executeByName: vi.fn().mockRejectedValue(error),
         },
     } as unknown as VertesiaClient;
@@ -56,6 +57,29 @@ async function mockInteractionError(
 }
 
 describe('executeInteraction retryability', () => {
+    it('should durably retry before executing when the LLM limiter returns a delay', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const executeByName = vi.fn();
+        const mockClient = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 5_000 }),
+                executeByName,
+            },
+        } as unknown as VertesiaClient;
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params: createPayload().params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            type: 'InteractionRateLimitRetry',
+            nextRetryDelay: 5_000,
+            nonRetryable: false,
+        } satisfies Partial<ApplicationFailure>);
+        expect(executeByName).not.toHaveBeenCalled();
+    });
+
     it('should forward the execution config object to interaction execution', async () => {
         const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
         const httpTimeout = {
@@ -68,8 +92,10 @@ describe('executeInteraction retryability', () => {
             status: ExecutionRunStatus.completed,
             result: [],
         });
+        const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 0 });
         const mockClient = {
             interactions: {
+                requestSlot,
                 executeByName,
             },
         } as unknown as VertesiaClient;
@@ -102,8 +128,20 @@ describe('executeInteraction retryability', () => {
                     model: 'model-id',
                     http_timeout: httpTimeout,
                 }),
+                workflow: expect.objectContaining({
+                    rate_limit_id: expect.stringMatching(/:testInteraction$/),
+                }),
             }),
         );
+        expect(requestSlot).toHaveBeenCalledWith(
+            expect.objectContaining({
+                interaction: 'testInteraction',
+                environment_id: 'env-id',
+                model_id: 'model-id',
+                rate_limit_id: expect.stringMatching(/:testInteraction$/),
+            }),
+        );
+        expect(requestSlot.mock.calls[0][0].rate_limit_id).toBe(executeByName.mock.calls[0][1].workflow.rate_limit_id);
     });
 
     it('should leave 412 rendition-in-progress failures retryable', async () => {
