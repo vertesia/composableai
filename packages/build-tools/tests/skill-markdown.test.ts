@@ -104,6 +104,21 @@ describe('tagged examples', () => {
         expect(result.errors).toEqual([]);
     });
 
+    /**
+     * A file authored on Windows leaves a `\r` on every line, and a fence pattern built from `.`
+     * cannot cross one — so every fence in such a file went unseen: tags unstripped and reaching
+     * the model, payloads unvalidated, and no error to say so. The tag must go and the file's own
+     * line endings must survive.
+     */
+    it('handles a fence in a CRLF document without changing its line endings', () => {
+        const source = 'Text\r\n\r\n```json tool=batch_execute\r\n{ "a": 1 }\r\n```\r\n';
+        const result = preprocessSkillMarkdown(source, catalog);
+
+        expect(result.markdown).toBe('Text\r\n\r\n```json\r\n{ "a": 1 }\r\n```\r\n');
+        expect(result.examples).toMatchObject([{ tool: 'batch_execute', lang: 'json', value: { a: 1 } }]);
+        expect(result.errors).toEqual([]);
+    });
+
     it('leaves an untagged fence entirely alone and records no example', () => {
         const source = 'Text\n\n```json\n{ "a": 1 }\n```\n';
         const result = preprocessSkillMarkdown(source, catalog);

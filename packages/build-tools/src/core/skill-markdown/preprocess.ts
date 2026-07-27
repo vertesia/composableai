@@ -129,8 +129,15 @@ const CONSTRUCT = /\{@([A-Za-z][A-Za-z0-9_]*)([^}]*)\}/g;
  */
 const FENCED_CONSTRUCT = /\{@(?:tool|skill|param)\b[^}]*\}/g;
 
-/** A code fence line: up to 3 spaces of indent, a run of markers, then the info string. */
-const FENCE = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*(.*)$/;
+/**
+ * A code fence line: up to 3 spaces of indent, a run of markers, then the info string.
+ *
+ * The info string is spelled `[^\r\n]*` rather than `.*` because lines are split on `\n` alone, so
+ * a CRLF file leaves a trailing `\r` that `.` — which excludes line terminators — cannot cross. The
+ * earlier spelling matched no fence at all in such a file: tags went unstripped and unvalidated,
+ * and the in-fence construct guard never ran, all without a single error.
+ */
+const FENCE = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*([^\r\n]*)\r?$/;
 
 /** Inline code spans, masked so `` `{@tool x}` `` can document the syntax without invoking it. */
 const INLINE_CODE = /(`+)(?:[^`]|(?!\1)`)*\1/g;
@@ -347,10 +354,13 @@ export function preprocessSkillMarkdown(
 
         // Rewrite the opening line only when there is a tag to remove, so untagged fences keep
         // their exact spelling — a preprocessor that reformats untouched prose is a liability.
+        // The line's own terminator is carried over for the same reason: rewriting one CRLF line
+        // as LF would leave the file mixed.
+        const cr = lines[i].endsWith('\r') ? '\r' : '';
         const open =
             tagIndex === -1
                 ? lines[i]
-                : `${indent}${marker}${parts.filter((_, index) => index !== tagIndex).join(' ')}`;
+                : `${indent}${marker}${parts.filter((_, index) => index !== tagIndex).join(' ')}${cr}`;
         out.push(open, ...body);
         if (closed) {
             out.push(lines[j]);
