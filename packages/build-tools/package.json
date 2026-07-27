@@ -42,11 +42,6 @@
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
-        "@rollup/plugin-commonjs": "^28.0.3",
-        "@rollup/plugin-json": "^6.1.0",
-        "@rollup/plugin-node-resolve": "^16.0.1",
-        "@rollup/plugin-terser": "^0.4.4",
-        "@rollup/plugin-typescript": "^12.1.2",
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
         "ajv": "^8.20.0",
