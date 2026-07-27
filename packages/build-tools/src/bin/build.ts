@@ -35,9 +35,8 @@
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { loadSkillCatalog } from '../core/skill-markdown/load-catalog.js';
 import { createSkillTransformer, isSkillTransformer } from '../core/transformers/skill.js';
-import type { PreprocessSkillMarkdownOptions } from '../core/skill-markdown/preprocess.js';
 import type { TransformerRule } from '../core/types.js';
 import { transformImports } from '../import-transform/index.js';
 import { resolveConfig, resolveSkillCatalogPath, VertesiaBuildConfigError } from './config.js';
@@ -62,38 +61,6 @@ function readPackageJson(cwd: string): Record<string, unknown> {
     }
 }
 
-/**
- * Load the catalog module named by `vertesia-build.skillCatalog`.
- *
- * The module's default export (or its named `tools`/`skills` exports) supplies the sets the
- * preprocessor resolves against. Arrays are accepted for JSON-friendliness.
- */
-async function loadSkillCatalog(modulePath: string): Promise<PreprocessSkillMarkdownOptions> {
-    const loaded = (await import(pathToFileURL(modulePath).href)) as Record<string, unknown>;
-    const source = (loaded.default ?? loaded) as Partial<PreprocessSkillMarkdownOptions> & {
-        tools?: Iterable<string>;
-        skills?: Iterable<string>;
-        ambiguousTools?: Iterable<string>;
-        ambiguousSkills?: Iterable<string>;
-        unvalidatableTools?: Iterable<string>;
-        exampleLanguages?: Iterable<string>;
-    };
-
-    if (!source.tools || !source.skills) {
-        fail(`skillCatalog module ${modulePath} must export { tools, skills }.`);
-    }
-    return {
-        tools: new Set(source.tools),
-        skills: new Set(source.skills),
-        ambiguousTools: source.ambiguousTools ? new Set(source.ambiguousTools) : undefined,
-        ambiguousSkills: source.ambiguousSkills ? new Set(source.ambiguousSkills) : undefined,
-        unvalidatableTools: source.unvalidatableTools ? new Set(source.unvalidatableTools) : undefined,
-        validateExample: source.validateExample,
-        skillToolPrefix: source.skillToolPrefix,
-        exampleLanguages: source.exampleLanguages ? new Set(source.exampleLanguages) : undefined,
-    };
-}
-
 async function main(): Promise<void> {
     const cwd = process.cwd();
     const pkg = readPackageJson(cwd);
@@ -110,7 +77,12 @@ async function main(): Promise<void> {
     }
 
     if (catalogPath) {
-        const markdown = await loadSkillCatalog(catalogPath);
+        let markdown: Awaited<ReturnType<typeof loadSkillCatalog>>;
+        try {
+            markdown = await loadSkillCatalog(catalogPath);
+        } catch (error) {
+            fail((error as Error).message);
+        }
         const bound = createSkillTransformer({ markdown });
         // Swap by identity, not by pattern: a consumer's own transformer registered for the same
         // files must not be silently replaced by ours.

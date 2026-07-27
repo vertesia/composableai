@@ -143,4 +143,60 @@ describe('vertesiaDevServerPlugin', () => {
             );
         });
     });
+
+    // The build gets its catalog from `vertesia-build.skillCatalog`; the dev path had no way
+    // to receive one. Every skill body using the markup therefore failed under `vite dev` and
+    // `vitest` while building fine -- the two paths disagreed about the same file.
+    describe('skill catalog', () => {
+        function writeSkill(body: string): string {
+            const skillDir = join(workDir, 'catalog-skill');
+            mkdirSync(skillDir, { recursive: true });
+            writeFileSync(
+                join(skillDir, 'SKILL.md'),
+                `---\nname: catalog_skill\ndescription: d\n---\n${body}\n`,
+                'utf-8',
+            );
+            return join(skillDir, 'SKILL.md');
+        }
+
+        it('resolves constructs against a catalog passed directly', async () => {
+            const file = writeSkill('Use {@tool real_tool} with {@skill other}.');
+            const plugin = getPlugin({
+                skillCatalog: { tools: new Set(['real_tool']), skills: new Set(['other']) },
+            });
+
+            const code = await loadHook(plugin, file);
+            expect(code).toContain('`real_tool`');
+            expect(code).toContain('learn_other');
+            expect(code).not.toContain('{@');
+        });
+
+        it('fails closed on an unresolved reference rather than emitting it', async () => {
+            const file = writeSkill('Use {@tool ghost_tool}.');
+            const plugin = getPlugin({ skillCatalog: { tools: new Set(), skills: new Set() } });
+
+            await expect(loadHook(plugin, file)).rejects.toThrow(/no provider registers/);
+        });
+
+        it('reads vertesia-build.skillCatalog from the package.json of the root', async () => {
+            writeFileSync(
+                join(workDir, 'catalog.mjs'),
+                'export const tools = ["from_pkg_json"];\nexport const skills = [];\n',
+                'utf-8',
+            );
+            writeFileSync(
+                join(workDir, 'package.json'),
+                JSON.stringify({ name: 'x', 'vertesia-build': { skillCatalog: './catalog.mjs' } }),
+                'utf-8',
+            );
+            const file = writeSkill('Use {@tool from_pkg_json}.');
+
+            const plugin = getPlugin();
+            (plugin as unknown as { configResolved: (c: { root: string }) => void }).configResolved({
+                root: workDir,
+            });
+
+            expect(await loadHook(plugin, file)).toContain('`from_pkg_json`');
+        });
+    });
 });

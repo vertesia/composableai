@@ -41,6 +41,10 @@ export {
 } from './core/compilers/widget.js';
 // Parsers
 export { type FrontmatterResult, parseFrontmatter } from './core/parsers/frontmatter.js';
+export {
+    loadSkillCatalog,
+    readPackageJson,
+} from './core/skill-markdown/load-catalog.js';
 // Skill markdown preprocessor: `{@tool …}` / `{@skill …}` resolution and tagged-example
 // validation. Pure — the consuming build supplies the catalog and the schema validator.
 export {
