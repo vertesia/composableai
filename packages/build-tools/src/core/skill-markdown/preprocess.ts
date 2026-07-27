@@ -146,7 +146,29 @@ const INLINE_CODE = /(`+)(?:[^`]|(?!\1)`)*\1/g;
 const MASK_OPEN = '\u0000';
 const MASK_CLOSE = '\u0001';
 
+/** An ATX heading: up to 3 spaces of indent, 1-6 `#`, its text, optional closing `#`s. */
+const HEADING = /^ {0,3}#{1,6}[ \t]+(.*?)[ \t]*#*[ \t]*\r?$/;
+
 const TAG_PREFIX = 'tool=';
+
+/**
+ * The tool a heading names, when it names exactly one — `## batch_execute`, `` ## `batch_execute` ``
+ * or `## {@tool batch_execute}`.
+ *
+ * A section titled after a tool is the author stating, in prose, which tool the examples below
+ * belong to. That is independent evidence about the tag, and the only kind available: field overlap
+ * cannot tell two tools apart when both declare `id`.
+ */
+function toolNamedByHeading(line: string, tools: ReadonlySet<string>): string | undefined {
+    const heading = HEADING.exec(line);
+    if (!heading) {
+        return undefined;
+    }
+    const named = heading[1]
+        .replace(/^\{@tool\s+([A-Za-z][A-Za-z0-9_]*)\}$/, '$1')
+        .replace(/^`([A-Za-z][A-Za-z0-9_]*)`$/, '$1');
+    return tools.has(named) ? named : undefined;
+}
 
 const DEFAULT_EXAMPLE_LANGUAGES: ReadonlySet<string> = new Set(['json']);
 
@@ -302,9 +324,18 @@ export function preprocessSkillMarkdown(
     const examples: SkillExample[] = [];
     const errors: string[] = [];
 
+    // The tool named by the most recent heading, if it named one. Any other heading clears it, so a
+    // later unrelated section never inherits the claim.
+    let headingTool: string | undefined;
+    let headingLine = 0;
+
     for (let i = 0; i < lines.length; ) {
         const fence = FENCE.exec(lines[i]);
         if (!fence) {
+            if (HEADING.test(lines[i])) {
+                headingTool = toolNamedByHeading(lines[i], options.tools);
+                headingLine = i + 1;
+            }
             out.push(renderLine(lines[i], i + 1, options, references, errors));
             i++;
             continue;
@@ -368,6 +399,15 @@ export function preprocessSkillMarkdown(
         i = closed ? j + 1 : j;
 
         if (tag !== undefined) {
+            if (headingTool !== undefined && tag !== headingTool) {
+                // Both were written deliberately, so one of them is wrong and only the author knows
+                // which. Schema validation cannot arbitrate: it would have accepted either.
+                errors.push(
+                    `line ${openLine}: fence is tagged '${TAG_PREFIX}${tag}' under the heading for ` +
+                        `'${headingTool}' (line ${headingLine}); the tag and the heading name ` +
+                        'different tools',
+                );
+            }
             examples.push(validateFenceExample(tag, lang, body.join('\n'), openLine, options, errors));
         }
     }

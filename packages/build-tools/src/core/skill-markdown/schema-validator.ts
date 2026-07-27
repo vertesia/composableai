@@ -387,7 +387,7 @@ export function pairDispatchedInputs(
 
 /** Mirrors the agent runtime's AJV configuration, so the build judges what the runtime judges. */
 /**
- * Catch a tag that names the wrong tool.
+ * Sanity-check that a tagged payload plausibly belongs to the tool it names.
  *
  * A tag is a claim that the payload below is *this tool's* payload, but schema validation only
  * enforces that claim for schemas that close over their properties. Against a permissive one, a
@@ -395,9 +395,13 @@ export function pairDispatchedInputs(
  * passed for months, and with it a dispatched tool name that does not exist — the tag had moved
  * the example out of reach of the very check that would have caught it.
  *
- * Sharing not one key with the tool's schema is the signal. It is deliberately weak: any overlap
- * at all is accepted, so a payload that merely uses an optional subset stays quiet, and a schema
- * that declares nothing is skipped rather than guessed at.
+ * Sharing not one field with the tool's schema is the signal, and it detects only gross mismatch.
+ * Generic names — `id`, `name`, `query` — are declared by many tools, so a wrongly tagged payload
+ * built from those still passes. This is a floor, not proof of correct binding; heading agreement
+ * (see `preprocessSkillMarkdown`) covers the cases where the author stated the tool in prose.
+ *
+ * Deliberately weak in the other direction too: any overlap at all is accepted, so a payload using
+ * an optional subset stays quiet, and a schema that declares nothing is skipped rather than guessed.
  */
 function checkBinding(toolName: string, tool: ToolSchemaEntry, value: unknown): string[] {
     if (!isSchemaObject(tool.params) || Array.isArray(value) || !isSchemaObject(value)) {
@@ -410,7 +414,7 @@ function checkBinding(toolName: string, tool: ToolSchemaEntry, value: unknown): 
     }
     return [
         `is tagged for '${toolName}', which declares none of the payload's fields ` +
-            `(${keys.join(', ')}); the tag names the wrong tool`,
+            `(${keys.join(', ')}); check that the tag names the intended tool`,
     ];
 }
 

@@ -119,6 +119,36 @@ describe('tagged examples', () => {
         expect(result.errors).toEqual([]);
     });
 
+    /**
+     * A section titled after a tool states which tool its examples belong to. That is the only
+     * evidence that distinguishes two tools declaring the same generic fields, which is exactly
+     * where the field-overlap check gives up.
+     */
+    describe('heading agreement', () => {
+        it('reports a tag that contradicts the heading it sits under', () => {
+            const source = '## batch_execute\n\n```json tool=fetch_document\n{ "id": "a" }\n```\n';
+            const errors = preprocessSkillMarkdown(source, catalog).errors;
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toContain("tagged 'tool=fetch_document' under the heading for 'batch_execute'");
+        });
+
+        it('accepts the heading written as a construct or a code span', () => {
+            for (const heading of ['## {@tool batch_execute}', '## `batch_execute`']) {
+                const source = `${heading}\n\n\`\`\`json tool=batch_execute\n{ "a": 1 }\n\`\`\`\n`;
+                expect(preprocessSkillMarkdown(source, catalog).errors, heading).toEqual([]);
+            }
+        });
+
+        it('says nothing when the heading names no tool, or a later one clears it', () => {
+            const prose = '## Batch operations\n\n```json tool=fetch_document\n{ "id": "a" }\n```\n';
+            const cleared = '## batch_execute\n\n### Reading a document\n\n```json tool=fetch_document\n{}\n```\n';
+
+            expect(preprocessSkillMarkdown(prose, catalog).errors).toEqual([]);
+            expect(preprocessSkillMarkdown(cleared, catalog).errors).toEqual([]);
+        });
+    });
+
     it('leaves an untagged fence entirely alone and records no example', () => {
         const source = 'Text\n\n```json\n{ "a": 1 }\n```\n';
         const result = preprocessSkillMarkdown(source, catalog);
