@@ -30,6 +30,13 @@ function createMessage(message: string, request: Request, status: number, payloa
     return msg;
 }
 
+export interface RateLimitMetadata {
+    reason: 'pacing' | 'quota';
+    retryAfterMs: number;
+    resource?: string;
+    window?: string;
+}
+
 export class RequestError extends Error {
     status: number;
     payload: unknown;
@@ -37,7 +44,15 @@ export class RequestError extends Error {
     request_info: string;
     displayDetails: boolean;
     original_message: string;
-    constructor(message: string, request: Request, status: number, payload: unknown, displayDetails = true) {
+    rateLimit?: RateLimitMetadata;
+    constructor(
+        message: string,
+        request: Request,
+        status: number,
+        payload: unknown,
+        displayDetails = true,
+        rateLimit?: RateLimitMetadata,
+    ) {
         super(createMessage(message, request, status, payload, displayDetails));
         this.original_message = message;
         this.request = request;
@@ -45,6 +60,7 @@ export class RequestError extends Error {
         this.payload = payload;
         this.request_info = `${request.method} ${request.url} => ${status}`;
         this.displayDetails = displayDetails;
+        this.rateLimit = rateLimit;
     }
 
     get details() {
@@ -53,14 +69,28 @@ export class RequestError extends Error {
 }
 
 export class ServerError extends RequestError {
-    constructor(message: string, req: Request, status: number, payload: unknown, displayDetails = true) {
-        super(message, req, status, payload, displayDetails);
+    constructor(
+        message: string,
+        req: Request,
+        status: number,
+        payload: unknown,
+        displayDetails = true,
+        rateLimit?: RateLimitMetadata,
+    ) {
+        super(message, req, status, payload, displayDetails, rateLimit);
     }
 
     updateDetails(details: unknown) {
         if (details !== this.details) {
             const payload = isRecord(this.payload) ? { ...this.payload, details } : { details };
-            return new ServerError(this.original_message, this.request, this.status, payload, this.displayDetails);
+            return new ServerError(
+                this.original_message,
+                this.request,
+                this.status,
+                payload,
+                this.displayDetails,
+                this.rateLimit,
+            );
         } else {
             return this;
         }

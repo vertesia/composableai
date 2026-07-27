@@ -101,6 +101,26 @@ describe('Test requests', () => {
         assert.equal(attempts, 1);
         assert.equal((error as { status?: number }).status, 503);
     });
+    it('does not type an unknown 429 as a generic API rate-limit response', async () => {
+        const unknownClient = new FetchClient(
+            'http://example.test',
+            async () =>
+                new Response(JSON.stringify({ message: 'provider overloaded' }), {
+                    status: 429,
+                    headers: { 'content-type': 'application/json', 'retry-after': '1' },
+                }),
+        );
+
+        let error: unknown;
+        try {
+            await unknownClient.get('/execute');
+        } catch (err: unknown) {
+            error = err;
+        }
+
+        assert.equal((error as { status?: number }).status, 429);
+        assert.equal((error as { rateLimit?: unknown }).rateLimit, undefined);
+    });
     it('retries opted-in transient responses for idempotent methods', async () => {
         let attempts = 0;
         const retryClient = new FetchClient('http://example.test', async () => {
@@ -160,6 +180,8 @@ describe('Test requests', () => {
                     'content-type': 'application/json',
                     'retry-after': '3600',
                     'x-ratelimit-reason': 'quota',
+                    'x-ratelimit-resource': 'content_read',
+                    'x-ratelimit-window': 'quota',
                 },
             });
         });
@@ -171,6 +193,12 @@ describe('Test requests', () => {
         }
         assert.equal(attempts, 1);
         assert.equal((error as { status?: number }).status, 429);
+        assert.deepEqual((error as { rateLimit?: unknown }).rateLimit, {
+            reason: 'quota',
+            retryAfterMs: 3_600_000,
+            resource: 'content_read',
+            window: 'quota',
+        });
 
         // A pacing hint above maxWaitMs surfaces the 429 instead of waiting.
         let slowAttempts = 0;
@@ -193,6 +221,12 @@ describe('Test requests', () => {
         }
         assert.equal(slowAttempts, 1);
         assert.equal((slowError as { status?: number }).status, 429);
+        assert.deepEqual((slowError as { rateLimit?: unknown }).rateLimit, {
+            reason: 'pacing',
+            retryAfterMs: 60_000,
+            resource: undefined,
+            window: undefined,
+        });
 
         // Persistent pacing exhausts its independent budget (default 2 retries = 3 attempts max).
         let stubbornAttempts = 0;
