@@ -35,6 +35,8 @@ export interface InteractionExecutionError {
     message: string;
     data?: unknown;
     retryable?: boolean;
+    /** Provider-supplied retry delay preserved across synchronous and async workflow execution. */
+    retry_after_ms?: number;
 }
 
 /**

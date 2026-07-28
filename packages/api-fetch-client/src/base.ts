@@ -199,6 +199,13 @@ function normalizeRetryPolicy(policy: IRequestRetryPolicy): NormalizedRetryPolic
 }
 
 function retryAfterDelayMs(res: Response): number | undefined {
+    const exact = res.headers.get('x-retry-after-ms');
+    if (exact) {
+        const exactMs = Number(exact);
+        if (Number.isFinite(exactMs) && exactMs >= 0) {
+            return exactMs;
+        }
+    }
     const retryAfter = res.headers.get('retry-after');
     if (!retryAfter) {
         return undefined;

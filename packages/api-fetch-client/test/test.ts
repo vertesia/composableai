@@ -122,6 +122,26 @@ describe('Test requests', () => {
         assert.equal((error as { rateLimit?: unknown }).rateLimit, undefined);
         assert.equal((error as { retryAfterMs?: number }).retryAfterMs, 1_000);
     });
+    it('preserves an exact generic retry delay without typing it as an API quota response', async () => {
+        const unknownClient = new FetchClient(
+            'http://example.test',
+            async () =>
+                new Response(JSON.stringify({ message: 'provider overloaded' }), {
+                    status: 429,
+                    headers: {
+                        'content-type': 'application/json',
+                        'retry-after': '2',
+                        'x-retry-after-ms': '1234',
+                    },
+                }),
+        );
+
+        await assert.rejects(unknownClient.get('/execute'), (error: unknown) => {
+            assert.equal((error as { rateLimit?: unknown }).rateLimit, undefined);
+            assert.equal((error as { retryAfterMs?: number }).retryAfterMs, 1_234);
+            return true;
+        });
+    });
     it('retries opted-in transient responses for idempotent methods', async () => {
         let attempts = 0;
         const retryClient = new FetchClient('http://example.test', async () => {
