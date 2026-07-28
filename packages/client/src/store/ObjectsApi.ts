@@ -3,6 +3,7 @@ import {
     type BulkObjectCreateOptions,
     type BulkObjectCreateResult,
     type BulkObjectDeleteResult,
+    type BulkObjectUpdateOptions,
     type BulkObjectUpdateResult,
     type Collection,
     type ComplexSearchPayload,
@@ -459,12 +460,15 @@ export class ObjectsApi extends ApiTopic {
         return this.del(`/${idOrIds}`);
     }
 
-    bulkUpdate(updates: Record<string, Record<string, unknown>>): Promise<BulkObjectUpdateResult> {
+    bulkUpdate(
+        updates: Record<string, Record<string, unknown>>,
+        options?: BulkObjectUpdateOptions,
+    ): Promise<BulkObjectUpdateResult> {
         const ids = Object.keys(updates);
         return this.client.runOperation({
             name: 'update',
             ids,
-            params: updates,
+            params: options ? { updates, ...options } : updates,
         }) as Promise<BulkObjectUpdateResult>;
     }
 
