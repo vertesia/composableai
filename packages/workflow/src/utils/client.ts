@@ -4,7 +4,7 @@
 
 import { activityInfo } from '@temporalio/activity';
 import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
-import { REQUEST_ORIGIN_HEADER, type WorkflowExecutionBaseParams } from '@vertesia/common';
+import type { WorkflowExecutionBaseParams } from '@vertesia/common';
 import { WorkflowParamNotFoundError } from '../errors.js';
 
 // Short default timeout for ordinary workflow -> server/store calls (object GETs, status updates,
@@ -57,15 +57,10 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
         tokenServerUrl: token.iss,
         apikey: payload.auth_token,
         timeout: parseWorkflowFetchTimeoutMs(),
-        ...(requestPrefix || payload.request_origin
+        ...(requestPrefix
             ? {
                   onRequest: (request: Request) => {
-                      if (payload.request_origin) {
-                          request.headers.set(REQUEST_ORIGIN_HEADER, payload.request_origin);
-                      }
-                      if (requestPrefix) {
-                          request.headers.set('x-request-id', `${requestPrefix}:${requestSequence++}`);
-                      }
+                      request.headers.set('x-request-id', `${requestPrefix}:${requestSequence++}`);
                   },
               }
             : {}),
