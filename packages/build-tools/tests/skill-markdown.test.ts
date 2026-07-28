@@ -73,6 +73,39 @@ describe('what must not be touched', () => {
         expect(result.references).toEqual([]);
     });
 
+    /**
+     * The masking used to be one regex with a backreference, whose body could match a backtick two
+     * ways — quadratic on a run of them (25ms at 8k backticks, and rising fourfold per doubling).
+     * These pin the behaviour the regex had, so the scanner that replaced it stays equivalent.
+     */
+    describe('inline code masking', () => {
+        it('leaves an unclosed run as literal text and still masks a later span', () => {
+            const source = 'A ``` stray run, then `{@tool search_documents}` here.';
+
+            expect(preprocessSkillMarkdown(source, catalog).markdown).toBe(source);
+        });
+
+        it('masks a double-backtick span containing a single backtick', () => {
+            const source = 'Write ``a `b` c`` verbatim.';
+
+            expect(preprocessSkillMarkdown(source, catalog).markdown).toBe(source);
+        });
+
+        it('masks several spans on one line, substituting only between them', () => {
+            const result = preprocessSkillMarkdown('`{@tool a}` {@tool search_documents} `{@skill b}`', catalog);
+
+            expect(result.markdown).toBe('`{@tool a}` `search_documents` `{@skill b}`');
+            expect(result.references.map((r) => r.name)).toEqual(['search_documents']);
+        });
+
+        it('stays fast on a long run of backticks', () => {
+            const started = performance.now();
+            preprocessSkillMarkdown('`'.repeat(20000), catalog);
+
+            expect(performance.now() - started).toBeLessThan(1000);
+        });
+    });
+
     it('does not substitute inside a fenced block', () => {
         const source = ['Example source:', '', '```markdown', 'Use {@skill workstreams}.', '```', ''].join('\n');
         expect(preprocessSkillMarkdown(source, catalog).markdown).toBe(source);

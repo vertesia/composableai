@@ -137,17 +137,68 @@ const FENCED_CONSTRUCT = /\{@(?:tool|skill|param)\b[^}]*\}/g;
  * earlier spelling matched no fence at all in such a file: tags went unstripped and unvalidated,
  * and the in-fence construct guard never ran, all without a single error.
  */
-const FENCE = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*([^\r\n]*)\r?$/;
+// The info string is anchored on a non-blank first character so it cannot overlap the run of
+// spaces before it. With both able to match a tab, a line of tabs gave the engine quadratically
+// many ways to split the same text — harmless on skill sources, but this is a published library
+// and its input is whatever a consumer passes. The empty alternative keeps group 3 a string.
+const FENCE = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*([^ \t\r\n][^\r\n]*|)\r?$/;
 
-/** Inline code spans, masked so `` `{@tool x}` `` can document the syntax without invoking it. */
-const INLINE_CODE = /(`+)(?:[^`]|(?!\1)`)*\1/g;
+/**
+ * Inline code spans, masked so `` `{@tool x}` `` can document the syntax without invoking it.
+ *
+ * Scanned rather than matched: the regex form needs a backreference and a body that can match a
+ * backtick two ways, which costs quadratic time on a run of them. This walks each opening run once
+ * and looks for the first equal-length run after it, which is what the regex resolved to anyway.
+ */
+function maskInlineCode(source: string, masked: string[]): string {
+    let out = '';
+    let at = 0;
+    while (at < source.length) {
+        const open = source.indexOf('`', at);
+        if (open < 0) {
+            return out + source.slice(at);
+        }
+        let run = open;
+        while (run < source.length && source[run] === '`') {
+            run++;
+        }
+        const close = source.indexOf('`'.repeat(run - open), run);
+        if (close < 0) {
+            // No closing run: the backticks are literal text, and the search resumes after them so
+            // a later span in the same line is still masked.
+            out += source.slice(at, run);
+            at = run;
+            continue;
+        }
+        const end = close + (run - open);
+        masked.push(source.slice(open, end));
+        out += `${source.slice(at, open)}${MASK_OPEN}${masked.length - 1}${MASK_CLOSE}`;
+        at = end;
+    }
+    return out;
+}
 
 /** NUL cannot occur in these sources, so masking round-trips even through numeric prose. */
 const MASK_OPEN = '\u0000';
 const MASK_CLOSE = '\u0001';
 
-/** An ATX heading: up to 3 spaces of indent, 1-6 `#`, its text, optional closing `#`s. */
-const HEADING = /^ {0,3}#{1,6}[ \t]+(.*?)[ \t]*#*[ \t]*\r?$/;
+/**
+ * An ATX heading: up to 3 spaces of indent, 1-6 `#`, then its text.
+ *
+ * The optional closing `#` run is trimmed in code rather than in the pattern. Expressed as
+ * `(.*?)[ \t]*#*[ \t]*$` it gave the engine several ways to divide the same trailing whitespace,
+ * which is quadratic on a line of tabs.
+ */
+const HEADING = /^ {0,3}#{1,6}(?:[ \t]+([^\r\n]*))?\r?$/;
+
+/** The heading's text without its optional closing `#` run, trimmed as the pattern used to. */
+function headingText(raw: string): string {
+    let end = raw.length;
+    while (end > 0 && (raw[end - 1] === ' ' || raw[end - 1] === '\t')) end--;
+    while (end > 0 && raw[end - 1] === '#') end--;
+    while (end > 0 && (raw[end - 1] === ' ' || raw[end - 1] === '\t')) end--;
+    return raw.slice(0, end);
+}
 
 const TAG_PREFIX = 'tool=';
 
@@ -164,7 +215,7 @@ function toolNamedByHeading(line: string, tools: ReadonlySet<string>): string | 
     if (!heading) {
         return undefined;
     }
-    const named = heading[1]
+    const named = headingText(heading[1] ?? '')
         .replace(/^\{@tool\s+([A-Za-z][A-Za-z0-9_]*)\}$/, '$1')
         .replace(/^`([A-Za-z][A-Za-z0-9_]*)`$/, '$1');
     return tools.has(named) ? named : undefined;
@@ -284,10 +335,7 @@ function renderLine(
     const prefix = options.skillToolPrefix ?? DEFAULT_SKILL_TOOL_PREFIX;
 
     const masked: string[] = [];
-    const text = source.replace(INLINE_CODE, (span) => {
-        masked.push(span);
-        return `${MASK_OPEN}${masked.length - 1}${MASK_CLOSE}`;
-    });
+    const text = maskInlineCode(source, masked);
 
     // Every `{@` must be consumed by a well-formed construct. An unterminated one would
     // otherwise sail through as prose and reach the model as raw template syntax.
