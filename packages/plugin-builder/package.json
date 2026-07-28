@@ -24,11 +24,14 @@
     "scripts": {
         "lint": "biome lint src",
         "build": "tsc -p tsconfig.json",
+        "test": "vitest run",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3"
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.9"
     },
     "dependencies": {
         "@adobe/css-tools": "^4.5.0",
