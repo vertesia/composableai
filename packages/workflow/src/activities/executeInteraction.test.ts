@@ -93,6 +93,36 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toBe(error);
     });
 
+    it('should convert a provider 429 with Retry-After into a durable retry timer', async () => {
+        const error = new ServerError(
+            'provider throttled',
+            new Request('https://studio.test/api'),
+            429,
+            {},
+            true,
+            undefined,
+            12_345,
+        );
+        await mockInteractionError(error);
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            type: 'ProviderRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: 12_345,
+        } satisfies Partial<ApplicationFailure>);
+    });
+
+    it('should leave provider 429 timing to the activity retry policy when Retry-After is absent', async () => {
+        const error = new ServerError('provider throttled', new Request('https://studio.test/api'), 429, {});
+        await mockInteractionError(error);
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            type: 'ProviderRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: undefined,
+        } satisfies Partial<ApplicationFailure>);
+    });
+
     it('should forward the execution config object to interaction execution', async () => {
         const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
         const httpTimeout = {

@@ -42,8 +42,10 @@ export interface WorkflowAncestor {
 
 /** Identifies HTTP requests made on behalf of durable event-bus delivery work. */
 export const EVENT_BUS_REQUEST_ORIGIN = 'event_bus' as const;
+/** Identifies HTTP requests made by the durable bulk-import workflow. */
+export const BULK_IMPORT_REQUEST_ORIGIN = 'bulk_import' as const;
 export const REQUEST_ORIGIN_HEADER = 'x-vertesia-request-origin' as const;
-export type WorkflowRequestOrigin = typeof EVENT_BUS_REQUEST_ORIGIN;
+export type WorkflowRequestOrigin = typeof EVENT_BUS_REQUEST_ORIGIN | typeof BULK_IMPORT_REQUEST_ORIGIN;
 
 export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
     /**

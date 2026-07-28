@@ -45,6 +45,8 @@ export class RequestError extends Error {
     displayDetails: boolean;
     original_message: string;
     rateLimit?: RateLimitMetadata;
+    /** Retry timing supplied by an upstream service, including untyped provider 429 responses. */
+    retryAfterMs?: number;
     constructor(
         message: string,
         request: Request,
@@ -52,6 +54,7 @@ export class RequestError extends Error {
         payload: unknown,
         displayDetails = true,
         rateLimit?: RateLimitMetadata,
+        retryAfterMs?: number,
     ) {
         super(createMessage(message, request, status, payload, displayDetails));
         this.original_message = message;
@@ -61,6 +64,7 @@ export class RequestError extends Error {
         this.request_info = `${request.method} ${request.url} => ${status}`;
         this.displayDetails = displayDetails;
         this.rateLimit = rateLimit;
+        this.retryAfterMs = retryAfterMs;
     }
 
     get details() {
@@ -76,8 +80,9 @@ export class ServerError extends RequestError {
         payload: unknown,
         displayDetails = true,
         rateLimit?: RateLimitMetadata,
+        retryAfterMs?: number,
     ) {
-        super(message, req, status, payload, displayDetails, rateLimit);
+        super(message, req, status, payload, displayDetails, rateLimit, retryAfterMs);
     }
 
     updateDetails(details: unknown) {
@@ -90,6 +95,7 @@ export class ServerError extends RequestError {
                 payload,
                 this.displayDetails,
                 this.rateLimit,
+                this.retryAfterMs,
             );
         } else {
             return this;

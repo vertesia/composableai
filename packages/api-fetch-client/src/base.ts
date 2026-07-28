@@ -463,7 +463,15 @@ export abstract class ClientBase {
                 }
             }
         }
-        return new ServerError(message, req, res.status, payload, this.verboseErrors, rateLimitMetadata(res));
+        return new ServerError(
+            message,
+            req,
+            res.status,
+            payload,
+            this.verboseErrors,
+            rateLimitMetadata(res),
+            retryAfterDelayMs(res),
+        );
     }
 
     async readJSONPayload(res: Response) {

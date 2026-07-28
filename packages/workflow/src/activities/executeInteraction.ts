@@ -77,6 +77,11 @@ interface ApiRateLimitedRequestError extends Error {
     rateLimit: RateLimitMetadata;
 }
 
+interface ProviderRateLimitedRequestError extends Error {
+    status: number;
+    retryAfterMs?: number;
+}
+
 function isApiRateLimitedRequestError(error: unknown): error is ApiRateLimitedRequestError {
     if (!(error instanceof Error)) return false;
     const candidate = error as Partial<ApiRateLimitedRequestError>;
@@ -87,6 +92,12 @@ function isApiRateLimitedRequestError(error: unknown): error is ApiRateLimitedRe
         Number.isFinite(candidate.rateLimit.retryAfterMs) &&
         candidate.rateLimit.retryAfterMs >= 0
     );
+}
+
+function isProviderRateLimitedRequestError(error: unknown): error is ProviderRateLimitedRequestError {
+    if (!(error instanceof Error)) return false;
+    const candidate = error as Partial<ProviderRateLimitedRequestError & ApiRateLimitedRequestError>;
+    return candidate.status === 429 && candidate.rateLimit === undefined;
 }
 export interface InteractionExecutionParams {
     /**
@@ -240,6 +251,14 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         // pacing/reset metadata into a durable Temporal retry timer. Provider 429s carry no metadata.
         if (isApiRateLimitedRequestError(error)) {
             throw error;
+        }
+        if (isProviderRateLimitedRequestError(error)) {
+            throw ApplicationFailure.create({
+                message: `Provider rate limit while executing ${interactionName}: ${error.message}`,
+                type: 'ProviderRateLimitRetry',
+                nonRetryable: false,
+                ...(error.retryAfterMs !== undefined ? { nextRetryDelay: error.retryAfterMs } : {}),
+            });
         }
         const executionError = toExecutionError(error);
         log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });

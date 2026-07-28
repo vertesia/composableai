@@ -120,6 +120,7 @@ describe('Test requests', () => {
 
         assert.equal((error as { status?: number }).status, 429);
         assert.equal((error as { rateLimit?: unknown }).rateLimit, undefined);
+        assert.equal((error as { retryAfterMs?: number }).retryAfterMs, 1_000);
     });
     it('retries opted-in transient responses for idempotent methods', async () => {
         let attempts = 0;
