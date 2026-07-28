@@ -35,8 +35,11 @@
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { loadSkillCatalog } from '../core/skill-markdown/load-catalog.js';
+import { createSkillTransformer, isSkillTransformer } from '../core/transformers/skill.js';
+import type { TransformerRule } from '../core/types.js';
 import { transformImports } from '../import-transform/index.js';
-import { resolveConfig, VertesiaBuildConfigError } from './config.js';
+import { resolveConfig, resolveSkillCatalogPath, VertesiaBuildConfigError } from './config.js';
 
 function fail(message: string): never {
     console.error(`vertesia-build: ${message}`);
@@ -61,15 +64,41 @@ function readPackageJson(cwd: string): Record<string, unknown> {
 async function main(): Promise<void> {
     const cwd = process.cwd();
     const pkg = readPackageJson(cwd);
-    let options;
+    let options: ReturnType<typeof resolveConfig>;
+    let catalogPath: string | undefined;
     try {
         options = resolveConfig(pkg, cwd);
+        catalogPath = resolveSkillCatalogPath(pkg, cwd);
     } catch (error) {
         if (error instanceof VertesiaBuildConfigError) {
             fail(error.message);
         }
         throw error;
     }
+
+    if (catalogPath) {
+        let markdown: Awaited<ReturnType<typeof loadSkillCatalog>>;
+        try {
+            markdown = await loadSkillCatalog(catalogPath);
+        } catch (error) {
+            fail((error as Error).message);
+        }
+        const bound = createSkillTransformer({ markdown });
+        // Swap by identity, not by pattern: a consumer's own transformer registered for the same
+        // files must not be silently replaced by ours.
+        const replaced = options.transformers.filter(isSkillTransformer).length;
+        if (replaced === 0) {
+            fail('skillCatalog is configured but "skill" is not in vertesia-build.transformers.');
+        }
+        options = {
+            ...options,
+            transformers: options.transformers.map((rule: TransformerRule) =>
+                isSkillTransformer(rule) ? bound : rule,
+            ),
+        };
+        console.log(`vertesia-build: skill catalog loaded (${markdown.tools.size} tools, ${markdown.skills.size} skills)`);
+    }
+
     const result = await transformImports(options);
     console.log(
         `vertesia-build: files=${result.filesProcessed} chunks=${result.chunksEmitted} ` +

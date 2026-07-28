@@ -34,10 +34,6 @@
         "react": "catalog:"
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^29.0.3",
-        "@rollup/plugin-node-resolve": "^16.0.3",
-        "@rollup/plugin-replace": "^6.0.3",
-        "@rollup/plugin-terser": "^1.0.0",
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
