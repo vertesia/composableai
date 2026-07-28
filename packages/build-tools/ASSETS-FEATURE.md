@@ -1,349 +1,209 @@
-# Asset Management Feature
+# Asset Management
+
+How `vertesia-build` discovers, copies and bundles the files that sit beside a `SKILL.md` or
+`TEMPLATE.md`. This is the detailed reference; [README.md](./README.md) has the short version and
+[IMPLEMENTATION.md](./IMPLEMENTATION.md) the pipeline it runs inside.
 
 ## Overview
 
-The plugin now supports automatic discovery and copying of asset files (scripts and widgets) associated with skill definitions.
+Two kinds of asset are discovered, both non-recursively, both from the directory containing the
+Markdown file being transformed:
 
-## New Features
+| Source | Discovered as | Handling |
+| ------ | ------------- | -------- |
+| `.js`, `.py` beside a `SKILL.md` | `skill.scripts` | Copied verbatim |
+| `.tsx` beside a `SKILL.md` | `skill.widgets` | Bundled with esbuild |
+| Anything beside a `TEMPLATE.md` except `TEMPLATE.md`, `.ts`, `.js` | template assets | Copied verbatim |
 
-### 1. Asset Discovery
+Discovery always runs — the names always land in the skill definition. *Copying and bundling* are
+what `assetsDir: false` disables, which is how `workflows` and `studio-server` are configured: they
+want `skill.scripts` populated without a `dist/` tree.
 
-When transforming a skill markdown file, the plugin automatically discovers:
-- **Script files**: `.js` and `.py` files in the same directory
-- **Widget files**: `.tsx` files in the same directory
+## Skill assets
 
-### 2. SkillDefinition Enhancement
+### Layout
 
-The `SkillDefinition` type now includes:
+```text
+skills/my-skill/
+├── SKILL.md      # the skill itself
+├── properties.ts # runtime properties — not an asset, compiled by tsc
+├── helper.js     # → scripts
+├── script.py     # → scripts
+├── widget.tsx    # → widgets
+└── README.md     # ignored
+```
+
+### Result
+
 ```typescript
+import mySkill from './skills/my-skill/SKILL.md';
+
+mySkill.scripts;  // ['helper.js', 'script.py']  — names with extension
+mySkill.widgets;  // ['widget']                  — names without extension
+```
+
+Both fields are omitted entirely when nothing is discovered, rather than set to `[]`.
+
+### Destinations
+
+```text
+{assetsDir}/
+├── scripts/
+│   ├── helper.js
+│   └── script.py
+└── {widgetsDir}/
+    ├── widget.js
+    └── widget.js.map
+```
+
+`scripts/` is **fixed**. `discoverSkillAssets()` accepts a `scriptsDir` option, but the skill
+transformer never passes one, and there is no `vertesia-build.scriptsDir` config key — so scripts
+always land in `{assetsDir}/scripts/`. Only `widgetsDir` is configurable (default `widgets`).
+
+## Widget bundling
+
+Widgets are bundled with **esbuild**, one bundle per widget, in parallel.
+
+The entry point is the **`tsc`-compiled `.js`**, not the `.tsx` source: `tsc` has already run by the
+time `vertesia-build` starts, so `mapSrcWidgetToLib()` maps `src/…/widget.tsx` to `lib/…/widget.js`
+and hands that to esbuild. No TypeScript or JSX transformation happens here — the bundler is a pure
+module concatenator. That is why there is no `tsconfig` or `typescript` option: JSX settings belong
+in the package's own `tsconfig.json`.
+
+Fixed esbuild settings: `bundle: true`, `format: 'esm'`, `platform: 'browser'`,
+`logLevel: 'silent'`. Output is `{assetsDir}/{widgetsDir}/{name}.js`.
+
+### `widgetConfig`
+
+```json
 {
-  name: string;
-  title: string;
-  description: string;
-  keywords?: string[];
-  content: string;
-  scripts?: string[];    // NEW: Script file names (e.g., ["helper.js", "script.py"])
-  widgets?: string[];    // NEW: Widget names without extension (e.g., ["chart", "user-select"])
-  metadata?: Record<string, unknown>;
+    "vertesia-build": {
+        "libDir": "./lib",
+        "srcDir": "./src",
+        "transformers": ["skill", "skills"],
+        "assetsDir": "./dist",
+        "widgetsDir": "widgets",
+        "widgetConfig": {
+            "external": ["react", "react-dom", "react/jsx-runtime", "@vertesia/ui"],
+            "minify": true,
+            "sourcemap": true
+        }
+    }
 }
 ```
 
-### 3. Asset Copying
+| Option | Type | Default | Meaning |
+| ------ | ---- | ------- | ------- |
+| `external` | `string[]` | React family (below) | Packages left as bare imports rather than bundled. |
+| `minify` | `boolean` | `false` | esbuild minification. |
+| `sourcemap` | `boolean \| 'inline' \| 'external'` | `true` | Source map emission. |
 
-Script files are automatically copied to the configured assets directory during build.
+Default externals, used whenever `external` is omitted:
 
-### 4. Widget Compilation
+```text
+react, react-dom, react/jsx-runtime, react/jsx-dev-runtime, react-dom/client
+```
 
-Widget `.tsx` files are **automatically compiled** during the build process using Rollup with TypeScript support. The plugin handles widget compilation transparently without requiring separate configuration.
+Supplying `external` **replaces** this list rather than extending it — include the React entries
+yourself if you still need them externalized.
 
-## Configuration
+## Template assets
 
-### Plugin Options
+`TEMPLATE.md` directories use an exclusion rule instead of an extension allow-list: every file
+except `TEMPLATE.md` itself, `.ts` and `.js` is treated as an asset. Destinations are namespaced by
+the template's own path, so two templates cannot overwrite each other:
+
+```text
+{assetsDir}/templates/{templatePath}/{file}
+```
+
+## Configuration summary
+
+Only these keys affect assets; see the README for the full config reference.
+
+| Key | Effect |
+| --- | ------ |
+| `assetsDir` | Destination root. `false` disables copying *and* bundling. Defaults to `libDir`. |
+| `widgetsDir` | Sub-directory of `assetsDir` for widget bundles. Default `widgets`. |
+| `widgetConfig` | Forwarded to the esbuild bundler (table above). |
+
+## Implementation map
+
+| Concern | Module | Key exports |
+| ------- | ------ | ----------- |
+| Skill discovery | `src/core/utils/asset-discovery.ts` | `discoverSkillAssets`, `WidgetMetadata`, `DiscoveredAssets` |
+| Template discovery | `src/core/utils/template-asset-discovery.ts` | `discoverTemplateAssets` |
+| Copying | `src/core/utils/asset-copy.ts` | `copyAssetFile`, `copyAssets` |
+| Bundling | `src/core/compilers/widget.ts` | `compileWidget`, `compileWidgets`, `WidgetCompilerConfig` |
+
+Ordering inside `transformImports`: assets and widgets are accumulated as chunks are emitted,
+deduplicated (widgets by source path), and only copied and bundled once the whole work queue has
+drained. Nothing is written for a build that fails partway through emitting.
+
+Copy failures are wrapped with both paths:
+
+```text
+Failed to copy asset from /abs/src/skills/my-skill/helper.js to /abs/dist/scripts/helper.js: EACCES …
+```
+
+## Types
 
 ```typescript
-vertesiaImportPlugin({
-  transformers: [skillTransformer, rawTransformer],
+interface AssetFile {
+    sourcePath: string;              // absolute path to the source file
+    destPath: string;                // path relative to assetsDir
+    type: 'script' | 'template';
+}
 
-  // Asset directory configuration
-  assetsDir: './dist',          // Default: './dist', use false to disable
-  scriptsDir: 'scripts',        // Default: 'scripts' (relative to assetsDir)
-  widgetsDir: 'widgets',        // Default: 'widgets' (relative to assetsDir)
+interface WidgetMetadata {
+    name: string;                    // widget name, no extension
+    path: string;                    // absolute path to the .tsx source
+}
 
-  // Widget compilation configuration (optional)
-  widgetConfig: {
-    external: ['react', 'react-dom', 'react/jsx-runtime'],  // External dependencies
-    tsconfig: './tsconfig.json',                             // TypeScript config path
-    typescript: {},                                          // Additional TS plugin options
-    minify: false                                            // Enable minification
-  }
-})
+interface DiscoveredAssets {
+    scripts: string[];               // file names, with extension
+    widgets: string[];               // widget names, without extension
+    widgetMetadata: WidgetMetadata[];
+    assetFiles: AssetFile[];         // scripts only — widgets are bundled, not copied
+}
+
+interface WidgetCompilerConfig {
+    external?: string[];
+    minify?: boolean;
+    sourcemap?: boolean | 'inline' | 'external';
+}
 ```
 
-### Options Explained
+Note that `assetFiles` never contains widgets. Widgets are bundled from their compiled entry, so
+copying the `.tsx` would ship a source file that nothing imports.
 
-- **`assetsDir`**: Root directory for asset output
-  - If string: assets copied to this directory
-  - If `false`: asset copying disabled
-  - Default: `'./dist'`
+## Build output
 
-- **`scriptsDir`**: Directory for script files relative to `assetsDir`
-  - Default: `'scripts'`
-  - Scripts copied to: `{assetsDir}/{scriptsDir}/`
+Counts are reported on the CLI's single summary line:
 
-- **`widgetsDir`**: Directory for compiled widget files relative to `assetsDir`
-  - Default: `'widgets'`
-  - Compiled widgets output to: `{assetsDir}/{widgetsDir}/`
-
-- **`widgetConfig`**: Widget compilation configuration (optional)
-  - **`external`**: Array of external dependencies (default: React and React DOM)
-  - **`tsconfig`**: Path to TypeScript config file (default: `'./tsconfig.json'`)
-  - **`typescript`**: Additional options passed to `@rollup/plugin-typescript`
-  - **`minify`**: Enable minification with terser (default: `false`)
-
-## How It Works
-
-### 1. Skill Directory Structure
-
-```
-skills/my-skill/
-├── SKILL.md        # Skill definition
-├── helper.js       # JavaScript helper (will be copied)
-├── script.py       # Python script (will be copied)
-├── widget.tsx      # React widget (won't be copied, compile separately)
-└── README.md       # Other files (ignored)
+```text
+vertesia-build: files=34 chunks=51 assets=8 widgets=2
 ```
 
-### 2. Import the Skill
+With `assetsDir: false`, the last two are always `0`.
+
+## Compatibility
+
+Skills without scripts or widgets need no changes — both fields are optional and are only present
+when something was discovered. Consumers should treat them as possibly-absent:
 
 ```typescript
-import mySkill from './skills/my-skill/SKILL.md?skill';
+import skill from './skills/my-skill/SKILL.md';
 
-console.log(mySkill.scripts);  // ['helper.js', 'script.py']
-console.log(mySkill.widgets);  // ['widget']
-```
-
-### 3. Build Output
-
-```
-dist/
-├── scripts/
-│   ├── helper.js   # Copied from skill directory
-│   └── script.py   # Copied from skill directory
-└── widgets/
-    └── widget.js   # Automatically compiled from widget.tsx
-```
-
-## Implementation Details
-
-### Asset Discovery (`src/utils/asset-discovery.ts`)
-
-**Functions:**
-- `discoverSkillAssets(skillFilePath, options)`: Discovers assets in skill directory
-  - Returns: `{ scripts, widgets, assetFiles }`
-  - Scripts: Files matching `/\.(js|py)$/`
-  - Widgets: Files matching `/\.tsx$/` (extension removed from name)
-
-### Asset Copying (`src/utils/asset-copy.ts`)
-
-**Functions:**
-- `copyAssetFile(asset, assetsRoot)`: Copies a single asset file
-- `copyAssets(assets, assetsRoot)`: Copies multiple assets
-  - Creates directories recursively
-  - Reports number of files copied
-
-### Widget Compilation (`src/utils/widget-compiler.ts`)
-
-**Functions:**
-- `compileWidgets(widgets, outputDir, config)`: Compiles widgets using Rollup
-  - Spawns child Rollup process with TypeScript support
-  - Compiles each widget to ES module format
-  - Supports custom externals, TypeScript options, and minification
-  - Generates source maps
-  - Inlines dynamic imports
-
-### Plugin Integration
-
-The plugin:
-1. Collects assets and widgets during the `load` phase
-2. Copies script assets during the `buildEnd` phase
-3. Compiles widgets during the `buildEnd` phase
-4. Logs the number of files copied and compiled
-
-## Example Usage
-
-### Basic Configuration (with automatic widget compilation)
-
-```typescript
-// rollup.config.js
-import { vertesiaImportPlugin, skillTransformer } from '@vertesia/build-tools';
-
-export default {
-  plugins: [
-    vertesiaImportPlugin({
-      transformers: [skillTransformer],
-      assetsDir: './dist',  // Scripts copied to ./dist/scripts/, widgets to ./dist/widgets/
-      widgetConfig: {
-        // Widgets automatically compiled with TypeScript
-        external: ['react', 'react-dom', 'react/jsx-runtime']
-      }
-    })
-  ]
-};
-```
-
-### Disable Asset Copying and Widget Compilation
-
-```typescript
-vertesiaImportPlugin({
-  transformers: [skillTransformer],
-  assetsDir: false  // No asset copying or widget compilation
-})
-```
-
-### Widget Compilation Only (no asset copying)
-
-```typescript
-vertesiaImportPlugin({
-  transformers: [skillTransformer],
-  assetsDir: './dist',
-  widgetConfig: {
-    // Omit this to skip widget compilation, keeping only asset copying
-  }
-})
-```
-
-### Custom Directories and Advanced Widget Config
-
-```typescript
-vertesiaImportPlugin({
-  transformers: [skillTransformer],
-  assetsDir: './build',
-  scriptsDir: 'skill-scripts',  // Scripts copied to ./build/skill-scripts/
-  widgetsDir: 'compiled-widgets',  // Widgets compiled to ./build/compiled-widgets/
-  widgetConfig: {
-    external: ['react', 'react-dom', 'react/jsx-runtime', '@vertesia/ui'],
-    tsconfig: './tsconfig.widgets.json',
-    typescript: {
-      jsx: 'react-jsx',
-      target: 'es2020'
-    },
-    minify: true  // Enable terser minification
-  }
-})
+if (skill.scripts) {
+    // script file names, resolvable under {assetsDir}/scripts/
+}
+if (skill.widgets) {
+    // widget names, resolvable under {assetsDir}/{widgetsDir}/
+}
 ```
 
 ## Testing
 
-New tests added:
-- `tests/asset-discovery.test.ts` - Asset discovery utilities (4 tests)
-- `tests/skill-assets.test.ts` - Skill transformer with assets (4 tests)
-
-Total tests: **21 passing**
-
-## Type Safety
-
-The `AssetFile` interface:
-```typescript
-export interface AssetFile {
-  sourcePath: string;      // Absolute path to source file
-  destPath: string;        // Relative path within assets directory
-  type: 'script';          // Asset type (scripts only - widgets compiled separately)
-}
-```
-
-The `WidgetConfig` interface:
-```typescript
-export interface WidgetConfig {
-  external?: string[];                    // External dependencies (default: React/ReactDOM)
-  tsconfig?: string;                      // Path to tsconfig.json (default: './tsconfig.json')
-  typescript?: Record<string, unknown>;   // Additional TypeScript plugin options
-  minify?: boolean;                       // Enable terser minification (default: false)
-}
-```
-
-The `WidgetMetadata` interface:
-```typescript
-export interface WidgetMetadata {
-  name: string;     // Widget name (without .tsx extension)
-  path: string;     // Absolute path to widget source file
-}
-```
-
-## Migration
-
-### For Existing Skills
-
-No changes needed! Skills without scripts/widgets continue to work:
-- `scripts` and `widgets` are optional properties
-- Only populated if assets exist in skill directory
-
-### For Existing Code
-
-If you're consuming skill definitions:
-```typescript
-// Before
-const skill = await import('./skill.md?skill');
-// skill.scripts and skill.widgets didn't exist
-
-// After
-const skill = await import('./skill.md?skill');
-if (skill.scripts) {
-  // Script files available at runtime
-}
-if (skill.widgets) {
-  // Widget names available for dynamic loading
-}
-```
-
-## Performance
-
-- Asset discovery is file-system based (fast)
-- Only processes files in skill directory (non-recursive)
-- Asset copying happens once during `buildEnd` phase
-- Widget compilation happens once during `buildEnd` phase
-  - Widgets compiled in parallel using `Promise.all()`
-  - Each widget gets its own Rollup build process
-  - Source maps generated for debugging
-- No impact on hot module replacement (HMR)
-
-## Advanced Features
-
-### Minification
-
-Enable minification for production builds:
-
-```typescript
-widgetConfig: {
-  minify: true  // Uses rollup-plugin-terser
-}
-```
-
-### Custom TypeScript Configuration
-
-Use a separate tsconfig for widgets:
-
-```typescript
-widgetConfig: {
-  tsconfig: './tsconfig.widgets.json',
-  typescript: {
-    jsx: 'react-jsx',
-    target: 'es2020',
-    declaration: false
-  }
-}
-```
-
-### External Dependencies
-
-Control which dependencies are externalized:
-
-```typescript
-widgetConfig: {
-  external: [
-    'react',
-    'react-dom',
-    'react/jsx-runtime',
-    'react/jsx-dev-runtime',
-    'react-dom/client',
-    '@vertesia/ui',
-    '@vertesia/common'
-  ]
-}
-```
-
-Default externals include:
-- `react`
-- `react-dom`
-- `react/jsx-runtime`
-- `react/jsx-dev-runtime`
-- `react-dom/client`
-
-## Build Output
-
-When widgets are compiled, you'll see console output:
-
-```
-Copied 2 asset file(s) to ./dist
-Compiling 3 widget(s)...
-Compiled 3 widget(s) to ./dist/widgets
-```
+`tests/asset-discovery.test.ts` covers the discovery rules and `tests/skill-assets.test.ts` the
+transformer integration; `tests/widget-compiler.test.ts` covers bundling. Run with `pnpm test`.

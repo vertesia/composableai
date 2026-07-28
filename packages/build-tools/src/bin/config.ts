@@ -27,6 +27,33 @@ interface RawConfig {
     assetsDir?: unknown;
     widgetsDir?: unknown;
     widgetConfig?: unknown;
+    skillCatalog?: unknown;
+}
+
+/**
+ * Absolute path of the module the CLI imports to obtain the skill catalog, if configured.
+ *
+ * A path rather than an inline object because the catalog is derived from compiled code — this
+ * package's own tool registry, or a dependency's catalog artifact. Naming the module in
+ * package.json keeps the dependency explicit and reviewable instead of having build-tools go
+ * looking for a registry it should not know about.
+ *
+ * Kept separate from `resolveConfig` because loading it is asynchronous I/O, and `resolveConfig`
+ * is deliberately pure.
+ */
+export function resolveSkillCatalogPath(pkg: Record<string, unknown>, cwd: string): string | undefined {
+    const raw = pkg[CONFIG_KEY];
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+        return undefined;
+    }
+    const value = (raw as RawConfig).skillCatalog;
+    if (value === undefined) {
+        return undefined;
+    }
+    if (typeof value !== 'string' || value.length === 0) {
+        throw new VertesiaBuildConfigError(`"${CONFIG_KEY}.skillCatalog" must be a non-empty path when set.`);
+    }
+    return path.resolve(cwd, value);
 }
 
 /**

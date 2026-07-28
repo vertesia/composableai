@@ -1,7 +1,11 @@
 /**
- * Shared regex fragments used by the scanner, detector, and orchestrator to
- * identify Vertesia query-style imports. Keep these in sync with the
- * `pattern` field of each transformer in `core/transformers/`.
+ * Shared regex fragments used by the scanner and orchestrator to cheaply pre-filter files that
+ * could contain Vertesia query-style imports. Keep these in sync with the `pattern` field of each
+ * transformer in `core/transformers/`.
+ *
+ * These are a *sniff* only. Deciding what is actually an import is the detector's job, and it
+ * lexes the module rather than matching string literals — a literal-matching regex used to live
+ * here too, and it could not tell an import from a comment or a constant.
  */
 
 /**
@@ -23,12 +27,3 @@ const BARE_GROUP = BARE_FILENAMES.map((name) => `\\/${name.replace('.', '\\.')}`
  * Cheap regex check before invoking the more expensive detector.
  */
 export const SNIFF_PATTERN = new RegExp(`\\?(?:${QUERY_GROUP})\\b|(?:${BARE_GROUP})\\b`);
-
-/**
- * Matches a quoted string literal whose contents end with a query marker.
- * Capture group 1 is the quote character; capture group 2 is the specifier.
- */
-export const QUERY_STRING_LITERAL = new RegExp(
-    `(['"\`])([^'"\`]*?(?:\\?(?:${QUERY_GROUP})|${BARE_GROUP})[^'"\`]*)\\1`,
-    'g',
-);
