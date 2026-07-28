@@ -1,5 +1,6 @@
 import { ApiTopic } from '@vertesia/api-fetch-client';
 import {
+    type BulkObjectCreateOptions,
     type BulkObjectCreateResult,
     type BulkObjectDeleteResult,
     type BulkObjectUpdateResult,
@@ -469,12 +470,7 @@ export class ObjectsApi extends ApiTopic {
 
     bulkCreate(
         objects: CreateContentObjectPayload[],
-        options?: {
-            collection_id?: string;
-            /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
-            skip_workflows?: boolean;
-            processing_priority?: ContentObjectProcessingPriority;
-        },
+        options?: BulkObjectCreateOptions,
     ): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({
             name: 'create',

@@ -84,6 +84,15 @@ export interface BulkObjectCreateResult extends BulkOperationResult<'create'> {
     failed: { external_id?: string; index: number; error: string }[];
 }
 
+export interface BulkObjectCreateOptions {
+    collection_id?: string;
+    /** @deprecated Events are now always emitted. This suppresses Temporal-backed delivery targets. */
+    skip_workflows?: boolean;
+    processing_priority?: ContentObjectProcessingPriority;
+    /** Stable identity for retrying an ambiguous bulk-create request without duplicating objects. */
+    idempotency_key?: string;
+}
+
 /**
  * @discriminator operation
  */
@@ -92,3 +101,5 @@ export type BulkOperationResponse =
     | BulkObjectCreateResult
     | BulkObjectUpdateResult
     | BulkObjectDeleteResult;
+
+import type { ContentObjectProcessingPriority } from './store/store.js';
