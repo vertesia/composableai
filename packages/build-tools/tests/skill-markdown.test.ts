@@ -315,6 +315,23 @@ describe('fail-closed syntax handling', () => {
         expect(result.errors[0]).toContain('malformed construct');
     });
 
+    // Regression: the argument class could cross `{`, so every opener on the line swept to its end
+    // before failing — quadratic in the number of openers rather than in any single match.
+    it('stays fast on a line of unterminated construct openers', () => {
+        const source = '{@A/'.repeat(40000);
+
+        const started = performance.now();
+        const result = preprocessSkillMarkdown(source, catalog);
+
+        // 2.3s before, 1ms after, and rising fourfold per doubling — so the threshold separates
+        // the two implementations rather than just the machine's mood.
+        expect(performance.now() - started).toBeLessThan(1000);
+        // None of them closes, so each is reported once and the text is passed through untouched.
+        expect(result.errors).toHaveLength(40000);
+        expect(result.errors[0]).toContain('malformed construct');
+        expect(result.markdown).toBe(source);
+    });
+
     it('reports a tagged fence that is never closed', () => {
         const result = preprocessSkillMarkdown('```json tool=batch_execute\n{ "a": 1 }\n', catalog);
         expect(result.errors.some((e) => e.includes('is never closed'))).toBe(true);

@@ -122,19 +122,31 @@ const NAME = /^[a-z][a-z0-9_-]*$/;
 /**
  * `{@word …}`. The keyword is matched loosely so `{@tolo x}` is a reported typo, not prose.
  *
- * The argument group is anchored on a character the keyword cannot take, so the two cannot divide
- * the same text: with both able to match `x`, `{@Axxxxxx…` with no closing brace gave the engine
- * quadratically many ways to fail. The empty alternative keeps the group a string, and keeps
- * `{@tool}` matching (and so reported) rather than falling through as prose.
+ * Two things keep the cost linear, neither of which costs any expressiveness — a construct's
+ * arguments are names and separators:
+ *
+ *   - The argument group is anchored on a character the keyword cannot take, so the two cannot
+ *     divide the same text. With both able to match `x`, `{@Axxxxxx…` with no closing brace gave
+ *     the engine quadratically many ways to fail at a single position.
+ *   - Neither argument class can cross a `{`. Otherwise the *scan* is quadratic rather than any
+ *     one match: on `{@A/{@A/{@A/…` every opener sweeps to the end of the line before failing, so
+ *     240 KB took 5.2s. Stopping at the next `{` bounds each attempt by the distance to the next
+ *     candidate start.
+ *
+ * The empty alternative keeps the group a string, and keeps `{@tool}` matching — and so being
+ * reported as naming nothing — rather than falling through as prose.
  */
-const CONSTRUCT = /\{@([A-Za-z][A-Za-z0-9_]*)([^A-Za-z0-9_}][^}]*|)\}/g;
+const CONSTRUCT = /\{@([A-Za-z][A-Za-z0-9_]*)([^A-Za-z0-9_{}][^{}]*|)\}/g;
 
 /**
  * The same construct, restricted to the real keywords, for use inside fenced blocks. The loose
  * form would flag template syntax that fenced examples legitimately contain — Handlebars
  * `{{@index}}`, for one — which the renderer only ever sees in prose.
+ *
+ * `[^{}]` for the same reason as above, and it keeps this guard reporting exactly what the
+ * renderer would have rendered: neither form matches a construct with a `{` in its arguments.
  */
-const FENCED_CONSTRUCT = /\{@(?:subagent_tool|tool|skill|param)\b[^}]*\}/g;
+const FENCED_CONSTRUCT = /\{@(?:subagent_tool|tool|skill|param)\b[^{}]*\}/g;
 
 /**
  * A code fence line: up to 3 spaces of indent, a run of markers, then the info string.
