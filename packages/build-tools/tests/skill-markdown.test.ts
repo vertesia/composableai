@@ -678,3 +678,59 @@ describe('field references', () => {
         expect(result.errors).toEqual([]);
     });
 });
+
+/**
+ * Sub-agent references need markup rather than prose because no graph can prove which actor a
+ * sentence addresses: "use `browser_act`" and "ask the browser agent to use `browser_act`" are
+ * indistinguishable to a checker, and only the second is legitimate when the parent agent was
+ * never given the tool.
+ */
+describe('sub-agent tool references', () => {
+    const tools = { ...catalog, tools: new Set([...catalog.tools, 'use_webbrowser', 'browser_act']) };
+
+    it('renders the tool alone, since the sentence already says whose action it is', () => {
+        const result = preprocessSkillMarkdown(
+            'Ask it to {@subagent_tool use_webbrowser browser_act} on the page.',
+            tools,
+        );
+
+        expect(result.errors).toEqual([]);
+        expect(result.markdown).toBe('Ask it to `browser_act` on the page.');
+        expect(result.references[0]).toEqual({
+            kind: 'subagent_tool',
+            name: 'browser_act',
+            rendered: '`browser_act`',
+            line: 1,
+            resolved: true,
+        });
+    });
+
+    it('rejects either name when no provider registers it', () => {
+        const result = preprocessSkillMarkdown('Ask it to {@subagent_tool use_webbrowser ghost_tool}.', tools);
+
+        expect(result.errors).toEqual([
+            "line 1: '{@subagent_tool use_webbrowser ghost_tool}' refers to a tool no provider registers: 'ghost_tool'",
+        ]);
+        expect(result.references[0].resolved).toBe(false);
+    });
+
+    it('requires exactly two names, so a single-argument form cannot pass silently', () => {
+        const result = preprocessSkillMarkdown('Ask it to {@subagent_tool browser_act}.', tools);
+
+        expect(result.errors).toEqual([
+            "line 1: '{@subagent_tool browser_act}' must be written {@subagent_tool launcher tool}, naming two tools",
+        ]);
+        // Left verbatim: a construct that did not resolve must not silently look rendered.
+        expect(result.markdown).toBe('Ask it to {@subagent_tool browser_act}.');
+    });
+
+    it('fails on an ambiguous name rather than picking a provider', () => {
+        const result = preprocessSkillMarkdown('Ask it to {@subagent_tool use_webbrowser browser_act}.', {
+            ...tools,
+            ambiguousTools: new Set(['browser_act']),
+        });
+
+        expect(result.errors[0]).toContain('is ambiguous');
+        expect(result.references[0].resolved).toBe(false);
+    });
+});

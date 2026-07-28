@@ -25,7 +25,7 @@
 /** The runtime convention: a skill named `x` is offered to the model as the tool `learn_x`. */
 export const DEFAULT_SKILL_TOOL_PREFIX = 'learn_';
 
-export type SkillReferenceKind = 'tool' | 'skill' | 'param';
+export type SkillReferenceKind = 'tool' | 'skill' | 'param' | 'subagent_tool';
 
 export interface SkillReference {
     kind: SkillReferenceKind;
@@ -231,6 +231,45 @@ function renderParam(
     return rendered;
 }
 
+/**
+ * `{@subagent_tool launcher tool}` — a tool the sub-agent launched by `launcher` will call.
+ *
+ * Renders as the tool name alone, since that is what the reader needs: the sentence around it
+ * already says whose action it is. Both names are resolved here; whether `launcher` really
+ * launches an interaction configured with `tool` is checked by `check:skills`, which is the only
+ * place that can see interaction definitions.
+ */
+function renderSubagentTool(
+    whole: string,
+    args: string[],
+    line: number,
+    options: PreprocessSkillMarkdownOptions,
+    references: SkillReference[],
+    errors: string[],
+): string {
+    if (args.length !== 2 || !NAME.test(args[0]) || !NAME.test(args[1])) {
+        errors.push(`line ${line}: '${whole}' must be written {@subagent_tool launcher tool}, naming two tools`);
+        return whole;
+    }
+    const [launcher, name] = args;
+    const rendered = `\`${name}\``;
+    let resolved = true;
+    for (const candidate of [launcher, name]) {
+        if (options.ambiguousTools?.has(candidate)) {
+            errors.push(
+                `line ${line}: '${whole}' is ambiguous — more than one provider defines the tool ` +
+                    `'${candidate}'. Resolve the collision at the source before referencing it.`,
+            );
+            resolved = false;
+        } else if (!options.tools.has(candidate)) {
+            errors.push(`line ${line}: '${whole}' refers to a tool no provider registers: '${candidate}'`);
+            resolved = false;
+        }
+    }
+    references.push({ kind: 'subagent_tool', name, rendered, line, resolved });
+    return rendered;
+}
+
 /** Substitute constructs on a single line, leaving inline code spans verbatim. */
 function renderLine(
     source: string,
@@ -258,14 +297,18 @@ function renderLine(
         consumed.add(offset);
         const args = rest.trim().split(/\s+/).filter(Boolean);
 
-        if (keyword !== 'tool' && keyword !== 'skill' && keyword !== 'param') {
+        if (keyword !== 'tool' && keyword !== 'skill' && keyword !== 'param' && keyword !== 'subagent_tool') {
             errors.push(
-                `line ${line}: unknown construct '{@${keyword} …}' (expected {@tool …}, {@skill …} or {@param …})`,
+                `line ${line}: unknown construct '{@${keyword} …}' (expected {@tool …}, {@skill …}, ` +
+                    '{@param …} or {@subagent_tool …})',
             );
             return whole;
         }
         if (keyword === 'param') {
             return renderParam(whole, args, line, options, references, errors);
+        }
+        if (keyword === 'subagent_tool') {
+            return renderSubagentTool(whole, args, line, options, references, errors);
         }
         if (args.length !== 1 || !NAME.test(args[0])) {
             errors.push(`line ${line}: '${whole}' must name exactly one ${keyword}`);
