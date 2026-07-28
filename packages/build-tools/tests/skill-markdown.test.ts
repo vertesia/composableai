@@ -98,11 +98,38 @@ describe('what must not be touched', () => {
             expect(result.references.map((r) => r.name)).toEqual(['search_documents']);
         });
 
+        it('resumes inside a longer closing run, leaving its surplus backticks literal', () => {
+            // The 3-run closes the 1-backtick opener with its first character; the two left over
+            // open a span of their own, which nothing closes. Exercises the one path where the
+            // scan re-enters a run it has already partly consumed.
+            const source = 'See `{@tool a}``` and {@tool search_documents}.';
+
+            const result = preprocessSkillMarkdown(source, catalog);
+
+            expect(result.markdown).toBe('See `{@tool a}``` and `search_documents`.');
+            expect(result.references.map((r) => r.name)).toEqual(['search_documents']);
+        });
+
+        // A line has to contain `{@` to be scanned at all, so these inputs carry one construct.
         it('stays fast on a long run of backticks', () => {
             const started = performance.now();
-            preprocessSkillMarkdown('`'.repeat(20000), catalog);
+            preprocessSkillMarkdown(`{@tool search_documents} ${'`'.repeat(20000)}`, catalog);
 
             expect(performance.now() - started).toBeLessThan(1000);
+        });
+
+        // Regression: every opener that found no closer rescanned the whole remainder, so runs in
+        // descending length made all 1200 of them sweep to the end — 18s on this 722 KB line,
+        // against ~2ms once the runs are tokenised once and indexed by suffix maximum.
+        it('stays fast on descending runs of backticks, none of which close', () => {
+            const runs = Array.from({ length: 1200 }, (_, i) => '`'.repeat(1200 - i)).join('x');
+
+            const started = performance.now();
+            const result = preprocessSkillMarkdown(`{@tool search_documents} ${runs}`, catalog);
+
+            expect(performance.now() - started).toBeLessThan(1000);
+            // None of them close, so all of them are literal text.
+            expect(result.markdown).toBe(`\`search_documents\` ${runs}`);
         });
     });
 
@@ -170,6 +197,21 @@ describe('tagged examples', () => {
             for (const heading of ['## {@tool batch_execute}', '## `batch_execute`']) {
                 const source = `${heading}\n\n\`\`\`json tool=batch_execute\n{ "a": 1 }\n\`\`\`\n`;
                 expect(preprocessSkillMarkdown(source, catalog).errors, heading).toEqual([]);
+            }
+        });
+
+        // Regression: the unwrapping patterns allowed only [A-Za-z0-9_] while tool names allow
+        // `-`, so a heading naming a hyphenated tool was silently not a heading for any tool and
+        // the agreement check never ran under it.
+        it('recognises a hyphenated tool name in a heading', () => {
+            const hyphenated = { tools: new Set(['web-fetch', 'fetch_document']), skills: new Set<string>() };
+
+            for (const heading of ['## `web-fetch`', '## {@tool web-fetch}']) {
+                const source = `${heading}\n\n\`\`\`json tool=fetch_document\n{ "id": "a" }\n\`\`\`\n`;
+                const errors = preprocessSkillMarkdown(source, hyphenated).errors;
+
+                expect(errors, heading).toHaveLength(1);
+                expect(errors[0], heading).toContain("tagged 'tool=fetch_document' under the heading for 'web-fetch'");
             }
         });
 
@@ -497,6 +539,18 @@ describe('dispatch descriptor coherence', () => {
         expect(result.errors[0]).toContain('line 2');
         // Still passed through untouched: the fence body is never rewritten.
         expect(result.markdown).toContain('{@skill web_search}');
+    });
+
+    // The in-fence guard lists the keywords explicitly, so a new construct has to be added to it —
+    // `{@subagent_tool …}` was not, and slipped through a fence unreported until this test.
+    it('reports a sub-agent construct written inside a code fence', () => {
+        const md = ['```yaml', '# see {@subagent_tool batch_execute fetch_document}', '```'].join('\n');
+        const result = preprocessSkillMarkdown(md, catalog);
+
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]).toContain('inside a code fence');
+        expect(result.errors[0]).toContain('line 2');
+        expect(result.markdown).toContain('{@subagent_tool batch_execute fetch_document}');
     });
 
     // Template syntax in fenced examples is not a construct: the renderer never sees fence bodies,

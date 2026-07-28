@@ -119,15 +119,22 @@ export interface PreprocessSkillMarkdownResult {
 /** Snake_case, with hyphens tolerated because some remote skill names use them. */
 const NAME = /^[a-z][a-z0-9_-]*$/;
 
-/** `{@word …}`. The keyword is matched loosely so `{@tolo x}` is a reported typo, not prose. */
-const CONSTRUCT = /\{@([A-Za-z][A-Za-z0-9_]*)([^}]*)\}/g;
+/**
+ * `{@word …}`. The keyword is matched loosely so `{@tolo x}` is a reported typo, not prose.
+ *
+ * The argument group is anchored on a character the keyword cannot take, so the two cannot divide
+ * the same text: with both able to match `x`, `{@Axxxxxx…` with no closing brace gave the engine
+ * quadratically many ways to fail. The empty alternative keeps the group a string, and keeps
+ * `{@tool}` matching (and so reported) rather than falling through as prose.
+ */
+const CONSTRUCT = /\{@([A-Za-z][A-Za-z0-9_]*)([^A-Za-z0-9_}][^}]*|)\}/g;
 
 /**
  * The same construct, restricted to the real keywords, for use inside fenced blocks. The loose
  * form would flag template syntax that fenced examples legitimately contain — Handlebars
  * `{{@index}}`, for one — which the renderer only ever sees in prose.
  */
-const FENCED_CONSTRUCT = /\{@(?:tool|skill|param)\b[^}]*\}/g;
+const FENCED_CONSTRUCT = /\{@(?:subagent_tool|tool|skill|param)\b[^}]*\}/g;
 
 /**
  * A code fence line: up to 3 spaces of indent, a run of markers, then the info string.
@@ -147,35 +154,73 @@ const FENCE = /^([ \t]{0,3})(`{3,}|~{3,})[ \t]*([^ \t\r\n][^\r\n]*|)\r?$/;
  * Inline code spans, masked so `` `{@tool x}` `` can document the syntax without invoking it.
  *
  * Scanned rather than matched: the regex form needs a backreference and a body that can match a
- * backtick two ways, which costs quadratic time on a run of them. This walks each opening run once
- * and looks for the first equal-length run after it, which is what the regex resolved to anyway.
+ * backtick two ways, which costs quadratic time on a run of them.
+ *
+ * The scan tokenises the backtick runs once and indexes them by suffix maximum, because the
+ * obvious scan is quadratic too: an opener with no closer would rescan the whole remainder, so
+ * descending run lengths (```` ```…``` ```` then ```` ``…`` ```` then …) make every opener fail
+ * after a full sweep. `suffixMax` answers "is any later run long enough?" in constant time, which
+ * leaves only openers that do close — and those consume everything they scanned past.
  */
 function maskInlineCode(source: string, masked: string[]): string {
-    let out = '';
-    let at = 0;
-    while (at < source.length) {
+    // Maximal runs of backticks: `start[i]` is where run i begins, `len[i]` how long it is.
+    const start: number[] = [];
+    const len: number[] = [];
+    for (let at = 0; at < source.length; ) {
         const open = source.indexOf('`', at);
         if (open < 0) {
-            return out + source.slice(at);
+            break;
         }
-        let run = open;
-        while (run < source.length && source[run] === '`') {
-            run++;
+        let end = open + 1;
+        while (end < source.length && source[end] === '`') {
+            end++;
         }
-        const close = source.indexOf('`'.repeat(run - open), run);
-        if (close < 0) {
-            // No closing run: the backticks are literal text, and the search resumes after them so
-            // a later span in the same line is still masked.
-            out += source.slice(at, run);
-            at = run;
+        start.push(open);
+        len.push(end - open);
+        at = end;
+    }
+    if (start.length === 0) {
+        return source;
+    }
+
+    // suffixMax[i] is the longest run at or after i; suffixMax[start.length] is 0.
+    const suffixMax = new Array<number>(start.length + 1).fill(0);
+    for (let i = start.length - 1; i >= 0; i--) {
+        suffixMax[i] = Math.max(len[i], suffixMax[i + 1]);
+    }
+
+    let out = '';
+    let at = 0;
+    let i = 0;
+    while (i < start.length) {
+        // Skip runs already consumed by an earlier span; `at` can also sit inside run i when a
+        // longer run closed a shorter opener and left backticks over.
+        if (start[i] + len[i] <= at) {
+            i++;
             continue;
         }
-        const end = close + (run - open);
+        const open = Math.max(start[i], at);
+        const width = start[i] + len[i] - open;
+        const after = start[i] + len[i];
+        if (suffixMax[i + 1] < width) {
+            // No closing run: the backticks are literal text, and the search resumes after them so
+            // a later span in the same line is still masked.
+            out += source.slice(at, after);
+            at = after;
+            i++;
+            continue;
+        }
+        let close = i + 1;
+        while (len[close] < width) {
+            close++;
+        }
+        const end = start[close] + width;
         masked.push(source.slice(open, end));
         out += `${source.slice(at, open)}${MASK_OPEN}${masked.length - 1}${MASK_CLOSE}`;
         at = end;
+        i = close;
     }
-    return out;
+    return out + source.slice(at);
 }
 
 /** NUL cannot occur in these sources, so masking round-trips even through numeric prose. */
@@ -189,7 +234,10 @@ const MASK_CLOSE = '\u0001';
  * `(.*?)[ \t]*#*[ \t]*$` it gave the engine several ways to divide the same trailing whitespace,
  * which is quadratic on a line of tabs.
  */
-const HEADING = /^ {0,3}#{1,6}(?:[ \t]+([^\r\n]*))?\r?$/;
+// The text group is anchored on a non-blank first character, for the same reason as `FENCE`: with
+// the separator and the text both able to match a tab, a heading followed by a run of them gave
+// the engine quadratically many ways to divide it. The empty alternative keeps group 1 a string.
+const HEADING = /^ {0,3}#{1,6}(?:[ \t]+([^ \t\r\n][^\r\n]*|))?\r?$/;
 
 /** The heading's text without its optional closing `#` run, trimmed as the pattern used to. */
 function headingText(raw: string): string {
@@ -215,9 +263,11 @@ function toolNamedByHeading(line: string, tools: ReadonlySet<string>): string | 
     if (!heading) {
         return undefined;
     }
+    // The unwrapped name allows `-` because `NAME` does: some remote skill and tool names use it,
+    // and a narrower pattern here would silently skip the heading agreement check for them.
     const named = headingText(heading[1] ?? '')
-        .replace(/^\{@tool\s+([A-Za-z][A-Za-z0-9_]*)\}$/, '$1')
-        .replace(/^`([A-Za-z][A-Za-z0-9_]*)`$/, '$1');
+        .replace(/^\{@tool[ \t]+([A-Za-z][A-Za-z0-9_-]*)\}$/, '$1')
+        .replace(/^`([A-Za-z][A-Za-z0-9_-]*)`$/, '$1');
     return tools.has(named) ? named : undefined;
 }
 
