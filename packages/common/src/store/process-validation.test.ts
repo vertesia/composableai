@@ -75,6 +75,7 @@ describe('process definition validation', () => {
                         type: 'inline',
                         files: { 'main.js': 'console.log("ok")' },
                     },
+                    packages: ['zod@4.0.0'],
                 },
                 reshape_types: {
                     language: 'typescript',
@@ -83,6 +84,7 @@ describe('process definition validation', () => {
                         type: 'inline',
                         files: { 'main.ts': 'console.log("ok")' },
                     },
+                    packages: ['@types/node', '@vertesia/client@latest'],
                 },
             },
         };
@@ -133,7 +135,7 @@ describe('process definition validation', () => {
                             '../escape.py': 'print("no")',
                         },
                     },
-                    packages: ['--index-url=evil'],
+                    packages: ['--index-url=evil', 'zod@latest`whoami`'],
                 },
             },
         };
@@ -153,6 +155,9 @@ describe('process definition validation', () => {
         );
         expect(result.errors).toContain(
             'script resource "bad resource" has unsafe package specification "--index-url=evil"',
+        );
+        expect(result.errors).toContain(
+            'script resource "bad resource" has unsafe package specification "zod@latest`whoami`"',
         );
         expect(result.errors).toContain('script node "review" references unknown script resource "missing"');
         expect(result.errors).toContain('script node "review" timeout must be an integer between 1 and 600');

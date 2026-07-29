@@ -45,7 +45,8 @@ export const MAX_PROCESS_GUARD_DEPTH = 64;
 export const MAX_PROCESS_GUARD_NODES = 4096;
 const PROCESS_SCRIPT_RESOURCE_NAME = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;
 const PROCESS_SCRIPT_FILE_PATH = /^[a-zA-Z0-9._-]+(\/[a-zA-Z0-9._-]+)*$/;
-const PROCESS_SCRIPT_PACKAGE = /^[a-zA-Z0-9][a-zA-Z0-9._-]*(\[[a-zA-Z0-9,._-]+\])?([<>=!~^][^\s;|&$]*)?$/;
+const PROCESS_SCRIPT_PACKAGE =
+    /^(?:@[a-zA-Z0-9][a-zA-Z0-9._-]*\/[a-zA-Z0-9][a-zA-Z0-9._-]*|[a-zA-Z0-9][a-zA-Z0-9._-]*)(?:\[[a-zA-Z0-9,._-]+\])?(?:(?:@|[<>=!~^])[^\s;|&$`]*)?$/;
 
 export function validateProcessDefinitionBody(
     definition: ProcessDefinitionBody,
