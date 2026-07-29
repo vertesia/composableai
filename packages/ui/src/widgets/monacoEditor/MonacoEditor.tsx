@@ -259,7 +259,7 @@ export function MonacoEditor({
         renderValidationDecorations: 'on', // Show error squiggles
         renderLineHighlight: 'line', // Highlight entire line for errors
         hover: {
-            enabled: true,
+            enabled: 'on',
             delay: 100,
         }, // Enable hover for error messages
         quickSuggestions: {
