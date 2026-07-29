@@ -1,219 +1,247 @@
-# @vertesia/build-tools - Implementation Summary
+# @vertesia/build-tools — Implementation Notes
+
+Design and internals. For usage, see [README.md](./README.md).
 
 ## Overview
 
-A generic, extensible Rollup plugin for transforming imports based on path patterns. Built with TypeScript, validated with Zod, and includes preset transformers for common use cases.
+A post-`tsc` import transformer. It reads the JavaScript `tsc` has already emitted into `libDir`,
+replaces Vertesia query-style import specifiers (`?skill`, `?raw`, …) with generated sibling
+modules, and rewrites the importing files in place.
 
-## Architecture
+The unit of work is a *file already on disk*, not a module graph. That is the whole design
+constraint, and it is what makes the package independent of any bundler.
 
-### Core Components
+## Why post-`tsc`
 
-1. **Plugin Core** (`src/plugin.ts`)
-   - Generic import transformer engine
-   - Pattern matching via RegExp
-   - File loading and transformation
-   - Optional Zod validation at build time
+This package began as a Rollup plugin (`vertesiaImportPlugin`) built on the `resolveId` / `load`
+hooks, in a package called `rollup-plugin-imports`. That coupled every consumer to Rollup, at a
+point where the repo was standardizing on Rolldown and several consumers (`studio-server`,
+`workflows`) do not bundle their libraries at all — they publish or consume `tsc` output directly
+and bundle later, or bundle with webpack via Temporal's workflow bundler.
 
-2. **Type System** (`src/types.ts`)
-   - `TransformerRule`: Configuration for a single import pattern
-   - `TransformFunction`: Function signature for transformations
-   - `TransformResult`: Return type with data and optional custom code
+Rewriting it as a standalone step decoupled the transformation from the bundler entirely: consumers
+run `tsc && vertesia-build`, and whatever consumes `lib/` afterwards — Rolldown, webpack, esbuild,
+Node itself — sees ordinary ESM.
 
-3. **Preset Transformers** (`src/presets/`)
-   - **Skill Transformer**: Parses markdown with YAML frontmatter into skill definitions
-   - **Raw Transformer**: Imports any file as a raw string
+Two traces of the original remain deliberately. The generated chunk format is byte-compatible with
+what the old `load()` hook produced, so the runtime behavior of transformed builds did not change
+across the migration; and the recursive re-scan reproduces Rollup's recursive `resolveId`/`load`
+behavior, which collection chunks depend on. Both are noted in the source where they matter.
 
-4. **Utilities** (`src/parsers/`)
-   - Frontmatter parser using gray-matter library
+## Package structure
 
-## Key Features
-
-### Generic Transformer Architecture
-
-The plugin is designed to be extensible:
-
-```typescript
-vertesiaImportPlugin({
-  transformers: [
-    {
-      pattern: /\.md\?skill$/,           // What to match
-      schema: SkillDefinitionSchema,      // Optional Zod validation
-      transform: (content, filePath) => { // How to transform
-        return { data: parsedData };
-      }
-    }
-  ]
-})
+```text
+src/
+├── bin/
+│   ├── build.ts               # `vertesia-build` CLI entry point
+│   └── config.ts              # pure package.json config parsing
+├── core/
+│   ├── compilers/widget.ts    # esbuild widget bundler
+│   ├── parsers/frontmatter.ts # YAML frontmatter splitter (js-yaml)
+│   ├── skill-markdown/
+│   │   ├── preprocess.ts      # {@tool}/{@skill}/tool= resolver — pure
+│   │   └── schema-validator.ts# AJV + dispatcher-field validation
+│   ├── transformers/          # skill, skills, template, templates, prompt, raw
+│   ├── utils/                 # asset discovery + copying
+│   └── types.ts               # TransformerRule, TransformResult, AssetFile
+├── import-transform/          # the pipeline (see below)
+├── vite/                      # dev-server + api-server plugins
+└── index.ts                   # public exports
 ```
 
-### Build-Time Validation
+## The pipeline
 
-Zod schemas validate transformed data during the build, not at runtime:
-- Build fails with clear error messages if validation fails
-- No runtime overhead
-- Type-safe with `z.infer<typeof Schema>`
+`import-transform/` is one module per stage, orchestrated by `index.ts`:
 
-### TypeScript Integration
+| Module | Responsibility |
+| ------ | -------------- |
+| `patterns.ts` | `SNIFF_PATTERN` — a coarse regex pre-filter, explicitly *not* a decision procedure. |
+| `scanner.ts` | Walk `libDir`, return `.js` files whose contents match the sniff, with content captured. |
+| `detector.ts` | Lex a file and return the specifiers that match a transformer, with quote offsets. |
+| `resolver.ts` | Map a specifier to its `srcDir` asset, its chunk path, and the replacement specifier. |
+| `chunk-emitter.ts` | Run the transformer, validate, write the chunk. |
+| `rewriter.ts` | Splice replacement specifiers over the original quoted ranges. |
+| `builtins.ts` | Name → `TransformerRule` registry for the CLI and the Vite plugin. |
 
-Type declarations for imports:
+### Path mapping
 
-```typescript
-// src/types/imports.d.ts
-declare module '*.md?skill' {
-  import type { SkillDefinition } from '@vertesia/build-tools';
-  const skill: SkillDefinition;
-  export default skill;
-}
+`libDir` and `srcDir` are mirror trees, so `<libDir>/<rel>` ↔ `<srcDir>/<rel>`. A chunk is written
+at the resolved lib path plus `.js`:
+
+```text
+import skill from './skills/code-review.md?skill';   // in lib/index.js
+    source asset   src/skills/code-review.md
+    chunk written  lib/skills/code-review.md.js
+    rewritten to   './skills/code-review.md.js'
 ```
 
-## Usage in Tool Server Template
+Appending rather than replacing the extension keeps the chunk name unambiguous: `foo.md` and
+`foo.jst` cannot collide, and the original asset name stays readable in a stack trace.
 
-### Configuration
+### Detection uses a real lexer
 
-`rollup.config.js`:
-```typescript
-import { vertesiaImportPlugin, skillTransformer, rawTransformer }
-  from '@vertesia/build-tools';
+`detector.ts` lexes with `es-module-lexer` rather than matching quoted strings with a regex. This
+is not a refactor for elegance — the regex was wrong in a way that broke a build. It matched
+anything shaped like a specifier, including a doc comment that mentioned `` `?skill` `` (which
+resolved to a directory and failed with `EISDIR`) and ordinary constants such as
+`const example = './example/SKILL.md'`, which became phantom imports.
 
-plugins: [
-  vertesiaImportPlugin({
-    transformers: [
-      skillTransformer,  // .md?skill imports
-      rawTransformer     // ?raw imports
-    ]
-  }),
-  // ... other plugins
-]
+An intermediate fix — stripping comments before matching — was rejected, correctly: it amounts to
+writing an incomplete JavaScript lexer, and it still mishandled comments inside template
+interpolations, regex literals following a keyword, and the plain-constant case, which is not a
+comment problem at all. Lexing the module handles comments, template literals, regex literals,
+static imports, `export … from` and dynamic `import()` in one pass, and still yields the offsets
+the rewriter needs.
+
+One wrinkle the lexer imposes: it reports specifiers *without* surrounding quotes for static
+imports but *with* them for dynamic ones. `quoteBounds()` normalizes this so the rewriter has a
+single convention; a dynamic import with a computed specifier yields no bounds and is skipped.
+
+### Fail-closed behavior
+
+A file reaches the detector only because it already matched the sniff — it contains a marker. So a
+lexer failure means a real import may be left untransformed and the raw specifier would ship to the
+runtime. `detectQueryImports` therefore does not catch parse errors, and `transformImports`
+annotates them with the file path:
+
+```text
+Failed to parse imports in /abs/path/lib/foo.js: Parse error @:12:5
 ```
 
-### Example Usage
+The same principle governs the skill preprocessor (below): every failure mode stops the build.
 
-```typescript
-// Import skill from markdown
-import codeReview from './skills/code-review.md?skill';
+### Recursion
 
-console.log(codeReview.name);        // Fully typed
-console.log(codeReview.title);       // TypeScript knows the structure
-console.log(codeReview.content);     // Markdown content as string
+Emitted chunks are re-scanned with `SNIFF_PATTERN` and queued if they match. This is what makes
+collection transformers work: `./all?skills` emits a chunk containing
+`import Skill_foo from './foo/SKILL.md';` lines, which are themselves transform targets. `seenFiles`
+and `emittedChunks` guard against reprocessing.
 
-// Import raw file
-import template from './template.html?raw';
-console.log(template); // String content
+## Transformers
+
+A `TransformerRule` is a `pattern` plus a `transform` function, with optional `schema` (Zod,
+validated in the emitter), `virtual` (no file to read), and `options`.
+
+`TransformResult.code` lets a transformer emit arbitrary module source instead of a JSON default
+export. Three built-ins rely on it: both collections generate import lists, and the skill
+transformer switches to custom code when a `properties.ts` is present, emitting
+
+```javascript
+import properties from './properties.js';
+// guard: isEnabled must be a function
+const skill = { … };
+export default { ...skill, ...properties };
 ```
 
-## Skill Transformer Details
+so the merge happens at runtime. `properties.ts` is compiled to `properties.js` by `tsc` in the
+step before this one — the pipeline never compiles TypeScript itself.
 
-### Input Format
+The skill transformer validates twice: frontmatter against a **strict** schema (unknown key ⇒
+error) before transformation, and the built definition against `SkillDefinitionSchema`
+(passthrough, so `properties.ts` additions survive) in the emitter.
 
-Markdown file with YAML frontmatter:
+## Skill Markdown preprocessing
 
-```markdown
----
-name: skill-name
-title: Skill Title
-description: What this skill does
-keywords: [tag1, tag2]
-custom_field: value
----
+`core/skill-markdown/preprocess.ts` resolves `{@tool x}`, `{@skill x}` and ` ```json tool=x `
+fences in skill bodies.
 
-# Skill Content
+**The module is pure.** It reads no files, imports no registry, and never inspects Git. It receives
+a catalog — sets of known tool and skill names, plus an optional `validateExample` callback — and
+returns `{ markdown, references, examples, errors }`. `assertSkillMarkdown` is the thin fail-closed
+wrapper that throws once, listing every problem.
 
-The markdown content here.
-```
+That purity is deliberate. The tools live in the consuming packages' registries; a transformer that
+went looking for one would couple this package to whichever package happens to own it, and would
+have to pick a winner when several do. Instead `vertesia-build` loads the module named by
+`vertesia-build.skillCatalog` and passes the result in.
 
-### Output Structure
+Design points worth knowing:
 
-```typescript
-{
-  name: 'skill-name',
-  title: 'Skill Title',
-  description: 'What this skill does',
-  keywords: ['tag1', 'tag2'],
-  content: '# Skill Content\n\nThe markdown content...',
-  metadata: {
-    custom_field: 'value'
-  }
-}
-```
+- **Ambiguity is an error, not a resolution.** A name defined by two providers is passed in via
+  `ambiguousTools` / `ambiguousSkills` and any unqualified reference to it fails. Silently binding
+  to whichever definition won is the exact failure the construct exists to prevent.
+- **Every `tool=` fence is validated.** A tagged example against a tool with no available schema
+  (`unvalidatableTools`) is an error rather than a pass — otherwise the tag would advertise a check
+  that never ran.
+- **`{@tool}` is not a naming indirection.** It renders to the plain name in backticks. Its value
+  is the fail-closed check and consistent rendering, not centralizing where names are written.
+- **Catalog-less builds fail on use.** If a body uses any construct and no catalog is configured,
+  the transformer throws instead of emitting the raw construct into the instructions.
 
-### Validation
+`schema-validator.ts` holds the semantic engine shared with the repo's skill auditor:
+`createSchemaExampleValidator` (AJV, configured `{ allErrors: true, coerceTypes: true, strict:
+false }` to mirror the runtime) plus the dispatcher primitives — `nodesAtPath`, `toolNamesAtPath`,
+`schemaNodeAtPath`, `checkDispatchDescriptor`, `resolveDispatchedNames`, `pairDispatchedInputs`.
+Dispatcher fields are parameters typed `string` that carry another tool's name
+(`batch_execute.tool_name`, `launch_workstream.allowed_tools[]`); JSON Schema is structurally blind
+to them, so the relation is declared as a `ToolDispatchDescriptor` (`{ field, inputField?, deny? }`)
+beside the tool's `params` and checked here.
 
-Required fields:
-- `name`: non-empty string
-- `title`: non-empty string
-- `description`: non-empty string
-- `content`: string (extracted markdown)
+### Transformer identity
 
-Optional fields:
-- `keywords`: array of strings
-- `metadata`: object with extra frontmatter fields
+The CLI swaps the configured skill transformer for one bound to the loaded catalog. It matches by a
+`Symbol.for('@vertesia/build-tools:skillTransformer')` marker (`isSkillTransformer`), not by
+`pattern.source` — pattern matching would also silently replace a consumer's own transformer
+registered for the same files. If nothing matches while `skillCatalog` is set, the build fails
+rather than proceeding with an unbound transformer.
+
+## Widget compilation
+
+`.tsx` files beside a `SKILL.md` are discovered, tracked in `skill.widgets`, and bundled with
+**esbuild** into `{assetsDir}/{widgetsDir}/`. The entry point is the `tsc`-compiled `.js`, not the
+`.tsx` source (`mapSrcWidgetToLib`). esbuild is the only bundler this package uses, and only here.
+
+Both asset copying and widget compilation are skipped when `assetsDir` is `false`, which is how
+`workflows` and `studio-server` are configured.
+
+## Vite dev path
+
+`vite/dev-server.ts` applies the same transformer set through Vite's `resolveId` + `load` hooks, so
+a source file behaves identically under `vite dev` and under `tsc && vertesia-build`. Asset copying
+and widget bundling are build-time concerns and are not performed. `vite/api-server.ts` layers a
+Hono tool server onto it as `/api` middleware.
+
+Vite and `@hono/node-server` are **optional peer dependencies** — the CLI path never loads them.
+
+## Configuration
+
+Parsing lives in `bin/config.ts`, separate from the CLI, so it is unit-testable without spawning a
+process. `resolveConfig` is pure and total: it validates every field and throws
+`VertesiaBuildConfigError`, which `build.ts` translates into `process.exit(1)`.
+
+`resolveSkillCatalogPath` is kept separate from `resolveConfig` precisely because loading the
+catalog is asynchronous I/O, and `resolveConfig` is meant to stay pure.
 
 ## Testing
 
-Comprehensive test suite in `tests/`:
-- `skill.test.ts`: Skill transformer tests
-- `raw.test.ts`: Raw transformer tests
-- `frontmatter.test.ts`: Frontmatter parser tests
+14 files, 143 tests (`pnpm test`), all unit-level — no fixture builds are spawned.
 
-All tests pass with 100% coverage of core functionality.
+| Area | Files |
+| ---- | ----- |
+| Pipeline | `detector`, `import-transform`, `import-transform-units`, `builtins` |
+| Transformers | `skill`, `skill-assets`, `prompt`, `raw` |
+| Skill Markdown | `skill-markdown` (35 tests: rendering, every fail-closed path, mutation cases) |
+| Support | `frontmatter`, `asset-discovery`, `bin-config`, `widget-compiler`, `dev-server` |
 
-## Package Structure
-
-```
-@vertesia/build-tools/
-├── src/
-│   ├── index.ts              # Main exports
-│   ├── plugin.ts             # Core plugin logic
-│   ├── types.ts              # TypeScript interfaces
-│   ├── presets/
-│   │   ├── skill.ts          # Skill transformer + schema
-│   │   └── raw.ts            # Raw transformer
-│   └── parsers/
-│       └── frontmatter.ts    # YAML frontmatter parser
-├── tests/                    # Test suite
-├── lib/                      # Built files (ESM + CJS)
-└── README.md                 # User documentation
-```
+Coverage of the preprocessor is verified by mutation rather than by assertion count: known-bad
+inputs (an unknown tool name, a payload with a wrong field name under a `tool=` tag) must fail, and
+tests assert the failure, so a regression that weakens a check is caught.
 
 ## Dependencies
 
-- **gray-matter**: YAML frontmatter parsing
-- **zod**: Runtime validation at build time
-- **rollup**: Peer dependency
+| Package | Used for |
+| ------- | -------- |
+| `js-yaml` | Frontmatter parsing. |
+| `zod` | Transformer output schemas, validated in the emitter. |
+| `ajv` | Tagged-example validation, mirroring the agent runtime's config. |
+| `es-module-lexer` | Import detection. |
+| `esbuild` | Widget bundling. |
+| `vite`, `@hono/node-server` | Optional peers, dev path only. |
 
-## Future Extensions
-
-The generic architecture allows easy addition of new transformers:
-
-1. **Interaction Transformer** - Parse interaction definitions from markdown
-2. **Widget Transformer** - Transform widget metadata files
-3. **JSON Schema Transformer** - Validate JSON files against schemas
-4. **YAML Transformer** - Parse YAML configuration files
-5. **Custom Transformers** - Any pattern-based transformation need
-
-## Integration Points
-
-### Tool Server Template
-- Replaced custom `rawPlugin()` with generic `vertesiaImportPlugin`
-- Added skill import support
-- Type declarations for TypeScript
-
-### Future: Other Templates
-- Can be used in any Rollup-based build
-- Works with both browser and server builds
-- No Vertesia-specific dependencies (except optional types)
-
-## Build System
-
-Uses ts-dual-module for dual ESM/CJS builds:
-1. `tsmod build` - Compiles TypeScript to ESM and CJS
-2. `rollup -c` - Bundles ESM build for distribution
+No bundler is used to build this package: `build` is `clean:lib && tsc -p tsconfig.json && chmod +x
+./lib/bin/build.js`.
 
 ## License
 
-Apache-2.0
-
-## Repository
-
-Part of the Vertesia ComposableAI monorepo:
-`composableai/packages/rollup-plugin-imports`
+Apache-2.0 — part of the Vertesia LLM Studio monorepo,
+<https://github.com/vertesia/composableai> (`packages/build-tools`).

@@ -57,6 +57,25 @@ Content`;
         expect((result.data as { tools: string[] }).tools).toEqual(['tool1', 'tool2']);
     });
 
+    /**
+     * `supporting_tools` exists so validation can tell which grants the body owes the reader an
+     * explanation for. It must not change what the skill unlocks — a split that quietly narrowed
+     * the toolset would break agents to satisfy a checker.
+     */
+    it('should unlock supporting_tools exactly as it unlocks tools', async () => {
+        const content = `---
+name: test
+title: Test
+description: Test description
+tools: [tool1]
+supporting_tools: [tool2, tool3]
+---
+Content`;
+
+        const result = await skillTransformer.transform(content, 'test.md');
+        expect((result.data as { tools: string[] }).tools).toEqual(['tool1', 'tool2', 'tool3']);
+    });
+
     it('should validate against schema successfully', () => {
         const validSkill = {
             name: 'test',

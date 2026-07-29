@@ -71,8 +71,9 @@ export interface PromptTemplate extends ExecutablePromptTemplate {
     name: string;
     status: PromptStatus;
     version: number;
-    // only to be used by published versions
-    // the id draft version which is the source of this published version (only when published)
+    // The record this one was derived from. On a published version it is the draft it was published
+    // from; on a fork it is the prompt that was forked, and the fork is itself a draft. So `parent`
+    // alone does not tell you which kind of record this is — read `status` for that.
     parent?: string;
     description?: string;
     test_data?: JSONObject; // optional test data satisfying the schema

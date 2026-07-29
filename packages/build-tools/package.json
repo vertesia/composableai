@@ -32,7 +32,7 @@
         }
     },
     "devDependencies": {
-        "@hono/node-server": "^2.0.10",
+        "@hono/node-server": "^2.0.11",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
@@ -42,19 +42,16 @@
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
-        "@rollup/plugin-commonjs": "^28.0.3",
-        "@rollup/plugin-json": "^6.1.0",
-        "@rollup/plugin-node-resolve": "^16.0.1",
-        "@rollup/plugin-terser": "^0.4.4",
-        "@rollup/plugin-typescript": "^12.1.2",
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
+        "ajv": "^8.20.0",
+        "es-module-lexer": "^1.7.0",
         "esbuild": "^0.28.1",
         "js-yaml": "^5.2.1",
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "@hono/node-server": "^2.0.10",
+        "@hono/node-server": "^2.0.11",
         "vite": "^8.1.4"
     },
     "peerDependenciesMeta": {
