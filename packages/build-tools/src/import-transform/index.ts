@@ -23,7 +23,7 @@ import type { AssetFile, TransformerRule } from '../core/types.js';
 import { copyAssets } from '../core/utils/asset-copy.js';
 import type { WidgetMetadata } from '../core/utils/asset-discovery.js';
 import { emitChunk } from './chunk-emitter.js';
-import { detectQueryImports } from './detector.js';
+import { detectQueryImports, type ImportOccurrence } from './detector.js';
 import { SNIFF_PATTERN } from './patterns.js';
 import { resolveImport } from './resolver.js';
 import { type ImportReplacement, writeRewrittenFile } from './rewriter.js';
@@ -94,7 +94,17 @@ export async function transformImports(opts: TransformImportsOptions): Promise<T
 
     while (workQueue.length > 0) {
         const file = workQueue.shift() as WorkItem;
-        const occurrences = detectQueryImports(file.content, transformers);
+
+        let occurrences: ImportOccurrence[];
+        try {
+            occurrences = detectQueryImports(file.content, transformers);
+        } catch (error) {
+            // Fail closed. This file reached the queue because it contains a transformation
+            // marker, so a lexer failure means a real import may go untransformed — the raw
+            // specifier would then ship to the runtime.
+            throw new Error(`Failed to parse imports in ${file.path}: ${(error as Error).message}`);
+        }
+
         if (occurrences.length === 0) {
             continue;
         }
