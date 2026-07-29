@@ -410,6 +410,26 @@ export type EventDeliveryQueueSubscriptionSummary = z.infer<typeof EventDelivery
 
 export type EventDeliveryQueueSummaryResponse = z.infer<typeof EventDeliveryQueueSummaryResponseSchema>;
 
+/** Filters for cancelling event deliveries that have not started yet. */
+export interface CancelEventDeliveryIntentsPayload {
+    /** Restrict cancellation to one subscription. */
+    subscription_id?: string;
+    /** Restrict cancellation to one or more delivery target types. */
+    target_type?: EventDeliveryTarget['type'][];
+}
+
+/** Result of cancelling queued event delivery intents. */
+export interface CancelEventDeliveryIntentsResponse {
+    /** Deployment environment whose queue was changed. */
+    environment: string;
+    /** Server-side watermark; intents created after this time were not changed. */
+    cleared_through: string;
+    /** Pending or retrying intents moved to the cancelled terminal state. */
+    cancelled: number;
+    /** Matching evaluating, starting, or running intents left for normal reconciliation. */
+    active_untouched: number;
+}
+
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;
     priority?: EventPriority;
