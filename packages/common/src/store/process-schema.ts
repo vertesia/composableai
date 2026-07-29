@@ -317,7 +317,7 @@ export const ProcessDefinitionBodyJsonSchema = {
                 scripts: {
                     type: 'object',
                     nullable: true,
-                    description: 'Named embedded script bundles available to script nodes.',
+                    description: 'Named script resources available to script nodes.',
                     required: [],
                     additionalProperties: {
                         $ref: '#/$defs/processScriptResource',
@@ -338,6 +338,29 @@ export const ProcessDefinitionBodyJsonSchema = {
                     type: 'string',
                     minLength: 1,
                 },
+                source: {
+                    $ref: '#/$defs/processScriptSource',
+                },
+                packages: {
+                    type: 'array',
+                    nullable: true,
+                    items: { type: 'string' },
+                },
+            },
+            required: ['language', 'entrypoint', 'source'],
+            additionalProperties: false,
+        },
+        processScriptSource: {
+            $ref: '#/$defs/processScriptInlineSource',
+        },
+        processScriptInlineSource: {
+            type: 'object',
+            properties: {
+                type: {
+                    type: 'string',
+                    const: 'inline',
+                    description: 'Source discriminator. Additional source types may be added in future versions.',
+                },
                 files: {
                     type: 'object',
                     minProperties: 1,
@@ -346,13 +369,8 @@ export const ProcessDefinitionBodyJsonSchema = {
                         type: 'string',
                     },
                 },
-                packages: {
-                    type: 'array',
-                    nullable: true,
-                    items: { type: 'string' },
-                },
             },
-            required: ['language', 'entrypoint', 'files'],
+            required: ['type', 'files'],
             additionalProperties: false,
         },
         branchDefinition: {

@@ -27,10 +27,23 @@ export type BranchJoinPolicy = 'all';
 export type ProcessDefinitionMetadata = Record<string, unknown>;
 export type ProcessScriptLanguage = 'python' | 'javascript' | 'typescript';
 
+/**
+ * Script files stored directly in the process definition.
+ *
+ * The source is a discriminated object so artifact- and Git-backed sources can
+ * be added without changing the surrounding script resource contract.
+ */
+export interface ProcessScriptInlineSource {
+    type: 'inline';
+    files: Record<string, string>;
+}
+
+export type ProcessScriptSource = ProcessScriptInlineSource;
+
 export interface ProcessScriptResource {
     language: ProcessScriptLanguage;
     entrypoint: string;
-    files: Record<string, string>;
+    source: ProcessScriptSource;
     packages?: string[];
 }
 

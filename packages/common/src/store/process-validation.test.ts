@@ -52,28 +52,37 @@ describe('process definition validation', () => {
         expect(() => validateProcessDefinitionBody(validDefinition())).not.toThrow();
     });
 
-    it('accepts embedded script resources and script fanout children', () => {
+    it('accepts inline script sources and script fanout children', () => {
         const definition = validDefinition();
         definition.resources = {
             scripts: {
                 score_contract: {
                     language: 'python',
                     entrypoint: 'main.py',
-                    files: {
-                        'main.py': 'print("ok")',
-                        'lib/helpers.py': 'def score(value): return value',
+                    source: {
+                        type: 'inline',
+                        files: {
+                            'main.py': 'print("ok")',
+                            'lib/helpers.py': 'def score(value): return value',
+                        },
                     },
                     packages: ['pandas>=2.0'],
                 },
                 normalize_json: {
                     language: 'javascript',
                     entrypoint: 'main.js',
-                    files: { 'main.js': 'console.log("ok")' },
+                    source: {
+                        type: 'inline',
+                        files: { 'main.js': 'console.log("ok")' },
+                    },
                 },
                 reshape_types: {
                     language: 'typescript',
                     entrypoint: 'main.ts',
-                    files: { 'main.ts': 'console.log("ok")' },
+                    source: {
+                        type: 'inline',
+                        files: { 'main.ts': 'console.log("ok")' },
+                    },
                 },
             },
         };
@@ -118,8 +127,11 @@ describe('process definition validation', () => {
                 'bad resource': {
                     language: 'python',
                     entrypoint: 'missing.py',
-                    files: {
-                        '../escape.py': 'print("no")',
+                    source: {
+                        type: 'inline',
+                        files: {
+                            '../escape.py': 'print("no")',
+                        },
                     },
                     packages: ['--index-url=evil'],
                 },
@@ -156,14 +168,17 @@ describe('process definition validation', () => {
         expect(result.errors).toContain('node "review" defines timeout but has type "human_task"');
     });
 
-    it('counts embedded script bundles against the process definition size cap', () => {
+    it('counts inline script sources against the process definition size cap', () => {
         const definition = validDefinition();
         definition.resources = {
             scripts: {
                 oversized: {
                     language: 'typescript',
                     entrypoint: 'main.ts',
-                    files: { 'main.ts': 'x'.repeat(1024 * 1024) },
+                    source: {
+                        type: 'inline',
+                        files: { 'main.ts': 'x'.repeat(1024 * 1024) },
+                    },
                 },
             },
         };

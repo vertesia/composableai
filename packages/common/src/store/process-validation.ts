@@ -333,11 +333,16 @@ function validateProcessResources(definition: ProcessDefinitionBody, errors: str
         ) {
             errors.push(`${label} has invalid language "${String(resource.language)}"`);
         }
-        if (!resource.files || Object.keys(resource.files).length === 0) {
+        if (resource.source?.type !== 'inline') {
+            errors.push(`${label} has unsupported source type "${String(resource.source?.type)}"`);
+            continue;
+        }
+        const files = resource.source.files;
+        if (!files || Object.keys(files).length === 0) {
             errors.push(`${label} must define at least one file`);
             continue;
         }
-        for (const [path, content] of Object.entries(resource.files)) {
+        for (const [path, content] of Object.entries(files)) {
             if (!PROCESS_SCRIPT_FILE_PATH.test(path) || path.split('/').includes('..')) {
                 errors.push(`${label} has unsafe file path "${path}"`);
             }
@@ -345,7 +350,7 @@ function validateProcessResources(definition: ProcessDefinitionBody, errors: str
                 errors.push(`${label} file "${path}" must contain text`);
             }
         }
-        if (!Object.hasOwn(resource.files, resource.entrypoint)) {
+        if (!Object.hasOwn(files, resource.entrypoint)) {
             errors.push(`${label} entrypoint "${resource.entrypoint}" is not present in files`);
         }
         for (const packageSpec of resource.packages ?? []) {
