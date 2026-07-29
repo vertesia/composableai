@@ -48,7 +48,7 @@ interface ScrollableSearchOptions<ResultT, PayloadT, PageT = number> {
     nextPageTrigger: React.RefObject<HTMLElement | null>;
 }
 
-interface ScrollableSearchResult<ResultT, PayloadT, PageT = number> {
+export interface ScrollableSearchResult<ResultT, PayloadT, PageT = number> {
     /**
      * Initiates a new search with the given payload
      * @param payload The search payload
@@ -105,15 +105,27 @@ export function useScrollableSearch<ResultT, PayloadT, PageT = number>(
     const [results, setResults] = useState<ResultT[]>([]);
     const [nextPage, setNextPage] = useState<PageT | null>(null);
     const [isSearching, setIsSearching] = useState(false);
+    // Bumped by search()/refresh() so the fetch effect re-runs even when the
+    // payload/page state is unchanged (e.g. refresh on the first page).
+    const [refreshTick, setRefreshTick] = useState(0);
 
     // Track current request to prevent stale results
     const requestIdRef = useRef(0);
+
+    // Latest-ref for the search function: callers routinely pass an inline
+    // closure, which gets a new identity on every render. Depending on it in
+    // the fetch effect made every completed request re-trigger the effect —
+    // an infinite request loop. The ref always points at the latest closure
+    // without participating in the effect's dependencies.
+    const searchFnRef = useRef(opts.search);
+    searchFnRef.current = opts.search;
 
     const search = (payload: PayloadT) => {
         setPage(null);
         setResults([]); // Clear old results immediately
         setNextPage(null);
         setLastPayload(payload);
+        setRefreshTick((tick) => tick + 1);
     };
 
     const searchMore = () => {
@@ -122,13 +134,15 @@ export function useScrollableSearch<ResultT, PayloadT, PageT = number>(
         }
     };
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: refreshTick is an intentional external trigger — refresh() bumps it to re-run the fetch when payload/page are unchanged
     useEffect(() => {
         // Increment request ID to mark previous requests as stale
         requestIdRef.current += 1;
         const currentRequestId = requestIdRef.current;
 
         setIsSearching(true);
-        opts.search(lastPayload, page, pageSize)
+        searchFnRef
+            .current(lastPayload, page, pageSize)
             .then((r) => {
                 // Only update state if this is still the current request
                 if (currentRequestId !== requestIdRef.current) {
@@ -158,7 +172,7 @@ export function useScrollableSearch<ResultT, PayloadT, PageT = number>(
                     setIsSearching(false);
                 }
             });
-    }, [...dependencies, lastPayload, opts.search, page, pageSize]);
+    }, [...dependencies, lastPayload, refreshTick, page, pageSize]);
 
     // Intersection observer for infinite scrolling
     useIntersectionObserver(
