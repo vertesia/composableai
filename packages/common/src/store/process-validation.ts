@@ -43,6 +43,9 @@ export function getProcessInteractionValidationSelectors(interactions: Iterable<
 export const MAX_PROCESS_DEFINITION_BYTES = 1024 * 1024;
 export const MAX_PROCESS_GUARD_DEPTH = 64;
 export const MAX_PROCESS_GUARD_NODES = 4096;
+const PROCESS_SCRIPT_RESOURCE_NAME = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;
+const PROCESS_SCRIPT_FILE_PATH = /^[a-zA-Z0-9._-]+(\/[a-zA-Z0-9._-]+)*$/;
+const PROCESS_SCRIPT_PACKAGE = /^[a-zA-Z0-9][a-zA-Z0-9._-]*(\[[a-zA-Z0-9,._-]+\])?([<>=!~^][^\s;|&$]*)?$/;
 
 export function validateProcessDefinitionBody(
     definition: ProcessDefinitionBody,
@@ -62,7 +65,7 @@ export function getProcessDefinitionValidationResult(
     const context = createValidationContext(options);
     const size = new TextEncoder().encode(JSON.stringify(definition)).length;
     if (size > MAX_PROCESS_DEFINITION_BYTES) {
-        errors.push(`process definition exceeds ${MAX_PROCESS_DEFINITION_BYTES} bytes`);
+        errors.push(`process definition, including embedded resources, exceeds ${MAX_PROCESS_DEFINITION_BYTES} bytes`);
     }
 
     if (!definition.process) {
@@ -85,6 +88,7 @@ export function getProcessDefinitionValidationResult(
     if (!definition.context?.initial) {
         errors.push('context.initial is missing');
     }
+    validateProcessResources(definition, errors);
 
     for (const [nodeId, node] of Object.entries(definition.nodes ?? {})) {
         validateNodeDefinition(definition, nodeId, node, errors, context);
@@ -135,6 +139,16 @@ function validateNodeDefinition(
     }
     if (node.type === 'tool') {
         validateToolNodeDefinition(nodeId, node, errors, context);
+    }
+    if (node.type === 'script') {
+        validateScriptNodeDefinition(definition, nodeId, node, errors);
+    } else {
+        if (node.script !== undefined) {
+            errors.push(`node "${nodeId}" defines script but has type "${node.type}"`);
+        }
+        if (node.timeout !== undefined) {
+            errors.push(`node "${nodeId}" defines timeout but has type "${node.type}"`);
+        }
     }
     if ((node.type === 'interaction' || node.type === 'agent') && node.interaction && context.knownInteractions) {
         if (!isKnownSelector(node.interaction, context.knownInteractions)) {
@@ -306,6 +320,63 @@ function validateToolNodeDefinition(
     }
 }
 
+function validateProcessResources(definition: ProcessDefinitionBody, errors: string[]) {
+    for (const [name, resource] of Object.entries(definition.resources?.scripts ?? {})) {
+        const label = `script resource "${name}"`;
+        if (!PROCESS_SCRIPT_RESOURCE_NAME.test(name)) {
+            errors.push(`${label} has an invalid name`);
+        }
+        if (
+            resource.language !== 'python' &&
+            resource.language !== 'javascript' &&
+            resource.language !== 'typescript'
+        ) {
+            errors.push(`${label} has invalid language "${String(resource.language)}"`);
+        }
+        if (!resource.files || Object.keys(resource.files).length === 0) {
+            errors.push(`${label} must define at least one file`);
+            continue;
+        }
+        for (const [path, content] of Object.entries(resource.files)) {
+            if (!PROCESS_SCRIPT_FILE_PATH.test(path) || path.split('/').includes('..')) {
+                errors.push(`${label} has unsafe file path "${path}"`);
+            }
+            if (typeof content !== 'string') {
+                errors.push(`${label} file "${path}" must contain text`);
+            }
+        }
+        if (!Object.hasOwn(resource.files, resource.entrypoint)) {
+            errors.push(`${label} entrypoint "${resource.entrypoint}" is not present in files`);
+        }
+        for (const packageSpec of resource.packages ?? []) {
+            if (
+                typeof packageSpec !== 'string' ||
+                !packageSpec ||
+                packageSpec.startsWith('-') ||
+                !PROCESS_SCRIPT_PACKAGE.test(packageSpec)
+            ) {
+                errors.push(`${label} has unsafe package specification "${String(packageSpec)}"`);
+            }
+        }
+    }
+}
+
+function validateScriptNodeDefinition(
+    definition: ProcessDefinitionBody,
+    nodeId: string,
+    node: NodeDefinition,
+    errors: string[],
+) {
+    if (!node.script) {
+        errors.push(`script node "${nodeId}" is missing script`);
+    } else if (!definition.resources?.scripts?.[node.script]) {
+        errors.push(`script node "${nodeId}" references unknown script resource "${node.script}"`);
+    }
+    if (node.timeout !== undefined && (!Number.isInteger(node.timeout) || node.timeout < 1 || node.timeout > 600)) {
+        errors.push(`script node "${nodeId}" timeout must be an integer between 1 and 600`);
+    }
+}
+
 function validateSetContextNode(nodeId: string, node: NodeDefinition, errors: string[]) {
     const input = node.input;
     if (!isRecord(input)) {
@@ -379,6 +450,7 @@ function isProcessNodeType(value: string): boolean {
         value === 'tool' ||
         value === 'interaction' ||
         value === 'agent' ||
+        value === 'script' ||
         value === 'process' ||
         value === 'human_task' ||
         value === 'foreach' ||
@@ -401,7 +473,9 @@ function isParallelFailurePolicy(value: string): boolean {
 }
 
 function isFanoutChildNodeType(value: string): boolean {
-    return value === 'tool' || value === 'interaction' || value === 'agent' || value === 'process';
+    return (
+        value === 'tool' || value === 'interaction' || value === 'agent' || value === 'script' || value === 'process'
+    );
 }
 
 function validateFanoutChildNodeDefinition(

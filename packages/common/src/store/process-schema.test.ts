@@ -69,6 +69,30 @@ describe('process definition JSON schema', () => {
         expect(validate(validDefinition())).toBe(true);
     });
 
+    it('accepts embedded script resources and script nodes', () => {
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
+        const definition = validDefinition();
+        definition.resources = {
+            scripts: {
+                normalize: {
+                    language: 'typescript',
+                    entrypoint: 'main.ts',
+                    files: {
+                        'main.ts': 'console.log("ok");',
+                    },
+                    packages: ['zod@4.0.0'],
+                },
+            },
+        };
+        definition.nodes.fanout.node = {
+            type: 'script',
+            script: 'normalize',
+            timeout: 120,
+        };
+
+        expect(validate(definition)).toBe(true);
+    });
+
     it('rejects malformed process definition shape for editor diagnostics', () => {
         const validate = new Ajv.default({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
         const invalidDefinition = {
