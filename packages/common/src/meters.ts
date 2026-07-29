@@ -1,4 +1,4 @@
-import type { BillingMethod } from './user.js';
+import type { StripeBillingStatusResponseFromSchema } from './api-schemas/account.js';
 
 export interface MeterAdjustment {
     meter: string;
@@ -19,9 +19,12 @@ export enum MeterNames {
     task_run = 'task_run',
 }
 
-export interface StripeBillingStatusResponse {
-    status: 'enabled' | 'disabled';
-    billing_method: BillingMethod | null;
-    portal_url?: string;
-    reason?: string;
-}
+/**
+ * Stripe billing status, derived from `StripeBillingStatusResponseSchema`.
+ *
+ * A real discriminated union rather than the flat object this used to be: the server sets
+ * `portal_url` only when enabled and `reason` only when disabled, and the flat shape gave every
+ * generated client two unrelated optionals with no way to tell which was populated. Narrowing on
+ * `status` now tells TypeScript which fields exist.
+ */
+export type StripeBillingStatusResponse = StripeBillingStatusResponseFromSchema;

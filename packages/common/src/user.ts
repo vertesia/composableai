@@ -1,5 +1,12 @@
+import type {
+    AccountBillingFromSchema,
+    AccountFromSchema,
+    UpdateAccountPayloadFromSchema,
+} from './api-schemas/account.js';
 import type { ApiKey } from './apikey.js';
 import type { ProjectRef, SystemRoles } from './project.js';
+
+export * from './account-values.js';
 
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];
@@ -63,145 +70,18 @@ export const EARLY_ACCESS_ANNOTATION = 'early-access';
  */
 export const RESTRICTED_ENVIRONMENT_ERROR_CODE = 'restricted_environment';
 
-export enum Datacenters {
-    aws = 'aws',
-    gcp = 'gcp',
-    azure = 'azure',
-}
-
-export enum BillingMethod {
-    stripe = 'stripe',
-    invoice = 'invoice',
-}
-
-export enum AccountType {
-    vertesia = 'vertesia',
-    partner = 'partner',
-    free = 'free',
-    customer = 'customer',
-    prospect = 'prospect',
-    unknown = 'unknown',
-}
-
-export interface AccountBilling {
-    method: BillingMethod;
-    stripe_customer_id?: string;
-}
-
 /**
- * Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota`
- * (`QUOTA_TIERS`); these names must match its keys.
- * - `standard` — protective baseline limits (the default for most accounts).
- * - `enterprise` — high limits for contracted customers / internal / partners.
+ * The account as it crosses the wire.
  *
- * An account with no explicit `quota_tier` derives its tier from its `account_type`.
+ * Derived from `AccountSchema`, not written alongside it: the schema is what OpenAPI publishes and
+ * what AJV compiles, so a hand-written twin could only ever drift from the contract actually being
+ * enforced. `import type` erases at compile time, so nothing here pulls zod into a browser or SDK
+ * bundle — runtime consumers reach the schemas through the `@vertesia/common/api-schemas` entry
+ * point instead.
  */
-export enum QuotaTier {
-    standard = 'standard',
-    enterprise = 'enterprise',
-}
-
-/**
- * Default tier for an account that has no explicit `quota_tier`, derived from its `account_type`:
- * contracted customers and internal Vertesia accounts get `enterprise`; everyone else (partner,
- * free, prospect, unknown) gets the protective `standard` baseline.
- */
-export function quotaTierForAccountType(accountType: AccountType | undefined | null): QuotaTier {
-    switch (accountType) {
-        case AccountType.customer:
-        case AccountType.vertesia:
-            return QuotaTier.enterprise;
-        default:
-            return QuotaTier.standard;
-    }
-}
-
-export const ACCOUNT_NAMESPACE_MAX_LENGTH = 63;
-export const ACCOUNT_APP_ACCESS_MESSAGE_MAX_LENGTH = 1000;
-export const RESERVED_ACCOUNT_NAMESPACES = [
-    'admin',
-    'api',
-    'apps',
-    'auth',
-    'cdn',
-    'docs',
-    'internal-auth',
-    'mcp',
-    'status',
-    'sts',
-    'www',
-] as const;
-
-const ACCOUNT_NAMESPACE_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-
-export function normalizeAccountNamespace(namespace: string): string {
-    return namespace.trim().toLowerCase();
-}
-
-export function getAccountNamespaceValidationError(namespace: string): string | undefined {
-    if (!namespace) {
-        return 'Account namespace is required';
-    }
-    if (namespace.length > ACCOUNT_NAMESPACE_MAX_LENGTH || !ACCOUNT_NAMESPACE_PATTERN.test(namespace)) {
-        return 'Account namespace must be a lowercase DNS label containing only letters, numbers, and hyphens';
-    }
-    if ((RESERVED_ACCOUNT_NAMESPACES as readonly string[]).includes(namespace)) {
-        return `Account namespace '${namespace}' is reserved`;
-    }
-    return undefined;
-}
-
-export interface Account {
-    id: string;
-    name: string;
-
-    /** Public DNS-label-compatible identifier used by organization app domains. */
-    namespace?: string;
-
-    /**
-     * Plain-text instructions shown when a signed-in user has no application access.
-     * @maxLength 1000
-     */
-    app_access_message?: string;
-
-    email_domains: string[];
-
-    onboarding: {
-        completed: boolean;
-        completed_at: Date;
-    };
-
-    datacenter: string;
-
-    account_type: AccountType;
-
-    billing: AccountBilling;
-
-    /** Quota/rate-limit tier. Unset → the deployment default tier (env `QUOTA_BASE_TIER`). */
-    quota_tier?: QuotaTier;
-
-    /**
-     * Ops-managed per-account feature flags. Untyped by design so operators can add / remove
-     * temporary rollout gates without a schema change. Keys are enumerated in the admin UI
-     * from a hardcoded registry (studio-server) — flags not in that registry are ignored.
-     * Not modifiable through the public account API; admin API only.
-     */
-    feature_flags?: Record<string, unknown>;
-
-    created_by: string;
-    updated_by: string;
-    created_at: string;
-    updated_at: string;
-}
-
-export interface UpdateAccountPayload {
-    name?: string;
-    /** @maxLength 1000 */
-    app_access_message?: string;
-    email_domains?: string[];
-    billing?: AccountBilling;
-    quota_tier?: QuotaTier;
-}
+export type Account = AccountFromSchema;
+export type AccountBilling = AccountBillingFromSchema;
+export type UpdateAccountPayload = UpdateAccountPayloadFromSchema;
 
 export interface AccountRef {
     id: string;

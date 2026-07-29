@@ -22,9 +22,14 @@
         ".": {
             "types": "./lib/index.d.ts",
             "default": "./lib/index.js"
+        },
+        "./api-schemas": {
+            "types": "./lib/api-schemas/index.d.ts",
+            "default": "./lib/api-schemas/index.js"
         }
     },
     "devDependencies": {
+        "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
         "typescript": "^6.0.3",
@@ -32,7 +37,9 @@
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
-        "ajv": "^8.20.0"
+        "ajv": "^8.20.0",
+        "ajv-formats": "^3.0.1",
+        "zod": "^4.4.3"
     },
     "repository": {
         "type": "git",

@@ -1,6 +1,18 @@
 export * from './access-control.js';
 export * from './agent-request-template.js';
 export * from './analytics.js';
+/**
+ * Schema-derived API types. MUST stay `export type` — tsc erases it, so `lib/index.js` never
+ * references `./api-schemas/*` and zod stays out of the browser bundle. A runtime `export *` here
+ * would ship zod to every UI user; see `./api-schemas/index.ts` for why.
+ */
+export type {
+    AccountBillingFromSchema,
+    AccountFromSchema,
+    StripeBillingStatusResponseFromSchema,
+    UpdateAccountPayloadFromSchema,
+} from './api-schemas/account.js';
+export type { ApiKeyListQueryFromSchema } from './api-schemas/apikey.js';
 export * from './apikey.js';
 export * from './apps.js';
 export * from './ask-user.js';
