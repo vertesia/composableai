@@ -314,32 +314,32 @@ describe('useAgentStream', () => {
 
     it('does not apply replayed file_processing snapshots to server file updates', async () => {
         let deliver: ((message: AgentMessage) => void) | undefined;
-        const fileSnapshot = (timestamp: number, id: string): AgentMessage =>
-            ({
-                timestamp,
-                workflow_run_id: 'run-1',
-                type: AgentMessageType.SYSTEM,
-                message: '',
-                workstream_id: 'main',
-                details: {
-                    system_type: 'file_processing',
-                    batch_id: 'batch-1',
-                    files: [
-                        {
-                            id,
-                            name: `${id}.pdf`,
-                            content_type: 'application/pdf',
-                            size: 1,
-                            status: FileProcessingStatus.READY,
-                            artifact_path: `files/${id}.pdf`,
-                            reference: `artifact:files/${id}.pdf`,
-                        },
-                    ],
-                    pending_count: 0,
-                    ready_count: 1,
-                    error_count: 0,
-                },
-            }) as AgentMessage;
+        const fileSnapshot = (timestamp: number, id: string): AgentMessage => ({
+            timestamp,
+            workflow_run_id: 'run-1',
+            type: AgentMessageType.SYSTEM,
+            message: '',
+            workstream_id: 'main',
+            details: {
+                system_type: 'file_processing',
+                batch_id: 'batch-1',
+                files: [
+                    {
+                        id,
+                        name: `${id}.pdf`,
+                        content_type: 'application/pdf',
+                        size: 1,
+                        status: FileProcessingStatus.READY,
+                        artifact_path: `files/${id}.pdf`,
+                        reference: `artifact:files/${id}.pdf`,
+                        started_at: timestamp,
+                    },
+                ],
+                pending_count: 0,
+                ready_count: 1,
+                error_count: 0,
+            },
+        });
         const historical = fileSnapshot(1_000, 'old-upload');
         const streamMessages = vi.fn<
             (
