@@ -48,7 +48,7 @@ interface ScrollableSearchOptions<ResultT, PayloadT, PageT = number> {
     nextPageTrigger: React.RefObject<HTMLElement | null>;
 }
 
-interface ScrollableSearchResult<ResultT, PayloadT, PageT = number> {
+export interface ScrollableSearchResult<ResultT, PayloadT, PageT = number> {
     /**
      * Initiates a new search with the given payload
      * @param payload The search payload
