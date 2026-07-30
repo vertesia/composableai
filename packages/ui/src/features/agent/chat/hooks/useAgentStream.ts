@@ -357,9 +357,12 @@ export function useAgentStream(
                 (message) => {
                     if (abortController.signal.aborted) return;
                     // Completed and idle runs replay their archived history through the live
-                    // stream. Only forward genuinely new deliveries so onMessage consumers
+                    // stream. Track replay status once, before the cursor advances below —
+                    // every replay-sensitive consumer in this callback must use it.
+                    const isReplay = Boolean(message.timestamp && message.timestamp <= lastDeliveredTsRef.current);
+                    // Only forward genuinely new deliveries so onMessage consumers
                     // never treat replayed events as fresh ones.
-                    if (!message.timestamp || message.timestamp > lastDeliveredTsRef.current) {
+                    if (!isReplay) {
                         onMessageRef.current?.(message);
                     }
 
@@ -426,7 +429,13 @@ export function useAgentStream(
                     if (message.type === AgentMessageType.SYSTEM) {
                         const details = message.details as FileProcessingDetails | undefined;
                         if (details?.system_type === 'file_processing' && details.files) {
-                            setServerFileUpdates(new Map(details.files.map((file) => [file.id, file])));
+                            // Replayed snapshots list every file ever uploaded to the run as
+                            // READY; applying them on reconnect would rehydrate historical
+                            // uploads as staged composer chips. Only genuinely new updates
+                            // may touch the file state.
+                            if (!isReplay) {
+                                setServerFileUpdates(new Map(details.files.map((file) => [file.id, file])));
+                            }
                             return;
                         }
                         // Other SYSTEM messages fall through to normal handling
