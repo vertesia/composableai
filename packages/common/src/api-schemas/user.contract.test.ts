@@ -10,6 +10,7 @@ import type {
     PrincipalContextFromSchema,
     PrincipalIdentityFromSchema,
     UpdateUserPayloadFromSchema,
+    UserArrayFromSchema,
     UserFromSchema,
 } from './user.js';
 
@@ -34,6 +35,7 @@ const VALID_USER = {
 describe('gate 1 — the schema is the single source of truth for the public IAM types', () => {
     it('publishes the exact schema-derived type, not a hand-written twin', () => {
         assertType<Equals<User, UserFromSchema>>(true);
+        assertType<Equals<UserArrayFromSchema, User[]>>(true);
         assertType<Equals<UpdateUserPayload, UpdateUserPayloadFromSchema>>(true);
         assertType<Equals<DeleteByIdResult, DeleteByIdResultFromSchema>>(true);
         assertType<Equals<PrincipalContext, PrincipalContextFromSchema>>(true);
@@ -145,6 +147,27 @@ describe('gate 4 — runtime enforcement uses the published components', () => {
         }
         // A document spread straight onto the wire is what this catches.
         expect(validateApiResponse('User', { ...VALID_USER, _id: 'x' }).valid).toBe(false);
+    });
+
+    it('enforces the date-time format the timestamps claim', () => {
+        // Through the registry rather than the local `compile` helper: the production validator
+        // registers ajv-formats, and a bare Ajv2020 ignores `format` entirely — which is precisely
+        // why the description alone was not enough. A plain string schema accepts 'yesterday'.
+        expect(validateApiResponse('User', { ...VALID_USER, created_at: 'yesterday' }).valid).toBe(false);
+        expect(validateApiResponse('User', { ...VALID_USER, created_at: '2026-07-30' }).valid).toBe(false);
+        expect(validateApiResponse('User', VALID_USER).valid).toBe(true);
+    });
+
+    it('checks every member of the account listing against the same User component', () => {
+        // The gap this closes: `UserArray` items $ref `User`, so publishing the array without
+        // enforcing it would document the contract for each member while checking none of them.
+        expect(validateApiResponse('UserArray', [VALID_USER, VALID_USER]).valid).toBe(true);
+        expect(validateApiResponse('UserArray', []).valid).toBe(true);
+        // A legacy member with no timestamps, which is exactly what the old jsonDocs() could emit.
+        const { created_at: _dropped, ...legacyMember } = VALID_USER;
+        expect(validateApiResponse('UserArray', [VALID_USER, legacyMember]).valid).toBe(false);
+        // And one carrying a null the component cannot publish.
+        expect(validateApiResponse('UserArray', [{ ...VALID_USER, phone: null }]).valid).toBe(false);
     });
 
     it('validates the shared DeleteByIdResult that seven other endpoints also publish', () => {

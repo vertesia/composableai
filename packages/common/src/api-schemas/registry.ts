@@ -12,7 +12,13 @@ import {
     type RawApiParameters,
 } from './parameters.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
-import { DeleteByIdResultSchema, PrincipalIdentitySchema, UpdateUserPayloadSchema, UserSchema } from './user.js';
+import {
+    DeleteByIdResultSchema,
+    PrincipalIdentitySchema,
+    UpdateUserPayloadSchema,
+    UserArraySchema,
+    UserSchema,
+} from './user.js';
 
 // ajv-formats is CommonJS with an ESM-style declaration file. Node's interop makes the default
 // import the whole `module.exports` (itself callable), while TypeScript sees the namespace — and
@@ -34,6 +40,7 @@ const API_SCHEMAS = {
     QuotaStandingResponse: QuotaStandingResponseSchema,
     QuotaTierResponse: QuotaTierResponseSchema,
     User: UserSchema,
+    UserArray: UserArraySchema,
     UpdateUserPayload: UpdateUserPayloadSchema,
     DeleteByIdResult: DeleteByIdResultSchema,
     PrincipalIdentity: PrincipalIdentitySchema,

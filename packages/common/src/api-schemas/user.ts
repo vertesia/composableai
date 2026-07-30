@@ -84,10 +84,24 @@ export const UserSchema = z
             .array(z.string())
             .optional()
             .meta({ description: 'Free-form user metadata - restricted to internal use' }),
-        created_at: z.string().meta({ description: 'ISO 8601 creation timestamp.' }),
-        updated_at: z.string().meta({ description: 'ISO 8601 timestamp of the last update.' }),
+        // `format: 'date-time'` and not a bare string: the description claims ISO 8601, and AJV
+        // (with ajv-formats) enforces the claim rather than leaving it as documentation. Matches
+        // how Account publishes its timestamps.
+        created_at: z.string().meta({ format: 'date-time', description: 'ISO 8601 creation timestamp.' }),
+        updated_at: z.string().meta({ format: 'date-time', description: 'ISO 8601 timestamp of the last update.' }),
     })
     .meta({ id: 'User' });
+
+/**
+ * The account members listing, published as its own component because the document already carries
+ * `UserArray` — an array named at the top level rather than inlined at the use site.
+ *
+ * It exists in this batch because `User` became canonical: a legacy array slot whose items `$ref` a
+ * canonical component publishes the new contract without enforcing it, so a member document missing
+ * timestamps or carrying a null would violate the nested contract silently. Converting the array is
+ * what closes that gap.
+ */
+export const UserArraySchema = z.array(UserSchema).meta({ id: 'UserArray' });
 
 export const UpdateUserPayloadSchema = z
     .object({
@@ -104,10 +118,14 @@ export const UpdateUserPayloadSchema = z
     .meta({ id: 'UpdateUserPayload' });
 
 /**
- * Shared by eight studio delete endpoints, of which only `DeleteUser` is converted in this batch.
- * The other seven keep deriving it from the TypeScript interface, and the generator fails the build
- * if the two definitions ever differ — which is what makes converting a shared component safe to do
- * one slot at a time.
+ * Shared by eight studio delete endpoints, and all eight converted together — a shared component
+ * cannot be migrated one slot at a time.
+ *
+ * The byte-identity guard in the generator does not make it safe to leave the others behind: the
+ * public `DeleteByIdResult` is now an alias inferred from this schema, so the TypeScript derivation
+ * the other slots relied on changes the moment this one does, and the generator refuses to publish
+ * a canonical and a derived component under a single name. Any future shared type has to move as a
+ * unit for the same reason.
  */
 export const DeleteByIdResultSchema = z.object({ id: z.string() }).meta({ id: 'DeleteByIdResult' });
 
@@ -118,5 +136,6 @@ export const DeleteByIdResultSchema = z.object({ id: z.string() }).meta({ id: 'D
 export type PrincipalContextFromSchema = z.infer<typeof PrincipalContextSchema>;
 export type PrincipalIdentityFromSchema = z.infer<typeof PrincipalIdentitySchema>;
 export type UserFromSchema = z.infer<typeof UserSchema>;
+export type UserArrayFromSchema = z.infer<typeof UserArraySchema>;
 export type UpdateUserPayloadFromSchema = z.infer<typeof UpdateUserPayloadSchema>;
 export type DeleteByIdResultFromSchema = z.infer<typeof DeleteByIdResultSchema>;

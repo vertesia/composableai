@@ -136,6 +136,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'UpdateAccountPayload',
             'UpdateUserPayload',
             'User',
+            'UserArray',
         ]);
     });
 
