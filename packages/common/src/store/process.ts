@@ -11,6 +11,7 @@ export type ProcessNodeType =
     | 'tool'
     | 'interaction'
     | 'agent'
+    | 'script'
     | 'process'
     | 'human_task'
     | 'foreach'
@@ -24,6 +25,31 @@ export type ProcessNodeRunType = 'supervised' | 'programmatic';
 export type ParallelCollectMode = 'array';
 export type BranchJoinPolicy = 'all';
 export type ProcessDefinitionMetadata = Record<string, unknown>;
+export type ProcessScriptLanguage = 'python' | 'javascript' | 'typescript';
+
+/**
+ * Script files stored directly in the process definition.
+ *
+ * The source is a discriminated object so artifact- and Git-backed sources can
+ * be added without changing the surrounding script resource contract.
+ */
+export interface ProcessScriptInlineSource {
+    type: 'inline';
+    files: Record<string, string>;
+}
+
+export type ProcessScriptSource = ProcessScriptInlineSource;
+
+export interface ProcessScriptResource {
+    language: ProcessScriptLanguage;
+    entrypoint: string;
+    source: ProcessScriptSource;
+    packages?: string[];
+}
+
+export interface ProcessResourcesDefinition {
+    scripts?: Record<string, ProcessScriptResource>;
+}
 export type ParallelCollectField =
     | 'status'
     | 'index'
@@ -104,6 +130,10 @@ export interface ParallelCollectDefinition {
 export interface NodeDefinition {
     type: ProcessNodeType;
     tool?: string;
+    /** Named entry in process resources.scripts for script nodes. */
+    script?: string;
+    /** Script execution timeout in seconds. Defaults to 300 and is capped at 600. */
+    timeout?: number;
     interaction?: string;
     process?: string;
     process_definition?: ProcessDefinitionBody;
@@ -165,6 +195,7 @@ export interface ProcessDefinitionBody {
     description?: string;
     initial: string;
     model?: string;
+    resources?: ProcessResourcesDefinition;
     context: ProcessContextDefinition;
     nodes: Record<string, NodeDefinition>;
     metadata?: ProcessDefinitionMetadata;
@@ -227,6 +258,8 @@ export interface NodeHistoryEntry {
     child_run_id?: string;
     child_workflow_id?: string;
     child_workflow_run_id?: string;
+    artifacts?: string[];
+    log_ref?: string;
 }
 
 export interface ProcessHistoryRef {

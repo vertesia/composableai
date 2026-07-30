@@ -69,6 +69,49 @@ describe('process definition JSON schema', () => {
         expect(validate(validDefinition())).toBe(true);
     });
 
+    it('accepts inline script sources and script nodes', () => {
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
+        const definition = validDefinition();
+        definition.resources = {
+            scripts: {
+                normalize: {
+                    language: 'typescript',
+                    entrypoint: 'main.ts',
+                    source: {
+                        type: 'inline',
+                        files: {
+                            'main.ts': 'console.log("ok");',
+                        },
+                    },
+                    packages: ['zod@4.0.0'],
+                },
+            },
+        };
+        definition.nodes.fanout.node = {
+            type: 'script',
+            script: 'normalize',
+            timeout: 120,
+        };
+
+        expect(validate(definition)).toBe(true);
+    });
+
+    it('rejects legacy script resources without a source discriminator', () => {
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
+        const definition = validDefinition() as unknown as Record<string, unknown>;
+        definition.resources = {
+            scripts: {
+                normalize: {
+                    language: 'typescript',
+                    entrypoint: 'main.ts',
+                    files: { 'main.ts': 'console.log("ok");' },
+                },
+            },
+        };
+
+        expect(validate(definition)).toBe(false);
+    });
+
     it('rejects malformed process definition shape for editor diagnostics', () => {
         const validate = new Ajv.default({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
         const invalidDefinition = {
