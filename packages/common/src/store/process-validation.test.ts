@@ -52,6 +52,147 @@ describe('process definition validation', () => {
         expect(() => validateProcessDefinitionBody(validDefinition())).not.toThrow();
     });
 
+    it('accepts inline script sources and script fanout children', () => {
+        const definition = validDefinition();
+        definition.resources = {
+            scripts: {
+                score_contract: {
+                    language: 'python',
+                    entrypoint: 'main.py',
+                    source: {
+                        type: 'inline',
+                        files: {
+                            'main.py': 'print("ok")',
+                            'lib/helpers.py': 'def score(value): return value',
+                        },
+                    },
+                    packages: ['pandas>=2.0'],
+                },
+                normalize_json: {
+                    language: 'javascript',
+                    entrypoint: 'main.js',
+                    source: {
+                        type: 'inline',
+                        files: { 'main.js': 'console.log("ok")' },
+                    },
+                    packages: ['zod@4.0.0'],
+                },
+                reshape_types: {
+                    language: 'typescript',
+                    entrypoint: 'main.ts',
+                    source: {
+                        type: 'inline',
+                        files: { 'main.ts': 'console.log("ok")' },
+                    },
+                    packages: ['@types/node', '@vertesia/client@latest'],
+                },
+            },
+        };
+        definition.initial = 'score';
+        definition.nodes.score = {
+            type: 'script',
+            script: 'score_contract',
+            timeout: 60,
+            writes: ['approved'],
+            transitions: [{ to: 'approved' }],
+        };
+        definition.nodes.fanout = {
+            type: 'foreach',
+            foreach: 'items',
+            node: {
+                type: 'script',
+                script: 'score_contract',
+            },
+            transitions: [{ to: 'approved' }],
+        };
+        definition.nodes.parallel = {
+            type: 'branch',
+            branches: [
+                {
+                    id: 'normalize',
+                    node: {
+                        type: 'script',
+                        script: 'normalize_json',
+                    },
+                },
+            ],
+            transitions: [{ to: 'approved' }],
+        };
+
+        expect(() => validateProcessDefinitionBody(definition)).not.toThrow();
+    });
+
+    it('rejects invalid script resources and references', () => {
+        const definition = validDefinition();
+        definition.resources = {
+            scripts: {
+                'bad resource': {
+                    language: 'python',
+                    entrypoint: 'missing.py',
+                    source: {
+                        type: 'inline',
+                        files: {
+                            '../escape.py': 'print("no")',
+                        },
+                    },
+                    packages: ['--index-url=evil', 'zod@latest`whoami`'],
+                },
+            },
+        };
+        definition.nodes.review = {
+            type: 'script',
+            script: 'missing',
+            timeout: 601,
+            transitions: [{ to: 'approved' }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.errors).toContain('script resource "bad resource" has an invalid name');
+        expect(result.errors).toContain('script resource "bad resource" has unsafe file path "../escape.py"');
+        expect(result.errors).toContain(
+            'script resource "bad resource" entrypoint "missing.py" is not present in files',
+        );
+        expect(result.errors).toContain(
+            'script resource "bad resource" has unsafe package specification "--index-url=evil"',
+        );
+        expect(result.errors).toContain(
+            'script resource "bad resource" has unsafe package specification "zod@latest`whoami`"',
+        );
+        expect(result.errors).toContain('script node "review" references unknown script resource "missing"');
+        expect(result.errors).toContain('script node "review" timeout must be an integer between 1 and 600');
+    });
+
+    it('rejects script-only fields on other node types', () => {
+        const definition = validDefinition();
+        Object.assign(definition.nodes.review, { script: 'score', timeout: 30 });
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.errors).toContain('node "review" defines script but has type "human_task"');
+        expect(result.errors).toContain('node "review" defines timeout but has type "human_task"');
+    });
+
+    it('counts inline script sources against the process definition size cap', () => {
+        const definition = validDefinition();
+        definition.resources = {
+            scripts: {
+                oversized: {
+                    language: 'typescript',
+                    entrypoint: 'main.ts',
+                    source: {
+                        type: 'inline',
+                        files: { 'main.ts': 'x'.repeat(1024 * 1024) },
+                    },
+                },
+            },
+        };
+
+        expect(() => validateProcessDefinitionBody(definition)).toThrow(
+            'process definition, including embedded resources, exceeds',
+        );
+    });
+
     it('rejects missing transition targets', () => {
         const definition = validDefinition();
         definition.nodes.review.transitions = [{ to: 'missing' }];
