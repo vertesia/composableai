@@ -12,6 +12,8 @@ export interface GroupsQueryOptions {
     tags?: string[];
     limit?: number;
     offset?: number;
+    /** Only return groups usable in this project (org-wide + restricted-to-this-project). */
+    project?: string;
     [key: string]: string | string[] | number | undefined;
 }
 

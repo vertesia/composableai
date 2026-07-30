@@ -215,8 +215,16 @@ export function MonacoEditor({
         [onMount, resolvedTheme, useCustomFolding, foldAllCodeBlocks],
     );
 
-    // Update editor value when prop changes from outside
+    // Apply external `value`/`defaultValue` changes to the model — but NEVER while the user is
+    // actively typing. If the editor has focus, an incoming value is almost always a stale echo of
+    // this editor's own (possibly debounced or reformatted) onChange output flowing back in through
+    // a controlled `value` prop. Re-applying it would jump the caret and drop the characters typed
+    // during the round-trip. We skip while focused; genuine external updates land once the editor is
+    // blurred. Explicit programmatic updates go through the editor ref (`setValue`) and are exempt.
     useEffect(() => {
+        if (editorInstanceRef.current?.hasTextFocus()) {
+            return;
+        }
         setEditorValue((currentValue) => {
             if (effectiveValue === currentValue) {
                 return currentValue;
@@ -228,9 +236,11 @@ export function MonacoEditor({
         });
     }, [effectiveValue]);
 
-    // Re-fold code blocks when value prop changes externally
+    // Re-fold code blocks when the value changes externally — same focus guard, so folding never
+    // moves the selection out from under an actively typing user.
     useEffect(() => {
         if (!effectiveValue || !useCustomFolding || !editorInstanceRef.current || !monacoInstanceRef.current) return;
+        if (editorInstanceRef.current.hasTextFocus()) return;
         const editor = editorInstanceRef.current;
         const monacoInstance = monacoInstanceRef.current;
         const timer = setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
@@ -278,12 +288,17 @@ export function MonacoEditor({
                 theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
                 language={language}
                 path={path}
-                value={editorValue}
                 onChange={handleEditorChange}
                 onMount={handleEditorDidMount}
                 beforeMount={beforeMount}
                 options={defaultOptions}
-                defaultValue={defaultValue || ''}
+                // Uncontrolled: seed the initial content once via `defaultValue` and never bind a
+                // reactive `value`. @monaco-editor/react re-applies a changed `value` prop through
+                // `executeEdits(..., forceMoveMarkers: true)` whenever it differs from the live
+                // model, snapping the caret to the END of the content — the cursor jump we are
+                // eliminating whenever a caller feeds its own onChange output back into `value`.
+                // All external updates instead flow through the focus-guarded sync effect above.
+                defaultValue={effectiveValue}
             />
         </div>
     );
