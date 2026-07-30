@@ -99,6 +99,29 @@ function isProviderRateLimitedRequestError(error: unknown): error is ProviderRat
     const candidate = error as Partial<ProviderRateLimitedRequestError & ApiRateLimitedRequestError>;
     return candidate.status === 429 && candidate.rateLimit === undefined;
 }
+
+/**
+ * Preserve rate-limit timing across activities that call executeInteractionFromActivity directly.
+ * API limiter errors stay typed for the worker interceptor; provider delays become durable Temporal timers.
+ */
+export function getInteractionRateLimitFailure(error: unknown, interactionName: string): Error | undefined {
+    if (error instanceof ApplicationFailure && error.type === 'InteractionRateLimitRetry') {
+        return error;
+    }
+    if (isApiRateLimitedRequestError(error)) {
+        return error;
+    }
+    if (isProviderRateLimitedRequestError(error)) {
+        return ApplicationFailure.create({
+            message: `Provider rate limit while executing ${interactionName}: ${error.message}`,
+            type: 'ProviderRateLimitRetry',
+            nonRetryable: false,
+            ...(error.retryAfterMs !== undefined ? { nextRetryDelay: error.retryAfterMs } : {}),
+        });
+    }
+    return undefined;
+}
+
 export interface InteractionExecutionParams {
     /**
      * Execution configuration shared across workflow-driven interaction calls.
@@ -244,21 +267,9 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             result: completionResult,
         });
     } catch (error: unknown) {
-        if (error instanceof ApplicationFailure && error.type === 'InteractionRateLimitRetry') {
-            throw error;
-        }
-        // Preserve the API client's typed 429 so the worker inbound interceptor can turn its exact
-        // pacing/reset metadata into a durable Temporal retry timer. Provider 429s carry no metadata.
-        if (isApiRateLimitedRequestError(error)) {
-            throw error;
-        }
-        if (isProviderRateLimitedRequestError(error)) {
-            throw ApplicationFailure.create({
-                message: `Provider rate limit while executing ${interactionName}: ${error.message}`,
-                type: 'ProviderRateLimitRetry',
-                nonRetryable: false,
-                ...(error.retryAfterMs !== undefined ? { nextRetryDelay: error.retryAfterMs } : {}),
-            });
+        const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
+        if (rateLimitFailure) {
+            throw rateLimitFailure;
         }
         const executionError = toExecutionError(error);
         log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
