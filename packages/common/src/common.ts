@@ -1,3 +1,4 @@
+import type { DeleteByIdResultFromSchema } from './api-schemas/user.js';
 export interface FindPayload {
     query: Record<string, unknown>;
     offset?: number;
@@ -14,9 +15,12 @@ export interface GenericCommandResponse {
     details?: unknown;
 }
 
-export interface DeleteByIdResult {
-    id: string;
-}
+/**
+ * Derived from `DeleteByIdResultSchema`. Shared by eight studio delete endpoints; only `DeleteUser`
+ * publishes it canonically so far, and the generator fails the build if the canonical and derived
+ * definitions ever differ.
+ */
+export type DeleteByIdResult = DeleteByIdResultFromSchema;
 
 export interface DeleteCountResult {
     id: string;

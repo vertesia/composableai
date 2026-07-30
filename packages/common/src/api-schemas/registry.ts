@@ -12,6 +12,7 @@ import {
     type RawApiParameters,
 } from './parameters.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
+import { DeleteByIdResultSchema, PrincipalIdentitySchema, UpdateUserPayloadSchema, UserSchema } from './user.js';
 
 // ajv-formats is CommonJS with an ESM-style declaration file. Node's interop makes the default
 // import the whole `module.exports` (itself callable), while TypeScript sees the namespace — and
@@ -32,6 +33,10 @@ const API_SCHEMAS = {
     ApiKeyListQuery: ApiKeyListQuerySchema,
     QuotaStandingResponse: QuotaStandingResponseSchema,
     QuotaTierResponse: QuotaTierResponseSchema,
+    User: UserSchema,
+    UpdateUserPayload: UpdateUserPayloadSchema,
+    DeleteByIdResult: DeleteByIdResultSchema,
+    PrincipalIdentity: PrincipalIdentitySchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -61,6 +66,12 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'QuotaStandingWindow',
     'QuotaStandingAdmissionClass',
     'QuotaTierResponse',
+    // The IAM closure. PrincipalContext is composed into PrincipalIdentity rather than hoisted,
+    // so it has no component of its own to list.
+    'User',
+    'UpdateUserPayload',
+    'DeleteByIdResult',
+    'PrincipalIdentity',
 ]);
 
 /**

@@ -3,6 +3,7 @@ import type {
     AccountFromSchema,
     UpdateAccountPayloadFromSchema,
 } from './api-schemas/account.js';
+import type { UpdateUserPayloadFromSchema, UserFromSchema } from './api-schemas/user.js';
 import type { ApiKey } from './apikey.js';
 import type { ProjectRef, SystemRoles } from './project.js';
 
@@ -12,40 +13,18 @@ export interface UserWithAccounts extends User {
     accounts: AccountRef[];
 }
 
-export interface User {
-    id: string;
-    externalId?: string;
-    email: string;
-    name: string;
-    username?: string;
-    picture?: string;
-    language?: string;
-    phone?: string;
-    sign_in_provider?: string;
-    last_selected_account?: string;
-    source?: 'firebase' | 'scim';
-    updated_by?: string;
-    /** Custom properties for dynamic permission matching */
-    properties?: Record<string, unknown>;
-    /** BLP clearance level — determines max document sensitivity the user can access */
-    clearance?: number;
-    /** Compartments the user belongs to — restricts access to documents in matching compartments */
-    compartments?: string[];
-    /** Free-form user metadata - restricted to internal use */
-    annotations?: string[];
-}
-
-export interface UpdateUserPayload {
-    name?: string;
-    username?: string;
-    picture?: string;
-    language?: string;
-    phone?: string;
-    last_selected_account?: string;
-    properties?: Record<string, unknown>;
-    clearance?: number;
-    compartments?: string[];
-}
+/**
+ * The user and its update payload as they cross the wire.
+ *
+ * Derived from the schemas in `./api-schemas/user.js`, which are what OpenAPI publishes and AJV
+ * compiles. The descriptions live there too — Zod reads `.meta()`, not TSDoc.
+ *
+ * NOTE for server code: this is the RESPONSE shape, not the stored document. `IUser` in
+ * `@dglabs/server-common` describes what Mongo actually holds (optional email, ObjectId
+ * references, Date timestamps) and is deliberately independent of this type.
+ */
+export type User = UserFromSchema;
+export type UpdateUserPayload = UpdateUserPayloadFromSchema;
 
 export interface UserRef {
     id: string;

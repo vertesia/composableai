@@ -21,6 +21,13 @@ export type {
     QuotaStandingWindowFromSchema,
     QuotaTierResponseFromSchema,
 } from './api-schemas/quota.js';
+export type {
+    DeleteByIdResultFromSchema,
+    PrincipalContextFromSchema,
+    PrincipalIdentityFromSchema,
+    UpdateUserPayloadFromSchema,
+    UserFromSchema,
+} from './api-schemas/user.js';
 export * from './apikey.js';
 export * from './apps.js';
 export * from './ask-user.js';

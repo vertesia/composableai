@@ -118,6 +118,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AccountType',
             'ApiKeyListQuery',
             'BillingMethod',
+            // The IAM closure, converted as the second resource batch. PrincipalContext is composed
+            // into PrincipalIdentity rather than hoisted, so it is a public type with no component.
+            'DeleteByIdResult',
+            'PrincipalIdentity',
             // The quota closure, converted as the first resource batch.
             'QuotaEffectiveTier',
             'QuotaStandingAdmissionClass',
@@ -130,6 +134,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'StripeBillingEnabled',
             'StripeBillingStatusResponse',
             'UpdateAccountPayload',
+            'UpdateUserPayload',
+            'User',
         ]);
     });
 
