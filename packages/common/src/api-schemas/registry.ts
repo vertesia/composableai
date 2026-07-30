@@ -11,6 +11,7 @@ import {
     normalizeParameters,
     type RawApiParameters,
 } from './parameters.js';
+import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 
 // ajv-formats is CommonJS with an ESM-style declaration file. Node's interop makes the default
 // import the whole `module.exports` (itself callable), while TypeScript sees the namespace — and
@@ -29,6 +30,8 @@ const API_SCHEMAS = {
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
     ApiKeyListQuery: ApiKeyListQuerySchema,
+    QuotaStandingResponse: QuotaStandingResponseSchema,
+    QuotaTierResponse: QuotaTierResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -51,6 +54,13 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'StripeBillingEnabled',
     'StripeBillingDisabled',
     'ApiKeyListQuery',
+    // The quota closure. Every object here is published closed today, so all of them are listed;
+    // QuotaEffectiveTier is a string and takes no additionalProperties at all.
+    'QuotaStandingResponse',
+    'QuotaStandingResource',
+    'QuotaStandingWindow',
+    'QuotaStandingAdmissionClass',
+    'QuotaTierResponse',
 ]);
 
 /**

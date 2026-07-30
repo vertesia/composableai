@@ -13,4 +13,5 @@ export * from './account.js';
 export * from './adapter.js';
 export * from './apikey.js';
 export * from './parameters.js';
+export * from './quota.js';
 export * from './registry.js';

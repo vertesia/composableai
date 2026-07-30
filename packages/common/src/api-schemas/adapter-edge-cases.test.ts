@@ -179,3 +179,133 @@ describe('discriminator synthesis', () => {
         expect(components.Union.discriminator).toBeUndefined();
     });
 });
+
+describe('strictness reaches anonymous nested objects', () => {
+    /**
+     * Strictness is declared per component, but an object nested inline in one has no name to declare.
+     * The TypeScript-derived generator closed every object it emitted, so the document already publishes
+     * those inline objects closed — `QuotaStandingResponse.admission` and `.llm` were the first two
+     * converted, and leaving them open would have loosened a published contract while reproducing it.
+     */
+    const nested = {
+        Report: {
+            type: 'object',
+            properties: {
+                inline: { type: 'object', properties: { note: { type: 'string' } } },
+                deeper: {
+                    type: 'array',
+                    items: { type: 'object', properties: { value: { type: 'number' } } },
+                },
+            },
+        },
+    } as const;
+
+    it('closes an inline object inside a strict component', () => {
+        const components = toOpenApiComponents(nested, { strictComponents: new Set(['Report']) });
+        const properties = components.Report.properties as Record<string, JsonObject>;
+        expect(components.Report.additionalProperties).toBe(false);
+        expect(properties.inline.additionalProperties).toBe(false);
+    });
+
+    it('closes an inline object nested under array items', () => {
+        const components = toOpenApiComponents(nested, { strictComponents: new Set(['Report']) });
+        const properties = components.Report.properties as Record<string, JsonObject>;
+        expect((properties.deeper.items as JsonObject).additionalProperties).toBe(false);
+    });
+
+    it('leaves inline objects open in a component that is not strict', () => {
+        const components = toOpenApiComponents(nested);
+        const properties = components.Report.properties as Record<string, JsonObject>;
+        expect(components.Report.additionalProperties).toBeUndefined();
+        expect(properties.inline.additionalProperties).toBeUndefined();
+    });
+
+    it('never overwrites an existing additionalProperties', () => {
+        // `true` or a subschema is a deliberate statement about the extras — a Record<string, string>
+        // value type, say — so replacing it with `false` would reject data the schema explicitly allows.
+        const components = toOpenApiComponents(
+            {
+                Report: {
+                    type: 'object',
+                    properties: {
+                        map: { type: 'object', additionalProperties: { type: 'string' } },
+                        open: { type: 'object', additionalProperties: true },
+                    },
+                },
+            },
+            { strictComponents: new Set(['Report']) },
+        );
+        const properties = components.Report.properties as Record<string, JsonObject>;
+        expect(properties.map.additionalProperties).toEqual({ type: 'string' });
+        expect(properties.open.additionalProperties).toBe(true);
+    });
+
+    it('does not close a $ref node, which is governed by its own component', () => {
+        const components = toOpenApiComponents(
+            {
+                Report: {
+                    type: 'object',
+                    properties: { billing: { $ref: '#/$defs/Billing' } },
+                    $defs: { Billing: { $id: 'Billing', type: 'object', properties: {} } },
+                },
+            },
+            { strictComponents: new Set(['Report']) },
+        );
+        const properties = components.Report.properties as Record<string, JsonObject>;
+        expect(Object.keys(properties.billing)).toEqual(['$ref']);
+        // Billing was not listed, so it stays open.
+        expect(components.Billing.additionalProperties).toBeUndefined();
+    });
+});
+
+describe('description is emitted last', () => {
+    /**
+     * Key order carries no meaning to a consumer, but it decides byte-identity — which is how a
+     * conversion proves it reproduced the published contract rather than renegotiating it. The
+     * scanner's TypeScript-derived output puts `description` last, so matching it is what lets a
+     * converted component diff clean.
+     */
+    it('puts description after a sibling $ref', () => {
+        const components = toOpenApiComponents({
+            Account: {
+                type: 'object',
+                properties: { tier: { description: 'The tier.', $ref: '#/$defs/Tier' } },
+                $defs: { Tier: { $id: 'Tier', type: 'string' } },
+            },
+        });
+        const properties = components.Account.properties as Record<string, JsonObject>;
+        expect(Object.keys(properties.tier)).toEqual(['$ref', 'description']);
+    });
+
+    it('puts description after the additionalProperties the strict policy appends', () => {
+        const components = toOpenApiComponents(
+            { Payload: { type: 'object', description: 'A payload.', properties: { a: { type: 'string' } } } },
+            { strictComponents: new Set(['Payload']) },
+        );
+        // Declared as `type, description, properties`; the strict policy appends additionalProperties,
+        // and description then moves behind it.
+        expect(Object.keys(components.Payload)).toEqual(['type', 'properties', 'additionalProperties', 'description']);
+    });
+
+    it('does not reorder a property NAMED description', () => {
+        // The trap a generic "walk every object" pass falls into: `properties` keys are user data, and
+        // five published components have a property called `description`. Moving it would change the
+        // published property order.
+        const components = toOpenApiComponents({
+            Project: {
+                type: 'object',
+                properties: {
+                    id: { type: 'string' },
+                    description: { type: 'string' },
+                    account: { type: 'string' },
+                },
+            },
+        });
+        expect(Object.keys(components.Project.properties as JsonObject)).toEqual(['id', 'description', 'account']);
+    });
+
+    it('leaves a description that is already last alone', () => {
+        const components = toOpenApiComponents({ Tier: { type: 'string', description: 'A tier.' } });
+        expect(Object.keys(components.Tier)).toEqual(['type', 'description']);
+    });
+});

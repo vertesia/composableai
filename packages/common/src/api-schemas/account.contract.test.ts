@@ -108,13 +108,24 @@ describe('gate 1 — the schema is the single source of truth for the public typ
 
 describe('gate 2 — canonical schemas carry stable OpenAPI component references', () => {
     it('hoists nested id-bearing schemas into components', () => {
+        // Exhaustive rather than a containment check, so a schema that acquires an `id` — and with it a
+        // published component and a `$ref` at every use site — cannot appear without being noticed. It
+        // grows by one line per hoisted schema as batches convert, which is the point: each addition is
+        // a new public component name and wants a reviewer to see it.
         expect(Object.keys(ApiSchemaComponents).sort()).toEqual([
             'Account',
             'AccountBilling',
             'AccountType',
             'ApiKeyListQuery',
             'BillingMethod',
+            // The quota closure, converted as the first resource batch.
+            'QuotaEffectiveTier',
+            'QuotaStandingAdmissionClass',
+            'QuotaStandingResource',
+            'QuotaStandingResponse',
+            'QuotaStandingWindow',
             'QuotaTier',
+            'QuotaTierResponse',
             'StripeBillingDisabled',
             'StripeBillingEnabled',
             'StripeBillingStatusResponse',

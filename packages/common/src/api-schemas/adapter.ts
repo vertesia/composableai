@@ -271,7 +271,7 @@ export function toOpenApiComponents(
             if (!schema) {
                 throw new SchemaAdapterError(`Cannot apply a strict policy to unknown component '${name}'.`);
             }
-            if (schema.type === 'object') schema.additionalProperties = false;
+            closeObjects(schema);
         }
     }
     for (const [name, schema] of Object.entries(ctx.components)) {
@@ -282,8 +282,84 @@ export function toOpenApiComponents(
         if (schema.additionalProperties === false) delete schema.additionalProperties;
     }
 
+    for (const schema of Object.values(ctx.components)) {
+        moveDescriptionsLast(schema);
+    }
+
     assertReferencesResolve(ctx.components);
     return ctx.components;
+}
+
+/**
+ * Visits every SUBSCHEMA of a node, and nothing else.
+ *
+ * The distinction is load-bearing rather than pedantic: `properties` is a map from property NAME to
+ * subschema, so its keys are user data. A generic "walk every object" pass would treat a property
+ * literally named `description` — which `Project`, `ICreateProjectPayload` and three other published
+ * components have — as the `description` keyword, and reordering it would change the published
+ * property order. Enumerating the structural keywords is what makes that impossible.
+ */
+function eachSubschema(node: JsonObject, visit: (child: JsonObject) => void): void {
+    for (const keyword of ['items', 'additionalProperties', 'propertyNames', 'contains', 'not', 'if', 'then', 'else']) {
+        const child = node[keyword];
+        if (isPlainObject(child)) visit(child);
+    }
+    for (const keyword of ['properties', 'patternProperties', '$defs', 'definitions', 'dependentSchemas']) {
+        const map = node[keyword];
+        if (!isPlainObject(map)) continue;
+        for (const child of Object.values(map)) {
+            if (isPlainObject(child)) visit(child);
+        }
+    }
+    for (const keyword of ['anyOf', 'oneOf', 'allOf', 'prefixItems']) {
+        const list = node[keyword];
+        if (!Array.isArray(list)) continue;
+        for (const child of list) {
+            if (isPlainObject(child)) visit(child);
+        }
+    }
+}
+
+/**
+ * Closes a strict component and every anonymous object inside it.
+ *
+ * Strictness is declared per component, but an object nested inline in one is not a component — it has
+ * no name to list — so without this it stayed open while its parent closed. The TypeScript-derived
+ * generator closed every object it emitted, so the document already publishes those inline objects
+ * closed (`QuotaStandingResponse.admission` and `.llm` are the first two converted), and leaving them
+ * open would have loosened a published contract on the way to reproducing it.
+ *
+ * An existing `additionalProperties` is never overwritten: `true` or a subschema is a deliberate
+ * statement about the extras — a `Record<string, string>` value type, say — and replacing it with
+ * `false` would reject data the schema explicitly allows. A nested `$ref` is left alone too; it points
+ * at another component, which is governed by its own listing.
+ */
+function closeObjects(node: JsonObject): void {
+    if (typeof node[REF] !== 'string' && node.type === 'object' && node.additionalProperties === undefined) {
+        node.additionalProperties = false;
+    }
+    eachSubschema(node, closeObjects);
+}
+
+/**
+ * Puts `description` last on every subschema, which is where the published document has it.
+ *
+ * Key order carries no meaning to any consumer, but it decides byte-identity — and byte-identity is
+ * how a conversion proves it reproduced the published contract rather than renegotiating it. The
+ * scanner's TypeScript-derived output puts `description` last in 2140 of 2143 places, so matching that
+ * is what lets a converted component diff clean. Zod emits it wherever `.meta()` happened to land, and
+ * the strict policy above appends `additionalProperties` after that, so without this pass a described
+ * `$ref` property emitted `{description, $ref}` against the document's `{$ref, description}` and every
+ * closed component with a description emitted `{description, additionalProperties}`.
+ */
+function moveDescriptionsLast(node: JsonObject): void {
+    eachSubschema(node, moveDescriptionsLast);
+    if (!('description' in node)) return;
+    const keys = Object.keys(node);
+    if (keys[keys.length - 1] === 'description') return;
+    const { description } = node;
+    delete node.description;
+    node.description = description;
 }
 
 /**
