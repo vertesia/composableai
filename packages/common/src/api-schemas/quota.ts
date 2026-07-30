@@ -124,5 +124,17 @@ export const QuotaTierResponseSchema = z
             'account tier cannot be resolved.',
     });
 
+/**
+ * The public quota types, inferred rather than written.
+ *
+ * Every schema in the closure gets one — not only the two the endpoints return. A hand-written
+ * `QuotaStandingWindow` sitting beside an inferred `QuotaStandingResponse` would be exactly the
+ * drift this migration exists to remove: two definitions of one contract, only one of which OpenAPI
+ * publishes and AJV compiles. `../rate-limiter.ts` re-exports these under their public names.
+ */
+export type QuotaEffectiveTierFromSchema = z.infer<typeof QuotaEffectiveTierSchema>;
+export type QuotaStandingWindowFromSchema = z.infer<typeof QuotaStandingWindowSchema>;
+export type QuotaStandingResourceFromSchema = z.infer<typeof QuotaStandingResourceSchema>;
+export type QuotaStandingAdmissionClassFromSchema = z.infer<typeof QuotaStandingAdmissionClassSchema>;
 export type QuotaStandingResponseFromSchema = z.infer<typeof QuotaStandingResponseSchema>;
 export type QuotaTierResponseFromSchema = z.infer<typeof QuotaTierResponseSchema>;
