@@ -5,6 +5,12 @@ import { z } from 'zod';
 import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
 import { findUnprunablePaths, type JsonObject, pruneToSchema, toOpenApiComponents } from './adapter.js';
 import { ApiKeyListQuerySchema } from './apikey.js';
+import {
+    type ApiParameterLocation,
+    type NormalizedApiParameters,
+    normalizeParameters,
+    type RawApiParameters,
+} from './parameters.js';
 
 // ajv-formats is CommonJS with an ESM-style declaration file. Node's interop makes the default
 // import the whole `module.exports` (itself callable), while TypeScript sees the namespace — and
@@ -230,4 +236,25 @@ export function pruneAndValidateApiResponse<N extends ApiComponentName>(
  */
 export function findUnprunableApiPaths(name: ApiComponentName): string[] {
     return findUnprunablePaths({ $ref: apiComponentRef(name) }, ApiSchemaComponents);
+}
+
+/**
+ * Normalizes raw query or header text into the value a component describes.
+ *
+ * Binds {@link normalizeParameters} to {@link ApiSchemaComponents} — the same objects the OpenAPI
+ * document publishes and {@link validateApiRequest} compiles. That is what keeps the published
+ * parameter and the enforced one the same declaration: the scanner expands this component's
+ * properties into `in: query` parameters, and the coercion below is decided by those same property
+ * schemas, so neither can be changed without changing the other.
+ *
+ * Validate the result with {@link validateApiRequest}, which is non-coercing: everything type-related
+ * has already happened here, so a value this could not coerce is reported against the published
+ * schema rather than by a second rule.
+ */
+export function normalizeApiParameters(
+    name: ApiComponentName,
+    raw: RawApiParameters,
+    location: ApiParameterLocation,
+): NormalizedApiParameters {
+    return normalizeParameters(name, raw, location, ApiSchemaComponents[name], ApiSchemaComponents);
 }

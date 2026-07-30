@@ -390,10 +390,24 @@ function resolveChain(schema: JsonObject, components: Readonly<Record<string, Js
     return { schema: merged };
 }
 
-/** {@link resolveChain} for callers that only need to know whether resolution succeeded. */
-function resolve(schema: JsonObject, components: Readonly<Record<string, JsonObject>>): JsonObject | undefined {
+/**
+ * {@link resolveChain} for callers that only need to know whether resolution succeeded.
+ *
+ * Exported so parameter normalization follows the same reference semantics as pruning rather than
+ * carrying a second, subtly different resolver. A query parameter typed by a hoisted enum is reached
+ * through exactly the chain walked here, so what the normalizer coerces towards and what the spec
+ * publishes are read off the same node.
+ */
+export function resolveSchemaRef(
+    schema: JsonObject,
+    components: Readonly<Record<string, JsonObject>>,
+): JsonObject | undefined {
     const resolution = resolveChain(schema, components);
     return 'schema' in resolution ? resolution.schema : undefined;
+}
+
+function resolve(schema: JsonObject, components: Readonly<Record<string, JsonObject>>): JsonObject | undefined {
+    return resolveSchemaRef(schema, components);
 }
 
 /**
