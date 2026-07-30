@@ -8,9 +8,8 @@ import { z } from 'zod';
  * server maps between them explicitly. What is declared here is the WIRE contract only.
  *
  * `DeleteByIdResult` is the first component shared beyond its own batch — eight studio slots publish
- * it. The generator requires a canonical component and a same-named derived one to be byte-identical,
- * so converting it republishes the identical definition for all eight while the other seven slots
- * migrate later on their own schedule.
+ * it, and all eight had to convert at once. See the note on {@link DeleteByIdResultSchema} for why a
+ * shared component cannot move one slot at a time.
  */
 
 /**
