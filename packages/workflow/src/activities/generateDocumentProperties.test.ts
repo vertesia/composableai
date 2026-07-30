@@ -1,4 +1,4 @@
-import type { ApplicationFailure } from '@temporalio/activity';
+import { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { ServerError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
@@ -144,17 +144,14 @@ describe('generateDocumentProperties', () => {
         await expect(testEnv.run(generateDocumentProperties, payload({}))).rejects.toBe(error);
     });
 
-    it('converts a provider retry delay into a durable Temporal timer', async () => {
+    it('preserves the provider retry timer normalized by the shared interaction boundary', async () => {
         await mockSetup({ text: 'source text', contentType: 'text/plain' });
-        const error = new ServerError(
-            'provider throttled',
-            new Request('https://studio.test/api'),
-            429,
-            {},
-            true,
-            undefined,
-            12_345,
-        );
+        const error = ApplicationFailure.create({
+            message: 'Provider rate limit while executing sys:ExtractInformation',
+            type: 'ProviderRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: 12_345,
+        });
         vi.mocked(executeInteractionFromActivity).mockRejectedValue(error);
 
         await expect(testEnv.run(generateDocumentProperties, payload({}))).rejects.toMatchObject({

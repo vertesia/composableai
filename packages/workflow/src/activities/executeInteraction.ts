@@ -82,6 +82,12 @@ interface ProviderRateLimitedRequestError extends Error {
     retryAfterMs?: number;
 }
 
+interface InteractionRateLimitApplicationFailure extends Error {
+    type: 'InteractionRateLimitRetry' | 'ProviderRateLimitRetry';
+    nonRetryable: false;
+    nextRetryDelay?: number;
+}
+
 function isApiRateLimitedRequestError(error: unknown): error is ApiRateLimitedRequestError {
     if (!(error instanceof Error)) return false;
     const candidate = error as Partial<ApiRateLimitedRequestError>;
@@ -100,12 +106,21 @@ function isProviderRateLimitedRequestError(error: unknown): error is ProviderRat
     return candidate.status === 429 && candidate.rateLimit === undefined;
 }
 
+function isInteractionRateLimitApplicationFailure(error: unknown): error is InteractionRateLimitApplicationFailure {
+    if (!(error instanceof Error)) return false;
+    const candidate = error as Partial<InteractionRateLimitApplicationFailure>;
+    return (
+        (candidate.type === 'InteractionRateLimitRetry' || candidate.type === 'ProviderRateLimitRetry') &&
+        candidate.nonRetryable === false
+    );
+}
+
 /**
  * Preserve rate-limit timing across activities that call executeInteractionFromActivity directly.
  * API limiter errors stay typed for the worker interceptor; provider delays become durable Temporal timers.
  */
 export function getInteractionRateLimitFailure(error: unknown, interactionName: string): Error | undefined {
-    if (error instanceof ApplicationFailure && error.type === 'InteractionRateLimitRetry') {
+    if (isInteractionRateLimitApplicationFailure(error)) {
         return error;
     }
     if (isApiRateLimitedRequestError(error)) {
@@ -267,6 +282,8 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             result: completionResult,
         });
     } catch (error: unknown) {
+        // Preserve admission failures raised before executeByName and the provider failures
+        // normalized by executeInteractionFromActivity.
         const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
         if (rateLimitFailure) {
             throw rateLimitFailure;
@@ -417,9 +434,10 @@ export async function executeInteractionFromActivity(
             stream: false,
             workflow,
         })
-        .catch((err) => {
-            log.error(`Error executing interaction ${interactionName}`, { err });
-            throw err;
+        .catch((error: unknown) => {
+            log.error(`Error executing interaction ${interactionName}`, { error });
+            const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
+            throw rateLimitFailure ?? error;
         });
 
     if (debug) {

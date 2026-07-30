@@ -13,11 +13,7 @@ import {
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { md5 } from '../utils/blobs.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import {
-    executeInteractionFromActivity,
-    getInteractionRateLimitFailure,
-    type InteractionExecutionParams,
-} from './executeInteraction.js';
+import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
 
 const INT_EXTRACT_INFORMATION = 'sys:ExtractInformation';
 
@@ -264,10 +260,6 @@ export async function generateDocumentProperties(
             payload.debug_mode ?? false,
         );
     } catch (error: unknown) {
-        const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
-        if (rateLimitFailure) {
-            throw rateLimitFailure;
-        }
         const extractionError = toRetryableError(error);
         log.error(`Failed to extract document properties for ${objectId}`, {
             error: extractionError,
