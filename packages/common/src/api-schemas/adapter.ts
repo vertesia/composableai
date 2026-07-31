@@ -174,6 +174,11 @@ function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
 
         const out: JsonObject = {};
         for (const [key, child] of Object.entries(rest)) {
+            // An empty `properties` map constrains nothing, and Zod emits one for the catchall-only
+            // object that a `Record<string, T>` index signature has to be written as — `z.record`
+            // additionally emits a `propertyNames`, which the TypeScript-derived generator never did.
+            // Dropping it is what lets such a component be byte-identical to its derived counterpart.
+            if (key === 'properties' && isPlainObject(child) && Object.keys(child).length === 0) continue;
             // `properties` keys are user data, not schema keywords — never treat them as refs.
             out[key] =
                 key === 'properties' && isPlainObject(child)
@@ -213,7 +218,12 @@ function hoist(name: string, schema: unknown, ctx: HoistContext): void {
     if (ctx.pending.has(name)) return;
     ctx.pending.add(name);
     const previousRoot = ctx.rootName;
-    ctx.rootName = name;
+    // A `$defs` entry does NOT open a new reference scope — only an `$id` does. `{"$ref": "#"}`
+    // inside one still points at the DOCUMENT root, so the enclosing root name has to stay in place.
+    // Naming the entry here instead was invisible until the first recursive schema: Zod writes
+    // `JSONSchemaProperties.additionalProperties` as a bare `#`, meaning the enclosing `JSONSchema`,
+    // and rewriting it to `JSONSchemaProperties` turned a property map into a map of property maps.
+    if (typeof schema.$id === 'string') ctx.rootName = schema.$id;
     try {
         // Note: no early return for an already-registered name. `register` compares shapes, so a
         // second definition that disagrees is reported rather than silently ignored.
@@ -280,6 +290,14 @@ export function toOpenApiComponents(
         // deliberate constraint on the extras (e.g. a Record<string, string> value type) and must
         // survive — deleting it would silently widen the contract to accept anything.
         if (schema.additionalProperties === false) delete schema.additionalProperties;
+        // The one subschema that is NOT a constraint: `{}` accepts every extra, which is exactly what
+        // an absent `additionalProperties` means. Zod emits it for `looseObject`, and the
+        // TypeScript-derived generator emits nothing for the index signature that models the same
+        // thing, so dropping it is what lets an intentionally-open component be byte-identical to its
+        // derived counterpart. Unlike the `false` above, this changes no meaning at all.
+        if (isPlainObject(schema.additionalProperties) && Object.keys(schema.additionalProperties).length === 0) {
+            delete schema.additionalProperties;
+        }
     }
 
     for (const schema of Object.values(ctx.components)) {
