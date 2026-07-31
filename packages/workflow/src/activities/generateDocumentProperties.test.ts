@@ -1,4 +1,6 @@
+import { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
+import { ServerError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
 import {
     ContentEventName,
@@ -129,6 +131,36 @@ async function mockSetup(options: {
 }
 
 describe('generateDocumentProperties', () => {
+    it('preserves typed API rate-limit metadata for the activity interceptor', async () => {
+        await mockSetup({ text: 'source text', contentType: 'text/plain' });
+        const error = new ServerError('quota reached', new Request('https://studio.test/api'), 429, {}, true, {
+            reason: 'quota',
+            retryAfterMs: 12_345,
+            resource: 'genai',
+            window: 'quota',
+        });
+        vi.mocked(executeInteractionFromActivity).mockRejectedValue(error);
+
+        await expect(testEnv.run(generateDocumentProperties, payload({}))).rejects.toBe(error);
+    });
+
+    it('preserves the provider retry timer normalized by the shared interaction boundary', async () => {
+        await mockSetup({ text: 'source text', contentType: 'text/plain' });
+        const error = ApplicationFailure.create({
+            message: 'Provider rate limit while executing sys:ExtractInformation',
+            type: 'ProviderRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: 12_345,
+        });
+        vi.mocked(executeInteractionFromActivity).mockRejectedValue(error);
+
+        await expect(testEnv.run(generateDocumentProperties, payload({}))).rejects.toMatchObject({
+            type: 'ProviderRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: 12_345,
+        } satisfies Partial<ApplicationFailure>);
+    });
+
     it('does not execute extraction when no text or supported vision source is available', async () => {
         await mockSetup({
             contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

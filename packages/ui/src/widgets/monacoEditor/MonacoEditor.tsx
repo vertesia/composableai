@@ -40,6 +40,39 @@ export interface IEditorApi {
     setValue(value?: string): void;
 }
 
+/**
+ * Registry of JSON schemas keyed by model path. Monaco's JSON language service is configured
+ * globally (per language, not per editor), so every mounted editor's schema must be re-applied
+ * together — each entry is scoped to its own model via `fileMatch`, so editors never see each
+ * other's schema.
+ */
+const jsonSchemaRegistry = new Map<string, object>();
+let jsonSchemaModelCounter = 0;
+
+/** The JSON language defaults API — present at runtime once monaco's JSON contribution is
+ * loaded, but typed as a deprecated stub in the bundled monaco-editor typings. */
+interface JsonLanguageDefaults {
+    setDiagnosticsOptions(options: {
+        validate?: boolean;
+        enableSchemaRequest?: boolean;
+        schemas?: { uri: string; fileMatch?: string[]; schema?: object }[];
+    }): void;
+}
+
+function applyJsonSchemas(monacoInstance: typeof import('monaco-editor')) {
+    const jsonDefaults = (monacoInstance.languages as unknown as { json?: { jsonDefaults?: JsonLanguageDefaults } })
+        .json?.jsonDefaults;
+    jsonDefaults?.setDiagnosticsOptions({
+        validate: true,
+        enableSchemaRequest: false,
+        schemas: Array.from(jsonSchemaRegistry.entries()).map(([modelPath, schema]) => ({
+            uri: `vertesia://schemas/${encodeURIComponent(modelPath)}`,
+            fileMatch: [modelPath],
+            schema,
+        })),
+    });
+}
+
 // Define Monaco ViewUpdate interface
 export interface ViewUpdate {
     docChanged: boolean;
@@ -80,6 +113,12 @@ interface MonacoEditorProps {
     onMount?: (editor: monaco.editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => void;
     defaultValue?: string;
     useCustomFolding?: boolean;
+    /**
+     * JSON Schema applied to this editor's content (language must be 'json'). Drives
+     * completion, hover documentation, and validation squiggles. Scoped to this editor
+     * instance only — other JSON editors keep their own (or no) schema.
+     */
+    jsonSchema?: object;
 }
 
 export function MonacoEditor({
@@ -95,10 +134,17 @@ export function MonacoEditor({
     onMount,
     defaultValue,
     useCustomFolding = false,
+    jsonSchema,
 }: MonacoEditorProps) {
     const [editorValue, setEditorValue] = useState(value || defaultValue || '');
     const editorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const monacoInstanceRef = useRef<typeof import('monaco-editor') | null>(null);
+    // Stable per-instance model path: required to scope a jsonSchema to THIS editor's model.
+    // Callers may pass an explicit `path`; otherwise one is generated when a schema is set.
+    const [generatedPath] = useState(() =>
+        jsonSchema ? `inmemory://vertesia/json/${++jsonSchemaModelCounter}.json` : undefined,
+    );
+    const modelPath = path ?? generatedPath;
     const { theme } = useTheme();
     const resolvedTheme =
         theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
@@ -182,6 +228,11 @@ export function MonacoEditor({
             editorInstanceRef.current = editor;
             monacoInstanceRef.current = monacoInstance;
 
+            if (jsonSchema && modelPath && language === 'json') {
+                jsonSchemaRegistry.set(modelPath, jsonSchema);
+                applyJsonSchemas(monacoInstance);
+            }
+
             if (useCustomFolding) {
                 registerCustomFoldingProviders(monacoInstance);
             }
@@ -212,8 +263,18 @@ export function MonacoEditor({
             // Call custom onMount if provided
             onMount?.(editor, monacoInstance);
         },
-        [onMount, resolvedTheme, useCustomFolding, foldAllCodeBlocks],
+        [onMount, resolvedTheme, useCustomFolding, foldAllCodeBlocks, jsonSchema, modelPath, language],
     );
+
+    // Unregister this editor's schema on unmount so the global JSON diagnostics config
+    // doesn't accumulate schemas for dead models.
+    useEffect(() => {
+        return () => {
+            if (jsonSchema && modelPath && jsonSchemaRegistry.delete(modelPath) && monacoInstanceRef.current) {
+                applyJsonSchemas(monacoInstanceRef.current);
+            }
+        };
+    }, [jsonSchema, modelPath]);
 
     // Apply external `value`/`defaultValue` changes to the model — but NEVER while the user is
     // actively typing. If the editor has focus, an incoming value is almost always a stale echo of
@@ -287,7 +348,7 @@ export function MonacoEditor({
                 height="100%"
                 theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
                 language={language}
-                path={path}
+                path={modelPath}
                 onChange={handleEditorChange}
                 onMount={handleEditorDidMount}
                 beforeMount={beforeMount}

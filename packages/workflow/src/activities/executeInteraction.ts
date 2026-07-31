@@ -7,6 +7,7 @@ import {
     type ModelOptions,
 } from '@llumiverse/common';
 import { ApplicationFailure, activityInfo, log } from '@temporalio/activity';
+import type { RateLimitMetadata } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import {
@@ -70,6 +71,72 @@ const _JSON: DSLActivitySpec = {
         },
     },
 };
+
+interface ApiRateLimitedRequestError extends Error {
+    status: number;
+    rateLimit: RateLimitMetadata;
+}
+
+interface ProviderRateLimitedRequestError extends Error {
+    status: number;
+    retryAfterMs?: number;
+}
+
+interface InteractionRateLimitApplicationFailure extends Error {
+    type: 'InteractionRateLimitRetry' | 'ProviderRateLimitRetry';
+    nonRetryable: false;
+    nextRetryDelay?: number;
+}
+
+function isApiRateLimitedRequestError(error: unknown): error is ApiRateLimitedRequestError {
+    if (!(error instanceof Error)) return false;
+    const candidate = error as Partial<ApiRateLimitedRequestError>;
+    return (
+        candidate.status === 429 &&
+        candidate.rateLimit !== undefined &&
+        (candidate.rateLimit.reason === 'pacing' || candidate.rateLimit.reason === 'quota') &&
+        Number.isFinite(candidate.rateLimit.retryAfterMs) &&
+        candidate.rateLimit.retryAfterMs >= 0
+    );
+}
+
+function isProviderRateLimitedRequestError(error: unknown): error is ProviderRateLimitedRequestError {
+    if (!(error instanceof Error)) return false;
+    const candidate = error as Partial<ProviderRateLimitedRequestError & ApiRateLimitedRequestError>;
+    return candidate.status === 429 && candidate.rateLimit === undefined;
+}
+
+function isInteractionRateLimitApplicationFailure(error: unknown): error is InteractionRateLimitApplicationFailure {
+    if (!(error instanceof Error)) return false;
+    const candidate = error as Partial<InteractionRateLimitApplicationFailure>;
+    return (
+        (candidate.type === 'InteractionRateLimitRetry' || candidate.type === 'ProviderRateLimitRetry') &&
+        candidate.nonRetryable === false
+    );
+}
+
+/**
+ * Preserve rate-limit timing across activities that call executeInteractionFromActivity directly.
+ * API limiter errors stay typed for the worker interceptor; provider delays become durable Temporal timers.
+ */
+export function getInteractionRateLimitFailure(error: unknown, interactionName: string): Error | undefined {
+    if (isInteractionRateLimitApplicationFailure(error)) {
+        return error;
+    }
+    if (isApiRateLimitedRequestError(error)) {
+        return error;
+    }
+    if (isProviderRateLimitedRequestError(error)) {
+        return ApplicationFailure.create({
+            message: `Provider rate limit while executing ${interactionName}: ${error.message}`,
+            type: 'ProviderRateLimitRetry',
+            nonRetryable: false,
+            ...(error.retryAfterMs !== undefined ? { nextRetryDelay: error.retryAfterMs } : {}),
+        });
+    }
+    return undefined;
+}
+
 export interface InteractionExecutionParams {
     /**
      * Execution configuration shared across workflow-driven interaction calls.
@@ -215,6 +282,12 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             result: completionResult,
         });
     } catch (error: unknown) {
+        // Preserve admission failures raised before executeByName and the provider failures
+        // normalized by executeInteractionFromActivity.
+        const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
+        if (rateLimitFailure) {
+            throw rateLimitFailure;
+        }
         const executionError = toExecutionError(error);
         log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
         if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
@@ -332,6 +405,24 @@ export async function executeInteractionFromActivity(
 
     const result_schema = params.result_schema;
 
+    const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
+    const slot = await client.interactions.requestSlot({
+        interaction: interactionName,
+        environment_id: config.environment,
+        model_id: config.model,
+        rate_limit_id: rateLimitId,
+    });
+    if (slot.delay_ms > 0) {
+        throw ApplicationFailure.create({
+            message: `Interaction admission delayed for ${slot.delay_ms}ms`,
+            type: 'InteractionRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: slot.delay_ms,
+            details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
+        });
+    }
+    workflow.rate_limit_id = rateLimitId;
+
     log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags, workflow });
 
     const res = await client.interactions
@@ -343,9 +434,10 @@ export async function executeInteractionFromActivity(
             stream: false,
             workflow,
         })
-        .catch((err) => {
-            log.error(`Error executing interaction ${interactionName}`, { err });
-            throw err;
+        .catch((error: unknown) => {
+            log.error(`Error executing interaction ${interactionName}`, { error });
+            const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
+            throw rateLimitFailure ?? error;
         });
 
     if (debug) {

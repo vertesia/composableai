@@ -7,7 +7,6 @@ import {
     log,
     patched,
     proxyActivities,
-    sleep,
     startChild,
     type UntypedActivities,
     uuid4,
@@ -27,7 +26,6 @@ import {
 import ms, { type StringValue } from 'ms';
 import type { HandleDslErrorParams } from '../activities/handleError.js';
 import type * as activities from '../activities/index.js';
-import type { RateLimitParams } from '../activities/rateLimiter.js';
 import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from '../errors.js';
 import { Vars } from './vars.js';
 
@@ -403,65 +401,6 @@ async function executeChildWorkflow(
     }
 }
 
-function buildRateLimitParams(
-    activity: DSLActivitySpec,
-    executionPayload: DSLActivityExecutionPayload<Record<string, unknown>>,
-): RateLimitParams {
-    // resolve payload params
-    const vars = new Vars({
-        ...executionPayload.params, // imported params (doesn't contain expressions)
-        ...executionPayload.activity.params, // activity params (may contain expressions)
-    });
-    const params = vars.resolve();
-
-    let interactionId: string;
-    const interactionName = typeof params.interactionName === 'string' ? params.interactionName : undefined;
-    const interactionNames =
-        params.interactionNames && typeof params.interactionNames === 'object'
-            ? (params.interactionNames as { selectDocumentType?: unknown })
-            : undefined;
-
-    switch (activity.name) {
-        case 'executeInteraction':
-            interactionId = interactionName || '';
-            break;
-
-        case 'generateDocumentProperties':
-            interactionId = interactionName || 'sys:ExtractInformation';
-            break;
-
-        case 'identifyTextSections':
-            interactionId = interactionName || 'sys:IdentifyTextSections';
-            break;
-
-        case 'generateOrAssignContentType':
-            interactionId =
-                typeof interactionNames?.selectDocumentType === 'string'
-                    ? interactionNames.selectDocumentType
-                    : 'sys:SelectDocumentType';
-            break;
-
-        case 'chunkDocument':
-            interactionId = interactionName || 'sys:ChunkDocument';
-            break;
-
-        default:
-            // For any other rate-limited activities, try to extract what we can
-            interactionId = interactionName || '';
-            break;
-    }
-
-    if (!interactionId) {
-        throw new Error(`No interaction ID could be determined for activity ${activity.name}`);
-    }
-
-    return {
-        interactionIdOrEndpoint: interactionId,
-        environmentId: typeof params.environment === 'string' ? params.environment : undefined,
-        modelId: typeof params.model === 'string' ? params.model : undefined,
-    };
-}
-
 async function runActivity(
     activity: DSLActivitySpec,
     basePayload: BaseActivityPayload,
@@ -521,7 +460,7 @@ async function runActivity(
             url: remote.url,
             activity_name: remote.activity_name,
             // Merge imported vars with static activity params, then resolve expressions
-            // (same merge pattern used by local activities — see buildRateLimitParams)
+            // Merge imported vars with static activity params, then resolve expressions.
             params: new Vars({ ...importParams, ...activity.params }).resolve(),
             app_install_id: remote.app_install_id,
             app_name: remote.app_name,
@@ -535,33 +474,6 @@ async function runActivity(
             log.debug(`Workflow vars after executing remote activity ${activity.name}`, { vars: vars.resolve() });
         }
         return;
-    }
-
-    // call rate limiter depending on the activity type
-    const rateLimitedActivities = [
-        'chunkDocument',
-        'executeInteraction',
-        'generateDocumentProperties',
-        'generateOrAssignContentType',
-        'identifyTextSections',
-    ];
-
-    if (activity.name && rateLimitedActivities.includes(activity.name)) {
-        log.debug(`Applying rate limit for activity ${activity.name}`);
-        // Apply rate limiting logic here
-        // Check rate limit first - loop until no delay
-        const rateLimitParams = buildRateLimitParams(activity, executionPayload);
-
-        const rateLimitPayload = dslActivityPayload(basePayload, activity, rateLimitParams);
-        let rateLimitResult = await proxy.checkRateLimit(rateLimitPayload);
-
-        while (rateLimitResult.delayMs > 0) {
-            log.debug(`Rate limit delay applied: ${rateLimitResult.delayMs}ms`);
-            await sleep(rateLimitResult.delayMs);
-
-            // Check again after sleeping
-            rateLimitResult = await proxy.checkRateLimit(rateLimitPayload);
-        }
     }
 
     const fn = proxy[activity.name];

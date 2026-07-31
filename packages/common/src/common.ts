@@ -1,3 +1,5 @@
+import type { ContentObjectProcessingPriority } from './store/store.js';
+
 export interface FindPayload {
     query: Record<string, unknown>;
     offset?: number;
@@ -79,9 +81,24 @@ export interface BulkObjectCreateResult extends BulkOperationResult<'create'> {
     /** Number of documents successfully created */
     created: number;
     /** Successfully created objects with their IDs */
-    objects: { id: string; external_id?: string }[];
+    objects: { id: string; index?: number; external_id?: string }[];
     /** Objects that failed to create */
     failed: { external_id?: string; index: number; error: string }[];
+}
+
+export interface BulkObjectCreateOptions {
+    collection_id?: string;
+    /** @deprecated Events are now always emitted. This suppresses Temporal-backed delivery targets. */
+    skip_workflows?: boolean;
+    processing_priority?: ContentObjectProcessingPriority;
+    /** Stable identity for retrying an ambiguous bulk-create request without duplicating objects. */
+    idempotency_key?: string;
+}
+
+export interface BulkObjectUpdateOptions {
+    processing_priority?: ContentObjectProcessingPriority;
+    /** Stable identity for retrying an ambiguous bulk-update request without duplicating events. */
+    idempotency_key?: string;
 }
 
 /**
