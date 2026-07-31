@@ -14,7 +14,7 @@ import type {
 import type { PrincipalType } from './apikey.js';
 import type { MCPToolAnnotations } from './apps.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
-import type { ProjectRef } from './project.js';
+import type { AgentCheckpointConfiguration, ProjectRef } from './project.js';
 import type {
     ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
@@ -700,6 +700,13 @@ export interface AgentRunnerOptions {
      * resolved from the run data.
      */
     request_template?: string;
+
+    /**
+     * Per-agent context checkpoint configuration. Field-wise it overrides the
+     * project's `configuration.agent.checkpoint`; a per-run `checkpoint_tokens`
+     * override still wins over both.
+     */
+    checkpoint?: AgentCheckpointConfiguration;
 }
 
 // ================= User Communication Channels ====================
