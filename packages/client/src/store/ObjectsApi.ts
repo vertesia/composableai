@@ -1,7 +1,9 @@
 import { ApiTopic } from '@vertesia/api-fetch-client';
 import {
+    type BulkObjectCreateOptions,
     type BulkObjectCreateResult,
     type BulkObjectDeleteResult,
+    type BulkObjectUpdateOptions,
     type BulkObjectUpdateResult,
     type Collection,
     type ComplexSearchPayload,
@@ -458,23 +460,21 @@ export class ObjectsApi extends ApiTopic {
         return this.del(`/${idOrIds}`);
     }
 
-    bulkUpdate(updates: Record<string, Record<string, unknown>>): Promise<BulkObjectUpdateResult> {
+    bulkUpdate(
+        updates: Record<string, Record<string, unknown>>,
+        options?: BulkObjectUpdateOptions,
+    ): Promise<BulkObjectUpdateResult> {
         const ids = Object.keys(updates);
         return this.client.runOperation({
             name: 'update',
             ids,
-            params: updates,
+            params: options ? { updates, ...options } : updates,
         }) as Promise<BulkObjectUpdateResult>;
     }
 
     bulkCreate(
         objects: CreateContentObjectPayload[],
-        options?: {
-            collection_id?: string;
-            /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
-            skip_workflows?: boolean;
-            processing_priority?: ContentObjectProcessingPriority;
-        },
+        options?: BulkObjectCreateOptions,
     ): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({
             name: 'create',
