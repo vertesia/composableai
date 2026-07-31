@@ -394,11 +394,21 @@ export interface ProjectConfiguration {
     agent_streaming_enabled?: boolean;
 
     /**
-     * Agent conversation checkpoint threshold in tokens: the context size at
-     * which the conversation is summarized and compacted. Overrides the
-     * model-based default (80% of the model's context window, capped at 500k).
-     * Clamped at runtime to 95% of the model's window so the prompt still fits.
-     * Unset means the model-based default.
+     * Agent conversation checkpoint threshold as a fraction of the model's
+     * context window (0–1, e.g. 0.95). Model-independent: applies to whatever
+     * model a run uses. Overrides the default ratio (0.8) AND the default hard
+     * cap — a project setting 0.95 on a 1M model checkpoints at 950k. Clamped
+     * at runtime to 0.95 so the prompt still fits. Combine with
+     * agent_checkpoint_tokens to also bound the absolute size.
+     */
+    agent_checkpoint_threshold?: number;
+
+    /**
+     * Agent conversation checkpoint hard cap in tokens: the absolute context
+     * size at which the conversation is summarized and compacted, regardless
+     * of the window fraction. Replaces the default 500k cap when set. Clamped
+     * at runtime to 95% of the model's window. Unset means the default cap
+     * (or no cap beyond the 95% clamp when agent_checkpoint_threshold is set).
      */
     agent_checkpoint_tokens?: number;
 
