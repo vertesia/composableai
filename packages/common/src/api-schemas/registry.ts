@@ -289,6 +289,39 @@ export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = toOpenA
     strictComponents: STRICT_COMPONENTS,
 });
 
+/**
+ * The registered schemas themselves, by component name.
+ *
+ * Exported for provenance checking, not for use. A component whose public TypeScript type is
+ * `z.infer<typeof XSchema>` is only single-sourced if the component published as `X` is emitted by
+ * that same schema OBJECT — the naming convention the OpenAPI scanner enforces proves the alias and
+ * the variable agree on a spelling, not that the registry entry points at it. Swapping this map's
+ * value for a different schema would leave the type inferred from one shape and the contract
+ * published from another, and the scanner cannot notice because it deliberately stops deriving
+ * these types. `check:aliases` closes that by comparing objects here.
+ */
+export const ApiSchemaRegistry: Readonly<Record<string, z.ZodType>> = API_SCHEMAS;
+
+/**
+ * The component `name` would publish if `schema` were the only thing registered.
+ *
+ * The same two calls {@link ApiSchemaComponents} makes, on one schema, so the comparison is against
+ * the real emission path rather than a reimplementation of it. This is what proves a canonical alias
+ * names the schema its component actually came from, including for the members hoisted out of a
+ * registered root — those never appear in {@link ApiSchemaRegistry}, so object identity alone would
+ * have nothing to compare.
+ */
+export function emitCanonicalComponent(name: string, schema: z.ZodType): JsonObject | undefined {
+    const raw = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' });
+    // The adapter validates the strict list against the components actually emitted, and this emits
+    // ONE root rather than the whole registry — so the list has to be narrowed to what this root
+    // produces, or every name closed elsewhere in the registry reads as an unknown component. The
+    // first pass exists only to learn those names; the second is the emission that gets compared.
+    const produced = new Set(Object.keys(toOpenApiComponents({ [name]: raw })));
+    const strictComponents = new Set([...STRICT_COMPONENTS].filter((component) => produced.has(component)));
+    return toOpenApiComponents({ [name]: raw }, { strictComponents })[name];
+}
+
 /** The `$ref` pointer for a component, in the same spelling the spec publishes. */
 export function apiComponentRef(name: ApiComponentName): string {
     return `#/components/schemas/${name}`;
