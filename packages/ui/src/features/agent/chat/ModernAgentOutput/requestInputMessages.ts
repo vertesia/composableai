@@ -133,6 +133,8 @@ export function clearRequestInputIdAnsweredForSession(agentRunId: string, reques
 }
 
 export function isRequestInputAnsweredForSession(agentRunId: string, message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.REQUEST_INPUT) return false;
+
     const requestId = getRequestInputId(message);
     if (!requestId || typeof window === 'undefined') return false;
 

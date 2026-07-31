@@ -1,6 +1,7 @@
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import {
+    clearRequestInputIdAnsweredForSession,
     getAnsweredRequestInputKeys,
     getAnsweredToolApprovalRequestInputKeys,
     getPendingRequestInputMessage,
@@ -8,6 +9,8 @@ import {
     getRequestInputResponseIdFromMetadata,
     getRequestInputResponseMetadata,
     getToolApprovalResponseMetadata,
+    isRequestInputAnsweredForSession,
+    markRequestInputIdAnsweredForSession,
 } from './requestInputMessages';
 
 const APPROVAL_KEY = 'create_interaction:name:JDE AR Payment Processing Agent';
@@ -84,6 +87,26 @@ describe('getAnsweredToolApprovalRequestInputKeys', () => {
 });
 
 describe('request input correlation', () => {
+    it('does not apply session acknowledgement to non-request-input messages with the same id', () => {
+        const agentRunId = 'agent-run-1';
+        const requestId = 'request-1';
+        const request = {
+            ...makeApprovalRequest(),
+            details: { request_id: requestId, ux: { options: [{ id: 'allow_once' }] } },
+        };
+        const unrelatedMessage = {
+            ...makeUserAnswer('Still working'),
+            details: { request_id: requestId },
+        };
+
+        markRequestInputIdAnsweredForSession(agentRunId, requestId);
+
+        expect(isRequestInputAnsweredForSession(agentRunId, request)).toBe(true);
+        expect(isRequestInputAnsweredForSession(agentRunId, unrelatedMessage)).toBe(false);
+
+        clearRequestInputIdAnsweredForSession(agentRunId, requestId);
+    });
+
     it('correlates a persisted response to the matching request id', () => {
         const firstRequest = {
             ...makeApprovalRequest(),
