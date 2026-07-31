@@ -4,90 +4,21 @@
  * Access control interfaces
  */
 
-import type { AbacScope } from './roles/types.js';
+import type { AccessControlResourceType } from './access-control-values.js';
+import type {
+    ACECreatePayloadFromSchema,
+    ACEUpdatePayloadFromSchema,
+    AccessControlEntryFromSchema,
+    AceConditionsFromSchema,
+    PropertyConditionsFromSchema,
+    PropertyConditionValueFromSchema,
+} from './api-schemas/access-control.js';
 
-export enum Permission {
-    int_read = 'interaction:read',
-    int_write = 'interaction:write',
-    int_delete = 'interaction:delete',
-
-    int_execute = 'interaction:execute',
-    run_read = 'run:read',
-    run_write = 'run:write',
-
-    env_admin = 'environment:admin',
-
-    app_manage = 'app:manage',
-    project_admin = 'project:admin',
-    project_integration_read = 'project:integration_read',
-    project_settings_write = 'project:settings_write',
-
-    api_key_create = 'api_key:create',
-    api_key_read = 'api_key:read',
-    api_key_secret_read = 'api_key:secret_read',
-    api_key_update = 'api_key:update',
-    api_key_delete = 'api_key:delete',
-
-    account_read = 'account:read',
-    account_write = 'account:write',
-    account_admin = 'account:admin',
-    manage_billing = 'account:billing',
-    /** View cost and usage analytics */
-    billing_read = 'billing:read',
-    /** View account and project audit events. */
-    audit_read = 'audit:read',
-    account_member = 'account:member',
-
-    content_read = 'content:read',
-    content_read_all = 'content:read_all',
-    content_write = 'content:write',
-    content_delete = 'content:delete',
-    content_admin = 'content:admin', //manage schemas
-    content_superadmin = 'content:superadmin', // list all objects and collections
-
-    workflow_read = 'workflow:read',
-    workflow_run = 'workflow:run',
-    workflow_admin = 'workflow:admin',
-    workflow_superadmin = 'workflow:superadmin',
-
-    agent_run_read = 'agent_run:read',
-
-    task_read = 'task:read',
-    task_manage = 'task:manage',
-
-    iam_impersonate = 'iam:impersonate',
-
-    /** whether the user has access to Sutdio App. */
-    studio_access = 'studio:access',
-}
-
-export enum AccessControlResourceType {
-    project = 'project',
-    environment = 'environment',
-    account = 'account',
-    interaction = 'interaction',
-    app = 'application',
-    /**
-     * Dynamic resource matching by property conditions at query time. The role
-     * partitions (content, future tasks/etc.) determine which kind of object
-     * the conditions match — selected via `AceConditions.scope`.
-     *
-     * NOTE: the string value remains `'content_set'` for backward compatibility
-     * with stored ACEs and JWTs. The wire/DB rename to `'resource_set'` is a
-     * separate concern (deferred). Until then, code reads
-     * `AccessControlResourceType.resource_set` but the value on the wire stays
-     * `'content_set'`.
-     */
-    resource_set = 'content_set',
-}
-
-export enum AccessControlPrincipalType {
-    user = 'user',
-    group = 'group',
-    apikey = 'apikey',
-    /** Dynamic principal matching by user/group properties at token time. */
-    principal_set = 'principal_set',
-}
+/**
+ * The enums live in `./access-control-values.js` so the API schemas can consume them without
+ * importing this module back. Re-exported here so every existing import path keeps working.
+ */
+export * from './access-control-values.js';
 
 /**
  * MongoDB query syntax subset for matching properties.
@@ -104,64 +35,27 @@ export enum AccessControlPrincipalType {
  * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
  * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
  */
-/** A single condition value. Resolved and evaluated dynamically by token/content security code. */
-export type PropertyConditionValue = unknown;
-
-export type PropertyConditions = Record<string, PropertyConditionValue>;
+export type PropertyConditionValue = PropertyConditionValueFromSchema;
+export type PropertyConditions = PropertyConditionsFromSchema;
 
 /**
- * Conditions attached to an ACE for dynamic matching.
- * - `principal_props`: matched against user/group properties at token time (PrincipalSet).
- * - `resource_props`: matched against object properties at query time (ResourceSet).
+ * The access-control wire types, inferred from the schemas in `./api-schemas/access-control.js` —
+ * which are what OpenAPI publishes and AJV compiles. The field descriptions live there too, since
+ * Zod reads `.meta()` and not TSDoc.
+ *
+ * NOTE `conditions` carries ONLY the three fields it declares. The server stores two more there —
+ * `principal_name` / `resource_name`, see `IAceConditions` in `@dglabs/server-common` — and copies
+ * them into `principal` / `resource` on the way out. They are not part of this contract, and the
+ * response mappers drop them rather than serializing the sub-document.
  */
-export interface AceConditions {
-    /** Property conditions matched against user/group properties at token time (PrincipalSet). */
-    principal_props?: PropertyConditions;
-    /** Property conditions matched against object properties at query time (ResourceSet). */
-    resource_props?: PropertyConditions;
-    /**
-     * Kind of object the `resource_props` matches. Used to disambiguate which
-     * partition's roles apply (e.g. content roles vs task roles) and to form
-     * the JWT `content_security` key prefix (`{scope}:{verb}`). Absent →
-     * `'document'` (default; emits bare `read`/`write`/`delete` keys for
-     * backward compatibility).
-     */
-    scope?: AbacScope;
-}
+export type AceConditions = AceConditionsFromSchema;
+export type AccessControlEntry = AccessControlEntryFromSchema;
+export type ACECreatePayload = ACECreatePayloadFromSchema;
+export type ACEUpdatePayload = ACEUpdatePayloadFromSchema;
 
-export interface AccessControlEntry {
-    /**
-     * Role name. Typed as `string` because role names now span multiple
-     * partitions: `SystemRoles` enum values for system-domain roles, and bare
-     * strings for ABAC-domain roles (e.g. `'content:reader'`,
-     * `'content:writer'`, `'content:manager'`). Mongoose schema validates the
-     * value against the registered role catalog via `getAllRoleNames()`.
-     */
-    role: string;
-    resource_type: AccessControlResourceType;
-    resource: string; //objectId
-    principal_type: AccessControlPrincipalType;
-    principal: string; //objectId
-    /** Account scope — required for principal_set/content_set ACEs. */
-    account?: string;
-    /** Project scope — narrows a principal_set/content_set ACE to a single project. */
-    project?: string;
-    /** Dynamic matching conditions for principal_set/content_set ACEs. */
-    conditions?: AceConditions;
-    tags?: string[];
-    expires_at?: string;
-    created_at?: string;
-    updated_at?: string;
-    id: string;
-}
-
-export interface ACECreatePayload extends Omit<AccessControlEntry, 'created_at' | 'updated_at' | 'id'> {}
-
-export interface ACEUpdatePayload extends Partial<ACECreatePayload> {}
-
-// RoleDefinition + SystemRoleDefinition now live in `./roles/types.js` to
-// avoid a circular import with `RoleDomain`. They remain re-exported via
-// the package's index.ts so consumers see no path change.
+// RoleDefinition + SystemRoleDefinition now live in `./roles/types.js`, and are likewise inferred
+// from `./api-schemas/access-control.js`. They remain re-exported via the package's index.ts so
+// consumers see no path change.
 
 // ============================================================================
 // BLP Security Levels

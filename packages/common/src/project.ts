@@ -1,34 +1,26 @@
 import type { JSONSchemaType } from 'ajv';
-import type { SupportedIntegrations } from './integrations.js';
+import type {
+    CreateProjectPayloadFromSchema,
+    ListProjectsQueryFromSchema,
+    ProjectIntegrationListEntryFromSchema,
+    ProjectIntegrationListResponseFromSchema,
+    ProjectPluginsUpdatePayloadFromSchema,
+    ProjectTagQueryFromSchema,
+} from './api-schemas/project.js';
 import type { ContentTypeIntakePolicy, IntakeVisionDetail, IntakeVisionProfileSettings } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
 import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
 
-export interface ICreateProjectPayload {
-    name: string;
-    namespace: string;
-    description?: string;
-    auto_config?: boolean;
-}
-export enum SystemRoles {
-    owner = 'owner', // all permissions
-    admin = 'admin', // all permissions
-    manager = 'manager', // all permissions but manage_account, manage_billing
-    developer = 'developer', // all permissions but manage_account, manage_billing, manage_roles, delete
-    application = 'application', // executor + request_pk
-    automation = 'automation', // event-triggered automation runner
-    content_processor = 'content_processor', // trusted system content processing
-    consumer = 'consumer', // required permissions for users of micro apps
-    executor = 'executor', // can only read and execute interactions
-    reader = 'reader', // can only read (browse)
-    auditor = 'auditor', // can read all non-admin resources without mutation permissions
-    support = 'support', // Vertesia support read-only role
-    billing = 'billing', // can only manage billings
-    member = 'member', // can only access, but no specific permissions
-    app_member = 'app_member', // used to mark an user have access to an application. does not provide any permission on its own
-    content_superadmin = 'content_superadmin', // can see all content objects and collections
-}
+/**
+ * `SystemRoles` lives in `./project-values.js` so the API schemas can read it without importing this
+ * module back. Re-exported here so every existing import path keeps working.
+ */
+export * from './project-values.js';
+
+import { SystemRoles } from './project-values.js';
+
+export type ICreateProjectPayload = CreateProjectPayloadFromSchema;
 
 export function isRoleIncludedIn(role: string, includingRole: string) {
     switch (includingRole) {
@@ -50,6 +42,28 @@ export interface PopulatedProjectRef {
     name: string;
     account: AccountRef;
 }
+// The compact project reference. Deliberately still hand-written, unlike every other type this
+// batch converted, and the one case where `export type X = XFromSchema` had to be reverted.
+//
+// `ProjectRef` is embedded by `Interaction`, `PromptTemplate` and `ExecutionRunRef`, none of which
+// have converted. Those components are still derived by the TypeScript scanner, and the scanner
+// cannot expand a `z.infer<>` alias — it resolved `ProjectRef` to nothing and then failed the whole
+// closure with "Encountered a reference to a missing definition", emptying six components that had
+// nothing to do with this batch.
+//
+// So the rule established for components has a mirror for types: a TypeScript-DERIVED component may
+// not reference a schema-INFERRED type, exactly as a canonical component may not `$ref` a derived
+// one. A shared type can only become inferred once nothing derived still reads it, which for this
+// one is the `Project` batch.
+//
+// The single source of truth is not lost in the meantime. The canonical schema in
+// `./api-schemas/apikey.ts` is what both OpenAPI and AJV use, and `apikey.contract.test.ts` asserts
+// `Equals<ProjectRef, ProjectRefFromSchema>` — so this declaration cannot drift from it without
+// failing the build.
+//
+// Note the comment style: `//` rather than JSDoc. A doc comment here becomes the component's
+// top-level `description`, which the canonical schema does not carry, and the generator rejects a
+// canonical/derived pair that is not byte-identical.
 export interface ProjectRef {
     id: string;
     name: string;
@@ -62,13 +76,9 @@ export interface ProjectRef {
     restricted?: boolean;
 }
 
-export interface ProjectTagQuery {
-    tag?: string;
-}
+export type ProjectTagQuery = ProjectTagQueryFromSchema;
 
-export interface ListProjectsQuery {
-    account?: string;
-}
+export type ListProjectsQuery = ListProjectsQueryFromSchema;
 
 export enum ResourceVisibility {
     public = 'public',
@@ -623,9 +633,7 @@ export interface ProjectCreatePayload {
 
 export interface ProjectUpdatePayload extends Partial<Project> {}
 
-export interface ProjectPluginsUpdatePayload {
-    plugins: string[];
-}
+export type ProjectPluginsUpdatePayload = ProjectPluginsUpdatePayloadFromSchema;
 
 export const ProjectRefPopulate = 'id name account';
 
@@ -1242,11 +1250,6 @@ export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
     error?: string;
 }
 
-export interface ProjectIntegrationListEntry {
-    id: SupportedIntegrations;
-    enabled: boolean;
-}
+export type ProjectIntegrationListEntry = ProjectIntegrationListEntryFromSchema;
 
-export interface ProjectIntegrationListResponse {
-    integrations: ProjectIntegrationListEntry[];
-}
+export type ProjectIntegrationListResponse = ProjectIntegrationListResponseFromSchema;

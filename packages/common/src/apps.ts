@@ -1,4 +1,5 @@
 import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
+import type { ProjectToolInfoFromSchema } from './api-schemas/project.js';
 import type { AppDashboardDefinition } from './data-platform.js';
 import type { CatalogInteractionRef } from './interaction.js';
 import type {
@@ -1459,36 +1460,10 @@ export interface AppToolCollection {
 }
 
 /**
- * Information about a tool and its associated app installation.
- * Used to look up which app provides a specific tool.
+ * A tool and the app installation that provides it, inferred from `./api-schemas/project.js` — the
+ * module that owns it, because it converted with the Projects batch rather than with Apps.
  */
-export interface ProjectToolInfo {
-    /**
-     * The tool name
-     */
-    tool_name: string;
-
-    /**
-     * Optional tool description
-     */
-    tool_description?: string;
-
-    /**
-     * The app name that provides this tool
-     */
-    app_name: string;
-
-    /**
-     * The app installation ID
-     */
-    app_install_id: string;
-
-    /**
-     * The app installation settings.
-     * Only included for agent tokens, not user tokens (security: may contain API keys).
-     */
-    settings?: Record<string, unknown>;
-}
+export type ProjectToolInfo = ProjectToolInfoFromSchema;
 
 /**
  * OAuth authentication status for an MCP tool collection

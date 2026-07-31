@@ -2,21 +2,67 @@ import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
 import { z } from 'zod';
+import {
+    ACECreatePayloadSchema,
+    ACEUpdatePayloadSchema,
+    AccessControlEntryArraySchema,
+    AccessControlEntrySchema,
+    RoleDefinitionArraySchema,
+    SystemRoleDefinitionArraySchema,
+} from './access-control.js';
 import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
 import { findUnprunablePaths, type JsonObject, pruneToSchema, toOpenApiComponents } from './adapter.js';
-import { ApiKeyListQuerySchema } from './apikey.js';
+import {
+    ApiKeyArraySchema,
+    ApiKeyListQuerySchema,
+    ApiKeyReadQuerySchema,
+    ApiKeyReadResponseSchema,
+    ApiKeySchema,
+    ApiKeyWithValueSchema,
+    AuthTokenResponseSchema,
+    CreateApiKeyPayloadSchema,
+    DeleteOperationResultSchema,
+    ProjectRefArraySchema,
+    UpdateApiKeyPayloadSchema,
+} from './apikey.js';
+import {
+    CreateUserGroupPayloadSchema,
+    UpdateUserGroupPayloadSchema,
+    UserGroupArraySchema,
+    UserGroupSchema,
+} from './group.js';
+import {
+    AccountProjectsResponseSchema,
+    InviteAcceptanceResponseSchema,
+    InviteDeclineResponseSchema,
+    InviteUserRequestPayloadSchema,
+    InviteUserResponsePayloadSchema,
+    OnboardingProgressSchema,
+    UserInviteTokenArraySchema,
+} from './invites.js';
 import {
     type ApiParameterLocation,
     type NormalizedApiParameters,
     normalizeParameters,
     type RawApiParameters,
 } from './parameters.js';
+import {
+    CountResultSchema,
+    CreateProjectPayloadSchema,
+    ListProjectsQuerySchema,
+    ProjectIntegrationListResponseSchema,
+    ProjectPluginsUpdatePayloadSchema,
+    ProjectTagQuerySchema,
+    ProjectToolInfoArraySchema,
+    ProjectToolInfoSchema,
+} from './project.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import {
     DeleteByIdResultSchema,
     PrincipalIdentitySchema,
     UpdateUserPayloadSchema,
     UserArraySchema,
+    UserRefArraySchema,
     UserSchema,
 } from './user.js';
 
@@ -44,6 +90,42 @@ const API_SCHEMAS = {
     UpdateUserPayload: UpdateUserPayloadSchema,
     DeleteByIdResult: DeleteByIdResultSchema,
     PrincipalIdentity: PrincipalIdentitySchema,
+    UserRefArray: UserRefArraySchema,
+    UserGroup: UserGroupSchema,
+    UserGroupArray: UserGroupArraySchema,
+    CreateUserGroupPayload: CreateUserGroupPayloadSchema,
+    UpdateUserGroupPayload: UpdateUserGroupPayloadSchema,
+    AccessControlEntry: AccessControlEntrySchema,
+    AccessControlEntryArray: AccessControlEntryArraySchema,
+    ACECreatePayload: ACECreatePayloadSchema,
+    ACEUpdatePayload: ACEUpdatePayloadSchema,
+    ProjectRefArray: ProjectRefArraySchema,
+    RoleDefinitionArray: RoleDefinitionArraySchema,
+    SystemRoleDefinitionArray: SystemRoleDefinitionArraySchema,
+    ApiKey: ApiKeySchema,
+    ApiKeyArray: ApiKeyArraySchema,
+    ApiKeyWithValue: ApiKeyWithValueSchema,
+    ApiKeyReadResponse: ApiKeyReadResponseSchema,
+    ApiKeyReadQuery: ApiKeyReadQuerySchema,
+    CreateApiKeyPayload: CreateApiKeyPayloadSchema,
+    UpdateApiKeyPayload: UpdateApiKeyPayloadSchema,
+    AuthTokenResponse: AuthTokenResponseSchema,
+    DeleteOperationResult: DeleteOperationResultSchema,
+    InviteUserRequestPayload: InviteUserRequestPayloadSchema,
+    InviteUserResponsePayload: InviteUserResponsePayloadSchema,
+    InviteAcceptanceResponse: InviteAcceptanceResponseSchema,
+    InviteDeclineResponse: InviteDeclineResponseSchema,
+    OnboardingProgress: OnboardingProgressSchema,
+    AccountProjectsResponse: AccountProjectsResponseSchema,
+    TransientToken_UserInviteTokenData_Array: UserInviteTokenArraySchema,
+    ListProjectsQuery: ListProjectsQuerySchema,
+    ProjectTagQuery: ProjectTagQuerySchema,
+    ICreateProjectPayload: CreateProjectPayloadSchema,
+    ProjectPluginsUpdatePayload: ProjectPluginsUpdatePayloadSchema,
+    CountResult: CountResultSchema,
+    ProjectIntegrationListResponse: ProjectIntegrationListResponseSchema,
+    ProjectToolInfo: ProjectToolInfoSchema,
+    ProjectToolInfoArray: ProjectToolInfoArraySchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -79,6 +161,55 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'UpdateUserPayload',
     'DeleteByIdResult',
     'PrincipalIdentity',
+    // The group closure. UserRef is hoisted by UserRefArray rather than named by an endpoint, but it
+    // is published closed today and must stay that way; the array components take no
+    // additionalProperties at all.
+    'UserRef',
+    'UserGroup',
+    'CreateUserGroupPayload',
+    'UpdateUserGroupPayload',
+    // The roles / access-control closure. `AceConditions` is closed too, and has to be listed by
+    // name: it is a hoisted component, so the parent's strict policy does not reach it.
+    // `PropertyConditions` is deliberately absent — it is a map whose `additionalProperties` is a
+    // value schema, not an object with declared properties.
+    'AccessControlEntry',
+    'ACECreatePayload',
+    'ACEUpdatePayload',
+    'AceConditions',
+    'RoleDefinition',
+    'SystemRoleDefinition',
+    // The API key and account-invite closure. ProjectRef, AccountRef and the invite payload are
+    // hoisted rather than named by an endpoint, and all three are published closed today.
+    'ProjectRef',
+    'AccountRef',
+    'ApiKey',
+    'ApiKeyWithValue',
+    'ApiKeyReadResponse',
+    'ApiKeyReadQuery',
+    'CreateApiKeyPayload',
+    'UpdateApiKeyPayload',
+    'AuthTokenResponse',
+    'DeleteOperationResult',
+    'InviteUserRequestPayload',
+    'InviteUserResponsePayload',
+    'InviteAcceptanceResponse',
+    'InviteDeclineResponse',
+    'OnboardingProgress',
+    'AccountProjectsResponse',
+    'UserInviteTokenData',
+    'TransientToken_UserInviteTokenData_',
+    // The Projects closure. The two query components are expanded into parameters rather than
+    // published, but the strict policy is what makes an undeclared query parameter a 400 rather than
+    // a silent ignore, so they are listed like ApiKeyListQuery. ProjectIntegrationListEntry and
+    // ProjectToolInfo are hoisted rather than named by an endpoint, and both are closed today.
+    'ListProjectsQuery',
+    'ProjectTagQuery',
+    'ICreateProjectPayload',
+    'ProjectPluginsUpdatePayload',
+    'CountResult',
+    'ProjectIntegrationListResponse',
+    'ProjectIntegrationListEntry',
+    'ProjectToolInfo',
 ]);
 
 /**

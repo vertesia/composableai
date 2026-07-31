@@ -113,16 +113,104 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
         // grows by one line per hoisted schema as batches convert, which is the point: each addition is
         // a new public component name and wants a reviewer to see it.
         expect(Object.keys(ApiSchemaComponents).sort()).toEqual([
+            // Batches convert whole `$ref` closures, so the list grows in groups rather than one
+            // name at a time. The comments say which batch each group arrived with; sort order is
+            // alphabetical, so a group is not contiguous and the note sits at its first member.
+            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
+            // because an ACE $refs AceConditions which $refs PropertyConditions.
+            'ACECreatePayload',
+            'ACEUpdatePayload',
+            'AbacScope',
+            'AccessControlEntry',
+            'AccessControlEntryArray',
+            'AccessControlPrincipalType',
+            'AccessControlResourceType',
             'Account',
             'AccountBilling',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'AccountProjectsResponse',
+            'AccountRef',
             'AccountType',
+            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
+            // because an ACE $refs AceConditions which $refs PropertyConditions.
+            'AceConditions',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'ApiKey',
+            'ApiKeyArray',
             'ApiKeyListQuery',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'ApiKeyReadQuery',
+            'ApiKeyReadResponse',
+            'ApiKeyTypes',
+            'ApiKeyWithValue',
+            'AuthTokenResponse',
             'BillingMethod',
-            // The IAM closure, converted as the second resource batch. PrincipalContext is composed
-            // into PrincipalIdentity rather than hoisted, so it is a public type with no component.
+            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
+            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            'CountResult',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'CreateApiKeyPayload',
+            // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
+            // an endpoint.
+            'CreateUserGroupPayload',
+            // The IAM closure, converted as the second. PrincipalContext is composed into
+            // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'DeleteByIdResult',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'DeleteOperationResult',
+            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
+            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            'ICreateProjectPayload',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'InviteAcceptanceResponse',
+            'InviteDeclineResponse',
+            'InviteUserRequestPayload',
+            'InviteUserResponsePayload',
+            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
+            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            'ListProjectsQuery',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'OnboardingProgress',
+            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
+            // because an ACE $refs AceConditions which $refs PropertyConditions.
+            'Permission',
+            // The IAM closure, converted as the second. PrincipalContext is composed into
+            // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'PrincipalIdentity',
-            // The quota closure, converted as the first resource batch.
+            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
+            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            'ProjectIntegrationListEntry',
+            'ProjectIntegrationListResponse',
+            'ProjectPluginsUpdatePayload',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'ProjectRef',
+            'ProjectRefArray',
+            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
+            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            'ProjectTagQuery',
+            'ProjectToolInfo',
+            'ProjectToolInfoArray',
+            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
+            // because an ACE $refs AceConditions which $refs PropertyConditions.
+            'PropertyConditionValue',
+            'PropertyConditions',
+            // The quota closure, converted as the first bulk batch.
             'QuotaEffectiveTier',
             'QuotaStandingAdmissionClass',
             'QuotaStandingResource',
@@ -130,13 +218,50 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'QuotaStandingWindow',
             'QuotaTier',
             'QuotaTierResponse',
+            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
+            // because an ACE $refs AceConditions which $refs PropertyConditions.
+            'RoleDefinition',
+            'RoleDefinitionArray',
+            'RoleDomain',
             'StripeBillingDisabled',
             'StripeBillingEnabled',
             'StripeBillingStatusResponse',
+            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
+            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            'SupportedIntegrations',
+            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
+            // because an ACE $refs AceConditions which $refs PropertyConditions.
+            'SystemRoleDefinition',
+            'SystemRoleDefinitionArray',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'SystemRoles',
+            'TransientTokenType',
+            'TransientToken_UserInviteTokenData_',
+            'TransientToken_UserInviteTokenData_Array',
             'UpdateAccountPayload',
+            'UpdateApiKeyPayload',
+            // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
+            // an endpoint.
+            'UpdateUserGroupPayload',
+            // The IAM closure, converted as the second. PrincipalContext is composed into
+            // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'UpdateUserPayload',
             'User',
             'UserArray',
+            // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
+            // an endpoint.
+            'UserGroup',
+            'UserGroupArray',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
+            'UserInviteTokenData',
+            // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
+            // an endpoint.
+            'UserRef',
+            'UserRefArray',
         ]);
     });
 

@@ -14,6 +14,12 @@ export type {
 } from './api-schemas/account.js';
 export type { ApiKeyListQueryFromSchema } from './api-schemas/apikey.js';
 export type {
+    CreateUserGroupPayloadFromSchema,
+    UpdateUserGroupPayloadFromSchema,
+    UserGroupArrayFromSchema,
+    UserGroupFromSchema,
+} from './api-schemas/group.js';
+export type {
     QuotaEffectiveTierFromSchema,
     QuotaStandingAdmissionClassFromSchema,
     QuotaStandingResourceFromSchema,
@@ -26,7 +32,10 @@ export type {
     PrincipalContextFromSchema,
     PrincipalIdentityFromSchema,
     UpdateUserPayloadFromSchema,
+    UserArrayFromSchema,
     UserFromSchema,
+    UserRefArrayFromSchema,
+    UserRefFromSchema,
 } from './api-schemas/user.js';
 export * from './apikey.js';
 export * from './apps.js';

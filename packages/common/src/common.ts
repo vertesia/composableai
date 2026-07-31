@@ -1,3 +1,5 @@
+import type { DeleteOperationResultFromSchema } from './api-schemas/apikey.js';
+import type { CountResultFromSchema } from './api-schemas/project.js';
 import type { DeleteByIdResultFromSchema } from './api-schemas/user.js';
 export interface FindPayload {
     query: Record<string, unknown>;
@@ -31,14 +33,22 @@ export interface SuccessResponse {
     success: true;
 }
 
-export interface DeleteOperationResult {
-    acknowledged: boolean;
-    deletedCount: number;
-}
+/**
+ * The raw Mongo delete acknowledgement, inferred from `./api-schemas/apikey.js`.
+ *
+ * One slot returns it (`DeleteApiKey`), so unlike {@link CountResult} it did not have to move as a
+ * group — it is here rather than in an apikey module because `./common.js` is where the shared
+ * result shapes live.
+ */
+export type DeleteOperationResult = DeleteOperationResultFromSchema;
 
-export interface CountResult {
-    count: number;
-}
+/**
+ * How many rows an operation touched, inferred from `./api-schemas/project.js`.
+ *
+ * The module that owns it is named for the batch that converted it, not for the only resource that
+ * uses it: four slots across three resources and two services return this.
+ */
+export type CountResult = CountResultFromSchema;
 
 export interface BulkOperationPayload {
     /**

@@ -102,18 +102,61 @@ export const UserSchema = z
  */
 export const UserArraySchema = z.array(UserSchema).meta({ id: 'UserArray' });
 
-export const UpdateUserPayloadSchema = z
-    .object({
-        name: z.string().optional(),
-        username: z.string().optional(),
-        picture: z.string().optional(),
-        language: z.string().optional(),
-        phone: z.string().optional(),
-        last_selected_account: z.string().optional(),
-        properties: z.record(z.string(), z.unknown()).optional(),
-        clearance: z.number().optional(),
-        compartments: z.array(z.string()).optional(),
-    })
+/**
+ * The compact user shape embedded in other resources' responses — currently the group members
+ * listing, which populates a user document down to these four fields.
+ *
+ * A `.pick()` of {@link UserSchema}, not a parallel object: `UserRef` IS a projection of `User`, so
+ * the field definitions, their requiredness and any constraints come from one declaration. A hand
+ * written copy would be a twin that drifts the first time a field on `User` changes. `.pick()` does
+ * not carry the `id: 'User'` metadata across, so this still publishes as its own component rather
+ * than a second `$ref` to `User`.
+ *
+ * `email` is therefore required here for the same reason it is on `User`, even though the Mongoose
+ * model marks it optional. That is not an oversight to fix by loosening the schema: the component
+ * has always said required, and the server maps a missing email to `''` rather than publishing a
+ * response that violates it.
+ *
+ * Note this is the WIRE projection. `UserRefPopulate` is the Mongoose one that feeds it, and stays
+ * written out: it names database fields and carries persistence concerns this schema has no view of.
+ */
+export const UserRefSchema = UserSchema.pick({
+    id: true,
+    name: true,
+    email: true,
+    picture: true,
+}).meta({ id: 'UserRef' });
+
+export const UserRefArraySchema = z.array(UserRefSchema).meta({ id: 'UserRefArray' });
+
+/**
+ * The writable subset of a user, picked from {@link UserSchema} rather than restated.
+ *
+ * Every field here means exactly what it means on `User` — same type, same constraints — so it comes
+ * from one declaration; `.partial()` then relaxes requiredness, which is the only thing a PUT payload
+ * genuinely changes about them. The fields NOT picked are the point of the whitelist: `email`,
+ * `externalId`, `sign_in_provider`, `source`, `annotations` and the timestamps are set by the
+ * identity provider or the server, and a picked schema makes that list impossible to widen by
+ * accident.
+ *
+ * Picking also carries the field descriptions across, so `properties`, `clearance` and `compartments`
+ * are now documented on the payload as they always were on `User`. That is additive documentation,
+ * not a contract change — the constraints are byte-identical. Use `.pick()` only where the request
+ * semantics really do match the response: a field that accepts `null` to clear a value, coerces, or
+ * carries a request-only constraint has to be overridden explicitly instead.
+ */
+export const UpdateUserPayloadSchema = UserSchema.pick({
+    name: true,
+    username: true,
+    picture: true,
+    language: true,
+    phone: true,
+    last_selected_account: true,
+    properties: true,
+    clearance: true,
+    compartments: true,
+})
+    .partial()
     .meta({ id: 'UpdateUserPayload' });
 
 /**
@@ -136,5 +179,7 @@ export type PrincipalContextFromSchema = z.infer<typeof PrincipalContextSchema>;
 export type PrincipalIdentityFromSchema = z.infer<typeof PrincipalIdentitySchema>;
 export type UserFromSchema = z.infer<typeof UserSchema>;
 export type UserArrayFromSchema = z.infer<typeof UserArraySchema>;
+export type UserRefFromSchema = z.infer<typeof UserRefSchema>;
+export type UserRefArrayFromSchema = z.infer<typeof UserRefArraySchema>;
 export type UpdateUserPayloadFromSchema = z.infer<typeof UpdateUserPayloadSchema>;
 export type DeleteByIdResultFromSchema = z.infer<typeof DeleteByIdResultSchema>;

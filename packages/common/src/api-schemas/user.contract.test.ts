@@ -56,6 +56,32 @@ describe('gate 1 — the schema is the single source of truth for the public IAM
         expect(true).toBe(true);
     });
 
+    it('derives the update payload from the user rather than restating nine fields', () => {
+        // A `.pick()` of UserSchema plus `.partial()`: the field types and constraints come from the
+        // response declaration, and the ONLY thing the payload changes about them is requiredness.
+        assertType<Equals<UpdateUserPayload['name'], string | undefined>>(true);
+        assertType<Equals<UpdateUserPayload['clearance'], User['clearance']>>(true);
+        assertType<Equals<UpdateUserPayload['compartments'], User['compartments']>>(true);
+        assertType<Equals<UpdateUserPayload['properties'], User['properties']>>(true);
+        // What is NOT picked is the whitelist. `email`, `source`, `annotations` and the timestamps
+        // are server- or IdP-owned, and adding one now means naming it in the pick.
+        assertType<
+            Equals<
+                keyof UpdateUserPayload,
+                | 'name'
+                | 'username'
+                | 'picture'
+                | 'language'
+                | 'phone'
+                | 'last_selected_account'
+                | 'properties'
+                | 'clearance'
+                | 'compartments'
+            >
+        >(true);
+        expect(true).toBe(true);
+    });
+
     it('keeps the wire type optionality the document declares', () => {
         assertType<Equals<User['email'], string>>(true);
         assertType<Equals<User['created_at'], string>>(true);

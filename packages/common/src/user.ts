@@ -3,9 +3,16 @@ import type {
     AccountFromSchema,
     UpdateAccountPayloadFromSchema,
 } from './api-schemas/account.js';
-import type { UpdateUserPayloadFromSchema, UserFromSchema } from './api-schemas/user.js';
+import type {
+    AccountProjectsResponseFromSchema,
+    InviteAcceptanceResponseFromSchema,
+    InviteDeclineResponseFromSchema,
+    InviteUserRequestPayloadFromSchema,
+    InviteUserResponsePayloadFromSchema,
+    OnboardingProgressFromSchema,
+} from './api-schemas/invites.js';
+import type { UpdateUserPayloadFromSchema, UserFromSchema, UserRefFromSchema } from './api-schemas/user.js';
 import type { ApiKey } from './apikey.js';
-import type { ProjectRef, SystemRoles } from './project.js';
 
 export * from './account-values.js';
 
@@ -26,12 +33,13 @@ export interface UserWithAccounts extends User {
 export type User = UserFromSchema;
 export type UpdateUserPayload = UpdateUserPayloadFromSchema;
 
-export interface UserRef {
-    id: string;
-    name: string;
-    email: string;
-    picture?: string;
-}
+/**
+ * The compact user shape embedded in other resources' responses, derived from `UserRefSchema`.
+ *
+ * `UserRefPopulate` is the Mongoose projection that produces it, and the two are meant to stay in
+ * step: a field added here without adding it there yields a response missing the field.
+ */
+export type UserRef = UserRefFromSchema;
 
 export const UserRefPopulate = 'id name email picture';
 
@@ -69,26 +77,21 @@ export interface AccountRef {
 
 export const AccountRefPopulate = 'id name';
 
-export interface InviteUserRequestPayload {
-    email: string;
-    role: SystemRoles;
-}
-
-export interface InviteUserResponsePayload {
-    action: 'invited' | 'added';
-}
-
-export interface InviteAcceptanceResponse {
-    status: 'added';
-}
-
-export interface InviteDeclineResponse {
-    status: 'deleted';
-}
-
-export interface AccountProjectsResponse {
-    data: ProjectRef[];
-}
+/**
+ * The account invite, onboarding and project-listing wire types, derived from
+ * `./api-schemas/invites.js`.
+ *
+ * `AccountRef` above is the one member of this closure that stays hand-written, and only because
+ * `Interaction` and `PromptTemplate` still reference it through the TypeScript scanner, which cannot
+ * expand a `z.infer<>`. Everything here is reachable only from converted slots, so nothing derived
+ * reads it and the alias is safe. `AccountRefSchema` is still the runtime source of truth, and the
+ * `Equals` assertion in `invites.contract.test.ts` is what holds the interface to it.
+ */
+export type InviteUserRequestPayload = InviteUserRequestPayloadFromSchema;
+export type InviteUserResponsePayload = InviteUserResponsePayloadFromSchema;
+export type InviteAcceptanceResponse = InviteAcceptanceResponseFromSchema;
+export type InviteDeclineResponse = InviteDeclineResponseFromSchema;
+export type AccountProjectsResponse = AccountProjectsResponseFromSchema;
 
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
 type SessionType<T extends User | ApiKey> = T extends User ? 'user' : 'apikey';
@@ -105,12 +108,7 @@ export interface SessionInfo<T extends User | ApiKey> {
 export interface UserSessionInfo extends SessionInfo<User> {}
 export interface ApiKeySessionInfo extends SessionInfo<ApiKey> {}
 
-export interface OnboardingProgress {
-    interactions: boolean;
-    prompts: boolean;
-    environments: boolean;
-    default_environment_defined: boolean;
-}
+export type OnboardingProgress = OnboardingProgressFromSchema;
 
 /**
  * Data collected at signup
