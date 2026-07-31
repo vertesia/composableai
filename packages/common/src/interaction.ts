@@ -825,9 +825,19 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /**
      * The token threshold in thousands (K) for creating checkpoints.
      * If total tokens exceed this value, a checkpoint will be created.
-     * If not specified, the default is computed from the selected model context window (75%).
+     * When set it wins over every other checkpoint setting, including the
+     * structured `checkpoint` override below. If not specified, the default
+     * is computed from the selected model context window (80%, capped at 500k).
      */
     checkpoint_tokens?: number;
+
+    /**
+     * Structured per-run checkpoint override. Field-wise it takes precedence
+     * over the interaction's `agent_runner_options.checkpoint` and the
+     * project's `configuration.agent.checkpoint`. The legacy absolute
+     * `checkpoint_tokens` above still wins over everything when set.
+     */
+    checkpoint?: AgentCheckpointConfiguration;
 
     /**
      * Configuration for stripping large data (images, text) from conversation history
