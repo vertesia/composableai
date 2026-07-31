@@ -127,7 +127,6 @@ export const AccountProjectsResponseSchema = z
     })
     .meta({ id: 'AccountProjectsResponse' });
 
-export type AccountRefFromSchema = z.infer<typeof AccountRefSchema>;
 export type UserInviteTokenDataFromSchema = z.infer<typeof UserInviteTokenDataSchema>;
 export type UserInviteTokenFromSchema = z.infer<typeof UserInviteTokenSchema>;
 export type UserInviteTokenArrayFromSchema = z.infer<typeof UserInviteTokenArraySchema>;

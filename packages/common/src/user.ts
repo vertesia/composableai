@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import type {
     AccountBillingFromSchema,
     AccountFromSchema,
@@ -5,6 +6,7 @@ import type {
 } from './api-schemas/account.js';
 import type {
     AccountProjectsResponseFromSchema,
+    AccountRefSchema,
     InviteAcceptanceResponseFromSchema,
     InviteDeclineResponseFromSchema,
     InviteUserRequestPayloadFromSchema,
@@ -70,10 +72,11 @@ export type Account = AccountFromSchema;
 export type AccountBilling = AccountBillingFromSchema;
 export type UpdateAccountPayload = UpdateAccountPayloadFromSchema;
 
-export interface AccountRef {
-    id: string;
-    name: string;
-}
+// The compact account reference, derived from the schema in `./api-schemas/invites.js`. It was
+// hand-written for the same reason `ProjectRef` was — `ExecutionRun` and `UserInviteTokenData` still
+// reach it through types the scanner derives — and is an alias now for the same reason: the scanner
+// short-circuits such an alias to the published component rather than failing to expand it.
+export type AccountRef = z.infer<typeof AccountRefSchema>;
 
 export const AccountRefPopulate = 'id name';
 

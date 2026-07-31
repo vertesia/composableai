@@ -185,7 +185,6 @@ export const DeleteOperationResultSchema = z
 
 export type ApiKeyListQueryFromSchema = z.infer<typeof ApiKeyListQuerySchema>;
 export type ApiKeyReadQueryFromSchema = z.infer<typeof ApiKeyReadQuerySchema>;
-export type ProjectRefFromSchema = z.infer<typeof ProjectRefSchema>;
 export type ProjectRefArrayFromSchema = z.infer<typeof ProjectRefArraySchema>;
 export type ApiKeyFromSchema = z.infer<typeof ApiKeySchema>;
 export type ApiKeyArrayFromSchema = z.infer<typeof ApiKeyArraySchema>;

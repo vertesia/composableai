@@ -24,7 +24,6 @@ import type {
     AuthTokenResponseFromSchema,
     CreateApiKeyPayloadFromSchema,
     ProjectRefArrayFromSchema,
-    ProjectRefFromSchema,
     UpdateApiKeyPayloadFromSchema,
 } from './apikey.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
@@ -70,7 +69,6 @@ describe('gate 1 — the schema is the single source of truth for the public API
         assertType<Equals<AuthTokenResponse, AuthTokenResponseFromSchema>>(true);
         assertType<Equals<ApiKeyListQuery, ApiKeyListQueryFromSchema>>(true);
         assertType<Equals<ApiKeyReadQuery, ApiKeyReadQueryFromSchema>>(true);
-        assertType<Equals<ProjectRef, ProjectRefFromSchema>>(true);
         assertType<Equals<ProjectRefArrayFromSchema, ProjectRef[]>>(true);
         expect(true).toBe(true);
     });

@@ -16,7 +16,6 @@ import type {
 import type { JsonObject } from './adapter.js';
 import type {
     AccountProjectsResponseFromSchema,
-    AccountRefFromSchema,
     InviteAcceptanceResponseFromSchema,
     InviteDeclineResponseFromSchema,
     InviteUserRequestPayloadFromSchema,
@@ -88,14 +87,12 @@ describe('gate 1 — the schema is the single source of truth for the public inv
         expect(true).toBe(true);
     });
 
-    it('keeps AccountRef hand-written on purpose, and holds it to the schema anyway', () => {
-        // The one member of this closure that is NOT an alias. `Interaction` and `PromptTemplate`
-        // still reference `AccountRef` and are still TypeScript-derived, and the scanner cannot
-        // expand a `z.infer<>` — making it an alias empties their whole closure. So the interface
-        // stays until the interaction batch, and THIS assertion is what stands in for the alias.
-        assertType<Equals<AccountRef, AccountRefFromSchema>>(true);
-        // Composed from the account it projects rather than restated, which is what keeps the two
-        // from drifting while the bridge lasts.
+    it('projects the account rather than restating it', () => {
+        // `AccountRef` was the last hand-written twin in this closure, kept that way because
+        // `ExecutionRun` and `UserInviteTokenData` reach it through types the scanner derives and
+        // the scanner used to resolve a `z.infer<>` to nothing. It short-circuits such an alias to
+        // the published component now, so the type is inferred and there is nothing to hold to the
+        // schema — only the emission is still worth pinning.
         expect(ApiSchemaComponents.AccountRef).toEqual({
             type: 'object',
             properties: {

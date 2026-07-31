@@ -1,4 +1,6 @@
 import type { JSONSchemaType } from 'ajv';
+import type { z } from 'zod';
+import type { ProjectRefSchema } from './api-schemas/apikey.js';
 import type {
     CreateProjectPayloadFromSchema,
     ListProjectsQueryFromSchema,
@@ -42,39 +44,20 @@ export interface PopulatedProjectRef {
     name: string;
     account: AccountRef;
 }
-// The compact project reference. Deliberately still hand-written, unlike every other type this
-// batch converted, and the one case where `export type X = XFromSchema` had to be reverted.
+// The compact project reference, derived from the schema in `./api-schemas/apikey.js` — the object
+// OpenAPI publishes and AJV compiles, so there is one statement of the shape.
 //
-// `ProjectRef` is embedded by `Interaction`, `PromptTemplate` and `ExecutionRunRef`, none of which
-// have converted. Those components are still derived by the TypeScript scanner, and the scanner
-// cannot expand a `z.infer<>` alias — it resolved `ProjectRef` to nothing and then failed the whole
-// closure with "Encountered a reference to a missing definition", emptying six components that had
-// nothing to do with this batch.
+// It was the last hand-written twin in this package, and it stayed one for a concrete reason:
+// `Interaction`, `PromptTemplate` and `ExecutionRunRef` embed it and are still derived from
+// TypeScript, and the scanner used to resolve a `z.infer<>` alias to nothing — emptying six
+// components that had nothing to do with the batch that introduced the schema. The scanner now
+// short-circuits such an alias to the published component instead of trying to expand it, so a
+// derived component may reference an inferred type and the rule that blocked this is gone.
 //
-// So the rule established for components has a mirror for types: a TypeScript-DERIVED component may
-// not reference a schema-INFERRED type, exactly as a canonical component may not `$ref` a derived
-// one. A shared type can only become inferred once nothing derived still reads it, which for this
-// one is the `Project` batch.
-//
-// The single source of truth is not lost in the meantime. The canonical schema in
-// `./api-schemas/apikey.ts` is what both OpenAPI and AJV use, and `apikey.contract.test.ts` asserts
-// `Equals<ProjectRef, ProjectRefFromSchema>` — so this declaration cannot drift from it without
-// failing the build.
-//
-// Note the comment style: `//` rather than JSDoc. A doc comment here becomes the component's
-// top-level `description`, which the canonical schema does not carry, and the generator rejects a
-// canonical/derived pair that is not byte-identical.
-export interface ProjectRef {
-    id: string;
-    name: string;
-    account: string;
-    /**
-     * Only set when fetching the list of projects visible to an user which is an org admin or owner.
-     * If present and true, it means that the project is not accessible to the user.(even if it visible in listing)
-     * If not present or false then the project is accessible to the user.
-     */
-    restricted?: boolean;
-}
+// The `restricted` flag's explanation lives in the schema's `.meta()`, which is what the published
+// component carries; it is no longer visible as TSDoc here, the same trade every other
+// schema-derived type in this package already makes.
+export type ProjectRef = z.infer<typeof ProjectRefSchema>;
 
 export type ProjectTagQuery = ProjectTagQueryFromSchema;
 
