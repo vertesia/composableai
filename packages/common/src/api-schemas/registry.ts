@@ -2,7 +2,7 @@
 // types, and a second declaration in this repository would be a copy that compiles — the drift this
 // migration exists to remove. They have no local `./*.ts` module for the same reason: there is
 // nothing local to declare.
-import { JSONSchemaSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
+import { HttpTimeoutOptionsSchema, JSONSchemaSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
 import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
@@ -163,6 +163,7 @@ const API_SCHEMAS = {
     // twenty-three driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
     JSONSchema: JSONSchemaSchema,
     ModelOptions: ModelOptionsSchema,
+    HttpTimeoutOptions: HttpTimeoutOptionsSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -261,6 +262,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectConfigurationEmbedding',
     'BrowserUseProjectConfiguration',
     'ProjectIntakeSniffConfiguration',
+    // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
+    'HttpTimeoutOptions',
     // Every member of the `ModelOptions` union. All twenty-three are published closed today, and
     // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
     // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union

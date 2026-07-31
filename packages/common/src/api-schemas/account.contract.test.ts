@@ -179,6 +179,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'GroqOptions',
+            // The Project closure, ninth — also declared in @llumiverse/common, because that is where
+            // the type is. `InteractionExecutionConfiguration.http_timeout` references it, so it has to
+            // convert before that does.
+            'HttpTimeoutOptions',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ICreateProjectPayload',
