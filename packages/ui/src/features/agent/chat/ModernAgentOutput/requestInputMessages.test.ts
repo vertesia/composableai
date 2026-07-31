@@ -1,8 +1,12 @@
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import {
+    getAnsweredRequestInputKeys,
     getAnsweredToolApprovalRequestInputKeys,
+    getPendingRequestInputMessage,
     getRequestInputMessageKey,
+    getRequestInputResponseIdFromMetadata,
+    getRequestInputResponseMetadata,
     getToolApprovalResponseMetadata,
 } from './requestInputMessages';
 
@@ -76,5 +80,73 @@ describe('getAnsweredToolApprovalRequestInputKeys', () => {
         const answer = makeUserAnswer('please proceed\n\nUploaded artifacts:\n[a.png](artifact:a)');
         const answered = getAnsweredToolApprovalRequestInputKeys([request, answer]);
         expect(answered.size).toBe(0);
+    });
+});
+
+describe('request input correlation', () => {
+    it('correlates a persisted response to the matching request id', () => {
+        const firstRequest = {
+            ...makeApprovalRequest(),
+            details: { request_id: 'request-1', ux: { options: [{ id: 'red', label: 'Red' }] } },
+        };
+        const secondRequest = {
+            ...makeApprovalRequest(),
+            timestamp: 2,
+            details: { request_id: 'request-2', ux: { options: [{ id: 'blue', label: 'Blue' }] } },
+        };
+        const answer = {
+            ...makeUserAnswer('red'),
+            timestamp: 3,
+            details: { request_input_response: { request_id: 'request-1' } },
+        };
+
+        const answered = getAnsweredRequestInputKeys([firstRequest, secondRequest, answer]);
+
+        expect(answered.has(getRequestInputMessageKey(firstRequest))).toBe(true);
+        expect(answered.has(getRequestInputMessageKey(secondRequest))).toBe(false);
+        expect(getPendingRequestInputMessage([firstRequest, secondRequest, answer])).toBe(secondRequest);
+    });
+
+    it('adds the request id without discarding existing response metadata', () => {
+        const request = {
+            ...makeApprovalRequest(),
+            details: { request_id: 'request-1', ux: { options: [{ id: 'red', label: 'Red' }] } },
+        };
+
+        expect(getRequestInputResponseMetadata(request, { source: 'free-response' })).toEqual({
+            source: 'free-response',
+            request_input_response: { request_id: 'request-1' },
+        });
+    });
+
+    it('does not let an earlier response resolve a later prompt that reused its request id', () => {
+        const firstRequest = {
+            ...makeApprovalRequest(),
+            details: { request_id: 'reused-request', ux: { options: [{ id: 'allow_once' }] } },
+        };
+        const firstAnswer = {
+            ...makeUserAnswer('allow_once'),
+            details: { request_input_response: { request_id: 'reused-request' } },
+        };
+        const secondRequest = {
+            ...makeApprovalRequest(),
+            timestamp: 3,
+            details: { request_id: 'reused-request', ux: { options: [{ id: 'allow_once' }] } },
+        };
+
+        const answered = getAnsweredRequestInputKeys([firstRequest, firstAnswer, secondRequest]);
+
+        expect(answered.has(getRequestInputMessageKey(firstRequest))).toBe(true);
+        expect(answered.has(getRequestInputMessageKey(secondRequest))).toBe(false);
+        expect(getPendingRequestInputMessage([firstRequest, firstAnswer, secondRequest])).toBe(secondRequest);
+    });
+
+    it('reads a request id from response metadata', () => {
+        expect(
+            getRequestInputResponseIdFromMetadata({
+                request_input_response: { request_id: 'request-1' },
+            }),
+        ).toBe('request-1');
+        expect(getRequestInputResponseIdFromMetadata({ request_input_response: {} })).toBeUndefined();
     });
 });

@@ -65,7 +65,14 @@ import MessageInput, {
     type UploadedFile,
 } from './ModernAgentOutput/MessageInput';
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
-import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputMessages';
+import {
+    clearRequestInputIdAnsweredForSession,
+    getPendingRequestInputMessage,
+    getRequestInputResolutionKey,
+    getRequestInputResponseIdFromMetadata,
+    isRequestInputAnsweredForSession,
+    markRequestInputIdAnsweredForSession,
+} from './ModernAgentOutput/requestInputMessages';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
 import {
@@ -1653,10 +1660,15 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
     }, [isAgentWorking, onAgentWorkingChange]);
-    const pendingRequestInputMessage = useMemo(
-        () => getPendingRequestInputMessage(displayedMessages),
-        [displayedMessages],
-    );
+    const pendingRequestInputMessage = useMemo(() => {
+        const answeredRequestInputKeys = new Set<string>();
+        for (const message of displayedMessages) {
+            if (isRequestInputAnsweredForSession(agentRunId, message)) {
+                answeredRequestInputKeys.add(getRequestInputResolutionKey(message));
+            }
+        }
+        return getPendingRequestInputMessage(displayedMessages, 'main', answeredRequestInputKeys);
+    }, [agentRunId, displayedMessages]);
     // A terminal run silently drops user input unless it can be continued (see the guard in
     // handleSendMessage), so never surface an actionable question overlay in that state —
     // the terminal status box renders instead.
@@ -2078,6 +2090,7 @@ function ModernAgentConversationInner({
                 return;
             }
 
+            const requestInputId = getRequestInputResponseIdFromMetadata(inputMetadata);
             setIsSending(true);
 
             const attachedDocs = getAttachedDocs?.() || [];
@@ -2120,6 +2133,9 @@ function ModernAgentConversationInner({
                     _messageId: messageId,
                     _deliveryStatus: 'sending',
                     ...(inputMetadata?.editing_action ? { editing_action: inputMetadata.editing_action } : {}),
+                    ...(inputMetadata?.request_input_response
+                        ? { request_input_response: inputMetadata.request_input_response }
+                        : {}),
                 },
             };
 
@@ -2151,6 +2167,9 @@ function ModernAgentConversationInner({
             // buffers the signal until the new run is ready to receive it. We reconnect
             // the stream in place (rather than remounting via onRestart) so the existing
             // timeline is preserved and the new exchange appends seamlessly at the bottom.
+            if (requestInputId) {
+                markRequestInputIdAnsweredForSession(agentRunId, requestInputId);
+            }
             const deliver = (async () => {
                 await waitForPendingToolApprovalModeChange();
                 if (isWorkflowTerminalRef.current) {
@@ -2163,6 +2182,9 @@ function ModernAgentConversationInner({
 
             deliver
                 .catch((err) => {
+                    if (requestInputId) {
+                        clearRequestInputIdAnsweredForSession(agentRunId, requestInputId);
+                    }
                     updateOptimisticMessageStatus(messageId, 'failed');
                     toast({
                         status: 'error',
@@ -2202,7 +2224,7 @@ function ModernAgentConversationInner({
     // conversation for tool re-discovery and resume it with a confirmation message so the agent
     // continues automatically with the newly-available tools.
     const handleMcpConnected = useCallback(
-        async (cfg: McpConnectUxConfig) => {
+        async (cfg: McpConnectUxConfig, metadata?: Record<string, unknown>) => {
             // Await the dirty-flag signal BEFORE sending the follow-up message so Temporal records
             // McpConfigChanged ahead of the UserInput. Otherwise the resume turn could run before
             // the flag is set and use the stale tool catalog. An omitted disabled list preserves
@@ -2212,7 +2234,7 @@ function ModernAgentConversationInner({
             } catch (err: unknown) {
                 console.error('Failed to signal MCP config change', err);
             }
-            handleSendMessage(t('agent.mcpConnectedMessage', { name: cfg.name }));
+            handleSendMessage(t('agent.mcpConnectedMessage', { name: cfg.name }), metadata);
         },
         [client, agentRunId, handleSendMessage, t],
     );

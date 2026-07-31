@@ -68,6 +68,7 @@ import {
     isToolApprovalRequestInput,
     isToolApprovalRequestInputHidden,
     type RequestInputMessageWithUx,
+    sendRequestInputResponse,
 } from './requestInputMessages';
 import {
     interleaveTurnSummaries,
@@ -753,13 +754,22 @@ function SummaryMessage({
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}
                     onSelect={(optionId) =>
-                        onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                        sendRequestInputResponse(
+                            onSendMessage,
+                            message,
+                            optionId,
+                            getToolApprovalResponseMetadata(message, optionId),
+                        )
                     }
-                    onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                    onMultiSelect={(optionIds) =>
+                        sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
+                    }
                     allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
                     placeholder={uxConfig.free_response?.placeholder}
                     submitLabel={uxConfig.free_response?.submit_label}
-                    onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
+                    onSubmit={(value) =>
+                        sendRequestInputResponse(onSendMessage, message, value, uxConfig.free_response?.metadata)
+                    }
                     hideBorder
                     compact
                     answered={requestInputAnswered}
@@ -2273,19 +2283,32 @@ function SummaryActivityRow({
                                                 variant={uxConfig.variant}
                                                 multiSelect={uxConfig.multiSelect}
                                                 onSelect={(optionId) =>
-                                                    onSendMessage?.(
+                                                    sendRequestInputResponse(
+                                                        onSendMessage,
+                                                        message,
                                                         optionId,
                                                         getToolApprovalResponseMetadata(message, optionId),
                                                     )
                                                 }
-                                                onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                                onMultiSelect={(optionIds) =>
+                                                    sendRequestInputResponse(
+                                                        onSendMessage,
+                                                        message,
+                                                        optionIds.join(', '),
+                                                    )
+                                                }
                                                 allowFreeResponse={
                                                     !uxConfig.options?.length || !!uxConfig.free_response
                                                 }
                                                 placeholder={uxConfig.free_response?.placeholder}
                                                 submitLabel={uxConfig.free_response?.submit_label}
                                                 onSubmit={(value) =>
-                                                    onSendMessage?.(value, uxConfig.free_response?.metadata)
+                                                    sendRequestInputResponse(
+                                                        onSendMessage,
+                                                        message,
+                                                        value,
+                                                        uxConfig.free_response?.metadata,
+                                                    )
                                                 }
                                                 hideBorder
                                                 compact

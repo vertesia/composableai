@@ -464,6 +464,7 @@ describe('AllMessagesMixed summary view', () => {
                     type: AgentMessageType.REQUEST_INPUT,
                     message: 'Approve Create Document: name News Headlines Today?',
                     details: {
+                        request_id: 'create_document:name:News Headlines Today',
                         tool_approval: {
                             approval_key: 'create_document:name:News Headlines Today',
                             tool_name: 'create_document',
@@ -498,6 +499,9 @@ describe('AllMessagesMixed summary view', () => {
             tool_approval_response: {
                 decision: 'allow_once',
                 approval_key: 'create_document:name:News Headlines Today',
+            },
+            request_input_response: {
+                request_id: 'create_document:name:News Headlines Today',
             },
         });
     });

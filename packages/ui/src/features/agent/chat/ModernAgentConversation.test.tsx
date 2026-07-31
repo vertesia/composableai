@@ -253,6 +253,7 @@ function latestRightPanelProps() {
 describe('ModernAgentConversation send handling', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        window.sessionStorage.clear();
         mocks.restart.mockResolvedValue({ id: 'agent-run-1' });
         mocks.sendSignal.mockResolvedValue({});
         mocks.getActiveWorkstreams.mockResolvedValue({ running: [] });
@@ -1486,6 +1487,80 @@ describe('ModernAgentConversation send handling', () => {
                 }),
             }),
         );
+    });
+
+    it('does not resurrect an answered request overlay after remounting before the persisted echo arrives', async () => {
+        const requestMessage = {
+            ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+            details: {
+                request_id: 'ask-user-1',
+                ux: {
+                    options: [
+                        { id: 'red', label: 'Red' },
+                        { id: 'blue', label: 'Blue' },
+                    ],
+                },
+            },
+        };
+        mockStreamState({
+            messages: [requestMessage],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        const firstView = renderConversation();
+        fireEvent.click(screen.getByRole('button', { name: /Blue/ }));
+
+        await waitFor(() => expect(mocks.sendSignal).toHaveBeenCalledTimes(1));
+        expect(mocks.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({
+                metadata: expect.objectContaining({
+                    request_input_response: { request_id: 'ask-user-1' },
+                }),
+            }),
+        );
+
+        firstView.unmount();
+        renderConversation();
+
+        expect(screen.queryByText('What is your favorite color?')).toBeNull();
+        expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
+    });
+
+    it('restores a request overlay after its response fails to send', async () => {
+        mocks.sendSignal.mockRejectedValueOnce(new Error('offline'));
+        const requestMessage = {
+            ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+            details: {
+                request_id: 'ask-user-1',
+                ux: {
+                    options: [
+                        { id: 'red', label: 'Red' },
+                        { id: 'blue', label: 'Blue' },
+                    ],
+                },
+            },
+        };
+        mockStreamState({
+            messages: [requestMessage],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        const firstView = renderConversation();
+        fireEvent.click(screen.getByRole('button', { name: /Blue/ }));
+
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'failed');
+        });
+
+        firstView.unmount();
+        renderConversation();
+
+        expect(screen.getByText('What is your favorite color?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Blue/ })).not.toBeNull();
     });
 
     it('hides a stale request overlay when a terminal run cannot continue', () => {
