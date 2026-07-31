@@ -1,3 +1,8 @@
+// Imported from llumiverse rather than restated here. These components describe llumiverse's own
+// types, and a second declaration in this repository would be a copy that compiles — the drift this
+// migration exists to remove. They have no local `./*.ts` module for the same reason: there is
+// nothing local to declare.
+import { JSONSchemaSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
 import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
@@ -74,9 +79,15 @@ const addFormats = ajvFormats.default;
 /**
  * Endpoint-level API schemas, keyed by the OpenAPI component name they publish under.
  *
- * Only schemas referenced directly by an endpoint belong here. Nested schemas carrying an id
+ * Schemas referenced directly by an endpoint belong here. Nested schemas carrying an id
  * (`AccountBilling`, the Stripe union members) are hoisted into components automatically by the
  * adapter, so listing them here would be redundant.
+ *
+ * A few entries are named by no endpoint yet: they are the LEAVES of closures still being
+ * converted, registered ahead of their dependants because a canonical component may not `$ref` a
+ * TypeScript-derived one. Registering one is inert on its own — the scanner collects a canonical
+ * component only when an endpoint or another canonical component reaches it — so the entry buys the
+ * closure rule without touching the published document.
  */
 const API_SCHEMAS = {
     Account: AccountSchema,
@@ -126,6 +137,10 @@ const API_SCHEMAS = {
     ProjectIntegrationListResponse: ProjectIntegrationListResponseSchema,
     ProjectToolInfo: ProjectToolInfoSchema,
     ProjectToolInfoArray: ProjectToolInfoArraySchema,
+    // Leaves of the Project closure, converted ahead of their dependants. `ModelOptions` hoists its
+    // twenty-three driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
+    JSONSchema: JSONSchemaSchema,
+    ModelOptions: ModelOptionsSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -210,6 +225,36 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectIntegrationListResponse',
     'ProjectIntegrationListEntry',
     'ProjectToolInfo',
+    // Every member of the `ModelOptions` union. All twenty-three are published closed today, and
+    // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
+    // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union
+    // and takes no `additionalProperties`, and neither do the four hoisted enums.
+    //
+    // `JSONSchema` is deliberately absent: it is OPEN by design and by long-standing publication —
+    // a JSON Schema carries keywords the type never enumerated. `JSONSchemaProperties` is a map.
+    'TextFallbackOptions',
+    'ImagenOptions',
+    'VertexAIClaudeOptions',
+    'VertexAIGeminiOptions',
+    'VertexAIGrokOptions',
+    'NovaCanvasOptions',
+    'BedrockConverseOptions',
+    'BedrockNovaOptions',
+    'BedrockMistralOptions',
+    'BedrockAI21Options',
+    'BedrockCohereCommandOptions',
+    'BedrockClaudeOptions',
+    'BedrockPalmyraOptions',
+    'BedrockGptOssOptions',
+    'TwelvelabsPegasusOptions',
+    'BedrockMantleResponsesOptions',
+    'BedrockMantleChatCompletionsOptions',
+    'BedrockMantleClaudeOptions',
+    'OpenAiThinkingOptions',
+    'OpenAiTextOptions',
+    'OpenAiDalleOptions',
+    'OpenAiGptImageOptions',
+    'GroqOptions',
 ]);
 
 /**

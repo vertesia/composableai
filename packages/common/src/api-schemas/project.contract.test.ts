@@ -69,13 +69,23 @@ describe('gate 1 — the schema is the single source of truth for the converted 
  * rather than a claim in a comment that quietly stops being true.
  */
 describe('gate 2 — the batch boundary is where the closure rule puts it', () => {
-    it('leaves Project and ProjectConfiguration derived, because they reach @llumiverse/common', () => {
+    it('leaves Project and ProjectConfiguration derived, now that only their own closure blocks them', () => {
         // `ProjectConfiguration.interaction_execution.model_options` is `ModelOptions`, the union of
-        // every llumiverse driver's options. A canonical component may not `$ref` a TypeScript-derived
-        // one, so converting Project means converting a separately published package.
-        expect(Object.keys(ApiSchemaComponents)).not.toContain('Project');
-        expect(Object.keys(ApiSchemaComponents)).not.toContain('ProjectConfiguration');
-        expect(Object.keys(ApiSchemaComponents)).not.toContain('ModelOptions');
+        // every llumiverse driver's options, and a canonical component may not `$ref` a
+        // TypeScript-derived one. That blocker is gone: `ModelOptions` is declared in
+        // `@llumiverse/common/schemas` and registered here, which is why this asserts its PRESENCE.
+        expect(Object.keys(ApiSchemaComponents)).toContain('ModelOptions');
+        // What is left is the configuration closure itself — roughly thirty components describing
+        // intake, indexing, search and embeddings. Same rule, one repository closer.
+        for (const name of [
+            'Project',
+            'ProjectConfiguration',
+            'InteractionExecutionConfiguration',
+            'ProjectIntakeConfiguration',
+            'ProjectIndexingConfiguration',
+        ]) {
+            expect(Object.keys(ApiSchemaComponents), name).not.toContain(name);
+        }
     });
 
     it('leaves the rendering templates derived, because AppManifest still embeds the ref', () => {

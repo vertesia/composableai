@@ -142,14 +142,29 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ApiKey',
             'ApiKeyArray',
             'ApiKeyListQuery',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'ApiKeyReadQuery',
             'ApiKeyReadResponse',
             'ApiKeyTypes',
             'ApiKeyWithValue',
             'AuthTokenResponse',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'BedrockAI21Options',
+            'BedrockClaudeOptions',
+            'BedrockCohereCommandOptions',
+            'BedrockConverseOptions',
+            'BedrockGptOssOptions',
+            'BedrockMantleChatCompletionsOptions',
+            'BedrockMantleClaudeOptions',
+            'BedrockMantleResponsesOptions',
+            'BedrockMistralOptions',
+            'BedrockNovaOptions',
+            'BedrockPalmyraOptions',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
             'BillingMethod',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
@@ -168,9 +183,21 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
             'DeleteOperationResult',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'GroqOptions',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ICreateProjectPayload',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'ImagenMaskMode',
+            'ImagenOptions',
+            'ImagenTaskType',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
@@ -178,13 +205,33 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'InviteDeclineResponse',
             'InviteUserRequestPayload',
             'InviteUserResponsePayload',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'JSONSchema',
+            'JSONSchemaProperties',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ListProjectsQuery',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'ModelOptions',
+            'NovaCanvasOptions',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
             'OnboardingProgress',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'OpenAiDalleOptions',
+            'OpenAiGptImageOptions',
+            'OpenAiTextOptions',
+            'OpenAiThinkingOptions',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'Permission',
@@ -218,6 +265,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'QuotaStandingWindow',
             'QuotaTier',
             'QuotaTierResponse',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'ReasoningEffort',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'RoleDefinition',
@@ -237,9 +289,26 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
             'SystemRoles',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'TextFallbackOptions',
+            'ThinkingLevel',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
             'TransientTokenType',
             'TransientToken_UserInviteTokenData_',
             'TransientToken_UserInviteTokenData_Array',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'TwelvelabsPegasusOptions',
+            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
+            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
+            // byte-identical to what the scanner derives.
             'UpdateAccountPayload',
             'UpdateApiKeyPayload',
             // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
@@ -262,6 +331,13 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // an endpoint.
             'UserRef',
             'UserRefArray',
+            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
+            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
+            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
+            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'VertexAIClaudeOptions',
+            'VertexAIGeminiOptions',
+            'VertexAIGrokOptions',
         ]);
     });
 
