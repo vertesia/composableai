@@ -46,6 +46,12 @@ export interface ApiKey {
     created_at: Date;
     updated_at: Date;
     expires_at?: Date; // in case of public key only
+    /** Custom properties for dynamic permission matching (PrincipalSet / $principal. conditions) */
+    properties?: Record<string, unknown>;
+    /** BLP clearance level — determines max document sensitivity the key can access */
+    clearance?: number;
+    /** Compartments the key belongs to — restricts access to documents in matching compartments */
+    compartments?: string[];
 }
 
 export interface CreateOrUpdateApiKeyPayload extends Partial<ApiKey> {}
