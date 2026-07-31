@@ -1,6 +1,10 @@
 import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
 import type { z } from 'zod';
-import type { ProjectToolInfoSchema } from './api-schemas/project.js';
+import type {
+    ProjectToolInfoSchema,
+    RenderingTemplateDefinitionRefSchema,
+    RenderingTemplateDefinitionSchema,
+} from './api-schemas/project.js';
 import type { AppDashboardDefinition } from './data-platform.js';
 import type { CatalogInteractionRef } from './interaction.js';
 import type {
@@ -1262,29 +1266,9 @@ export interface AppWidgetInfo {
     url: string;
 }
 
-export interface RenderingTemplateDefinition {
-    /** Unique template id: "collection:name" */
-    id: string;
-    /** Unique template name (kebab-case) */
-    name: string;
-    /** Display title */
-    title?: string;
-    /** Short description */
-    description: string;
-    /** Template type */
-    type: 'presentation' | 'document';
-    /** Tags for categorization */
-    tags?: string[];
-    /** Absolute paths to asset files */
-    assets: string[];
-    /** The template instructions (markdown) */
-    instructions: string;
-}
+export type RenderingTemplateDefinition = z.infer<typeof RenderingTemplateDefinitionSchema>;
 
-export type RenderingTemplateDefinitionRef = Omit<RenderingTemplateDefinition, 'instructions'> & {
-    /** Absolute API path to fetch the full template definition */
-    path: string;
-};
+export type RenderingTemplateDefinitionRef = z.infer<typeof RenderingTemplateDefinitionRefSchema>;
 
 export interface AppManifest extends AppManifestData {
     id: string;

@@ -60,6 +60,8 @@ import {
     ProjectTagQuerySchema,
     ProjectToolInfoArraySchema,
     ProjectToolInfoSchema,
+    RenderingTemplateDefinitionRefSchema,
+    RenderingTemplateDefinitionSchema,
 } from './project.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import {
@@ -137,6 +139,8 @@ const API_SCHEMAS = {
     ProjectIntegrationListResponse: ProjectIntegrationListResponseSchema,
     ProjectToolInfo: ProjectToolInfoSchema,
     ProjectToolInfoArray: ProjectToolInfoArraySchema,
+    RenderingTemplateDefinition: RenderingTemplateDefinitionSchema,
+    RenderingTemplateDefinitionRef: RenderingTemplateDefinitionRefSchema,
     // Leaves of the Project closure, converted ahead of their dependants. `ModelOptions` hoists its
     // twenty-three driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
     JSONSchema: JSONSchemaSchema,
@@ -225,6 +229,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectIntegrationListResponse',
     'ProjectIntegrationListEntry',
     'ProjectToolInfo',
+    'RenderingTemplateDefinition',
+    'RenderingTemplateDefinitionRef',
     // Every member of the `ModelOptions` union. All twenty-three are published closed today, and
     // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
     // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union

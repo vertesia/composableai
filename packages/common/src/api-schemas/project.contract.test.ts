@@ -63,14 +63,25 @@ describe('gate 2 — the batch boundary is where the closure rule puts it', () =
         }
     });
 
-    it('leaves the rendering templates derived, because AppManifest still embeds the ref', () => {
-        // `AppManifestData.templates` is `RenderingTemplateDefinitionRef[]`, and the Ref is an
-        // `Omit<>` — which the scanner emits with alphabetized `required` and `additionalProperties`
-        // before `properties`, an ordering Zod cannot reproduce. The generator requires a
-        // canonical/derived pair to be byte-identical, so this one converts when AppManifest does.
-        expect(Object.keys(ApiSchemaComponents)).not.toContain('RenderingTemplateDefinition');
-        expect(Object.keys(ApiSchemaComponents)).not.toContain('RenderingTemplateDefinitionRef');
-        // Still a public type, still hand-written, still reachable — just not canonical yet.
+    it('converts the rendering templates ahead of the AppManifest that embeds them', () => {
+        // This pair was previously held back because the Ref is an `Omit<>`, which the scanner emits
+        // with `additionalProperties` before `properties` — an ordering Zod cannot reproduce. The
+        // canonical/derived comparison is no longer spelling-sensitive: `schemasAgree` compares
+        // objects key-order-insensitively and arrays index-by-index, so only the `required` ARRAY
+        // order still has to match, and the schema declares its fields to produce it.
+        expect(Object.keys(ApiSchemaComponents)).toContain('RenderingTemplateDefinition');
+        expect(Object.keys(ApiSchemaComponents)).toContain('RenderingTemplateDefinitionRef');
+        expect(ApiSchemaComponents.RenderingTemplateDefinitionRef.required).toEqual([
+            'assets',
+            'description',
+            'id',
+            'name',
+            'path',
+            'type',
+        ]);
+        // `AppManifestData.templates` stays derived and now `$ref`s the canonical Ref — the closure
+        // rule only forbids the other direction.
+        expect(Object.keys(ApiSchemaComponents)).not.toContain('AppManifest');
         const ref: RenderingTemplateDefinitionRef = {
             path: '/api/v1/projects/p/apps/templates/deck',
             id: 'acme:deck',
@@ -79,7 +90,11 @@ describe('gate 2 — the batch boundary is where the closure rule puts it', () =
             type: 'presentation',
             assets: [],
         };
-        expect(ref.name).toBe('deck');
+        expect(validateApiResponse('RenderingTemplateDefinitionRef', ref).valid).toBe(true);
+        // The instructions body belongs to the full definition, not the listing entry.
+        expect(validateApiResponse('RenderingTemplateDefinitionRef', { ...ref, instructions: '# Deck' }).valid).toBe(
+            false,
+        );
     });
 });
 

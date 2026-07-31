@@ -134,3 +134,47 @@ export type ProjectIntegrationListEntryFromSchema = z.infer<typeof ProjectIntegr
 export type ProjectIntegrationListResponseFromSchema = z.infer<typeof ProjectIntegrationListResponseSchema>;
 export type ProjectToolInfoFromSchema = z.infer<typeof ProjectToolInfoSchema>;
 export type ProjectToolInfoArrayFromSchema = z.infer<typeof ProjectToolInfoArraySchema>;
+
+/**
+ * The rendering templates an app ships, and the reference form the manifest embeds.
+ *
+ * These were deferred once for a reason that no longer holds. `RenderingTemplateDefinitionRef` is an
+ * `Omit<>`, and the scanner emits an `Omit<>` with `additionalProperties` ahead of `properties` and
+ * an alphabetized `required` — an ordering Zod does not reproduce. The conflict check compares
+ * OBJECTS order-insensitively now, so the property order no longer matters; `required` is an array
+ * and is still compared in order, which is why the shape below is declared alphabetically while
+ * {@link RenderingTemplateDefinitionSchema} is declared in its interface's order. Neither ordering
+ * carries meaning in JSON Schema — they exist so a canonical component and the one the scanner still
+ * derives for `AppManifestData.templates` agree exactly.
+ */
+const RenderingTemplateTypeSchema = z.enum(['presentation', 'document']).meta({ description: 'Template type' });
+
+const renderingTemplateFields = {
+    id: z.string().meta({ description: 'Unique template id: "collection:name"' }),
+    name: z.string().meta({ description: 'Unique template name (kebab-case)' }),
+    title: z.string().optional().meta({ description: 'Display title' }),
+    description: z.string().meta({ description: 'Short description' }),
+    type: RenderingTemplateTypeSchema,
+    tags: z.array(z.string()).optional().meta({ description: 'Tags for categorization' }),
+    assets: z.array(z.string()).meta({ description: 'Absolute paths to asset files' }),
+};
+
+export const RenderingTemplateDefinitionSchema = z
+    .object({
+        ...renderingTemplateFields,
+        instructions: z.string().meta({ description: 'The template instructions (markdown)' }),
+    })
+    .meta({ id: 'RenderingTemplateDefinition' });
+
+export const RenderingTemplateDefinitionRefSchema = z
+    .object({
+        assets: renderingTemplateFields.assets,
+        description: renderingTemplateFields.description,
+        id: renderingTemplateFields.id,
+        name: renderingTemplateFields.name,
+        path: z.string().meta({ description: 'Absolute API path to fetch the full template definition' }),
+        type: renderingTemplateFields.type,
+        title: renderingTemplateFields.title,
+        tags: renderingTemplateFields.tags,
+    })
+    .meta({ id: 'RenderingTemplateDefinitionRef' });

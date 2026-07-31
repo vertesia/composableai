@@ -254,6 +254,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'ReasoningEffort',
+            // The app-manifest closure, ninth — the rendering templates convert first because they are
+            // a leaf of it: AppManifestData embeds the Ref, and a derived component may $ref a
+            // canonical one.
+            'RenderingTemplateDefinition',
+            'RenderingTemplateDefinitionRef',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'RoleDefinition',
