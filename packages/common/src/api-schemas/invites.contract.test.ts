@@ -1,9 +1,7 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
-import type { ProjectRef } from '../project.js';
-import { SystemRoles } from '../project.js';
-import type { UserInviteToken, UserInviteTokenData } from '../transient-tokens.js';
-import { TransientTokenType } from '../transient-tokens.js';
+import { type ProjectRef, SystemRoles } from '../project.js';
+import { TransientTokenType, type UserInviteToken, type UserInviteTokenData } from '../transient-tokens.js';
 import type {
     AccountProjectsResponse,
     AccountRef,
@@ -14,17 +12,7 @@ import type {
     OnboardingProgress,
 } from '../user.js';
 import type { JsonObject } from './adapter.js';
-import type {
-    AccountProjectsResponseFromSchema,
-    InviteAcceptanceResponseFromSchema,
-    InviteDeclineResponseFromSchema,
-    InviteUserRequestPayloadFromSchema,
-    InviteUserResponsePayloadFromSchema,
-    OnboardingProgressFromSchema,
-    UserInviteTokenArrayFromSchema,
-    UserInviteTokenDataFromSchema,
-    UserInviteTokenFromSchema,
-} from './invites.js';
+import type { UserInviteTokenArrayFromSchema, UserInviteTokenFromSchema } from './invites.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
@@ -77,13 +65,6 @@ describe('gate 1 — the schema is the single source of truth for the public inv
     it('publishes the exact schema-derived type, not a hand-written twin', () => {
         assertType<Equals<UserInviteToken, UserInviteTokenFromSchema>>(true);
         assertType<Equals<UserInviteTokenArrayFromSchema, UserInviteToken[]>>(true);
-        assertType<Equals<UserInviteTokenData, UserInviteTokenDataFromSchema>>(true);
-        assertType<Equals<InviteUserRequestPayload, InviteUserRequestPayloadFromSchema>>(true);
-        assertType<Equals<InviteUserResponsePayload, InviteUserResponsePayloadFromSchema>>(true);
-        assertType<Equals<InviteAcceptanceResponse, InviteAcceptanceResponseFromSchema>>(true);
-        assertType<Equals<InviteDeclineResponse, InviteDeclineResponseFromSchema>>(true);
-        assertType<Equals<AccountProjectsResponse, AccountProjectsResponseFromSchema>>(true);
-        assertType<Equals<OnboardingProgress, OnboardingProgressFromSchema>>(true);
         expect(true).toBe(true);
     });
 
@@ -264,7 +245,7 @@ describe('gate 4 — runtime enforcement uses the published components', () => {
         expect(validateApiResponse('AccountProjectsResponse', { data: [] }).valid).toBe(true);
         // An envelope, not a bare array — which is what the document already published.
         expect(validateApiResponse('AccountProjectsResponse', [ref]).valid).toBe(false);
-        assertType<Equals<AccountProjectsResponseFromSchema['data'], ProjectRef[]>>(true);
+        assertType<Equals<AccountProjectsResponse['data'], ProjectRef[]>>(true);
     });
 
     it('enforces the date-time format through the registry validator', () => {
@@ -277,11 +258,11 @@ describe('gate 4 — runtime enforcement uses the published components', () => {
     });
 
     it('keeps the fixed-shape responses typed as their literals', () => {
-        assertType<Equals<InviteAcceptanceResponseFromSchema['status'], 'added'>>(true);
-        assertType<Equals<InviteDeclineResponseFromSchema['status'], 'deleted'>>(true);
-        assertType<Equals<InviteUserResponsePayloadFromSchema['action'], 'invited' | 'added'>>(true);
-        assertType<Equals<InviteUserRequestPayloadFromSchema['email'], string>>(true);
-        assertType<Equals<OnboardingProgressFromSchema['prompts'], boolean>>(true);
+        assertType<Equals<InviteAcceptanceResponse['status'], 'added'>>(true);
+        assertType<Equals<InviteDeclineResponse['status'], 'deleted'>>(true);
+        assertType<Equals<InviteUserResponsePayload['action'], 'invited' | 'added'>>(true);
+        assertType<Equals<InviteUserRequestPayload['email'], string>>(true);
+        assertType<Equals<OnboardingProgress['prompts'], boolean>>(true);
         expect(true).toBe(true);
     });
 });

@@ -3,11 +3,11 @@ import type { z } from 'zod';
 import type { ProjectRefSchema } from './api-schemas/apikey.js';
 import type {
     CreateProjectPayloadFromSchema,
-    ListProjectsQueryFromSchema,
-    ProjectIntegrationListEntryFromSchema,
-    ProjectIntegrationListResponseFromSchema,
-    ProjectPluginsUpdatePayloadFromSchema,
-    ProjectTagQueryFromSchema,
+    ListProjectsQuerySchema,
+    ProjectIntegrationListEntrySchema,
+    ProjectIntegrationListResponseSchema,
+    ProjectPluginsUpdatePayloadSchema,
+    ProjectTagQuerySchema,
 } from './api-schemas/project.js';
 import type { ContentTypeIntakePolicy, IntakeVisionDetail, IntakeVisionProfileSettings } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
@@ -59,9 +59,9 @@ export interface PopulatedProjectRef {
 // schema-derived type in this package already makes.
 export type ProjectRef = z.infer<typeof ProjectRefSchema>;
 
-export type ProjectTagQuery = ProjectTagQueryFromSchema;
+export type ProjectTagQuery = z.infer<typeof ProjectTagQuerySchema>;
 
-export type ListProjectsQuery = ListProjectsQueryFromSchema;
+export type ListProjectsQuery = z.infer<typeof ListProjectsQuerySchema>;
 
 export enum ResourceVisibility {
     public = 'public',
@@ -616,7 +616,7 @@ export interface ProjectCreatePayload {
 
 export interface ProjectUpdatePayload extends Partial<Project> {}
 
-export type ProjectPluginsUpdatePayload = ProjectPluginsUpdatePayloadFromSchema;
+export type ProjectPluginsUpdatePayload = z.infer<typeof ProjectPluginsUpdatePayloadSchema>;
 
 export const ProjectRefPopulate = 'id name account';
 
@@ -1233,6 +1233,6 @@ export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
     error?: string;
 }
 
-export type ProjectIntegrationListEntry = ProjectIntegrationListEntryFromSchema;
+export type ProjectIntegrationListEntry = z.infer<typeof ProjectIntegrationListEntrySchema>;
 
-export type ProjectIntegrationListResponse = ProjectIntegrationListResponseFromSchema;
+export type ProjectIntegrationListResponse = z.infer<typeof ProjectIntegrationListResponseSchema>;

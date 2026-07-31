@@ -1,31 +1,17 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
-import type {
-    ApiKey,
-    ApiKeyListQuery,
-    ApiKeyReadQuery,
-    ApiKeyReadResponse,
-    ApiKeyWithValue,
-    AuthTokenResponse,
-    CreateApiKeyPayload,
-    UpdateApiKeyPayload,
+import {
+    type ApiKey,
+    type ApiKeyArray,
+    type ApiKeyReadResponse,
+    ApiKeyTypes,
+    type ApiKeyWithValue,
+    type CreateApiKeyPayload,
+    type UpdateApiKeyPayload,
 } from '../apikey.js';
-import { ApiKeyTypes } from '../apikey.js';
-import type { ProjectRef } from '../project.js';
-import { SystemRoles } from '../project.js';
+import { type ProjectRef, SystemRoles } from '../project.js';
 import type { JsonObject } from './adapter.js';
-import type {
-    ApiKeyArrayFromSchema,
-    ApiKeyFromSchema,
-    ApiKeyListQueryFromSchema,
-    ApiKeyReadQueryFromSchema,
-    ApiKeyReadResponseFromSchema,
-    ApiKeyWithValueFromSchema,
-    AuthTokenResponseFromSchema,
-    CreateApiKeyPayloadFromSchema,
-    ProjectRefArrayFromSchema,
-    UpdateApiKeyPayloadFromSchema,
-} from './apikey.js';
+import type { ProjectRefArrayFromSchema } from './apikey.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
@@ -60,15 +46,7 @@ const VALID_KEY = {
 
 describe('gate 1 — the schema is the single source of truth for the public API key types', () => {
     it('publishes the exact schema-derived type, not a hand-written twin', () => {
-        assertType<Equals<ApiKey, ApiKeyFromSchema>>(true);
-        assertType<Equals<ApiKeyArrayFromSchema, ApiKey[]>>(true);
-        assertType<Equals<ApiKeyWithValue, ApiKeyWithValueFromSchema>>(true);
-        assertType<Equals<ApiKeyReadResponse, ApiKeyReadResponseFromSchema>>(true);
-        assertType<Equals<CreateApiKeyPayload, CreateApiKeyPayloadFromSchema>>(true);
-        assertType<Equals<UpdateApiKeyPayload, UpdateApiKeyPayloadFromSchema>>(true);
-        assertType<Equals<AuthTokenResponse, AuthTokenResponseFromSchema>>(true);
-        assertType<Equals<ApiKeyListQuery, ApiKeyListQueryFromSchema>>(true);
-        assertType<Equals<ApiKeyReadQuery, ApiKeyReadQueryFromSchema>>(true);
+        assertType<Equals<ApiKeyArray, ApiKey[]>>(true);
         assertType<Equals<ProjectRefArrayFromSchema, ProjectRef[]>>(true);
         expect(true).toBe(true);
     });

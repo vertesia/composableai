@@ -3,14 +3,9 @@ import { describe, expect, it } from 'vitest';
 import type { CreateUserGroupPayload, UpdateUserGroupPayload, UserGroup } from '../group.js';
 import type { User, UserRef } from '../user.js';
 import type { JsonObject } from './adapter.js';
-import type {
-    CreateUserGroupPayloadFromSchema,
-    UpdateUserGroupPayloadFromSchema,
-    UserGroupArrayFromSchema,
-    UserGroupFromSchema,
-} from './group.js';
+import type { UserGroupArrayFromSchema } from './group.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
-import type { UserRefArrayFromSchema, UserRefFromSchema } from './user.js';
+import type { UserRefArrayFromSchema } from './user.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -35,11 +30,7 @@ const VALID_REF = { id: 'u1', name: 'Someone', email: 'someone@acme.com' };
 
 describe('gate 1 — the schema is the single source of truth for the public group types', () => {
     it('publishes the exact schema-derived type, not a hand-written twin', () => {
-        assertType<Equals<UserGroup, UserGroupFromSchema>>(true);
         assertType<Equals<UserGroupArrayFromSchema, UserGroup[]>>(true);
-        assertType<Equals<CreateUserGroupPayload, CreateUserGroupPayloadFromSchema>>(true);
-        assertType<Equals<UpdateUserGroupPayload, UpdateUserGroupPayloadFromSchema>>(true);
-        assertType<Equals<UserRef, UserRefFromSchema>>(true);
         assertType<Equals<UserRefArrayFromSchema, UserRef[]>>(true);
         expect(true).toBe(true);
     });

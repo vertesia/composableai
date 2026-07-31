@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 /**
  * @module access-control
  * @description
@@ -6,12 +7,12 @@
 
 import type { AccessControlResourceType } from './access-control-values.js';
 import type {
-    ACECreatePayloadFromSchema,
-    ACEUpdatePayloadFromSchema,
-    AccessControlEntryFromSchema,
-    AceConditionsFromSchema,
-    PropertyConditionsFromSchema,
-    PropertyConditionValueFromSchema,
+    ACECreatePayloadSchema,
+    ACEUpdatePayloadSchema,
+    AccessControlEntrySchema,
+    AceConditionsSchema,
+    PropertyConditionsSchema,
+    PropertyConditionValueSchema,
 } from './api-schemas/access-control.js';
 
 /**
@@ -35,8 +36,8 @@ export * from './access-control-values.js';
  * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
  * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
  */
-export type PropertyConditionValue = PropertyConditionValueFromSchema;
-export type PropertyConditions = PropertyConditionsFromSchema;
+export type PropertyConditionValue = z.infer<typeof PropertyConditionValueSchema>;
+export type PropertyConditions = z.infer<typeof PropertyConditionsSchema>;
 
 /**
  * The access-control wire types, inferred from the schemas in `./api-schemas/access-control.js` —
@@ -48,10 +49,10 @@ export type PropertyConditions = PropertyConditionsFromSchema;
  * them into `principal` / `resource` on the way out. They are not part of this contract, and the
  * response mappers drop them rather than serializing the sub-document.
  */
-export type AceConditions = AceConditionsFromSchema;
-export type AccessControlEntry = AccessControlEntryFromSchema;
-export type ACECreatePayload = ACECreatePayloadFromSchema;
-export type ACEUpdatePayload = ACEUpdatePayloadFromSchema;
+export type AceConditions = z.infer<typeof AceConditionsSchema>;
+export type AccessControlEntry = z.infer<typeof AccessControlEntrySchema>;
+export type ACECreatePayload = z.infer<typeof ACECreatePayloadSchema>;
+export type ACEUpdatePayload = z.infer<typeof ACEUpdatePayloadSchema>;
 
 // RoleDefinition + SystemRoleDefinition now live in `./roles/types.js`, and are likewise inferred
 // from `./api-schemas/access-control.js`. They remain re-exported via the package's index.ts so

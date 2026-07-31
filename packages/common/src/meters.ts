@@ -1,4 +1,5 @@
-import type { StripeBillingStatusResponseFromSchema } from './api-schemas/account.js';
+import type { z } from 'zod';
+import type { StripeBillingStatusResponseSchema } from './api-schemas/account.js';
 
 export interface MeterAdjustment {
     meter: string;
@@ -27,4 +28,4 @@ export enum MeterNames {
  * generated client two unrelated optionals with no way to tell which was populated. Narrowing on
  * `status` now tells TypeScript which fields exist.
  */
-export type StripeBillingStatusResponse = StripeBillingStatusResponseFromSchema;
+export type StripeBillingStatusResponse = z.infer<typeof StripeBillingStatusResponseSchema>;

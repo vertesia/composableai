@@ -212,9 +212,6 @@ export const SystemRoleDefinitionArraySchema = z
  * The public access-control types, inferred rather than written. `../access-control.ts` and
  * `../roles/types.ts` re-export these under their public names.
  */
-export type AbacScopeFromSchema = z.infer<typeof AbacScopeSchema>;
-export type RoleDomainFromSchema = z.infer<typeof RoleDomainSchema>;
-export type PropertyConditionValueFromSchema = z.infer<typeof PropertyConditionValueSchema>;
 export type PropertyConditionsFromSchema = z.infer<typeof PropertyConditionsSchema>;
 export type AceConditionsFromSchema = z.infer<typeof AceConditionsSchema>;
 export type AccessControlEntryFromSchema = z.infer<typeof AccessControlEntrySchema>;

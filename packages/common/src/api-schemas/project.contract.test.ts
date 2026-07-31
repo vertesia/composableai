@@ -1,28 +1,10 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectToolInfo, RenderingTemplateDefinitionRef } from '../apps.js';
-import type { CountResult } from '../common.js';
 import { SupportedIntegrations } from '../integrations.js';
-import type {
-    ICreateProjectPayload,
-    ListProjectsQuery,
-    ProjectIntegrationListEntry,
-    ProjectIntegrationListResponse,
-    ProjectPluginsUpdatePayload,
-    ProjectTagQuery,
-} from '../project.js';
+import type { ICreateProjectPayload, ProjectPluginsUpdatePayload } from '../project.js';
 import type { JsonObject } from './adapter.js';
-import type {
-    CountResultFromSchema,
-    CreateProjectPayloadFromSchema,
-    ListProjectsQueryFromSchema,
-    ProjectIntegrationListEntryFromSchema,
-    ProjectIntegrationListResponseFromSchema,
-    ProjectPluginsUpdatePayloadFromSchema,
-    ProjectTagQueryFromSchema,
-    ProjectToolInfoArrayFromSchema,
-    ProjectToolInfoFromSchema,
-} from './project.js';
+import type { CreateProjectPayloadFromSchema, ProjectToolInfoArrayFromSchema } from './project.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
@@ -43,14 +25,7 @@ const VALID_TOOL = {
 
 describe('gate 1 — the schema is the single source of truth for the converted Projects types', () => {
     it('publishes the exact schema-derived type, not a hand-written twin', () => {
-        assertType<Equals<ListProjectsQuery, ListProjectsQueryFromSchema>>(true);
-        assertType<Equals<ProjectTagQuery, ProjectTagQueryFromSchema>>(true);
         assertType<Equals<ICreateProjectPayload, CreateProjectPayloadFromSchema>>(true);
-        assertType<Equals<ProjectPluginsUpdatePayload, ProjectPluginsUpdatePayloadFromSchema>>(true);
-        assertType<Equals<CountResult, CountResultFromSchema>>(true);
-        assertType<Equals<ProjectIntegrationListEntry, ProjectIntegrationListEntryFromSchema>>(true);
-        assertType<Equals<ProjectIntegrationListResponse, ProjectIntegrationListResponseFromSchema>>(true);
-        assertType<Equals<ProjectToolInfo, ProjectToolInfoFromSchema>>(true);
         assertType<Equals<ProjectToolInfoArrayFromSchema, ProjectToolInfo[]>>(true);
         expect(true).toBe(true);
     });

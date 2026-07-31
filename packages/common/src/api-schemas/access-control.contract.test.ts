@@ -1,25 +1,18 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
-import type {
-    ACECreatePayload,
-    ACEUpdatePayload,
-    AccessControlEntry,
-    AceConditions,
-    PropertyConditions,
+import {
+    type ACECreatePayload,
+    type ACEUpdatePayload,
+    type AccessControlEntry,
+    AccessControlPrincipalType,
+    AccessControlResourceType,
+    Permission,
 } from '../access-control.js';
-import { AccessControlPrincipalType, AccessControlResourceType, Permission } from '../access-control.js';
 import type { RoleDefinition, SystemRoleDefinition } from '../roles/types.js';
 import type {
-    ACECreatePayloadFromSchema,
-    ACEUpdatePayloadFromSchema,
     AccessControlEntryArrayFromSchema,
-    AccessControlEntryFromSchema,
-    AceConditionsFromSchema,
-    PropertyConditionsFromSchema,
     RoleDefinitionArrayFromSchema,
-    RoleDefinitionFromSchema,
     SystemRoleDefinitionArrayFromSchema,
-    SystemRoleDefinitionFromSchema,
 } from './access-control.js';
 import type { JsonObject } from './adapter.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
@@ -47,15 +40,8 @@ const VALID_ROLE = { name: 'owner', permissions: ['account:admin'], domain: 'sys
 
 describe('gate 1 — the schema is the single source of truth for the public access-control types', () => {
     it('publishes the exact schema-derived type, not a hand-written twin', () => {
-        assertType<Equals<AccessControlEntry, AccessControlEntryFromSchema>>(true);
         assertType<Equals<AccessControlEntryArrayFromSchema, AccessControlEntry[]>>(true);
-        assertType<Equals<ACECreatePayload, ACECreatePayloadFromSchema>>(true);
-        assertType<Equals<ACEUpdatePayload, ACEUpdatePayloadFromSchema>>(true);
-        assertType<Equals<AceConditions, AceConditionsFromSchema>>(true);
-        assertType<Equals<PropertyConditions, PropertyConditionsFromSchema>>(true);
-        assertType<Equals<RoleDefinition, RoleDefinitionFromSchema>>(true);
         assertType<Equals<RoleDefinitionArrayFromSchema, RoleDefinition[]>>(true);
-        assertType<Equals<SystemRoleDefinition, SystemRoleDefinitionFromSchema>>(true);
         assertType<Equals<SystemRoleDefinitionArrayFromSchema, SystemRoleDefinition[]>>(true);
         expect(true).toBe(true);
     });

@@ -1,4 +1,5 @@
-import type { PrincipalContextFromSchema, PrincipalIdentityFromSchema } from './api-schemas/user.js';
+import type { z } from 'zod';
+import type { PrincipalContextFromSchema, PrincipalIdentitySchema } from './api-schemas/user.js';
 
 /**
  * Resolved per-user context consumed by PrincipalSet condition evaluation
@@ -19,4 +20,4 @@ export type PrincipalContext = PrincipalContextFromSchema;
  * Response shape of the `/iam/users/identity` endpoint. Derived from `PrincipalIdentitySchema`,
  * where its published description lives — Zod reads `.meta()`, not TSDoc.
  */
-export type PrincipalIdentity = PrincipalIdentityFromSchema;
+export type PrincipalIdentity = z.infer<typeof PrincipalIdentitySchema>;

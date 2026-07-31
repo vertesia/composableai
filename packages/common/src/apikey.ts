@@ -1,14 +1,15 @@
+import type { z } from 'zod';
 import type { PropertyConditions } from './access-control.js';
 import type {
-    ApiKeyArrayFromSchema,
-    ApiKeyFromSchema,
-    ApiKeyListQueryFromSchema,
-    ApiKeyReadQueryFromSchema,
-    ApiKeyReadResponseFromSchema,
-    ApiKeyWithValueFromSchema,
-    AuthTokenResponseFromSchema,
-    CreateApiKeyPayloadFromSchema,
-    UpdateApiKeyPayloadFromSchema,
+    ApiKeyArraySchema,
+    ApiKeyListQuerySchema,
+    ApiKeyReadQuerySchema,
+    ApiKeyReadResponseSchema,
+    ApiKeySchema,
+    ApiKeyWithValueSchema,
+    AuthTokenResponseSchema,
+    CreateApiKeyPayloadSchema,
+    UpdateApiKeyPayloadSchema,
 } from './api-schemas/apikey.js';
 import type { UserGroupRef } from './group.js';
 import type { ProjectRef, SystemRoles } from './project.js';
@@ -53,8 +54,8 @@ export interface ContentSecurity {
  * `format: date-time` strings and JSON has no date type, so the previous `Date` declaration
  * described the Mongoose document rather than the response a client parses.
  */
-export type ApiKey = ApiKeyFromSchema;
-export type ApiKeyArray = ApiKeyArrayFromSchema;
+export type ApiKey = z.infer<typeof ApiKeySchema>;
+export type ApiKeyArray = z.infer<typeof ApiKeyArraySchema>;
 /**
  * Create and update take DIFFERENT payloads, and did not before.
  *
@@ -63,10 +64,10 @@ export type ApiKeyArray = ApiKeyArrayFromSchema;
  * `role` (which unset a required path). Splitting it is source-breaking for the SDK and is announced
  * as a release operation; the two names say which operation they belong to.
  */
-export type CreateApiKeyPayload = CreateApiKeyPayloadFromSchema;
-export type UpdateApiKeyPayload = UpdateApiKeyPayloadFromSchema;
-export type ApiKeyWithValue = ApiKeyWithValueFromSchema;
-export type ApiKeyReadResponse = ApiKeyReadResponseFromSchema;
+export type CreateApiKeyPayload = z.infer<typeof CreateApiKeyPayloadSchema>;
+export type UpdateApiKeyPayload = z.infer<typeof UpdateApiKeyPayloadSchema>;
+export type ApiKeyWithValue = z.infer<typeof ApiKeyWithValueSchema>;
+export type ApiKeyReadResponse = z.infer<typeof ApiKeyReadResponseSchema>;
 
 export interface CreatePublicKeyPayload {
     name?: string;
@@ -74,9 +75,9 @@ export interface CreatePublicKeyPayload {
     ttl?: number;
 }
 
-export type AuthTokenResponse = AuthTokenResponseFromSchema;
-export type ApiKeyListQuery = ApiKeyListQueryFromSchema;
-export type ApiKeyReadQuery = ApiKeyReadQueryFromSchema;
+export type AuthTokenResponse = z.infer<typeof AuthTokenResponseSchema>;
+export type ApiKeyListQuery = z.infer<typeof ApiKeyListQuerySchema>;
+export type ApiKeyReadQuery = z.infer<typeof ApiKeyReadQuerySchema>;
 
 export interface AuthTokenPayload {
     sub: string;

@@ -193,4 +193,3 @@ export type ApiKeyReadResponseFromSchema = z.infer<typeof ApiKeyReadResponseSche
 export type CreateApiKeyPayloadFromSchema = z.infer<typeof CreateApiKeyPayloadSchema>;
 export type UpdateApiKeyPayloadFromSchema = z.infer<typeof UpdateApiKeyPayloadSchema>;
 export type AuthTokenResponseFromSchema = z.infer<typeof AuthTokenResponseSchema>;
-export type DeleteOperationResultFromSchema = z.infer<typeof DeleteOperationResultSchema>;

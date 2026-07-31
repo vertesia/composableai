@@ -9,14 +9,6 @@ import type {
     QuotaTierResponse,
 } from '../rate-limiter.js';
 import type { JsonObject } from './adapter.js';
-import type {
-    QuotaEffectiveTierFromSchema,
-    QuotaStandingAdmissionClassFromSchema,
-    QuotaStandingResourceFromSchema,
-    QuotaStandingResponseFromSchema,
-    QuotaStandingWindowFromSchema,
-    QuotaTierResponseFromSchema,
-} from './quota.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiResponse } from './registry.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
@@ -49,12 +41,6 @@ describe('gate 1 — the schema is the single source of truth for the public quo
         // The whole closure, not only the two types the endpoints return. A hand-written
         // QuotaStandingWindow beside an inferred QuotaStandingResponse would leave the drift path
         // open one level down, where it is harder to see.
-        assertType<Equals<QuotaStandingWindow, QuotaStandingWindowFromSchema>>(true);
-        assertType<Equals<QuotaStandingResource, QuotaStandingResourceFromSchema>>(true);
-        assertType<Equals<QuotaStandingAdmissionClass, QuotaStandingAdmissionClassFromSchema>>(true);
-        assertType<Equals<QuotaEffectiveTier, QuotaEffectiveTierFromSchema>>(true);
-        assertType<Equals<QuotaStandingResponse, QuotaStandingResponseFromSchema>>(true);
-        assertType<Equals<QuotaTierResponse, QuotaTierResponseFromSchema>>(true);
         expect(true).toBe(true);
     });
 

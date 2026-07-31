@@ -1,6 +1,7 @@
-import type { DeleteOperationResultFromSchema } from './api-schemas/apikey.js';
-import type { CountResultFromSchema } from './api-schemas/project.js';
-import type { DeleteByIdResultFromSchema } from './api-schemas/user.js';
+import type { z } from 'zod';
+import type { DeleteOperationResultSchema } from './api-schemas/apikey.js';
+import type { CountResultSchema } from './api-schemas/project.js';
+import type { DeleteByIdResultSchema } from './api-schemas/user.js';
 export interface FindPayload {
     query: Record<string, unknown>;
     offset?: number;
@@ -22,7 +23,7 @@ export interface GenericCommandResponse {
  * publishes it canonically so far, and the generator fails the build if the canonical and derived
  * definitions ever differ.
  */
-export type DeleteByIdResult = DeleteByIdResultFromSchema;
+export type DeleteByIdResult = z.infer<typeof DeleteByIdResultSchema>;
 
 export interface DeleteCountResult {
     id: string;
@@ -40,7 +41,7 @@ export interface SuccessResponse {
  * group — it is here rather than in an apikey module because `./common.js` is where the shared
  * result shapes live.
  */
-export type DeleteOperationResult = DeleteOperationResultFromSchema;
+export type DeleteOperationResult = z.infer<typeof DeleteOperationResultSchema>;
 
 /**
  * How many rows an operation touched, inferred from `./api-schemas/project.js`.
@@ -48,7 +49,7 @@ export type DeleteOperationResult = DeleteOperationResultFromSchema;
  * The module that owns it is named for the batch that converted it, not for the only resource that
  * uses it: four slots across three resources and two services return this.
  */
-export type CountResult = CountResultFromSchema;
+export type CountResult = z.infer<typeof CountResultSchema>;
 
 export interface BulkOperationPayload {
     /**

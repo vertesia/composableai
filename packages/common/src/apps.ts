@@ -1,5 +1,6 @@
 import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
-import type { ProjectToolInfoFromSchema } from './api-schemas/project.js';
+import type { z } from 'zod';
+import type { ProjectToolInfoSchema } from './api-schemas/project.js';
 import type { AppDashboardDefinition } from './data-platform.js';
 import type { CatalogInteractionRef } from './interaction.js';
 import type {
@@ -1463,7 +1464,7 @@ export interface AppToolCollection {
  * A tool and the app installation that provides it, inferred from `./api-schemas/project.js` — the
  * module that owns it, because it converted with the Projects batch rather than with Apps.
  */
-export type ProjectToolInfo = ProjectToolInfoFromSchema;
+export type ProjectToolInfo = z.infer<typeof ProjectToolInfoSchema>;
 
 /**
  * OAuth authentication status for an MCP tool collection

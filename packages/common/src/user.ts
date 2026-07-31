@@ -1,19 +1,15 @@
 import type { z } from 'zod';
+import type { AccountBillingSchema, AccountSchema, UpdateAccountPayloadSchema } from './api-schemas/account.js';
 import type {
-    AccountBillingFromSchema,
-    AccountFromSchema,
-    UpdateAccountPayloadFromSchema,
-} from './api-schemas/account.js';
-import type {
-    AccountProjectsResponseFromSchema,
+    AccountProjectsResponseSchema,
     AccountRefSchema,
-    InviteAcceptanceResponseFromSchema,
-    InviteDeclineResponseFromSchema,
-    InviteUserRequestPayloadFromSchema,
-    InviteUserResponsePayloadFromSchema,
-    OnboardingProgressFromSchema,
+    InviteAcceptanceResponseSchema,
+    InviteDeclineResponseSchema,
+    InviteUserRequestPayloadSchema,
+    InviteUserResponsePayloadSchema,
+    OnboardingProgressSchema,
 } from './api-schemas/invites.js';
-import type { UpdateUserPayloadFromSchema, UserFromSchema, UserRefFromSchema } from './api-schemas/user.js';
+import type { UpdateUserPayloadSchema, UserRefSchema, UserSchema } from './api-schemas/user.js';
 import type { ApiKey } from './apikey.js';
 
 export * from './account-values.js';
@@ -32,8 +28,8 @@ export interface UserWithAccounts extends User {
  * `@dglabs/server-common` describes what Mongo actually holds (optional email, ObjectId
  * references, Date timestamps) and is deliberately independent of this type.
  */
-export type User = UserFromSchema;
-export type UpdateUserPayload = UpdateUserPayloadFromSchema;
+export type User = z.infer<typeof UserSchema>;
+export type UpdateUserPayload = z.infer<typeof UpdateUserPayloadSchema>;
 
 /**
  * The compact user shape embedded in other resources' responses, derived from `UserRefSchema`.
@@ -41,7 +37,7 @@ export type UpdateUserPayload = UpdateUserPayloadFromSchema;
  * `UserRefPopulate` is the Mongoose projection that produces it, and the two are meant to stay in
  * step: a field added here without adding it there yields a response missing the field.
  */
-export type UserRef = UserRefFromSchema;
+export type UserRef = z.infer<typeof UserRefSchema>;
 
 export const UserRefPopulate = 'id name email picture';
 
@@ -68,9 +64,9 @@ export const RESTRICTED_ENVIRONMENT_ERROR_CODE = 'restricted_environment';
  * bundle — runtime consumers reach the schemas through the `@vertesia/common/api-schemas` entry
  * point instead.
  */
-export type Account = AccountFromSchema;
-export type AccountBilling = AccountBillingFromSchema;
-export type UpdateAccountPayload = UpdateAccountPayloadFromSchema;
+export type Account = z.infer<typeof AccountSchema>;
+export type AccountBilling = z.infer<typeof AccountBillingSchema>;
+export type UpdateAccountPayload = z.infer<typeof UpdateAccountPayloadSchema>;
 
 // The compact account reference, derived from the schema in `./api-schemas/invites.js`. It was
 // hand-written for the same reason `ProjectRef` was — `ExecutionRun` and `UserInviteTokenData` still
@@ -90,11 +86,11 @@ export const AccountRefPopulate = 'id name';
  * reads it and the alias is safe. `AccountRefSchema` is still the runtime source of truth, and the
  * `Equals` assertion in `invites.contract.test.ts` is what holds the interface to it.
  */
-export type InviteUserRequestPayload = InviteUserRequestPayloadFromSchema;
-export type InviteUserResponsePayload = InviteUserResponsePayloadFromSchema;
-export type InviteAcceptanceResponse = InviteAcceptanceResponseFromSchema;
-export type InviteDeclineResponse = InviteDeclineResponseFromSchema;
-export type AccountProjectsResponse = AccountProjectsResponseFromSchema;
+export type InviteUserRequestPayload = z.infer<typeof InviteUserRequestPayloadSchema>;
+export type InviteUserResponsePayload = z.infer<typeof InviteUserResponsePayloadSchema>;
+export type InviteAcceptanceResponse = z.infer<typeof InviteAcceptanceResponseSchema>;
+export type InviteDeclineResponse = z.infer<typeof InviteDeclineResponseSchema>;
+export type AccountProjectsResponse = z.infer<typeof AccountProjectsResponseSchema>;
 
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
 type SessionType<T extends User | ApiKey> = T extends User ? 'user' : 'apikey';
@@ -111,7 +107,7 @@ export interface SessionInfo<T extends User | ApiKey> {
 export interface UserSessionInfo extends SessionInfo<User> {}
 export interface ApiKeySessionInfo extends SessionInfo<ApiKey> {}
 
-export type OnboardingProgress = OnboardingProgressFromSchema;
+export type OnboardingProgress = z.infer<typeof OnboardingProgressSchema>;
 
 /**
  * Data collected at signup

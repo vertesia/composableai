@@ -1,7 +1,8 @@
+import type { z } from 'zod';
 import type {
-    CreateUserGroupPayloadFromSchema,
-    UpdateUserGroupPayloadFromSchema,
-    UserGroupFromSchema,
+    CreateUserGroupPayloadSchema,
+    UpdateUserGroupPayloadSchema,
+    UserGroupSchema,
 } from './api-schemas/group.js';
 import type { UserRef } from './user.js';
 
@@ -16,9 +17,9 @@ import type { UserRef } from './user.js';
  * described the Mongoose document rather than the response a client parses. `IUserGroup` in
  * `@dglabs/server-common` describes what Mongo actually holds and is deliberately independent.
  */
-export type UserGroup = UserGroupFromSchema;
-export type CreateUserGroupPayload = CreateUserGroupPayloadFromSchema;
-export type UpdateUserGroupPayload = UpdateUserGroupPayloadFromSchema;
+export type UserGroup = z.infer<typeof UserGroupSchema>;
+export type CreateUserGroupPayload = z.infer<typeof CreateUserGroupPayloadSchema>;
+export type UpdateUserGroupPayload = z.infer<typeof UpdateUserGroupPayloadSchema>;
 
 /**
  * A group with its members resolved.

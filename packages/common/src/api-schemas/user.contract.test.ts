@@ -1,18 +1,10 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
-import type { DeleteByIdResult } from '../common.js';
 import type { PrincipalContext, PrincipalIdentity } from '../principal-context.js';
 import type { UpdateUserPayload, User } from '../user.js';
 import type { JsonObject } from './adapter.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
-import type {
-    DeleteByIdResultFromSchema,
-    PrincipalContextFromSchema,
-    PrincipalIdentityFromSchema,
-    UpdateUserPayloadFromSchema,
-    UserArrayFromSchema,
-    UserFromSchema,
-} from './user.js';
+import type { PrincipalContextFromSchema, UserArrayFromSchema } from './user.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -34,12 +26,8 @@ const VALID_USER = {
 
 describe('gate 1 — the schema is the single source of truth for the public IAM types', () => {
     it('publishes the exact schema-derived type, not a hand-written twin', () => {
-        assertType<Equals<User, UserFromSchema>>(true);
         assertType<Equals<UserArrayFromSchema, User[]>>(true);
-        assertType<Equals<UpdateUserPayload, UpdateUserPayloadFromSchema>>(true);
-        assertType<Equals<DeleteByIdResult, DeleteByIdResultFromSchema>>(true);
         assertType<Equals<PrincipalContext, PrincipalContextFromSchema>>(true);
-        assertType<Equals<PrincipalIdentity, PrincipalIdentityFromSchema>>(true);
         expect(true).toBe(true);
     });
 

@@ -1,14 +1,15 @@
+import type { z } from 'zod';
 /**
  * Rate Limiter Types
  */
 
 import type {
-    QuotaEffectiveTierFromSchema,
-    QuotaStandingAdmissionClassFromSchema,
-    QuotaStandingResourceFromSchema,
-    QuotaStandingResponseFromSchema,
-    QuotaStandingWindowFromSchema,
-    QuotaTierResponseFromSchema,
+    QuotaEffectiveTierSchema,
+    QuotaStandingAdmissionClassSchema,
+    QuotaStandingResourceSchema,
+    QuotaStandingResponseSchema,
+    QuotaStandingWindowSchema,
+    QuotaTierResponseSchema,
 } from './api-schemas/quota.js';
 
 export interface RateLimiterCapacity {
@@ -55,9 +56,9 @@ export type RateLimiterStatusResponse = RateLimiterStatus[];
  * `import type` erases at compile time, so nothing here pulls zod into a browser or SDK bundle;
  * runtime consumers reach the schemas through the `@vertesia/common/api-schemas` entry point.
  */
-export type QuotaStandingWindow = QuotaStandingWindowFromSchema;
-export type QuotaStandingResource = QuotaStandingResourceFromSchema;
-export type QuotaStandingAdmissionClass = QuotaStandingAdmissionClassFromSchema;
-export type QuotaEffectiveTier = QuotaEffectiveTierFromSchema;
-export type QuotaStandingResponse = QuotaStandingResponseFromSchema;
-export type QuotaTierResponse = QuotaTierResponseFromSchema;
+export type QuotaStandingWindow = z.infer<typeof QuotaStandingWindowSchema>;
+export type QuotaStandingResource = z.infer<typeof QuotaStandingResourceSchema>;
+export type QuotaStandingAdmissionClass = z.infer<typeof QuotaStandingAdmissionClassSchema>;
+export type QuotaEffectiveTier = z.infer<typeof QuotaEffectiveTierSchema>;
+export type QuotaStandingResponse = z.infer<typeof QuotaStandingResponseSchema>;
+export type QuotaTierResponse = z.infer<typeof QuotaTierResponseSchema>;

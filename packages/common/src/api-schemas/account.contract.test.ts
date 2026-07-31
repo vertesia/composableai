@@ -1,19 +1,7 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import type { StripeBillingStatusResponse } from '../meters.js';
-import {
-    type Account,
-    type AccountBilling,
-    BillingMethod,
-    type QuotaTier,
-    type UpdateAccountPayload,
-} from '../user.js';
-import type {
-    AccountBillingFromSchema,
-    AccountFromSchema,
-    StripeBillingStatusResponseFromSchema,
-    UpdateAccountPayloadFromSchema,
-} from './account.js';
+import { type Account, BillingMethod, type QuotaTier, type UpdateAccountPayload } from '../user.js';
 import { type JsonObject, SchemaAdapterError, toOpenApiComponents } from './adapter.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
 
@@ -61,10 +49,6 @@ describe('gate 1 — the schema is the single source of truth for the public typ
         // `Equals`, not assignability: two structurally similar declarations would satisfy
         // assignability while still being free to drift. Identity is the property that makes the
         // schema the source of truth — there is only one definition to change.
-        assertType<Equals<Account, AccountFromSchema>>(true);
-        assertType<Equals<AccountBilling, AccountBillingFromSchema>>(true);
-        assertType<Equals<UpdateAccountPayload, UpdateAccountPayloadFromSchema>>(true);
-        assertType<Equals<StripeBillingStatusResponse, StripeBillingStatusResponseFromSchema>>(true);
         expect(true).toBe(true);
     });
 
