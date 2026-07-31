@@ -309,3 +309,52 @@ describe('description is emitted last', () => {
         expect(Object.keys(components.Tier)).toEqual(['type', 'description']);
     });
 });
+
+describe('the JavaScript safe-integer range', () => {
+    it('drops the sentinel bounds Zod attaches to every z.int()', () => {
+        // `z.int()` emits ±9007199254740991 because that is what a JS `number` holds exactly. It is a
+        // property of the language the server is written in, not of the contract: no value a JSON
+        // parser produced can fall outside it, so the bounds can never reject anything. Publishing
+        // them makes a generated Java client widen the field to a 64-bit type and documents a page
+        // count as capped at nine quadrillion.
+        const components = toOpenApiComponents({
+            Policy: {
+                type: 'object',
+                properties: {
+                    max_pages: {
+                        type: 'integer',
+                        minimum: -Number.MAX_SAFE_INTEGER,
+                        maximum: Number.MAX_SAFE_INTEGER,
+                    },
+                },
+            },
+        });
+        expect((components.Policy.properties as JsonObject).max_pages).toEqual({ type: 'integer' });
+    });
+
+    it('keeps a deliberate bound and drops only the sentinel beside it', () => {
+        // `z.int().min(1)` — the floor is a real constraint and the ceiling is still the JS artifact.
+        const components = toOpenApiComponents({
+            Policy: {
+                type: 'object',
+                properties: {
+                    max_pages: { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER },
+                },
+            },
+        });
+        expect((components.Policy.properties as JsonObject).max_pages).toEqual({ type: 'integer', minimum: 1 });
+    });
+
+    it('leaves the same numbers alone on a non-integer schema', () => {
+        // Only `z.int()` produces the sentinel. A `number` carrying those bounds was written by hand
+        // and means them.
+        const components = toOpenApiComponents({
+            Odd: { type: 'number', minimum: -Number.MAX_SAFE_INTEGER, maximum: Number.MAX_SAFE_INTEGER },
+        });
+        expect(components.Odd).toEqual({
+            type: 'number',
+            minimum: -Number.MAX_SAFE_INTEGER,
+            maximum: Number.MAX_SAFE_INTEGER,
+        });
+    });
+});

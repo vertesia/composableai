@@ -644,13 +644,17 @@ function stringifyPolicy(policy: ContentTypeIntakePolicy | undefined) {
     return JSON.stringify(policy ?? EMPTY_POLICY, null, 2);
 }
 
-function createPolicyValidator() {
+function createPolicyValidator(): ValidateFunction<ContentTypeIntakePolicy> {
     const ajv = new Ajv({
         strict: false,
         allErrors: true,
     });
     addFormats(ajv);
-    return ajv.compile(ContentTypeIntakePolicySchema);
+    // The schema is plain JSON — generated from the canonical Zod schema, and deliberately typed as
+    // opaque data so the package root can export it without pulling Zod into the browser bundle. AJV
+    // therefore infers `unknown`; the type argument states what compiling THIS schema validates, and
+    // `store.contract.test.ts` is what keeps the claim true.
+    return ajv.compile<ContentTypeIntakePolicy>(ContentTypeIntakePolicySchema);
 }
 
 function parseAndValidatePolicy(

@@ -56,19 +56,40 @@ describe('gate 2 — the batch boundary is where the closure rule puts it', () =
         // TypeScript-derived one. That blocker is gone: `ModelOptions` is declared in
         // `@llumiverse/common/schemas` and registered here, which is why this asserts its PRESENCE.
         expect(Object.keys(ApiSchemaComponents)).toContain('ModelOptions');
-        // The leaves are converted (below), so what is left is the one closure that still reaches
-        // outside this module: `ProjectIntakeConfiguration.default_policy` is `ContentTypeIntakePolicy`
-        // from `../store/store.ts`, which carries its own hand-written AJV schema and pulls in
-        // `InteractionExecutionConfiguration`. Same rule, one closure closer.
+        // The intake policy tree converted with it, so `ProjectIntakeConfiguration` — the last
+        // component between the configuration leaves and `ProjectConfiguration` — is canonical too.
         for (const name of [
-            'Project',
-            'ProjectConfiguration',
             'InteractionExecutionConfiguration',
-            'ProjectIntakeConfiguration',
             'ContentTypeIntakePolicy',
+            'ProjectIntakeConfiguration',
         ]) {
+            expect(Object.keys(ApiSchemaComponents), name).toContain(name);
+        }
+        // What is left is the two components at the top. They stay derived until the Map/Date wire
+        // corrections land with the response mapper that normalizes them.
+        for (const name of ['Project', 'ProjectConfiguration']) {
             expect(Object.keys(ApiSchemaComponents), name).not.toContain(name);
         }
+    });
+
+    it('converts the vision-profile map, because a canonical alias cannot be a mapped-type key', () => {
+        // `vision_profiles` was `Partial<Record<IntakeVisionDetail, …>>`. Once `IntakeVisionDetail`
+        // became a canonical alias the schema generator could no longer enumerate the mapped type's
+        // keys — it failed with `Unexpected key type "def-canonical-alias-IntakeVisionDetail"`, and
+        // `Project` then fell back to a source-text inference that silently dropped `configuration`
+        // and `integrations` from the published document. Converting the map is what removed the
+        // mapped type; this asserts the components it produces still exist under their old names.
+        expect(Object.keys(ApiSchemaComponents)).toContain('ProjectIntakeConfiguration');
+        const intake = ApiSchemaComponents.ProjectIntakeConfiguration as JsonObject;
+        const properties = intake.properties as Record<string, JsonObject>;
+        expect(properties.vision_profiles.$ref).toBe(
+            apiComponentRef('Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings' as never),
+        );
+        const map =
+            ApiSchemaComponents.Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings as JsonObject;
+        // The three keys are restated in the schema rather than derived from the enum, so this is
+        // what fails if a detail name is added to `IntakeVisionDetail` and not to the map.
+        expect(Object.keys(map.properties as JsonObject).sort()).toEqual(['high', 'low', 'standard']);
     });
 
     it('converts every configuration leaf that depends on nothing outside this module', () => {

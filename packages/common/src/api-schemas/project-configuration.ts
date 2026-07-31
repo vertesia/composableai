@@ -1,6 +1,7 @@
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ResourceVisibility } from '../project-values.js';
+import { ContentTypeIntakePolicySchema } from './store.js';
 
 /**
  * Runtime API schemas for the leaves of the `ProjectConfiguration` closure — the ninth batch.
@@ -272,3 +273,103 @@ export const ProjectIntakeSniffConfigurationSchema = z
             "docProps) BEFORE any conversion, so a high-confidence match can apply the type's intake policy — " +
             'including skipping conversion — without paying for it first.',
     });
+
+/**
+ * A project's override for one platform vision profile.
+ *
+ * `Partial_IntakeVisionProfileSettings` is the name the scanner synthesized for
+ * `Partial<IntakeVisionProfileSettings>`; the unpartialled interface was never published, because
+ * nothing on the wire ever holds a complete profile — the platform defaults supply what a project
+ * leaves out. So there is one schema here, and it is the partial one.
+ */
+export const PartialIntakeVisionProfileSettingsSchema = z
+    .strictObject({
+        dpi: z.number().optional().meta({ description: 'Render resolution in dots per inch.' }),
+        max_hw: z
+            .number()
+            .optional()
+            .meta({ description: 'Maximum height/width of the rendered page image in pixels.' }),
+        quality: z.number().optional().meta({ description: 'JPEG quality (0-100).' }),
+        color_mode: z.enum(['grayscale', 'auto']).optional().meta({
+            description: 'grayscale renders gray always; auto keeps color when the plan asks for it.',
+        }),
+    })
+    .meta({ id: 'Partial_IntakeVisionProfileSettings' });
+
+/**
+ * Per-detail-name overrides, spelled out rather than written over the `IntakeVisionDetail` enum.
+ *
+ * `Partial<Record<IntakeVisionDetail, …>>` is what the TypeScript said, and this schema is why that
+ * declaration had to stop being the source: once `IntakeVisionDetail` became a canonical alias it is
+ * opaque to the schema generator, which then cannot enumerate the mapped type's keys and fails with
+ * `Unexpected key type "def-canonical-alias-IntakeVisionDetail"`. Converting the map is what unblocks
+ * `ProjectConfiguration` and `Project` above it.
+ *
+ * The three keys are therefore restated here. They are checked against the enum in
+ * `project.contract.test.ts` rather than derived from it, so adding a detail name to the platform
+ * fails a test instead of silently publishing a map that cannot hold it.
+ */
+export const ProjectVisionProfileOverridesSchema = z
+    .strictObject({
+        low: PartialIntakeVisionProfileSettingsSchema.optional(),
+        standard: PartialIntakeVisionProfileSettingsSchema.optional(),
+        high: PartialIntakeVisionProfileSettingsSchema.optional(),
+    })
+    .meta({ id: 'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings' });
+
+export const ProjectIntakeConfigurationSchema = z
+    .strictObject({
+        enabled: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Master switch for the standard intake pipeline. When false, StandardIntake exits as a ' +
+                    'no-op WITHOUT touching object status (objects stay in `created`, identifiable as ' +
+                    'unprocessed). Defaults to true.',
+            }),
+        sniff: ProjectIntakeSniffConfigurationSchema.optional().meta({
+            description:
+                'Fast pre-conversion type identification for untyped documents. Absent means enabled with ' +
+                'platform default thresholds.',
+        }),
+        default_policy: ContentTypeIntakePolicySchema.optional().meta({
+            description:
+                "Project-level intake policy defaults. Same shape as the per-content-type policy; a type's " +
+                '`intake` block wins field-by-field over these defaults, which in turn win over the legacy flat ' +
+                'fields below. `identification` is type-specific and ignored here.',
+        }),
+        vision_profiles: ProjectVisionProfileOverridesSchema.optional().meta({
+            description:
+                'Project overrides for the platform vision detail profiles used by intake visual extraction ' +
+                '(`low`/`standard`/`high`). Partial: omitted profiles or fields inherit the platform defaults. ' +
+                'Types reference detail NAMES only; the profile settings live here.',
+        }),
+        generate_toc: z.boolean().optional().meta({
+            description: 'Generate table-of-content sections during standard document intake. Defaults to false.',
+        }),
+        generate_toc_max_size: z
+            .number()
+            .optional()
+            .meta({
+                description:
+                    'Skip table-of-content generation when the document text exceeds this many characters. ' +
+                    'Avoids sending very large documents through the TOC interactions. Unset means no limit.',
+            }),
+        generate_content_type: z.boolean().optional().meta({
+            description: 'Select or assign a content type during standard intake. Defaults to true.',
+        }),
+        generate_properties: z.boolean().optional().meta({
+            description: 'Extract document properties after content type assignment. Defaults to true.',
+        }),
+        default_content_type: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    'Default content type assigned during intake when type selection finds no matching type. A ' +
+                    'type id resolvable in this project (a stored `oid:` type, an `app:` type, or a `sys:` type). ' +
+                    'Defaults to the platform `sys:GenericDocument` when unset.',
+            }),
+    })
+    .meta({ id: 'ProjectIntakeConfiguration' });

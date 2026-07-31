@@ -1,0 +1,395 @@
+import { HttpTimeoutOptionsSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
+import { z } from 'zod';
+// From the values module, for the reason `./apikey.js` gives.
+import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
+
+/**
+ * Runtime API schemas for the content-intake policy tree — the ninth batch, second slice.
+ *
+ * This is the closure that stood between the `ProjectConfiguration` leaves and `Project` itself:
+ * `ProjectIntakeConfiguration.default_policy` is `ContentTypeIntakePolicy`, which reaches
+ * `InteractionExecutionConfiguration`, which reaches `ModelOptions` and `HttpTimeoutOptions` in
+ * `@llumiverse/common` — both already canonical.
+ *
+ * `ContentTypeIntakePolicy` was stated three times before this: the interface in `../store/store.ts`,
+ * the component the scanner derived from it, and a 287-line hand-written
+ * `JSONSchemaType<ContentTypeIntakePolicy>` beside the interface, compiled by zeno-server, by a
+ * workflow tool and by the Studio intake-policy editor. This module is now the only authored
+ * statement; the JSON that AJV and Monaco need is GENERATED from it through the same adapter that
+ * produces the OpenAPI components — see `../store/intake-policy-schema.generated.ts`.
+ *
+ * The hand-written schema was also more permissive than the contract it was supposed to enforce: it
+ * carried `nullable: true` on 112 subschemas, and AJV honours that keyword for OpenAPI
+ * compatibility, so 101 of them accepted an explicit `null` that neither the TypeScript type nor the
+ * published component allows. (The other 11 are enum-valued and rejected `null` regardless.) The
+ * fields below are OPTIONAL and not nullable, which is what the type and the document have always
+ * said — recorded as a runtime tightening in operation 25 of the 1.5 runbook.
+ *
+ * It was more permissive in three further ways, all of which this module also closes because the
+ * PUBLISHED component already stated the stricter contract: it left the four
+ * `InteractionExecutionConfiguration` slots (and `http_timeout` inside them) open to unknown keys,
+ * left `model_options` an unconstrained object rather than the `ModelOptions` union, and left
+ * `configMode`/`run_data` unconstrained strings rather than their enums.
+ *
+ * In ONE direction it was stricter, and that is a regression to guard against rather than a
+ * tightening to record: it carried `type: 'integer'` on ten page/DPI counters and numeric bounds on
+ * eighteen fields, none of which the published component ever stated. Those are restored below with
+ * `z.int()` and `.min()`/`.max()`, so the document finally publishes the constraints the server has
+ * enforced all along. `packages/workflows/src/activities/intake-policy-schema.test.ts` is the parity
+ * suite that caught their absence.
+ *
+ * `strictObject` throughout, including the inline nested objects: every one of them is published
+ * `additionalProperties: false` today, and plain `z.object` would PARSE an unknown key by silently
+ * dropping it.
+ */
+
+export const IntakeVisionDetailSchema = z.enum(['low', 'standard', 'high']).meta({
+    id: 'IntakeVisionDetail',
+    description:
+        'Vision detail level names referenced by intake policies. The rendering profiles behind the names ' +
+        '(dpi, max size, quality, color mode) are PLATFORM-defined and project-overridable — a type only ever ' +
+        'references a detail name.',
+});
+
+export const IntakePageScopeSchema = z.enum(['all', 'located']).meta({
+    id: 'IntakePageScope',
+    description:
+        'Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ' +
+        'ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because ' +
+        'scalar-or-collection unions generate unstable API clients.',
+});
+
+/**
+ * Inclusive `[start, end]` pairs.
+ *
+ * `z.array(z.int()).min(2).max(2)` rather than `z.tuple([z.int(), z.int()])`: the published component
+ * is `items` with `minItems`/`maxItems`, which is how the scanner rendered the tuple, and a Zod tuple
+ * emits `prefixItems` instead. Same accepted values, different spelling — and the spelling is what
+ * generated Java and Go clients are built from, so it stays. The cost is that the inferred type
+ * widens from `[number, number][]` to `number[][]`, which is recorded with the other SDK type
+ * corrections; `z.int()` is what keeps a fractional page index rejected, as the hand-written schema's
+ * `type: 'integer'` did.
+ */
+export const IntakePageRangesSchema = z.array(z.array(z.int()).min(2).max(2)).meta({
+    id: 'IntakePageRanges',
+    description:
+        'Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the ' +
+        'document ([[1, 2], [-1, -1]] = first two pages plus the last page).',
+});
+
+export const RunDataStorageLevelSchema = z.enum(RunDataStorageLevel).meta({ id: 'RunDataStorageLevel' });
+
+export const ConfigModesSchema = z.enum(ConfigModes).meta({ id: 'ConfigModes' });
+
+export const InteractionExecutionConfigurationSchema = z
+    .strictObject({
+        id: z.string().optional(),
+        environment: z.string().optional(),
+        model: z.string().optional(),
+        do_validate: z.boolean().optional(),
+        run_data: RunDataStorageLevelSchema.optional(),
+        configMode: ConfigModesSchema.optional(),
+        model_options: ModelOptionsSchema.optional(),
+        prompt_cache_key: z
+            .string()
+            .optional()
+            .meta({ description: 'Stable provider-side routing key for automatic prompt caching.' }),
+        prompt_cache_schema_suffix: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Put the result schema after the cached prefix; Vertesia still validates the returned JSON ' +
+                    'against it.',
+            }),
+        http_timeout: HttpTimeoutOptionsSchema.optional().meta({
+            description: 'Per-run HTTP timeouts for upstream LLM-provider calls.',
+        }),
+    })
+    .meta({ id: 'InteractionExecutionConfiguration' });
+
+export const ContentTypeExtractionGroundingReviewPolicySchema = z
+    .strictObject({
+        enabled: z
+            .boolean()
+            .optional()
+            .meta({ description: 'Set false to disable an inherited grounding review pass for this type.' }),
+        config: InteractionExecutionConfigurationSchema.optional().meta({
+            description: 'Model execution configuration for the review interaction.',
+        }),
+        threshold: z
+            .number()
+            .min(0)
+            .max(1)
+            .optional()
+            .meta({ description: 'Hardness score at or above which review runs. Defaults to hardness_threshold.' }),
+        coverage_threshold: z
+            .number()
+            .min(0)
+            .max(1)
+            .optional()
+            .meta({
+                description:
+                    "Review also runs when any page's citation coverage falls below this floor (evidence of " +
+                    'missed content). Default 0.2.',
+            }),
+        force: z.boolean().optional().meta({ description: 'Run review regardless of hardness.' }),
+    })
+    .meta({ id: 'ContentTypeExtractionGroundingReviewPolicy' });
+
+export const ContentTypeExtractionGroundingPolicySchema = z
+    .strictObject({
+        enabled: z
+            .boolean()
+            .optional()
+            .meta({ description: 'Enable PDF block-level citation grounding for property extraction.' }),
+        interaction: z
+            .string()
+            .optional()
+            .meta({ description: 'Grounded extraction interaction. Defaults to the system grounded extractor.' }),
+        max_pages: z.int().min(1).optional().meta({ description: 'Maximum pages to process.' }),
+        force_ocr: z.boolean().optional().meta({ description: 'Run OCR on every page even when a text layer exists.' }),
+        use_vision: z
+            .boolean()
+            .optional()
+            .meta({ description: 'Attach instrumented page images to the grounded extraction prompt.' }),
+        raster_mode: z
+            .enum(['vision', 'ocr'])
+            .optional()
+            .meta({
+                description:
+                    'How to read pages with no digital text layer (scans / image-only pages). ' +
+                    "'vision' (default): read them off the page image and skip OCR. 'ocr': legacy path — OCR " +
+                    'those pages and block-ground on the (lossy) OCR text.',
+            }),
+        grid_cell_pt: z
+            .number()
+            .min(1)
+            .optional()
+            .meta({
+                description:
+                    'A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid (more cells, ' +
+                    'tighter boxes) but can trip weaker models into over-reading; tune per the model in `config`. ' +
+                    'Default 15.',
+            }),
+        omit_block_boxes: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Drop block bounding boxes from the extraction prompt. Only sound with use_vision (layout ' +
+                    'comes from the image).',
+            }),
+        window_pages: z
+            .int()
+            .min(1)
+            .optional()
+            .meta({ description: 'Maximum pages per grounded extraction call before windowing.' }),
+        update_properties: z
+            .boolean()
+            .optional()
+            .meta({ description: 'Update object properties with grounded extraction data. Default true.' }),
+        config: InteractionExecutionConfigurationSchema.optional().meta({
+            description: 'Model execution configuration for the main grounded extraction interaction.',
+        }),
+        hard_config: InteractionExecutionConfigurationSchema.optional().meta({
+            description: 'Model execution configuration used for hard-to-read content.',
+        }),
+        hardness_threshold: z
+            .number()
+            .min(0)
+            .max(1)
+            .optional()
+            .meta({ description: 'Hardness score at or above which hard_config is used. Default 0.5.' }),
+        min_citation_density: z
+            .number()
+            .min(0)
+            .max(1)
+            .optional()
+            .meta({
+                description:
+                    'Minimum citations-per-leaf-value ratio; completions below it retry with escalation. ' +
+                    'Default 0.3.',
+            }),
+        refresh_ocr: z.boolean().optional().meta({
+            description: 'Re-run OCR instead of restoring durable OCR artifacts (stale pipeline output).',
+        }),
+        review: ContentTypeExtractionGroundingReviewPolicySchema.optional().meta({
+            description: 'Optional post-extraction review pass.',
+        }),
+    })
+    .meta({ id: 'ContentTypeExtractionGroundingPolicy' });
+
+/**
+ * Per-type embedding switches.
+ *
+ * Published as `Partial_Record_SupportedEmbeddingTypes_boolean` — the name the scanner synthesizes
+ * for `Partial<Record<SupportedEmbeddingTypes, boolean>>`. Like `ProjectSearchPropertyMappingMap` it
+ * has no TypeScript name of its own, so it is registered without a public alias.
+ */
+export const IntakeEmbeddingSwitchesSchema = z
+    .strictObject({
+        text: z.boolean().optional(),
+        image: z.boolean().optional(),
+        properties: z.boolean().optional(),
+    })
+    .meta({ id: 'Partial_Record_SupportedEmbeddingTypes_boolean' });
+
+export const ContentTypeIntakePolicySchema = z
+    .strictObject({
+        mode: z
+            .enum(['programmatic', 'agentic'])
+            .optional()
+            .meta({ description: 'Intake orchestration mode for this type.' }),
+        identification: z
+            .strictObject({
+                guidance: z.string().optional(),
+                distinguish_from: z.string().optional(),
+                examples: z.array(z.string()).optional(),
+            })
+            .optional()
+            .meta({ description: 'Guidance used when selecting or creating this content type.' }),
+        locate: z
+            .strictObject({
+                instructions: z.string().meta({
+                    description: 'What to look for ("commercial terms, payment schedule, signature pages").',
+                }),
+                detail: z.literal([8, 16]).optional().meta({
+                    description: 'Pages per contact sheet: 8 = bigger tiles (headings readable). Default 16.',
+                }),
+                min_pages: z
+                    .int()
+                    .min(0)
+                    .optional()
+                    .meta({ description: 'Only run when the page count is at least this. Default 8.' }),
+            })
+            .optional()
+            .meta({
+                description:
+                    'Document-map ("locate") pass: page thumbnails tiled into labeled contact sheets, one vision ' +
+                    'call returns which pages matter for THIS type. The result can scope conversion and ' +
+                    'extraction, and doubles as the vision planner for visual extraction.',
+            }),
+        text_conversion: z
+            .strictObject({
+                enabled: z.boolean().optional(),
+                method: z.enum(['auto', 'basic', 'llm', 'custom']).optional(),
+                custom: z
+                    .strictObject({
+                        interaction: z.string().optional(),
+                        agent: z.string().optional(),
+                    })
+                    .optional(),
+                instructions: z.string().optional(),
+                output_format: z.enum(['markdown', 'text']).optional(),
+                scope: IntakePageScopeSchema.optional().meta({
+                    description: 'Which pages to convert: everything or the locate result. Default all.',
+                }),
+                page_ranges: IntakePageRangesSchema.optional().meta({
+                    description: 'Static page ranges to convert (wins over `scope` when set).',
+                }),
+                render_dpi: z
+                    .int()
+                    .min(72)
+                    .optional()
+                    .meta({
+                        description:
+                            'DPI at which each page is rendered to the image the LLM converts. Default 150 — the ' +
+                            'accuracy/cost sweet spot: higher resolutions balloon input tokens (some providers ' +
+                            'tile the page) for no quality gain, below ~150 dense tables start to misread. Raise ' +
+                            'only for very fine print.',
+                    }),
+                config: InteractionExecutionConfigurationSchema.optional().meta({
+                    description:
+                        "Model execution config for the page-conversion interaction (method 'llm'/'auto' -> " +
+                        "sys:ConvertPageToMarkdown, method 'custom' -> the custom interaction). Lets the visual " +
+                        'conversion run on a cheaper/faster model (e.g. a flash model) than extraction. When ' +
+                        "unset, conversion uses the run's model config or the project default model.",
+                }),
+            })
+            .optional()
+            .meta({ description: 'Controls source-to-text conversion before extraction and embedding.' }),
+        extraction: z
+            .strictObject({
+                enabled: z.boolean().optional(),
+                source: z.enum(['auto', 'text', 'vision', 'mixed']).optional(),
+                instructions: z.string().optional(),
+                interaction: z.string().optional(),
+                config: InteractionExecutionConfigurationSchema.optional().meta({
+                    description:
+                        'Model execution config for the standard property-extraction interaction ' +
+                        '(sys:ExtractInformation). Lets extraction run on a different model/environment than the ' +
+                        "visual page conversion. When unset, extraction uses the run's model config or the " +
+                        'project default model. (Grounded extraction is configured separately via ' +
+                        'grounding.config.)',
+                }),
+                scope: IntakePageScopeSchema.optional().meta({
+                    description: 'Which pages extraction sees: everything or the locate result.',
+                }),
+                page_ranges: IntakePageRangesSchema.optional().meta({
+                    description: 'Static page ranges extraction sees (wins over `scope` when set).',
+                }),
+                max_pages: z
+                    .int()
+                    .min(1)
+                    .optional()
+                    .meta({ description: 'Cap on pages sent to extraction. Default 20.' }),
+                vision: z
+                    .strictObject({
+                        default_detail: IntakeVisionDetailSchema.optional(),
+                        allowed_details: z.array(IntakeVisionDetailSchema).optional(),
+                        max_image_tokens: z.int().min(1).optional().meta({
+                            description: 'PRIMARY budget: estimated image tokens per extraction call. Default 16000.',
+                        }),
+                        max_payload_mb: z
+                            .number()
+                            .min(1)
+                            .optional()
+                            .meta({ description: 'Transport guard in megabytes. Default 16.' }),
+                        max_pages_per_call: z
+                            .int()
+                            .min(1)
+                            .optional()
+                            .meta({ description: 'Cap on page images per extraction call. Default 8.' }),
+                    })
+                    .optional()
+                    .meta({
+                        description:
+                            'Vision evidence budget for visual extraction. Detail names reference platform ' +
+                            'profiles; the type never defines dpi/quality/resolution.',
+                    }),
+                verification: z
+                    .strictObject({
+                        enabled: z.boolean().optional(),
+                        model: z.string().optional(),
+                        environment: z.string().optional(),
+                        materiality: z.string().optional(),
+                        threshold: z.number().min(0).max(1).optional(),
+                        max_retries: z.int().min(0).optional(),
+                        on_fail: z.enum(['flag', 'block']).optional(),
+                    })
+                    .optional(),
+                grounding: ContentTypeExtractionGroundingPolicySchema.optional().meta({
+                    description: 'Controls PDF block-level citation grounding with annotated proof output.',
+                }),
+            })
+            .optional()
+            .meta({ description: 'Controls schema-property extraction after type assignment.' }),
+        rendering_template: z.string().optional().meta({
+            description: 'Handlebars template used to materialize extracted properties into object text.',
+        }),
+        embeddings: IntakeEmbeddingSwitchesSchema.optional().meta({
+            description: 'Per-type embedding switches. Unspecified values inherit the project policy.',
+        }),
+        generate_toc: z.boolean().optional().meta({
+            description: 'Whether intake should generate a table of contents for matching documents.',
+        }),
+        default_view: z
+            .enum(['auto', 'text', 'pdf', 'image', 'properties'])
+            .optional()
+            .meta({ description: 'Preferred first view for objects of this type.' }),
+    })
+    .meta({
+        id: 'ContentTypeIntakePolicy',
+        description: 'Per-content-type policy for the standard intake workflows.',
+    });

@@ -1,7 +1,6 @@
 import type {
     CompletionResult,
     ExecutionTokenUsage,
-    HttpTimeoutOptions,
     JSONObject,
     JSONSchema,
     Modalities,
@@ -11,6 +10,8 @@ import type {
     ToolDefinition,
     ToolUse,
 } from '@llumiverse/common';
+import type { z } from 'zod';
+import type { InteractionExecutionConfigurationSchema } from './api-schemas/store.js';
 import type { PrincipalType } from './apikey.js';
 import type { MCPToolAnnotations } from './apps.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
@@ -28,6 +29,15 @@ import type { ExecutionRunDocRef } from './runs.js';
 import type { AgentToolApprovalMode } from './store/agent-approval.js';
 import type { ConversationState, TextArtifactReference } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
+
+/**
+ * `RunDataStorageLevel` and `ConfigModes` live in `./interaction-values.js` so the API schemas can
+ * read them without importing this module back. Re-exported here so every existing import path keeps
+ * working.
+ */
+export * from './interaction-values.js';
+
+import { ConfigModes, RunDataStorageLevel } from './interaction-values.js';
 import type { LlmCallType } from './workflow-analytics.js';
 
 export interface InteractionExecutionError {
@@ -400,12 +410,6 @@ export enum ExecutionRunStatus {
     processing = 'processing',
     completed = 'completed',
     failed = 'failed',
-}
-
-export enum RunDataStorageLevel {
-    STANDARD = 'STANDARD',
-    RESTRICTED = 'RESTRICTED',
-    DEBUG = 'DEBUG',
 }
 
 export enum RunDataStorageDescription {
@@ -1300,12 +1304,6 @@ export interface ExecutionRunRef extends Omit<ExecutionRun, 'result' | 'paramete
 
 export const ExecutionRunRefSelect = '-result -parameters -result_schema -prompt';
 
-export enum ConfigModes {
-    RUN_AND_INTERACTION_CONFIG = 'RUN_AND_INTERACTION_CONFIG',
-    RUN_CONFIG_ONLY = 'RUN_CONFIG_ONLY',
-    INTERACTION_CONFIG_ONLY = 'INTERACTION_CONFIG_ONLY',
-}
-
 export enum ConfigModesDescription {
     RUN_AND_INTERACTION_CONFIG = 'This run configuration is used. Undefined options are filled with interaction configuration.',
     RUN_CONFIG_ONLY = 'Only this run configuration is used. Undefined options remain undefined.',
@@ -1318,21 +1316,7 @@ export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
     [ConfigModes.INTERACTION_CONFIG_ONLY]: ConfigModesDescription.INTERACTION_CONFIG_ONLY,
 };
 
-export interface InteractionExecutionConfiguration {
-    id?: string;
-    environment?: string;
-    model?: string;
-    do_validate?: boolean;
-    run_data?: RunDataStorageLevel;
-    configMode?: ConfigModes;
-    model_options?: ModelOptions;
-    /** Stable provider-side routing key for automatic prompt caching. */
-    prompt_cache_key?: string;
-    /** Put the result schema after the cached prefix; Vertesia still validates the returned JSON against it. */
-    prompt_cache_schema_suffix?: boolean;
-    /** Per-run HTTP timeouts for upstream LLM-provider calls. */
-    http_timeout?: HttpTimeoutOptions;
-}
+export type InteractionExecutionConfiguration = z.infer<typeof InteractionExecutionConfigurationSchema>;
 
 export interface GenerateInteractionPayload {
     description: string;

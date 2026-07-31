@@ -1,0 +1,45 @@
+/**
+ * Generates the browser-safe JSON Schema for `ContentTypeIntakePolicy`.
+ *
+ * The authored source is the Zod schema in `src/api-schemas/store.ts`. This writes its emission —
+ * through the SAME adapter that produces the OpenAPI components, so the artifact and the published
+ * component cannot describe different shapes — into a plain TypeScript module that the package root
+ * re-exports. That is what lets zeno-server, the workflow tool and the Studio intake-policy editor
+ * keep compiling a plain JSON Schema without any of them importing Zod.
+ *
+ * The output is COMPILED OUTPUT, not a second definition: `src/api-schemas/store.contract.test.ts`
+ * fails if it drifts from the component. Run `pnpm run gen:schemas` after editing the Zod schema.
+ */
+import { writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { bundleCanonicalComponent } from '../lib/api-schemas/registry.js';
+
+const OUTPUT = fileURLToPath(new URL('../src/store/intake-policy-schema.generated.ts', import.meta.url));
+
+const HEADER = `// GENERATED FILE — DO NOT EDIT.
+//
+// Written by \`scripts/gen-intake-policy-schema.mjs\` from \`ContentTypeIntakePolicySchema\` in
+// \`../api-schemas/store.ts\`, through the same adapter that emits the OpenAPI components. Edit the Zod
+// schema and re-run \`pnpm run gen:schemas\`; \`store.contract.test.ts\` fails if this drifts from the
+// canonical component.
+//
+// It exists so the Studio intake-policy editor and the server validators get a self-contained JSON
+// Schema without importing Zod: the package root exports plain data, and \`zod\` stays out of every
+// browser bundle. The component's \`$ref\`s are re-rooted from \`#/components/schemas/\` to \`#/$defs/\`
+// so AJV and Monaco can compile it standalone.
+//
+// It carries the name consumers have always imported. The Zod object it was emitted from is exported
+// under the same name from \`../api-schemas/store.ts\`, which the package root does NOT re-export —
+// that split is what keeps zod out of the browser while the alias-provenance gate still sees the
+// \`\${Name}Schema\` convention it requires.
+
+`;
+
+const schema = bundleCanonicalComponent('ContentTypeIntakePolicy');
+// Annotated as `JSONObject` rather than left to infer, and not for brevity: an `as const` literal
+// of this size becomes a 1700-line literal type in the emitted `.d.ts`, and the OpenAPI scanner then
+// walks it — which drags the submodule's SOURCE tree into its program alongside the built `.d.ts`
+// files and makes every canonical alias look declared twice. Consumers treat this as opaque JSON.
+const body = `import type { JSONObject } from '../json.js';\n\nexport const ContentTypeIntakePolicySchema: JSONObject = ${JSON.stringify(schema, null, 4)};\n`;
+writeFileSync(OUTPUT, HEADER + body);
+console.log(`wrote ${OUTPUT} (${Object.keys(schema.$defs ?? {}).length} $defs)`);

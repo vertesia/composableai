@@ -17,6 +17,7 @@ import type {
     ModelDefaultSchema,
     ProjectConfigurationEmbeddingSchema,
     ProjectIndexingConfigurationSchema,
+    ProjectIntakeConfigurationSchema,
     ProjectIntakeSniffConfigurationSchema,
     ProjectModelDefaultsSchema,
     ProjectSearchPropertyMappingSchema,
@@ -24,7 +25,6 @@ import type {
     ProjectSearchTierSchema,
     SystemDefaultsSchema,
 } from './api-schemas/project-configuration.js';
-import type { ContentTypeIntakePolicy, IntakeVisionDetail, IntakeVisionProfileSettings } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
 import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
@@ -169,65 +169,7 @@ export type ElasticsearchBackend = z.infer<typeof ElasticsearchBackendSchema>;
 
 export type ProjectIntakeSniffConfiguration = z.infer<typeof ProjectIntakeSniffConfigurationSchema>;
 
-export interface ProjectIntakeConfiguration {
-    /**
-     * Master switch for the standard intake pipeline. When false, StandardIntake exits as a
-     * no-op WITHOUT touching object status (objects stay in `created`, identifiable as
-     * unprocessed). Defaults to true.
-     */
-    enabled?: boolean;
-
-    /**
-     * Fast pre-conversion type identification for untyped documents. Absent means enabled
-     * with platform default thresholds.
-     */
-    sniff?: ProjectIntakeSniffConfiguration;
-
-    /**
-     * Project-level intake policy defaults. Same shape as the per-content-type policy; a
-     * type's `intake` block wins field-by-field over these defaults, which in turn win over
-     * the legacy flat fields below. `identification` is type-specific and ignored here.
-     */
-    default_policy?: ContentTypeIntakePolicy;
-
-    /**
-     * Project overrides for the platform vision detail profiles used by intake visual
-     * extraction (`low`/`standard`/`high`). Partial: omitted profiles or fields inherit the
-     * platform defaults. Types reference detail NAMES only; the profile settings live here.
-     */
-    vision_profiles?: Partial<Record<IntakeVisionDetail, Partial<IntakeVisionProfileSettings>>>;
-
-    /**
-     * Generate table-of-content sections during standard document intake.
-     * Defaults to false.
-     */
-    generate_toc?: boolean;
-
-    /**
-     * Skip table-of-content generation when the document text exceeds this many characters.
-     * Avoids sending very large documents through the TOC interactions. Unset means no limit.
-     */
-    generate_toc_max_size?: number;
-
-    /**
-     * Select or assign a content type during standard intake.
-     * Defaults to true.
-     */
-    generate_content_type?: boolean;
-
-    /**
-     * Extract document properties after content type assignment.
-     * Defaults to true.
-     */
-    generate_properties?: boolean;
-
-    /**
-     * Default content type assigned during intake when type selection finds no matching type.
-     * A type id resolvable in this project (a stored `oid:` type, an `app:` type, or a `sys:` type).
-     * Defaults to the platform `sys:GenericDocument` when unset.
-     */
-    default_content_type?: string;
-}
+export type ProjectIntakeConfiguration = z.infer<typeof ProjectIntakeConfigurationSchema>;
 
 export interface ProjectConfiguration {
     human_context?: string;

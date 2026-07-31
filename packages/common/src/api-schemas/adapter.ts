@@ -60,6 +60,25 @@ function componentRef(name: string): JsonObject {
 }
 
 /**
+ * Removes the JavaScript safe-integer range that Zod attaches to every `z.int()`.
+ *
+ * `z.int()` emits `minimum: -9007199254740991, maximum: 9007199254740991` because that is the range
+ * a JS `number` can hold exactly. That is a property of the language the server happens to be written
+ * in, not of the API contract, and publishing it is actively harmful: a generated Java or Go client
+ * reads the bound and widens the field to a 64-bit type, and a human reading the document sees a page
+ * count documented as capped at nine quadrillion. Neither bound can ever reject a value a JSON parser
+ * produced in the first place, so dropping them changes nothing an API client can observe.
+ *
+ * Deliberate bounds survive — `z.int().min(1)` keeps its `minimum: 1` and loses only the sentinel
+ * `maximum`.
+ */
+function dropSafeIntegerSentinels(node: JsonObject): void {
+    if (node.type !== 'integer') return;
+    if (node.minimum === -Number.MAX_SAFE_INTEGER) delete node.minimum;
+    if (node.maximum === Number.MAX_SAFE_INTEGER) delete node.maximum;
+}
+
+/**
  * Adds `discriminator` to a union whose members are all component references and which share a
  * required single-valued property. Generated Java/Go clients need this to pick a concrete
  * subtype; without it they fall back to a loose map or fail to deserialize.
@@ -186,6 +205,7 @@ function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
                     : walk(child, ctx, false);
         }
 
+        dropSafeIntegerSentinels(out);
         synthesizeDiscriminator(out, ctx.components);
 
         // A nested schema carrying its own $id is a named component: hoist it and leave a reference.

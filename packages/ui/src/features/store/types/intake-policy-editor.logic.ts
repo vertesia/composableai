@@ -34,13 +34,21 @@ export function updateIntakePolicy(
     return next as ContentTypeIntakePolicy;
 }
 
+/**
+ * `number[][]` in, `[number, number][]` out.
+ *
+ * The policy type says `number[][]` — JSON has no tuples, and the published component has always
+ * described a two-element array rather than a pair — so the editor takes what the policy holds and
+ * returns the pair shape the form rows render. The `[1, 1]` default is what makes the result honest:
+ * a short row read out of a stored policy is completed rather than assumed.
+ */
 export function replaceIntakeRange(
-    ranges: [number, number][] | undefined,
+    ranges: number[][] | undefined,
     index: number,
     endpoint: 0 | 1,
     value: number,
 ): [number, number][] {
-    const next = ranges?.map((range) => [...range] as [number, number]) ?? [];
+    const next: [number, number][] = ranges?.map((range) => [range[0] ?? 1, range[1] ?? 1]) ?? [];
     const current = next[index] ?? [1, 1];
     current[endpoint] = value;
     next[index] = current;

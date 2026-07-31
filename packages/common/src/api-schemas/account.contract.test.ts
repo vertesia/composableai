@@ -156,6 +156,15 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'BrowserUseProjectConfiguration',
             'BrowserUseRiskPolicy',
             'BrowserUseScreenshotCapture',
+            // The intake policy tree, tenth. `ContentTypeIntakePolicy` replaces a hand-written AJV
+            // schema and hoists InteractionExecutionConfiguration, the two grounding policies, three
+            // enums and the embedding-switch map. ProjectIntakeConfiguration converts with it:
+            // `vision_profiles` was a mapped type over IntakeVisionDetail, and a mapped type cannot
+            // be keyed by an alias the generator treats as opaque.
+            'ConfigModes',
+            'ContentTypeExtractionGroundingPolicy',
+            'ContentTypeExtractionGroundingReviewPolicy',
+            'ContentTypeIntakePolicy',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'CountResult',
@@ -193,6 +202,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ImagenMaskMode',
             'ImagenOptions',
             'ImagenTaskType',
+            'IntakePageRanges',
+            'IntakePageScope',
+            'IntakeVisionDetail',
+            'InteractionExecutionConfiguration',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
@@ -229,6 +242,9 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'OpenAiGptImageOptions',
             'OpenAiTextOptions',
             'OpenAiThinkingOptions',
+            'Partial_IntakeVisionProfileSettings',
+            'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings',
+            'Partial_Record_SupportedEmbeddingTypes_boolean',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'Permission',
@@ -237,6 +253,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'PrincipalIdentity',
             'ProjectConfigurationEmbedding',
             'ProjectIndexingConfiguration',
+            'ProjectIntakeConfiguration',
             'ProjectIntakeSniffConfiguration',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
@@ -286,6 +303,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'RoleDefinition',
             'RoleDefinitionArray',
             'RoleDomain',
+            'RunDataStorageLevel',
             'StripeBillingDisabled',
             'StripeBillingEnabled',
             'StripeBillingStatusResponse',

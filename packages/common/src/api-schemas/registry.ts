@@ -67,11 +67,13 @@ import {
     BrowserUseProjectConfigurationSchema,
     ProjectConfigurationEmbeddingSchema,
     ProjectIndexingConfigurationSchema,
+    ProjectIntakeConfigurationSchema,
     ProjectIntakeSniffConfigurationSchema,
     ProjectModelDefaultsSchema,
     ResourceVisibilitySchema,
 } from './project-configuration.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
+import { ContentTypeIntakePolicySchema } from './store.js';
 import {
     DeleteByIdResultSchema,
     PrincipalIdentitySchema,
@@ -164,6 +166,12 @@ const API_SCHEMAS = {
     JSONSchema: JSONSchemaSchema,
     ModelOptions: ModelOptionsSchema,
     HttpTimeoutOptions: HttpTimeoutOptionsSchema,
+    // The intake policy tree. Everything it reaches — InteractionExecutionConfiguration, the two
+    // grounding policies, the page/vision enums and the embedding switches — is hoisted from here.
+    ContentTypeIntakePolicy: ContentTypeIntakePolicySchema,
+    // Registered after the policy it references. `Partial_IntakeVisionProfileSettings` and the
+    // per-detail override map are hoisted from here; neither has a TypeScript name to alias.
+    ProjectIntakeConfiguration: ProjectIntakeConfigurationSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -264,6 +272,18 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectIntakeSniffConfiguration',
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
+    // The intake policy tree. Every object in it is published closed today, including the inline
+    // nested ones, which the schemas spell `strictObject` so the emission carries it directly.
+    'ContentTypeIntakePolicy',
+    'ContentTypeExtractionGroundingPolicy',
+    'ContentTypeExtractionGroundingReviewPolicy',
+    'InteractionExecutionConfiguration',
+    'Partial_Record_SupportedEmbeddingTypes_boolean',
+    // The intake configuration above the policy, and the two anonymous shapes it hoists. All three
+    // are published closed today.
+    'ProjectIntakeConfiguration',
+    'Partial_IntakeVisionProfileSettings',
+    'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings',
     // Every member of the `ModelOptions` union. All twenty-three are published closed today, and
     // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
     // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union
@@ -352,6 +372,66 @@ export function emitCanonicalComponent(name: string, schema: z.ZodType): JsonObj
     const produced = new Set(Object.keys(toOpenApiComponents({ [name]: raw })));
     const strictComponents = new Set([...STRICT_COMPONENTS].filter((component) => produced.has(component)));
     return toOpenApiComponents({ [name]: raw }, { strictComponents })[name];
+}
+
+/**
+ * A canonical component as a SELF-CONTAINED JSON Schema, for consumers that compile it directly.
+ *
+ * The published component `$ref`s its neighbours through `#/components/schemas/...`, which resolves
+ * only inside the OpenAPI document. AJV and the Monaco editor need a document they can compile on
+ * its own, so the transitive closure is inlined under `$defs` and the pointers rewritten. Nothing
+ * about the shapes changes — this is a re-rooting of the same objects, which is what lets a
+ * generated artifact be compared with the component it came from.
+ */
+export function bundleCanonicalComponent(name: ApiComponentName): JsonObject {
+    const seen = new Set<string>();
+    const queue: string[] = [name];
+    while (queue.length > 0) {
+        const current = queue.shift() as string;
+        if (seen.has(current)) continue;
+        seen.add(current);
+        for (const referenced of collectComponentRefs(ApiSchemaComponents[current])) {
+            if (!seen.has(referenced)) queue.push(referenced);
+        }
+    }
+    seen.delete(name);
+    const defs: JsonObject = {};
+    for (const dependency of [...seen].sort()) {
+        defs[dependency] = rerootComponentRefs(ApiSchemaComponents[dependency]) as JsonObject;
+    }
+    const root = rerootComponentRefs(ApiSchemaComponents[name]) as JsonObject;
+    return seen.size > 0 ? { ...root, $defs: defs } : root;
+}
+
+const COMPONENT_REF_PREFIX = '#/components/schemas/';
+
+function collectComponentRefs(value: unknown, out = new Set<string>()): Set<string> {
+    if (Array.isArray(value)) {
+        for (const item of value) collectComponentRefs(item, out);
+        return out;
+    }
+    if (!value || typeof value !== 'object') return out;
+    for (const [key, item] of Object.entries(value)) {
+        if (key === '$ref' && typeof item === 'string' && item.startsWith(COMPONENT_REF_PREFIX)) {
+            out.add(item.slice(COMPONENT_REF_PREFIX.length));
+        } else {
+            collectComponentRefs(item, out);
+        }
+    }
+    return out;
+}
+
+function rerootComponentRefs(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(rerootComponentRefs);
+    if (!value || typeof value !== 'object') return value;
+    const out: JsonObject = {};
+    for (const [key, item] of Object.entries(value)) {
+        out[key] =
+            key === '$ref' && typeof item === 'string' && item.startsWith(COMPONENT_REF_PREFIX)
+                ? `#/$defs/${item.slice(COMPONENT_REF_PREFIX.length)}`
+                : (rerootComponentRefs(item) as never);
+    }
+    return out;
 }
 
 /** The `$ref` pointer for a component, in the same spelling the spec publishes. */
