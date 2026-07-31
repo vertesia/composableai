@@ -1,3 +1,5 @@
+import type { ContentObjectProcessingPriority } from './store/store.js';
+
 export interface FindPayload {
     query: Record<string, unknown>;
     offset?: number;
@@ -107,5 +109,3 @@ export type BulkOperationResponse =
     | BulkObjectCreateResult
     | BulkObjectUpdateResult
     | BulkObjectDeleteResult;
-
-import type { ContentObjectProcessingPriority } from './store/store.js';
