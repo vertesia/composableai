@@ -290,26 +290,19 @@ export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = toOpenA
 });
 
 /**
- * The registered schemas themselves, by component name.
- *
- * Exported for provenance checking, not for use. A component whose public TypeScript type is
- * `z.infer<typeof XSchema>` is only single-sourced if the component published as `X` is emitted by
- * that same schema OBJECT — the naming convention the OpenAPI scanner enforces proves the alias and
- * the variable agree on a spelling, not that the registry entry points at it. Swapping this map's
- * value for a different schema would leave the type inferred from one shape and the contract
- * published from another, and the scanner cannot notice because it deliberately stops deriving
- * these types. `check:aliases` closes that by comparing objects here.
- */
-export const ApiSchemaRegistry: Readonly<Record<string, z.ZodType>> = API_SCHEMAS;
-
-/**
  * The component `name` would publish if `schema` were the only thing registered.
  *
  * The same two calls {@link ApiSchemaComponents} makes, on one schema, so the comparison is against
- * the real emission path rather than a reimplementation of it. This is what proves a canonical alias
- * names the schema its component actually came from, including for the members hoisted out of a
- * registered root — those never appear in {@link ApiSchemaRegistry}, so object identity alone would
- * have nothing to compare.
+ * the real emission path rather than a reimplementation of it.
+ *
+ * Exported for provenance checking, not for use. A component whose public TypeScript type is
+ * `z.infer<typeof XSchema>` is only single-sourced if the component published as `X` is emitted by
+ * the schema object that alias's import resolves to. The OpenAPI scanner cannot check that: it reads
+ * source text, so it can prove the alias and the variable agree on a spelling and nothing more, and
+ * it deliberately stops deriving these types — which is what leaves the usual derived-versus-
+ * canonical comparison with nothing to compare. `check:aliases` closes it by emitting each alias's
+ * own schema through here. Emission rather than object identity because the members hoisted out of a
+ * registered root are published components that never appear in `API_SCHEMAS` at all.
  */
 export function emitCanonicalComponent(name: string, schema: z.ZodType): JsonObject | undefined {
     const raw = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' });
