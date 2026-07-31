@@ -2,7 +2,13 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectToolInfo, RenderingTemplateDefinitionRef } from '../apps.js';
 import { SupportedIntegrations } from '../integrations.js';
-import type { ICreateProjectPayload, ProjectPluginsUpdatePayload } from '../project.js';
+import type {
+    ICreateProjectPayload,
+    ModelDefault,
+    ProjectPluginsUpdatePayload,
+    SystemDefaults,
+    SystemInteractionCategory,
+} from '../project.js';
 import type { JsonObject } from './adapter.js';
 import type { CreateProjectPayloadFromSchema, ProjectToolInfoArrayFromSchema } from './project.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
@@ -44,23 +50,86 @@ describe('gate 1 — the schema is the single source of truth for the converted 
  * rather than a claim in a comment that quietly stops being true.
  */
 describe('gate 2 — the batch boundary is where the closure rule puts it', () => {
-    it('leaves Project and ProjectConfiguration derived, now that only their own closure blocks them', () => {
+    it('leaves Project and ProjectConfiguration derived, because the intake policy tree still blocks them', () => {
         // `ProjectConfiguration.interaction_execution.model_options` is `ModelOptions`, the union of
         // every llumiverse driver's options, and a canonical component may not `$ref` a
         // TypeScript-derived one. That blocker is gone: `ModelOptions` is declared in
         // `@llumiverse/common/schemas` and registered here, which is why this asserts its PRESENCE.
         expect(Object.keys(ApiSchemaComponents)).toContain('ModelOptions');
-        // What is left is the configuration closure itself — roughly thirty components describing
-        // intake, indexing, search and embeddings. Same rule, one repository closer.
+        // The leaves are converted (below), so what is left is the one closure that still reaches
+        // outside this module: `ProjectIntakeConfiguration.default_policy` is `ContentTypeIntakePolicy`
+        // from `../store/store.ts`, which carries its own hand-written AJV schema and pulls in
+        // `InteractionExecutionConfiguration`. Same rule, one closure closer.
         for (const name of [
             'Project',
             'ProjectConfiguration',
             'InteractionExecutionConfiguration',
             'ProjectIntakeConfiguration',
-            'ProjectIndexingConfiguration',
+            'ContentTypeIntakePolicy',
         ]) {
             expect(Object.keys(ApiSchemaComponents), name).not.toContain(name);
         }
+    });
+
+    it('converts every configuration leaf that depends on nothing outside this module', () => {
+        // Sixteen components, none of them named by an endpoint — they are hoisted by
+        // `ProjectConfiguration`, which is still derived. Converting them changes no slot; it makes
+        // the `$ref`s that the two remaining configuration components have to satisfy canonical, so
+        // the closure rule stops applying to them one level at a time.
+        for (const name of [
+            'ModelDefault',
+            'ModalityDefaults',
+            'SystemDefaults',
+            'ProjectModelDefaults',
+            'ResourceVisibility',
+            'ProjectSearchTier',
+            'ElasticsearchBackend',
+            'ProjectSearchPropertyType',
+            'ProjectSearchPropertyMapping',
+            'ProjectSearchPropertyMappingMap',
+            'ProjectIndexingConfiguration',
+            'ProjectConfigurationEmbedding',
+            'BrowserUseRiskPolicy',
+            'BrowserUseScreenshotCapture',
+            'BrowserUseProjectConfiguration',
+            'ProjectIntakeSniffConfiguration',
+        ]) {
+            expect(Object.keys(ApiSchemaComponents), name).toContain(name);
+        }
+    });
+
+    it('keeps SystemDefaults covering every system interaction category', () => {
+        // The interface was `{ [K in SystemInteractionCategory]?: ModelDefault }`, so a new category
+        // widened it for free. A Zod object cannot map over an enum and still infer useful keys, so
+        // the categories are written out — and this is what makes forgetting one a compile error
+        // rather than a silently unpublishable default. The template literal turns the enum's member
+        // union into its string values, which is what the schema's keys are.
+        assertType<Equals<keyof SystemDefaults, `${SystemInteractionCategory}`>>(true);
+        assertType<Equals<SystemDefaults['intake'], ModelDefault | undefined>>(true);
+        expect(true).toBe(true);
+    });
+
+    it('publishes the property-mapping map without the propertyNames z.record adds', () => {
+        // `Record<string, ProjectSearchPropertyMapping>` is inline in the interface and has no
+        // TypeScript name, so it never becomes a canonical alias — it stays canonical AND derived,
+        // and the two have to agree forever. `z.record` emits a `propertyNames: {type: 'string'}`
+        // that the scanner never did, which is why the schema is a catchall-only object instead.
+        expect(ApiSchemaComponents.ProjectSearchPropertyMappingMap).toEqual({
+            type: 'object',
+            additionalProperties: { $ref: '#/components/schemas/ProjectSearchPropertyMapping' },
+        });
+    });
+
+    it('enforces the browser-use configuration the deleted AJV schema only described', () => {
+        // A `JSONSchemaType<BrowserUseProjectConfiguration>` used to sit beside the interface with
+        // descriptions that had already drifted from the TSDoc, and nothing compiled it. This is the
+        // same shape, and it is enforced.
+        expect(validateApiRequest('BrowserUseProjectConfiguration', { max_policy: 'low_write' }).valid).toBe(true);
+        expect(validateApiRequest('BrowserUseProjectConfiguration', { max_policy: 'god_mode' }).valid).toBe(false);
+        expect(validateApiRequest('BrowserUseProjectConfiguration', { capture_screenshots: 'always' }).valid).toBe(
+            false,
+        );
+        expect(validateApiRequest('BrowserUseProjectConfiguration', { unknown_switch: true }).valid).toBe(false);
     });
 
     it('converts the rendering templates ahead of the AppManifest that embeds them', () => {

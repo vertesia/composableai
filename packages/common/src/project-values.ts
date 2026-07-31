@@ -11,6 +11,16 @@
 // `access-control-values.ts` keeps its JSDoc header only because none of its enums are resolved
 // through that path.
 
+// Moved here from `project.ts` for the same reason: `ResourceVisibilitySchema` is `z.enum(...)` over
+// it, and a runtime import of `project.ts` from the schema modules would be a cycle. The enum stays
+// the single statement of the values — the schema reads them rather than restating them, which is
+// why `ResourceVisibility` is not a canonical alias.
+export enum ResourceVisibility {
+    public = 'public',
+    account = 'account',
+    project = 'project',
+}
+
 export enum SystemRoles {
     owner = 'owner', // all permissions
     admin = 'admin', // all permissions

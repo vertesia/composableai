@@ -63,6 +63,14 @@ import {
     RenderingTemplateDefinitionRefSchema,
     RenderingTemplateDefinitionSchema,
 } from './project.js';
+import {
+    BrowserUseProjectConfigurationSchema,
+    ProjectConfigurationEmbeddingSchema,
+    ProjectIndexingConfigurationSchema,
+    ProjectIntakeSniffConfigurationSchema,
+    ProjectModelDefaultsSchema,
+    ResourceVisibilitySchema,
+} from './project-configuration.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import {
     DeleteByIdResultSchema,
@@ -141,6 +149,16 @@ const API_SCHEMAS = {
     ProjectToolInfoArray: ProjectToolInfoArraySchema,
     RenderingTemplateDefinition: RenderingTemplateDefinitionSchema,
     RenderingTemplateDefinitionRef: RenderingTemplateDefinitionRefSchema,
+    // Leaves of the ProjectConfiguration closure. Each is hoisted by `ProjectConfiguration` rather
+    // than named by an endpoint, so only the roots that nothing else here references are listed;
+    // `ModelDefault`, the two search enums, `ProjectSearchPropertyMapping(+Map)` and the two
+    // browser-use enums are published by being referenced from these.
+    ProjectModelDefaults: ProjectModelDefaultsSchema,
+    ResourceVisibility: ResourceVisibilitySchema,
+    ProjectIndexingConfiguration: ProjectIndexingConfigurationSchema,
+    ProjectConfigurationEmbedding: ProjectConfigurationEmbeddingSchema,
+    BrowserUseProjectConfiguration: BrowserUseProjectConfigurationSchema,
+    ProjectIntakeSniffConfiguration: ProjectIntakeSniffConfigurationSchema,
     // Leaves of the Project closure, converted ahead of their dependants. `ModelOptions` hoists its
     // twenty-three driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
     JSONSchema: JSONSchemaSchema,
@@ -231,6 +249,18 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectToolInfo',
     'RenderingTemplateDefinition',
     'RenderingTemplateDefinitionRef',
+    // The ProjectConfiguration leaves. All are published closed today. The three enums and
+    // `ProjectSearchPropertyMappingMap` are absent for the reasons `PropertyConditions` is: a string
+    // takes no `additionalProperties`, and a map's is a value schema rather than a policy.
+    'ModelDefault',
+    'ModalityDefaults',
+    'SystemDefaults',
+    'ProjectModelDefaults',
+    'ProjectSearchPropertyMapping',
+    'ProjectIndexingConfiguration',
+    'ProjectConfigurationEmbedding',
+    'BrowserUseProjectConfiguration',
+    'ProjectIntakeSniffConfiguration',
     // Every member of the `ModelOptions` union. All twenty-three are published closed today, and
     // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
     // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union

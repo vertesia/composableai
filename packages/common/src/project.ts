@@ -1,4 +1,3 @@
-import type { JSONSchemaType } from 'ajv';
 import type { z } from 'zod';
 import type { ProjectRefSchema } from './api-schemas/apikey.js';
 import type {
@@ -9,6 +8,22 @@ import type {
     ProjectPluginsUpdatePayloadSchema,
     ProjectTagQuerySchema,
 } from './api-schemas/project.js';
+import type {
+    BrowserUseProjectConfigurationSchema,
+    BrowserUseRiskPolicySchema,
+    BrowserUseScreenshotCaptureSchema,
+    ElasticsearchBackendSchema,
+    ModalityDefaultsSchema,
+    ModelDefaultSchema,
+    ProjectConfigurationEmbeddingSchema,
+    ProjectIndexingConfigurationSchema,
+    ProjectIntakeSniffConfigurationSchema,
+    ProjectModelDefaultsSchema,
+    ProjectSearchPropertyMappingSchema,
+    ProjectSearchPropertyTypeSchema,
+    ProjectSearchTierSchema,
+    SystemDefaultsSchema,
+} from './api-schemas/project-configuration.js';
 import type { ContentTypeIntakePolicy, IntakeVisionDetail, IntakeVisionProfileSettings } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
@@ -20,7 +35,7 @@ import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
  */
 export * from './project-values.js';
 
-import { SystemRoles } from './project-values.js';
+import { type ResourceVisibility, SystemRoles } from './project-values.js';
 
 export type ICreateProjectPayload = CreateProjectPayloadFromSchema;
 
@@ -63,34 +78,13 @@ export type ProjectTagQuery = z.infer<typeof ProjectTagQuerySchema>;
 
 export type ListProjectsQuery = z.infer<typeof ListProjectsQuerySchema>;
 
-export enum ResourceVisibility {
-    public = 'public',
-    account = 'account',
-    project = 'project',
-}
-
 // ==========================================
 // Project Model Defaults Types
 // ==========================================
 
-/**
- * Environment and model pair for a default configuration.
- */
-export interface ModelDefault {
-    environment: string;
-    model: string;
-}
+export type ModelDefault = z.infer<typeof ModelDefaultSchema>;
 
-/**
- * Modality-specific default model overrides.
- * These override the base default when specific input modalities are detected.
- */
-export interface ModalityDefaults {
-    /** Override for inputs containing images */
-    image?: ModelDefault;
-    /** Override for inputs containing video (requires video-capable model) */
-    video?: ModelDefault;
-}
+export type ModalityDefaults = z.infer<typeof ModalityDefaultsSchema>;
 
 /**
  * System interaction category enum.
@@ -142,164 +136,38 @@ export function getSystemInteractionCategory(endpoint: string): SystemInteractio
     return category || undefined;
 }
 
-export type SystemDefaults = {
-    [K in SystemInteractionCategory]?: ModelDefault;
-};
+/**
+ * One optional default per {@link SystemInteractionCategory}.
+ *
+ * The schema writes the categories out rather than mapping over the enum, so `project.contract.test`
+ * asserts that its keys are exactly the category union — a new category has to be added in both
+ * places, and fails to compile until it is.
+ */
+export type SystemDefaults = z.infer<typeof SystemDefaultsSchema>;
+
+export type ProjectModelDefaults = z.infer<typeof ProjectModelDefaultsSchema>;
+
+export type BrowserUseRiskPolicy = z.infer<typeof BrowserUseRiskPolicySchema>;
+
+export type BrowserUseScreenshotCapture = z.infer<typeof BrowserUseScreenshotCaptureSchema>;
 
 /**
- * Extensible project defaults using map/dictionary pattern.
+ * Project defaults and caps for `browser_use` agent workstreams.
+ *
+ * A hand-written `JSONSchemaType<BrowserUseProjectConfiguration>` used to sit here beside the
+ * interface. Nothing read it, and its descriptions had already drifted from the TSDoc the published
+ * component was derived from — the schema module is now the only statement of the shape.
  */
-export interface ProjectModelDefaults {
-    /** Base default model - used when no other default applies */
-    base?: ModelDefault;
-    /** Modality-based overrides (image, video) - override base when specific input modalities detected */
-    modality?: ModalityDefaults;
-    /** System interaction category defaults */
-    system?: SystemDefaults;
-}
-
-export type BrowserUseRiskPolicy = 'read_only' | 'low_write' | 'requires_approval' | 'unrestricted';
-
-export type BrowserUseScreenshotCapture = 'off' | 'on_action' | 'each_turn';
-
-export interface BrowserUseProjectConfiguration {
-    /**
-     * Enable the browser_use workflow-level tool for this project.
-     * Defaults to true when omitted.
-     */
-    enabled?: boolean;
-    /**
-     * Risk policy used when the tool call does not specify one.
-     * Defaults to low_write.
-     */
-    default_policy?: BrowserUseRiskPolicy;
-    /**
-     * Maximum policy a tool call may request. Requested policies above this
-     * are clamped down to the project maximum. Defaults to unrestricted.
-     */
-    max_policy?: BrowserUseRiskPolicy;
-    /**
-     * Optional project-wide host allowlist. When present, browser_use calls
-     * can only request hosts contained by this list.
-     */
-    allowed_hosts?: string[];
-    /**
-     * Allow saved Playwright scripts to hydrate artifacts/documents as files
-     * inside the browser sandbox for upload flows. Defaults to true.
-     */
-    allow_file_uploads?: boolean;
-    /**
-     * Allow the browser_playwright_script tool in browser workstreams.
-     * Defaults to true.
-     */
-    allow_playwright_scripts?: boolean;
-    /**
-     * Persist browser screenshots for UI progress. Defaults to on_action.
-     */
-    capture_screenshots?: BrowserUseScreenshotCapture;
-    /**
-     * Prefer unannotated screenshots in the browser-use UI widget when both
-     * raw and annotated captures are available. Defaults to true.
-     */
-    prefer_raw_screenshots?: boolean;
-}
-
-export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProjectConfiguration> = {
-    type: 'object',
-    properties: {
-        enabled: {
-            type: 'boolean',
-            nullable: true,
-            description: 'Enable the browser_use workflow-level tool for this project. Defaults to true.',
-        },
-        default_policy: {
-            type: 'string',
-            nullable: true,
-            enum: ['read_only', 'low_write', 'requires_approval', 'unrestricted'],
-            description: 'Risk policy used when a browser_use call does not specify one. Defaults to low_write.',
-        },
-        max_policy: {
-            type: 'string',
-            nullable: true,
-            enum: ['read_only', 'low_write', 'requires_approval', 'unrestricted'],
-            description: 'Maximum risk policy a browser_use call may request. Defaults to unrestricted.',
-        },
-        allowed_hosts: {
-            type: 'array',
-            nullable: true,
-            items: { type: 'string' },
-            description:
-                'Optional project-wide host allowlist. When present, browser_use calls can only request hosts contained by this list.',
-        },
-        allow_file_uploads: {
-            type: 'boolean',
-            nullable: true,
-            description:
-                'Allow replay scripts to hydrate artifacts/documents as files in the browser sandbox. Defaults to true.',
-        },
-        allow_playwright_scripts: {
-            type: 'boolean',
-            nullable: true,
-            description: 'Allow browser_playwright_script in browser workstreams. Defaults to true.',
-        },
-        capture_screenshots: {
-            type: 'string',
-            nullable: true,
-            enum: ['off', 'on_action', 'each_turn'],
-            description: 'Persist browser screenshots for UI progress. Defaults to on_action.',
-        },
-        prefer_raw_screenshots: {
-            type: 'boolean',
-            nullable: true,
-            description: 'Prefer unannotated screenshots in the browser-use UI widget. Defaults to true.',
-        },
-    },
-    required: [],
-    additionalProperties: false,
-};
+export type BrowserUseProjectConfiguration = z.infer<typeof BrowserUseProjectConfigurationSchema>;
 
 // ==========================================
 // Project Configuration
 // ==========================================
 
-export type ProjectSearchTier = 'standard' | 'performance';
-export type ElasticsearchBackend = 'serverless' | 'hosted';
+export type ProjectSearchTier = z.infer<typeof ProjectSearchTierSchema>;
+export type ElasticsearchBackend = z.infer<typeof ElasticsearchBackendSchema>;
 
-/**
- * Fast pre-conversion type identification (the "sniff") for untyped documents.
- * The sniff classifies a document from cheap local evidence (first/last page text,
- * a low-res first-page image, office docProps) BEFORE any conversion, so a
- * high-confidence match can apply the type's intake policy — including skipping
- * conversion — without paying for it first.
- */
-export interface ProjectIntakeSniffConfiguration {
-    /**
-     * Enable the pre-conversion sniff for untyped documents. Defaults to true.
-     * Can be overridden per run with the `sniffEnabled` workflow var.
-     */
-    enabled?: boolean;
-
-    /**
-     * Confidence at or above which the sniffed type is committed and its full policy applied
-     * (including conversion-skip). 0..1, defaults to 0.85.
-     */
-    high_confidence?: number;
-
-    /**
-     * Confidence at or above which the sniffed type is treated as provisional: the document
-     * still converts and the post-conversion selector confirms on neutral evidence.
-     * 0..1, defaults to 0.6. Below this the sniff result is advisory provenance only.
-     */
-    medium_confidence?: number;
-
-    /**
-     * Minimum page count for the sniff LLM call. Below this, conversion is cheap and full
-     * converted text is better selection evidence, so intake uses the standard
-     * convert-then-select path. Documents with unknown page counts are sniffed.
-     * Defaults to 5; 0 means always sniff.
-     */
-    min_pages?: number;
-}
+export type ProjectIntakeSniffConfiguration = z.infer<typeof ProjectIntakeSniffConfigurationSchema>;
 
 export interface ProjectIntakeConfiguration {
     /**
@@ -420,33 +288,9 @@ export interface ProjectConfiguration {
     pdf_template_object_id?: string;
 }
 
-/**
- * Elasticsearch field types that may be explicitly assigned to content-object
- * properties. Paths are relative to the object's `properties` field.
- */
-export type ProjectSearchPropertyType = 'keyword' | 'text' | 'boolean' | 'long' | 'double' | 'date';
+export type ProjectSearchPropertyType = z.infer<typeof ProjectSearchPropertyTypeSchema>;
 
-/**
- * Explicit search mapping for one content-object property.
- *
- * Changing a mapping requires a full reindex. Existing Elasticsearch fields
- * cannot change type in place.
- */
-export interface ProjectSearchPropertyMapping {
-    type: ProjectSearchPropertyType;
-
-    /** Elasticsearch date format. Valid only when type is `date`. */
-    format?: string;
-
-    /** Maximum indexed string length. Valid only when type is `keyword`. */
-    ignore_above?: number;
-
-    /**
-     * Skip malformed values instead of rejecting the whole document. Valid only
-     * for long, double, and date mappings.
-     */
-    ignore_malformed?: boolean;
-}
+export type ProjectSearchPropertyMapping = z.infer<typeof ProjectSearchPropertyMappingSchema>;
 
 export const PROJECT_SEARCH_PROPERTY_TYPES: readonly ProjectSearchPropertyType[] = [
     'keyword',
@@ -523,38 +367,7 @@ export function validateProjectSearchPropertyMappings(value: unknown): string[] 
     return issues;
 }
 
-export interface ProjectIndexingConfiguration {
-    /**
-     * Enable indexing for content objects in this project.
-     * When enabled, content changes trigger indexing workflows.
-     * Defaults to true - indexing is always on when ES infrastructure is available.
-     */
-    enabled?: boolean;
-
-    /**
-     * Search tier for this project.
-     * standard uses the regional hosted Elasticsearch deployment.
-     * performance uses the regional serverless Elasticsearch project.
-     * Defaults to standard when omitted.
-     */
-    search_tier?: ProjectSearchTier;
-
-    /**
-     * Elasticsearch backend override for this project.
-     * Prefer search_tier for project configuration unless an explicit backend override is needed.
-     */
-    backend?: ElasticsearchBackend;
-
-    /**
-     * Explicit mappings for selected content-object property paths.
-     *
-     * Keys are dot-separated paths relative to `properties`, for example
-     * `order_total` or `customer.account_number`. Unlisted fields are mapped
-     * dynamically from their JSON values. Changing this value requires a full
-     * reindex.
-     */
-    property_mappings?: Record<string, ProjectSearchPropertyMapping>;
-}
+export type ProjectIndexingConfiguration = z.infer<typeof ProjectIndexingConfigurationSchema>;
 
 // export interface ProjectConfigurationEmbeddings {
 //     environment: string;
@@ -580,13 +393,7 @@ export const SearchTypes = {
     ...FullTextType,
 } as const;
 
-export interface ProjectConfigurationEmbedding {
-    environment?: string;
-    enabled: boolean;
-    dimensions?: number;
-    max_tokens?: number;
-    model?: string;
-}
+export type ProjectConfigurationEmbedding = z.infer<typeof ProjectConfigurationEmbeddingSchema>;
 
 export interface ProjectConfigurationEmbeddingEnablePayload {
     environment: string;

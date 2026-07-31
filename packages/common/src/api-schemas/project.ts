@@ -27,6 +27,11 @@ import { SupportedIntegrations } from '../integrations.js';
  *
  * `CompositeAppConfig` (18 components) and the integration config union (20) are self-contained in
  * this package and blocked by nothing but size; they are the natural next slice.
+ *
+ * Two of those statements have since been overtaken, and are kept because they record why the
+ * boundary was drawn where it was. The `ModelOptions` blocker was removed by the seventh batch, and
+ * the rendering templates converted with the ninth once the canonical/derived comparison stopped
+ * being sensitive to key order — see the bottom of this file and `./project-configuration.ts`.
  */
 
 /**

@@ -150,6 +150,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
             'BillingMethod',
+            // The ProjectConfiguration leaves, ninth — sixteen components hoisted by the configuration
+            // rather than named by an endpoint, converted ahead of `Project` and `ProjectConfiguration`
+            // themselves, which still reach the intake-policy tree.
+            'BrowserUseProjectConfiguration',
+            'BrowserUseRiskPolicy',
+            'BrowserUseScreenshotCapture',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'CountResult',
@@ -167,6 +173,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
             'DeleteOperationResult',
+            'ElasticsearchBackend',
             // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
             // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
@@ -198,6 +205,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ListProjectsQuery',
+            'ModalityDefaults',
+            'ModelDefault',
             // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
             // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
@@ -222,16 +231,24 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The IAM closure, converted as the second. PrincipalContext is composed into
             // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'PrincipalIdentity',
+            'ProjectConfigurationEmbedding',
+            'ProjectIndexingConfiguration',
+            'ProjectIntakeSniffConfiguration',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ProjectIntegrationListEntry',
             'ProjectIntegrationListResponse',
+            'ProjectModelDefaults',
             'ProjectPluginsUpdatePayload',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
             'ProjectRef',
             'ProjectRefArray',
+            'ProjectSearchPropertyMapping',
+            'ProjectSearchPropertyMappingMap',
+            'ProjectSearchPropertyType',
+            'ProjectSearchTier',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ProjectTagQuery',
@@ -259,6 +276,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // canonical one.
             'RenderingTemplateDefinition',
             'RenderingTemplateDefinitionRef',
+            'ResourceVisibility',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'RoleDefinition',
@@ -270,6 +288,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'SupportedIntegrations',
+            'SystemDefaults',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'SystemRoleDefinition',
