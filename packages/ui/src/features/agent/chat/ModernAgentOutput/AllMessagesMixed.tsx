@@ -93,6 +93,7 @@ import {
     getWorkstreamId,
     groupMessagesWithStreaming,
     isInProgress,
+    isToolActivityMessage,
     isToolPreambleMessage,
     isUserStoppedMessage,
     mergeConsecutiveToolGroups,
@@ -2686,18 +2687,23 @@ function AllMessagesMixedComponent({
         });
     }, []);
 
+    const previousActiveWorkstreamRef = useRef(activeWorkstream);
+    useEffect(() => {
+        if (previousActiveWorkstreamRef.current === activeWorkstream) return;
+        previousActiveWorkstreamRef.current = activeWorkstream;
+        requestAnimationFrame(scrollToTop);
+    }, [activeWorkstream, scrollToTop]);
+
     const handleSelectWorkstream = useCallback(
         (workstreamId: string) => {
             setActiveWorkstream(workstreamId);
-            requestAnimationFrame(scrollToTop);
         },
-        [scrollToTop, setActiveWorkstream],
+        [setActiveWorkstream],
     );
 
     const handleShowMainAgentChat = useCallback(() => {
         setActiveWorkstream('all');
-        requestAnimationFrame(scrollToTop);
-    }, [scrollToTop, setActiveWorkstream]);
+    }, [setActiveWorkstream]);
 
     useEffect(() => {
         if (activeWorkstream !== 'all' && !workstreams.has(activeWorkstream)) {
@@ -2967,6 +2973,20 @@ function AllMessagesMixedComponent({
         // completed until the agent posts its next message.
         return !isDisplayCompleted || hasOpenUserTurn(completionDisplayMessages);
     }, [completionDisplayMessages, isDisplayCompleted]);
+
+    const showPostToolThinking = useMemo(() => {
+        if (!isAgentWorking || incompleteStreaming.length > 0) return false;
+
+        const latestSummaryItem = summaryConversationItems[summaryConversationItems.length - 1];
+        const latestMessage = completionDisplayMessages[completionDisplayMessages.length - 1];
+        return (
+            latestSummaryItem?.type === 'work' &&
+            latestSummaryItem.isActive &&
+            latestMessage !== undefined &&
+            isToolActivityMessage(latestMessage) &&
+            latestMessage.details?.tool_status === 'completed'
+        );
+    }, [completionDisplayMessages, incompleteStreaming.length, isAgentWorking, summaryConversationItems]);
 
     const showActivityFallback = shouldShowSummaryActivityFallback(
         summaryConversationItems,
@@ -3684,6 +3704,17 @@ function AllMessagesMixedComponent({
                                     artifactRunId={artifactRunId}
                                 />
                             ))}
+                            {showPostToolThinking && (
+                                <div
+                                    className={cn(
+                                        'mx-auto w-full max-w-3xl px-1 text-sm text-muted',
+                                        workingIndicatorClassName,
+                                    )}
+                                    data-testid="post-tool-thinking-indicator"
+                                >
+                                    {t('agent.thinking')}
+                                </div>
+                            )}
                             {/* Activity fallback - shown before any tool/thought message has arrived */}
                             {showActivityFallback && !showInitialRequestWaitingCard && (
                                 <SummaryActivityRow

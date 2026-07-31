@@ -196,6 +196,7 @@
   "agent.summary": "Сводка",
   "agent.taskProgress": "Прогресс задач",
   "agent.tasksCompleted": "{{completed}}/{{total}} завершено",
+  "agent.thinking": "Размышляю...",
   "agent.timeout": "Время ожидания истекло",
   "agent.toggleRightSidebar": "Переключить правую панель",
   "agent.typeYourMessage": "Введите сообщение...",

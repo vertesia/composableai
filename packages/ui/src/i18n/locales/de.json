@@ -192,6 +192,7 @@
   "agent.summary": "Zusammenfassung",
   "agent.taskProgress": "Aufgabenfortschritt",
   "agent.tasksCompleted": "{{completed}}/{{total}} abgeschlossen",
+  "agent.thinking": "Denke nach...",
   "agent.timeout": "Zeitüberschreitung",
   "agent.toggleRightSidebar": "Rechte Seitenleiste umschalten",
   "agent.typeYourMessage": "Geben Sie Ihre Nachricht ein...",

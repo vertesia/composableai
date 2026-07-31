@@ -194,6 +194,7 @@
   "agent.summary": "Riepilogo",
   "agent.taskProgress": "Progresso attività",
   "agent.tasksCompleted": "{{completed}}/{{total}} completate",
+  "agent.thinking": "Sto pensando...",
   "agent.timeout": "Tempo scaduto",
   "agent.toggleRightSidebar": "Alterna pannello laterale",
   "agent.typeYourMessage": "Scrivi il tuo messaggio...",

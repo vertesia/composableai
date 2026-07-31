@@ -192,6 +192,7 @@
   "agent.summary": "摘要",
   "agent.taskProgress": "任務進度",
   "agent.tasksCompleted": "{{completed}}/{{total}} 已完成",
+  "agent.thinking": "思考中...",
   "agent.timeout": "已逾時",
   "agent.toggleRightSidebar": "切換右側邊欄",
   "agent.typeYourMessage": "輸入訊息...",

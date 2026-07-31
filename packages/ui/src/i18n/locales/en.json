@@ -265,6 +265,7 @@
     "agent.summary": "Summary",
     "agent.taskProgress": "Task Progress",
     "agent.tasksCompleted": "{{completed}}/{{total}} completed",
+    "agent.thinking": "Thinking...",
     "agent.timeout": "Timed out",
     "agent.toggleRightSidebar": "Toggle right sidebar",
     "agent.typeYourMessage": "Type your message...",

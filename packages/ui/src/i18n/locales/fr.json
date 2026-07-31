@@ -194,6 +194,7 @@
   "agent.summary": "Résumé",
   "agent.taskProgress": "Progression des tâches",
   "agent.tasksCompleted": "{{completed}}/{{total}} terminées",
+  "agent.thinking": "Réflexion...",
   "agent.timeout": "Délai dépassé",
   "agent.toggleRightSidebar": "Basculer le panneau latéral",
   "agent.typeYourMessage": "Saisissez votre message...",

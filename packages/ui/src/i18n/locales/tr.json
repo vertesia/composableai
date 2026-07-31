@@ -192,6 +192,7 @@
   "agent.summary": "Özet",
   "agent.taskProgress": "Görev ilerlemesi",
   "agent.tasksCompleted": "{{completed}}/{{total}} tamamlandı",
+  "agent.thinking": "Düşünüyor...",
   "agent.timeout": "Zaman aşımına uğradı",
   "agent.toggleRightSidebar": "Sağ kenar çubuğunu aç/kapat",
   "agent.typeYourMessage": "Mesajınızı yazın...",

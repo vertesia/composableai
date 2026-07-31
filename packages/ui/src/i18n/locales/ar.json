@@ -200,6 +200,7 @@
   "agent.summary": "ملخص",
   "agent.taskProgress": "تقدم المهام",
   "agent.tasksCompleted": "{{completed}}/{{total}} مكتملة",
+  "agent.thinking": "جارٍ التفكير...",
   "agent.timeout": "انتهت المهلة",
   "agent.toggleRightSidebar": "تبديل الشريط الجانبي الأيمن",
   "agent.typeYourMessage": "اكتب رسالتك...",
