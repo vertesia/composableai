@@ -394,6 +394,15 @@ export interface ProjectConfiguration {
     agent_streaming_enabled?: boolean;
 
     /**
+     * Agent conversation checkpoint threshold in tokens: the context size at
+     * which the conversation is summarized and compacted. Overrides the
+     * model-based default (80% of the model's context window, capped at 500k).
+     * Clamped at runtime to 95% of the model's window so the prompt still fits.
+     * Unset means the model-based default.
+     */
+    agent_checkpoint_tokens?: number;
+
+    /**
      * Indexing configuration for this project.
      * Controls whether indexing and querying are enabled at the project level.
      */

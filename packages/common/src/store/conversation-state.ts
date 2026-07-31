@@ -143,6 +143,14 @@ export interface ConversationState {
     streaming_enabled?: boolean;
 
     /**
+     * Project-configured checkpoint threshold in tokens (cached from
+     * project.configuration.agent_checkpoint_tokens at conversation start).
+     * The workflow resolves the effective threshold from this, the per-run
+     * checkpoint_tokens override, and the model-based default.
+     */
+    checkpoint_tokens?: number;
+
+    /**
      * Active communication channels with their current state.
      * Channels can be updated as conversation progresses (e.g., email threading info).
      */
