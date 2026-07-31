@@ -1,4 +1,4 @@
-import type { AIModel, ProviderParams } from '@llumiverse/common';
+import type { AIModel, ProviderParams, TextFallbackOptions } from '@llumiverse/common';
 import { ProviderList, Providers } from '@llumiverse/common';
 
 // Virtual providers from studio
@@ -77,16 +77,10 @@ export interface MediatorEnvConfig {
     model_options?: TextFallbackOptions;
 }
 
-export interface TextFallbackOptions {
-    _option_id: 'text-fallback';
-    max_tokens?: number;
-    temperature?: number;
-    top_p?: number;
-    top_k?: number;
-    presence_penalty?: number;
-    frequency_penalty?: number;
-    stop_sequence?: string[];
-}
+// Re-exported, not restated. This file carried a byte-for-byte copy of llumiverse's interface, which
+// published under the same component name — so which of the two the OpenAPI document described
+// depended on which one the scanner reached first. They agreed, so nothing ever failed.
+export type { TextFallbackOptions } from '@llumiverse/common';
 
 export interface ExecutionEnvironmentSettings {
     [key: string]: unknown;
