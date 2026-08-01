@@ -2,6 +2,7 @@
  * get a zeno client for a given token
  */
 
+import { activityInfo } from '@temporalio/activity';
 import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
 import type { WorkflowExecutionBaseParams } from '@vertesia/common';
 import { WorkflowParamNotFoundError } from '../errors.js';
@@ -38,12 +39,31 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
 
     const token = decodeJWT(payload.auth_token);
 
+    let requestSequence = 0;
+    let requestPrefix: string | undefined;
+    try {
+        const info = activityInfo();
+        const execution = info.workflowExecution;
+        if (execution) {
+            requestPrefix = `workflow:${execution.workflowId}:${execution.runId}:${info.activityId}`;
+        }
+    } catch {
+        // Option construction is also used outside an activity by tests and utility callers.
+    }
+
     return {
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
         tokenServerUrl: token.iss,
         apikey: payload.auth_token,
         timeout: parseWorkflowFetchTimeoutMs(),
+        ...(requestPrefix
+            ? {
+                  onRequest: (request: Request) => {
+                      request.headers.set('x-request-id', `${requestPrefix}:${requestSequence++}`);
+                  },
+              }
+            : {}),
     };
 }
 
