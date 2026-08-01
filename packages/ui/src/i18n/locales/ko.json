@@ -160,7 +160,7 @@
   "agent.rewind.jumpToLatest": "최신 메시지로 이동",
   "agent.rewind.jumpToLive": "라이브로 이동",
   "agent.rewind.jumpToStart": "첫 메시지로 이동",
-  "agent.rewind.label": "재생",
+  "agent.rewind.label": "디버그",
   "agent.rewind.nextMessage": "다음 메시지",
   "agent.rewind.pause": "일시 중지",
   "agent.rewind.positionInput": "재생 위치",

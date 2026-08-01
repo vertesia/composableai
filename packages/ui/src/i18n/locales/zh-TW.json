@@ -160,7 +160,7 @@
   "agent.rewind.jumpToLatest": "跳到最新訊息",
   "agent.rewind.jumpToLive": "跳到即時",
   "agent.rewind.jumpToStart": "跳到第一則訊息",
-  "agent.rewind.label": "重播",
+  "agent.rewind.label": "偵錯",
   "agent.rewind.nextMessage": "下一則訊息",
   "agent.rewind.pause": "暫停",
   "agent.rewind.positionInput": "播放位置",

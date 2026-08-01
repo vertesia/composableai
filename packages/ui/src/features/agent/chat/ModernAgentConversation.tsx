@@ -743,7 +743,7 @@ export interface ModernAgentConversationProps {
     initialToolApprovalMode?: AgentToolApprovalMode;
     /** Force display playback controls on or off. When omitted, local playback can be toggled from the header. */
     enablePlayback?: boolean;
-    /** Show the Rewind button for local playback controls. Defaults to true; set to false to hide it. */
+    /** Show the Debug button for local playback controls. Defaults to true; set to false to hide it. */
     showPlaybackToggle?: boolean;
 }
 

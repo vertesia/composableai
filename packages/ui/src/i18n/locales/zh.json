@@ -160,7 +160,7 @@
   "agent.rewind.jumpToLatest": "跳到最新消息",
   "agent.rewind.jumpToLive": "跳到实时",
   "agent.rewind.jumpToStart": "跳到第一条消息",
-  "agent.rewind.label": "回放",
+  "agent.rewind.label": "调试",
   "agent.rewind.nextMessage": "下一条消息",
   "agent.rewind.pause": "暂停",
   "agent.rewind.positionInput": "播放位置",

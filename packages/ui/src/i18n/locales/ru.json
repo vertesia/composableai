@@ -162,7 +162,7 @@
   "agent.rewind.jumpToLatest": "Перейти к последнему сообщению",
   "agent.rewind.jumpToLive": "Перейти к live",
   "agent.rewind.jumpToStart": "Перейти к первому сообщению",
-  "agent.rewind.label": "Повтор",
+  "agent.rewind.label": "Отладка",
   "agent.rewind.nextMessage": "Следующее сообщение",
   "agent.rewind.pause": "Пауза",
   "agent.rewind.positionInput": "Позиция воспроизведения",

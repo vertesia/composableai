@@ -2331,7 +2331,7 @@ describe('ModernAgentConversation send handling', () => {
         );
     });
 
-    it('hides the rewind button when the playback toggle is disabled', () => {
+    it('hides the debug button when the playback toggle is disabled', () => {
         mockStreamState({
             messages: [
                 createMessage(AgentMessageType.QUESTION, 'first question'),

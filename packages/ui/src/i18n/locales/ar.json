@@ -164,7 +164,7 @@
   "agent.rewind.jumpToLatest": "الانتقال إلى أحدث رسالة",
   "agent.rewind.jumpToLive": "الانتقال إلى المباشر",
   "agent.rewind.jumpToStart": "الانتقال إلى أول رسالة",
-  "agent.rewind.label": "إعادة التشغيل",
+  "agent.rewind.label": "تصحيح الأخطاء",
   "agent.rewind.nextMessage": "الرسالة التالية",
   "agent.rewind.pause": "إيقاف مؤقت",
   "agent.rewind.positionInput": "موضع التشغيل",

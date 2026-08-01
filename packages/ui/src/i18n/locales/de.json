@@ -160,7 +160,7 @@
   "agent.rewind.jumpToLatest": "Zur neuesten Nachricht springen",
   "agent.rewind.jumpToLive": "Zur Live-Ansicht springen",
   "agent.rewind.jumpToStart": "Zur ersten Nachricht springen",
-  "agent.rewind.label": "Wiedergabe",
+  "agent.rewind.label": "Debuggen",
   "agent.rewind.nextMessage": "Nächste Nachricht",
   "agent.rewind.pause": "Pausieren",
   "agent.rewind.positionInput": "Wiedergabeposition",

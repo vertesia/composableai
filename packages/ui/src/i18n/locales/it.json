@@ -161,7 +161,7 @@
   "agent.rewind.jumpToLatest": "Vai al messaggio più recente",
   "agent.rewind.jumpToLive": "Vai al live",
   "agent.rewind.jumpToStart": "Vai al primo messaggio",
-  "agent.rewind.label": "Replay",
+  "agent.rewind.label": "Debug",
   "agent.rewind.nextMessage": "Messaggio successivo",
   "agent.rewind.pause": "Pausa",
   "agent.rewind.positionInput": "Posizione di riproduzione",

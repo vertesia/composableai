@@ -161,7 +161,7 @@
   "agent.rewind.jumpToLatest": "Aller au dernier message",
   "agent.rewind.jumpToLive": "Aller au direct",
   "agent.rewind.jumpToStart": "Aller au premier message",
-  "agent.rewind.label": "Lecture",
+  "agent.rewind.label": "Débogage",
   "agent.rewind.nextMessage": "Message suivant",
   "agent.rewind.pause": "Pause",
   "agent.rewind.positionInput": "Position de lecture",
