@@ -5,6 +5,7 @@ import { SupportedIntegrations } from '../integrations.js';
 import type {
     ICreateProjectPayload,
     ModelDefault,
+    Project,
     ProjectPluginsUpdatePayload,
     SystemDefaults,
     SystemInteractionCategory,
@@ -49,27 +50,66 @@ describe('gate 1 — the schema is the single source of truth for the converted 
  * The batch is deliberately partial, and these two tests pin WHY — so the boundary is a checked fact
  * rather than a claim in a comment that quietly stops being true.
  */
-describe('gate 2 — the batch boundary is where the closure rule puts it', () => {
-    it('leaves Project and ProjectConfiguration derived, because the intake policy tree still blocks them', () => {
-        // `ProjectConfiguration.interaction_execution.model_options` is `ModelOptions`, the union of
-        // every llumiverse driver's options, and a canonical component may not `$ref` a
-        // TypeScript-derived one. That blocker is gone: `ModelOptions` is declared in
-        // `@llumiverse/common/schemas` and registered here, which is why this asserts its PRESENCE.
-        expect(Object.keys(ApiSchemaComponents)).toContain('ModelOptions');
-        // The intake policy tree converted with it, so `ProjectIntakeConfiguration` — the last
-        // component between the configuration leaves and `ProjectConfiguration` — is canonical too.
+describe('gate 2 — the closure is closed, bottom-up', () => {
+    it('converts Project only after everything it reaches', () => {
+        // The order was forced, not chosen. `ProjectConfiguration` reaches
+        // `InteractionExecutionConfiguration.model_options`, which is `ModelOptions` — the union of
+        // every llumiverse driver's options — and a canonical component may not `$ref` a
+        // TypeScript-derived one. So `ModelOptions` converted first, then the intake policy tree,
+        // then the configuration leaves, and only then the two components at the top. Asserting the
+        // whole chain is what keeps a later batch from converting a root out from under a derived
+        // leaf and silently publishing a `$ref` to something that is no longer there.
         for (const name of [
+            'ModelOptions',
             'InteractionExecutionConfiguration',
             'ContentTypeIntakePolicy',
             'ProjectIntakeConfiguration',
+            'ProjectConfiguration',
+            'Project',
         ]) {
             expect(Object.keys(ApiSchemaComponents), name).toContain(name);
         }
-        // What is left is the two components at the top. They stay derived until the Map/Date wire
-        // corrections land with the response mapper that normalizes them.
-        for (const name of ['Project', 'ProjectConfiguration']) {
-            expect(Object.keys(ApiSchemaComponents), name).not.toContain(name);
+    });
+
+    it('names the two update payloads, which the scanner can no longer derive', () => {
+        // `apiSchema<Partial<Project>>()` worked while `Project` was a TypeScript interface. An
+        // intercepted canonical alias is OPAQUE to the generator, so `Partial<>` over one cannot be
+        // expanded — it collapses to `{}`, an empty schema that accepts anything, without an error.
+        // Registering them is what keeps the request bodies described AND makes them enforced.
+        for (const name of ['Partial_Project', 'Partial_ProjectConfiguration']) {
+            expect(Object.keys(ApiSchemaComponents), name).toContain(name);
         }
+        // `.partial()` of the root, not a restatement: same properties, none required.
+        const project = ApiSchemaComponents.Project as JsonObject;
+        const partial = ApiSchemaComponents.Partial_Project as JsonObject;
+        expect(Object.keys(partial.properties as JsonObject)).toEqual(Object.keys(project.properties as JsonObject));
+        expect(partial.required).toBeUndefined();
+        expect(partial.additionalProperties).toBe(false);
+    });
+
+    it('says what JSON can carry, which the TypeScript declaration did not', () => {
+        // `integrations` was `Map<string, unknown>` and the timestamps `Date`. No HTTP response has
+        // ever contained either — Mongoose flattens maps in `toJSON` and `JSON.stringify` turns a
+        // Date into a string — so a caller writing `.get(id)` or `.getTime()` got a TypeError. The
+        // published document is unchanged; only the TypeScript was wrong.
+        assertType<Equals<Project['integrations'], Record<string, unknown> | undefined>>(true);
+        assertType<Equals<Project['created_at'], string>>(true);
+
+        const properties = (ApiSchemaComponents.Project as JsonObject).properties as Record<string, JsonObject>;
+        // Still `format: date-time`, which is what makes the generated clients emit
+        // `OffsetDateTime` / `time.Time` rather than a bare string. A plain `z.string()` here would
+        // have dropped it silently.
+        expect(properties.created_at).toEqual({ type: 'string', format: 'date-time' });
+        expect(properties.updated_at).toEqual({ type: 'string', format: 'date-time' });
+        // The same open-map emission as Account.feature_flags and User.properties. `tenant_id` is
+        // absent, as it always was — the model computes it and the handler used to ship it anyway,
+        // which is what the response mapper now stops.
+        expect(properties.integrations).toEqual({
+            type: 'object',
+            propertyNames: { type: 'string' },
+            additionalProperties: {},
+        });
+        expect(properties).not.toHaveProperty('tenant_id');
     });
 
     it('converts the vision-profile map, because a canonical alias cannot be a mapped-type key', () => {

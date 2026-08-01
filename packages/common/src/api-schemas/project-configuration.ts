@@ -373,3 +373,73 @@ export const ProjectIntakeConfigurationSchema = z
             }),
     })
     .meta({ id: 'ProjectIntakeConfiguration' });
+
+/**
+ * The project configuration, and with it the last two components of the `Project` closure.
+ *
+ * Every leaf above is already canonical, so this is the join: a canonical component may not `$ref` a
+ * TypeScript-derived one, and there is nothing derived left underneath.
+ *
+ * `embeddings` is spelled out inline rather than named, because the derived component published it
+ * inline — the TypeScript declaration used an anonymous object literal, so the scanner never minted a
+ * component for it. Naming it here would ADD a component to the document and change every consumer's
+ * generated code for a shape that has not changed. It stays `strictObject` for the same reason: the
+ * published shape is closed.
+ *
+ * `embeddings` is also the only required field, which is what makes `ProjectConfiguration` unusual —
+ * a project written before the field existed has no embeddings block at all. The response mapper in
+ * studio-server supplies `{}` rather than omitting it, so the response satisfies the component it
+ * has always claimed to satisfy.
+ */
+export const ProjectConfigurationSchema = z
+    .strictObject({
+        human_context: z.string().optional(),
+        defaults: ProjectModelDefaultsSchema.optional(),
+        default_visibility: ResourceVisibilitySchema.optional(),
+        sync_content_properties: z.boolean().optional(),
+        embeddings: z.strictObject({
+            text: ProjectConfigurationEmbeddingSchema.optional(),
+            image: ProjectConfigurationEmbeddingSchema.optional(),
+            properties: ProjectConfigurationEmbeddingSchema.optional(),
+        }),
+        datacenter: z.string().optional(),
+        storage_bucket: z.string().optional(),
+        agent_streaming_enabled: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Enable real-time streaming of agent LLM responses to clients. When enabled, LLM responses ' +
+                    'are streamed chunk-by-chunk via Redis pub/sub. Defaults to true if not specified.',
+            }),
+        indexing: ProjectIndexingConfigurationSchema.optional().meta({
+            description:
+                'Indexing configuration for this project. Controls whether indexing and querying are enabled ' +
+                'at the project level.',
+        }),
+        intake: ProjectIntakeConfigurationSchema.optional().meta({
+            description: 'Standard content intake behavior.',
+        }),
+        main_language: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    "Primary language for full-text search analysis. ISO 639-1 code (e.g., 'en', 'fr', 'ja', " +
+                    "'de'). Determines which Elasticsearch analyzer is used for the text field. Defaults to 'en' " +
+                    '(English/standard analyzer).\n\nChanging this value requires a full reindex to take effect.',
+            }),
+        browser_use: BrowserUseProjectConfigurationSchema.optional().meta({
+            description: 'Project defaults and caps for browser_use agent workstreams.',
+        }),
+        pdf_template_object_id: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    'Object ID of a content object containing a custom LaTeX template (.latex file) to use as ' +
+                    'the branded PDF template. When set, "Export as Branded PDF" uses this template instead of ' +
+                    'the built-in Vertesia default template.',
+            }),
+    })
+    .meta({ id: 'ProjectConfiguration' });

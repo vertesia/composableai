@@ -55,8 +55,11 @@ import {
     CountResultSchema,
     CreateProjectPayloadSchema,
     ListProjectsQuerySchema,
+    PartialProjectConfigurationSchema,
+    PartialProjectSchema,
     ProjectIntegrationListResponseSchema,
     ProjectPluginsUpdatePayloadSchema,
+    ProjectSchema,
     ProjectTagQuerySchema,
     ProjectToolInfoArraySchema,
     ProjectToolInfoSchema,
@@ -66,6 +69,7 @@ import {
 import {
     BrowserUseProjectConfigurationSchema,
     ProjectConfigurationEmbeddingSchema,
+    ProjectConfigurationSchema,
     ProjectIndexingConfigurationSchema,
     ProjectIntakeConfigurationSchema,
     ProjectIntakeSniffConfigurationSchema,
@@ -172,6 +176,16 @@ const API_SCHEMAS = {
     // Registered after the policy it references. `Partial_IntakeVisionProfileSettings` and the
     // per-detail override map are hoisted from here; neither has a TypeScript name to alias.
     ProjectIntakeConfiguration: ProjectIntakeConfigurationSchema,
+    // The roots of the Project closure, registered last because every leaf above is a `$ref` target
+    // of one of them.
+    ProjectConfiguration: ProjectConfigurationSchema,
+    Project: ProjectSchema,
+    // The two update payloads. They have no TypeScript name to alias — they are `Partial<>` views —
+    // so they are registered as components without a canonical alias, which is what the two update
+    // endpoints now name. See the note on their schemas: the scanner cannot derive a `Partial<>` of
+    // an intercepted alias, so leaving them derived would publish `{}`.
+    Partial_Project: PartialProjectSchema,
+    Partial_ProjectConfiguration: PartialProjectConfigurationSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -284,6 +298,12 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectIntakeConfiguration',
     'Partial_IntakeVisionProfileSettings',
     'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings',
+    // The Project closure roots. Both are published closed today, as is the anonymous `embeddings`
+    // object `ProjectConfiguration` publishes inline, and so are the two `Partial<>` update payloads.
+    'Project',
+    'ProjectConfiguration',
+    'Partial_Project',
+    'Partial_ProjectConfiguration',
     // Every member of the `ModelOptions` union. All twenty-three are published closed today, and
     // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
     // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union

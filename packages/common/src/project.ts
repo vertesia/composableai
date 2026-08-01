@@ -6,6 +6,7 @@ import type {
     ProjectIntegrationListEntrySchema,
     ProjectIntegrationListResponseSchema,
     ProjectPluginsUpdatePayloadSchema,
+    ProjectSchema,
     ProjectTagQuerySchema,
 } from './api-schemas/project.js';
 import type {
@@ -16,6 +17,7 @@ import type {
     ModalityDefaultsSchema,
     ModelDefaultSchema,
     ProjectConfigurationEmbeddingSchema,
+    ProjectConfigurationSchema,
     ProjectIndexingConfigurationSchema,
     ProjectIntakeConfigurationSchema,
     ProjectIntakeSniffConfigurationSchema,
@@ -35,7 +37,7 @@ import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
  */
 export * from './project-values.js';
 
-import { type ResourceVisibility, SystemRoles } from './project-values.js';
+import { SystemRoles } from './project-values.js';
 
 export type ICreateProjectPayload = CreateProjectPayloadFromSchema;
 
@@ -171,64 +173,7 @@ export type ProjectIntakeSniffConfiguration = z.infer<typeof ProjectIntakeSniffC
 
 export type ProjectIntakeConfiguration = z.infer<typeof ProjectIntakeConfigurationSchema>;
 
-export interface ProjectConfiguration {
-    human_context?: string;
-
-    defaults?: ProjectModelDefaults;
-
-    default_visibility?: ResourceVisibility;
-
-    sync_content_properties?: boolean;
-
-    embeddings: {
-        text?: ProjectConfigurationEmbedding;
-        image?: ProjectConfigurationEmbedding;
-        properties?: ProjectConfigurationEmbedding;
-    };
-
-    datacenter?: string;
-    storage_bucket?: string;
-
-    /**
-     * Enable real-time streaming of agent LLM responses to clients.
-     * When enabled, LLM responses are streamed chunk-by-chunk via Redis pub/sub.
-     * Defaults to true if not specified.
-     */
-    agent_streaming_enabled?: boolean;
-
-    /**
-     * Indexing configuration for this project.
-     * Controls whether indexing and querying are enabled at the project level.
-     */
-    indexing?: ProjectIndexingConfiguration;
-
-    /**
-     * Standard content intake behavior.
-     */
-    intake?: ProjectIntakeConfiguration;
-
-    /**
-     * Primary language for full-text search analysis.
-     * ISO 639-1 code (e.g., 'en', 'fr', 'ja', 'de').
-     * Determines which Elasticsearch analyzer is used for the text field.
-     * Defaults to 'en' (English/standard analyzer).
-     *
-     * Changing this value requires a full reindex to take effect.
-     */
-    main_language?: string;
-
-    /**
-     * Project defaults and caps for browser_use agent workstreams.
-     */
-    browser_use?: BrowserUseProjectConfiguration;
-
-    /**
-     * Object ID of a content object containing a custom LaTeX template (.latex file)
-     * to use as the branded PDF template. When set, "Export as Branded PDF" uses this
-     * template instead of the built-in Vertesia default template.
-     */
-    pdf_template_object_id?: string;
-}
+export type ProjectConfiguration = z.infer<typeof ProjectConfigurationSchema>;
 
 export type ProjectSearchPropertyType = z.infer<typeof ProjectSearchPropertyTypeSchema>;
 
@@ -343,20 +288,7 @@ export interface ProjectConfigurationEmbeddingEnablePayload {
     model?: string;
 }
 
-export interface Project {
-    id: string;
-    name: string;
-    namespace: string;
-    description?: string;
-    account: string;
-    configuration: ProjectConfiguration;
-    integrations?: Map<string, unknown>;
-    plugins: string[];
-    created_by: string;
-    updated_by: string;
-    created_at: Date;
-    updated_at: Date;
-}
+export type Project = z.infer<typeof ProjectSchema>;
 
 export interface ProjectCreatePayload {
     name: string;

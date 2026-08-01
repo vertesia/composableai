@@ -1,6 +1,7 @@
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { SupportedIntegrations } from '../integrations.js';
+import { ProjectConfigurationSchema } from './project-configuration.js';
 
 /**
  * Runtime API schemas for the Projects resources — the sixth batch.
@@ -183,3 +184,67 @@ export const RenderingTemplateDefinitionRefSchema = z
         tags: renderingTemplateFields.tags,
     })
     .meta({ id: 'RenderingTemplateDefinitionRef' });
+
+/**
+ * The project itself — the component `GetProject`, `UpdateProject` and `CreateProject` all return.
+ *
+ * Converting it corrects two declarations that no HTTP response has ever matched. `integrations` was
+ * `Map<string, unknown>` and the timestamps were `Date`; JSON carries neither, so a caller writing
+ * `project.integrations.get(id)` or `project.created_at.getTime()` got a `TypeError` against a shape
+ * TypeScript had promised. Both are source-breaking corrections for SDK consumers and wire-neutral —
+ * proved by `apps/studio-server/src/api/projects/project-wire-shape.test.ts`, which serializes a real
+ * `ProjectModel` document the way the handler does. Operation 24 of the 1.5 deployment runbook.
+ *
+ * The published document is unchanged by the conversion. `Map<string, unknown>` was already emitted
+ * as an open object, and the timestamps as `format: date-time` strings — which is why they carry
+ * `.meta({ format: 'date-time' })`: a bare `z.string()` would silently drop the format and narrow
+ * `OffsetDateTime`/`time.Time` to `String` in the generated clients. `z.iso.datetime()` would keep
+ * the format but also publish its validation regex as a `pattern`, which is a new constraint on a
+ * component that never had one — the same class of change as the intake bounds, and not one to make
+ * by accident while converting.
+ *
+ * `integrations` stays an open `z.record()` on purpose. Its values are per-integration configuration
+ * objects with no common shape, and `SupportedIntegrations` is not a closed key set for stored data —
+ * a project can hold configuration for an integration this build no longer knows about.
+ *
+ * The persistence type is NOT this: `IProject` in `@dglabs/server-common` keeps the `Map` and the
+ * `Date`s, because that is what Mongo really holds, and `toProjectResponse()` in studio-server is the
+ * single place that converts — and the single place `tenant_id` is dropped, which the model computes
+ * and this component has never declared.
+ */
+export const ProjectSchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+        namespace: z.string(),
+        description: z.string().optional(),
+        account: z.string(),
+        configuration: ProjectConfigurationSchema,
+        integrations: z.record(z.string(), z.unknown()).optional(),
+        plugins: z.array(z.string()),
+        created_by: z.string(),
+        updated_by: z.string(),
+        created_at: z.string().meta({ format: 'date-time' }),
+        updated_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'Project' });
+
+/**
+ * The `UpdateProject` and `UpdateProjectConfiguration` request bodies.
+ *
+ * They were `apiSchema<Partial<Project>>()` and `apiSchema<Partial<ProjectConfiguration>>()`, which
+ * the scanner expanded from the TypeScript declarations. That stops working the moment `Project`
+ * becomes a canonical alias: an intercepted alias is OPAQUE to the generator, so `Partial<>` over one
+ * cannot be expanded and the component silently collapses to `{}` — an empty schema accepts
+ * anything, so the request body would have gone from fully described to unconstrained without a
+ * single error. Declaring them here restores the exact components and makes them enforced instead of
+ * merely published.
+ *
+ * `.partial()` rather than a restatement: a field added to `Project` must appear in its update
+ * payload, and a hand-written twin is exactly the drift this migration removes.
+ */
+export const PartialProjectSchema = ProjectSchema.partial().meta({ id: 'Partial_Project' });
+
+export const PartialProjectConfigurationSchema = ProjectConfigurationSchema.partial().meta({
+    id: 'Partial_ProjectConfiguration',
+});

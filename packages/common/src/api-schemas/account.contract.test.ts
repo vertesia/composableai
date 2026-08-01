@@ -243,6 +243,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'OpenAiTextOptions',
             'OpenAiThinkingOptions',
             'Partial_IntakeVisionProfileSettings',
+            // The two update payloads of the Project closure, tenth. `Partial<>` of an intercepted
+            // canonical alias cannot be derived, so they are registered rather than left to the scanner.
+            'Partial_Project',
+            'Partial_ProjectConfiguration',
             'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings',
             'Partial_Record_SupportedEmbeddingTypes_boolean',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
@@ -251,12 +255,16 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The IAM closure, converted as the second. PrincipalContext is composed into
             // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'PrincipalIdentity',
+            // The two roots of the Project closure, tenth — converted last, after every component
+            // they reach. `Project` also corrects `integrations` to a plain map and the timestamps to
+            // strings, which is what the wire has always carried.
+            'Project',
+            'ProjectConfiguration',
             'ProjectConfigurationEmbedding',
             'ProjectIndexingConfiguration',
             'ProjectIntakeConfiguration',
             'ProjectIntakeSniffConfiguration',
-            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
-            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            // The Projects closure, sixth: the slots that needed nothing from the two roots above.
             'ProjectIntegrationListEntry',
             'ProjectIntegrationListResponse',
             'ProjectModelDefaults',
@@ -270,8 +278,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ProjectSearchPropertyMappingMap',
             'ProjectSearchPropertyType',
             'ProjectSearchTier',
-            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
-            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            // The Projects closure, sixth.
             'ProjectTagQuery',
             'ProjectToolInfo',
             'ProjectToolInfoArray',
