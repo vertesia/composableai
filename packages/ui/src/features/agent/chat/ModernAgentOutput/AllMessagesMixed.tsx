@@ -2979,13 +2979,11 @@ function AllMessagesMixedComponent({
 
         const latestSummaryItem = summaryConversationItems[summaryConversationItems.length - 1];
         const latestMessage = completionDisplayMessages[completionDisplayMessages.length - 1];
-        return (
-            latestSummaryItem?.type === 'work' &&
-            latestSummaryItem.isActive &&
+        const latestMessageShowsThinking =
             latestMessage !== undefined &&
-            isToolActivityMessage(latestMessage) &&
-            latestMessage.details?.tool_status === 'completed'
-        );
+            (latestMessage.details?.display_role === 'thinking' ||
+                (isToolActivityMessage(latestMessage) && latestMessage.details?.tool_status === 'completed'));
+        return latestSummaryItem?.type === 'work' && latestSummaryItem.isActive && latestMessageShowsThinking;
     }, [completionDisplayMessages, incompleteStreaming.length, isAgentWorking, summaryConversationItems]);
 
     const showActivityFallback = shouldShowSummaryActivityFallback(

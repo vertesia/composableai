@@ -318,6 +318,54 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByTestId('post-tool-thinking-indicator').textContent).toBe('Thinking...');
     });
 
+    it('keeps showing thinking when the current display-role marker follows a completed tool', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Find Japan news.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Searching for Japan news',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'web_search_serper',
+                        tool_status: 'running',
+                        tool_run_id: 'tool-1',
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    message: 'Found Japan news',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'web_search_serper',
+                        tool_status: 'completed',
+                        tool_run_id: 'tool-1',
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    message: 'Thinking...',
+                    details: {
+                        event_class: 'activity',
+                        display_role: 'thinking',
+                        activity_id: '17',
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+            ],
+            false,
+        );
+
+        expect(screen.getAllByRole('button', { name: /Working.*for/ })).toHaveLength(1);
+        expect(screen.getByTestId('post-tool-thinking-indicator').textContent).toBe('Thinking...');
+    });
+
     it('replaces a completed tool’s progress title with an immediately visible resource deep link', () => {
         renderSummary(
             [
