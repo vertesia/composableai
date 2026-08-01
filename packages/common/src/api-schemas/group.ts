@@ -118,10 +118,38 @@ export const UpdateUserGroupPayloadSchema = UserGroupSchema.pick({
     .meta({ id: 'UpdateUserGroupPayload' });
 
 /**
- * The public group types, inferred rather than written. `../group.ts` re-exports these under their
- * public names.
+ * The group as it appears embedded in a token payload, and the one place a group crosses the wire
+ * without being the response of a group endpoint.
+ *
+ * Picked from {@link UserGroupSchema} for the same reason the payloads are — it is a subset of the
+ * group, not a parallel shape — and the subset is decided by what an authorization decision needs:
+ * identity (`id`, `name`), the dynamic-matching input (`tags`, `properties`) and the BLP inputs
+ * (`clearance`, `compartments`, `allowed_projects`). `account` and the audit fields are deliberately
+ * out: a token is not a place to restate who edited a group.
+ *
+ * `tags` is optional here while the group always has them, matching the payloads: the token mapper
+ * omits an empty list rather than emitting one.
+ *
+ * This is NOT the Mongoose projection that feeds it. The projection is a `select()` string that lives
+ * beside its query — token-server has one, studio-server's resource-reference endpoint has a
+ * different and much narrower one — and a single shared string would have to be the union of every
+ * caller's needs, which is how the previous `UserGroupRefPopulate` came to select a `description`
+ * that nothing emits.
  */
-export type UserGroupFromSchema = z.infer<typeof UserGroupSchema>;
+export const UserGroupRefSchema = UserGroupSchema.pick({
+    id: true,
+    name: true,
+    tags: true,
+    properties: true,
+    clearance: true,
+    compartments: true,
+    allowed_projects: true,
+})
+    .partial({ tags: true })
+    .meta({ id: 'UserGroupRef' });
+
+/**
+ * The array components have no public alias of their own — `UserGroup[]` is what the client sees —
+ * so this exists only for the gate in `./group.contract.test.ts` to assert that equivalence.
+ */
 export type UserGroupArrayFromSchema = z.infer<typeof UserGroupArraySchema>;
-export type CreateUserGroupPayloadFromSchema = z.infer<typeof CreateUserGroupPayloadSchema>;
-export type UpdateUserGroupPayloadFromSchema = z.infer<typeof UpdateUserGroupPayloadSchema>;

@@ -6,6 +6,7 @@ import type {
     CompleteTaskPayloadSchema,
     CreateTaskPayloadSchema,
     DurableTaskStatusSchema,
+    ListTasksQuerySchema,
     TaskFieldSchema,
     TaskFieldTypeSchema,
     TaskSchema,
@@ -33,14 +34,4 @@ export type UpdateTaskPayload = z.infer<typeof UpdateTaskPayloadSchema>;
 
 export type CompleteTaskPayload = z.infer<typeof CompleteTaskPayloadSchema>;
 
-export interface ListTasksQuery {
-    status?: DurableTaskStatus | DurableTaskStatus[];
-    assignee?: string;
-    run_id?: string;
-    // Spelled out rather than `TaskSource['type']`: an indexed access into a canonical alias is
-    // opaque to the OpenAPI scanner, and the parameter silently disappeared from the published
-    // operation — and from the generated clients' `listTasks` signature.
-    source_type?: 'process' | 'agent';
-    limit?: number;
-    offset?: number;
-}
+export type ListTasksQuery = z.infer<typeof ListTasksQuerySchema>;

@@ -59,7 +59,17 @@ export interface NormalizedApiParameters {
 /** What a declared parameter's published schema says its wire text should become. */
 type ParameterTarget =
     | { kind: 'string' | 'number' | 'integer' | 'boolean' | 'opaque' }
-    | { kind: 'array'; items: ParameterTarget };
+    | {
+          kind: 'array';
+          items: ParameterTarget;
+          /**
+           * Whether one occurrence carrying commas is read as several values.
+           *
+           * True only for an array of a string `enum` none of whose members contains a comma — see
+           * {@link commaSafeEnum} for why that is the whole condition.
+           */
+          commaDelimited: boolean;
+      };
 
 /**
  * Depth cap for target resolution.
@@ -155,13 +165,50 @@ function parameterTarget(
     }
 
     const type = declaredType(resolved);
-    if (type === 'array') return { kind: 'array', items: parameterTarget(resolved.items, components, depth + 1) };
+    if (type === 'array') {
+        return {
+            kind: 'array',
+            items: parameterTarget(resolved.items, components, depth + 1),
+            commaDelimited: commaSafeEnum(resolved.items, components),
+        };
+    }
     if (type === 'number' || type === 'integer' || type === 'boolean' || type === 'string') {
         return { kind: type };
     }
     // An enum with no `type`, a bare `{}`, an unresolvable `$ref`: nothing to coerce towards, so the
     // text passes through and the component decides.
     return { kind: 'opaque' };
+}
+
+/**
+ * Whether an array parameter's items are an enum whose members can never contain a comma.
+ *
+ * This is the entire condition under which `?status=pending,completed` is read as two values, and the
+ * narrowness is the point. `explode: true` — which is what the document publishes for every one of
+ * these parameters — describes repeated keys and says nothing about commas, so splitting is strictly
+ * something the server accepts beyond what it promises. Doing that for arrays in general would be
+ * wrong: a `?name=` or `?q=` filter can legitimately carry a comma inside one value, and splitting it
+ * would silently turn one filter into two with no way for the caller to escape it.
+ *
+ * An enum has no such ambiguity. Its members are a closed published set, so if none of them contains a
+ * comma then text that does contain one cannot be a member — the request fails today. Splitting can
+ * therefore only turn a request that was rejected into one that is either accepted or rejected by the
+ * same enum; no request that validated before changes meaning.
+ *
+ * The compatibility this exists for is not hypothetical. `TaskApi.list` builds its `status` parameter
+ * as `query.status.join(',')`, so every SDK in the field sends the comma form, and enforcing the
+ * published component without this would 400 our own client's multi-status listing.
+ */
+function commaSafeEnum(items: unknown, components: Readonly<Record<string, JsonObject>>): boolean {
+    if (!isPlainObject(items)) return false;
+    const resolved = resolveSchemaRef(items, components) ?? items;
+    if (declaredType(resolved) !== 'string') return false;
+    const values = resolved.enum;
+    return (
+        Array.isArray(values) &&
+        values.length > 0 &&
+        values.every((value) => typeof value === 'string' && !value.includes(','))
+    );
 }
 
 function coerceScalar(text: string, target: ParameterTarget): unknown {
@@ -200,7 +247,10 @@ function coerceScalar(text: string, target: ParameterTarget): unknown {
 function coerceParameter(raw: string | string[], target: ParameterTarget): unknown {
     if (target.kind === 'array') {
         // `explode: true`: one occurrence is a one-element array.
-        const items = Array.isArray(raw) ? raw : [raw];
+        const occurrences = Array.isArray(raw) ? raw : [raw];
+        // Splitting per occurrence rather than after joining, so the two spellings compose:
+        // `?status=pending,completed&status=cancelled` is the same three values as three keys.
+        const items = target.commaDelimited ? occurrences.flatMap((item) => item.split(',')) : occurrences;
         return items.map((item) => coerceScalar(item, target.items));
     }
     if (Array.isArray(raw)) return raw;

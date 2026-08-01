@@ -172,6 +172,33 @@ export const UpdateUserPayloadSchema = UserSchema.pick({
 export const DeleteByIdResultSchema = z.object({ id: z.string() }).meta({ id: 'DeleteByIdResult' });
 
 /**
+ * The signup request contract, shared between the sign-in UI and `POST /auth/signup`.
+ *
+ * `accountType` and `maturity` stay `z.string()`. The UI sends `personal | company` for the first and
+ * a maturity catalog of its own for the second, and neither is drawn from the persisted `AccountType`
+ * enum — so narrowing them here would not be recording what the endpoint accepts, it would be
+ * changing it, and that is a deliberate contract change rather than part of a conversion.
+ *
+ * `companySize` is a number: the form sends a headcount, not a bucket label.
+ */
+export const SignupDataSchema = z
+    .strictObject({
+        accountType: z.string(),
+        companyName: z.string().optional(),
+        companySize: z.number().optional(),
+        companyWebsite: z.string().optional(),
+        maturity: z.string().optional(),
+    })
+    .meta({ id: 'SignupData' });
+
+export const SignupPayloadSchema = z
+    .strictObject({
+        firebaseToken: z.string(),
+        signupData: SignupDataSchema,
+    })
+    .meta({ id: 'SignupPayload' });
+
+/**
  * The public IAM types, inferred rather than written. `../principal-context.ts`, `../user.ts` and
  * `../common.ts` re-export these under their public names.
  */

@@ -51,7 +51,10 @@ import {
     CopyFileResponseSchema,
     DeleteFileResultSchema,
     FileBucketResponseSchema,
+    FileDeleteQuerySchema,
+    FileListQuerySchema,
     FileListResponseSchema,
+    FileMetadataQuerySchema,
     FileMetadataResponseSchema,
     FileMetadataUpdateResultSchema,
     GetFileUrlPayloadSchema,
@@ -64,6 +67,7 @@ import {
     CreateUserGroupPayloadSchema,
     UpdateUserGroupPayloadSchema,
     UserGroupArraySchema,
+    UserGroupRefSchema,
     UserGroupSchema,
 } from './group.js';
 import {
@@ -110,8 +114,10 @@ import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js
 import {
     ColumnLayoutSchema,
     ContentObjectTypeCatalogEntrySchema,
+    ContentObjectTypeCatalogQuerySchema,
     ContentObjectTypeItemArraySchema,
     ContentObjectTypeItemSchema,
+    ContentObjectTypeListQuerySchema,
     ContentObjectTypeSchema,
     ContentObjectTypeStatusSchema,
     ContentTypeEditingPolicySchema,
@@ -123,6 +129,7 @@ import {
     CompleteTaskPayloadSchema,
     CreateTaskPayloadSchema,
     DurableTaskStatusSchema,
+    ListTasksQuerySchema,
     TaskArraySchema,
     TaskFieldSchema,
     TaskFieldTypeSchema,
@@ -133,6 +140,8 @@ import {
 import {
     DeleteByIdResultSchema,
     PrincipalIdentitySchema,
+    SignupDataSchema,
+    SignupPayloadSchema,
     UpdateUserPayloadSchema,
     UserArraySchema,
     UserRefArraySchema,
@@ -169,9 +178,12 @@ const API_SCHEMAS = {
     UpdateUserPayload: UpdateUserPayloadSchema,
     DeleteByIdResult: DeleteByIdResultSchema,
     PrincipalIdentity: PrincipalIdentitySchema,
+    SignupData: SignupDataSchema,
+    SignupPayload: SignupPayloadSchema,
     UserRefArray: UserRefArraySchema,
     UserGroup: UserGroupSchema,
     UserGroupArray: UserGroupArraySchema,
+    UserGroupRef: UserGroupRefSchema,
     CreateUserGroupPayload: CreateUserGroupPayloadSchema,
     UpdateUserGroupPayload: UpdateUserGroupPayloadSchema,
     AccessControlEntry: AccessControlEntrySchema,
@@ -278,6 +290,9 @@ const API_SCHEMAS = {
     BulkUploadUrlsPayload: BulkUploadUrlsPayloadSchema,
     BulkUploadUrlsResponse: BulkUploadUrlsResponseSchema,
     SetFileMetadataPayload: SetFileMetadataPayloadSchema,
+    FileMetadataQuery: FileMetadataQuerySchema,
+    FileListQuery: FileListQuerySchema,
+    FileDeleteQuery: FileDeleteQuerySchema,
 
     TaskFieldType: TaskFieldTypeSchema,
     DurableTaskStatus: DurableTaskStatusSchema,
@@ -288,6 +303,7 @@ const API_SCHEMAS = {
     CreateTaskPayload: CreateTaskPayloadSchema,
     UpdateTaskPayload: UpdateTaskPayloadSchema,
     CompleteTaskPayload: CompleteTaskPayloadSchema,
+    ListTasksQuery: ListTasksQuerySchema,
 
     ColumnLayout: ColumnLayoutSchema,
     ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
@@ -298,6 +314,8 @@ const API_SCHEMAS = {
     InCodeTypeDefinition: InCodeTypeDefinitionSchema,
     CreateContentObjectTypePayload: CreateContentObjectTypePayloadSchema,
     ContentObjectType: ContentObjectTypeSchema,
+    ContentObjectTypeCatalogQuery: ContentObjectTypeCatalogQuerySchema,
+    ContentObjectTypeListQuery: ContentObjectTypeListQuerySchema,
 
     DeleteCountResult: DeleteCountResultSchema,
     MigrationListResponse: MigrationListResponseSchema,
@@ -338,11 +356,14 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'UpdateUserPayload',
     'DeleteByIdResult',
     'PrincipalIdentity',
+    'SignupData',
+    'SignupPayload',
     // The group closure. UserRef is hoisted by UserRefArray rather than named by an endpoint, but it
     // is published closed today and must stay that way; the array components take no
     // additionalProperties at all.
     'UserRef',
     'UserGroup',
+    'UserGroupRef',
     'CreateUserGroupPayload',
     'UpdateUserGroupPayload',
     // The roles / access-control closure. `AceConditions` is closed too, and has to be listed by
@@ -477,12 +498,21 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'BulkUploadUrlsPayload',
     'BulkUploadUrlsResponse',
     'SetFileMetadataPayload',
+    // The four zeno query components. Expanded into parameters rather than published; listed for the
+    // same reason ApiKeyListQuery is, so an endpoint can opt into rejecting an undeclared parameter.
+    'FileMetadataQuery',
+    'FileListQuery',
+    'FileDeleteQuery',
     'TaskSource',
     'TaskField',
     'Task',
     'CreateTaskPayload',
     'UpdateTaskPayload',
     'CompleteTaskPayload',
+    // Expanded into parameters rather than published, like ApiKeyListQuery and the two project query
+    // components. Listed because the strict policy is what an endpoint opting into
+    // `rejectUndeclaredQuery` rejects against; `GET /tasks` does not opt in today.
+    'ListTasksQuery',
     'ColumnLayout',
     'ContentTypeEditingPolicy',
     'ContentObjectTypeItem',
@@ -490,9 +520,12 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'InCodeTypeDefinition',
     'CreateContentObjectTypePayload',
     'ContentObjectType',
+    'ContentObjectTypeCatalogQuery',
+    'ContentObjectTypeListQuery',
     'DeleteCountResult',
     'RunMigrationPayload',
     'RunMigrationResponse',
+    'MigrationListResponse',
 ]);
 
 /**

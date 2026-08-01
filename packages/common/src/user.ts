@@ -9,7 +9,13 @@ import type {
     InviteUserResponsePayloadSchema,
     OnboardingProgressSchema,
 } from './api-schemas/invites.js';
-import type { UpdateUserPayloadSchema, UserRefSchema, UserSchema } from './api-schemas/user.js';
+import type {
+    SignupDataSchema,
+    SignupPayloadSchema,
+    UpdateUserPayloadSchema,
+    UserRefSchema,
+    UserSchema,
+} from './api-schemas/user.js';
 import type { ApiKey } from './apikey.js';
 
 export * from './account-values.js';
@@ -110,21 +116,11 @@ export interface ApiKeySessionInfo extends SessionInfo<ApiKey> {}
 export type OnboardingProgress = z.infer<typeof OnboardingProgressSchema>;
 
 /**
- * Data collected at signup
- * used for onboarding and segments
- **/
-export interface SignupData {
-    accountType: string;
-    companyName?: string;
-    companySize?: number;
-    companyWebsite?: string;
-    maturity?: string;
-}
+ * Data collected at signup, used for onboarding and segments.
+ */
+export type SignupData = z.infer<typeof SignupDataSchema>;
 
 /**
- * Signup Payload: used to create a new user
+ * The `POST /auth/signup` request body.
  */
-export interface SignupPayload {
-    firebaseToken: string;
-    signupData: SignupData;
-}
+export type SignupPayload = z.infer<typeof SignupPayloadSchema>;

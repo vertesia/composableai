@@ -24,6 +24,17 @@ const COMPONENTS: Record<string, JsonObject> = toOpenApiComponents(
                 // What zod emits for `z.union([z.string(), z.array(z.string())])`, and what the scanner
                 // publishes as a single `type: array` parameter with `explode: true`.
                 single_or_many: { anyOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }] },
+                statuses: { type: 'array', items: { $ref: '#/components/schemas/Status' } },
+                // The same union shape as `single_or_many`, over an enum: what `ListTasksQuery`
+                // declares for `status`.
+                status_or_many: {
+                    anyOf: [
+                        { $ref: '#/components/schemas/Status' },
+                        { type: 'array', items: { $ref: '#/components/schemas/Status' } },
+                    ],
+                },
+                // An enum with a comma inside a member, which is what makes splitting ambiguous.
+                separators: { type: 'array', items: { type: 'string', enum: ['a,b', 'c'] } },
                 nullable_count: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
                 listed_type: { type: ['integer', 'null'] },
                 freeform: {},
@@ -176,6 +187,40 @@ describe('arrays and repeated values', () => {
     });
 });
 
+/**
+ * The single exception to the rule above, and the reasoning for why it is safe is in `commaSafeEnum`.
+ * The short version: an enum publishes its members, so if none contains a comma then text that does
+ * cannot be one — splitting can only turn a request that was already rejected into one the same enum
+ * accepts or rejects. Nothing that validated before changes meaning.
+ */
+describe('comma-joined values, for an array of a comma-free enum', () => {
+    it('splits one occurrence into several values', () => {
+        expect(normalize({ name: 'a', statuses: 'on,off' }).value.statuses).toEqual(['on', 'off']);
+    });
+
+    it('splits through the single-or-many union, which is how ListTasksQuery declares status', () => {
+        expect(normalize({ name: 'a', status_or_many: 'on,off' }).value.status_or_many).toEqual(['on', 'off']);
+        expect(normalize({ name: 'a', status_or_many: 'on' }).value.status_or_many).toEqual(['on']);
+    });
+
+    it('composes with repetition rather than replacing it', () => {
+        // Both spellings mean the same list, so mixing them is not a third case to decide.
+        expect(normalize({ name: 'a', statuses: ['on,off', 'on'] }).value.statuses).toEqual(['on', 'off', 'on']);
+    });
+
+    it('leaves an unknown member in place for the enum to reject', () => {
+        // Not dropped: the component reports `bogus` by index, so the caller learns which value was
+        // wrong rather than getting a silently shorter filter.
+        expect(normalize({ name: 'a', statuses: 'on,bogus' }).value.statuses).toEqual(['on', 'bogus']);
+    });
+
+    it('does not split when a member could itself contain a comma', () => {
+        // `'a,b'` is a declared member, so splitting would make the one value the caller sent
+        // unreachable. The guard is on the enum, not on the text.
+        expect(normalize({ name: 'a', separators: 'a,b' }).value.separators).toEqual(['a,b']);
+    });
+});
+
 describe('undeclared parameters', () => {
     it('reports undeclared query keys without removing or rejecting anything', () => {
         const { value, undeclared } = normalize({ name: 'a', sort: 'asc', page: '2' });
@@ -306,5 +351,43 @@ describe('bound to the published registry', () => {
         const empty = normalizeApiParameters('ApiKeyListQuery', {}, 'query');
         expect(empty.value).toEqual({});
         expect(validateApiRequest('ApiKeyListQuery', empty.value)).toMatchObject({ valid: true });
+    });
+
+    /**
+     * `GET /tasks` is the endpoint the enum rule exists for. `TaskApi.list` builds its status
+     * parameter as `query.status.join(',')`, so every SDK in the field sends the comma form; these
+     * assertions are what stops enforcement from turning our own client's multi-status listing into
+     * a 400.
+     */
+    it('accepts every spelling of the ListTasksQuery status parameter', () => {
+        for (const raw of ['pending,completed', ['pending', 'completed'], ['pending,completed']]) {
+            const { value } = normalizeApiParameters('ListTasksQuery', { status: raw }, 'query');
+            expect(value.status).toEqual(['pending', 'completed']);
+            expect(validateApiRequest('ListTasksQuery', value)).toMatchObject({ valid: true });
+        }
+    });
+
+    it('coerces the ListTasksQuery paging parameters, and rejects text that is not a number', () => {
+        const good = normalizeApiParameters('ListTasksQuery', { limit: '25', offset: '50' }, 'query');
+        expect(good.value).toEqual({ limit: 25, offset: 50 });
+        expect(validateApiRequest('ListTasksQuery', good.value)).toMatchObject({ valid: true });
+
+        // `parseInt('abc')` reached Mongo as `NaN` before this, which disabled the page size cap.
+        const bad = normalizeApiParameters('ListTasksQuery', { limit: 'abc' }, 'query');
+        expect(validateApiRequest('ListTasksQuery', bad.value)).toMatchObject({ valid: false });
+    });
+
+    it('rejects a status outside the published enum', () => {
+        const { value } = normalizeApiParameters('ListTasksQuery', { status: 'pending,bogus' }, 'query');
+        expect(validateApiRequest('ListTasksQuery', value)).toMatchObject({ valid: false });
+    });
+
+    it('leaves an undeclared ListTasksQuery parameter out of the validated copy rather than rejecting', () => {
+        // `GET /tasks` does not set `rejectUndeclaredQuery`, so a stale `?sort=` keeps working. The
+        // undeclared list is reported for the endpoint to act on; the component never sees the key.
+        const { value, undeclared } = normalizeApiParameters('ListTasksQuery', { sort: 'asc' }, 'query');
+        expect(undeclared).toEqual(['sort']);
+        expect(value).toEqual({});
+        expect(validateApiRequest('ListTasksQuery', value)).toMatchObject({ valid: true });
     });
 });

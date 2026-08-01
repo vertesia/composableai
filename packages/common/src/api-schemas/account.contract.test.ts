@@ -182,8 +182,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // which replaces the generated `Pick_ContentObjectTypeItem_...` component name.
             'ContentObjectType',
             'ContentObjectTypeCatalogEntry',
+            'ContentObjectTypeCatalogQuery',
             'ContentObjectTypeItem',
             'ContentObjectTypeItemArray',
+            'ContentObjectTypeListQuery',
             'ContentObjectTypeStatus',
             'ContentTypeEditingPolicy',
             'ContentTypeExtractionGroundingPolicy',
@@ -219,7 +221,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'FileBucketResponse',
+            'FileDeleteQuery',
+            'FileListQuery',
             'FileListResponse',
+            'FileMetadataQuery',
             'FileMetadataResponse',
             'FileMetadataUpdateResult',
             'GetFileUrlPayload',
@@ -261,6 +266,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ListProjectsQuery',
+            'ListTasksQuery',
             'MCPOAuthConfig',
             'MCPToolCollectionObject',
             'MigrationListResponse',
@@ -356,6 +362,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'RunMigrationPayload',
             'RunMigrationResponse',
             'SetFileMetadataPayload',
+            'SignupData',
+            'SignupPayload',
             'StringValueMap',
             'StripeBillingDisabled',
             'StripeBillingEnabled',
@@ -414,6 +422,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // an endpoint.
             'UserGroup',
             'UserGroupArray',
+            'UserGroupRef',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.

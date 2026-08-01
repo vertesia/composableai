@@ -6,7 +6,10 @@ import type {
     CopyFileResponseSchema,
     DeleteFileResultSchema,
     FileBucketResponseSchema,
+    FileDeleteQuerySchema,
+    FileListQuerySchema,
     FileListResponseSchema,
+    FileMetadataQuerySchema,
     FileMetadataResponseSchema,
     FileMetadataUpdateResultSchema,
     GetFileUrlPayloadSchema,
@@ -17,7 +20,9 @@ import type {
 import type {
     ColumnLayoutSchema,
     ContentObjectTypeCatalogEntrySchema,
+    ContentObjectTypeCatalogQuerySchema,
     ContentObjectTypeItemSchema,
+    ContentObjectTypeListQuerySchema,
     ContentObjectTypeSchema,
     ContentObjectTypeStatusSchema,
     ContentTypeEditingPolicySchema,
@@ -1169,34 +1174,15 @@ export type FileBucketResponse = z.infer<typeof FileBucketResponseSchema>;
 
 export type FileListResponse = z.infer<typeof FileListResponseSchema>;
 
-export interface FileMetadataQuery {
-    file: string;
-}
+export type FileMetadataQuery = z.infer<typeof FileMetadataQuerySchema>;
 
-export interface FileListQuery {
-    prefix: string;
-}
+export type FileListQuery = z.infer<typeof FileListQuerySchema>;
 
-export interface FileDeleteQuery {
-    prefix?: boolean;
-}
+export type FileDeleteQuery = z.infer<typeof FileDeleteQuerySchema>;
 
-export interface ContentObjectTypeCatalogQuery {
-    tag?: string;
-    layout?: boolean;
-    schema?: boolean;
-    limit?: number;
-    offset?: number;
-}
+export type ContentObjectTypeCatalogQuery = z.infer<typeof ContentObjectTypeCatalogQuerySchema>;
 
-export interface ContentObjectTypeListQuery {
-    name?: string;
-    chunkable?: boolean;
-    layout?: boolean;
-    schema?: boolean;
-    limit?: number;
-    offset?: number;
-}
+export type ContentObjectTypeListQuery = z.infer<typeof ContentObjectTypeListQuerySchema>;
 
 export type CopyFilePayload = z.infer<typeof CopyFilePayloadSchema>;
 

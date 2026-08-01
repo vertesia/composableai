@@ -560,3 +560,33 @@ export const CreateContentObjectTypePayloadSchema = z
     .meta({ id: 'CreateContentObjectTypePayload' });
 
 export const ContentObjectTypeSchema = z.strictObject(storedContentTypeShape).meta({ id: 'ContentObjectType' });
+
+/**
+ * The content-type listing query contracts, composed from one paging shape for the same reason the
+ * type shapes above are: the four catalog routes and the stored listing share `layout`, `schema`,
+ * `limit` and `offset` verbatim, and the two that drifted apart would drift silently.
+ *
+ * `layout` and `schema` select which of the two heavy columns come back, so they are projection
+ * switches rather than filters — which is why they read as booleans on every one of these routes.
+ */
+const contentTypeListingFields = {
+    layout: z.boolean().optional(),
+    schema: z.boolean().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional(),
+};
+
+export const ContentObjectTypeCatalogQuerySchema = z
+    .strictObject({
+        tag: z.string().optional(),
+        ...contentTypeListingFields,
+    })
+    .meta({ id: 'ContentObjectTypeCatalogQuery' });
+
+export const ContentObjectTypeListQuerySchema = z
+    .strictObject({
+        name: z.string().optional(),
+        chunkable: z.boolean().optional(),
+        ...contentTypeListingFields,
+    })
+    .meta({ id: 'ContentObjectTypeListQuery' });

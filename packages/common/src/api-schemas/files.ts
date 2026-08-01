@@ -112,3 +112,28 @@ export const SetFileMetadataPayloadSchema = z
         metadata: StringValueMapSchema.meta({ description: 'Custom metadata key-value pairs to set on the file' }),
     })
     .meta({ id: 'SetFileMetadataPayload' });
+
+/**
+ * The file query contracts.
+ *
+ * `file` and `prefix` are required, which the document already said and each handler restated as its
+ * own `ctx.throw(400, 'The … query parameter is required')`. Enforcing the component removes the
+ * restatement; the message changes wording and the status does not.
+ */
+export const FileMetadataQuerySchema = z
+    .strictObject({
+        file: z.string(),
+    })
+    .meta({ id: 'FileMetadataQuery' });
+
+export const FileListQuerySchema = z
+    .strictObject({
+        prefix: z.string(),
+    })
+    .meta({ id: 'FileListQuery' });
+
+export const FileDeleteQuerySchema = z
+    .strictObject({
+        prefix: z.boolean().optional(),
+    })
+    .meta({ id: 'FileDeleteQuery' });

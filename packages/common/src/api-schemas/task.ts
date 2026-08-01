@@ -83,3 +83,28 @@ export const UpdateTaskPayloadSchema = z
     .meta({ id: 'UpdateTaskPayload' });
 
 export const TaskArraySchema = z.array(TaskSchema).meta({ id: 'TaskArray' });
+
+/**
+ * The `GET /tasks` query contract.
+ *
+ * `source_type` reuses `TaskSourceSchema.shape.type` rather than restating `'process' | 'agent'`.
+ * The scanner-opacity problem that forced spelling it out in TypeScript was specific to
+ * `TaskSource['type']`: an indexed access into a canonical alias reads as nothing to a scanner that
+ * works from source text, and the parameter silently vanished from the published operation. Zod is a
+ * value, so reaching into its shape is an ordinary property read and the enum arrives intact.
+ *
+ * `status` is published as a single `type: array` parameter with `explode: true` — the scanner
+ * collapses `X | X[]` that way, because repeated keys are the only serialization OpenAPI has for it.
+ * The runtime additionally accepts the comma-joined spelling the SDK emits; see `commaSafeEnum` in
+ * `./parameters.js` for why that is safe for an enum specifically.
+ */
+export const ListTasksQuerySchema = z
+    .strictObject({
+        status: z.union([DurableTaskStatusSchema, z.array(DurableTaskStatusSchema)]).optional(),
+        assignee: z.string().optional(),
+        run_id: z.string().optional(),
+        source_type: TaskSourceSchema.shape.type.optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+    })
+    .meta({ id: 'ListTasksQuery' });

@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import type {
     CreateUserGroupPayloadSchema,
     UpdateUserGroupPayloadSchema,
+    UserGroupRefSchema,
     UserGroupSchema,
 } from './api-schemas/group.js';
 import type { UserRef } from './user.js';
@@ -32,16 +33,15 @@ export interface PopulatesUserGroup extends UserGroup {
     members: UserRef[];
 }
 
-export interface UserGroupRef {
-    id: string;
-    name: string;
-    tags?: string[];
-    properties?: Record<string, unknown>;
-    clearance?: number;
-    compartments?: string[];
-    allowed_projects?: string[];
-}
-
-export const UserGroupRefPopulate = 'id name tags description properties clearance compartments allowed_projects';
+/**
+ * The group as it appears in a token payload, read by the servers' authorization layer, the clients
+ * and the integration tests.
+ *
+ * The Mongoose projections that feed it live beside their queries in the servers, not here: a
+ * `select()` string is MongoDB field-selection behaviour, and a shared one has to be the union of
+ * every caller's needs. The previous one selected `description`, which token generation has never
+ * emitted, and the security fields, which the resource-reference endpoint has no use for.
+ */
+export type UserGroupRef = z.infer<typeof UserGroupRefSchema>;
 
 export const MEMBERS_GROUP_NAME = 'members';
