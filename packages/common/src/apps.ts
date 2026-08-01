@@ -1,6 +1,20 @@
 import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
+    AppAccessControlSchema,
+    AppAvailableInSchema,
+    AppCapabilitiesSchema,
+    AppGitSourceConfigSchema,
+    AppManifestSourceSchema,
+    AppSourceConfigSchema,
+    AppUIConfigSchema,
+    MCPOAuthConfigSchema,
+    MCPToolCollectionObjectSchema,
+    ToolCollectionAuthTypeSchema,
+    ToolCollectionObjectSchema,
+    VertesiaSDKToolCollectionObjectSchema,
+} from './api-schemas/apps.js';
+import type {
     ProjectToolInfoSchema,
     RenderingTemplateDefinitionRefSchema,
     RenderingTemplateDefinitionSchema,
@@ -18,6 +32,19 @@ import type { InCodeViewDefinition } from './views.js';
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
 
+// The app-manifest closure is declared once, as the Zod schemas in `./api-schemas/apps.ts`, and
+// inferred below. The documentation moved with it: what a published component says about a field now
+// comes from the schema's own `.meta({ description })` rather than from a TSDoc comment a generator
+// had to interpret.
+//
+// This one type is the exception, and for the same reason `JSONSchema` is: it RECURSES. Zod 4 infers
+// a recursive type from a getter, but the inference bottoms out at depth — `children` degrades to
+// `Record<string, unknown>[]`, and the composite-app menu code that walks nested items stops
+// compiling. So the named type stays hand-written and `z.ZodType<AppUINavItem>` on the schema is what
+// keeps the two checked against each other. Recorded, with this reason, in `canonical-aliases.json`.
+// Its TSDoc block below is deliberate: this type is still derived by the scanner wherever an
+// unconverted type reaches it, and the derived component has to keep carrying the same description as
+// the canonical one.
 /**
  * Additional navigation item for an app's UI configuration.
  * Used in AppUIConfig.navigation to define sidebar navigation entries in CompositeApp shell contexts.
@@ -45,38 +72,7 @@ export interface AppUINavItem {
     preferredSection?: (typeof PREFERRED_SECTIONS)[number];
 }
 
-export interface AppUIConfig {
-    /**
-     * The source URL of the app. The src can be a template which contain
-     * a variable named `buildId` which will be replaced with the current build id.
-     * For example: `/plugins/vertesia-review-center-${buildId}`
-     */
-    src: string;
-    /**
-     * The isolation strategy. If not specified it defaults to shadow.
-     * - shadow - use Shadow DOM to fully isolate the plugin from the host.
-     * - css - inject the plugin's styles (minus the preflight) into the host document;
-     *   lighter but styles may conflict with the host.
-     */
-    isolation?: 'shadow' | 'css';
-    /**
-     * When true the host modifies the app's css at load time to attempt to fix broken
-     * or missing styles. Only takes effect in css isolation mode. Defaults to false.
-     */
-    css_rebuild?: boolean;
-    /**
-     * Navigation items for the app's sidebar UI.
-     * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
-     */
-    navigation?: AppUINavItem[];
-    /**
-     * Where this app's UI can be displayed.
-     * - 'app_portal': Available in the main app portal (standalone)
-     * - 'composite_app': Available within a CompositeApp shell
-     * Defaults to ['app_portal', 'composite_app'] for new apps.
-     */
-    available_in?: AppAvailableIn[];
-}
+export type AppUIConfig = z.infer<typeof AppUIConfigSchema>;
 
 export interface AppInstallationProjectsQuery {
     name?: string;
@@ -88,161 +84,20 @@ export interface AppInstallationsQuery {
     available_in?: AppAvailableIn;
 }
 
-/**
- * Authentication type for tool collections
- */
-export type ToolCollectionAuthType = 'oauth' | 'other';
+export type ToolCollectionAuthType = z.infer<typeof ToolCollectionAuthTypeSchema>;
 
 /**
  * Tool collection type
  */
 export type ToolCollectionType = 'mcp' | 'vertesia_sdk';
 
-/**
- * Base tool collection configuration
- */
-interface BaseToolCollectionObject {
-    /**
-     * The URL endpoint for the tool collection
-     */
-    url: string;
+export type MCPOAuthConfig = z.infer<typeof MCPOAuthConfigSchema>;
 
-    /**
-     * Optional authentication type required for this tool collection
-     */
-    auth?: ToolCollectionAuthType;
-}
+export type MCPToolCollectionObject = z.infer<typeof MCPToolCollectionObjectSchema>;
 
-/**
- * Install-time OAuth provisioning blueprint for an MCP collection.
- * Defines how to auto-create an OAuth provider when the app is installed.
- * Does NOT affect runtime behaviour — the runtime uses oauth_bindings on AppInstallation.
- */
-export interface MCPOAuthConfig {
-    /**
-     * Name for the OAuth provider to create at install time.
-     * Defaults to the collection id converted to kebab-case if not specified.
-     */
-    name?: string;
-    /** Human-readable display name for the created OAuth provider. */
-    display_name?: string;
-    grant_type?: 'authorization_code' | 'client_credentials';
-    authorization_endpoint?: string;
-    token_endpoint?: string;
-    revocation_endpoint?: string;
-    /**
-     * Pre-configured client_id.
-     * Omit if the installer must supply it (include 'client_id' in required_at_install).
-     */
-    client_id?: string;
-    use_pkce?: boolean;
-    default_scopes?: string[];
-    /**
-     * Parameters the installer must provide at install time.
-     * These are shown as form fields in composable-ui before the install completes.
-     * - 'client_id': user supplies the OAuth client ID
-     * - 'client_secret': user supplies the OAuth client secret
-     */
-    required_at_install?: Array<'client_id' | 'client_secret' | 'scopes'>;
-}
+export type VertesiaSDKToolCollectionObject = z.infer<typeof VertesiaSDKToolCollectionObjectSchema>;
 
-/**
- * MCP tool collection configuration (requires name, description, and namespace)
- */
-export interface MCPToolCollectionObject extends BaseToolCollectionObject {
-    type: 'mcp';
-
-    /**
-     * Stable identifier for this collection.
-     * Used to key oauth_bindings on AppInstallation — protects against collection renames.
-     * Required for new manifests.
-     */
-    id: string;
-
-    /**
-     * Name for the tool collection.
-     * Human-readable label for the collection.
-     * Used in UI.
-     */
-    name: string;
-
-    /**
-     * Description for the tool collection.
-     * Helps users understand what tools this collection provides.
-     */
-    description: string;
-
-    /**
-     * Prefix to use for tool names from this collection.
-     * Provides clean, readable tool names (e.g., "jira" instead of "https://mcp.atlassian.com/v1/mcp")
-     */
-    namespace: string;
-
-    /**
-     * Reference to an OAuth provider name for this collection (legacy / manual path).
-     * When set, uses the OAuth provider's config (endpoints, client_id, client_secret)
-     * instead of MCP dynamic client registration or random fallback.
-     * The referenced OAuth provider must exist in the same project.
-     */
-    oauth_app?: string;
-
-    /**
-     * Install-time OAuth provisioning blueprint.
-     * When present, the platform auto-creates an OAuth provider at install time
-     * using these values merged with any user-supplied required_at_install params.
-     * The created app is recorded in AppInstallation.oauth_bindings.
-     * Mutually exclusive with oauth_provider.
-     */
-    oauth_config?: MCPOAuthConfig;
-
-    /**
-     * Reference to a key in AppManifestData.oauth_providers.
-     * When set, this collection shares the named provider's OAuth provider configuration.
-     * Mutually exclusive with oauth_config and oauth_app.
-     * Requires auth: "oauth" to be set.
-     */
-    oauth_provider?: string;
-
-    /**
-     * Additional OAuth scopes for this collection when using a shared oauth_provider.
-     * These are merged (union) with the provider's default_scopes at install time.
-     * Only valid when oauth_provider is set.
-     */
-    oauth_scopes?: string[];
-}
-
-/**
- * Vertesia SDK tool collection configuration
- */
-export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObject {
-    type: 'vertesia_sdk';
-
-    /**
-     * Optional namespace to use for tool names from this collection.
-     * If not provided, the tool server default will be used.
-     */
-    namespace?: string;
-
-    /**
-     * Optional name for the tool collection.
-     * If not provided, the tool server default will be used.
-     */
-    name?: string;
-
-    /**
-     * Optional description for the tool collection.
-     * If not provided, the tool server default will be used.
-     */
-    description?: string;
-}
-
-/**
- * Tool collection configuration (object format)
- */
-/**
- * @discriminator type
- */
-export type ToolCollectionObject = MCPToolCollectionObject | VertesiaSDKToolCollectionObject;
+export type ToolCollectionObject = z.infer<typeof ToolCollectionObjectSchema>;
 
 /**
  * Backward-compatible TypeScript alias. Public API payloads should reference
@@ -410,7 +265,7 @@ export const APP_CAPABILITIES = [
     'dashboards',
 ] as const;
 
-export type AppCapabilities = (typeof APP_CAPABILITIES)[number];
+export type AppCapabilities = z.infer<typeof AppCapabilitiesSchema>;
 
 /**
  * Header carrying the app version a generated-app UI is running, so studio/zeno resolve app-owned
@@ -505,7 +360,7 @@ export interface AppCapabilityManifest {
 
 /** Repo-relative path the capability manifest is committed to, read by version-build gates. */
 export const APP_CAPABILITY_MANIFEST_PATH = 'docs/app-capability-manifest.json';
-export type AppAvailableIn = 'app_portal' | 'composite_app';
+export type AppAvailableIn = z.infer<typeof AppAvailableInSchema>;
 
 export type AppVersionKind = 'design' | 'version';
 export type AppVersionState = 'ready' | 'failed' | 'expired';
@@ -778,7 +633,7 @@ export interface AppScaffoldProgress {
  *
  * Declared on the manifest as the app's default. May be overridden per-installation.
  */
-export type AppAccessControl = 'all' | 'ui' | 'none';
+export type AppAccessControl = z.infer<typeof AppAccessControlSchema>;
 
 /**
  * Resolve the effective access_control policy for an installed app:
@@ -796,6 +651,19 @@ export function effectiveAppAccessControl(
     return installation?.access_control ?? manifest?.access_control ?? 'all';
 }
 
+// QUARANTINED from the tenth batch, and the blocker is not in this file. A `//` comment rather than
+// TSDoc on purpose: this component is still DERIVED, so a doc comment here would be published as its
+// OpenAPI description.
+//
+// `settings_schema` is a `JSONSchema`, so making this component canonical pulls the registry's
+// `JSONSchema` into the studio service — where the TypeScript-derived one publishes `type` as
+// `JSONSchemaTypeName | JSONSchemaTypeName[]` while the canonical publishes `type: {}`. The
+// generator refuses to publish a name that is both derived and canonical unless the two agree, and
+// it is right to. The combined document already ships the canonical spelling (zeno reaches it
+// through `ContentTypeIntakePolicy` and wins the merge), so what is left is a disagreement to settle
+// in `@llumiverse/common`, not one to work around here.
+//
+// Everything this interface REFERENCES converted: the fields below now carry canonical components.
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -941,17 +809,9 @@ export interface AppManifestData {
     access_control?: AppAccessControl;
 }
 
-export interface AppGitSourceConfig {
-    url?: string;
-    default_branch?: string;
-    production_branch?: string;
-    development_branch?: string;
-}
+export type AppGitSourceConfig = z.infer<typeof AppGitSourceConfigSchema>;
 
-export interface AppSourceConfig {
-    kind: 'git';
-    git?: AppGitSourceConfig;
-}
+export type AppSourceConfig = z.infer<typeof AppSourceConfigSchema>;
 
 /**
  * Deployment-time URL endpoints that can be referenced in app manifest URLs
@@ -1280,15 +1140,7 @@ export interface AppManifest extends AppManifestData {
     updated_at: string;
 }
 
-export interface AppManifestSource {
-    kind: 'git';
-    git: {
-        url: string;
-        default_branch?: string;
-        production_branch?: string;
-        development_branch?: string;
-    };
-}
+export type AppManifestSource = z.infer<typeof AppManifestSourceSchema>;
 
 /**
  * Binding between an MCP collection and an OAuth provider created at install time.

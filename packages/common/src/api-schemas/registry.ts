@@ -31,6 +31,14 @@ import {
     UpdateApiKeyPayloadSchema,
 } from './apikey.js';
 import {
+    AppAccessControlSchema,
+    AppCapabilitiesSchema,
+    AppManifestSourceSchema,
+    AppSourceConfigSchema,
+    AppUIConfigSchema,
+    ToolCollectionObjectSchema,
+} from './apps.js';
+import {
     CreateUserGroupPayloadSchema,
     UpdateUserGroupPayloadSchema,
     UserGroupArraySchema,
@@ -186,6 +194,28 @@ const API_SCHEMAS = {
     // an intercepted alias, so leaving them derived would publish `{}`.
     Partial_Project: PartialProjectSchema,
     Partial_ProjectConfiguration: PartialProjectConfigurationSchema,
+    // The app-manifest LEAVES. Each is registered as a root of its own because nothing canonical
+    // reaches it yet: `AppManifestData` and `AppManifest` are still derived from TypeScript, and
+    // their derived components now `$ref` these. Registration is what publishes the bodies those
+    // references point at.
+    //
+    // `AppManifest(Data)` itself is quarantined rather than forgotten. Its `settings_schema` is a
+    // `JSONSchema`, and making it canonical pulls the registry's `JSONSchema` into the studio
+    // service, where the TypeScript-derived one publishes `type` as
+    // `JSONSchemaTypeName | JSONSchemaTypeName[]` while the canonical publishes `type: {}`. The
+    // generator refuses that pair, correctly. The combined document already ships the canonical
+    // spelling — zeno reaches it through `ContentTypeIntakePolicy` and wins the merge — so this is a
+    // disagreement to settle in `@llumiverse/common`, not something to work around here.
+    //
+    // `MCPToolCollectionObject`, `VertesiaSDKToolCollectionObject`, `ToolCollectionAuthType`,
+    // `MCPOAuthConfig`, `AppUINavItem`, `AppAvailableIn` and `AppGitSourceConfig` are hoisted from
+    // the roots below rather than listed.
+    ToolCollectionObject: ToolCollectionObjectSchema,
+    AppUIConfig: AppUIConfigSchema,
+    AppCapabilities: AppCapabilitiesSchema,
+    AppAccessControl: AppAccessControlSchema,
+    AppSourceConfig: AppSourceConfigSchema,
+    AppManifestSource: AppManifestSourceSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -334,6 +364,17 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
     'GroqOptions',
+    // The app-manifest leaves. Every object among them is published closed today, the nested `git`
+    // block included, and it is spelled `strictObject` so the emission carries it directly. The five
+    // enums take no `additionalProperties` at all.
+    'AppManifestSource',
+    'AppSourceConfig',
+    'AppGitSourceConfig',
+    'AppUIConfig',
+    'AppUINavItem',
+    'MCPOAuthConfig',
+    'MCPToolCollectionObject',
+    'VertesiaSDKToolCollectionObject',
 ]);
 
 /**

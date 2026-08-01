@@ -130,6 +130,16 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ApiKeyReadResponse',
             'ApiKeyTypes',
             'ApiKeyWithValue',
+            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
+            // still derived, and these are the components their derived bodies now `$ref`.
+            'AppAccessControl',
+            'AppAvailableIn',
+            'AppCapabilities',
+            'AppGitSourceConfig',
+            'AppManifestSource',
+            'AppSourceConfig',
+            'AppUIConfig',
+            'AppUINavItem',
             'AuthTokenResponse',
             // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
             // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
@@ -222,6 +232,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ListProjectsQuery',
+            'MCPOAuthConfig',
+            'MCPToolCollectionObject',
             'ModalityDefaults',
             'ModelDefault',
             // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
@@ -335,6 +347,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
+            'ToolCollectionAuthType',
+            'ToolCollectionObject',
             'TransientTokenType',
             'TransientToken_UserInviteTokenData_',
             'TransientToken_UserInviteTokenData_Array',
@@ -372,6 +386,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'VertesiaSDKToolCollectionObject',
             'VertexAIClaudeOptions',
             'VertexAIGeminiOptions',
             'VertexAIGrokOptions',
