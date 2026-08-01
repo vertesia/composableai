@@ -916,11 +916,13 @@ describe('ModernAgentConversation send handling', () => {
             onCompactContext?: () => void | Promise<void>;
         };
 
+        // Prompt-based, matching the server's checkpoint trigger: `total`
+        // includes reasoning/result tokens that never re-enter context.
         expect(latestMessageInputProps.contextWindowUsage).toEqual({
-            usedTokens: 50_000,
+            usedTokens: 40_000,
             checkpointTokens: 100_000,
-            usedPercent: 50,
-            remainingPercent: 50,
+            usedPercent: 40,
+            remainingPercent: 60,
         });
 
         act(() => {
