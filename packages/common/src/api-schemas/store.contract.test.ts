@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { ContentTypeIntakePolicySchema as GeneratedIntakePolicySchema } from '../store/intake-policy-schema.generated.js';
 import type { ContentObjectTypeRef, ContentTypeIntakePolicy, IntakePageRanges } from '../store/store.js';
 import { ApiSchemaComponents, bundleCanonicalComponent } from './registry.js';
-import type { ContentTypeIntakePolicySchema } from './store.js';
+import { ContentTypeIntakePolicySchema } from './store.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -61,6 +61,121 @@ describe('gate — generated artifact = canonical component = published componen
     it('registers the component the alias claims, under the id the alias name requires', () => {
         expect(Object.keys(ApiSchemaComponents)).toContain('ContentTypeIntakePolicy');
         assertType<Equals<ContentTypeIntakePolicy, (typeof ContentTypeIntakePolicySchema)['_zod']['output']>>(true);
+    });
+});
+
+/**
+ * Bodies that probe where the two validators could disagree.
+ *
+ * The gate above compares the artifact to the component, and both are produced by the SAME adapter
+ * from the SAME Zod schema — so any transform applied on the way out is invisible to it. That blind
+ * spot shipped once: an adapter pass stripped the bounds `z.int()` attaches for the JavaScript
+ * safe-integer range, on the reasoning that no JSON value could fall outside them. `1e20` does, and
+ * the Zod schema rejected it while the generated schema accepted it. Nothing in a
+ * schema-versus-schema comparison can see that; only running both validators over the same value can.
+ */
+const PROBES: unknown[] = [
+    // Numeric range, including the values that made the sentinel-stripping bug observable.
+    {},
+    { extraction: { max_pages: 1 } },
+    { extraction: { max_pages: 0 } },
+    { extraction: { max_pages: 2.5 } },
+    { extraction: { max_pages: 1e20 } },
+    { extraction: { max_pages: 2147483647 } },
+    { extraction: { max_pages: 2147483648 } },
+    { extraction: { max_pages: Number.MAX_SAFE_INTEGER + 1 } },
+    { extraction: { max_pages: -1 } },
+    { locate: { instructions: 'x', min_pages: 0 } },
+    { locate: { instructions: 'x', min_pages: -1 } },
+    { locate: { instructions: 'x', min_pages: 1e20 } },
+    { locate: { detail: 8 } },
+    { text_conversion: { render_dpi: 72 } },
+    { text_conversion: { render_dpi: 71 } },
+    { text_conversion: { render_dpi: 1e20 } },
+    { extraction: { verification: { threshold: 0 } } },
+    { extraction: { verification: { threshold: 1 } } },
+    { extraction: { verification: { threshold: 1.000001 } } },
+    { extraction: { verification: { max_retries: 1e20 } } },
+    { extraction: { vision: { max_image_tokens: 1e20, max_payload_mb: 1e20 } } },
+    { extraction: { grounding: { window_pages: 1e20, grid_cell_pt: 1e20 } } },
+    { extraction: { grounding: { hardness_threshold: 1e20 } } },
+    // Page ranges: length, element type, and element magnitude.
+    { extraction: { page_ranges: [[1, 2]] } },
+    { extraction: { page_ranges: [[-1, -1]] } },
+    { extraction: { page_ranges: [[1]] } },
+    { extraction: { page_ranges: [[1, 2, 3]] } },
+    { extraction: { page_ranges: [[1.5, 2]] } },
+    { extraction: { page_ranges: [[1e20, 2]] } },
+    // Nullability, unknown keys, and the enums.
+    { generate_toc: null },
+    { extraction: null },
+    { extraction: { max_pages: null } },
+    { grounded_extraction: { enabled: true } },
+    { locate: { instructions: 'x', dpi: 300 } },
+    { extraction: { scope: 'first-two' } },
+    { extraction: { vision: { default_detail: 'ultra' } } },
+    { default_view: 'pdf' },
+    { mode: 'agentic' },
+    // The execution config: closedness, the option union, the two enums.
+    { extraction: { config: { model: 'm' } } },
+    { extraction: { config: { temperature: 0.5 } } },
+    { extraction: { config: { http_timeout: { bodyTimeout: 1000 } } } },
+    { extraction: { config: { http_timeout: { socketTimeout: 1000 } } } },
+    { extraction: { config: { model_options: { _option_id: 'openai-text', temperature: 0.5 } } } },
+    { extraction: { config: { model_options: { temperature: 0.5 } } } },
+    { extraction: { config: { model_options: { _option_id: 'not-a-driver' } } } },
+    { extraction: { config: { run_data: 'STANDARD' } } },
+    { extraction: { config: { run_data: 'WHATEVER' } } },
+    { extraction: { config: { configMode: 'RUN_CONFIG_ONLY' } } },
+    // Wrong types where a shape is expected.
+    { extraction: 'nope' },
+    { embeddings: { text: 'yes' } },
+    { identification: { examples: 'not-a-list' } },
+];
+
+describe('gate — the artifact accepts exactly what the Zod schema accepts', () => {
+    it.each(PROBES.map((probe) => [JSON.stringify(probe), probe] as const))('agrees on %s', (_label, probe) => {
+        // The point of the migration is that ONE schema is enforced. Two validators built from it
+        // that disagree on a value means one of the consumers is enforcing something the source
+        // never said, which is the drift this whole exercise removes.
+        expect(validate(probe)).toBe(ContentTypeIntakePolicySchema.safeParse(probe).success);
+    });
+});
+
+describe('the fixture the generated Java and Go clients deserialize', () => {
+    // `openapi/fixtures/content-type-intake-policy.json` is read by
+    // `openapi/java/src/test/.../ContentTypeIntakePolicyDeserializationTest.java` and by
+    // `openapi/go/tests/intake_policy_deserialization_test.go`. Asserting it HERE is what stops it
+    // going stale: a schema change that the fixture no longer satisfies fails in this package,
+    // beside the schema, rather than in a client harness that only CI runs.
+    const fixture = JSON.parse(
+        readFileSync(
+            fileURLToPath(new URL('../../../../../openapi/fixtures/content-type-intake-policy.json', import.meta.url)),
+            'utf8',
+        ),
+    );
+
+    it('is a policy the canonical schema and the generated artifact both accept', () => {
+        expect(ContentTypeIntakePolicySchema.safeParse(fixture).success).toBe(true);
+        expect(validate(fixture), errors()).toBe(true);
+    });
+
+    it('exercises the shapes the number -> integer correction changed', () => {
+        // The fields whose generated Java type moved from Double to Integer and whose Go type moved
+        // from float32 to int32. A fixture that omitted them would let the clients compile and
+        // deserialize while proving nothing about the change this batch makes.
+        const policy = fixture as ContentTypeIntakePolicy;
+        expect(policy.extraction?.max_pages).toBe(6);
+        expect(policy.extraction?.page_ranges).toEqual([
+            [1, 2],
+            [-1, -1],
+        ]);
+        expect(policy.text_conversion?.render_dpi).toBe(150);
+        expect(policy.extraction?.vision?.max_image_tokens).toBe(9000);
+        expect(policy.extraction?.grounding?.window_pages).toBe(4);
+        // ...and the discriminated union, which is what a Go oneOf decoder gets wrong when the
+        // discriminator is missing from the document.
+        expect(policy.extraction?.config?.model_options?._option_id).toBe('vertexai-claude');
     });
 });
 

@@ -7,21 +7,31 @@
  * re-exports. That is what lets zeno-server, the workflow tool and the Studio intake-policy editor
  * keep compiling a plain JSON Schema without any of them importing Zod.
  *
+ * Run through `tsx` and imports `../src`, NOT `../lib`. Reading the build output would make the
+ * declared command fail on a clean checkout (nothing tracked under `lib`), silently generate from the
+ * previous build after a source edit, and leave the packaged `lib` stale whenever it did run. The
+ * source is the input for the same reason it is the source of truth.
+ *
  * The output is COMPILED OUTPUT, not a second definition: `src/api-schemas/store.contract.test.ts`
  * fails if it drifts from the component. Run `pnpm run gen:schemas` after editing the Zod schema.
+ *
+ * `gen:schemas` runs `biome format --write` over the result, because `JSON.stringify` and Biome
+ * disagree about quotes and array wrapping. Without it the declared command leaves the repository
+ * failing `format:check`, and the artifact would only become committable after someone remembered to
+ * run a second, undeclared command.
  */
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { bundleCanonicalComponent } from '../lib/api-schemas/registry.js';
+import { bundleCanonicalComponent } from '../src/api-schemas/registry.js';
 
 const OUTPUT = fileURLToPath(new URL('../src/store/intake-policy-schema.generated.ts', import.meta.url));
 
 const HEADER = `// GENERATED FILE — DO NOT EDIT.
 //
-// Written by \`scripts/gen-intake-policy-schema.mjs\` from \`ContentTypeIntakePolicySchema\` in
+// Written by \`scripts/gen-intake-policy-schema.ts\` from \`ContentTypeIntakePolicySchema\` in
 // \`../api-schemas/store.ts\`, through the same adapter that emits the OpenAPI components. Edit the Zod
 // schema and re-run \`pnpm run gen:schemas\`; \`store.contract.test.ts\` fails if this drifts from the
-// canonical component.
+// canonical component, and fails too if it accepts a value the Zod schema rejects.
 //
 // It exists so the Studio intake-policy editor and the server validators get a self-contained JSON
 // Schema without importing Zod: the package root exports plain data, and \`zod\` stays out of every

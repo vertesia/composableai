@@ -17,7 +17,7 @@
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "gen:schemas": "node ./scripts/gen-intake-policy-schema.mjs"
+        "gen:schemas": "tsx ./scripts/gen-intake-policy-schema.ts && pnpm exec biome format --write ./src/store/intake-policy-schema.generated.ts"
     },
     "exports": {
         ".": {
@@ -33,6 +33,7 @@
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
+        "tsx": "^4.23.1",
         "typescript": "^6.0.3",
         "vitest": "^4.1.10"
     },

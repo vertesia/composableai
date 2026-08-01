@@ -1,9 +1,9 @@
 // GENERATED FILE — DO NOT EDIT.
 //
-// Written by `scripts/gen-intake-policy-schema.mjs` from `ContentTypeIntakePolicySchema` in
+// Written by `scripts/gen-intake-policy-schema.ts` from `ContentTypeIntakePolicySchema` in
 // `../api-schemas/store.ts`, through the same adapter that emits the OpenAPI components. Edit the Zod
 // schema and re-run `pnpm run gen:schemas`; `store.contract.test.ts` fails if this drifts from the
-// canonical component.
+// canonical component, and fails too if it accepts a value the Zod schema rejects.
 //
 // It exists so the Studio intake-policy editor and the server validators get a self-contained JSON
 // Schema without importing Zod: the package root exports plain data, and `zod` stays out of every
@@ -59,6 +59,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 min_pages: {
                     type: 'integer',
                     minimum: 0,
+                    maximum: 2147483647,
                     description: 'Only run when the page count is at least this. Default 8.',
                 },
             },
@@ -107,6 +108,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 render_dpi: {
                     type: 'integer',
                     minimum: 72,
+                    maximum: 2147483647,
                     description:
                         'DPI at which each page is rendered to the image the LLM converts. Default 150 — the accuracy/cost sweet spot: higher resolutions balloon input tokens (some providers tile the page) for no quality gain, below ~150 dense tables start to misread. Raise only for very fine print.',
                 },
@@ -151,6 +153,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 max_pages: {
                     type: 'integer',
                     minimum: 1,
+                    maximum: 2147483647,
                     description: 'Cap on pages sent to extraction. Default 20.',
                 },
                 vision: {
@@ -168,6 +171,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         max_image_tokens: {
                             type: 'integer',
                             minimum: 1,
+                            maximum: 2147483647,
                             description: 'PRIMARY budget: estimated image tokens per extraction call. Default 16000.',
                         },
                         max_payload_mb: {
@@ -178,6 +182,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         max_pages_per_call: {
                             type: 'integer',
                             minimum: 1,
+                            maximum: 2147483647,
                             description: 'Cap on page images per extraction call. Default 8.',
                         },
                     },
@@ -208,6 +213,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         max_retries: {
                             type: 'integer',
                             minimum: 0,
+                            maximum: 2147483647,
                         },
                         on_fail: {
                             type: 'string',
@@ -621,6 +627,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 max_pages: {
                     type: 'integer',
                     minimum: 1,
+                    maximum: 2147483647,
                     description: 'Maximum pages to process.',
                 },
                 force_ocr: {
@@ -651,6 +658,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 window_pages: {
                     type: 'integer',
                     minimum: 1,
+                    maximum: 2147483647,
                     description: 'Maximum pages per grounded extraction call before windowing.',
                 },
                 update_properties: {
@@ -885,6 +893,8 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 type: 'array',
                 items: {
                     type: 'integer',
+                    minimum: -2147483648,
+                    maximum: 2147483647,
                 },
             },
             description:

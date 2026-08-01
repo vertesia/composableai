@@ -34,7 +34,7 @@ import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
  * In ONE direction it was stricter, and that is a regression to guard against rather than a
  * tightening to record: it carried `type: 'integer'` on ten page/DPI counters and numeric bounds on
  * eighteen fields, none of which the published component ever stated. Those are restored below with
- * `z.int()` and `.min()`/`.max()`, so the document finally publishes the constraints the server has
+ * `z.int32()` and `.min()`/`.max()`, so the document finally publishes the constraints the server has
  * enforced all along. `packages/workflows/src/activities/intake-policy-schema.test.ts` is the parity
  * suite that caught their absence.
  *
@@ -62,15 +62,13 @@ export const IntakePageScopeSchema = z.enum(['all', 'located']).meta({
 /**
  * Inclusive `[start, end]` pairs.
  *
- * `z.array(z.int()).min(2).max(2)` rather than `z.tuple([z.int(), z.int()])`: the published component
- * is `items` with `minItems`/`maxItems`, which is how the scanner rendered the tuple, and a Zod tuple
- * emits `prefixItems` instead. Same accepted values, different spelling — and the spelling is what
- * generated Java and Go clients are built from, so it stays. The cost is that the inferred type
- * widens from `[number, number][]` to `number[][]`, which is recorded with the other SDK type
- * corrections; `z.int()` is what keeps a fractional page index rejected, as the hand-written schema's
- * `type: 'integer'` did.
+ * `z.array(z.int32()).min(2).max(2)` rather than `z.tuple([...])`: the published component is `items`
+ * with `minItems`/`maxItems`, which is how the scanner rendered the tuple, and a Zod tuple emits
+ * `prefixItems` instead. Same accepted values, different spelling — and the spelling is what generated
+ * Java and Go clients are built from, so it stays. The cost is that the inferred type widens from
+ * `[number, number][]` to `number[][]`, which is recorded with the other SDK type corrections.
  */
-export const IntakePageRangesSchema = z.array(z.array(z.int()).min(2).max(2)).meta({
+export const IntakePageRangesSchema = z.array(z.array(z.int32()).min(2).max(2)).meta({
     id: 'IntakePageRanges',
     description:
         'Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the ' +
@@ -147,7 +145,7 @@ export const ContentTypeExtractionGroundingPolicySchema = z
             .string()
             .optional()
             .meta({ description: 'Grounded extraction interaction. Defaults to the system grounded extractor.' }),
-        max_pages: z.int().min(1).optional().meta({ description: 'Maximum pages to process.' }),
+        max_pages: z.int32().min(1).optional().meta({ description: 'Maximum pages to process.' }),
         force_ocr: z.boolean().optional().meta({ description: 'Run OCR on every page even when a text layer exists.' }),
         use_vision: z
             .boolean()
@@ -181,7 +179,7 @@ export const ContentTypeExtractionGroundingPolicySchema = z
                     'comes from the image).',
             }),
         window_pages: z
-            .int()
+            .int32()
             .min(1)
             .optional()
             .meta({ description: 'Maximum pages per grounded extraction call before windowing.' }),
@@ -258,7 +256,7 @@ export const ContentTypeIntakePolicySchema = z
                     description: 'Pages per contact sheet: 8 = bigger tiles (headings readable). Default 16.',
                 }),
                 min_pages: z
-                    .int()
+                    .int32()
                     .min(0)
                     .optional()
                     .meta({ description: 'Only run when the page count is at least this. Default 8.' }),
@@ -289,7 +287,7 @@ export const ContentTypeIntakePolicySchema = z
                     description: 'Static page ranges to convert (wins over `scope` when set).',
                 }),
                 render_dpi: z
-                    .int()
+                    .int32()
                     .min(72)
                     .optional()
                     .meta({
@@ -330,7 +328,7 @@ export const ContentTypeIntakePolicySchema = z
                     description: 'Static page ranges extraction sees (wins over `scope` when set).',
                 }),
                 max_pages: z
-                    .int()
+                    .int32()
                     .min(1)
                     .optional()
                     .meta({ description: 'Cap on pages sent to extraction. Default 20.' }),
@@ -338,7 +336,7 @@ export const ContentTypeIntakePolicySchema = z
                     .strictObject({
                         default_detail: IntakeVisionDetailSchema.optional(),
                         allowed_details: z.array(IntakeVisionDetailSchema).optional(),
-                        max_image_tokens: z.int().min(1).optional().meta({
+                        max_image_tokens: z.int32().min(1).optional().meta({
                             description: 'PRIMARY budget: estimated image tokens per extraction call. Default 16000.',
                         }),
                         max_payload_mb: z
@@ -347,7 +345,7 @@ export const ContentTypeIntakePolicySchema = z
                             .optional()
                             .meta({ description: 'Transport guard in megabytes. Default 16.' }),
                         max_pages_per_call: z
-                            .int()
+                            .int32()
                             .min(1)
                             .optional()
                             .meta({ description: 'Cap on page images per extraction call. Default 8.' }),
@@ -365,7 +363,7 @@ export const ContentTypeIntakePolicySchema = z
                         environment: z.string().optional(),
                         materiality: z.string().optional(),
                         threshold: z.number().min(0).max(1).optional(),
-                        max_retries: z.int().min(0).optional(),
+                        max_retries: z.int32().min(0).optional(),
                         on_fail: z.enum(['flag', 'block']).optional(),
                     })
                     .optional(),
