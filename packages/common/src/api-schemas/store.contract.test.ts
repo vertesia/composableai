@@ -4,7 +4,8 @@ import { Ajv } from 'ajv';
 import { describe, expect, it } from 'vitest';
 import { ContentTypeIntakePolicySchema as GeneratedIntakePolicySchema } from '../store/intake-policy-schema.generated.js';
 import type { ContentObjectTypeRef, ContentTypeIntakePolicy, IntakePageRanges } from '../store/store.js';
-import { ApiSchemaComponents, bundleCanonicalComponent } from './registry.js';
+import type { JsonObject } from './adapter.js';
+import { ApiSchemaComponents, bundleCanonicalComponent, validateApiResponse } from './registry.js';
 import { ContentTypeIntakePolicySchema } from './store.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
@@ -315,5 +316,71 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
         expect(validate({ extraction: { config: { run_data: 'WHATEVER' } } })).toBe(false);
         expect(validate({ extraction: { config: { configMode: 'RUN_CONFIG_ONLY' } } }), errors()).toBe(true);
         expect(validate({ extraction: { config: { configMode: 'WHATEVER' } } })).toBe(false);
+    });
+});
+
+describe('the five content-type shapes are composed, not repeated', () => {
+    const properties = (name: string) =>
+        Object.keys((ApiSchemaComponents[name] as { properties: Record<string, unknown> }).properties);
+    const property = (name: string, key: string) =>
+        (ApiSchemaComponents[name] as { properties: Record<string, JsonObject> }).properties[key];
+
+    it('gives every shape the same definition for a shared field', () => {
+        // The drift this guards: five hand-transcribed copies of `table_layout` could disagree about
+        // its item type or its description and nothing would notice. They come from one dictionary now.
+        const shapes = [
+            'ContentObjectTypeItem',
+            'ContentObjectType',
+            'ContentObjectTypeCatalogEntry',
+            'InCodeTypeDefinition',
+            'CreateContentObjectTypePayload',
+        ];
+        for (const field of ['table_layout', 'object_schema', 'strict_mode', 'intake', 'editing', 'status']) {
+            const rendered = shapes.map((shape) => JSON.stringify(property(shape, field)));
+            expect(new Set(rendered).size, `${field} differs across the content-type shapes`).toBe(1);
+        }
+    });
+
+    it('keeps the published property order, which composition must not reshuffle', () => {
+        // Order is contract: it decides the order of the generated clients' constructor arguments and
+        // model fields. The five orders differ because they were derived from five different types.
+        expect(properties('ContentObjectTypeItem')).toEqual(properties('ContentObjectType'));
+        expect(properties('ContentObjectTypeCatalogEntry').slice(0, 11)).toEqual(properties('InCodeTypeDefinition'));
+        expect(properties('CreateContentObjectTypePayload')).toEqual([
+            'status',
+            'is_chunkable',
+            'intake',
+            'editing',
+            'table_layout',
+            'object_schema',
+            'strict_mode',
+            'name',
+            'description',
+            'tags',
+        ]);
+    });
+
+    it('keeps the audit fields required on a stored type and optional in the catalog', () => {
+        // Not a detail: a catalog entry may be an in-code type contributed by a plugin, which nobody
+        // created and nobody has modified. Requiring the four there would reject a legitimate entry.
+        const audit = ['updated_by', 'created_by', 'created_at', 'updated_at'];
+        const required = (name: string) => (ApiSchemaComponents[name] as { required?: string[] }).required ?? [];
+
+        expect(required('ContentObjectTypeItem')).toEqual(expect.arrayContaining(audit));
+        expect(required('ContentObjectType')).toEqual(expect.arrayContaining(audit));
+        for (const field of audit) {
+            expect(required('ContentObjectTypeCatalogEntry')).not.toContain(field);
+            expect(property('ContentObjectTypeCatalogEntry', field)).toEqual({ type: 'string' });
+        }
+    });
+
+    it('accepts a catalog entry for an in-code type that has no audit trail', () => {
+        expect(
+            validateApiResponse('ContentObjectTypeCatalogEntry', {
+                id: 'sys:Invoice',
+                name: 'Invoice',
+                is_chunkable: false,
+            }).valid,
+        ).toBe(true);
     });
 });

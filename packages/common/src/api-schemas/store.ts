@@ -432,193 +432,131 @@ export const ContentTypeEditingPolicySchema = z
 
 export const ContentObjectTypeStatusSchema = z.enum(['active', 'draft']).meta({ id: 'ContentObjectTypeStatus' });
 
+/*
+ * The five content-type shapes, composed from one field dictionary.
+ *
+ * They are five because the API publishes five: a stored type, a catalog entry, an in-code
+ * definition, the create payload and the read alias. They differ in three ways that a single schema
+ * cannot express — which properties they carry, what ORDER they publish them in, and whether the
+ * audit fields are required — and the published order is part of the contract, so `.pick()` over one
+ * base cannot produce all five.
+ *
+ * What can be shared is every field DEFINITION, which is what this dictionary is. Each schema below
+ * then lists the keys it publishes, in the order it publishes them, and a change to a type or a
+ * description lands in all five at once.
+ */
+const contentTypeFields = {
+    id: z.string().meta({ description: 'Unique identifier for the object' }),
+    name: z.string().meta({ description: 'Human-readable name or title' }),
+    description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
+    tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+    object_schema: z
+        .looseObject({})
+        .meta({
+            description:
+                'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+        })
+        .optional(),
+    table_layout: z
+        .array(ColumnLayoutSchema)
+        .meta({
+            description:
+                'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+        })
+        .optional(),
+    is_chunkable: z.boolean().optional(),
+    strict_mode: z
+        .boolean()
+        .meta({
+            description:
+                'Determines if the content will be validated against the object schema a generation time and save/update time.',
+        })
+        .optional(),
+    status: ContentObjectTypeStatusSchema.optional(),
+    intake: ContentTypeIntakePolicySchema.optional(),
+    editing: ContentTypeEditingPolicySchema.optional(),
+};
+
+/**
+ * Audit fields as a STORED type publishes them: written by the server on every save, so always
+ * present and documented.
+ */
+const storedAuditFields = {
+    updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }),
+    created_by: z.string().meta({ description: 'Identifier of the user who created the object' }),
+    created_at: z.string().meta({ description: 'ISO timestamp of when the object was created' }),
+    updated_at: z.string().meta({ description: 'ISO timestamp of when the object was last updated' }),
+};
+
+/**
+ * Audit fields as the CATALOG publishes them: optional, because a catalog entry may be an in-code
+ * type contributed by a plugin, which nobody created and nobody has modified. This difference is the
+ * reason the catalog has its own component rather than reusing `ContentObjectTypeItem`.
+ */
+const catalogAuditFields = {
+    updated_by: z.string().optional(),
+    created_by: z.string().optional(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional(),
+};
+
 export const ContentObjectTypeCatalogEntrySchema = z
     .strictObject({
-        id: z.string().meta({ description: 'Unique identifier for the object' }),
-        name: z.string().meta({ description: 'Human-readable name or title' }),
-        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
-        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
-        object_schema: z
-            .looseObject({})
-            .meta({
-                description:
-                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        table_layout: z
-            .array(ColumnLayoutSchema)
-            .meta({
-                description:
-                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        is_chunkable: z.boolean().optional(),
-        strict_mode: z
-            .boolean()
-            .meta({
-                description:
-                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
-            })
-            .optional(),
-        status: ContentObjectTypeStatusSchema.optional(),
-        intake: ContentTypeIntakePolicySchema.optional(),
-        editing: ContentTypeEditingPolicySchema.optional(),
-        updated_by: z.string().optional(),
-        created_by: z.string().optional(),
-        created_at: z.string().optional(),
-        updated_at: z.string().optional(),
+        ...contentTypeFields,
+        ...catalogAuditFields,
     })
     .meta({ id: 'ContentObjectTypeCatalogEntry' });
 
-export const ContentObjectTypeItemSchema = z
-    .strictObject({
-        id: z.string().meta({ description: 'Unique identifier for the object' }),
-        name: z.string().meta({ description: 'Human-readable name or title' }),
-        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
-        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
-        updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }),
-        created_by: z.string().meta({ description: 'Identifier of the user who created the object' }),
-        created_at: z.string().meta({ description: 'ISO timestamp of when the object was created' }),
-        updated_at: z.string().meta({ description: 'ISO timestamp of when the object was last updated' }),
-        status: ContentObjectTypeStatusSchema.optional(),
-        is_chunkable: z.boolean().optional(),
-        intake: ContentTypeIntakePolicySchema.optional(),
-        editing: ContentTypeEditingPolicySchema.optional(),
-        table_layout: z
-            .array(ColumnLayoutSchema)
-            .meta({
-                description:
-                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        object_schema: z
-            .looseObject({})
-            .meta({
-                description:
-                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        strict_mode: z
-            .boolean()
-            .meta({
-                description:
-                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
-            })
-            .optional(),
-    })
-    .meta({ id: 'ContentObjectTypeItem' });
+/**
+ * A stored content type, in the order it is published.
+ *
+ * `ContentObjectTypeItem` and `ContentObjectType` are two component names for this one shape — the
+ * API has always published both bodies in full. They are built from this shape rather than one from
+ * the other, because `.meta({ id })` on a schema that already carries an id produces a `$ref` to the
+ * first rather than a second body, which would change the published document.
+ */
+const storedContentTypeShape = {
+    id: contentTypeFields.id,
+    name: contentTypeFields.name,
+    description: contentTypeFields.description,
+    tags: contentTypeFields.tags,
+    ...storedAuditFields,
+    status: contentTypeFields.status,
+    is_chunkable: contentTypeFields.is_chunkable,
+    intake: contentTypeFields.intake,
+    editing: contentTypeFields.editing,
+    table_layout: contentTypeFields.table_layout,
+    object_schema: contentTypeFields.object_schema,
+    strict_mode: contentTypeFields.strict_mode,
+};
+
+export const ContentObjectTypeItemSchema = z.strictObject(storedContentTypeShape).meta({ id: 'ContentObjectTypeItem' });
 
 export const ContentObjectTypeItemArraySchema = z
     .array(ContentObjectTypeItemSchema)
     .meta({ id: 'ContentObjectTypeItemArray' });
 
 /*
- * The three content-type shapes that a mapped type used to derive. `InCodeTypeDefinition` was
- * published as `Pick_ContentObjectTypeItem_id_name_...` — the generator name for `Pick<>` — and
- * `ContentObjectType`/`CreateContentObjectTypePayload` were an `extends` and an `Omit<>` over it.
- * A mapped type over a canonical alias resolves to `{}`, so these are authored rather than derived.
+ * The three shapes below were derived from mapped types until wave Z1: `InCodeTypeDefinition` was
+ * published as `Pick_ContentObjectTypeItem_id_name_...`, and `ContentObjectType` and
+ * `CreateContentObjectTypePayload` were an `extends` and an `Omit<>` over it. A mapped type over a
+ * canonical alias resolves to `{}`, so they are authored — and composed, so they cannot drift.
  */
-export const InCodeTypeDefinitionSchema = z
-    .strictObject({
-        id: z.string().meta({ description: 'Unique identifier for the object' }),
-        name: z.string().meta({ description: 'Human-readable name or title' }),
-        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
-        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
-        object_schema: z
-            .looseObject({})
-            .meta({
-                description:
-                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        table_layout: z
-            .array(ColumnLayoutSchema)
-            .meta({
-                description:
-                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        is_chunkable: z.boolean().optional(),
-        strict_mode: z
-            .boolean()
-            .meta({
-                description:
-                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
-            })
-            .optional(),
-        status: ContentObjectTypeStatusSchema.optional(),
-        intake: ContentTypeIntakePolicySchema.optional(),
-        editing: ContentTypeEditingPolicySchema.optional(),
-    })
-    .meta({ id: 'InCodeTypeDefinition' });
+export const InCodeTypeDefinitionSchema = z.strictObject(contentTypeFields).meta({ id: 'InCodeTypeDefinition' });
 
 export const CreateContentObjectTypePayloadSchema = z
     .strictObject({
-        status: ContentObjectTypeStatusSchema.optional(),
-        is_chunkable: z.boolean().optional(),
-        intake: ContentTypeIntakePolicySchema.optional(),
-        editing: ContentTypeEditingPolicySchema.optional(),
-        table_layout: z
-            .array(ColumnLayoutSchema)
-            .meta({
-                description:
-                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        object_schema: z
-            .looseObject({})
-            .meta({
-                description:
-                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        strict_mode: z
-            .boolean()
-            .meta({
-                description:
-                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
-            })
-            .optional(),
-        name: z.string().meta({ description: 'Human-readable name or title' }),
-        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
-        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+        status: contentTypeFields.status,
+        is_chunkable: contentTypeFields.is_chunkable,
+        intake: contentTypeFields.intake,
+        editing: contentTypeFields.editing,
+        table_layout: contentTypeFields.table_layout,
+        object_schema: contentTypeFields.object_schema,
+        strict_mode: contentTypeFields.strict_mode,
+        name: contentTypeFields.name,
+        description: contentTypeFields.description,
+        tags: contentTypeFields.tags,
     })
     .meta({ id: 'CreateContentObjectTypePayload' });
 
-export const ContentObjectTypeSchema = z
-    .strictObject({
-        id: z.string().meta({ description: 'Unique identifier for the object' }),
-        name: z.string().meta({ description: 'Human-readable name or title' }),
-        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
-        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
-        updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }),
-        created_by: z.string().meta({ description: 'Identifier of the user who created the object' }),
-        created_at: z.string().meta({ description: 'ISO timestamp of when the object was created' }),
-        updated_at: z.string().meta({ description: 'ISO timestamp of when the object was last updated' }),
-        status: ContentObjectTypeStatusSchema.optional(),
-        is_chunkable: z.boolean().optional(),
-        intake: ContentTypeIntakePolicySchema.optional(),
-        editing: ContentTypeEditingPolicySchema.optional(),
-        table_layout: z
-            .array(ColumnLayoutSchema)
-            .meta({
-                description:
-                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        object_schema: z
-            .looseObject({})
-            .meta({
-                description:
-                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
-            })
-            .optional(),
-        strict_mode: z
-            .boolean()
-            .meta({
-                description:
-                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
-            })
-            .optional(),
-    })
-    .meta({ id: 'ContentObjectType' });
+export const ContentObjectTypeSchema = z.strictObject(storedContentTypeShape).meta({ id: 'ContentObjectType' });

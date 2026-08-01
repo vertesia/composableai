@@ -1,4 +1,8 @@
-import { type ContentObjectType, type ContentTypeIntakePolicy, ContentTypeIntakePolicySchema } from '@vertesia/common';
+import {
+    type ContentObjectTypeCatalogEntry,
+    type ContentTypeIntakePolicy,
+    ContentTypeIntakePolicySchema,
+} from '@vertesia/common';
 import {
     Badge,
     Button,
@@ -25,7 +29,7 @@ import { IntakePolicyForm, type IntakePolicyFormSection } from './IntakePolicyFo
 
 interface IntakePolicyEditorProps {
     /** Content type whose intake policy is edited; omit when editing a standalone policy. */
-    objectType?: ContentObjectType;
+    objectType?: ContentObjectTypeCatalogEntry;
     /** Initial policy value when no objectType is given (e.g. the project default policy). */
     value?: ContentTypeIntakePolicy;
     /** Custom persistence (e.g. save to project configuration). Returns the saved policy.
