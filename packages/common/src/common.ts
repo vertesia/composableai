@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import type { DeleteOperationResultSchema } from './api-schemas/apikey.js';
+import type { DeleteCountResultSchema } from './api-schemas/commands.js';
 import type { CountResultSchema } from './api-schemas/project.js';
 import type { DeleteByIdResultSchema } from './api-schemas/user.js';
 export interface FindPayload {
@@ -25,10 +26,7 @@ export interface GenericCommandResponse {
  */
 export type DeleteByIdResult = z.infer<typeof DeleteByIdResultSchema>;
 
-export interface DeleteCountResult {
-    id: string;
-    count: number;
-}
+export type DeleteCountResult = z.infer<typeof DeleteCountResultSchema>;
 
 export interface SuccessResponse {
     success: true;

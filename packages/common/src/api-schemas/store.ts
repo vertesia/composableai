@@ -391,3 +391,234 @@ export const ContentTypeIntakePolicySchema = z
         id: 'ContentTypeIntakePolicy',
         description: 'Per-content-type policy for the standard intake workflows.',
     });
+
+/*
+ * Content-type catalog components, converted from the published document by
+ * `packages/api-specs/scripts/convert-to-zod.mjs` (wave Z1). The conversion is mechanical: each
+ * body below re-emits byte-identically to the component it replaces.
+ */
+export const ColumnLayoutSchema = z
+    .strictObject({
+        field: z.string().meta({ description: 'The path of the field to use (e.g. "properties.title")' }),
+        name: z.string().meta({ description: 'The name to display in the table column' }),
+        type: z
+            .string()
+            .meta({
+                description:
+                    'The type of the field specifies how the rendering will be done. If not specified the string type will be used. The type may contain additional parameters prepended using a web-like query string syntax: date?LLL',
+            })
+            .optional(),
+        fallback: z.string().optional(),
+        default: z
+            .unknown()
+            .meta({ description: 'A default value to be used if the field is not present in the object' })
+            .optional(),
+    })
+    .meta({ id: 'ColumnLayout' });
+
+export const ContentTypeEditingPolicySchema = z
+    .strictObject({
+        interaction: z
+            .string()
+            .meta({
+                description: 'Agent interaction used for new document-editing sessions. Defaults to sys:GeneralAgent.',
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'ContentTypeEditingPolicy',
+        description: 'Per-content-type policy for collaborative document editing.',
+    });
+
+export const ContentObjectTypeStatusSchema = z.enum(['active', 'draft']).meta({ id: 'ContentObjectTypeStatus' });
+
+export const ContentObjectTypeCatalogEntrySchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Unique identifier for the object' }),
+        name: z.string().meta({ description: 'Human-readable name or title' }),
+        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
+        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+        object_schema: z
+            .looseObject({})
+            .meta({
+                description:
+                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        table_layout: z
+            .array(ColumnLayoutSchema)
+            .meta({
+                description:
+                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        is_chunkable: z.boolean().optional(),
+        strict_mode: z
+            .boolean()
+            .meta({
+                description:
+                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
+            })
+            .optional(),
+        status: ContentObjectTypeStatusSchema.optional(),
+        intake: ContentTypeIntakePolicySchema.optional(),
+        editing: ContentTypeEditingPolicySchema.optional(),
+        updated_by: z.string().optional(),
+        created_by: z.string().optional(),
+        created_at: z.string().optional(),
+        updated_at: z.string().optional(),
+    })
+    .meta({ id: 'ContentObjectTypeCatalogEntry' });
+
+export const ContentObjectTypeItemSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Unique identifier for the object' }),
+        name: z.string().meta({ description: 'Human-readable name or title' }),
+        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
+        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+        updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }),
+        created_by: z.string().meta({ description: 'Identifier of the user who created the object' }),
+        created_at: z.string().meta({ description: 'ISO timestamp of when the object was created' }),
+        updated_at: z.string().meta({ description: 'ISO timestamp of when the object was last updated' }),
+        status: ContentObjectTypeStatusSchema.optional(),
+        is_chunkable: z.boolean().optional(),
+        intake: ContentTypeIntakePolicySchema.optional(),
+        editing: ContentTypeEditingPolicySchema.optional(),
+        table_layout: z
+            .array(ColumnLayoutSchema)
+            .meta({
+                description:
+                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        object_schema: z
+            .looseObject({})
+            .meta({
+                description:
+                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        strict_mode: z
+            .boolean()
+            .meta({
+                description:
+                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'ContentObjectTypeItem' });
+
+export const ContentObjectTypeItemArraySchema = z
+    .array(ContentObjectTypeItemSchema)
+    .meta({ id: 'ContentObjectTypeItemArray' });
+
+/*
+ * The three content-type shapes that a mapped type used to derive. `InCodeTypeDefinition` was
+ * published as `Pick_ContentObjectTypeItem_id_name_...` — the generator name for `Pick<>` — and
+ * `ContentObjectType`/`CreateContentObjectTypePayload` were an `extends` and an `Omit<>` over it.
+ * A mapped type over a canonical alias resolves to `{}`, so these are authored rather than derived.
+ */
+export const InCodeTypeDefinitionSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Unique identifier for the object' }),
+        name: z.string().meta({ description: 'Human-readable name or title' }),
+        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
+        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+        object_schema: z
+            .looseObject({})
+            .meta({
+                description:
+                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        table_layout: z
+            .array(ColumnLayoutSchema)
+            .meta({
+                description:
+                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        is_chunkable: z.boolean().optional(),
+        strict_mode: z
+            .boolean()
+            .meta({
+                description:
+                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
+            })
+            .optional(),
+        status: ContentObjectTypeStatusSchema.optional(),
+        intake: ContentTypeIntakePolicySchema.optional(),
+        editing: ContentTypeEditingPolicySchema.optional(),
+    })
+    .meta({ id: 'InCodeTypeDefinition' });
+
+export const CreateContentObjectTypePayloadSchema = z
+    .strictObject({
+        status: ContentObjectTypeStatusSchema.optional(),
+        is_chunkable: z.boolean().optional(),
+        intake: ContentTypeIntakePolicySchema.optional(),
+        editing: ContentTypeEditingPolicySchema.optional(),
+        table_layout: z
+            .array(ColumnLayoutSchema)
+            .meta({
+                description:
+                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        object_schema: z
+            .looseObject({})
+            .meta({
+                description:
+                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        strict_mode: z
+            .boolean()
+            .meta({
+                description:
+                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
+            })
+            .optional(),
+        name: z.string().meta({ description: 'Human-readable name or title' }),
+        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
+        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+    })
+    .meta({ id: 'CreateContentObjectTypePayload' });
+
+export const ContentObjectTypeSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Unique identifier for the object' }),
+        name: z.string().meta({ description: 'Human-readable name or title' }),
+        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
+        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+        updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }),
+        created_by: z.string().meta({ description: 'Identifier of the user who created the object' }),
+        created_at: z.string().meta({ description: 'ISO timestamp of when the object was created' }),
+        updated_at: z.string().meta({ description: 'ISO timestamp of when the object was last updated' }),
+        status: ContentObjectTypeStatusSchema.optional(),
+        is_chunkable: z.boolean().optional(),
+        intake: ContentTypeIntakePolicySchema.optional(),
+        editing: ContentTypeEditingPolicySchema.optional(),
+        table_layout: z
+            .array(ColumnLayoutSchema)
+            .meta({
+                description:
+                    'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        object_schema: z
+            .looseObject({})
+            .meta({
+                description:
+                    'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+            })
+            .optional(),
+        strict_mode: z
+            .boolean()
+            .meta({
+                description:
+                    'Determines if the content will be validated against the object schema a generation time and save/update time.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'ContentObjectType' });

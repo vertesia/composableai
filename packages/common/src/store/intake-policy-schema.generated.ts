@@ -5,7 +5,7 @@
 // schema and re-run `pnpm run gen:schemas`; `store.contract.test.ts` fails if this drifts from the
 // canonical component, and fails too if it accepts a value the Zod schema rejects.
 //
-// It exists so the Studio intake-policy editor and the server validators get a self-contained JSON
+// It exists so the Studio policy editors and the server validators get a self-contained JSON
 // Schema without importing Zod: the package root exports plain data, and `zod` stays out of every
 // browser bundle. The component's `$ref`s are re-rooted from `#/components/schemas/` to `#/$defs/`
 // so AJV and Monaco can compile it standalone.

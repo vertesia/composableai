@@ -1,6 +1,6 @@
 import Ajv from 'ajv';
 import { describe, expect, it } from 'vitest';
-import { ContentTypeEditingPolicySchema } from './store.js';
+import { ContentTypeEditingPolicySchema } from './editing-policy-schema.generated.js';
 
 const validate = new Ajv.default({ allErrors: true, strict: false }).compile(ContentTypeEditingPolicySchema);
 

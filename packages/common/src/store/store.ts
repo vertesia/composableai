@@ -1,9 +1,31 @@
-import type { JSONSchemaType } from 'ajv';
 import type { z } from 'zod';
 import type {
+    BulkUploadUrlsPayloadSchema,
+    BulkUploadUrlsResponseSchema,
+    CopyFilePayloadSchema,
+    CopyFileResponseSchema,
+    DeleteFileResultSchema,
+    FileBucketResponseSchema,
+    FileListResponseSchema,
+    FileMetadataResponseSchema,
+    FileMetadataUpdateResultSchema,
+    GetFileUrlPayloadSchema,
+    GetFileUrlResponseSchema,
+    GetUploadUrlPayloadSchema,
+    SetFileMetadataPayloadSchema,
+} from '../api-schemas/files.js';
+import type {
+    ColumnLayoutSchema,
+    ContentObjectTypeCatalogEntrySchema,
+    ContentObjectTypeItemSchema,
+    ContentObjectTypeSchema,
+    ContentObjectTypeStatusSchema,
+    ContentTypeEditingPolicySchema,
     ContentTypeExtractionGroundingPolicySchema,
     ContentTypeExtractionGroundingReviewPolicySchema,
     ContentTypeIntakePolicySchema,
+    CreateContentObjectTypePayloadSchema,
+    InCodeTypeDefinitionSchema,
     IntakePageRangesSchema,
     IntakePageScopeSchema,
     IntakeVisionDetailSchema,
@@ -841,31 +863,9 @@ export interface ComplexSearchPayload extends Omit<SearchPayload, 'query'> {
     query?: ComplexSearchQuery;
 }
 
-export interface ColumnLayout {
-    /**
-     * The path of the field to use (e.g. "properties.title")
-     */
-    field: string;
-    /**
-     * The name to display in the table column
-     */
-    name: string;
-    /**
-     * The type of the field specifies how the rendering will be done. If not specified the string type will be used.
-     * The type may contain additional parameters prepended using a web-like query string syntax: date?LLL
-     */
-    type?: string;
-    /*
-     * a fallback field to use if the field is not present in the object
-     */
-    fallback?: string;
-    /**
-     * A default value to be used if the field is not present in the object
-     */
-    default?: unknown;
-}
+export type ColumnLayout = z.infer<typeof ColumnLayoutSchema>;
 
-export type ContentObjectTypeStatus = 'active' | 'draft';
+export type ContentObjectTypeStatus = z.infer<typeof ContentObjectTypeStatusSchema>;
 
 export type IntakeVisionDetail = z.infer<typeof IntakeVisionDetailSchema>;
 
@@ -902,68 +902,23 @@ export type ContentTypeExtractionGroundingPolicy = z.infer<typeof ContentTypeExt
 
 export type ContentTypeIntakePolicy = z.infer<typeof ContentTypeIntakePolicySchema>;
 
-/** Per-content-type policy for collaborative document editing. */
-export interface ContentTypeEditingPolicy {
-    /** Agent interaction used for new document-editing sessions. Defaults to sys:GeneralAgent. */
-    interaction?: string;
-}
+// No TSDoc: the description is the canonical schema's, and a doc comment above a canonical alias is
+// published a second time.
+//
+// The hand-written AJV `ContentTypeEditingPolicySchema` that used to sit here is gone. It said the
+// same thing as the Zod schema and had to be kept in step by hand; `./editing-policy-schema.generated.ts`
+// now emits it from the canonical component, under the same exported name, so the validator the types
+// resource compiles and the component the spec publishes are the same object.
+export type ContentTypeEditingPolicy = z.infer<typeof ContentTypeEditingPolicySchema>;
 
-export const ContentTypeEditingPolicySchema: JSONSchemaType<ContentTypeEditingPolicy> = {
-    type: 'object',
-    description: 'Per-content-type policy for collaborative document editing.',
-    required: [],
-    additionalProperties: false,
-    properties: {
-        interaction: {
-            type: 'string',
-            description: 'Agent interaction used for new document-editing sessions. Omit to use sys:GeneralAgent.',
-            nullable: true,
-        },
-    },
-};
-
-export interface ContentObjectType extends ContentObjectTypeItem {}
-export interface ContentObjectTypeItem extends BaseObject {
-    status?: ContentObjectTypeStatus;
-    is_chunkable?: boolean;
-    intake?: ContentTypeIntakePolicy;
-    editing?: ContentTypeEditingPolicy;
-    /**
-     * This is only included in ContentObjectTypeItem if explicitly requested
-     * It is always included in ContentObjectType
-     */
-    table_layout?: ColumnLayout[];
-    /**
-     * this is only included in ContentObjectTypeItem if explicitly requested
-     * It is always included in ContentObjectType
-     */
-    object_schema?: Record<string, unknown>; // an optional JSON schema for the object properties.
-
-    /**
-     * Determines if the content will be validated against the object schema a generation time and save/update time.
-     */
-    strict_mode?: boolean;
-}
-export type InCodeTypeDefinition = Pick<
-    ContentObjectTypeItem,
-    | 'id'
-    | 'name'
-    | 'description'
-    | 'tags'
-    | 'object_schema'
-    | 'table_layout'
-    | 'is_chunkable'
-    | 'strict_mode'
-    | 'status'
-    | 'intake'
-    | 'editing'
->;
-export interface ContentObjectTypeCatalogEntry extends InCodeTypeDefinition {
-    updated_by?: string;
-    created_by?: string;
-    created_at?: string;
-    updated_at?: string;
-}
+export type ContentObjectType = z.infer<typeof ContentObjectTypeSchema>;
+export type ContentObjectTypeItem = z.infer<typeof ContentObjectTypeItemSchema>;
+// Was `Pick<ContentObjectTypeItem, ...>`, and published under the name that derived from:
+// `Pick_ContentObjectTypeItem_id_name_description_tags_object_schema_...`. A mapped type over a
+// canonical alias resolves to `{}`, so the shape is authored now — and it publishes under its own
+// name, which is what the API always meant.
+export type InCodeTypeDefinition = z.infer<typeof InCodeTypeDefinitionSchema>;
+export type ContentObjectTypeCatalogEntry = z.infer<typeof ContentObjectTypeCatalogEntrySchema>;
 /**
  * The itnerface to be used whend efining types in a plugin app.
  */
@@ -978,8 +933,7 @@ export function isInCodeType(typeId: string): boolean {
     return typeId.includes(':');
 }
 
-export interface CreateContentObjectTypePayload
-    extends Omit<ContentObjectType, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'> {}
+export type CreateContentObjectTypePayload = z.infer<typeof CreateContentObjectTypePayloadSchema>;
 
 export enum WorkflowRuleInputType {
     single = 'single',
@@ -1179,27 +1133,11 @@ export function supportsVisualRendition(contentType: string | undefined): boolea
     return canGenerateRendition(contentType, ImageRenditionFormat.jpeg);
 }
 
-export interface GetUploadUrlPayload {
-    name: string;
-    id?: string;
-    mime_type?: string;
-    ttl?: number;
-}
+export type GetUploadUrlPayload = z.infer<typeof GetUploadUrlPayloadSchema>;
 
-export interface GetFileUrlPayload {
-    file: string;
-    // Optional filename to use in Content-Disposition for downloads
-    name?: string;
-    // Optional disposition for downloads (default: attachment)
-    disposition?: 'inline' | 'attachment';
-}
+export type GetFileUrlPayload = z.infer<typeof GetFileUrlPayloadSchema>;
 
-export interface GetFileUrlResponse {
-    url: string;
-    id: string;
-    mime_type?: string;
-    path: string;
-}
+export type GetFileUrlResponse = z.infer<typeof GetFileUrlResponseSchema>;
 
 export interface EnsureBucketReadAccessPayload {
     principal: string;
@@ -1217,42 +1155,19 @@ export interface BucketReadAccessStatusResponse {
     hasAccess: boolean;
 }
 
-export interface FileMetadataResponse {
-    name: string;
-    size: number;
-    contentType: string;
-    contentDisposition?: string;
-    etag?: string;
-    customMetadata?: Record<string, string>;
-}
+export type FileMetadataResponse = z.infer<typeof FileMetadataResponseSchema>;
 
-export interface SetFileMetadataPayload {
-    /** The file path (relative to bucket) or full URI */
-    file: string;
-    /** Custom metadata key-value pairs to set on the file */
-    metadata: Record<string, string>;
-}
+export type SetFileMetadataPayload = z.infer<typeof SetFileMetadataPayloadSchema>;
 
-export interface FileMetadataUpdateResult {
-    success: boolean;
-    file: string;
-}
+export type FileMetadataUpdateResult = z.infer<typeof FileMetadataUpdateResultSchema>;
 
-export interface BulkUploadUrlsPayload {
-    files: { name: string; mime_type?: string; id?: string }[];
-}
+export type BulkUploadUrlsPayload = z.infer<typeof BulkUploadUrlsPayloadSchema>;
 
-export interface BulkUploadUrlsResponse {
-    files: GetFileUrlResponse[];
-}
+export type BulkUploadUrlsResponse = z.infer<typeof BulkUploadUrlsResponseSchema>;
 
-export interface FileBucketResponse {
-    bucket: string;
-}
+export type FileBucketResponse = z.infer<typeof FileBucketResponseSchema>;
 
-export interface FileListResponse {
-    files: string[];
-}
+export type FileListResponse = z.infer<typeof FileListResponseSchema>;
 
 export interface FileMetadataQuery {
     file: string;
@@ -1283,23 +1198,11 @@ export interface ContentObjectTypeListQuery {
     offset?: number;
 }
 
-export interface CopyFilePayload {
-    source: string;
-    dest: string;
-}
+export type CopyFilePayload = z.infer<typeof CopyFilePayloadSchema>;
 
-export interface CopyFileResponse {
-    success: boolean;
-    source: string;
-    dest: string;
-}
+export type CopyFileResponse = z.infer<typeof CopyFileResponseSchema>;
 
-export interface DeleteFileResult {
-    success: boolean;
-    count: number;
-    message?: string;
-    file?: string;
-}
+export type DeleteFileResult = z.infer<typeof DeleteFileResultSchema>;
 
 export enum ContentObjectProcessingPriority {
     normal = 'normal',

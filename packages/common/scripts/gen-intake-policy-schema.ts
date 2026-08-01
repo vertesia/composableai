@@ -24,16 +24,20 @@ import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { bundleCanonicalComponent } from '../src/api-schemas/registry.js';
 
-const OUTPUT = fileURLToPath(new URL('../src/store/intake-policy-schema.generated.ts', import.meta.url));
+/** Canonical component -> the artifact module that publishes it as plain JSON Schema. */
+const ARTIFACTS = [
+    { component: 'ContentTypeIntakePolicy', output: 'intake-policy-schema.generated.ts' },
+    { component: 'ContentTypeEditingPolicy', output: 'editing-policy-schema.generated.ts' },
+];
 
-const HEADER = `// GENERATED FILE — DO NOT EDIT.
+const header = (component: string) => `// GENERATED FILE — DO NOT EDIT.
 //
-// Written by \`scripts/gen-intake-policy-schema.ts\` from \`ContentTypeIntakePolicySchema\` in
+// Written by \`scripts/gen-intake-policy-schema.ts\` from \`${component}Schema\` in
 // \`../api-schemas/store.ts\`, through the same adapter that emits the OpenAPI components. Edit the Zod
 // schema and re-run \`pnpm run gen:schemas\`; \`store.contract.test.ts\` fails if this drifts from the
 // canonical component, and fails too if it accepts a value the Zod schema rejects.
 //
-// It exists so the Studio intake-policy editor and the server validators get a self-contained JSON
+// It exists so the Studio policy editors and the server validators get a self-contained JSON
 // Schema without importing Zod: the package root exports plain data, and \`zod\` stays out of every
 // browser bundle. The component's \`$ref\`s are re-rooted from \`#/components/schemas/\` to \`#/$defs/\`
 // so AJV and Monaco can compile it standalone.
@@ -45,11 +49,16 @@ const HEADER = `// GENERATED FILE — DO NOT EDIT.
 
 `;
 
-const schema = bundleCanonicalComponent('ContentTypeIntakePolicy');
-// Annotated as `JSONObject` rather than left to infer, and not for brevity: an `as const` literal
-// of this size becomes a 1700-line literal type in the emitted `.d.ts`, and the OpenAPI scanner then
-// walks it — which drags the submodule's SOURCE tree into its program alongside the built `.d.ts`
-// files and makes every canonical alias look declared twice. Consumers treat this as opaque JSON.
-const body = `import type { JSONObject } from '../json.js';\n\nexport const ContentTypeIntakePolicySchema: JSONObject = ${JSON.stringify(schema, null, 4)};\n`;
-writeFileSync(OUTPUT, HEADER + body);
-console.log(`wrote ${OUTPUT} (${Object.keys(schema.$defs ?? {}).length} $defs)`);
+for (const { component, output } of ARTIFACTS) {
+    const schema = bundleCanonicalComponent(component);
+    // Annotated as `JSONObject` rather than left to infer, and not for brevity: an `as const` literal
+    // of this size becomes a 1700-line literal type in the emitted `.d.ts`, and the OpenAPI scanner
+    // then walks it — which drags the submodule's SOURCE tree into its program alongside the built
+    // `.d.ts` files and makes every canonical alias look declared twice. Consumers treat it as opaque.
+    const body =
+        `import type { JSONObject } from '../json.js';\n\n` +
+        `export const ${component}Schema: JSONObject = ${JSON.stringify(schema, null, 4)};\n`;
+    const path = fileURLToPath(new URL(`../src/store/${output}`, import.meta.url));
+    writeFileSync(path, header(component) + body);
+    console.log(`wrote ${path} (${Object.keys(schema.$defs ?? {}).length} $defs)`);
+}

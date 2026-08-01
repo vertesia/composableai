@@ -1,71 +1,46 @@
 /**
  * Durable human task types used by process human_task nodes and agent asks.
  */
+import type { z } from 'zod';
+import type {
+    CompleteTaskPayloadSchema,
+    CreateTaskPayloadSchema,
+    DurableTaskStatusSchema,
+    TaskFieldSchema,
+    TaskFieldTypeSchema,
+    TaskSchema,
+    TaskSourceSchema,
+    UpdateTaskPayloadSchema,
+} from '../api-schemas/task.js';
 
-export type DurableTaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type DurableTaskStatus = z.infer<typeof DurableTaskStatusSchema>;
 
-export type TaskFieldType = 'string' | 'number' | 'boolean' | 'select' | 'text';
+export type TaskFieldType = z.infer<typeof TaskFieldTypeSchema>;
 
-export interface TaskField {
-    name: string;
-    type: TaskFieldType;
-    required?: boolean;
-    label?: string;
-    options?: string[];
-    default?: unknown;
-}
+export type TaskField = z.infer<typeof TaskFieldSchema>;
 
-export interface TaskSource {
-    type: 'process' | 'agent';
-    run_id: string;
-    node?: string;
-    ask_id?: string;
-}
+export type TaskSource = z.infer<typeof TaskSourceSchema>;
 
-export interface Task {
-    id: string;
-    account: string;
-    project: string;
-    title: string;
-    description?: string;
-    status: DurableTaskStatus;
-    assignee?: string;
-    fields: TaskField[];
-    result?: Record<string, unknown>;
-    source: TaskSource;
-    due_at?: Date;
-    created_at: Date;
-    completed_at?: Date;
-    updated_at?: Date;
-}
+/**
+ * The timestamps are ISO date-time STRINGS, not `Date`: this is the wire shape, and JSON has no date
+ * type. The Mongoose model keeps `Date` — persistence and transport are different contracts.
+ */
+export type Task = z.infer<typeof TaskSchema>;
 
-export interface CreateTaskPayload {
-    title: string;
-    description?: string;
-    assignee?: string;
-    fields?: TaskField[];
-    source: TaskSource;
-    due_at?: Date;
-}
+export type CreateTaskPayload = z.infer<typeof CreateTaskPayloadSchema>;
 
-export interface UpdateTaskPayload {
-    title?: string;
-    description?: string;
-    status?: DurableTaskStatus;
-    assignee?: string | null;
-    fields?: TaskField[];
-    due_at?: Date | null;
-}
+export type UpdateTaskPayload = z.infer<typeof UpdateTaskPayloadSchema>;
 
-export interface CompleteTaskPayload {
-    result: Record<string, unknown>;
-}
+export type CompleteTaskPayload = z.infer<typeof CompleteTaskPayloadSchema>;
 
 export interface ListTasksQuery {
     status?: DurableTaskStatus | DurableTaskStatus[];
     assignee?: string;
     run_id?: string;
-    source_type?: TaskSource['type'];
+    // Spelled out rather than `TaskSource['type']`: an indexed access into a canonical alias is
+    // opaque to the OpenAPI scanner, and the parameter silently disappeared from the published
+    // operation — and from the generated clients' `listTasks` signature.
+    source_type?: 'process' | 'agent';
     limit?: number;
     offset?: number;
 }

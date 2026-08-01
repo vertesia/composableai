@@ -171,12 +171,28 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // enums and the embedding-switch map. ProjectIntakeConfiguration converts with it:
             // `vision_profiles` was a mapped type over IntakeVisionDetail, and a mapped type cannot
             // be keyed by an alias the generator treats as opaque.
+            // Wave Z1, eleventh — the zeno files, durable-task, content-type-catalog and migration closures,
+            // converted in bulk from the published document rather than transcribed one property at a time.
+            'BulkUploadUrlsPayload',
+            'BulkUploadUrlsResponse',
+            'ColumnLayout',
+            'CompleteTaskPayload',
             'ConfigModes',
+            // Also wave Z1: the two content-type shapes a mapped type used to derive, plus InCodeTypeDefinition,
+            // which replaces the generated `Pick_ContentObjectTypeItem_...` component name.
+            'ContentObjectType',
+            'ContentObjectTypeCatalogEntry',
+            'ContentObjectTypeItem',
+            'ContentObjectTypeItemArray',
+            'ContentObjectTypeStatus',
+            'ContentTypeEditingPolicy',
             'ContentTypeExtractionGroundingPolicy',
             'ContentTypeExtractionGroundingReviewPolicy',
             'ContentTypeIntakePolicy',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
+            'CopyFilePayload',
+            'CopyFileResponse',
             'CountResult',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
@@ -184,6 +200,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'CreateApiKeyPayload',
             // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
             // an endpoint.
+            'CreateContentObjectTypePayload',
+            'CreateTaskPayload',
             'CreateUserGroupPayload',
             // The IAM closure, converted as the second. PrincipalContext is composed into
             // PrincipalIdentity rather than hoisted, so it is a public type with no component.
@@ -191,12 +209,22 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
+            'DeleteCountResult',
+            'DeleteFileResult',
             'DeleteOperationResult',
+            'DurableTaskStatus',
             'ElasticsearchBackend',
             // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
             // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'FileBucketResponse',
+            'FileListResponse',
+            'FileMetadataResponse',
+            'FileMetadataUpdateResult',
+            'GetFileUrlPayload',
+            'GetFileUrlResponse',
+            'GetUploadUrlPayload',
             'GroqOptions',
             // The Project closure, ninth — also declared in @llumiverse/common, because that is where
             // the type is. `InteractionExecutionConfiguration.http_timeout` references it, so it has to
@@ -212,6 +240,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ImagenMaskMode',
             'ImagenOptions',
             'ImagenTaskType',
+            'InCodeTypeDefinition',
             'IntakePageRanges',
             'IntakePageScope',
             'IntakeVisionDetail',
@@ -234,6 +263,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ListProjectsQuery',
             'MCPOAuthConfig',
             'MCPToolCollectionObject',
+            'MigrationListResponse',
             'ModalityDefaults',
             'ModelDefault',
             // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
@@ -323,6 +353,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'RoleDefinitionArray',
             'RoleDomain',
             'RunDataStorageLevel',
+            'RunMigrationPayload',
+            'RunMigrationResponse',
+            'SetFileMetadataPayload',
+            'StringValueMap',
             'StripeBillingDisabled',
             'StripeBillingEnabled',
             'StripeBillingStatusResponse',
@@ -342,6 +376,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
+            'Task',
+            'TaskArray',
+            'TaskField',
+            'TaskFieldType',
+            'TaskSource',
             'TextFallbackOptions',
             'ThinkingLevel',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
@@ -364,6 +403,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'UpdateApiKeyPayload',
             // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
             // an endpoint.
+            'UpdateTaskPayload',
             'UpdateUserGroupPayload',
             // The IAM closure, converted as the second. PrincipalContext is composed into
             // PrincipalIdentity rather than hoisted, so it is a public type with no component.

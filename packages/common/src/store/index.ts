@@ -6,9 +6,10 @@ export * from './common.js';
 export * from './conversation-state.js';
 export * from './doc-analyzer.js';
 export * from './dsl-workflow.js';
+// The compiled JSON Schema for ContentTypeIntakePolicy, under the name consumers import.
+export * from './editing-policy-schema.generated.js';
 export * from './grounded-extraction.js';
 export * from './hive-memory.js';
-// The compiled JSON Schema for ContentTypeIntakePolicy, under the name consumers import.
 export * from './intake-policy-schema.generated.js';
 export * from './object-types.js';
 export * from './process.js';

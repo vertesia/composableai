@@ -39,6 +39,28 @@ import {
     ToolCollectionObjectSchema,
 } from './apps.js';
 import {
+    DeleteCountResultSchema,
+    MigrationListResponseSchema,
+    RunMigrationPayloadSchema,
+    RunMigrationResponseSchema,
+} from './commands.js';
+import {
+    BulkUploadUrlsPayloadSchema,
+    BulkUploadUrlsResponseSchema,
+    CopyFilePayloadSchema,
+    CopyFileResponseSchema,
+    DeleteFileResultSchema,
+    FileBucketResponseSchema,
+    FileListResponseSchema,
+    FileMetadataResponseSchema,
+    FileMetadataUpdateResultSchema,
+    GetFileUrlPayloadSchema,
+    GetFileUrlResponseSchema,
+    GetUploadUrlPayloadSchema,
+    SetFileMetadataPayloadSchema,
+    StringValueMapSchema,
+} from './files.js';
+import {
     CreateUserGroupPayloadSchema,
     UpdateUserGroupPayloadSchema,
     UserGroupArraySchema,
@@ -85,7 +107,29 @@ import {
     ResourceVisibilitySchema,
 } from './project-configuration.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
-import { ContentTypeIntakePolicySchema } from './store.js';
+import {
+    ColumnLayoutSchema,
+    ContentObjectTypeCatalogEntrySchema,
+    ContentObjectTypeItemArraySchema,
+    ContentObjectTypeItemSchema,
+    ContentObjectTypeSchema,
+    ContentObjectTypeStatusSchema,
+    ContentTypeEditingPolicySchema,
+    ContentTypeIntakePolicySchema,
+    CreateContentObjectTypePayloadSchema,
+    InCodeTypeDefinitionSchema,
+} from './store.js';
+import {
+    CompleteTaskPayloadSchema,
+    CreateTaskPayloadSchema,
+    DurableTaskStatusSchema,
+    TaskArraySchema,
+    TaskFieldSchema,
+    TaskFieldTypeSchema,
+    TaskSchema,
+    TaskSourceSchema,
+    UpdateTaskPayloadSchema,
+} from './task.js';
 import {
     DeleteByIdResultSchema,
     PrincipalIdentitySchema,
@@ -216,6 +260,49 @@ const API_SCHEMAS = {
     AppAccessControl: AppAccessControlSchema,
     AppSourceConfig: AppSourceConfigSchema,
     AppManifestSource: AppManifestSourceSchema,
+
+    // Wave Z1 — zeno files, durable tasks, the content-type catalog and the migration commands.
+    // Converted in bulk by `packages/api-specs/scripts/convert-to-zod.mjs` from the published
+    // document, so every body here re-emits byte-identically to the component it replaces.
+    StringValueMap: StringValueMapSchema,
+    CopyFilePayload: CopyFilePayloadSchema,
+    CopyFileResponse: CopyFileResponseSchema,
+    DeleteFileResult: DeleteFileResultSchema,
+    FileBucketResponse: FileBucketResponseSchema,
+    FileListResponse: FileListResponseSchema,
+    FileMetadataResponse: FileMetadataResponseSchema,
+    FileMetadataUpdateResult: FileMetadataUpdateResultSchema,
+    GetFileUrlPayload: GetFileUrlPayloadSchema,
+    GetFileUrlResponse: GetFileUrlResponseSchema,
+    GetUploadUrlPayload: GetUploadUrlPayloadSchema,
+    BulkUploadUrlsPayload: BulkUploadUrlsPayloadSchema,
+    BulkUploadUrlsResponse: BulkUploadUrlsResponseSchema,
+    SetFileMetadataPayload: SetFileMetadataPayloadSchema,
+
+    TaskFieldType: TaskFieldTypeSchema,
+    DurableTaskStatus: DurableTaskStatusSchema,
+    TaskSource: TaskSourceSchema,
+    TaskField: TaskFieldSchema,
+    Task: TaskSchema,
+    TaskArray: TaskArraySchema,
+    CreateTaskPayload: CreateTaskPayloadSchema,
+    UpdateTaskPayload: UpdateTaskPayloadSchema,
+    CompleteTaskPayload: CompleteTaskPayloadSchema,
+
+    ColumnLayout: ColumnLayoutSchema,
+    ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
+    ContentObjectTypeStatus: ContentObjectTypeStatusSchema,
+    ContentObjectTypeItem: ContentObjectTypeItemSchema,
+    ContentObjectTypeItemArray: ContentObjectTypeItemArraySchema,
+    ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntrySchema,
+    InCodeTypeDefinition: InCodeTypeDefinitionSchema,
+    CreateContentObjectTypePayload: CreateContentObjectTypePayloadSchema,
+    ContentObjectType: ContentObjectTypeSchema,
+
+    DeleteCountResult: DeleteCountResultSchema,
+    MigrationListResponse: MigrationListResponseSchema,
+    RunMigrationPayload: RunMigrationPayloadSchema,
+    RunMigrationResponse: RunMigrationResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 export type ApiComponentName = keyof typeof API_SCHEMAS;
@@ -375,6 +462,37 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'MCPOAuthConfig',
     'MCPToolCollectionObject',
     'VertesiaSDKToolCollectionObject',
+    // Wave Z1. Every one is published closed today; `StringValueMap`, `MigrationListResponse`,
+    // `TaskArray`, `ContentObjectTypeItemArray` and the three enums are not objects and take none.
+    'CopyFilePayload',
+    'CopyFileResponse',
+    'DeleteFileResult',
+    'FileBucketResponse',
+    'FileListResponse',
+    'FileMetadataResponse',
+    'FileMetadataUpdateResult',
+    'GetFileUrlPayload',
+    'GetFileUrlResponse',
+    'GetUploadUrlPayload',
+    'BulkUploadUrlsPayload',
+    'BulkUploadUrlsResponse',
+    'SetFileMetadataPayload',
+    'TaskSource',
+    'TaskField',
+    'Task',
+    'CreateTaskPayload',
+    'UpdateTaskPayload',
+    'CompleteTaskPayload',
+    'ColumnLayout',
+    'ContentTypeEditingPolicy',
+    'ContentObjectTypeItem',
+    'ContentObjectTypeCatalogEntry',
+    'InCodeTypeDefinition',
+    'CreateContentObjectTypePayload',
+    'ContentObjectType',
+    'DeleteCountResult',
+    'RunMigrationPayload',
+    'RunMigrationResponse',
 ]);
 
 /**
