@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type { DeleteOperationResultSchema } from './api-schemas/apikey.js';
 import type { DeleteCountResultSchema } from './api-schemas/commands.js';
+import type { SuccessResponseSchema } from './api-schemas/oauth.js';
 import type { CountResultSchema } from './api-schemas/project.js';
 import type { DeleteByIdResultSchema } from './api-schemas/user.js';
 import type { ContentObjectProcessingPriority } from './store/store.js';
@@ -30,9 +31,15 @@ export type DeleteByIdResult = z.infer<typeof DeleteByIdResultSchema>;
 
 export type DeleteCountResult = z.infer<typeof DeleteCountResultSchema>;
 
-export interface SuccessResponse {
-    success: true;
-}
+/**
+ * The success acknowledgement the OAuth provider and client endpoints return, inferred from
+ * `./api-schemas/oauth.js`.
+ *
+ * `success: boolean`, not `success: true`, which is what the document has always published — the
+ * scanner widened the literal on its way out. The handlers still only ever return `true`; the type
+ * now says what a client can be sent rather than what our five handlers happen to send.
+ */
+export type SuccessResponse = z.infer<typeof SuccessResponseSchema>;
 
 /**
  * The raw Mongo delete acknowledgement, inferred from `./api-schemas/apikey.js`.

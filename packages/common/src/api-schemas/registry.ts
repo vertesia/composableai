@@ -80,6 +80,41 @@ import {
     UserInviteTokenArraySchema,
 } from './invites.js';
 import {
+    CreateOAuthProviderPayloadSchema,
+    OAuthProviderAccessTokenResponseSchema,
+    OAuthProviderArraySchema,
+    OAuthProviderAuthorizeResponseSchema,
+    OAuthProviderAuthStatusSchema,
+    OAuthProviderExchangePayloadSchema,
+    OAuthProviderSchema,
+    SuccessResponseSchema,
+    UpdateOAuthProviderPayloadSchema,
+} from './oauth.js';
+import {
+    BulkRevokeOAuthGrantsPayloadSchema,
+    CreateOAuthClientPayloadSchema,
+    ListOAuthGrantsQuerySchema,
+    OAuthClientArraySchema,
+    OAuthClientCreateResponseSchema,
+    OAuthClientSchema,
+    OAuthClientScopeMetadataSchema,
+    OAuthClientStatusSchema,
+    OAuthClientTypeSchema,
+    OAuthGrantListResponseSchema,
+    OAuthGrantRevokeResponseSchema,
+    OAuthGrantSchema,
+    OAuthGrantSortFieldSchema,
+    OAuthGrantSortOrderSchema,
+    OAuthGrantStatusSchema,
+    OAuthGrantTypeSchema,
+    OAuthProjectBindingModeSchema,
+    OAuthRegistrationSourceSchema,
+    OAuthResponseTypeSchema,
+    OAuthTokenEndpointAuthMethodSchema,
+    RevokeOAuthGrantQuerySchema,
+    UpdateOAuthClientPayloadSchema,
+} from './oauth-server.js';
+import {
     type ApiParameterLocation,
     type NormalizedApiParameters,
     normalizeParameters,
@@ -298,6 +333,59 @@ const PROJECT_AND_APP_SCHEMAS = {
     AppManifestSource: AppManifestSourceSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+/**
+ * Wave S1 — the studio OAuth surface: providers, clients, grants.
+ *
+ * A group of its own rather than an addition to one above, for the reason stated on the grouping
+ * note: thirty-one components is most of what a group can hold before the declaration emit refuses
+ * it, so adding them to an existing group would spend the whole remaining margin at once.
+ *
+ * The token server's own OAuth surface — authorize, token, device code, consent — is NOT here. It is
+ * a different service with its own slots and converts in a later wave; these are the components the
+ * three studio resources name.
+ */
+const OAUTH_SCHEMAS = {
+    // Providers: Vertesia as a client of someone else's authorization server.
+    SuccessResponse: SuccessResponseSchema,
+    OAuthProvider: OAuthProviderSchema,
+    OAuthProviderArray: OAuthProviderArraySchema,
+    CreateOAuthProviderPayload: CreateOAuthProviderPayloadSchema,
+    UpdateOAuthProviderPayload: UpdateOAuthProviderPayloadSchema,
+    OAuthProviderAuthStatus: OAuthProviderAuthStatusSchema,
+    OAuthProviderAuthorizeResponse: OAuthProviderAuthorizeResponseSchema,
+    OAuthProviderAccessTokenResponse: OAuthProviderAccessTokenResponseSchema,
+    OAuthProviderExchangePayload: OAuthProviderExchangePayloadSchema,
+    // The client and grant enums. Each is published as a component today because it has a
+    // TypeScript name, so each is registered rather than inlined — dropping one would rewrite every
+    // `$ref` that points at it into an inline enum.
+    OAuthClientType: OAuthClientTypeSchema,
+    OAuthClientStatus: OAuthClientStatusSchema,
+    OAuthRegistrationSource: OAuthRegistrationSourceSchema,
+    OAuthProjectBindingMode: OAuthProjectBindingModeSchema,
+    OAuthTokenEndpointAuthMethod: OAuthTokenEndpointAuthMethodSchema,
+    OAuthGrantType: OAuthGrantTypeSchema,
+    OAuthResponseType: OAuthResponseTypeSchema,
+    OAuthGrantStatus: OAuthGrantStatusSchema,
+    OAuthGrantSortField: OAuthGrantSortFieldSchema,
+    OAuthGrantSortOrder: OAuthGrantSortOrderSchema,
+    // Clients registered against Vertesia's own OAuth server. `OAuthClientData` is composed into
+    // `OAuthClient` rather than hoisted, so it has no component of its own — as today.
+    OAuthClient: OAuthClientSchema,
+    OAuthClientArray: OAuthClientArraySchema,
+    OAuthClientCreateResponse: OAuthClientCreateResponseSchema,
+    OAuthClientScopeMetadata: OAuthClientScopeMetadataSchema,
+    CreateOAuthClientPayload: CreateOAuthClientPayloadSchema,
+    UpdateOAuthClientPayload: UpdateOAuthClientPayloadSchema,
+    // Grants. The two query components are registered like any other — they are expanded into
+    // parameters rather than published as component bodies, which is what every query contract does.
+    OAuthGrant: OAuthGrantSchema,
+    ListOAuthGrantsQuery: ListOAuthGrantsQuerySchema,
+    RevokeOAuthGrantQuery: RevokeOAuthGrantQuerySchema,
+    BulkRevokeOAuthGrantsPayload: BulkRevokeOAuthGrantsPayloadSchema,
+    OAuthGrantListResponse: OAuthGrantListResponseSchema,
+    OAuthGrantRevokeResponse: OAuthGrantRevokeResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const ZENO_SCHEMAS = {
     // Wave Z1 — zeno files, durable tasks, the content-type catalog and the migration commands.
     // Converted in bulk by `packages/api-specs/scripts/convert-to-zod.mjs` from the published
@@ -352,21 +440,61 @@ const ZENO_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 /**
+ * Merges the groups, refusing a name that appears in more than one.
+ *
+ * A spread would accept the duplicate and keep the LAST group's schema, while
+ * {@link ApiComponentType} — a conditional that tests the groups in order — would resolve to the
+ * FIRST group's. That is the exact type/runtime split this registry exists to make impossible:
+ * validation would enforce one shape while every handler was typed against another, and nothing
+ * downstream would report it. Registering a component twice is always a mistake, so it fails loudly
+ * at module load rather than being resolved by an ordering rule nobody can see.
+ *
+ * Not expressible in the type system: the groups are separate objects, so a name in two of them is
+ * a legal union member, not a compile error.
+ *
+ * Exported only so the registry's tests can drive it with groups that DO collide; the real call is
+ * the one below, and it runs at module load, so a duplicate in the real groups fails every import
+ * of this module rather than waiting for a test to look.
+ */
+export function mergeComponentGroups(groups: Record<string, z.ZodType>[]): Record<string, z.ZodType> {
+    const merged: Record<string, z.ZodType> = {};
+    const duplicates: string[] = [];
+    for (const group of groups) {
+        for (const [name, schema] of Object.entries(group)) {
+            if (name in merged) {
+                duplicates.push(name);
+            }
+            merged[name] = schema;
+        }
+    }
+    if (duplicates.length > 0) {
+        throw new Error(
+            `API component${duplicates.length > 1 ? 's' : ''} registered in more than one group: ` +
+                `${duplicates.sort().join(', ')}. Each component must be listed in exactly one group — ` +
+                'a duplicate makes the runtime schema and ApiComponentType disagree.',
+        );
+    }
+    return merged;
+}
+
+/**
  * Every registered component, keyed by the name it publishes under.
  *
  * Annotated rather than inferred: the precise per-key types live on the groups above, and this
  * is only ever iterated, so widening the values here is what keeps the merged object from
  * re-creating the type the split exists to avoid.
  */
-const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = {
-    ...IAM_AND_ACCOUNT_SCHEMAS,
-    ...PROJECT_AND_APP_SCHEMAS,
-    ...ZENO_SCHEMAS,
-};
+const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponentGroups([
+    IAM_AND_ACCOUNT_SCHEMAS,
+    PROJECT_AND_APP_SCHEMAS,
+    OAUTH_SCHEMAS,
+    ZENO_SCHEMAS,
+]) as Record<ApiComponentName, z.ZodType>;
 
 export type ApiComponentName =
     | keyof typeof IAM_AND_ACCOUNT_SCHEMAS
     | keyof typeof PROJECT_AND_APP_SCHEMAS
+    | keyof typeof OAUTH_SCHEMAS
     | keyof typeof ZENO_SCHEMAS;
 
 /**
@@ -575,6 +703,29 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'RunMigrationPayload',
     'RunMigrationResponse',
     'MigrationListResponse',
+    // The OAuth closure. Every object in it is published closed today; the ten enums and the two
+    // array components take no additionalProperties at all, and `OAuthProviderData`/`OAuthClientData`
+    // are composed rather than hoisted so they have no component to list.
+    'SuccessResponse',
+    'OAuthProvider',
+    'CreateOAuthProviderPayload',
+    'UpdateOAuthProviderPayload',
+    'OAuthProviderAuthStatus',
+    'OAuthProviderAuthorizeResponse',
+    'OAuthProviderAccessTokenResponse',
+    'OAuthProviderExchangePayload',
+    'OAuthClient',
+    'OAuthClientCreateResponse',
+    'OAuthClientScopeMetadata',
+    'CreateOAuthClientPayload',
+    'UpdateOAuthClientPayload',
+    'OAuthGrant',
+    'BulkRevokeOAuthGrantsPayload',
+    'OAuthGrantListResponse',
+    'OAuthGrantRevokeResponse',
+    // Expanded into parameters rather than published, like the zeno and project query components.
+    'ListOAuthGrantsQuery',
+    'RevokeOAuthGrantQuery',
 ]);
 
 /**
@@ -711,9 +862,11 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeo
     ? z.infer<(typeof IAM_AND_ACCOUNT_SCHEMAS)[N]>
     : N extends keyof typeof PROJECT_AND_APP_SCHEMAS
       ? z.infer<(typeof PROJECT_AND_APP_SCHEMAS)[N]>
-      : N extends keyof typeof ZENO_SCHEMAS
-        ? z.infer<(typeof ZENO_SCHEMAS)[N]>
-        : never;
+      : N extends keyof typeof OAUTH_SCHEMAS
+        ? z.infer<(typeof OAUTH_SCHEMAS)[N]>
+        : N extends keyof typeof ZENO_SCHEMAS
+          ? z.infer<(typeof ZENO_SCHEMAS)[N]>
+          : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

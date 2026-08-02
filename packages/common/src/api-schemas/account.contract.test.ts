@@ -168,6 +168,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'BrowserUseProjectConfiguration',
             'BrowserUseRiskPolicy',
             'BrowserUseScreenshotCapture',
+            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
+            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
+            // component of its own; the two query components are expanded into parameters rather than
+            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
+            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
+            'BulkRevokeOAuthGrantsPayload',
             // The intake policy tree, tenth. `ContentTypeIntakePolicy` replaces a hand-written AJV
             // schema and hoists InteractionExecutionConfiguration, the two grounding policies, three
             // enums and the embedding-switch map. ProjectIntakeConfiguration converts with it:
@@ -206,6 +212,13 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
             // an endpoint.
             'CreateContentObjectTypePayload',
+            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
+            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
+            // component of its own; the two query components are expanded into parameters rather than
+            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
+            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
+            'CreateOAuthClientPayload',
+            'CreateOAuthProviderPayload',
             'CreateTaskPayload',
             'CreateUserGroupPayload',
             // The IAM closure, converted as the second. PrincipalContext is composed into
@@ -266,6 +279,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'JSONSchema',
             'JSONSchemaProperties',
+            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
+            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
+            // component of its own; the two query components are expanded into parameters rather than
+            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
+            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
+            'ListOAuthGrantsQuery',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ListProjectsQuery',
@@ -281,6 +300,34 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'ModelOptions',
             'NovaCanvasOptions',
+            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
+            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
+            // component of its own; the two query components are expanded into parameters rather than
+            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
+            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
+            'OAuthClient',
+            'OAuthClientArray',
+            'OAuthClientCreateResponse',
+            'OAuthClientScopeMetadata',
+            'OAuthClientStatus',
+            'OAuthClientType',
+            'OAuthGrant',
+            'OAuthGrantListResponse',
+            'OAuthGrantRevokeResponse',
+            'OAuthGrantSortField',
+            'OAuthGrantSortOrder',
+            'OAuthGrantStatus',
+            'OAuthGrantType',
+            'OAuthProjectBindingMode',
+            'OAuthProvider',
+            'OAuthProviderAccessTokenResponse',
+            'OAuthProviderArray',
+            'OAuthProviderAuthStatus',
+            'OAuthProviderAuthorizeResponse',
+            'OAuthProviderExchangePayload',
+            'OAuthRegistrationSource',
+            'OAuthResponseType',
+            'OAuthTokenEndpointAuthMethod',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
@@ -356,6 +403,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'RenderingTemplateDefinition',
             'RenderingTemplateDefinitionRef',
             'ResourceVisibility',
+            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
+            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
+            // component of its own; the two query components are expanded into parameters rather than
+            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
+            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
+            'RevokeOAuthGrantQuery',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'RoleDefinition',
@@ -371,6 +424,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'StripeBillingDisabled',
             'StripeBillingEnabled',
             'StripeBillingStatusResponse',
+            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
+            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
+            // component of its own; the two query components are expanded into parameters rather than
+            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
+            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
+            'SuccessResponse',
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'SupportedIntegrations',
@@ -413,6 +472,13 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'UpdateAccountPayload',
             'UpdateApiKeyPayload',
             'UpdateContentObjectTypePayload',
+            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
+            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
+            // component of its own; the two query components are expanded into parameters rather than
+            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
+            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
+            'UpdateOAuthClientPayload',
+            'UpdateOAuthProviderPayload',
             // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
             // an endpoint.
             'UpdateTaskPayload',
