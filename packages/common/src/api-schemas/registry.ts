@@ -67,6 +67,73 @@ import {
     UpdateApiKeyPayloadSchema,
 } from './apikey.js';
 import {
+    AgentRunSearchHitSchema,
+    AgentRunStatusSchema,
+    AgentRunTypeSchema,
+    AgentToolApprovalClassSchema,
+    AgentToolDefinitionSchema,
+    AppBuildProgressSchema,
+    AppBuildProgressStatusSchema,
+    AppBuildTriggerSchema,
+    AppDevelopmentTaskDetailsSchema,
+    AppDevelopmentTaskListSchema,
+    AppDevelopmentTaskSchema,
+    AppInspectionCapabilityReportSchema,
+    AppInspectionIssueSchema,
+    AppInspectionResultSchema,
+    AppInstallationKindSchema,
+    AppInstallationOAuthBindingSchema,
+    AppInstallationPayloadSchema,
+    AppInstallationProjectsQuerySchema,
+    AppInstallationProviderBindingSchema,
+    AppInstallationsQuerySchema,
+    AppOAuthCollectionParamsSchema,
+    AppOAuthProviderParamsSchema,
+    AppPackageScopeSchema,
+    AppRepoBranchSchema,
+    AppRepoCommitSchema,
+    AppRepoCommitsSchema,
+    AppRepoDocumentCommitSchema,
+    AppRepoRefSchema,
+    AppRepoRefsSchema,
+    AppRepoTreeEntrySchema,
+    AppRepoTreeSchema,
+    AppScaffoldModuleSchema,
+    AppScaffoldProgressSchema,
+    AppScaffoldProgressStatusSchema,
+    AppToolCollectionArraySchema,
+    AppToolCollectionSchema,
+    AppVersionGitRefTypeSchema,
+    AppVersionGitSourceSchema,
+    AppVersionKindSchema,
+    AppVersionRecordArraySchema,
+    AppVersionRecordSchema,
+    AppVersionStateSchema,
+    AppVersionStorageSchema,
+    AppVersionTargetSchema,
+    AppVersionUrlsSchema,
+    ContentObjectTypeRefSchema,
+    ConversationActivityStateSchema,
+    DeleteAppVersionResponseSchema,
+    EventRefSchema,
+    Extract_AppVersionGitRefType_branch_tag_commitSchema,
+    InCodeTypeRefSchema,
+    OAuthClientCredentialsMapSchema,
+    OAuthClientCredentialsSchema,
+    RunKindSchema,
+    RunTypeSchema,
+    StartAppBuildRequestSchema,
+    StartAppBuildResponseSchema,
+    StartAppScaffoldRequestSchema,
+    StartAppScaffoldResponseSchema,
+    StoredTypeRefSchema,
+    SystemPackageQuerySchema,
+    UpdateAppInstallationToolAllowlistPayloadSchema,
+    UpsertAppVersionRequestSchema,
+    ValidateUrlRequestSchema,
+    ValidateUrlResponseSchema,
+} from './app-lifecycle.js';
+import {
     AppAccessControlSchema,
     AppCapabilitiesSchema,
     AppManifestSourceSchema,
@@ -1360,6 +1427,77 @@ const VIEW_EXPERIENCE_SCHEMAS = {
  * is only ever iterated, so widening the values here is what keeps the merged object from
  * re-creating the type the split exists to avoid.
  */
+const APP_LIFECYCLE_SCHEMAS = {
+    // Wave S5 - what an app does once it exists: versions, builds, scaffolds, git repositories,
+    // development tasks, installations and inspection. The manifest itself is still derived; see
+    // the note in `./app-lifecycle.js` for what blocks it.
+    UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayloadSchema,
+    ValidateUrlResponse: ValidateUrlResponseSchema,
+    ValidateUrlRequest: ValidateUrlRequestSchema,
+    AppVersionUrls: AppVersionUrlsSchema,
+    AppVersionGitRefType: AppVersionGitRefTypeSchema,
+    AppVersionTarget: AppVersionTargetSchema,
+    AppVersionState: AppVersionStateSchema,
+    AppVersionKind: AppVersionKindSchema,
+    StartAppScaffoldResponse: StartAppScaffoldResponseSchema,
+    AppScaffoldModule: AppScaffoldModuleSchema,
+    AppBuildTrigger: AppBuildTriggerSchema,
+    Extract_AppVersionGitRefType_branch_tag_commit: Extract_AppVersionGitRefType_branch_tag_commitSchema,
+    StartAppBuildResponse: StartAppBuildResponseSchema,
+    AgentToolApprovalClass: AgentToolApprovalClassSchema,
+    AppDevelopmentTask: AppDevelopmentTaskSchema,
+    AppInstallationProviderBinding: AppInstallationProviderBindingSchema,
+    AppInstallationOAuthBinding: AppInstallationOAuthBindingSchema,
+    OAuthClientCredentials: OAuthClientCredentialsSchema,
+    AppPackageScope: AppPackageScopeSchema,
+    AppInspectionCapabilityReport: AppInspectionCapabilityReportSchema,
+    AppScaffoldProgressStatus: AppScaffoldProgressStatusSchema,
+    AppRepoTreeEntry: AppRepoTreeEntrySchema,
+    AppRepoRef: AppRepoRefSchema,
+    AppRepoCommit: AppRepoCommitSchema,
+    AgentRunType: AgentRunTypeSchema,
+    EventRef: EventRefSchema,
+    InCodeTypeRef: InCodeTypeRefSchema,
+    StoredTypeRef: StoredTypeRefSchema,
+    ConversationActivityState: ConversationActivityStateSchema,
+    AgentRunStatus: AgentRunStatusSchema,
+    RunKind: RunKindSchema,
+    RunType: RunTypeSchema,
+    AppBuildProgressStatus: AppBuildProgressStatusSchema,
+    DeleteAppVersionResponse: DeleteAppVersionResponseSchema,
+    AppRepoBranch: AppRepoBranchSchema,
+    AppRepoDocumentCommit: AppRepoDocumentCommitSchema,
+    AppVersionGitSource: AppVersionGitSourceSchema,
+    StartAppScaffoldRequest: StartAppScaffoldRequestSchema,
+    StartAppBuildRequest: StartAppBuildRequestSchema,
+    AgentToolDefinition: AgentToolDefinitionSchema,
+    AppDevelopmentTaskList: AppDevelopmentTaskListSchema,
+    OAuthClientCredentialsMap: OAuthClientCredentialsMapSchema,
+    AppOAuthCollectionParams: AppOAuthCollectionParamsSchema,
+    AppInspectionIssue: AppInspectionIssueSchema,
+    AppScaffoldProgress: AppScaffoldProgressSchema,
+    AppRepoTree: AppRepoTreeSchema,
+    AppRepoRefs: AppRepoRefsSchema,
+    AppRepoCommits: AppRepoCommitsSchema,
+    ContentObjectTypeRef: ContentObjectTypeRefSchema,
+    AppBuildProgress: AppBuildProgressSchema,
+    AppVersionStorage: AppVersionStorageSchema,
+    AppToolCollection: AppToolCollectionSchema,
+    AppOAuthProviderParams: AppOAuthProviderParamsSchema,
+    AppInspectionResult: AppInspectionResultSchema,
+    AppVersionRecord: AppVersionRecordSchema,
+    AgentRunSearchHit: AgentRunSearchHitSchema,
+    UpsertAppVersionRequest: UpsertAppVersionRequestSchema,
+    AppInstallationPayload: AppInstallationPayloadSchema,
+    AppDevelopmentTaskDetails: AppDevelopmentTaskDetailsSchema,
+    AppVersionRecordArray: AppVersionRecordArraySchema,
+    AppToolCollectionArray: AppToolCollectionArraySchema,
+    AppInstallationKind: AppInstallationKindSchema,
+    AppInstallationsQuery: AppInstallationsQuerySchema,
+    AppInstallationProjectsQuery: AppInstallationProjectsQuerySchema,
+    SystemPackageQuery: SystemPackageQuerySchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponentGroups([
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -1375,6 +1513,7 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
     REMOTE_MCP_SCHEMAS,
     AUDIT_TRAIL_SCHEMAS,
     VIEW_EXPERIENCE_SCHEMAS,
+    APP_LIFECYCLE_SCHEMAS,
     ZENO_SCHEMAS,
     ZENO_DASHBOARD_SCHEMAS,
     ZENO_DATA_STORE_CORE_SCHEMAS,
@@ -1398,6 +1537,7 @@ export type ApiComponentName =
     | keyof typeof REMOTE_MCP_SCHEMAS
     | keyof typeof AUDIT_TRAIL_SCHEMAS
     | keyof typeof VIEW_EXPERIENCE_SCHEMAS
+    | keyof typeof APP_LIFECYCLE_SCHEMAS
     | keyof typeof ZENO_SCHEMAS
     | keyof typeof ZENO_DASHBOARD_SCHEMAS
     | keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
@@ -1935,6 +2075,48 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ListProjectToolsQuery',
     'AuditTrailQuery',
     'ViewExperienceListQuery',
+    'UpdateAppInstallationToolAllowlistPayload',
+    'ValidateUrlResponse',
+    'ValidateUrlRequest',
+    'AppVersionUrls',
+    'StartAppScaffoldResponse',
+    'StartAppBuildResponse',
+    'AppDevelopmentTask',
+    'AppInstallationProviderBinding',
+    'AppInstallationOAuthBinding',
+    'OAuthClientCredentials',
+    'AppInspectionCapabilityReport',
+    'AppRepoTreeEntry',
+    'AppRepoRef',
+    'AppRepoCommit',
+    'EventRef',
+    'InCodeTypeRef',
+    'StoredTypeRef',
+    'DeleteAppVersionResponse',
+    'AppRepoBranch',
+    'AppRepoDocumentCommit',
+    'AppVersionGitSource',
+    'StartAppScaffoldRequest',
+    'StartAppBuildRequest',
+    'AgentToolDefinition',
+    'AppDevelopmentTaskList',
+    'AppInspectionIssue',
+    'AppScaffoldProgress',
+    'AppRepoTree',
+    'AppRepoRefs',
+    'AppRepoCommits',
+    'AppBuildProgress',
+    'AppVersionStorage',
+    'AppToolCollection',
+    'AppInspectionResult',
+    'AppVersionRecord',
+    'AgentRunSearchHit',
+    'UpsertAppVersionRequest',
+    'AppInstallationPayload',
+    'AppDevelopmentTaskDetails',
+    'AppInstallationsQuery',
+    'AppInstallationProjectsQuery',
+    'SystemPackageQuery',
 ]);
 
 /**
@@ -2095,19 +2277,21 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeo
                             ? z.infer<(typeof AUDIT_TRAIL_SCHEMAS)[N]>
                             : N extends keyof typeof VIEW_EXPERIENCE_SCHEMAS
                               ? z.infer<(typeof VIEW_EXPERIENCE_SCHEMAS)[N]>
-                              : N extends keyof typeof ZENO_SCHEMAS
-                                ? z.infer<(typeof ZENO_SCHEMAS)[N]>
-                                : N extends keyof typeof ZENO_DASHBOARD_SCHEMAS
-                                  ? z.infer<(typeof ZENO_DASHBOARD_SCHEMAS)[N]>
-                                  : N extends keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
-                                    ? z.infer<(typeof ZENO_DATA_STORE_CORE_SCHEMAS)[N]>
-                                    : N extends keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
-                                      ? z.infer<(typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS)[N]>
-                                      : N extends keyof typeof ZENO_COST_SCHEMAS
-                                        ? z.infer<(typeof ZENO_COST_SCHEMAS)[N]>
-                                        : N extends keyof typeof ZENO_BULK_OPERATION_SCHEMAS
-                                          ? z.infer<(typeof ZENO_BULK_OPERATION_SCHEMAS)[N]>
-                                          : never;
+                              : N extends keyof typeof APP_LIFECYCLE_SCHEMAS
+                                ? z.infer<(typeof APP_LIFECYCLE_SCHEMAS)[N]>
+                                : N extends keyof typeof ZENO_SCHEMAS
+                                  ? z.infer<(typeof ZENO_SCHEMAS)[N]>
+                                  : N extends keyof typeof ZENO_DASHBOARD_SCHEMAS
+                                    ? z.infer<(typeof ZENO_DASHBOARD_SCHEMAS)[N]>
+                                    : N extends keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
+                                      ? z.infer<(typeof ZENO_DATA_STORE_CORE_SCHEMAS)[N]>
+                                      : N extends keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
+                                        ? z.infer<(typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS)[N]>
+                                        : N extends keyof typeof ZENO_COST_SCHEMAS
+                                          ? z.infer<(typeof ZENO_COST_SCHEMAS)[N]>
+                                          : N extends keyof typeof ZENO_BULK_OPERATION_SCHEMAS
+                                            ? z.infer<(typeof ZENO_BULK_OPERATION_SCHEMAS)[N]>
+                                            : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

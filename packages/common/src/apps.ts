@@ -1,5 +1,56 @@
-import type { JSONSchema, ToolDefinition } from '@llumiverse/common';
+import type { JSONSchema } from '@llumiverse/common';
 import type { z } from 'zod';
+import type {
+    AgentToolApprovalClassSchema,
+    AgentToolDefinitionSchema,
+    AppBuildProgressSchema,
+    AppBuildProgressStatusSchema,
+    AppBuildTriggerSchema,
+    AppDevelopmentTaskDetailsSchema,
+    AppDevelopmentTaskListSchema,
+    AppDevelopmentTaskSchema,
+    AppInspectionCapabilityReportSchema,
+    AppInspectionIssueSchema,
+    AppInspectionResultSchema,
+    AppInstallationKindSchema,
+    AppInstallationOAuthBindingSchema,
+    AppInstallationPayloadSchema,
+    AppInstallationProjectsQuerySchema,
+    AppInstallationProviderBindingSchema,
+    AppInstallationsQuerySchema,
+    AppOAuthCollectionParamsSchema,
+    AppOAuthProviderParamsSchema,
+    AppRepoBranchSchema,
+    AppRepoCommitSchema,
+    AppRepoCommitsSchema,
+    AppRepoDocumentCommitSchema,
+    AppRepoRefSchema,
+    AppRepoRefsSchema,
+    AppRepoTreeEntrySchema,
+    AppRepoTreeSchema,
+    AppScaffoldModuleSchema,
+    AppScaffoldProgressSchema,
+    AppScaffoldProgressStatusSchema,
+    AppToolCollectionSchema,
+    AppVersionGitRefTypeSchema,
+    AppVersionGitSourceSchema,
+    AppVersionKindSchema,
+    AppVersionRecordSchema,
+    AppVersionStateSchema,
+    AppVersionStorageSchema,
+    AppVersionTargetSchema,
+    AppVersionUrlsSchema,
+    DeleteAppVersionResponseSchema,
+    OAuthClientCredentialsSchema,
+    StartAppBuildRequestSchema,
+    StartAppBuildResponseSchema,
+    StartAppScaffoldRequestSchema,
+    StartAppScaffoldResponseSchema,
+    UpdateAppInstallationToolAllowlistPayloadSchema,
+    UpsertAppVersionRequestSchema,
+    ValidateUrlRequestSchema,
+    ValidateUrlResponseSchema,
+} from './api-schemas/app-lifecycle.js';
 import type {
     AppAccessControlSchema,
     AppAvailableInSchema,
@@ -29,12 +80,7 @@ import type {
 } from './api-schemas/project.js';
 import type { AppDashboardDefinition } from './data-platform.js';
 import type { CatalogInteractionRef } from './interaction.js';
-import type {
-    AgentRunSearchHit,
-    DSLActivityOptions,
-    InCodeProcessDefinition,
-    InCodeTypeDefinition,
-} from './store/index.js';
+import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
 import type { InCodeViewDefinition } from './views.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
@@ -82,15 +128,9 @@ export interface AppUINavItem {
 
 export type AppUIConfig = z.infer<typeof AppUIConfigSchema>;
 
-export interface AppInstallationProjectsQuery {
-    name?: string;
-    id?: string;
-}
+export type AppInstallationProjectsQuery = z.infer<typeof AppInstallationProjectsQuerySchema>;
 
-export interface AppInstallationsQuery {
-    kind?: AppInstallationKind;
-    available_in?: AppAvailableIn;
-}
+export type AppInstallationsQuery = z.infer<typeof AppInstallationsQuerySchema>;
 
 export type ToolCollectionAuthType = z.infer<typeof ToolCollectionAuthTypeSchema>;
 
@@ -181,44 +221,12 @@ export type MCPToolAnnotations = z.infer<typeof MCPToolAnnotationsSchema>;
  * - `control`: affects agent control flow or tool availability, not user data or external systems.
  * - `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode.
  */
-export type AgentToolApprovalClass = 'read_only' | 'side_effecting' | 'control' | 'requires_confirmation';
+export type AgentToolApprovalClass = z.infer<typeof AgentToolApprovalClassSchema>;
 
 /**
  * Tool definition with optional activation control for agent exposure.
  */
-export interface AgentToolDefinition extends ToolDefinition {
-    /**
-     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained
-     * using the base URL of the tool server API. Ex: http://tool-server.com/api/
-     * Example of relative URLs: "tools/my-tool-collection" or "/api/tools/my-tool-collection"
-     */
-    url?: string;
-    /**
-     * The tool category if any - for UI purposes.
-     */
-    category?: string;
-    /**
-     * Whether this tool is available by default.
-     * - true/undefined: Tool is always available to agents
-     * - false: Tool is only available when enabled by a skill via `tools`
-     */
-    default?: boolean;
-    /**
-     * For skill tools (`learn_*`): the tool names this skill enables when called.
-     * Matches the `tools:` key used in SKILL.md frontmatter and built-in skill
-     * definitions — one name across the whole stack.
-     */
-    tools?: string[];
-    /**
-     * MCP tool annotations providing hints about tool behavior and safety.
-     */
-    annotations?: MCPToolAnnotations;
-    /**
-     * Approval classification used by interactive agent approval modes.
-     * Use `requires_confirmation` for actions that must prompt even in full-control mode.
-     */
-    approval_class?: AgentToolApprovalClass;
-}
+export type AgentToolDefinition = z.infer<typeof AgentToolDefinitionSchema>;
 
 /**
  * Definition of a remote activity exposed by a tool server for use in DSL workflows.
@@ -359,130 +367,23 @@ export interface AppCapabilityManifest {
 export const APP_CAPABILITY_MANIFEST_PATH = 'docs/app-capability-manifest.json';
 export type AppAvailableIn = z.infer<typeof AppAvailableInSchema>;
 
-export type AppVersionKind = 'design' | 'version';
-export type AppVersionState = 'ready' | 'failed' | 'expired';
-export type AppVersionTarget = 'static' | 'service';
-export type AppVersionGitRefType = 'branch' | 'tag' | 'commit' | 'detached';
-export type AppBuildTrigger = 'ui' | 'git_push' | 'agent' | 'api';
+export type AppVersionKind = z.infer<typeof AppVersionKindSchema>;
+export type AppVersionState = z.infer<typeof AppVersionStateSchema>;
+export type AppVersionTarget = z.infer<typeof AppVersionTargetSchema>;
+export type AppVersionGitRefType = z.infer<typeof AppVersionGitRefTypeSchema>;
+export type AppBuildTrigger = z.infer<typeof AppBuildTriggerSchema>;
 
-export interface AppVersionStorage {
-    tenant_id?: string;
-    app_prefix?: string;
-    artifacts_prefix?: string;
-    source_archive?: string;
-    source_git?: AppVersionGitSource;
-    build_prefix?: string;
-    manifest_path?: string;
-    service_archive?: string;
-    live_metadata_path?: string;
-}
+export type AppVersionStorage = z.infer<typeof AppVersionStorageSchema>;
 
-export interface AppVersionGitSource {
-    url?: string;
-    remote?: string;
-    /**
-     * The source ref that should be used to reproduce this version. Immutable
-     * app versions use the exact commit SHA rather than a mutable branch or tag.
-     */
-    ref?: string;
-    ref_type?: AppVersionGitRefType;
-    branch?: string;
-    tag?: string;
-    commit?: string;
-    dirty?: boolean;
-    pushed?: boolean;
-    push_warning?: string;
-}
+export type AppVersionGitSource = z.infer<typeof AppVersionGitSourceSchema>;
 
-export interface AppVersionUrls {
-    live_url?: string;
-    app_url?: string;
-    plugin_url?: string;
-    package_url?: string;
-    internal_preview_url?: string;
-}
+export type AppVersionUrls = z.infer<typeof AppVersionUrlsSchema>;
 
-export interface AppVersionRecord {
-    id: string;
-    account: string;
-    project: string;
-    app?: string;
-    app_id: string;
-    app_name: string;
-    version_id: string;
-    kind: AppVersionKind;
-    state: AppVersionState;
-    promoted?: boolean;
-    target?: AppVersionTarget;
-    agent_run_id?: string;
-    /** Development task that produced this version, when built by the app assistant. */
-    development_task_id?: string;
-    /** Temporal workflow that produced this version. */
-    build_workflow_id?: string;
-    /** Temporal run that produced this version. */
-    build_workflow_run_id?: string;
-    sandbox_id?: string;
-    title?: string;
-    description?: string;
-    storage?: AppVersionStorage;
-    /** Exact Git commit used to build this immutable version. */
-    source_commit?: string;
-    urls?: AppVersionUrls;
-    manifest?: Record<string, unknown>;
-    files?: string[];
-    file_count?: number;
-    source_file_count?: number;
-    screenshot_artifact?: string;
-    checks?: string[];
-    created_by?: string;
-    created_at: string;
-    updated_at: string;
-    built_at?: string;
-    checked_at?: string;
-    expires_at?: string;
-}
+export type AppVersionRecord = z.infer<typeof AppVersionRecordSchema>;
 
-export interface DeleteAppVersionResponse {
-    id: string;
-    app_id: string;
-    version_id: string;
-    storage_prefix?: string;
-    deleted: boolean;
-    warnings: string[];
-}
+export type DeleteAppVersionResponse = z.infer<typeof DeleteAppVersionResponseSchema>;
 
-export interface UpsertAppVersionRequest {
-    /** Existing version record to update in place, used by reproducible rebuilds. */
-    record_id?: string;
-    app?: string;
-    app_id: string;
-    app_name?: string;
-    version_id: string;
-    kind: AppVersionKind;
-    state?: AppVersionState;
-    target?: AppVersionTarget;
-    agent_run_id?: string;
-    /** Development task that produced this version, when built by the app assistant. */
-    development_task_id?: string;
-    build_workflow_id?: string;
-    build_workflow_run_id?: string;
-    sandbox_id?: string;
-    title?: string;
-    description?: string;
-    storage?: AppVersionStorage;
-    /** Exact Git commit used to build this immutable version. */
-    source_commit?: string;
-    urls?: AppVersionUrls;
-    manifest?: Record<string, unknown>;
-    files?: string[];
-    file_count?: number;
-    source_file_count?: number;
-    screenshot_artifact?: string;
-    checks?: string[];
-    built_at?: string;
-    checked_at?: string;
-    expires_at?: string;
-}
+export type UpsertAppVersionRequest = z.infer<typeof UpsertAppVersionRequestSchema>;
 
 export interface AppVersionListQuery {
     app_id?: string;
@@ -496,28 +397,9 @@ export interface PromoteAppVersionResponse {
     app?: AppManifest;
 }
 
-export interface StartAppBuildRequest {
-    /**
-     * Source branch, tag, or commit to build. When omitted, the app source
-     * configuration chooses its default branch.
-     */
-    source_ref?: string;
-    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
-    trigger?: AppBuildTrigger;
-    target?: AppVersionTarget;
-    title?: string;
-    description?: string;
-}
+export type StartAppBuildRequest = z.infer<typeof StartAppBuildRequestSchema>;
 
-export interface StartAppBuildResponse {
-    workflow_id: string;
-    run_id: string;
-    app_id: string;
-    version_id?: string;
-    rebuild_version_record_id?: string;
-    source_ref?: string;
-    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
-}
+export type StartAppBuildResponse = z.infer<typeof StartAppBuildResponseSchema>;
 
 export interface AppBuildWorkflowInput extends StartAppBuildRequest {
     app_id: string;
@@ -540,48 +422,15 @@ export interface AppBuildWorkflowResult {
     file_count?: number;
 }
 
-export type AppBuildProgressStatus = 'queued' | 'resolving' | 'building' | 'completed' | 'failed';
+export type AppBuildProgressStatus = z.infer<typeof AppBuildProgressStatusSchema>;
 
-export interface AppBuildProgress {
-    status: AppBuildProgressStatus;
-    step: string;
-    app_id?: string;
-    version_id?: string;
-    source_ref?: string;
-    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
-    source_commit?: string;
-    file_count?: number;
-    app_url?: string;
-    error?: string;
-    updated_at: string;
-}
+export type AppBuildProgress = z.infer<typeof AppBuildProgressSchema>;
 
-export type AppScaffoldModule = 'service' | 'assistant' | 'content-app' | 'examples';
+export type AppScaffoldModule = z.infer<typeof AppScaffoldModuleSchema>;
 
-export interface StartAppScaffoldRequest {
-    /**
-     * App id / package name to create. It is normalized to the same slug rules
-     * used by @vertesia/create-plugin.
-     */
-    app_id: string;
-    title?: string;
-    description?: string;
-    modules?: AppScaffoldModule[];
-    /**
-     * Start an initial app version build after the source has been pushed.
-     * Defaults to true.
-     */
-    create_version?: boolean;
-}
+export type StartAppScaffoldRequest = z.infer<typeof StartAppScaffoldRequestSchema>;
 
-export interface StartAppScaffoldResponse {
-    workflow_id: string;
-    run_id: string;
-    app_id: string;
-    app_record_id?: string;
-    git_url?: string;
-    create_version: boolean;
-}
+export type StartAppScaffoldResponse = z.infer<typeof StartAppScaffoldResponseSchema>;
 
 export interface AppScaffoldWorkflowInput extends StartAppScaffoldRequest {}
 
@@ -595,28 +444,9 @@ export interface AppScaffoldWorkflowResult {
     initial_version_build?: StartAppBuildResponse;
 }
 
-export type AppScaffoldProgressStatus =
-    | 'queued'
-    | 'reserving'
-    | 'scaffolding'
-    | 'pushing'
-    | 'building'
-    | 'completed'
-    | 'failed';
+export type AppScaffoldProgressStatus = z.infer<typeof AppScaffoldProgressStatusSchema>;
 
-export interface AppScaffoldProgress {
-    status: AppScaffoldProgressStatus;
-    step: string;
-    app_id?: string;
-    app_record_id?: string;
-    installation_id?: string;
-    git_url?: string;
-    files?: number;
-    initial_version_build?: StartAppBuildResponse;
-    error?: string;
-    error_details?: string[];
-    updated_at: string;
-}
+export type AppScaffoldProgress = z.infer<typeof AppScaffoldProgressSchema>;
 
 /**
  * Access control policy for an app installation.
@@ -855,23 +685,10 @@ function trimTrailingSlashes(value: string): string {
 }
 
 /** One entry in an app git-repo directory listing (see {@link AppRepoTree}). */
-export interface AppRepoTreeEntry {
-    /** File or directory name (last path segment). */
-    name: string;
-    /** Path relative to the repo root. */
-    path: string;
-    /** Whether the entry is a file (`blob`) or a directory (`tree`). */
-    type: 'blob' | 'tree';
-}
+export type AppRepoTreeEntry = z.infer<typeof AppRepoTreeEntrySchema>;
 
 /** A non-recursive listing of an app git repo directory at a given ref. */
-export interface AppRepoTree {
-    /** The ref the listing was read at (empty/undefined = default branch / HEAD). */
-    ref?: string;
-    /** The directory prefix that was listed (empty = repo root). */
-    prefix?: string;
-    entries: AppRepoTreeEntry[];
-}
+export type AppRepoTree = z.infer<typeof AppRepoTreeSchema>;
 
 /** Browser-side limits mirrored by the app Git service document endpoint. */
 export const APP_REPO_DOCUMENT_UPLOAD_MAX_FILE_BYTES = 20 * 1024 * 1024;
@@ -880,87 +697,28 @@ export const APP_REPO_DOCUMENT_UPLOAD_MAX_FILES = 20;
 export const APP_REPO_DOCUMENT_UPLOAD_PREFIX = 'docs/';
 
 /** Result of committing one or more uploaded documents to an app repository. */
-export interface AppRepoDocumentCommit {
-    /** Updated branch name. */
-    ref: string;
-    /** Branch HEAD before the commit. */
-    previous_commit: string;
-    /** Newly created commit SHA. */
-    commit: string;
-    /** Repository paths changed by the commit. */
-    paths: string[];
-}
+export type AppRepoDocumentCommit = z.infer<typeof AppRepoDocumentCommitSchema>;
 
 /** One commit that inserted or changed a file in an app git repository. */
-export interface AppRepoCommit {
-    /** Full commit SHA. */
-    commit: string;
-    /** Complete commit message. */
-    message: string;
-    /** Commit author name, when available. */
-    author?: string;
-    /** Commit author date as an ISO-8601 string, when available. */
-    date?: string;
-}
+export type AppRepoCommit = z.infer<typeof AppRepoCommitSchema>;
 
 /** Commit history in an app git repository, optionally filtered to a file. */
-export interface AppRepoCommits {
-    /** Ref from which history traversal started (empty/undefined = default branch / HEAD). */
-    ref?: string;
-    /** File path relative to the repository root, when history was filtered to a file. */
-    path?: string;
-    /** Commits ordered newest first. */
-    commits: AppRepoCommit[];
-    /** Pass this cursor to retrieve the next page. Absent when history is exhausted. */
-    next_cursor?: string;
-}
+export type AppRepoCommits = z.infer<typeof AppRepoCommitsSchema>;
 
 /** A branch or tag in an app git repo, resolved to its latest commit. */
-export interface AppRepoRef {
-    /** Short ref name (e.g. `main`, `v1.0.0`). */
-    name: string;
-    /** Commit hash the ref points at (annotated tags are peeled to their commit). */
-    commit: string;
-    /** First line of the commit message, when available. */
-    commit_subject?: string;
-    /** Commit date as an ISO-8601 string, when available. */
-    commit_date?: string;
-    /** Commit author name, when available. */
-    commit_author?: string;
-}
+export type AppRepoRef = z.infer<typeof AppRepoRefSchema>;
 
 /** The branches and tags of an app git repo (see {@link AppRepoRef}). */
-export interface AppRepoRefs {
-    /** The repository's default branch (HEAD target), when resolvable. */
-    default_branch?: string;
-    branches: AppRepoRef[];
-    tags: AppRepoRef[];
-}
+export type AppRepoRefs = z.infer<typeof AppRepoRefsSchema>;
 
 /** A mutable app development task represented by an `agent/*` Git branch. */
-export interface AppDevelopmentTask {
-    /** Task slug derived from the branch name. */
-    id: string;
-    /** Complete Git branch name. */
-    branch: string;
-    /** Commit currently at the branch head. */
-    source_commit: string;
-    /** Branch-head commit date, when available. */
-    commit_date?: string;
-}
+export type AppDevelopmentTask = z.infer<typeof AppDevelopmentTaskSchema>;
 
 /** Git-backed development tasks and the branch used for new tasks by default. */
-export interface AppDevelopmentTaskList {
-    /** Repository default branch, when resolvable. */
-    default_branch?: string;
-    tasks: AppDevelopmentTask[];
-}
+export type AppDevelopmentTaskList = z.infer<typeof AppDevelopmentTaskListSchema>;
 
 /** Development task details, including the latest parent assistant run when one exists. */
-export interface AppDevelopmentTaskDetails extends AppDevelopmentTask {
-    /** Latest Studio Assistant run started for this task branch. */
-    agent_run?: AgentRunSearchHit;
-}
+export type AppDevelopmentTaskDetails = z.infer<typeof AppDevelopmentTaskDetailsSchema>;
 
 /** Request to create a branch from an existing branch, tag, or commit. */
 export interface CreateAppRepoBranchRequest {
@@ -969,11 +727,7 @@ export interface CreateAppRepoBranchRequest {
 }
 
 /** A newly created app repository branch. */
-export interface AppRepoBranch {
-    name: string;
-    commit: string;
-    source_ref: string;
-}
+export type AppRepoBranch = z.infer<typeof AppRepoBranchSchema>;
 
 /**
  * Canonical package scopes, including the catch-all `all`. The public type is derived
@@ -1065,29 +819,13 @@ export interface AppPackage {
 /**
  * A single diagnostic produced while inspecting an app's registration state.
  */
-export interface AppInspectionIssue {
-    severity: 'error' | 'warning';
-    /** The capability this issue relates to, when applicable (e.g. 'types'). */
-    capability?: AppPackageScope;
-    /** Stable machine code, e.g. 'capability_declared_but_empty', 'endpoint_unreachable', 'not_installed'. */
-    code: string;
-    /** Human-readable explanation, safe to surface to the model and the UI. */
-    message: string;
-}
+export type AppInspectionIssue = z.infer<typeof AppInspectionIssueSchema>;
 
 /**
  * Per-capability report of what an app's promoted package actually exposes,
  * compared against what its manifest declares.
  */
-export interface AppInspectionCapabilityReport {
-    capability: AppPackageScope;
-    /** True when the manifest's `capabilities` array declares this capability. */
-    declared: boolean;
-    /** The local ids the promoted package actually serves for this capability. */
-    exposed_ids: string[];
-    /** Convenience count of `exposed_ids`. */
-    exposed_count: number;
-}
+export type AppInspectionCapabilityReport = z.infer<typeof AppInspectionCapabilityReportSchema>;
 
 /**
  * Result of inspecting an app's registration: the resolved manifest state, what
@@ -1096,26 +834,7 @@ export interface AppInspectionCapabilityReport {
  * Build › App inspection UI to verify what is registered vs declared, instead of
  * inferring it from failed object/import calls.
  */
-export interface AppInspectionResult {
-    app_id: string;
-    name: string;
-    version?: string;
-    /** The resolved package endpoint for the current environment, if any. */
-    endpoint?: string;
-    /** True when the package endpoint responded to the capability probe. */
-    endpoint_reachable: boolean;
-    /** True when the app is installed in the current project. */
-    installed: boolean;
-    access_control?: string;
-    /** The capabilities declared on the manifest. */
-    capabilities: AppPackageScope[];
-    /** What the promoted package exposes, per capability. */
-    package: AppInspectionCapabilityReport[];
-    /** Diagnostics — errors and warnings about the registration state. */
-    issues: AppInspectionIssue[];
-    /** Populated when the package probe itself failed (endpoint error/unreachable). */
-    probe_error?: string;
-}
+export type AppInspectionResult = z.infer<typeof AppInspectionResultSchema>;
 
 export interface AppWidgetInfo {
     collection: string;
@@ -1144,37 +863,14 @@ export type AppManifestSource = z.infer<typeof AppManifestSourceSchema>;
  * Stored on AppInstallation so the runtime can look up the correct OAuth provider by ID,
  * independent of manifest oauth_provider references (which may change).
  */
-export interface AppInstallationOAuthBinding {
-    /**
-     * Stable collection identifier: MCPToolCollectionObject.id for new manifests.
-     * Legacy installations may still contain a name-based fallback value.
-     */
-    collection_id: string;
-    /**
-     * MongoDB ObjectId of the OAuth provider in this project.
-     * Used for ID-based lookups (rename-proof).
-     */
-    oauth_provider_id: string;
-    /**
-     * Name of the OAuth provider at creation time.
-     * Used by the workflow token path (getMCPClient → remoteMcpConnections.getToken) which looks up by name.
-     */
-    oauth_provider_name: string;
-}
+export type AppInstallationOAuthBinding = z.infer<typeof AppInstallationOAuthBindingSchema>;
 
 /**
  * Binding between a named OAuth provider and the OAuth provider created for it at install time.
  * Stored on AppInstallation so the runtime can resolve the correct OAuth provider for collections
  * that reference a shared provider via MCPToolCollectionObject.oauth_provider.
  */
-export interface AppInstallationProviderBinding {
-    /** Key from AppManifestData.oauth_providers */
-    provider_key: string;
-    /** MongoDB ObjectId of the created OAuth provider */
-    oauth_provider_id: string;
-    /** Name of the OAuth provider at creation time (for audit/display only) */
-    oauth_provider_name: string;
-}
+export type AppInstallationProviderBinding = z.infer<typeof AppInstallationProviderBindingSchema>;
 
 export interface AppInstallation {
     id: string;
@@ -1228,70 +924,21 @@ export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest
     manifest: null;
 }
 
-export interface OAuthClientCredentials {
-    client_id?: string;
-    client_secret?: string;
-    scopes?: string[];
-}
+export type OAuthClientCredentials = z.infer<typeof OAuthClientCredentialsSchema>;
 
-export type AppOAuthCollectionParams = Record<string, OAuthClientCredentials>;
-export type AppOAuthProviderParams = Record<string, OAuthClientCredentials>;
+export type AppOAuthCollectionParams = z.infer<typeof AppOAuthCollectionParamsSchema>;
+export type AppOAuthProviderParams = z.infer<typeof AppOAuthProviderParamsSchema>;
 
-export interface AppInstallationPayload {
-    app_id: string;
-    settings?: Record<string, unknown>;
-    /**
-     * Per-installation override of the manifest's `access_control` policy. When provided, takes precedence
-     * over the manifest default for every access check. Sibling of `settings` — admin-controlled, not
-     * part of the app's own settings JSON.
-     *
-     * Three send-time semantics on update:
-     *  - Field omitted entirely from the payload → leave the existing override unchanged.
-     *  - Explicit `null` → clear the override, fall back to the manifest default.
-     *  - String enum → set the override to that value.
-     *
-     * (On install, the same shape applies; omit or pass `null` to use the manifest default.)
-     */
-    access_control?: AppAccessControl | null;
-    /**
-     * OAuth credentials for each collection, keyed by collection.id.
-     * Legacy callers may still use collection.name for older manifests.
-     * Collected from the user at install time for collections with oauth_config.required_at_install.
-     */
-    oauth_params?: AppOAuthCollectionParams;
-    /**
-     * OAuth credentials for named providers, keyed by the provider key from oauth_providers.
-     * Collected from the user at install time for providers with required_at_install.
-     * Separate from oauth_params to avoid key collisions between provider keys and collection ids.
-     */
-    oauth_provider_params?: AppOAuthProviderParams;
-}
+export type AppInstallationPayload = z.infer<typeof AppInstallationPayloadSchema>;
 
-export interface UpdateAppInstallationToolAllowlistPayload {
-    tool_allowlist: string[] | null;
-}
+export type UpdateAppInstallationToolAllowlistPayload = z.infer<typeof UpdateAppInstallationToolAllowlistPayloadSchema>;
 
-export type AppInstallationKind = 'ui' | 'tools' | 'all';
+export type AppInstallationKind = z.infer<typeof AppInstallationKindSchema>;
 
 /**
  * A description of the tools provided by an app
  */
-export interface AppToolCollection {
-    /**
-     * The collection name
-     */
-    name: string;
-
-    /**
-     * Optional collection description
-     */
-    description?: string;
-
-    /**
-     * the tools provided by this collection
-     */
-    tools: AgentToolDefinition[];
-}
+export type AppToolCollection = z.infer<typeof AppToolCollectionSchema>;
 
 /**
  * A tool and the app installation that provides it, inferred from `./api-schemas/project.js` — the
@@ -1622,13 +1269,9 @@ export interface CompositeAppConfig {
 
 export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
 
-export interface ValidateUrlRequest {
-    url: string;
-}
+export type ValidateUrlRequest = z.infer<typeof ValidateUrlRequestSchema>;
 
-export interface ValidateUrlResponse {
-    valid: true;
-}
+export type ValidateUrlResponse = z.infer<typeof ValidateUrlResponseSchema>;
 
 /**
  * Result of DELETE /api/v1/apps/:id. With `?confirm=true` the cascade runs and
