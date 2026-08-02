@@ -655,6 +655,50 @@ export const RunSearchQuerySchema = z
     })
     .meta({ id: 'RunSearchQuery' });
 
+/**
+ * The filters `GET /runs` actually applies.
+ *
+ * Separate from {@link RunSearchQuerySchema} because the two are different contracts that happened to
+ * share a name on this route. `RunSearchQuery` is the structured body of `POST /runs/search`, and
+ * publishing it here advertised ten filters this endpoint has never read — `exclude_tags`,
+ * `finish_reason`, `created_by`, `start`, `end`, `object`, `query`, `default_query_path`, `run_ids`
+ * and `is_agent` — while omitting the `tag` and `workflow_ids` it does read. A generated client
+ * following the document got silently unfiltered results.
+ *
+ * Every multi-valued filter is an array with `form`/`explode` serialization, which is the spelling the
+ * OpenAPI compliance rules ask for and what a single `?tag=x` normalizes to. The handler additionally
+ * splits each value on commas, so the long-standing `?tag=a,b` spelling keeps working; that is a
+ * property of the handler rather than of the document, which cannot express it.
+ *
+ * `fromDate` and `toDate` are deliberately absent. The SDK sends them and the endpoint has never
+ * applied them, so publishing them would restate the same kind of promise this component exists to
+ * remove. They are still accepted and ignored, exactly as before.
+ */
+export const RunListQuerySchema = z
+    .strictObject({
+        limit: z.number().int().meta({ description: 'Maximum number of runs to return.' }).optional(),
+        offset: z.number().int().meta({ description: 'Number of runs to skip.' }).optional(),
+        interaction: z
+            .array(z.string())
+            .meta({ description: 'Interaction ids, or in-code interaction names, to filter by.' })
+            .optional(),
+        model: z.array(z.string()).meta({ description: 'Model ids to filter by.' }).optional(),
+        environment: z.array(z.string()).meta({ description: 'Environment ids to filter by.' }).optional(),
+        status: z.array(ExecutionRunStatusSchema).meta({ description: 'Run statuses to filter by.' }).optional(),
+        tag: z.array(z.string()).meta({ description: 'Run tags to filter by.' }).optional(),
+        parent: z
+            .array(z.string())
+            .meta({ description: 'Parent run ids to filter by. Mutually exclusive with `is_root=true`.' })
+            .optional(),
+        is_root: z
+            .boolean()
+            .meta({ description: 'Return only runs that have no parent. Mutually exclusive with `parent`.' })
+            .optional(),
+        workflow_run_ids: z.array(z.string()).meta({ description: 'Temporal workflow run ids.' }).optional(),
+        workflow_ids: z.array(z.string()).meta({ description: 'Temporal workflow ids.' }).optional(),
+    })
+    .meta({ id: 'RunListQuery' });
+
 export const StreamingTelemetryContextSchema = z
     .strictObject({
         callType: LlmCallTypeSchema.meta({
@@ -1210,6 +1254,60 @@ export const InteractionTagsSchema = z
 
 export const InteractionRefArraySchema = z.array(InteractionRefSchema).meta({ id: 'InteractionRefArray' });
 
+// The name picker's shape, and the whole of it. `GET /interactions/names` exists to fill a select box
+// from a projection of two fields, so it publishes those two rather than an `InteractionRef` whose
+// other required properties the endpoint deliberately does not read. The document used to claim a
+// full `Interaction` here, which no caller could rely on and the SDK already contradicted.
+export const InteractionNameSchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+    })
+    .meta({
+        id: 'InteractionName',
+        description: 'An interaction reduced to the fields a name picker needs.',
+    });
+
+export const InteractionNameArraySchema = z.array(InteractionNameSchema).meta({ id: 'InteractionNameArray' });
+
+// What `POST /interactions/export` puts in each prompt segment. The export populates its templates
+// with `inputSchema` alone — it is exporting definitions, not rendering them — so this is a template
+// id and its input schema rather than the `PromptTemplateRef` the other segment shapes carry.
+export const ExportedPromptTemplateRefSchema = z
+    .strictObject({
+        id: z.string(),
+        inputSchema: JSONSchemaSchema.optional(),
+    })
+    .meta({
+        id: 'ExportedPromptTemplateRef',
+        description: 'A prompt template reduced to the input schema an export carries.',
+    });
+
+export const PromptSegmentRef_ExportedPromptTemplateRefSchema = z
+    .strictObject({
+        id: z.string(),
+        type: PromptSegmentDefTypeSchema,
+        template: ExportedPromptTemplateRefSchema.optional(),
+        configuration: z.unknown().optional(),
+    })
+    .meta({ id: 'PromptSegmentRef_ExportedPromptTemplateRef' });
+
+// The export shape: an `InteractionRef` plus the result schema, with prompt templates reduced as
+// above. Modelled here rather than derived from the `InteractionRefWithSchema` interface, which is
+// declared as `Omit<InteractionRef, 'prompts'>` — an `Omit` over a canonical alias that the schema
+// generator cannot resolve, since the alias publishes as a bare reference with no members to omit.
+export const InteractionRefWithSchemaSchema = InteractionRefSchema.extend({
+    result_schema: JSONSchemaSchema.optional(),
+    prompts: z.array(PromptSegmentRef_ExportedPromptTemplateRefSchema).optional(),
+}).meta({
+    id: 'InteractionRefWithSchema',
+    description: 'An interaction reference carrying the schemas an export needs to reconstruct it.',
+});
+
+export const InteractionRefWithSchemaArraySchema = z
+    .array(InteractionRefWithSchemaSchema)
+    .meta({ id: 'InteractionRefWithSchemaArray' });
+
 export const GeneratedInteractionDefinitionArraySchema = z
     .array(GeneratedInteractionDefinitionSchema)
     .meta({ id: 'GeneratedInteractionDefinitionArray' });
@@ -1347,6 +1445,60 @@ export const InteractionExecutionResultSchema = z
         options: StatelessExecutionOptionsSchema.optional(),
     })
     .meta({ id: 'InteractionExecutionResult' });
+
+/**
+ * The run-with-result shape as the retrieve endpoints return it.
+ *
+ * One property apart from {@link InteractionExecutionResultSchema}, and it is the one the retrieve
+ * path populates: `GET /runs/{runId}` resolves `interaction` into a full reference, where the create
+ * path leaves the stored id. Publishing both under a single component would mean a string-or-object
+ * union that no generated client can deserialize into one type.
+ *
+ * `account` and `project` stay plain ids in both, because neither path populates them.
+ */
+export const PopulatedExecutionRunResultSchema = InteractionExecutionResultSchema.extend({
+    interaction: ExecutionRunInteractionSchema.optional(),
+}).meta({
+    id: 'PopulatedExecutionRunResult',
+    description: 'An execution run with its completion result and its interaction reference populated.',
+});
+
+/**
+ * `result` in the shape the pre-`COMPLETION_RESULT_V1` endpoints report it.
+ *
+ * The legacy conversion collapses the `CompletionResult[]` into whichever single value the parts
+ * amount to: the JSON object when the run produced one, the joined text otherwise, and `null` when
+ * the run stored an explicit null. Published as a raw value rather than an object-or-string union,
+ * which is the representation the OpenAPI compliance rules ask for and the only one a generated
+ * client can hold in a single field.
+ *
+ * Both legacy components exist to describe endpoints we intend to remove, not to invite new callers.
+ * Until then the document says what they return: it used to name a component with no `result`
+ * property at all, so a generated client dropped the entire payload of these operations.
+ *
+ * Named for the run rather than after the `LegacyInteractionExecutionResult` interface in
+ * `../interaction.js`, which is generic over its parameter type and so cannot become an alias of
+ * anything inferred here. Two names for one shape is worse than one name that says what it is.
+ */
+const LEGACY_RESULT = z.unknown().meta({
+    description:
+        'The completion result collapsed to a single value: the parsed JSON object when the run produced one, the joined text otherwise. Superseded by the `result` array of the current API version.',
+});
+
+export const LegacyExecutionRunResultSchema = InteractionExecutionResultSchema.extend({
+    result: LEGACY_RESULT,
+}).meta({
+    id: 'LegacyExecutionRunResult',
+    description: 'An execution run whose completion result is reported in the pre-versioning format.',
+});
+
+export const LegacyPopulatedExecutionRunResultSchema = PopulatedExecutionRunResultSchema.extend({
+    result: LEGACY_RESULT,
+}).meta({
+    id: 'LegacyPopulatedExecutionRunResult',
+    description:
+        'A retrieved execution run whose completion result is reported in the pre-versioning format. A run that has no result yet is returned unchanged, so `result` may still hold the current array form.',
+});
 
 export const ExecutionRunRefSchema = z
     .strictObject({

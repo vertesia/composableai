@@ -44,8 +44,10 @@ import type {
     InteractionExecutionErrorSchema,
     InteractionExecutionPayloadSchema,
     InteractionForkPayloadSchema,
+    InteractionNameSchema,
     InteractionPublishPayloadSchema,
     InteractionRefSchema,
+    InteractionRefWithSchemaSchema,
     InteractionSchema,
     InteractionsExportPayloadSchema,
     InteractionTagsSchema,
@@ -72,12 +74,7 @@ import type { InteractionExecutionConfigurationSchema } from './api-schemas/stor
 import type { MCPToolAnnotations } from './apps.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
 import type { ProjectRef } from './project.js';
-import type {
-    ExecutablePromptSegmentDef,
-    PopulatedPromptSegmentDef,
-    PromptSegmentRef,
-    PromptTemplateRefWithSchema,
-} from './prompt.js';
+import type { ExecutablePromptSegmentDef, PopulatedPromptSegmentDef } from './prompt.js';
 import type { ExecutionRunDocRef } from './runs.js';
 import type { TextArtifactReference } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
@@ -259,15 +256,25 @@ export type InteractionEndpoint = z.infer<typeof InteractionEndpointSchema>;
 export type InteractionTags = z.infer<typeof InteractionTagsSchema>;
 
 export type InteractionRef = z.infer<typeof InteractionRefSchema>;
+
+/** An interaction reduced to the fields a name picker needs. */
+export type InteractionName = z.infer<typeof InteractionNameSchema>;
+export const InteractionNamePopulate = 'id name';
+
 export const InteractionRefPopulate =
     'id name endpoint parent description status version visibility tags agent_runner_options updated_at prompts';
 
 export const InteractionRefWithSchemaPopulate = `${InteractionRefPopulate} result_schema`;
 
-export interface InteractionRefWithSchema extends Omit<InteractionRef, 'prompts'> {
-    result_schema?: JSONSchema;
-    prompts?: PromptSegmentRef<PromptTemplateRefWithSchema>[];
-}
+/**
+ * An interaction reference carrying the schemas an export needs to reconstruct it.
+ *
+ * An alias of the published component rather than the `Omit<InteractionRef, 'prompts'>` interface it
+ * replaces. That `Omit` could not be resolved by the schema generator once `InteractionRef` became a
+ * canonical alias — the alias publishes as a bare reference, with no members to omit — and the
+ * interface also overstated each prompt template, which an export populates with `inputSchema` alone.
+ */
+export type InteractionRefWithSchema = z.infer<typeof InteractionRefWithSchemaSchema>;
 
 export type InteractionsExportPayload = z.infer<typeof InteractionsExportPayloadSchema>;
 
