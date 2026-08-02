@@ -1,5 +1,7 @@
 import Ajv from 'ajv';
-import { describe, expect, it } from 'vitest';
+import { assertType, describe, expect, it } from 'vitest';
+import type { z } from 'zod';
+import type { ViewExperienceConfigurationSchema } from './api-schemas/zeno-remaining.js';
 import { validateViewConfiguration } from './view-configuration-validation.js';
 import { type ViewExperienceConfiguration, type ViewNavigationItem, viewExperienceRoute } from './views.js';
 import {
@@ -7,6 +9,8 @@ import {
     ViewExperienceConfigurationJsonSchema,
 } from './views-schema.js';
 import { parseAppViewExperienceId, validateViewExperienceId } from './views-validation.js';
+
+type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
 function documentLibrary(): ViewExperienceConfiguration {
     return {
@@ -115,6 +119,10 @@ function documentLibrary(): ViewExperienceConfiguration {
 }
 
 describe('View Experience configuration schema', () => {
+    it('keeps the temporary named TypeScript bridge identical to the runtime schema', () => {
+        assertType<Equals<ViewExperienceConfiguration, z.infer<typeof ViewExperienceConfigurationSchema>>>(true);
+    });
+
     it('accepts navigation, one agentic model, and visual result displays', () => {
         const validate = new Ajv.default({ allErrors: true, strict: false }).compile(
             ViewExperienceConfigurationJsonSchema,

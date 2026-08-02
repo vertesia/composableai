@@ -1,5 +1,48 @@
-import type { InteractionExecutionConfiguration } from './interaction.js';
-import type { ContentObjectItemApiResponse } from './store/store.js';
+import type { z } from 'zod';
+import type {
+    AgenticViewSearchConfigurationSchema,
+    ExecuteViewRequestSchema,
+    PreviewViewExperienceRequestSchema,
+    ViewBoardCardConfigurationSchema,
+    ViewBoardColumnSchema,
+    ViewBoardDisplaySchema,
+    ViewCardsDisplaySchema,
+    ViewCollectionNavigationSchema,
+    ViewDisplayConfigurationSchema,
+    ViewElasticsearchQuerySchema,
+    ViewExecutionDefinitionSchema,
+    ViewExecutionQueryPlanSchema,
+    ViewExecutionResultSchema,
+    ViewExecutionSearchConfigurationSchema,
+    ViewExecutionSearchResultSchema,
+    ViewExecutionWarningSchema,
+    ViewExperienceLayoutSchema,
+    ViewExperienceScopeSchema,
+    ViewGalleryDisplaySchema,
+    ViewHierarchyLevelSchema,
+    ViewHierarchyNavigationSchema,
+    ViewHitAnnotationSchema,
+    ViewHitSchema,
+    ViewKeyTermDefinitionSchema,
+    ViewListDisplaySchema,
+    ViewLocationNavigationSchema,
+    ViewNavigationItemSchema,
+    ViewQueryPlanningFailureCodeSchema,
+    ViewRangeDefinitionSchema,
+    ViewRangeNavigationSchema,
+    ViewResultFieldFormatSchema,
+    ViewResultFieldSchema,
+    ViewResultMediaSchema,
+    ViewResultsConfigurationSchema,
+    ViewSearchConfigurationSchema,
+    ViewSearchFieldDefinitionSchema,
+    ViewSearchFieldTypeSchema,
+    ViewSortClauseSchema,
+    ViewSortOptionSchema,
+    ViewTableColumnSchema,
+    ViewTableDisplaySchema,
+    ViewTermsNavigationSchema,
+} from './api-schemas/zeno-remaining.js';
 
 export const VIEW_EXPERIENCE_SCHEMA_VERSION = 1 as const;
 
@@ -10,24 +53,11 @@ export function viewExperienceRoute(id: string): string {
     return `/view/${encodeURIComponent(id)}`;
 }
 
-/** An author-provided Elasticsearch query subtree validated by the View runtime. */
-export interface ViewElasticsearchQuery {
-    [clause: string]: unknown;
-}
+export type ViewElasticsearchQuery = z.infer<typeof ViewElasticsearchQuerySchema>;
 
-export interface ViewExperienceLayout {
-    mode?: 'browse' | 'worklist';
-    navigation_position?: 'sidebar' | 'top';
-}
+export type ViewExperienceLayout = z.infer<typeof ViewExperienceLayoutSchema>;
 
-export interface ViewExperienceScope {
-    type_ids?: string[];
-    locations?: string[];
-    collection_ids?: string[];
-    include_collection_descendants?: boolean;
-    fixed_filter?: ViewElasticsearchQuery;
-    head_only?: boolean;
-}
+export type ViewExperienceScope = z.infer<typeof ViewExperienceScopeSchema>;
 
 export interface ViewNavigationBase {
     id: string;
@@ -38,126 +68,37 @@ export interface ViewNavigationBase {
     renderer?: string;
 }
 
-export interface ViewLocationNavigation extends ViewNavigationBase {
-    source: 'location';
-    roots?: string[];
-    depth?: number;
-}
+export type ViewLocationNavigation = z.infer<typeof ViewLocationNavigationSchema>;
 
-export interface ViewCollectionNavigation extends ViewNavigationBase {
-    source: 'collection';
-    roots?: string[];
-    include_descendants?: boolean;
-}
+export type ViewCollectionNavigation = z.infer<typeof ViewCollectionNavigationSchema>;
 
-export interface ViewTermsNavigation extends ViewNavigationBase {
-    source: 'terms';
-    field: string;
-    size?: number;
-    sort?: 'count' | 'label';
-}
+export type ViewTermsNavigation = z.infer<typeof ViewTermsNavigationSchema>;
 
-export interface ViewHierarchyLevel {
-    id: string;
-    label: string;
-    field: string;
-    size?: number;
-    sort?: 'count' | 'label';
-}
+export type ViewHierarchyLevel = z.infer<typeof ViewHierarchyLevelSchema>;
 
-/**
- * A drill-down hierarchy assembled from independently mapped properties.
- *
- * Hierarchies represent one selected path, so multi_select may only be false.
- * Selection ids are opaque runtime values and must not be constructed by clients.
- */
-export interface ViewHierarchyNavigation extends ViewNavigationBase {
-    source: 'hierarchy';
-    levels: ViewHierarchyLevel[];
-    multi_select?: false;
-}
+export type ViewHierarchyNavigation = z.infer<typeof ViewHierarchyNavigationSchema>;
 
-export interface ViewRangeDefinition {
-    id: string;
-    label: string;
-    from?: number;
-    to?: number;
-}
+export type ViewRangeDefinition = z.infer<typeof ViewRangeDefinitionSchema>;
 
-export interface ViewRangeNavigation extends ViewNavigationBase {
-    source: 'range';
-    field: string;
-    ranges: ViewRangeDefinition[];
-}
+export type ViewRangeNavigation = z.infer<typeof ViewRangeNavigationSchema>;
 
-export type ViewNavigationItem =
-    | ViewLocationNavigation
-    | ViewCollectionNavigation
-    | ViewTermsNavigation
-    | ViewHierarchyNavigation
-    | ViewRangeNavigation;
+export type ViewNavigationItem = z.infer<typeof ViewNavigationItemSchema>;
 
-export interface ViewKeyTermDefinition {
-    id: string;
-    label: string;
-    field?: string;
-    type: ViewSearchFieldType;
-    multiple?: boolean;
-    operator?: 'match' | 'term' | 'range';
-}
+export type ViewKeyTermDefinition = z.infer<typeof ViewKeyTermDefinitionSchema>;
 
 export const VIEW_SEARCH_FIELD_TYPES = ['text', 'keyword', 'number', 'date', 'boolean'] as const;
 
-export type ViewSearchFieldType = (typeof VIEW_SEARCH_FIELD_TYPES)[number];
+export type ViewSearchFieldType = z.infer<typeof ViewSearchFieldTypeSchema>;
 
-/**
- * A mapped Elasticsearch field that a View may use for query planning and
- * deterministic full-text fallback.
- */
-export interface ViewSearchFieldDefinition {
-    field: string;
-    /** Meaning of the field for query planners, for example "Full OCR text". */
-    description?: string;
-    /** Mapping hint used only when the active index mapping does not expose a type. */
-    type?: ViewSearchFieldType;
-    /**
-     * `full_text` enables scoring text queries, `exact` limits the field to
-     * structured operators, and `auto` derives behavior from the mapped type.
-     */
-    mode?: 'auto' | 'full_text' | 'exact';
-    /** Relative boost when this field participates in multi-field text search. */
-    boost?: number;
-}
+export type ViewSearchFieldDefinition = z.infer<typeof ViewSearchFieldDefinitionSchema>;
 
-export interface AgenticViewSearchConfiguration {
-    interaction?: string;
-    config?: InteractionExecutionConfiguration;
-    /** View-specific guidance for Elasticsearch query planning. */
-    instructions?: string;
-    mode?: 'query';
-    timeout_ms?: number;
-    minimum_confidence?: number;
-}
+export type AgenticViewSearchConfiguration = z.infer<typeof AgenticViewSearchConfigurationSchema>;
 
-export interface ViewSearchConfiguration {
-    renderer?: string;
-    mode?: 'deterministic' | 'agentic';
-    placeholder?: string;
-    fields?: ViewSearchFieldDefinition[];
-    key_terms?: ViewKeyTermDefinition[];
-    agentic?: AgenticViewSearchConfiguration;
-}
+export type ViewSearchConfiguration = z.infer<typeof ViewSearchConfigurationSchema>;
 
-export interface ViewSortClause {
-    field: string;
-    order: 'asc' | 'desc';
-}
+export type ViewSortClause = z.infer<typeof ViewSortClauseSchema>;
 
-export interface ViewSortOption {
-    id: string;
-    label: string;
-    sort: ViewSortClause[];
-}
+export type ViewSortOption = z.infer<typeof ViewSortOptionSchema>;
 
 export const VIEW_RESULT_FIELD_FORMATS = [
     'text',
@@ -169,21 +110,11 @@ export const VIEW_RESULT_FIELD_FORMATS = [
     'location',
 ] as const;
 
-export type ViewResultFieldFormat = (typeof VIEW_RESULT_FIELD_FORMATS)[number];
+export type ViewResultFieldFormat = z.infer<typeof ViewResultFieldFormatSchema>;
 
-export interface ViewResultField {
-    field: string;
-    label?: string;
-    format?: ViewResultFieldFormat;
-    fallback?: string;
-}
+export type ViewResultField = z.infer<typeof ViewResultFieldSchema>;
 
-export interface ViewResultMedia {
-    source: 'content_thumbnail' | 'property' | 'type_icon';
-    field?: string;
-    fit?: 'cover' | 'contain';
-    fallback?: 'type_icon' | 'placeholder' | 'none';
-}
+export type ViewResultMedia = z.infer<typeof ViewResultMediaSchema>;
 
 export interface ViewDisplayBase {
     id: string;
@@ -192,80 +123,31 @@ export interface ViewDisplayBase {
     page_size?: number;
 }
 
-export interface ViewListDisplay extends ViewDisplayBase {
-    type: 'list';
-    title: ViewResultField;
-    subtitle?: ViewResultField[];
-    description?: ViewResultField;
-    media?: ViewResultMedia;
-    badges?: ViewResultField[];
-}
+export type ViewListDisplay = z.infer<typeof ViewListDisplaySchema>;
 
-export interface ViewTableColumn extends ViewResultField {
-    width?: number;
-    sortable?: boolean;
-    sort_option?: string;
-}
+export type ViewTableColumn = z.infer<typeof ViewTableColumnSchema>;
 
-export interface ViewTableDisplay extends ViewDisplayBase {
-    type: 'table';
-    columns: ViewTableColumn[];
-}
+export type ViewTableDisplay = z.infer<typeof ViewTableDisplaySchema>;
 
-export interface ViewCardsDisplay extends ViewDisplayBase {
-    type: 'cards';
-    title: ViewResultField;
-    description?: ViewResultField;
-    media?: ViewResultMedia;
-    fields?: ViewResultField[];
-    badges?: ViewResultField[];
-    columns?: 2 | 3 | 4 | 5 | 6;
-}
+export type ViewCardsDisplay = z.infer<typeof ViewCardsDisplaySchema>;
 
-export interface ViewGalleryDisplay extends ViewDisplayBase {
-    type: 'gallery';
-    media: ViewResultMedia;
-    title: ViewResultField;
-    caption?: ViewResultField[];
-    columns?: 2 | 3 | 4 | 5 | 6;
-}
+export type ViewGalleryDisplay = z.infer<typeof ViewGalleryDisplaySchema>;
 
-export interface ViewBoardColumn {
-    value: string;
-    label: string;
-    order?: number;
-}
+export type ViewBoardColumn = z.infer<typeof ViewBoardColumnSchema>;
 
-export interface ViewBoardCardConfiguration {
-    title: ViewResultField;
-    description?: ViewResultField;
-    media?: ViewResultMedia;
-    fields?: ViewResultField[];
-    badges?: ViewResultField[];
-}
+export type ViewBoardCardConfiguration = z.infer<typeof ViewBoardCardConfigurationSchema>;
 
-export interface ViewBoardDisplay extends ViewDisplayBase {
-    type: 'board';
-    group_by: string;
-    columns?: ViewBoardColumn[];
-    card: ViewBoardCardConfiguration;
-}
+export type ViewBoardDisplay = z.infer<typeof ViewBoardDisplaySchema>;
 
-export type ViewDisplayConfiguration =
-    | ViewListDisplay
-    | ViewTableDisplay
-    | ViewCardsDisplay
-    | ViewGalleryDisplay
-    | ViewBoardDisplay;
+export type ViewDisplayConfiguration = z.infer<typeof ViewDisplayConfigurationSchema>;
 
-export interface ViewResultsConfiguration {
-    default_display: string;
-    allow_display_switch?: boolean;
-    displays: ViewDisplayConfiguration[];
-    default_sort?: string;
-    sort_options?: ViewSortOption[];
-}
+export type ViewResultsConfiguration = z.infer<typeof ViewResultsConfigurationSchema>;
 
+// Kept as a named declaration while legacy OpenAPI components extend or map this
+// type through TypeScript. ts-json-schema-generator cannot expand a z.infer alias
+// through Omit/extends and would silently erase the inherited View fields.
+// ViewExperienceConfigurationSchema remains the runtime authority and the parity
+// test prevents the declaration from drifting while those referrers migrate.
 export interface ViewExperienceConfiguration {
     name: string;
     description?: string;
@@ -354,64 +236,19 @@ export interface ViewExperienceListQuery {
     offset?: number;
 }
 
-export interface ExecuteViewRequest {
-    query?: string;
-    key_terms?: Record<string, string[]>;
-    navigation?: Record<string, string[]>;
-    display?: string;
-    sort?: string;
-    offset?: number;
-    limit?: number;
-}
+export type ExecuteViewRequest = z.infer<typeof ExecuteViewRequestSchema>;
 
-/**
- * Execute an unsaved (draft) View configuration without persisting it. Combines
- * the inline configuration with the same execution inputs as {@link ExecuteViewRequest}
- * so authors can validate and preview results before calling create/update.
- */
-export interface PreviewViewExperienceRequest extends ExecuteViewRequest {
-    /** The unsaved View configuration to validate and execute. */
-    configuration: ViewExperienceConfiguration;
-}
+export type PreviewViewExperienceRequest = z.infer<typeof PreviewViewExperienceRequestSchema>;
 
-export interface ViewExecutionWarning {
-    code: string;
-    message: string;
-    path?: string;
-}
+export type ViewExecutionWarning = z.infer<typeof ViewExecutionWarningSchema>;
 
-export type ViewQueryPlanningFailureCode =
-    | 'interaction_failed'
-    | 'invalid_output'
-    | 'invalid_query'
-    | 'low_confidence'
-    | 'timeout'
-    | 'unknown';
+export type ViewQueryPlanningFailureCode = z.infer<typeof ViewQueryPlanningFailureCodeSchema>;
 
-/**
- * Safe query-planning diagnostics. The query contains only the model-authored
- * subtree; server-owned scope and content-security filters are never exposed.
- */
-export interface ViewExecutionQueryPlan {
-    status: 'applied' | 'fallback';
-    query?: ViewElasticsearchQuery;
-    confidence?: number;
-    error_code?: ViewQueryPlanningFailureCode;
-    error_message?: string;
-}
+export type ViewExecutionQueryPlan = z.infer<typeof ViewExecutionQueryPlanSchema>;
 
-export interface ViewHitAnnotation {
-    why_match?: string;
-    answer?: string;
-    excerpt?: string;
-}
+export type ViewHitAnnotation = z.infer<typeof ViewHitAnnotationSchema>;
 
-export interface ViewHit {
-    id: string;
-    score?: number;
-    document: ContentObjectItemApiResponse;
-    annotation?: ViewHitAnnotation;
-}
+export type ViewHit = z.infer<typeof ViewHitSchema>;
 
 export interface ViewNavigationNode {
     id: string;
@@ -432,53 +269,10 @@ export interface ViewNavigationResult {
     truncated?: boolean;
 }
 
-export interface ViewExecutionSearchResult {
-    input?: string;
-    interpretation?: string;
-    key_terms?: Record<string, string[]>;
-    plan?: ViewExecutionQueryPlan;
-    requested_mode: 'browse' | 'deterministic' | 'agentic';
-    applied_mode: 'browse' | 'deterministic' | 'query';
-    fallback_reason?: string;
-    warnings: ViewExecutionWarning[];
-}
+export type ViewExecutionSearchResult = z.infer<typeof ViewExecutionSearchResultSchema>;
 
-/**
- * Client-visible search controls. Agentic planner instructions, interaction,
- * and model configuration are intentionally omitted.
- */
-export interface ViewExecutionSearchConfiguration {
-    renderer?: string;
-    mode?: 'deterministic' | 'agentic';
-    placeholder?: string;
-    fields?: ViewSearchFieldDefinition[];
-    key_terms?: ViewKeyTermDefinition[];
-}
+export type ViewExecutionSearchConfiguration = z.infer<typeof ViewExecutionSearchConfigurationSchema>;
 
-/**
- * The reusable, client-visible part of the View definition used for an execution.
- * Server-owned scope is intentionally omitted.
- */
-export interface ViewExecutionDefinition {
-    name: string;
-    description?: string;
-    enabled?: boolean;
-    layout?: ViewExperienceLayout;
-    navigation?: ViewNavigationItem[];
-    search?: ViewExecutionSearchConfiguration;
-    results?: ViewResultsConfiguration;
-}
+export type ViewExecutionDefinition = z.infer<typeof ViewExecutionDefinitionSchema>;
 
-export interface ViewExecutionResult {
-    view: string;
-    revision: number;
-    /** The runtime-safe rendering definition resolved by Zeno for this execution. */
-    definition: ViewExecutionDefinition;
-    display?: string;
-    sort?: string;
-    search: ViewExecutionSearchResult;
-    hits: ViewHit[];
-    total: number;
-    navigation: Record<string, ViewNavigationResult>;
-    took: number;
-}
+export type ViewExecutionResult = z.infer<typeof ViewExecutionResultSchema>;
