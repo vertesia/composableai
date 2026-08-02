@@ -173,6 +173,17 @@ function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
     const previousRoot = ctx.rootName;
     ctx.rootName = scopeName;
     try {
+        // Hoist sibling definition blocks first so members can reference each other — and before the
+        // `$ref` branch below, which returns without descending. A node that is ONLY a reference can
+        // still carry the definitions that reference points at: that is exactly the shape Zod emits
+        // for an alias schema adapted on its own, and skipping its `$defs` left the reference dangling.
+        for (const block of [$defs, definitions]) {
+            if (!isPlainObject(block)) continue;
+            for (const [name, schema] of inHoistOrder(block)) {
+                hoist(name, schema, ctx);
+            }
+        }
+
         if (typeof rest[REF] === 'string') {
             const rewritten = componentRef(refTargetName(rest[REF] as string, ctx.rootName));
             // In 2020-12 a reference may carry sibling keywords and annotations; keep them.
@@ -181,14 +192,6 @@ function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
             const out: JsonObject = {};
             for (const [key, child] of siblings) out[key] = walk(child, ctx, false);
             return { ...out, ...rewritten };
-        }
-
-        // Hoist sibling definition blocks first so members can reference each other.
-        for (const block of [$defs, definitions]) {
-            if (!isPlainObject(block)) continue;
-            for (const [name, schema] of inHoistOrder(block)) {
-                hoist(name, schema, ctx);
-            }
         }
 
         const out: JsonObject = {};

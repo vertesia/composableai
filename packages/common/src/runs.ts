@@ -1,20 +1,17 @@
+import type { z } from 'zod';
+import type { ExecutionRunDocRefSchema, RunCreatePayloadSchema } from './api-schemas/interaction.js';
 import type { FacetResult } from './facets.js';
-import type { NamedInteractionExecutionPayload } from './interaction.js';
 
 /**
  * The run ref is used to identify a run document in the storage
  */
-export interface ExecutionRunDocRef {
-    id: string;
-    account: string;
-    project: string;
-}
+export type ExecutionRunDocRef = z.infer<typeof ExecutionRunDocRefSchema>;
 
 /**
  * Interaction execution payload for creating a new run
  * It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run
  */
-export interface RunCreatePayload extends NamedInteractionExecutionPayload {}
+export type RunCreatePayload = z.infer<typeof RunCreatePayloadSchema>;
 
 /**
  * Payload for cloning an existing ExecutionRun.

@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+import type { InteractionSearchQuerySchema, RunSearchQuerySchema } from './api-schemas/interaction.js';
 import type { ExecutionRunStatus } from './interaction.js';
 import type { SearchTypes, SupportedEmbeddingTypes } from './project.js';
 import type { CollectionSearchPayload } from './store/collections.js';
@@ -68,46 +70,9 @@ export interface PromptSearchQuery extends SimpleSearchQuery {
     matchInteractions?: boolean;
 }
 
-export interface InteractionSearchQuery extends SimpleSearchQuery {
-    prompt?: string;
-    tags?: string[];
-    version?: string;
-    model?: string;
-    environment?: string;
-    is_agent?: boolean;
-    is_tool?: boolean;
-    is_skill?: boolean;
-    is_basic?: boolean;
-    is_sub_agent?: boolean;
-}
+export type InteractionSearchQuery = z.infer<typeof InteractionSearchQuerySchema>;
 
-export interface RunSearchQuery extends SimpleSearchQuery {
-    offset?: number;
-    interaction?: string;
-    environment?: string;
-    model?: string;
-    status?: ExecutionRunStatus;
-    tags?: string[];
-    /**
-     * Tags to exclude. Runs carrying any of these tags are filtered out of the results,
-     * counts, and facet buckets. Combined with `tags` (which requires all of the listed
-     * tags) as an additional `$nin` constraint on the same field.
-     */
-    exclude_tags?: string[];
-    query?: string;
-    default_query_path?: string;
-    parent?: string[];
-    is_root?: boolean;
-    object?: string;
-    start?: string;
-    end?: string;
-    finish_reason?: string;
-    created_by?: string;
-    workflow_run_ids?: string[];
-    workflow_ids?: string[];
-    run_ids?: string[];
-    is_agent?: boolean;
-}
+export type RunSearchQuery = z.infer<typeof RunSearchQuerySchema>;
 
 export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
     documentId?: string;

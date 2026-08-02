@@ -1,4 +1,6 @@
 import type { ExecutionTokenUsage, HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
+import type { z } from 'zod';
+import type { PlanSchema, PlanTaskSchema, WorkflowAncestorSchema } from '../api-schemas/interaction.js';
 import type {
     AgentResourceReference,
     ConversationVisibility,
@@ -31,14 +33,7 @@ export interface Queue {
     queue_full_name?: string; // full name
 }
 
-export interface WorkflowAncestor {
-    run_id: string;
-    workflow_id: string;
-    /**
-     * the depth of nested parent workflows
-     */
-    run_depth: number;
-}
+export type WorkflowAncestor = z.infer<typeof WorkflowAncestorSchema>;
 
 export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
     /**
@@ -1249,18 +1244,9 @@ export function getWorkflowUpdatesKey(workflowRunId: string): string {
     return `workflow:${workflowRunId}:updates`;
 }
 
-export interface PlanTask {
-    id: number;
-    goal: string;
-    instructions?: string[];
-    comment?: string;
-    status?: 'pending' | 'in_progress' | 'completed' | 'skipped';
-}
+export type PlanTask = z.infer<typeof PlanTaskSchema>;
 
-export interface Plan {
-    plan: PlanTask[];
-    comment?: string;
-}
+export type Plan = z.infer<typeof PlanSchema>;
 
 export const LOW_PRIORITY_TASK_QUEUE = 'low_priority';
 

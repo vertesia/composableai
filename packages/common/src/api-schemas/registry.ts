@@ -6,16 +6,30 @@ import {
     AIModelArraySchema,
     AIModelSchema,
     AIModelStatusSchema,
+    CompletionResultSchema,
+    DataSourceSchema,
     EmbeddingOutputSchema,
     EmbeddingResultItemSchema,
     EmbeddingsResultSchema,
     EmbeddingsTokenUsageSchema,
     EmbeddingTaskTypeSchema,
+    ExecutionTokenUsageSchema,
     HttpTimeoutOptionsSchema,
+    ImageResultSchema,
+    JSONObjectSchema,
     JSONSchemaSchema,
+    JSONValueSchema,
+    JsonResultSchema,
+    ModalitiesSchema,
     ModelOptionsSchema,
     ModelSearchPayloadSchema,
     ModelTypeSchema,
+    PromptRoleSchema,
+    PromptSegmentSchema,
+    StatelessExecutionOptionsSchema,
+    TextResultSchema,
+    ToolDefinitionSchema,
+    ToolUseSchema,
 } from '@llumiverse/common/schemas';
 import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
@@ -80,6 +94,7 @@ import {
     ExecutionEnvironmentArraySchema,
     ExecutionEnvironmentConfigUpdatePayloadSchema,
     ExecutionEnvironmentCreatePayloadSchema,
+    ExecutionEnvironmentRefSchema,
     ExecutionEnvironmentSchema,
     ExecutionEnvironmentSettingsSchema,
     ExecutionEnvironmentUpdatePayloadSchema,
@@ -116,6 +131,124 @@ import {
     UserGroupRefSchema,
     UserGroupSchema,
 } from './group.js';
+import {
+    AgentResourceActionSchema,
+    AgentResourceReferenceSchema,
+    AgentResourceTypeSchema,
+    AgentRunnerOptionsSchema,
+    AgentSearchScope_CollectionSchema,
+    AgentSearchScopeSchema,
+    AgentToolApprovalModeSchema,
+    AsyncCompletionModeSchema,
+    AsyncCompletionOptionsSchema,
+    AsyncConversationExecutionPayloadSchema,
+    AsyncExecutionPayloadSchema,
+    AsyncExecutionResultSchema,
+    AsyncInteractionExecutionPayloadSchema,
+    CachePolicySchema,
+    CatalogInteractionRefArraySchema,
+    CatalogInteractionRefSchema,
+    CatalogTagQuerySchema,
+    ComputedFacetResponseSchema,
+    ComputeInteractionFacetPayloadSchema,
+    ConversationStateSchema,
+    ConversationStripOptionsSchema,
+    ConversationVisibilitySchema,
+    EmailChannelSchema,
+    ExecuteInteractionByEndpointHeadersSchema,
+    ExecuteInteractionByEndpointQuerySchema,
+    ExecutionRunDocRefSchema,
+    ExecutionRunInteractionSchema,
+    ExecutionRunRefArraySchema,
+    ExecutionRunRefSchema,
+    ExecutionRunSchema,
+    ExecutionRunStatusSchema,
+    ExecutionRunWorkflowSchema,
+    ExternalizedToolInputRefSchema,
+    ExternalizedToolInputRefsSchema,
+    FacetSpecSchema,
+    GeneratedInteractionDefinitionArraySchema,
+    GeneratedInteractionDefinitionSchema,
+    GeneratedInteractionPromptSegmentSchema,
+    GeneratedInteractionPromptTemplateSchema,
+    GeneratedTestDataRecordArraySchema,
+    GeneratedTestDataRecordSchema,
+    GenerateInteractionPayloadSchema,
+    GenerateTestDataPayloadSchema,
+    ImprovePromptPayloadConfigSchema,
+    ImprovePromptPayloadSchema,
+    InCodePromptSchema,
+    InitialToolCallSchema,
+    InteractionArraySchema,
+    InteractionCreatePayloadSchema,
+    InteractionEndpointArraySchema,
+    InteractionEndpointQuerySchema,
+    InteractionEndpointSchema,
+    InteractionExecutionErrorSchema,
+    InteractionExecutionPayloadSchema,
+    InteractionExecutionResultSchema,
+    InteractionForkPayloadSchema,
+    InteractionPublishPayloadSchema,
+    InteractionRefArraySchema,
+    InteractionRefSchema,
+    InteractionSchema,
+    InteractionSearchQuerySchema,
+    InteractionStatusSchema,
+    InteractionsExportPayloadSchema,
+    InteractionTagsArraySchema,
+    InteractionTagsSchema,
+    InteractionUpdatePayloadSchema,
+    InteractionVisibilitySchema,
+    InteractiveChannelSchema,
+    LlmCallTypeSchema,
+    ModelSourceSchema,
+    NamedInteractionExecutionPayloadSchema,
+    NumberValueMapSchema,
+    Partial_ExecutionRunRefSchema,
+    PendingMcpConnectionSchema,
+    PendingToolApprovalResultsSchema,
+    PlanSchema,
+    PlanTaskSchema,
+    PromptImprovementResponseSchema,
+    PromptModalitiesSchema,
+    PromptSegmentDefSchema,
+    PromptSegmentDefTypeSchema,
+    PromptSegmentRef_PromptTemplateRefSchema,
+    PromptStatusSchema,
+    PromptTemplateCreatePayloadSchema,
+    PromptTemplateRefSchema,
+    PromptTemplateSchema,
+    PromptTemplateUpdatePayloadSchema,
+    RateLimitRequestPayloadSchema,
+    RateLimitRequestResponseSchema,
+    ResolvedEnvironmentInfoSchema,
+    ResolvedInteractionExecutionInfoSchema,
+    ResolvedRuntimeConfigSchema,
+    ResolveInteractionQuerySchema,
+    ResultStorageOptionsSchema,
+    RunCreatePayloadSchema,
+    RunSearchPayloadSchema,
+    RunSearchQuerySchema,
+    RunSourceSchema,
+    RunSourceTypesSchema,
+    SchemaRefSchema,
+    SkillContextTriggersSchema,
+    SortOptionSchema,
+    SortOrderSchema,
+    StoredCatalogInteractionsQuerySchema,
+    StreamingOptionsSchema,
+    StreamingTelemetryContextSchema,
+    TemplateTypeSchema,
+    TextArtifactReferenceSchema,
+    ToolApprovalGrantMapSchema,
+    ToolApprovalGrantSchema,
+    ToolReferenceSchema,
+    ToolResultMetaSchema,
+    ToolResultSchema,
+    UsedSkillSchema,
+    UserChannelSchema,
+    WorkflowAncestorSchema,
+} from './interaction.js';
 import {
     AccountProjectsResponseSchema,
     InviteAcceptanceResponseSchema,
@@ -445,9 +578,11 @@ const OAUTH_SCHEMAS = {
  * here rather than defining them here is the whole point: one definition, whichever package owns it.
  */
 const ENVIRONMENT_SCHEMAS = {
-    // The environment itself. `ExecutionEnvironmentRef` is a projection the UI reads and no endpoint
-    // returns, so it stays a plain interface with no component.
+    // The environment itself. `ExecutionEnvironmentRef` is the secret-free projection; wave S2 left
+    // it a plain interface because no environment endpoint returned it, and wave S3 registered it
+    // because `ResolvedInteractionExecutionInfo` refs it.
     SupportedProviders: SupportedProvidersSchema,
+    ExecutionEnvironmentRef: ExecutionEnvironmentRefSchema,
     ExecutionEnvironment: ExecutionEnvironmentSchema,
     ExecutionEnvironmentArray: ExecutionEnvironmentArraySchema,
     ExecutionEnvironmentSettings: ExecutionEnvironmentSettingsSchema,
@@ -489,6 +624,187 @@ const ENVIRONMENT_SCHEMAS = {
     EmbeddingResultItem: EmbeddingResultItemSchema,
     EmbeddingOutput: EmbeddingOutputSchema,
     EmbeddingsTokenUsage: EmbeddingsTokenUsageSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+/**
+ * Wave S3 — interactions, prompts, runs and agent conversations: the sixty-eight slots across the
+ * six `/interactions`, `/runs` and `/execute` resources.
+ *
+ * One wave rather than six, because it is one closure. `Interaction` reaches `PromptSegmentDef`
+ * reaches `PromptTemplate`; `InteractionExecutionResult` reaches `ExecutionRun` reaches
+ * `ConversationState` reaches the agent plan, the channels and the tool-approval types. A canonical
+ * component may not `$ref` a TypeScript-derived one, so the closure converts together or not at all.
+ *
+ * A hundred and twenty-nine components is far past what one group serializes, so it arrives as five,
+ * split along the lines the closure already has. The split is still only a compiler accommodation:
+ * nothing reads a component's group.
+ *
+ * The completion group is llumiverse's. A prompt segment, a tool call and a completion result are
+ * llumiverse types, so their schemas live in `@llumiverse/common/schemas` beside the types they
+ * derive — the arrangement `ModelOptions`, `JSONSchema` and `AIModel` already use.
+ */
+const LLM_COMPLETION_SCHEMAS = {
+    // What a prompt is made of.
+    JSONValue: JSONValueSchema,
+    JSONObject: JSONObjectSchema,
+    PromptRole: PromptRoleSchema,
+    Modalities: ModalitiesSchema,
+    DataSource: DataSourceSchema,
+    PromptSegment: PromptSegmentSchema,
+    // Tools, and what a model returns.
+    ToolDefinition: ToolDefinitionSchema,
+    ToolUse: ToolUseSchema,
+    TextResult: TextResultSchema,
+    JsonResult: JsonResultSchema,
+    ImageResult: ImageResultSchema,
+    CompletionResult: CompletionResultSchema,
+    ExecutionTokenUsage: ExecutionTokenUsageSchema,
+    // The options a caller may send. `PromptFormatter` is deliberately gone: see the note on
+    // `StatelessExecutionOptionsSchema`.
+    StatelessExecutionOptions: StatelessExecutionOptionsSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const INTERACTION_SCHEMAS = {
+    // The interaction definition and the prompt tree under it.
+    InteractionStatus: InteractionStatusSchema,
+    InteractionVisibility: InteractionVisibilitySchema,
+    PromptModalities: PromptModalitiesSchema,
+    PromptStatus: PromptStatusSchema,
+    PromptSegmentDefType: PromptSegmentDefTypeSchema,
+    TemplateType: TemplateTypeSchema,
+    SchemaRef: SchemaRefSchema,
+    CachePolicy: CachePolicySchema,
+    PromptTemplate: PromptTemplateSchema,
+    PromptTemplateCreatePayload: PromptTemplateCreatePayloadSchema,
+    PromptTemplateUpdatePayload: PromptTemplateUpdatePayloadSchema,
+    PromptTemplateRef: PromptTemplateRefSchema,
+    PromptSegmentDef: PromptSegmentDefSchema,
+    PromptSegmentRef_PromptTemplateRef: PromptSegmentRef_PromptTemplateRefSchema,
+    InCodePrompt: InCodePromptSchema,
+    Interaction: InteractionSchema,
+    InteractionArray: InteractionArraySchema,
+    InteractionRef: InteractionRefSchema,
+    InteractionRefArray: InteractionRefArraySchema,
+    InteractionTags: InteractionTagsSchema,
+    InteractionTagsArray: InteractionTagsArraySchema,
+    // Endpoints — an interaction's published, executable name.
+    InteractionEndpoint: InteractionEndpointSchema,
+    InteractionEndpointArray: InteractionEndpointArraySchema,
+    InteractionEndpointQuery: InteractionEndpointQuerySchema,
+    // Write and search contracts.
+    InteractionCreatePayload: InteractionCreatePayloadSchema,
+    InteractionUpdatePayload: InteractionUpdatePayloadSchema,
+    InteractionPublishPayload: InteractionPublishPayloadSchema,
+    InteractionForkPayload: InteractionForkPayloadSchema,
+    InteractionsExportPayload: InteractionsExportPayloadSchema,
+    InteractionSearchQuery: InteractionSearchQuerySchema,
+    ResolveInteractionQuery: ResolveInteractionQuerySchema,
+    // The catalog — in-code interactions an app or the system provides, alongside stored ones.
+    CatalogInteractionRef: CatalogInteractionRefSchema,
+    CatalogInteractionRefArray: CatalogInteractionRefArraySchema,
+    CatalogTagQuery: CatalogTagQuerySchema,
+    StoredCatalogInteractionsQuery: StoredCatalogInteractionsQuerySchema,
+    // What `GET /interactions/resolve/:nameOrId` answers with.
+    ModelSource: ModelSourceSchema,
+    ResolvedEnvironmentInfo: ResolvedEnvironmentInfoSchema,
+    ResolvedInteractionExecutionInfo: ResolvedInteractionExecutionInfoSchema,
+    // Facets over the interaction list.
+    FacetSpec: FacetSpecSchema,
+    NumberValueMap: NumberValueMapSchema,
+    ComputeInteractionFacetPayload: ComputeInteractionFacetPayloadSchema,
+    ComputedFacetResponse: ComputedFacetResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const INTERACTION_AUTHORING_SCHEMAS = {
+    // Prompt improvement, and the two generators behind the authoring screens.
+    ImprovePromptPayloadConfig: ImprovePromptPayloadConfigSchema,
+    ImprovePromptPayload: ImprovePromptPayloadSchema,
+    PromptImprovementResponse: PromptImprovementResponseSchema,
+    GenerateTestDataPayload: GenerateTestDataPayloadSchema,
+    GeneratedTestDataRecord: GeneratedTestDataRecordSchema,
+    GeneratedTestDataRecordArray: GeneratedTestDataRecordArraySchema,
+    GenerateInteractionPayload: GenerateInteractionPayloadSchema,
+    GeneratedInteractionDefinition: GeneratedInteractionDefinitionSchema,
+    GeneratedInteractionDefinitionArray: GeneratedInteractionDefinitionArraySchema,
+    GeneratedInteractionPromptTemplate: GeneratedInteractionPromptTemplateSchema,
+    GeneratedInteractionPromptSegment: GeneratedInteractionPromptSegmentSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const AGENT_CONVERSATION_SCHEMAS = {
+    // How an agent run is configured.
+    AgentRunnerOptions: AgentRunnerOptionsSchema,
+    AgentSearchScope: AgentSearchScopeSchema,
+    AgentSearchScope_Collection: AgentSearchScope_CollectionSchema,
+    SkillContextTriggers: SkillContextTriggersSchema,
+    InitialToolCall: InitialToolCallSchema,
+    ConversationVisibility: ConversationVisibilitySchema,
+    ConversationStripOptions: ConversationStripOptionsSchema,
+    StreamingOptions: StreamingOptionsSchema,
+    StreamingTelemetryContext: StreamingTelemetryContextSchema,
+    ResolvedRuntimeConfig: ResolvedRuntimeConfigSchema,
+    LlmCallType: LlmCallTypeSchema,
+    // Where an interactive agent talks to a human.
+    InteractiveChannel: InteractiveChannelSchema,
+    EmailChannel: EmailChannelSchema,
+    UserChannel: UserChannelSchema,
+    // Tools: what was called, what came back, and what a human still has to approve.
+    ToolReference: ToolReferenceSchema,
+    ToolResult: ToolResultSchema,
+    ToolResultMeta: ToolResultMetaSchema,
+    ExternalizedToolInputRef: ExternalizedToolInputRefSchema,
+    ExternalizedToolInputRefs: ExternalizedToolInputRefsSchema,
+    ToolApprovalGrant: ToolApprovalGrantSchema,
+    ToolApprovalGrantMap: ToolApprovalGrantMapSchema,
+    AgentToolApprovalMode: AgentToolApprovalModeSchema,
+    PendingToolApprovalResults: PendingToolApprovalResultsSchema,
+    AgentResourceAction: AgentResourceActionSchema,
+    AgentResourceType: AgentResourceTypeSchema,
+    AgentResourceReference: AgentResourceReferenceSchema,
+    PendingMcpConnection: PendingMcpConnectionSchema,
+    // The conversation itself, and what it accumulates.
+    UsedSkill: UsedSkillSchema,
+    PlanTask: PlanTaskSchema,
+    Plan: PlanSchema,
+    WorkflowAncestor: WorkflowAncestorSchema,
+    TextArtifactReference: TextArtifactReferenceSchema,
+    ConversationState: ConversationStateSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const EXECUTION_RUN_SCHEMAS = {
+    // A run: what was executed, by whom, and how it ended.
+    ExecutionRunStatus: ExecutionRunStatusSchema,
+    RunSourceTypes: RunSourceTypesSchema,
+    RunSource: RunSourceSchema,
+    ExecutionRunDocRef: ExecutionRunDocRefSchema,
+    ExecutionRunWorkflow: ExecutionRunWorkflowSchema,
+    ExecutionRunInteraction: ExecutionRunInteractionSchema,
+    ExecutionRun: ExecutionRunSchema,
+    ExecutionRunRef: ExecutionRunRefSchema,
+    ExecutionRunRefArray: ExecutionRunRefArraySchema,
+    Partial_ExecutionRunRef: Partial_ExecutionRunRefSchema,
+    RunCreatePayload: RunCreatePayloadSchema,
+    // Listing and searching runs.
+    SortOrder: SortOrderSchema,
+    SortOption: SortOptionSchema,
+    RunSearchQuery: RunSearchQuerySchema,
+    RunSearchPayload: RunSearchPayloadSchema,
+    // Executing an interaction, synchronously or as a workflow.
+    InteractionExecutionPayload: InteractionExecutionPayloadSchema,
+    NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
+    InteractionExecutionResult: InteractionExecutionResultSchema,
+    InteractionExecutionError: InteractionExecutionErrorSchema,
+    ResultStorageOptions: ResultStorageOptionsSchema,
+    ExecuteInteractionByEndpointQuery: ExecuteInteractionByEndpointQuerySchema,
+    ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersSchema,
+    AsyncCompletionMode: AsyncCompletionModeSchema,
+    AsyncCompletionOptions: AsyncCompletionOptionsSchema,
+    AsyncExecutionPayload: AsyncExecutionPayloadSchema,
+    AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayloadSchema,
+    AsyncConversationExecutionPayload: AsyncConversationExecutionPayloadSchema,
+    AsyncExecutionResult: AsyncExecutionResultSchema,
+    // The execution rate limiter.
+    RateLimitRequestPayload: RateLimitRequestPayloadSchema,
+    RateLimitRequestResponse: RateLimitRequestResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const ZENO_SCHEMAS = {
@@ -594,6 +910,11 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
     PROJECT_AND_APP_SCHEMAS,
     OAUTH_SCHEMAS,
     ENVIRONMENT_SCHEMAS,
+    LLM_COMPLETION_SCHEMAS,
+    INTERACTION_SCHEMAS,
+    INTERACTION_AUTHORING_SCHEMAS,
+    AGENT_CONVERSATION_SCHEMAS,
+    EXECUTION_RUN_SCHEMAS,
     ZENO_SCHEMAS,
 ]) as Record<ApiComponentName, z.ZodType>;
 
@@ -602,6 +923,11 @@ export type ApiComponentName =
     | keyof typeof PROJECT_AND_APP_SCHEMAS
     | keyof typeof OAUTH_SCHEMAS
     | keyof typeof ENVIRONMENT_SCHEMAS
+    | keyof typeof LLM_COMPLETION_SCHEMAS
+    | keyof typeof INTERACTION_SCHEMAS
+    | keyof typeof INTERACTION_AUTHORING_SCHEMAS
+    | keyof typeof AGENT_CONVERSATION_SCHEMAS
+    | keyof typeof EXECUTION_RUN_SCHEMAS
     | keyof typeof ZENO_SCHEMAS;
 
 /**
@@ -839,6 +1165,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // round-trips; it is deliberately absent from this list. The six enums take no
     // additionalProperties at all.
     'ExecutionEnvironment',
+    'ExecutionEnvironmentRef',
     'ExecutionEnvironmentCreatePayload',
     'ExecutionEnvironmentUpdatePayload',
     'ExecutionEnvironmentConfigUpdatePayload',
@@ -865,6 +1192,114 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // `/environments` resources take.
     'ListEnvironmentsQuery',
     'ModelSearchPayload',
+    // Wave S3 — the interaction, prompt, run and agent-conversation closure. Every name here is
+    // published closed today.
+    //
+    // What is deliberately absent, and why, because the list is long enough that absence has to be
+    // readable: the enums and string constants (`InteractionStatus`, `PromptStatus`, `TemplateType`,
+    // `PromptSegmentDefType`, `InteractionVisibility`, `ExecutionRunStatus`, `RunSourceTypes`,
+    // `ModelSource`, `LlmCallType`, `AgentSearchScope`, `AgentSearchScope_Collection`,
+    // `AgentResourceAction`, `AgentResourceType`, `AgentToolApprovalMode`, `ConversationVisibility`,
+    // `SortOrder`, `AsyncCompletionMode`, `PromptRole`, `Modalities`) and the array components take
+    // no `additionalProperties` at all; the unions (`UserChannel`, `CompletionResult`,
+    // `AsyncExecutionPayload`) and the `$ref` alias `ExecutionRunInteraction` take none either; and
+    // the maps (`NumberValueMap`, `ToolApprovalGrantMap`, `ExternalizedToolInputRefs`,
+    // `GeneratedTestDataRecord`, `GeneratedTestDataRecordArray`, `JSONObject`,
+    // `ComputedFacetResponse`) publish a VALUE schema there rather than a policy. `ToolResultMeta`,
+    // `AsyncInteractionExecutionPayload` and `AsyncConversationExecutionPayload` are open today and
+    // stay open.
+    'PromptSegment',
+    'DataSource',
+    'ToolDefinition',
+    'ToolUse',
+    'TextResult',
+    'JsonResult',
+    'ImageResult',
+    'ExecutionTokenUsage',
+    'StatelessExecutionOptions',
+    'SchemaRef',
+    'CachePolicy',
+    'PromptModalities',
+    'PromptTemplate',
+    'PromptTemplateCreatePayload',
+    'PromptTemplateUpdatePayload',
+    'PromptTemplateRef',
+    'PromptSegmentDef',
+    'PromptSegmentRef_PromptTemplateRef',
+    'InCodePrompt',
+    'Interaction',
+    'InteractionRef',
+    'InteractionTags',
+    'InteractionEndpoint',
+    'InteractionEndpointQuery',
+    'InteractionCreatePayload',
+    'InteractionUpdatePayload',
+    'InteractionPublishPayload',
+    'InteractionForkPayload',
+    'InteractionsExportPayload',
+    'CatalogInteractionRef',
+    'ResolvedEnvironmentInfo',
+    'ResolvedInteractionExecutionInfo',
+    'FacetSpec',
+    'ComputeInteractionFacetPayload',
+    'ImprovePromptPayloadConfig',
+    'ImprovePromptPayload',
+    'PromptImprovementResponse',
+    'GenerateTestDataPayload',
+    'GenerateInteractionPayload',
+    'GeneratedInteractionDefinition',
+    'GeneratedInteractionPromptTemplate',
+    'GeneratedInteractionPromptSegment',
+    'AgentRunnerOptions',
+    'SkillContextTriggers',
+    'InitialToolCall',
+    'ConversationStripOptions',
+    'StreamingOptions',
+    'StreamingTelemetryContext',
+    'ResolvedRuntimeConfig',
+    'InteractiveChannel',
+    'EmailChannel',
+    'ToolReference',
+    'ToolResult',
+    'ExternalizedToolInputRef',
+    'ToolApprovalGrant',
+    'PendingToolApprovalResults',
+    'AgentResourceReference',
+    'PendingMcpConnection',
+    'UsedSkill',
+    'PlanTask',
+    'Plan',
+    'WorkflowAncestor',
+    'TextArtifactReference',
+    'ConversationState',
+    'RunSource',
+    'ExecutionRunDocRef',
+    'ExecutionRunWorkflow',
+    'ExecutionRun',
+    'ExecutionRunRef',
+    'Partial_ExecutionRunRef',
+    'RunCreatePayload',
+    'SortOption',
+    'RunSearchPayload',
+    'InteractionExecutionPayload',
+    'NamedInteractionExecutionPayload',
+    'InteractionExecutionResult',
+    'InteractionExecutionError',
+    'ResultStorageOptions',
+    'AsyncCompletionOptions',
+    'AsyncExecutionResult',
+    'RateLimitRequestPayload',
+    'RateLimitRequestResponse',
+    // Expanded into parameters rather than published, like every query contract above.
+    // `ExecuteInteractionByEndpointHeaders` is listed for symmetry only: header validation matches
+    // declared names and leaves everything else alone, so strictness cannot reject a real request.
+    'InteractionSearchQuery',
+    'RunSearchQuery',
+    'CatalogTagQuery',
+    'StoredCatalogInteractionsQuery',
+    'ResolveInteractionQuery',
+    'ExecuteInteractionByEndpointQuery',
+    'ExecuteInteractionByEndpointHeaders',
 ]);
 
 /**
@@ -1005,9 +1440,19 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeo
         ? z.infer<(typeof OAUTH_SCHEMAS)[N]>
         : N extends keyof typeof ENVIRONMENT_SCHEMAS
           ? z.infer<(typeof ENVIRONMENT_SCHEMAS)[N]>
-          : N extends keyof typeof ZENO_SCHEMAS
-            ? z.infer<(typeof ZENO_SCHEMAS)[N]>
-            : never;
+          : N extends keyof typeof LLM_COMPLETION_SCHEMAS
+            ? z.infer<(typeof LLM_COMPLETION_SCHEMAS)[N]>
+            : N extends keyof typeof INTERACTION_SCHEMAS
+              ? z.infer<(typeof INTERACTION_SCHEMAS)[N]>
+              : N extends keyof typeof INTERACTION_AUTHORING_SCHEMAS
+                ? z.infer<(typeof INTERACTION_AUTHORING_SCHEMAS)[N]>
+                : N extends keyof typeof AGENT_CONVERSATION_SCHEMAS
+                  ? z.infer<(typeof AGENT_CONVERSATION_SCHEMAS)[N]>
+                  : N extends keyof typeof EXECUTION_RUN_SCHEMAS
+                    ? z.infer<(typeof EXECUTION_RUN_SCHEMAS)[N]>
+                    : N extends keyof typeof ZENO_SCHEMAS
+                      ? z.infer<(typeof ZENO_SCHEMAS)[N]>
+                      : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

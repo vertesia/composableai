@@ -5,29 +5,81 @@ import type {
     JSONSchema,
     Modalities,
     ModelOptions,
-    PromptRole,
     StatelessExecutionOptions,
     ToolDefinition,
     ToolUse,
 } from '@llumiverse/common';
 import type { z } from 'zod';
+import type {
+    AgentResourceActionSchema,
+    AgentResourceReferenceSchema,
+    AgentResourceTypeSchema,
+    AgentRunnerOptionsSchema,
+    AsyncCompletionModeSchema,
+    AsyncCompletionOptionsSchema,
+    AsyncConversationExecutionPayloadSchema,
+    AsyncExecutionPayloadSchema,
+    AsyncExecutionResultSchema,
+    AsyncInteractionExecutionPayloadSchema,
+    CachePolicySchema,
+    CatalogInteractionRefSchema,
+    ConversationStripOptionsSchema,
+    ConversationVisibilitySchema,
+    ExecutionRunInteractionSchema,
+    ExecutionRunRefSchema,
+    ExecutionRunWorkflowSchema,
+    GeneratedInteractionDefinitionSchema,
+    GeneratedInteractionPromptSegmentSchema,
+    GeneratedInteractionPromptTemplateSchema,
+    GeneratedTestDataRecordSchema,
+    GenerateInteractionPayloadSchema,
+    GenerateTestDataPayloadSchema,
+    ImprovePromptPayloadConfigSchema,
+    ImprovePromptPayloadSchema,
+    InCodePromptSchema,
+    InitialToolCallSchema,
+    InteractionCreatePayloadSchema,
+    InteractionEndpointQuerySchema,
+    InteractionEndpointSchema,
+    InteractionExecutionErrorSchema,
+    InteractionExecutionPayloadSchema,
+    InteractionForkPayloadSchema,
+    InteractionPublishPayloadSchema,
+    InteractionRefSchema,
+    InteractionSchema,
+    InteractionsExportPayloadSchema,
+    InteractionTagsSchema,
+    InteractionUpdatePayloadSchema,
+    InteractionVisibilitySchema,
+    NamedInteractionExecutionPayloadSchema,
+    PromptImprovementResponseSchema,
+    PromptModalitiesSchema,
+    RateLimitRequestPayloadSchema,
+    RateLimitRequestResponseSchema,
+    ResolvedEnvironmentInfoSchema,
+    ResolvedInteractionExecutionInfoSchema,
+    ResolvedRuntimeConfigSchema,
+    ResultStorageOptionsSchema,
+    RunSourceSchema,
+    SchemaRefSchema,
+    SkillContextTriggersSchema,
+    StreamingOptionsSchema,
+    StreamingTelemetryContextSchema,
+    ToolResultMetaSchema,
+    ToolResultSchema,
+} from './api-schemas/interaction.js';
 import type { InteractionExecutionConfigurationSchema } from './api-schemas/store.js';
-import type { PrincipalType } from './apikey.js';
 import type { MCPToolAnnotations } from './apps.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
-import type { AgentCheckpointConfiguration, ProjectRef } from './project.js';
+import type { ProjectRef } from './project.js';
 import type {
     ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
-    PromptSegmentDef,
     PromptSegmentRef,
-    PromptTemplateRef,
     PromptTemplateRefWithSchema,
-    TemplateType,
 } from './prompt.js';
 import type { ExecutionRunDocRef } from './runs.js';
-import type { AgentToolApprovalMode } from './store/agent-approval.js';
-import type { ConversationState, TextArtifactReference } from './store/conversation-state.js';
+import type { TextArtifactReference } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 
 /**
@@ -38,48 +90,14 @@ import type { AccountRef } from './user.js';
 export * from './interaction-values.js';
 
 import { ConfigModes, RunDataStorageLevel } from './interaction-values.js';
-import type { LlmCallType } from './workflow-analytics.js';
 
-export interface InteractionExecutionError {
-    code: string;
-    message: string;
-    data?: unknown;
-    retryable?: boolean;
-    /** Provider-supplied retry delay preserved across synchronous and async workflow execution. */
-    retry_after_ms?: number;
-}
+export type InteractionExecutionError = z.infer<typeof InteractionExecutionErrorSchema>;
 
 /**
  * Configuration for stripping large data from conversation history
  * to prevent JSON serialization issues and reduce storage bloat.
  */
-export interface ConversationStripOptions {
-    /**
-     * Number of turns to keep images before stripping them.
-     * - 0: Strip images immediately after each turn
-     * - N > 0: Keep images for N turns before stripping (default: 5)
-     * - Infinity: Never strip images
-     */
-    images_after_turns?: number;
-
-    /**
-     * Maximum tokens for text content before truncation.
-     * Text content exceeding this limit will be truncated with a marker.
-     * Uses ~4 characters per token estimate.
-     */
-    text_max_tokens?: number;
-
-    /**
-     * Number of turns to keep heartbeat messages before stripping them.
-     * Heartbeat messages are periodic workstream status updates wrapped in
-     * `<heartbeat>...</heartbeat>` tags that clutter conversation history.
-     * - 0: Strip heartbeats immediately after each turn
-     * - 1 (default): Keep only the most recent heartbeat
-     * - N > 0: Keep heartbeats for N turns before stripping
-     * - Infinity: Never strip heartbeats
-     */
-    heartbeats_after_turns?: number;
-}
+export type ConversationStripOptions = z.infer<typeof ConversationStripOptionsSchema>;
 
 // ------------------ in code interactions -----------------
 /**
@@ -88,55 +106,7 @@ export interface ConversationStripOptions {
  * Stored interactions can use `oid:` prefix.
  * If no prefix is used it fallback on `oid:`.
  */
-export interface CatalogInteractionRef {
-    /**
-     * The type of interaction
-     */
-    type: 'sys' | 'app' | 'stored' | 'draft';
-
-    /**
-     * the interaction id that can be used to execute the interaction.
-     */
-    id: string;
-
-    /**
-     * The interaction name which identify the interaction in the provider interaction list.
-     * For the stored interactions this is the same as the endpoint property.
-     * For other types of interactions this is the local name of the interaction.
-     */
-    name: string;
-
-    /**
-     * Only applies for stored interactions. The version of the interaction.
-     * Undefined for non stored interactions
-     */
-    version?: number;
-
-    /**
-     * Only applies for stored interactions. Whether the interaction is published or not.
-     */
-    published?: boolean;
-
-    /**
-     * The tags associated with the interaction.
-     */
-    tags: string[];
-
-    /**
-     * Agent Runner configuration options.
-     */
-    agent_runner_options?: AgentRunnerOptions;
-
-    /**
-     * The name of the interaction. For display purposes only.
-     */
-    title: string;
-
-    /**
-     * Optional description of the interaction.
-     */
-    description?: string;
-}
+export type CatalogInteractionRef = z.infer<typeof CatalogInteractionRefSchema>;
 
 export interface CatalogTagQuery {
     tag?: string;
@@ -162,21 +132,7 @@ export interface ResolveInteractionQuery {
     hasVideo?: boolean;
 }
 
-export interface InCodePrompt {
-    role: PromptRole;
-    content: string;
-    content_type: TemplateType;
-    schema?: JSONSchema;
-    /**
-     * optional name of the prompt segment. Use kebab case for prompt names
-     */
-    name?: string;
-    /**
-     * optional reference to an external resource if any.
-     * Used internally by the system to synchronize stored prompts with in-code prompts.
-     */
-    externalId?: string;
-}
+export type InCodePrompt = z.infer<typeof InCodePromptSchema>;
 export interface InCodeInteraction {
     /**
      * The interaction type.
@@ -293,87 +249,16 @@ export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime
 /**
  * The payload to query the interaction endpoints
  */
-export interface InteractionEndpointQuery {
-    limit?: number;
-    offset?: number;
-
-    status?: InteractionStatus;
-    visibility?: InteractionVisibility;
-    version?: number;
-    tags?: string[];
-
-    /**
-     * Filter by interaction endpoint name to include only the specified endpoints
-     * * If both includes and excludes are specified then only the includes filter will be used.
-     */
-    includes?: string[];
-
-    /**
-     * Filter by interaction endpoint name to excludes the specified endpoints.
-     * If both includes and excludes are specified then only the includes filter will be used.
-     */
-    excludes?: string[];
-
-    /**
-     * Whether or not to return the parameters schema.
-     * The parameters schema is an array of JSON schemas.
-     * Each schema is a JSON schema that describes the parameters of an interaction prompt.
-     */
-    include_params_schema?: boolean;
-
-    /**
-     * Whether or not to return the result schema
-     */
-    include_result_schema?: boolean;
-
-    /**
-     * When true, filter results to only interactions with is_skill=true.
-     */
-    is_skill?: boolean;
-}
+export type InteractionEndpointQuery = z.infer<typeof InteractionEndpointQuerySchema>;
 
 /**
  * A description of an interaction endpoint.
  */
-export interface InteractionEndpoint {
-    id: string;
-    name: string;
-    endpoint: string;
-    description?: string;
-    status: InteractionStatus;
-    visibility?: InteractionVisibility;
-    version: number;
-    tags: string[];
-    agent_runner_options?: AgentRunnerOptions;
-    /**
-     * @deprecated This is deprecated. Use CompletionResult.type information instead.
-     */
-    output_modality?: Modalities;
-    result_schema?: JSONSchema;
-    params_schema?: JSONSchema;
-}
+export type InteractionEndpoint = z.infer<typeof InteractionEndpointSchema>;
 
-export interface InteractionTags {
-    tag: string;
-    count: number;
-    interactions: InteractionRef[];
-}
+export type InteractionTags = z.infer<typeof InteractionTagsSchema>;
 
-export interface InteractionRef {
-    id: string;
-    name: string;
-    endpoint: string;
-    parent?: string;
-    model?: string;
-    description?: string;
-    status: InteractionStatus;
-    visibility?: InteractionVisibility;
-    version: number;
-    tags: string[];
-    agent_runner_options?: AgentRunnerOptions;
-    prompts?: PromptSegmentRef<PromptTemplateRef>[];
-    updated_at: Date;
-}
+export type InteractionRef = z.infer<typeof InteractionRefSchema>;
 export const InteractionRefPopulate =
     'id name endpoint parent description status version visibility tags agent_runner_options updated_at prompts';
 
@@ -384,20 +269,7 @@ export interface InteractionRefWithSchema extends Omit<InteractionRef, 'prompts'
     prompts?: PromptSegmentRef<PromptTemplateRefWithSchema>[];
 }
 
-export interface InteractionsExportPayload {
-    /**
-     * The name of the interaction. If not specified all the interactions in the current project will be exported
-     */
-    name?: string;
-    /*
-     * tags to filter the exported interactions
-     */
-    tags?: string[];
-    /*
-     * if not specified, all versions will be exported
-     */
-    versions?: (number | 'draft' | 'latest')[];
-}
+export type InteractionsExportPayload = z.infer<typeof InteractionsExportPayloadSchema>;
 
 export enum InteractionStatus {
     draft = 'draft',
@@ -430,16 +302,9 @@ export const RunDataStorageOptions: Record<RunDataStorageLevel, RunDataStorageDe
  * Schema can be stored or specified as a reference to an external schema.
  * We only support "store:" references for now
  */
-export interface SchemaRef {
-    $uri: string;
-}
-export interface CachePolicy {
-    type: 'cache' | 'no_cache' | 'cache_and_refresh';
-    refresh_probability: number;
-    varies_on: string[];
-    ttl: number;
-}
-export type InteractionVisibility = 'public' | 'private';
+export type SchemaRef = z.infer<typeof SchemaRefSchema>;
+export type CachePolicy = z.infer<typeof CachePolicySchema>;
+export type InteractionVisibility = z.infer<typeof InteractionVisibilitySchema>;
 
 export interface InteractionData {
     readonly id: string;
@@ -460,23 +325,7 @@ export interface InteractionData {
      */
     output_modality?: Modalities;
 }
-export interface Interaction extends InteractionData {
-    status: InteractionStatus;
-    parent?: string;
-    // only used for versions (status === "published")
-    visibility: InteractionVisibility;
-    version: number;
-    test_data?: JSONObject;
-    interaction_schema?: JSONSchema | SchemaRef;
-    cache_policy?: CachePolicy;
-    prompts: PromptSegmentDef[];
-    // only for drafts - when it was last published
-    last_published_at?: Date;
-    created_by: string;
-    updated_by: string;
-    created_at: Date;
-    updated_at: Date;
-}
+export type Interaction = z.infer<typeof InteractionSchema>;
 
 export interface PopulatedInteraction extends Omit<Interaction, 'prompts'> {
     prompts: PopulatedPromptSegmentDef[];
@@ -490,40 +339,11 @@ export interface ExecutableInteraction extends InteractionData {
     prompts: ExecutablePromptSegmentDef[];
 }
 
-export interface InteractionCreatePayload
-    extends Omit<
-        Interaction,
-        | 'id'
-        | 'created_at'
-        | 'updated_at'
-        | 'created_by'
-        | 'updated_by'
-        | 'project'
-        | 'formatter'
-        | 'tags'
-        | 'parent'
-        | 'version'
-        | 'visibility'
-        | 'endpoint'
-    > {
-    visibility?: InteractionVisibility;
-    tags?: string[];
-}
+export type InteractionCreatePayload = z.infer<typeof InteractionCreatePayloadSchema>;
 
-export interface InteractionUpdatePayload
-    extends Partial<
-        Omit<
-            Interaction,
-            'result_schema' | 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project'
-        >
-    > {
-    result_schema?: JSONSchema | SchemaRef | null;
-}
+export type InteractionUpdatePayload = z.infer<typeof InteractionUpdatePayloadSchema>;
 
-export interface InteractionPublishPayload {
-    visibility?: InteractionVisibility;
-    tags?: string[];
-}
+export type InteractionPublishPayload = z.infer<typeof InteractionPublishPayloadSchema>;
 
 export interface InteractionDeletePayload {
     /**
@@ -535,83 +355,16 @@ export interface InteractionDeletePayload {
     cascade?: boolean;
 }
 
-export interface InteractionForkPayload {
-    keepTags?: boolean;
-    forkPrompts?: boolean;
-    targetProject?: string;
-}
+export type InteractionForkPayload = z.infer<typeof InteractionForkPayloadSchema>;
 
-export interface InteractionExecutionPayload {
-    /**
-     * If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location.
-     * and the other properties of the data will contain the memory pack mapping.
-     */
-    data?: Record<string, unknown> | `memory:${string}`;
-    config?: InteractionExecutionConfiguration;
-    //Use null to explicitly state no schema, will not fallback to interaction schema
-    result_schema?: JSONSchema | SchemaRef | null;
-    stream?: boolean;
-    do_validate?: boolean;
-    tags?: string | string[]; // tags to be added to the execution run
+export type InteractionExecutionPayload = z.infer<typeof InteractionExecutionPayloadSchema>;
 
-    /**
-     * The conversation state to be used in the execution if any.
-     * If the `true` is passed then the conversation will be returned in the result.
-     * The true value must be used for the first execution that starts the conversation.
-     * If conversation is falsy then no conversation is returned back.
-     * For regular executions the conversation is not returned back to save memory.
-     */
-    conversation?: true | unknown;
-
-    /**
-     * The tools to be used in the execution
-     */
-    tool_definitions?: ToolDefinition[];
-
-    /**
-     * The workflow related to this Interaction Run.
-     */
-    workflow?: ExecutionRunWorkflow;
-
-    /**
-     * Only used by ad-hoc interactions which defines the prompt in the execution payload itself
-     * These are temporary interactions using "tmp:" suffix.
-     */
-    prompts?: InCodePrompt[];
-
-    /**
-     * Options for async completion and/or streaming LLM response chunks to Redis.
-     * Used by agent workflows for async activity completion and real-time streaming.
-     */
-    asyncCompletion?: AsyncCompletionOptions;
-}
-
-export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
-    /**
-     * The interaction name and suffixed by an optional tag or version separated from the name using a @ character
-     * If no version/tag part is specified then the latest version is used.
-     * Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag
-     */
-    interaction: string;
-}
+export type NamedInteractionExecutionPayload = z.infer<typeof NamedInteractionExecutionPayloadSchema>;
 
 // ================= async execution payloads ====================
 export type ToolRef = string | { name: string; description: string };
 
-interface AsyncExecutionPayloadBase
-    extends Omit<NamedInteractionExecutionPayload, 'tool_definitions' | 'stream'>,
-        Record<string, unknown> {
-    type: 'conversation' | 'interaction';
-
-    /**
-     * An array of endpoint URLs to be notified upon execution
-     */
-    notify_endpoints?: string[];
-
-    task_queue?: string;
-}
-
-export type ConversationVisibility = 'private' | 'project';
+export type ConversationVisibility = z.infer<typeof ConversationVisibilitySchema>;
 
 /**
  * Defines the scope for agent search operations.
@@ -627,95 +380,16 @@ export enum AgentSearchScope {
  * Context triggers for auto-injection of skills.
  * When these conditions match, the skill is automatically injected into the agent context.
  */
-export interface SkillContextTriggers {
-    /**
-     * Keywords in user input that should trigger this skill
-     */
-    keywords?: string[];
-
-    /**
-     * If these tools are being used, suggest this skill
-     */
-    tool_names?: string[];
-
-    /**
-     * Regex patterns to match against input data
-     */
-    data_patterns?: string[];
-}
+export type SkillContextTriggers = z.infer<typeof SkillContextTriggersSchema>;
 
 /**
  * Configuration options for Agent Runner functionality.
  * These options control how interactions are exposed and executed in the Agent Runner.
  */
-export interface AgentRunnerOptions {
-    /**
-     * Whether this interaction is an agent (executable in Agent Runner).
-     */
-    is_agent?: boolean;
-
-    /**
-     * Whether this interaction is available as a tool (sub-agent).
-     */
-    is_tool?: boolean;
-
-    /**
-     * Whether this interaction is a skill (provides instructions without execution).
-     * Skills are injected into the agent's context based on context_triggers.
-     */
-    is_skill?: boolean;
-
-    /**
-     * Context triggers for auto-injection of this skill.
-     * Only used when is_skill is true.
-     */
-    context_triggers?: SkillContextTriggers;
-
-    /**
-     * Injection priority for skills (higher = more likely to be selected when multiple match).
-     * Only used when is_skill is true.
-     */
-    skill_priority?: number;
-
-    /**
-     * Array of default tool names available to this agent.
-     * For interactions: defines default tools.
-     * For execution payloads: you can use + and - to add or remove from default,
-     * if no sign, then list replaces default.
-     */
-    tool_names?: string[];
-
-    /**
-     * On which scope should the search be applied by the search_tool.
-     * Only supports 'collection' scope or undefined for now.
-     */
-    search_scope?: AgentSearchScope;
-
-    /**
-     * The ID of the collection to restrict agent operations to.
-     * When specified, the agent's search and retrieval operations are limited to documents
-     * within this collection'.
-     */
-    collection_id?: string;
-
-    /**
-     * Optional user-facing template for rendering run input as the first conversation entry.
-     * Supports {{field_name}}, {{nested.field}}, {{items.0.name}}, and {{json}} placeholders
-     * resolved from the run data.
-     */
-    request_template?: string;
-
-    /**
-     * Per-agent context checkpoint configuration. Field-wise it overrides the
-     * project's `configuration.agent.checkpoint`; a per-run `checkpoint_tokens`
-     * override still wins over both.
-     */
-    checkpoint?: AgentCheckpointConfiguration;
-}
+export type AgentRunnerOptions = z.infer<typeof AgentRunnerOptionsSchema>;
 
 // ================= User Communication Channels ====================
 // Import for local use
-import type { UserChannel } from './email.js';
 
 export type {
     EmailChannel,
@@ -734,292 +408,41 @@ export {
  * A tool invocation executed before the first model turn of a conversation.
  * Results are injected into the initial context so the agent starts with them in hand.
  */
-export interface InitialToolCall {
-    /** Stable identifier used to make initialization replay-safe. */
-    id: string;
-    /** Read-only builtin activity tool name. Skills are configured separately through initial_skills. */
-    tool: string;
-    /** Tool input parameters. */
-    input?: Record<string, unknown>;
-    /** Whether a failed initialization call aborts the conversation start. */
-    on_error?: 'fail' | 'continue';
-}
+export type InitialToolCall = z.infer<typeof InitialToolCallSchema>;
 
-export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
-    type: 'conversation';
+export type AsyncConversationExecutionPayload = z.infer<typeof AsyncConversationExecutionPayloadSchema>;
 
-    /** Effective tool approval mode for interactive agent conversations. */
-    tool_approval_mode?: AgentToolApprovalMode;
-
-    /**
-     * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project
-     * If not specified, the default is project
-     **/
-    visibility?: ConversationVisibility;
-
-    /**
-     * The tools to use, list of tool or function names.
-     * You can use + and - to add or remove from default, if no sign, then list replaces default
-     */
-    tool_names?: string[];
-
-    /**
-     * Builtin system skills to activate at conversation start. Their related tools are
-     * exposed from the first turn and their instructions are injected into the initial
-     * context, replacing the learn_<skill> round-trip.
-     */
-    initial_skills?: string[];
-
-    /**
-     * Tool calls executed before the first model turn. Results are injected into the
-     * initial context. These run sequentially with the caller's authority before the
-     * first model turn. Only a bounded set of read/hydration tools is accepted.
-     */
-    initial_tool_calls?: InitialToolCall[];
-
-    /**
-     * Hard denylist of tool names for this conversation. Excluded tools are never
-     * exposed to the model and are refused at execution time, even when a skill or
-     * tool refresh would otherwise unlock them. Takes precedence over tool_names,
-     * initial_skills, and skill-based tool activation.
-     */
-    excluded_tools?: string[];
-
-    /**
-     * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
-     */
-    max_iterations?: number;
-
-    /**
-     * Whether the conversation should be interactive or not
-     */
-    interactive?: boolean;
-
-    /**
-     * Array of channels to use for user communication.
-     * Multiple channels can be active simultaneously (e.g., both email and interactive).
-     * Each channel contains its own configuration and state (e.g., email threading info).
-     */
-    user_channels?: UserChannel[];
-
-    /**
-     * Whether to disable the generation of interaction tools or not.
-     */
-    disable_interaction_tools?: boolean;
-
-    /**
-     * On which scope should the searched by applied, by the search_tool.
-     * Only supports collection scope or null for now.
-     */
-    search_scope?: AgentSearchScope.Collection;
-
-    /**
-     * The collection in which this workflow is executing
-     */
-    collection_id?: string;
-
-    /**
-     * Denylist of MCP tool-collection ids deactivated for this conversation.
-     * `undefined`/empty means all installed/connected MCP collections are active (back-compat,
-     * and new servers stay active by default). Listed collections are excluded even if connected.
-     * Can be updated mid-conversation via the MCP config signal.
-     */
-    disabled_mcp_collections?: string[];
-
-    /**
-     * The token threshold in thousands (K) for creating checkpoints.
-     * If total tokens exceed this value, a checkpoint will be created.
-     * When set it wins over every other checkpoint setting, including the
-     * structured `checkpoint` override below. If not specified, the default
-     * is computed from the selected model context window (80%, capped at 500k).
-     */
-    checkpoint_tokens?: number;
-
-    /**
-     * Structured per-run checkpoint override. Field-wise it takes precedence
-     * over the interaction's `agent_runner_options.checkpoint` and the
-     * project's `configuration.agent.checkpoint`. The legacy absolute
-     * `checkpoint_tokens` above still wins over everything when set.
-     */
-    checkpoint?: AgentCheckpointConfiguration;
-
-    /**
-     * Configuration for stripping large data (images, text) from conversation history
-     * to prevent JSON serialization issues and reduce storage bloat.
-     */
-    strip_options?: ConversationStripOptions;
-
-    /** In child execution workflow, this is the curent task_id */
-    task_id?: string;
-
-    /** Parent-assigned launch ID for non-blocking workstreams.
-     *  The child uses this when signaling progress/completion back to the parent. */
-    launch_id?: string;
-
-    /** Whether to enable debug mode */
-    debug_mode?: boolean;
-
-    /** Maximum depth for nested conversations to prevent infinite recursion (default: 5) */
-    max_nested_conversation_depth?: number;
-
-    /**
-     * Metadata inherited from parent workflow.
-     * Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams.
-     * When a workstream is spawned, the parent's `data` is preserved here so that
-     * child tools can access it via metadata.parent_metadata.
-     */
-    parent_metadata?: Record<string, unknown>;
-
-    /**
-     * When true, subagent/workstream tool calls use fire-and-forget `startChild()`
-     * instead of blocking `executeChild()`. The parent continues reasoning while
-     * children run, receiving progress/completion via Temporal signals.
-     */
-    non_blocking_subagents?: boolean;
-
-    /**
-     * Temporal runId of a previous workflow to restart/fork from.
-     * When set, conversation history is loaded from the old run's GCS storage
-     * instead of calling startConversation fresh.
-     */
-    restart_from_workflow_run_id?: string;
-
-    /**
-     * The Temporal firstExecutionRunId of the original workflow being restarted/forked.
-     * Used by loadConversationForRestart to look up the original ExecutionRun
-     * so that token accumulation and status updates target a valid run.
-     */
-    source_first_workflow_run_id?: string;
-
-    /**
-     * When true, indicates this is a fork (new ExecutionRun) rather than a restart (reuse original).
-     */
-    is_fork?: boolean;
-
-    /**
-     * The AgentRun MongoDB _id. Used for artifact storage paths: agents/{agent_run_id}/
-     * Flows into ConversationState and down to workstreams.
-     * Undefined for legacy workflows started before the AgentRun system.
-     */
-    agent_run_id?: string;
-
-    /**
-     * The Schedule MongoDB _id. Set when this execution was triggered by a Temporal schedule.
-     * Used by the workflow to create an AgentRun on first run if agent_run_id is absent.
-     */
-    schedule_id?: string;
-}
-
-export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
-    type: 'interaction';
-
-    /**
-     * Only used for non conversation workflows to include the error on next retry.
-     * If tools is defined this is not used
-     */
-    include_previous_error?: boolean;
-}
+export type AsyncInteractionExecutionPayload = z.infer<typeof AsyncInteractionExecutionPayloadSchema>;
 
 /**
  * @discriminator type
  */
-export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInteractionExecutionPayload;
+export type AsyncExecutionPayload = z.infer<typeof AsyncExecutionPayloadSchema>;
 
-export interface AsyncExecutionResult {
-    runId: string;
-    workflowId: string;
-    agentRunId?: string;
-}
+export type AsyncExecutionResult = z.infer<typeof AsyncExecutionResultSchema>;
 
 /**
  * Telemetry context for streaming mode.
  * Contains info not available in current_state needed to send LlmCallEvent.
  */
-export interface StreamingTelemetryContext {
-    /** Type of LLM call: start, resume after user message, or resume after tool results */
-    callType: LlmCallType;
-    /** Activity retry attempt number */
-    attemptNumber?: number;
-    /** Timestamp when inference started (for duration calculation) */
-    inferenceStartTime: number;
-}
+export type StreamingTelemetryContext = z.infer<typeof StreamingTelemetryContextSchema>;
 
 /**
  * Options for storing inference results to cloud storage
  */
-export interface ResultStorageOptions {
-    /** Full storage path for the result (e.g., "pages/doc123/page-1.md") */
-    path: string;
-    // Note: content_type is inferred from execution context:
-    // - If result_schema → application/json
-    // - Otherwise → text/markdown or text/plain
-}
+export type ResultStorageOptions = z.infer<typeof ResultStorageOptionsSchema>;
 
-export type AsyncCompletionMode = 'conversation_state' | 'text';
+export type AsyncCompletionMode = z.infer<typeof AsyncCompletionModeSchema>;
 
 /**
  * Streaming-specific options (only needed when stream=true)
  */
-export interface StreamingOptions {
-    /** Redis channel to publish streaming chunks to */
-    redis_channel: string;
-    /** Optional workstream ID for multi-workstream agents */
-    workstream_id?: string;
-}
+export type StreamingOptions = z.infer<typeof StreamingOptionsSchema>;
 
 /**
  * Options for async completion and/or streaming LLM responses
  */
-export interface AsyncCompletionOptions {
-    /** Workflow run ID for message context */
-    run_id: string;
-    /** Whether to stream chunks to Redis */
-    stream?: boolean;
-    /** Streaming-specific options (required if stream=true) */
-    streaming?: StreamingOptions;
-    /**
-     * Temporal task token for async activity completion (base64url encoded).
-     * When provided, Studio will complete the activity after execution finishes,
-     * allowing the worker to release the activity slot immediately.
-     */
-    task_token?: string;
-    /**
-     * Activity ID for idempotency metadata when storing conversation.
-     * Required when task_token is provided.
-     */
-    activity_id?: string;
-    /**
-     * Current conversation state to merge with execution result.
-     * Studio will store the conversation and complete the activity with merged state.
-     * Required when task_token is provided.
-     */
-    current_state?: ConversationState;
-    /**
-     * Interval in milliseconds for sending heartbeats to Temporal during streaming.
-     * When provided, Studio will send periodic heartbeats to keep the activity alive.
-     * Recommended: 10000 (10 seconds). Activity heartbeat timeout should be ~3x this value.
-     */
-    heartbeat_interval_ms?: number;
-    /**
-     * Telemetry context for sending LlmCallEvent after streaming completes.
-     * Studio will use this to send token usage telemetry since the activity
-     * exits before the response is available in async completion mode.
-     */
-    telemetry?: StreamingTelemetryContext;
-    /**
-     * Storage options for inference result.
-     * When provided, Studio will store the result to the specified path
-     * after inference completes (before completing the Temporal activity).
-     */
-    result_storage?: ResultStorageOptions;
-    /**
-     * Controls the value used to complete the Temporal activity.
-     * Defaults to `conversation_state` for agent resume/continuation calls.
-     * Use `text` for one-shot helper calls, such as checkpoint summaries,
-     * that need the model's text result instead of merged conversation state.
-     */
-    completion_mode?: AsyncCompletionMode;
-}
+export type AsyncCompletionOptions = z.infer<typeof AsyncCompletionOptionsSchema>;
 
 interface ResumeConversationPayload {
     run: ExecutionRunDocRef; // the run created by the first execution.
@@ -1038,20 +461,9 @@ interface ResumeConversationPayload {
  * Restricted to resources that have a real detail route to navigate to — do not emit a reference
  * for a mutation with no meaningful navigation target. Add new kinds only once their route exists.
  */
-export type AgentResourceType =
-    | 'document'
-    | 'collection'
-    | 'content_type'
-    | 'interaction'
-    | 'prompt'
-    | 'agent'
-    | 'workflow'
-    | 'process'
-    | 'process_run'
-    | 'interaction_run'
-    | 'view';
+export type AgentResourceType = z.infer<typeof AgentResourceTypeSchema>;
 
-export type AgentResourceAction = 'created' | 'updated' | 'deleted';
+export type AgentResourceAction = z.infer<typeof AgentResourceActionSchema>;
 
 /**
  * A navigable reference to a resource an agent tool mutated. Tools return these as tool-result
@@ -1059,25 +471,13 @@ export type AgentResourceAction = 'created' | 'updated' | 'deleted';
  * tool's completed lifecycle message so the UI can render deterministic deep links and an
  * end-of-turn "resources changed" summary — independent of any link the model writes in prose.
  */
-export interface AgentResourceReference {
-    type: AgentResourceType;
-    /** The resource id used to build its detail route. */
-    id: string;
-    /** Human-readable label captured at mutation time (e.g. the document name). */
-    label: string;
-    action: AgentResourceAction;
-    /** Set when the mutation produced a new revision, enabling a "view changes" affordance. */
-    revision_id?: string;
-}
+export type AgentResourceReference = z.infer<typeof AgentResourceReferenceSchema>;
 
 /**
  * Metadata a tool executor may attach to its result. Kept as an open record for forward
  * compatibility while typing the fields the runtime interprets.
  */
-export interface ToolResultMeta extends Record<string, unknown> {
-    /** Resources this tool created/updated/deleted, surfaced as deep links in the UI. */
-    resources?: AgentResourceReference[];
-}
+export type ToolResultMeta = z.infer<typeof ToolResultMetaSchema>;
 
 export interface ToolResultContent {
     content: string;
@@ -1148,14 +548,7 @@ export function getResourcesFromToolResult(result: Pick<ToolResultContent, 'meta
     return normalizeAgentResources(result.meta?.resources);
 }
 
-export interface ToolResult extends ToolResultContent {
-    tool_use_id: string;
-    /**
-     * Gemini thinking models require thought_signature to be passed back with tool results.
-     * Copy this from the ToolUse.thought_signature that requested this tool call.
-     */
-    thought_signature?: string;
-}
+export type ToolResult = z.infer<typeof ToolResultSchema>;
 
 /**
  * The payload to sent the tool responses back to the target LLM
@@ -1182,15 +575,9 @@ export enum RunSourceTypes {
     schedule = 'schedule',
 }
 
-export interface RunSource {
-    type: RunSourceTypes;
-    label: string;
-    principal_type: `${PrincipalType}`;
-    principal_id: string;
-    client_ip: string;
-}
+export type RunSource = z.infer<typeof RunSourceSchema>;
 
-export type ExecutionRunInteraction = InteractionRef;
+export type ExecutionRunInteraction = z.infer<typeof ExecutionRunInteractionSchema>;
 
 export interface BaseExecutionRun<P = unknown> {
     readonly id: string;
@@ -1211,11 +598,10 @@ export interface BaseExecutionRun<P = unknown> {
      */
     parameters: P; //params used to create the interaction, only in varies on?
     tags?: string[];
-    /**
-     * Interaction reference. Stored interactions may be populated as full
-     * Interaction documents; in-code interactions are represented as refs whose
-     * `id` is the namespaced interaction id.
-     */
+    // The description that used to sit here now sits on `ExecutionRunInteractionSchema`, which is
+    // where a `$ref` to an alias component can carry one. A `/** */` block here would publish a
+    // SECOND copy on this property alone, and the property and the component it points at would then
+    // be documented by two texts that have to be kept in step by hand.
     interaction?: string | ExecutionRunInteraction;
     /** Environment reference - populated with full object in API responses */
     environment: ExecutionEnvironmentRef;
@@ -1228,8 +614,15 @@ export interface BaseExecutionRun<P = unknown> {
     token_use?: ExecutionTokenUsage;
     chunks?: number;
     execution_time?: number; // ms
-    created_at: Date;
-    updated_at: Date;
+    // ISO strings, not `Date`. `ExecutionRunRef` — the shape every run endpoint actually returns —
+    // is now inferred from the schema the document publishes, which says `type: string,
+    // format: date-time`; `ExecutionRun` publishes the same two fields the same way. Typing them
+    // `Date` here made the two disagree in TypeScript while agreeing on the wire. The `@format` tag
+    // is what keeps the DERIVED schema saying `date-time` now that the type is no longer `Date`.
+    /** @format date-time */
+    created_at: string;
+    /** @format date-time */
+    updated_at: string;
     account: AccountRef;
     project: ProjectRef;
     config: InteractionExecutionConfiguration;
@@ -1261,46 +654,9 @@ export interface PopulatedExecutionRun<P = unknown> extends BaseExecutionRun<P> 
     interaction?: ExecutionRunInteraction;
 }
 
-export interface ExecutionRunWorkflow {
-    /** Stable identifier pairing an interaction rate-limit admission with its completion feedback. */
-    rate_limit_id?: string;
-    /**
-     * The Temporal Workflow Run ID related to this Interaction Run.
-     *
-     * A Run ID is a globally unique, platform-level identifier for a Workflow Execution.
-     *
-     * @deprecated For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.
-     * The AgentRun object provides a stable ID that survives workflow restarts.
-     * This field is only relevant for legacy non-agent interaction executions.
-     *
-     * @example 01970d37-a890-70c0-9f44-1256d063e69a
-     * @see https://docs.temporal.io/workflow-execution/workflowid-runid
-     */
-    run_id: string;
-    /**
-     * The Temporal Workflow ID related to this Interaction Run.
-     *
-     * @deprecated For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.
-     * The AgentRun object provides a stable ID that survives workflow restarts.
-     * This field is only relevant for legacy non-agent interaction executions.
-     *
-     * @example Standard Document Intake:6834841e4f828d4e36192796
-     * @see https://docs.temporal.io/workflow-execution/workflowid-runid
-     */
-    workflow_id: string;
-    /**
-     * The Temporal Activity Type used for executing this Interaction. Undefined if the interaction
-     * was not executed as part of a workflow (such as Agent Runner).
-     *
-     * @example generateDocumentProperties
-     */
-    activity_type?: string;
-}
+export type ExecutionRunWorkflow = z.infer<typeof ExecutionRunWorkflowSchema>;
 
-export interface PromptModalities {
-    hasVideo: boolean;
-    hasImage: boolean;
-}
+export type PromptModalities = z.infer<typeof PromptModalitiesSchema>;
 
 export interface InteractionExecutionResult<P = unknown>
     extends Omit<ExecutionRun<P>, 'account' | 'project' | 'interaction'> {
@@ -1319,9 +675,7 @@ export interface LegacyInteractionExecutionResult<P = unknown>
     result?: JSONObject | string | null;
 }
 
-export interface ExecutionRunRef extends Omit<ExecutionRun, 'result' | 'parameters' | 'interaction'> {
-    interaction?: InteractionRef;
-}
+export type ExecutionRunRef = z.infer<typeof ExecutionRunRefSchema>;
 
 export const ExecutionRunRefSelect = '-result -parameters -result_schema -prompt';
 
@@ -1339,73 +693,27 @@ export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
 
 export type InteractionExecutionConfiguration = z.infer<typeof InteractionExecutionConfigurationSchema>;
 
-export interface GenerateInteractionPayload {
-    description: string;
-    config: InteractionExecutionConfiguration;
-}
+export type GenerateInteractionPayload = z.infer<typeof GenerateInteractionPayloadSchema>;
 
-export interface GenerateTestDataPayload {
-    message?: string;
-    count?: number;
-    config: InteractionExecutionConfiguration;
-}
+export type GenerateTestDataPayload = z.infer<typeof GenerateTestDataPayloadSchema>;
 
-export interface GeneratedTestDataRecord {
-    [key: string]: unknown;
-}
+export type GeneratedTestDataRecord = z.infer<typeof GeneratedTestDataRecordSchema>;
 
-export interface ImprovePromptPayloadConfig {
-    config: InteractionExecutionConfiguration;
-}
+export type ImprovePromptPayloadConfig = z.infer<typeof ImprovePromptPayloadConfigSchema>;
 
-export interface ImprovePromptPayload extends ImprovePromptPayloadConfig {
-    interaction_name: string; // name of the interaction to improve
-    context?: string;
-    prompt: { name: string; content: string }[]; // prompt array
-    result_schema?: JSONSchema; // optional interaction result schema
-}
+export type ImprovePromptPayload = z.infer<typeof ImprovePromptPayloadSchema>;
 
-export interface GeneratedInteractionPromptTemplate {
-    role: 'safety' | 'system' | 'user';
-    name: string;
-    content: string;
-    content_type: 'jst';
-    inputSchema: JSONSchema;
-}
+export type GeneratedInteractionPromptTemplate = z.infer<typeof GeneratedInteractionPromptTemplateSchema>;
 
-export interface GeneratedInteractionPromptSegment {
-    type: 'template';
-    template: GeneratedInteractionPromptTemplate;
-}
+export type GeneratedInteractionPromptSegment = z.infer<typeof GeneratedInteractionPromptSegmentSchema>;
 
-export interface GeneratedInteractionDefinition {
-    name: string;
-    description: string;
-    temperature: number;
-    prompts: GeneratedInteractionPromptSegment[];
-    max_tokens?: number;
-    result_schema: JSONSchema;
-    tags: Array<'generated' | 'agent'>;
-}
+export type GeneratedInteractionDefinition = z.infer<typeof GeneratedInteractionDefinitionSchema>;
 
-export interface PromptImprovementResponse {
-    result: CompletionResult[];
-}
+export type PromptImprovementResponse = z.infer<typeof PromptImprovementResponseSchema>;
 
-export interface RateLimitRequestPayload {
-    interaction: string;
-    environment_id?: string;
-    model_id?: string;
-    /** @deprecated Use rate_limit_id for admission/completion correlation. */
-    workflow_run_id?: string;
-    /** Stable per-execution admission identifier. Preferred over the legacy workflow_run_id. */
-    rate_limit_id?: string;
-    modalities?: PromptModalities;
-}
+export type RateLimitRequestPayload = z.infer<typeof RateLimitRequestPayloadSchema>;
 
-export interface RateLimitRequestResponse {
-    delay_ms: number;
-}
+export type RateLimitRequestResponse = z.infer<typeof RateLimitRequestResponseSchema>;
 
 /**
  * Source of the resolved model configuration
@@ -1430,66 +738,19 @@ export enum ModelSource {
 /**
  * Resolved environment information
  */
-export interface ResolvedEnvironmentInfo {
-    id: string;
-    name: string;
-    provider: string;
-}
+export type ResolvedEnvironmentInfo = z.infer<typeof ResolvedEnvironmentInfoSchema>;
 
 /**
  * Resolved runtime configuration for an interaction
  */
-export interface ResolvedRuntimeConfig {
-    environment: ResolvedEnvironmentInfo;
-    model?: string;
-    model_source: ModelSource;
-}
+export type ResolvedRuntimeConfig = z.infer<typeof ResolvedRuntimeConfigSchema>;
 
 /**
  * Resolved execution info for an interaction.
  * Contains the interaction ID, basic metadata, and the resolved runtime configuration
  * (environment, model) that would be used at execution time.
  */
-export interface ResolvedInteractionExecutionInfo {
-    /**
-     * The resolved interaction ID
-     */
-    id: string;
-
-    /**
-     * The interaction endpoint name
-     */
-    name: string;
-
-    /**
-     * The interaction version number
-     */
-    version: number;
-
-    /**
-     * The interaction status (draft or published)
-     */
-    status: InteractionStatus;
-
-    /**
-     * The interaction tags (can include version tags like "production", "staging")
-     */
-    tags: string[];
-
-    /**
-     * Agent runner configuration (tool_names opt-ins, is_agent, is_tool, etc.).
-     * Included on resolve so non-UI callers (worker activities) can pick up the
-     * interaction's defaults without a second retrieve round-trip — and so
-     * in-code interactions (sys:, app:) which have no Mongo document work the
-     * same as stored ones.
-     */
-    agent_runner_options?: AgentRunnerOptions;
-
-    /**
-     * The resolved runtime configuration
-     */
-    resolved: ResolvedRuntimeConfig;
-}
+export type ResolvedInteractionExecutionInfo = z.infer<typeof ResolvedInteractionExecutionInfoSchema>;
 
 /**
  * A builtin tool definition from the tools catalog

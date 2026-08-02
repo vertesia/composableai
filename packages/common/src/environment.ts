@@ -1,10 +1,11 @@
-import type { AIModel, ProviderParams } from '@llumiverse/common';
+import type { ProviderParams } from '@llumiverse/common';
 import { ProviderList, Providers } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
     EnableEnvironmentModelPayloadSchema,
     ExecutionEnvironmentConfigUpdatePayloadSchema,
     ExecutionEnvironmentCreatePayloadSchema,
+    ExecutionEnvironmentRefSchema,
     ExecutionEnvironmentSchema,
     ExecutionEnvironmentSettingsSchema,
     ExecutionEnvironmentUpdatePayloadSchema,
@@ -105,20 +106,7 @@ export function getVertexBucketAccessPrincipal(
 
 export type ExecutionEnvironment = z.infer<typeof ExecutionEnvironmentSchema>;
 
-export interface ExecutionEnvironmentRef {
-    id: string;
-    name: string;
-    provider: SupportedProviders;
-    enabled_models?: AIModel[];
-    default_model?: string;
-    endpoint_url?: string;
-    allowed_projects?: string[];
-    account: string;
-    created_by: string;
-    updated_by: string;
-    created_at: string;
-    updated_at: string;
-}
+export type ExecutionEnvironmentRef = z.infer<typeof ExecutionEnvironmentRefSchema>;
 
 // The two write payloads used to be `Omit`/`Partial<Omit<...>>` of the read shape. They are stated
 // where they are named now, from the same field list the schema composes them from: a mapped type

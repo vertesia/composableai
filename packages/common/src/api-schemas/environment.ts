@@ -124,6 +124,32 @@ export const ExecutionEnvironmentArraySchema = z
     .array(ExecutionEnvironmentSchema)
     .meta({ id: 'ExecutionEnvironmentArray' });
 
+/**
+ * The environment as an interaction's resolution result sees it — same fields as
+ * {@link ExecutionEnvironmentSchema} minus the secret (`apiKey`, `apikey_hint`) and the
+ * provider-specific `config`/`settings` blocks.
+ *
+ * Wave S2 left this a plain interface because no environment endpoint returned it. Wave S3 gave it
+ * a component: `ResolvedInteractionExecutionInfo` refs it, and a canonical component may not `$ref`
+ * a TypeScript-derived one.
+ */
+export const ExecutionEnvironmentRefSchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+        provider: SupportedProvidersSchema,
+        enabled_models: z.array(AIModelSchema).optional(),
+        default_model: z.string().optional(),
+        endpoint_url: z.string().optional(),
+        allowed_projects: z.array(z.string()).optional(),
+        account: z.string(),
+        created_by: z.string(),
+        updated_by: z.string(),
+        created_at: z.string(),
+        updated_at: z.string(),
+    })
+    .meta({ id: 'ExecutionEnvironmentRef' });
+
 export const ExecutionEnvironmentConfigUpdatePayloadSchema = z
     .strictObject({
         enabled_models: z.array(AIModelSchema).optional(),

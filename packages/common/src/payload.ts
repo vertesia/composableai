@@ -1,3 +1,10 @@
+import type { z } from 'zod';
+import type {
+    ComputeInteractionFacetPayloadSchema,
+    RunSearchPayloadSchema,
+    SortOptionSchema,
+    SortOrderSchema,
+} from './api-schemas/interaction.js';
 import type { FacetSpec } from './facets.js';
 import type {
     ComplexCollectionSearchQuery,
@@ -11,14 +18,9 @@ import type {
 } from './query.js';
 import type { ColumnLayout } from './store/store.js';
 
-export type SortOrder = 'asc' | 'desc';
+export type SortOrder = z.infer<typeof SortOrderSchema>;
 
-export interface SortOption {
-    /** Field path to sort by (e.g. 'updated_at', 'name', 'properties.title') */
-    field: string;
-    /** Sort direction. Defaults to 'desc'. */
-    order?: SortOrder;
-}
+export type SortOption = z.infer<typeof SortOptionSchema>;
 
 export interface SearchPayload {
     facets?: FacetSpec[];
@@ -60,17 +62,13 @@ export interface PromptSearchPayload extends SearchPayload {
     query?: PromptSearchQuery;
 }
 
-export interface RunSearchPayload extends SearchPayload {
-    query?: RunSearchQuery;
-}
+export type RunSearchPayload = z.infer<typeof RunSearchPayloadSchema>;
 
 export interface ComputeCollectionFacetPayload extends Omit<ComputeFacetPayload, 'query'> {
     query?: ComplexCollectionSearchQuery;
 }
 
-export interface ComputeInteractionFacetPayload extends ComputeFacetPayload {
-    query?: InteractionSearchQuery;
-}
+export type ComputeInteractionFacetPayload = z.infer<typeof ComputeInteractionFacetPayloadSchema>;
 
 export interface ComputeObjectFacetPayload extends ComputeFacetPayload {
     query?: ComplexSearchQuery;
