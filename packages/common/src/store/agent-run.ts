@@ -12,63 +12,67 @@
  * (workflowId, runId) are internal server concerns.
  */
 
-import type { UserChannel } from '../email.js';
+import type { z } from 'zod';
 import type {
-    AgentSearchScope,
+    AgentArtifactContentResponseSchema,
+    AgentArtifactUrlResponseSchema,
+    AgentRunArchiveStateSchema,
+    AgentRunArtifactQuerySchema,
+    AgentRunArtifactsQuerySchema,
+    AgentRunArtifactUploadHeadersSchema,
+    AgentRunDetailsQuerySchema,
+    AgentRunSchema,
+    AgentRunSearchHitSchema,
+    AgentRunStatusSchema,
+    AgentRunTypeSchema,
+    AgentRunUpdatesQuerySchema,
+    AgentRunUpdatesResponseSchema,
+    BindRunWorkflowPayloadSchema,
+    CreateAgentRunPayloadSchema,
+    ListAgentRunsQuerySchema,
+    PostAgentRunUpdatePayloadSchema,
+    PostAgentRunUpdateResponseSchema,
+    ProcessRunConfigSchema,
+    ProcessRunTypeSchema,
+    RunKindSchema,
+    RunTypeSchema,
+    SearchAgentRunsQuerySchema,
+    SearchAgentRunsResponseSchema,
+    SignalAgentResponseSchema,
+    StreamAgentRunQuerySchema,
+    TerminateAgentRunResponseSchema,
+    UpdateAgentArtifactContentPayloadSchema,
+    UpdateAgentArtifactContentResponseSchema,
+} from '../api-schemas/zeno-remaining.js';
+import type {
     ConversationVisibility,
     InitialToolCall,
     InteractionExecutionConfiguration,
-    InteractionRef,
     RunSource,
 } from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
-import type { AgentCheckpointConfiguration } from '../project.js';
-import type { ResourceRef } from '../refs.js';
 import type { AgentEvent } from '../workflow-analytics.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type { StopSignal, UserInputSignal } from './signals.js';
 import type { ContentObjectTypeRef } from './store.js';
 import type {
-    AgentMessage,
-    CompactMessage,
     ConversationActivityState,
     ConversationFileRef,
     ConversationFileRemovedRef,
     WorkflowRunEvent,
 } from './workflow.js';
 
-/**
- * Status of an agent run through its lifecycle.
- */
-export type AgentRunStatus = 'created' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type AgentRunStatus = z.infer<typeof AgentRunStatusSchema>;
 
-/**
- * Archive lifecycle state for an agent run.
- *
- * - `none`:      No archive exists (default)
- * - `pending`:   Terminal status recorded; archive workflow triggered
- * - `archiving`: Archive workflow is running
- * - `complete`:  Archive stored in GCS successfully
- * - `failed`:    Archive attempt failed (see `last_archive_error`)
- */
-export type AgentRunArchiveState = 'none' | 'pending' | 'archiving' | 'complete' | 'failed';
+export type AgentRunArchiveState = z.infer<typeof AgentRunArchiveStateSchema>;
 
-/**
- * How the agent run was created.
- */
-export type AgentRunType = 'api' | 'schedule' | 'event_subscription';
+export type AgentRunType = z.infer<typeof AgentRunTypeSchema>;
 
-/**
- * Internal discriminator key for documents stored in the agent_runs collection.
- */
-export type RunKind = 'agent' | 'process';
+export type RunKind = z.infer<typeof RunKindSchema>;
 
-/**
- * Public-facing runtime mode.
- */
-export type RunType = 'autonomous' | 'supervised' | 'programmatic';
-export type ProcessRunType = 'supervised' | 'programmatic';
+export type RunType = z.infer<typeof RunTypeSchema>;
+export type ProcessRunType = z.infer<typeof ProcessRunTypeSchema>;
 
 /**
  * Shared fields for all records stored in the agent_runs collection.
@@ -111,10 +115,10 @@ export interface RunBase {
     started_by: string;
 
     /** When the run started */
-    started_at: Date;
+    started_at: string;
 
     /** When the run completed (or failed/cancelled) */
-    completed_at?: Date;
+    completed_at?: string;
 
     /** Short human-readable title */
     title?: string;
@@ -144,10 +148,10 @@ export interface RunBase {
     archive_state?: AgentRunArchiveState;
 
     /** Timestamp when the document was created */
-    created_at: Date;
+    created_at: string;
 
     /** Timestamp when the document was last updated */
-    updated_at: Date;
+    updated_at: string;
 }
 
 /**
@@ -224,109 +228,21 @@ export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Rec
     type?: AgentRunType;
 }
 
+type AgentRunWire = z.infer<typeof AgentRunSchema>;
+
 /**
- * AgentRun — the client-facing stable identity for a running or completed agent.
- *
- * All operations use `id` as the sole identifier.
- * Temporal workflow internals are never exposed to clients.
- *
- * @typeParam TData - The interaction's expected input data type.
- * @typeParam TProperties - The content type's property schema.
+ * The wire contract is schema-derived; the two generic data bags remain caller-specializable.
+ * A single concrete `z.infer` cannot express those type parameters.
  */
-export interface AgentRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>>
-    extends RunBase,
-        AgentRunBase<TData, TProperties> {
-    run_kind: 'agent';
-    run_type: 'autonomous';
+export type AgentRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = Omit<
+    AgentRunWire,
+    'data' | 'properties'
+> & {
+    data?: TData;
+    properties?: TProperties;
+};
 
-    // --- Temporal workflow references ---
-
-    /** Temporal workflow ID (stable across continueAsNew) */
-    workflow_id?: string;
-
-    /** First Temporal workflow run ID (used for Redis channel and artifact resolution) */
-    first_workflow_run_id?: string;
-
-    // --- Interaction info ---
-
-    /** Human-readable interaction name */
-    interaction_name?: string;
-
-    interactionRef: InteractionRef;
-
-    /**
-     * Resolved environment reference (name resolved from `config.environment` id).
-     * Populated by the list endpoint; may be absent on other endpoints or when the id
-     * cannot be resolved, in which case consumers should fall back to `config.environment`.
-     */
-    environmentRef?: ResourceRef;
-
-    // --- Lifecycle ---
-
-    /** Current status of the agent run */
-    status: AgentRunStatus;
-
-    /** Whether the agent is currently working or idle (waiting for user input) */
-    activity_state?: ConversationActivityState;
-
-    /** When the run started */
-    started_at: Date;
-
-    /** When the run completed (or failed/cancelled) */
-    completed_at?: Date;
-
-    /** User or service that initiated the run */
-    started_by: string;
-
-    // --- Metadata ---
-
-    /** Conversation title (short, human-readable) */
-    title?: string;
-
-    /** Conversation topic (longer description from topic analysis) */
-    topic?: string;
-
-    /** Lessons learned from the conversation (extracted at completion) */
-    lessons_learned?: string[];
-
-    // --- Archival ---
-
-    /** Archive lifecycle state */
-    archive_state?: AgentRunArchiveState;
-
-    /** When the last successful archive completed */
-    archived_at?: Date;
-
-    /** Archive format version (for forward compatibility) */
-    archive_version?: number;
-
-    /** Last archive error message (when archive_state === 'failed') */
-    last_archive_error?: string;
-
-    /** Source agent run ID when this run was forked (enables message history chaining) */
-    forked_from?: string;
-}
-
-export interface ProcessRunConfig {
-    model?: string;
-    /**
-     * Free-form message from the user when starting a run. Passed to the
-     * orchestrator LLM in supervised mode; stored on the run regardless
-     * so programmatic runs retain the intent that triggered them.
-     */
-    user_message?: string;
-    /**
-     * Optional monitor workflow used when a process is launched as a
-     * conversation workstream. The process workflow sends checkpoint status
-     * signals to this monitor so long-running human-task processes do not need
-     * tight polling.
-     */
-    process_workstream_monitor?: {
-        monitor_workflow_id: string;
-        launch_id?: string;
-        workstream_id?: string;
-    };
-}
+export type ProcessRunConfig = z.infer<typeof ProcessRunConfigSchema>;
 
 export interface ProcessRun extends RunBase {
     run_kind: 'process';
@@ -353,43 +269,14 @@ export type AgentRunResponse<TData = Record<string, unknown>, TProperties = Reco
     | SupervisedRunResponse
     | ProgrammaticRunResponse;
 
-/**
- * Payload to create and start a new agent run.
- *
- * @typeParam TData - The interaction's expected input data type.
- * @typeParam TProperties - The content type's property schema.
- */
-export interface CreateAgentRunPayload<TData = Record<string, unknown>, TProperties = Record<string, unknown>>
-    extends AgentRunBase<TData, TProperties> {
-    /** Search scope for RAG queries */
-    search_scope?: AgentSearchScope;
-
-    /** User communication channels (email, interactive) */
-    user_channels?: UserChannel[];
-
-    /** Token budget for checkpointing, in thousands (K). Wins over every other checkpoint setting. */
-    checkpoint_tokens?: number;
-
-    /**
-     * Structured checkpoint override for this run. Field-wise it takes
-     * precedence over the interaction's `agent_runner_options.checkpoint`
-     * and the project's `configuration.agent.checkpoint`; the legacy
-     * `checkpoint_tokens` above still wins over everything when set.
-     */
-    checkpoint?: AgentCheckpointConfiguration;
-
-    /** Maximum conversation iterations (default: 20) */
-    max_iterations?: number;
-
-    /** Webhook URLs to notify on completion */
-    notify_endpoints?: string[];
-
-    /** Enable debug mode for verbose logging */
-    debug_mode?: boolean;
-
-    /** Principal ref of the user who initiated the run (for server-to-server forwarding) */
-    started_by?: string;
-}
+type CreateAgentRunWire = z.infer<typeof CreateAgentRunPayloadSchema>;
+export type CreateAgentRunPayload<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = Omit<
+    CreateAgentRunWire,
+    'data' | 'properties'
+> & {
+    data?: TData;
+    properties?: TProperties;
+};
 
 export interface ProcessRunInputPayload<TData = Record<string, unknown>, TSource = RunSource> {
     process_id?: string;
@@ -450,18 +337,9 @@ export type RecordRunPayload<TData = Record<string, unknown>, TSource = RunSourc
  * @internal Attaches the first Temporal run id after a pre-created run record
  * has successfully started its workflow.
  */
-export interface BindRunWorkflowPayload extends Required<RecordRunWorkflowPayload> {
-    status?: AgentRunStatus;
-    activity_state?: ConversationActivityState;
-}
+export type BindRunWorkflowPayload = z.infer<typeof BindRunWorkflowPayloadSchema>;
 
-/**
- * Response from terminating an agent run.
- */
-export interface TerminateAgentRunResponse {
-    message: string;
-    reason?: string;
-}
+export type TerminateAgentRunResponse = z.infer<typeof TerminateAgentRunResponseSchema>;
 
 /**
  * Payload for updating an AgentRun's lifecycle and derived metadata.
@@ -492,9 +370,8 @@ export interface UpdateAgentRunStatusPayload {
     process_state?: ProcessState;
 }
 
-/**
- * Generic signal payload sent to a running agent workflow.
- */
+// The wire contract is deliberately open because signal payloads are selected by `signalName`.
+// Preserve the known authoring shapes while still allowing custom signal objects.
 export type SignalAgentPayload =
     | UserInputSignal
     | StopSignal
@@ -502,88 +379,35 @@ export type SignalAgentPayload =
     | ConversationFileRemovedRef
     | Record<string, unknown>;
 
-/**
- * Response from signaling an agent workflow.
- */
-export interface SignalAgentResponse {
-    status: string;
-    message: string;
-}
+export type SignalAgentResponse = z.infer<typeof SignalAgentResponseSchema>;
 
-/**
- * Response payload for retrieving compact agent updates.
- */
-export interface AgentRunUpdatesResponse {
-    messages: CompactMessage[];
-}
+export type AgentRunUpdatesResponse = z.infer<typeof AgentRunUpdatesResponseSchema>;
 
-export interface AgentRunUpdatesQuery {
-    since?: number;
-}
+export type AgentRunUpdatesQuery = z.infer<typeof AgentRunUpdatesQuerySchema>;
 
-export interface StreamAgentRunQuery extends AgentRunUpdatesQuery {
-    skipHistory?: boolean;
-}
+export type StreamAgentRunQuery = z.infer<typeof StreamAgentRunQuerySchema>;
 
-export interface AgentRunDetailsQuery {
-    include_history?: boolean;
-    hydrate_payloads?: boolean;
-}
+export type AgentRunDetailsQuery = z.infer<typeof AgentRunDetailsQuerySchema>;
 
 export type AgentArtifactVisibility = 'user' | 'internal' | 'all';
 
-export interface AgentRunArtifactsQuery {
-    visibility?: AgentArtifactVisibility;
-}
+export type AgentRunArtifactsQuery = z.infer<typeof AgentRunArtifactsQuerySchema>;
 
-export interface AgentRunArtifactUploadHeaders {
-    'content-type'?: string;
-}
+export type AgentRunArtifactUploadHeaders = z.infer<typeof AgentRunArtifactUploadHeadersSchema>;
 
-export interface AgentRunArtifactQuery {
-    url?: boolean;
-    disposition?: 'inline' | 'attachment';
-    filename?: string;
-}
+export type AgentRunArtifactQuery = z.infer<typeof AgentRunArtifactQuerySchema>;
 
-/**
- * Payload for posting an update into an agent's workflow stream.
- */
-export type PostAgentRunUpdatePayload = Partial<AgentMessage>;
+export type PostAgentRunUpdatePayload = z.infer<typeof PostAgentRunUpdatePayloadSchema>;
 
-/**
- * Response from posting an agent update.
- */
-export interface PostAgentRunUpdateResponse {
-    success: boolean;
-}
+export type PostAgentRunUpdateResponse = z.infer<typeof PostAgentRunUpdateResponseSchema>;
 
-/**
- * Signed artifact URL response for agent artifacts.
- */
-export interface AgentArtifactUrlResponse {
-    url: string;
-    path: string;
-}
+export type AgentArtifactUrlResponse = z.infer<typeof AgentArtifactUrlResponseSchema>;
 
-/** Text content and concurrency token for an agent artifact. */
-export interface AgentArtifactContentResponse {
-    path: string;
-    content: string;
-    generation: string;
-}
+export type AgentArtifactContentResponse = z.infer<typeof AgentArtifactContentResponseSchema>;
 
-/** Conditional text update for an agent artifact. */
-export interface UpdateAgentArtifactContentPayload {
-    content: string;
-    generation: string;
-}
+export type UpdateAgentArtifactContentPayload = z.infer<typeof UpdateAgentArtifactContentPayloadSchema>;
 
-/** Result of a conditional agent artifact update. */
-export interface UpdateAgentArtifactContentResponse {
-    path: string;
-    generation: string;
-}
+export type UpdateAgentArtifactContentResponse = z.infer<typeof UpdateAgentArtifactContentResponseSchema>;
 
 /**
  * Telemetry ingestion payload for an agent run.
@@ -633,52 +457,7 @@ export type AgentRunDetailsStreamEvent =
 /**
  * Filters for listing agent runs.
  */
-export interface ListAgentRunsQuery {
-    /** Filter by agent run ID */
-    id?: string;
-
-    /** Filter by status (single or multiple) */
-    status?: AgentRunStatus | AgentRunStatus[];
-
-    /** Filter by interaction ID or code */
-    interaction?: string;
-
-    /** Filter by user who started the run */
-    started_by?: string;
-
-    /** Only return runs started after this date */
-    since?: Date;
-
-    /** Only return runs started at or before this date */
-    until?: Date;
-
-    /** Maximum number of results (default: 50) */
-    limit?: number;
-
-    /** Offset for pagination */
-    offset?: number;
-
-    /** Cursor for stable pagination */
-    cursor?: string;
-
-    /** Filter by schedule ID */
-    schedule_id?: string;
-
-    /** Filter by run type */
-    type?: AgentRunType;
-
-    /** Filter by public runtime mode */
-    run_type?: RunType | RunType[];
-
-    /** Filter by internal run discriminator */
-    run_kind?: RunKind;
-
-    /** Field to sort by */
-    sort?: 'started_at' | 'updated_at';
-
-    /** Sort order */
-    order?: 'asc' | 'desc';
-}
+export type ListAgentRunsQuery = z.infer<typeof ListAgentRunsQuerySchema>;
 
 export interface ListAgentRunsResponse {
     items: AgentRunResponse[];
@@ -689,152 +468,11 @@ export interface ListAgentRunsResponse {
 /**
  * Query for searching agent runs via Elasticsearch.
  */
-export interface SearchAgentRunsQuery {
-    /** Full-text search across name, title, topic, interaction_name, and content */
-    query?: string;
+export type SearchAgentRunsQuery = z.infer<typeof SearchAgentRunsQuerySchema>;
 
-    /** Filter by status (single or multiple) */
-    status?: AgentRunStatus | AgentRunStatus[];
+export type AgentRunSearchHit = z.infer<typeof AgentRunSearchHitSchema>;
 
-    /** Filter by interaction ID or code */
-    interaction?: string;
-
-    /** Filter by user who started the run */
-    started_by?: string;
-
-    /** Filter by categories */
-    categories?: string[];
-
-    /** Filter by tags */
-    tags?: string[];
-
-    /** Filter by content type name */
-    content_type_name?: string;
-
-    /** Filter by public runtime mode */
-    run_type?: RunType | RunType[];
-
-    /** Only return runs started after this date */
-    since?: Date;
-
-    /** Only return runs started at or before this date */
-    until?: Date;
-
-    /** Maximum number of results (default: 50) */
-    limit?: number;
-
-    /** Offset for pagination */
-    offset?: number;
-
-    /**
-     * Multi-field sort. Each item has the form `field` or `field:order`, where
-     *   field is one of: `started_at`, `updated_at`
-     *   order is one of: `asc`, `desc` (default: `desc`)
-     * The first item is the primary sort; subsequent items are tie-breakers.
-     * Example: `['updated_at:desc', 'started_at:asc']`.
-     * Defaults to `['started_at:desc']` when omitted.
-     */
-    sort?: string[];
-}
-
-/**
- * A single search hit from Elasticsearch.
- */
-export interface AgentRunSearchHit {
-    /** Agent run ID */
-    id: string;
-
-    /** Relevance score */
-    score: number;
-
-    /** Interaction ID */
-    interaction?: string;
-
-    /** Public-facing runtime mode */
-    run_type?: RunType;
-
-    /** Internal run discriminator */
-    run_kind?: RunKind;
-
-    /** Human-readable interaction name */
-    interaction_name?: string;
-
-    /** Current status */
-    status: AgentRunStatus;
-
-    /** Whether the agent is currently working or idle */
-    activity_state?: ConversationActivityState;
-
-    /** When the run started */
-    started_at: string;
-
-    /** When the run completed */
-    completed_at?: string;
-
-    /** Who started the run */
-    started_by: string;
-
-    /** Conversation title */
-    title?: string;
-
-    /** Conversation topic */
-    topic?: string;
-
-    /** Lessons learned from the conversation */
-    lessons_learned?: string[];
-
-    /** Tags */
-    tags?: string[];
-
-    /** Categories */
-    categories?: string[];
-
-    /** Whether the agent accepts user input */
-    interactive: boolean;
-
-    /** Collection ID */
-    collection_id?: string;
-
-    /** Content type */
-    content_type?: ContentObjectTypeRef;
-
-    /** Tools configured for this run */
-    tool_names?: string[];
-
-    /** Schedule ID (if schedule-triggered) */
-    schedule_id?: string;
-
-    /** Event subscription ID (if event-triggered) */
-    event_subscription_id?: string;
-
-    /** Event reference (if event-triggered) */
-    event_ref?: EventRef;
-
-    /** How the run was created */
-    source_type?: AgentRunType;
-
-    /**
-     * @deprecated Use source_type for creation source and run_type for runtime mode.
-     */
-    type?: AgentRunType;
-
-    /** Created timestamp */
-    created_at: string;
-
-    /** Updated timestamp */
-    updated_at: string;
-}
-
-/**
- * Response from the agent runs search endpoint.
- */
-export interface SearchAgentRunsResponse {
-    /** Search results */
-    hits: AgentRunSearchHit[];
-
-    /** Total matching results */
-    total: number;
-}
+export type SearchAgentRunsResponse = z.infer<typeof SearchAgentRunsResponseSchema>;
 
 /**
  * Internal/Temporal details for an AgentRun.
@@ -856,9 +494,9 @@ export interface AgentRunInternals {
     process_definition_snapshot?: ProcessDefinitionBody;
     process_version?: number;
     process_state?: ProcessState;
-    started_at: Date;
-    completed_at?: Date;
+    started_at: string;
+    completed_at?: string;
     started_by: string;
-    created_at: Date;
-    updated_at: Date;
+    created_at: string;
+    updated_at: string;
 }

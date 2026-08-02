@@ -23,18 +23,32 @@ import type {
     ViewNavigationItemSchema,
     ViewRangeDefinitionSchema,
     ViewRangeNavigationSchema,
+    ViewResultFieldFormatSchema,
     ViewResultFieldSchema,
     ViewResultMediaSchema,
     ViewResultsConfigurationSchema,
     ViewSearchConfigurationSchema,
     ViewSearchFieldDefinitionSchema,
+    ViewSearchFieldTypeSchema,
     ViewSortClauseSchema,
     ViewSortOptionSchema,
     ViewTableColumnSchema,
     ViewTableDisplaySchema,
     ViewTermsNavigationSchema,
 } from './api-schemas/views.js';
-import type { ContentObjectItemApiResponse } from './store/store.js';
+import type {
+    ExecuteViewRequestSchema,
+    PreviewViewExperienceRequestSchema,
+    ViewExecutionDefinitionSchema,
+    ViewExecutionQueryPlanSchema,
+    ViewExecutionResultSchema,
+    ViewExecutionSearchConfigurationSchema,
+    ViewExecutionSearchResultSchema,
+    ViewExecutionWarningSchema,
+    ViewHitAnnotationSchema,
+    ViewHitSchema,
+    ViewQueryPlanningFailureCodeSchema,
+} from './api-schemas/zeno-remaining.js';
 
 export const VIEW_EXPERIENCE_SCHEMA_VERSION = 1 as const;
 
@@ -91,7 +105,7 @@ export type ViewKeyTermDefinition = z.infer<typeof ViewKeyTermDefinitionSchema>;
 
 export const VIEW_SEARCH_FIELD_TYPES = ['text', 'keyword', 'number', 'date', 'boolean'] as const;
 
-export type ViewSearchFieldType = (typeof VIEW_SEARCH_FIELD_TYPES)[number];
+export type ViewSearchFieldType = z.infer<typeof ViewSearchFieldTypeSchema>;
 
 /**
  * A mapped Elasticsearch field that a View may use for query planning and
@@ -117,7 +131,7 @@ export const VIEW_RESULT_FIELD_FORMATS = [
     'location',
 ] as const;
 
-export type ViewResultFieldFormat = (typeof VIEW_RESULT_FIELD_FORMATS)[number];
+export type ViewResultFieldFormat = z.infer<typeof ViewResultFieldFormatSchema>;
 
 export type ViewResultField = z.infer<typeof ViewResultFieldSchema>;
 
@@ -150,6 +164,11 @@ export type ViewDisplayConfiguration = z.infer<typeof ViewDisplayConfigurationSc
 
 export type ViewResultsConfiguration = z.infer<typeof ViewResultsConfigurationSchema>;
 
+// Kept as a named declaration while legacy OpenAPI components extend or map this
+// type through TypeScript. ts-json-schema-generator cannot expand a z.infer alias
+// through Omit/extends and would silently erase the inherited View fields.
+// ViewExperienceConfigurationSchema remains the runtime authority and the parity
+// test prevents the declaration from drifting while those referrers migrate.
 export interface ViewExperienceConfiguration {
     name: string;
     description?: string;
@@ -221,64 +240,19 @@ export type UpdateViewExperienceRequest = z.infer<typeof UpdateViewExperienceReq
 
 export type ViewExperienceListQuery = z.infer<typeof ViewExperienceListQuerySchema>;
 
-export interface ExecuteViewRequest {
-    query?: string;
-    key_terms?: Record<string, string[]>;
-    navigation?: Record<string, string[]>;
-    display?: string;
-    sort?: string;
-    offset?: number;
-    limit?: number;
-}
+export type ExecuteViewRequest = z.infer<typeof ExecuteViewRequestSchema>;
 
-/**
- * Execute an unsaved (draft) View configuration without persisting it. Combines
- * the inline configuration with the same execution inputs as {@link ExecuteViewRequest}
- * so authors can validate and preview results before calling create/update.
- */
-export interface PreviewViewExperienceRequest extends ExecuteViewRequest {
-    /** The unsaved View configuration to validate and execute. */
-    configuration: ViewExperienceConfiguration;
-}
+export type PreviewViewExperienceRequest = z.infer<typeof PreviewViewExperienceRequestSchema>;
 
-export interface ViewExecutionWarning {
-    code: string;
-    message: string;
-    path?: string;
-}
+export type ViewExecutionWarning = z.infer<typeof ViewExecutionWarningSchema>;
 
-export type ViewQueryPlanningFailureCode =
-    | 'interaction_failed'
-    | 'invalid_output'
-    | 'invalid_query'
-    | 'low_confidence'
-    | 'timeout'
-    | 'unknown';
+export type ViewQueryPlanningFailureCode = z.infer<typeof ViewQueryPlanningFailureCodeSchema>;
 
-/**
- * Safe query-planning diagnostics. The query contains only the model-authored
- * subtree; server-owned scope and content-security filters are never exposed.
- */
-export interface ViewExecutionQueryPlan {
-    status: 'applied' | 'fallback';
-    query?: ViewElasticsearchQuery;
-    confidence?: number;
-    error_code?: ViewQueryPlanningFailureCode;
-    error_message?: string;
-}
+export type ViewExecutionQueryPlan = z.infer<typeof ViewExecutionQueryPlanSchema>;
 
-export interface ViewHitAnnotation {
-    why_match?: string;
-    answer?: string;
-    excerpt?: string;
-}
+export type ViewHitAnnotation = z.infer<typeof ViewHitAnnotationSchema>;
 
-export interface ViewHit {
-    id: string;
-    score?: number;
-    document: ContentObjectItemApiResponse;
-    annotation?: ViewHitAnnotation;
-}
+export type ViewHit = z.infer<typeof ViewHitSchema>;
 
 export interface ViewNavigationNode {
     id: string;
@@ -299,53 +273,10 @@ export interface ViewNavigationResult {
     truncated?: boolean;
 }
 
-export interface ViewExecutionSearchResult {
-    input?: string;
-    interpretation?: string;
-    key_terms?: Record<string, string[]>;
-    plan?: ViewExecutionQueryPlan;
-    requested_mode: 'browse' | 'deterministic' | 'agentic';
-    applied_mode: 'browse' | 'deterministic' | 'query';
-    fallback_reason?: string;
-    warnings: ViewExecutionWarning[];
-}
+export type ViewExecutionSearchResult = z.infer<typeof ViewExecutionSearchResultSchema>;
 
-/**
- * Client-visible search controls. Agentic planner instructions, interaction,
- * and model configuration are intentionally omitted.
- */
-export interface ViewExecutionSearchConfiguration {
-    renderer?: string;
-    mode?: 'deterministic' | 'agentic';
-    placeholder?: string;
-    fields?: ViewSearchFieldDefinition[];
-    key_terms?: ViewKeyTermDefinition[];
-}
+export type ViewExecutionSearchConfiguration = z.infer<typeof ViewExecutionSearchConfigurationSchema>;
 
-/**
- * The reusable, client-visible part of the View definition used for an execution.
- * Server-owned scope is intentionally omitted.
- */
-export interface ViewExecutionDefinition {
-    name: string;
-    description?: string;
-    enabled?: boolean;
-    layout?: ViewExperienceLayout;
-    navigation?: ViewNavigationItem[];
-    search?: ViewExecutionSearchConfiguration;
-    results?: ViewResultsConfiguration;
-}
+export type ViewExecutionDefinition = z.infer<typeof ViewExecutionDefinitionSchema>;
 
-export interface ViewExecutionResult {
-    view: string;
-    revision: number;
-    /** The runtime-safe rendering definition resolved by Zeno for this execution. */
-    definition: ViewExecutionDefinition;
-    display?: string;
-    sort?: string;
-    search: ViewExecutionSearchResult;
-    hits: ViewHit[];
-    total: number;
-    navigation: Record<string, ViewNavigationResult>;
-    took: number;
-}
+export type ViewExecutionResult = z.infer<typeof ViewExecutionResultSchema>;

@@ -6,10 +6,14 @@ import type {
     SortOrderSchema,
 } from './api-schemas/interaction.js';
 import type { ComputePromptFacetPayloadSchema } from './api-schemas/prompt.js';
+import type {
+    ComputeCollectionFacetPayloadSchema,
+    ComputeObjectFacetPayloadSchema,
+    ExportPropertiesPayloadSchema,
+    ExportPropertiesResponseSchema,
+} from './api-schemas/zeno-remaining.js';
 import type { FacetSpec } from './facets.js';
 import type {
-    ComplexCollectionSearchQuery,
-    ComplexSearchQuery,
     InteractionSearchQuery,
     ObjectSearchQuery,
     ObjectTypeSearchQuery,
@@ -17,7 +21,6 @@ import type {
     RunSearchQuery,
     SimpleSearchQuery,
 } from './query.js';
-import type { ColumnLayout } from './store/store.js';
 
 export type SortOrder = z.infer<typeof SortOrderSchema>;
 
@@ -65,15 +68,11 @@ export interface PromptSearchPayload extends SearchPayload {
 
 export type RunSearchPayload = z.infer<typeof RunSearchPayloadSchema>;
 
-export interface ComputeCollectionFacetPayload extends Omit<ComputeFacetPayload, 'query'> {
-    query?: ComplexCollectionSearchQuery;
-}
+export type ComputeCollectionFacetPayload = z.infer<typeof ComputeCollectionFacetPayloadSchema>;
 
 export type ComputeInteractionFacetPayload = z.infer<typeof ComputeInteractionFacetPayloadSchema>;
 
-export interface ComputeObjectFacetPayload extends ComputeFacetPayload {
-    query?: ComplexSearchQuery;
-}
+export type ComputeObjectFacetPayload = z.infer<typeof ComputeObjectFacetPayloadSchema>;
 
 export type ComputePromptFacetPayload = z.infer<typeof ComputePromptFacetPayloadSchema>;
 
@@ -81,15 +80,6 @@ export interface ComputeRunFacetPayload extends ComputeFacetPayload {
     query?: RunSearchQuery;
 }
 
-export interface ExportPropertiesPayload {
-    objectIds: string[];
-    type: string;
-    query?: ComplexSearchQuery;
-    table_layout?: ColumnLayout[];
-}
+export type ExportPropertiesPayload = z.infer<typeof ExportPropertiesPayloadSchema>;
 
-export interface ExportPropertiesResponse {
-    type: string;
-    name: string;
-    data: string;
-}
+export type ExportPropertiesResponse = z.infer<typeof ExportPropertiesResponseSchema>;

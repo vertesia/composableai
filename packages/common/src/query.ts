@@ -1,11 +1,17 @@
 import type { z } from 'zod';
 import type { InteractionSearchQuerySchema, RunSearchQuerySchema } from './api-schemas/interaction.js';
 import type { PromptSearchQuerySchema } from './api-schemas/prompt.js';
+import type {
+    ComplexCollectionSearchQuerySchema,
+    ComplexSearchQuerySchema,
+    dynamicScalingTypesSchema,
+    EmbeddingSearchConfigSchema,
+    scoreAggregationTypesSchema,
+    VectorSearchQuerySchema,
+} from './api-schemas/zeno-remaining.js';
 import type { ExecutionRunStatus } from './interaction.js';
-import type { SearchTypes, SupportedEmbeddingTypes } from './project.js';
-import type { CollectionSearchPayload } from './store/collections.js';
 
-export type EmbeddingSearchConfig = Partial<Record<SupportedEmbeddingTypes, boolean>>;
+export type EmbeddingSearchConfig = z.infer<typeof EmbeddingSearchConfigSchema>;
 
 export interface RunListingQueryOptions {
     project?: string;
@@ -38,16 +44,10 @@ export interface RunListingFilters {
     workflow_ids?: string[];
 }
 
-export type scoreAggregationTypes = 'rrf' | 'rsf' | 'smart';
-export type dynamicScalingTypes = 'off' | 'on';
+export type scoreAggregationTypes = z.infer<typeof scoreAggregationTypesSchema>;
+export type dynamicScalingTypes = z.infer<typeof dynamicScalingTypesSchema>;
 
-export interface VectorSearchQuery {
-    objectId?: string;
-    values?: number[];
-    text?: string;
-    image?: string;
-    config?: EmbeddingSearchConfig;
-}
+export type VectorSearchQuery = z.infer<typeof VectorSearchQuerySchema>;
 
 export interface SimpleSearchQuery {
     name?: string;
@@ -90,37 +90,6 @@ export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
     status?: string;
 }
 
-/**
- * ComplexSearchQuery is used for full-text search and vector embedding search.
- */
-export interface ComplexSearchQuery extends ObjectSearchQuery {
-    vector?: VectorSearchQuery;
+export type ComplexSearchQuery = z.infer<typeof ComplexSearchQuerySchema>;
 
-    /**
-     * If present, do a full text search (snake_case version).
-     */
-    full_text?: string;
-
-    weights?: Record<SearchTypes, number>;
-
-    /**
-     * dynamicScaling rescales the weights when a particular search type is not present in the results, per object.
-     * e.g. Weights of 5,3,2 will be treated as 0,3,2 if the first search type is not present in the results.
-     * Ignored when scoreAggregation is 'smart'
-     * Default is 'on'
-     */
-    dynamic_scaling?: dynamicScalingTypes; // Move to top level
-
-    /**
-     * rrf: Reciprocal Rank Fusion
-     * rsf: Reciprocal Score Fusion
-     * smart: Our own algorithm (default and recommended)
-     */
-    score_aggregation?: scoreAggregationTypes;
-
-    match?: Record<string, unknown>;
-}
-
-export interface ComplexCollectionSearchQuery extends CollectionSearchPayload {
-    match?: Record<string, unknown>;
-}
+export type ComplexCollectionSearchQuery = z.infer<typeof ComplexCollectionSearchQuerySchema>;

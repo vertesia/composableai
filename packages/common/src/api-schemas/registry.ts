@@ -35,6 +35,43 @@ import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
 import { z } from 'zod';
+import type {
+    CreateEventSubscriptionPayload,
+    EventDeliveryTarget,
+    EventDeliveryTargetInput,
+    EventSubscription,
+    EventSubscriptionMutationResponse,
+    ProcessEventDeliveryTarget,
+    UpdateEventSubscriptionPayload,
+} from '../platform-event.js';
+import type {
+    AgentRunInternals,
+    AgentRunResponse,
+    BindRunWorkflowPayload,
+    ListAgentRunsResponse,
+    ProgrammaticRunResponse,
+    RecordRunPayload,
+    SupervisedRunResponse,
+    UpdateAgentRunStatusPayload,
+} from '../store/agent-run.js';
+import type * as DSLWorkflowTypes from '../store/dsl-workflow.js';
+import type {
+    DSLChildWorkflowStep,
+    DSLWorkflowDefinition,
+    DSLWorkflowDefinitionResponse,
+    DSLWorkflowSpec,
+    DSLWorkflowSpecWithSteps,
+    DSLWorkflowStep,
+} from '../store/dsl-workflow.js';
+import type {
+    BranchNodeBranchDefinition,
+    CreateProcessDefinitionPayload,
+    NodeDefinition,
+    ProcessDefinition,
+    ProcessDefinitionBody,
+    UpdateProcessDefinitionPayload,
+} from '../store/process.js';
+import type { ViewNavigationNode } from '../views.js';
 import {
     ACECreatePayloadSchema,
     ACEUpdatePayloadSchema,
@@ -292,6 +329,26 @@ import {
     SemanticColumnTypeSchema,
     UpdateSchemaPayloadSchema,
 } from './data-store.js';
+import {
+    DocAnalyzeRunStatusResponseSchema,
+    DocAnalyzerProgressSchema,
+    DocAnalyzerProgressStatusSchema,
+    DocProcessorOutputFormatSchema,
+    DocumentPrepOptionsSchema,
+    DocumentProcessingPhaseSchema,
+    GroundedAssistantResponseSchema,
+    GroundedExtractionRequestSchema,
+    GroundedExtractionResultResponseSchema,
+    GroundedExtractionVerdictSchema,
+    GroundedVerificationBreakdownSchema,
+    MarkdownRenditionFormatSchema,
+    PdfRenderingMetadataSchema,
+    RenderMarkdownPayloadSchema,
+    RenderMarkdownStartResponseSchema,
+    RenderMarkdownStatusQuerySchema,
+    RenderMarkdownStatusResponseSchema,
+    WorkflowExecutionStatusSchema,
+} from './document-processing.js';
 import {
     EmbeddingsApiAudioInputSchema,
     EmbeddingsApiImageInputSchema,
@@ -643,6 +700,19 @@ import {
     ViewTableDisplaySchema,
     ViewTermsNavigationSchema,
 } from './views.js';
+import {
+    DriftAnalysisProgressSchema,
+    DriftAnalysisResultSchema,
+    DriftAnalysisStatusResponseSchema,
+    EmbeddingsStatusResponseSchema,
+    GenericCommandResponseSchema,
+    IndexingStatusResponseSchema,
+    ProjectConfigurationEmbeddingEnablePayloadSchema,
+    ReindexAgentRunsPayloadSchema,
+    ReindexAgentRunsResponseSchema,
+    StartProjectReindexPayloadSchema,
+} from './zeno-commands.js';
+import * as ZenoRemainingSchemas from './zeno-remaining.js';
 
 // ajv-formats is CommonJS with an ESM-style declaration file. Node's interop makes the default
 // import the whole `module.exports` (itself callable), while TypeScript sees the namespace — and
@@ -1270,6 +1340,361 @@ const ZENO_BULK_OPERATION_SCHEMAS = {
     BulkOperationResponse: BulkOperationResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const ZENO_DOCUMENT_PROCESSING_SCHEMAS = {
+    GroundedAssistantResponse: GroundedAssistantResponseSchema,
+    GroundedExtractionRequest: GroundedExtractionRequestSchema,
+    GroundedVerificationBreakdown: GroundedVerificationBreakdownSchema,
+    GroundedExtractionVerdict: GroundedExtractionVerdictSchema,
+    DocProcessorOutputFormat: DocProcessorOutputFormatSchema,
+    DocAnalyzerProgressStatus: DocAnalyzerProgressStatusSchema,
+    DocumentProcessingPhase: DocumentProcessingPhaseSchema,
+    WorkflowExecutionStatus: WorkflowExecutionStatusSchema,
+    DocumentPrepOptions: DocumentPrepOptionsSchema,
+    MarkdownRenditionFormat: MarkdownRenditionFormatSchema,
+    RenderMarkdownStatusQuery: RenderMarkdownStatusQuerySchema,
+    RenderMarkdownStartResponse: RenderMarkdownStartResponseSchema,
+    PdfRenderingMetadata: PdfRenderingMetadataSchema,
+    GroundedExtractionResultResponse: GroundedExtractionResultResponseSchema,
+    DocAnalyzerProgress: DocAnalyzerProgressSchema,
+    RenderMarkdownStatusResponse: RenderMarkdownStatusResponseSchema,
+    RenderMarkdownPayload: RenderMarkdownPayloadSchema,
+    DocAnalyzeRunStatusResponse: DocAnalyzeRunStatusResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_COMMAND_SCHEMAS = {
+    StartProjectReindexPayload: StartProjectReindexPayloadSchema,
+    ReindexAgentRunsResponse: ReindexAgentRunsResponseSchema,
+    ReindexAgentRunsPayload: ReindexAgentRunsPayloadSchema,
+    IndexingStatusResponse: IndexingStatusResponseSchema,
+    DriftAnalysisResult: DriftAnalysisResultSchema,
+    DriftAnalysisProgress: DriftAnalysisProgressSchema,
+    EmbeddingsStatusResponse: EmbeddingsStatusResponseSchema,
+    ProjectConfigurationEmbeddingEnablePayload: ProjectConfigurationEmbeddingEnablePayloadSchema,
+    GenericCommandResponse: GenericCommandResponseSchema,
+    DriftAnalysisStatusResponse: DriftAnalysisStatusResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_1 = {
+    DSLWorkflowDefinition: ZenoRemainingSchemas.DSLWorkflowDefinitionSchema,
+    AgentMessageType: ZenoRemainingSchemas.AgentMessageTypeSchema,
+    DurationValue: ZenoRemainingSchemas.DurationValueSchema,
+    ProcessDefinitionMetadata: ZenoRemainingSchemas.ProcessDefinitionMetadataSchema,
+    JsonLogicRule: ZenoRemainingSchemas.JsonLogicRuleSchema,
+    BranchJoinPolicy: ZenoRemainingSchemas.BranchJoinPolicySchema,
+    ParallelFailurePolicy: ZenoRemainingSchemas.ParallelFailurePolicySchema,
+    ParallelCollectField: ZenoRemainingSchemas.ParallelCollectFieldSchema,
+    ParallelCollectMode: ZenoRemainingSchemas.ParallelCollectModeSchema,
+    HumanTaskDefinition: ZenoRemainingSchemas.HumanTaskDefinitionSchema,
+    TransitionTrigger: ZenoRemainingSchemas.TransitionTriggerSchema,
+    ProcessNodeReturnsDefinition: ZenoRemainingSchemas.ProcessNodeReturnsDefinitionSchema,
+    ProcessNodeRunType: ZenoRemainingSchemas.ProcessNodeRunTypeSchema,
+    ProcessNodeType: ZenoRemainingSchemas.ProcessNodeTypeSchema,
+    ProcessContextDefinition: ZenoRemainingSchemas.ProcessContextDefinitionSchema,
+    ProcessScriptInlineSource: ZenoRemainingSchemas.ProcessScriptInlineSourceSchema,
+    ProcessScriptLanguage: ZenoRemainingSchemas.ProcessScriptLanguageSchema,
+    ProcessDefinitionFormatVersion: ZenoRemainingSchemas.ProcessDefinitionFormatVersionSchema,
+    ProcessDefinitionStatus: ZenoRemainingSchemas.ProcessDefinitionStatusSchema,
+    GenerationRunMetadata: ZenoRemainingSchemas.GenerationRunMetadataSchema,
+    ContentObjectUserPermissions: ZenoRemainingSchemas.ContentObjectUserPermissionsSchema,
+    RevisionInfo: ZenoRemainingSchemas.RevisionInfoSchema,
+    ContentSource: ZenoRemainingSchemas.ContentSourceSchema,
+    ContentObjectStatus: ZenoRemainingSchemas.ContentObjectStatusSchema,
+    InheritedPropertyMetadata: ZenoRemainingSchemas.InheritedPropertyMetadataSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_2 = {
+    TranscriptSegment: ZenoRemainingSchemas.TranscriptSegmentSchema,
+    Embedding: ZenoRemainingSchemas.EmbeddingSchema,
+    EventPriority: ZenoRemainingSchemas.EventPrioritySchema,
+    ProcessRunType: ZenoRemainingSchemas.ProcessRunTypeSchema,
+    AgentDeliveryMatchMode: ZenoRemainingSchemas.AgentDeliveryMatchModeSchema,
+    WebhookPayloadMode: ZenoRemainingSchemas.WebhookPayloadModeSchema,
+    WebhookSigningMode: ZenoRemainingSchemas.WebhookSigningModeSchema,
+    WorkflowRuleInputType: ZenoRemainingSchemas.WorkflowRuleInputTypeSchema,
+    SemanticConditionOnError: ZenoRemainingSchemas.SemanticConditionOnErrorSchema,
+    SemanticConditionMode: ZenoRemainingSchemas.SemanticConditionModeSchema,
+    AgentSemanticEvaluator: ZenoRemainingSchemas.AgentSemanticEvaluatorSchema,
+    InteractionSemanticEvaluator: ZenoRemainingSchemas.InteractionSemanticEvaluatorSchema,
+    EventIngestSignatureEncoding: ZenoRemainingSchemas.EventIngestSignatureEncodingSchema,
+    EventIngestSignatureAlgorithm: ZenoRemainingSchemas.EventIngestSignatureAlgorithmSchema,
+    EventIngestResourceRule: ZenoRemainingSchemas.EventIngestResourceRuleSchema,
+    CollectionSecuritySettingsResponse: ZenoRemainingSchemas.CollectionSecuritySettingsResponseSchema,
+    CollectionMembersUpdateResult: ZenoRemainingSchemas.CollectionMembersUpdateResultSchema,
+    CollectionMembersUpdatePayload: ZenoRemainingSchemas.CollectionMembersUpdatePayloadSchema,
+    CollectionChildrenUpdateResult: ZenoRemainingSchemas.CollectionChildrenUpdateResultSchema,
+    CollectionChildrenUpdatePayload: ZenoRemainingSchemas.CollectionChildrenUpdatePayloadSchema,
+    UpdateAgentArtifactContentResponse: ZenoRemainingSchemas.UpdateAgentArtifactContentResponseSchema,
+    UpdateAgentArtifactContentPayload: ZenoRemainingSchemas.UpdateAgentArtifactContentPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_3 = {
+    TerminateAgentRunResponse: ZenoRemainingSchemas.TerminateAgentRunResponseSchema,
+    StartContentObjectExportResponse: ZenoRemainingSchemas.StartContentObjectExportResponseSchema,
+    ExportContentObjectsIncludeOptions: ZenoRemainingSchemas.ExportContentObjectsIncludeOptionsSchema,
+    ExportContentObjectsFilter: ZenoRemainingSchemas.ExportContentObjectsFilterSchema,
+    SupportedEmbeddingTypes: ZenoRemainingSchemas.SupportedEmbeddingTypesSchema,
+    SignalAgentPayload: ZenoRemainingSchemas.SignalAgentPayloadSchema,
+    SetObjectEmbeddingsResponse: ZenoRemainingSchemas.SetObjectEmbeddingsResponseSchema,
+    SemanticEvaluationStatus: ZenoRemainingSchemas.SemanticEvaluationStatusSchema,
+    EventDeliveryIntentStatus: ZenoRemainingSchemas.EventDeliveryIntentStatusSchema,
+    EventOutboxStatus: ZenoRemainingSchemas.EventOutboxStatusSchema,
+    EventDeliverySortField: ZenoRemainingSchemas.EventDeliverySortFieldSchema,
+    ContentObjectApiRevision: ZenoRemainingSchemas.ContentObjectApiRevisionSchema,
+    scoreAggregationTypes: ZenoRemainingSchemas.scoreAggregationTypesSchema,
+    dynamicScalingTypes: ZenoRemainingSchemas.dynamicScalingTypesSchema,
+    Record_SearchTypes_number: ZenoRemainingSchemas.Record_SearchTypes_numberSchema,
+    EmbeddingSearchConfig: ZenoRemainingSchemas.EmbeddingSearchConfigSchema,
+    CollectionStatus: ZenoRemainingSchemas.CollectionStatusSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_4 = {
+    RevertProcessDefinitionPayload: ZenoRemainingSchemas.RevertProcessDefinitionPayloadSchema,
+    RetryProcessNodePayload: ZenoRemainingSchemas.RetryProcessNodePayloadSchema,
+    nd_restart_count_number: ZenoRemainingSchemas.nd_restart_count_numberSchema,
+    WorkflowQueryResult: ZenoRemainingSchemas.WorkflowQueryResultSchema,
+    PublishProcessDefinitionPayload: ZenoRemainingSchemas.PublishProcessDefinitionPayloadSchema,
+    CollectionPropagationResponse: ZenoRemainingSchemas.CollectionPropagationResponseSchema,
+    WorkflowUpdatePublishResponse: ZenoRemainingSchemas.WorkflowUpdatePublishResponseSchema,
+    PostAgentRunUpdateResponse: ZenoRemainingSchemas.PostAgentRunUpdateResponseSchema,
+    FileProcessingStatus: ZenoRemainingSchemas.FileProcessingStatusSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_5 = {
+    ListWorkflowRunsPayload: ZenoRemainingSchemas.ListWorkflowRunsPayloadSchema,
+    WorkflowRuleItem: ZenoRemainingSchemas.WorkflowRuleItemSchema,
+    WorkflowDefinitionRef: ZenoRemainingSchemas.WorkflowDefinitionRefSchema,
+    ProcessDefinitionRevisionInfo: ZenoRemainingSchemas.ProcessDefinitionRevisionInfoSchema,
+    WebhookEventDeliveryTarget: ZenoRemainingSchemas.WebhookEventDeliveryTargetSchema,
+    WorkflowEventDeliveryTarget: ZenoRemainingSchemas.WorkflowEventDeliveryTargetSchema,
+    ContentObjectTypeArray: ZenoRemainingSchemas.ContentObjectTypeArraySchema,
+    ContentObjectExportArtifactFile: ZenoRemainingSchemas.ContentObjectExportArtifactFileSchema,
+    ProcessRunConfig: ZenoRemainingSchemas.ProcessRunConfigSchema,
+    ProcessHistoryRef: ZenoRemainingSchemas.ProcessHistoryRefSchema,
+    NodeHistoryEntry: ZenoRemainingSchemas.NodeHistoryEntrySchema,
+    AgentRunArchiveState: ZenoRemainingSchemas.AgentRunArchiveStateSchema,
+    ResourceRef: ZenoRemainingSchemas.ResourceRefSchema,
+    WorkflowRun: ZenoRemainingSchemas.WorkflowRunSchema,
+    ProcessHistoryResponse: ZenoRemainingSchemas.ProcessHistoryResponseSchema,
+    ProcessContextResponse: ZenoRemainingSchemas.ProcessContextResponseSchema,
+    ContentObjectTextResponse: ZenoRemainingSchemas.ContentObjectTextResponseSchema,
+    GetRenditionResponse: ZenoRemainingSchemas.GetRenditionResponseSchema,
+    EventDeliveryQueueFailureSummary: ZenoRemainingSchemas.EventDeliveryQueueFailureSummarySchema,
+    EventOutboxQueueSummary: ZenoRemainingSchemas.EventOutboxQueueSummarySchema,
+    EventDeliveryQueueSortField: ZenoRemainingSchemas.EventDeliveryQueueSortFieldSchema,
+    ContentObjectExportResult: ZenoRemainingSchemas.ContentObjectExportResultSchema,
+    ContentObjectExportProgress: ZenoRemainingSchemas.ContentObjectExportProgressSchema,
+    PendingActivity: ZenoRemainingSchemas.PendingActivitySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_6 = {
+    AgentTask: ZenoRemainingSchemas.AgentTaskSchema,
+    TaskStatus: ZenoRemainingSchemas.TaskStatusSchema,
+    TaskType_TIMER: ZenoRemainingSchemas.TaskType_TIMERSchema,
+    TaskType_SIGNAL: ZenoRemainingSchemas.TaskType_SIGNALSchema,
+    TaskType_CHILD_WORKFLOW: ZenoRemainingSchemas.TaskType_CHILD_WORKFLOWSchema,
+    TaskType_ACTIVITY: ZenoRemainingSchemas.TaskType_ACTIVITYSchema,
+    EventError: ZenoRemainingSchemas.EventErrorSchema,
+    SignalEventProperties: ZenoRemainingSchemas.SignalEventPropertiesSchema,
+    AgentArtifactContentResponse: ZenoRemainingSchemas.AgentArtifactContentResponseSchema,
+    ExportPropertiesResponse: ZenoRemainingSchemas.ExportPropertiesResponseSchema,
+    WorkflowExecutionStartResult: ZenoRemainingSchemas.WorkflowExecutionStartResultSchema,
+    WorkflowInputFile: ZenoRemainingSchemas.WorkflowInputFileSchema,
+    ViewNavigationNode: ZenoRemainingSchemas.ViewNavigationNodeSchema,
+    ViewHitAnnotation: ZenoRemainingSchemas.ViewHitAnnotationSchema,
+    ViewExecutionWarning: ZenoRemainingSchemas.ViewExecutionWarningSchema,
+    ViewQueryPlanningFailureCode: ZenoRemainingSchemas.ViewQueryPlanningFailureCodeSchema,
+    ExecuteViewRequest: ZenoRemainingSchemas.ExecuteViewRequestSchema,
+    DeleteContentObjectResult: ZenoRemainingSchemas.DeleteContentObjectResultSchema,
+    DeleteContentObjectExportResponse: ZenoRemainingSchemas.DeleteContentObjectExportResponseSchema,
+    WorkflowRule: ZenoRemainingSchemas.WorkflowRuleSchema,
+    CreateWorkflowRulePayload: ZenoRemainingSchemas.CreateWorkflowRulePayloadSchema,
+    ActivityFetchSpec: ZenoRemainingSchemas.ActivityFetchSpecSchema,
+    ImportSpec: ZenoRemainingSchemas.ImportSpecSchema,
+    WorkflowSearchAttributeValue: ZenoRemainingSchemas.WorkflowSearchAttributeValueSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_7 = {
+    EmbeddingMap: ZenoRemainingSchemas.EmbeddingMapSchema,
+    CreateCollectionPayload: ZenoRemainingSchemas.CreateCollectionPayloadSchema,
+    AgentArtifactUrlResponse: ZenoRemainingSchemas.AgentArtifactUrlResponseSchema,
+    FindPayload: ZenoRemainingSchemas.FindPayloadSchema,
+    WorkflowActionResponse: ZenoRemainingSchemas.WorkflowActionResponseSchema,
+    AnswerProcessTaskPayload: ZenoRemainingSchemas.AnswerProcessTaskPayloadSchema,
+    SignalAgentResponse: ZenoRemainingSchemas.SignalAgentResponseSchema,
+    AdvanceProcessPayload: ZenoRemainingSchemas.AdvanceProcessPayloadSchema,
+    BranchDefinition: ZenoRemainingSchemas.BranchDefinitionSchema,
+    ParallelCollectDefinition: ZenoRemainingSchemas.ParallelCollectDefinitionSchema,
+    TransitionDefinition: ZenoRemainingSchemas.TransitionDefinitionSchema,
+    ProcessScriptSource: ZenoRemainingSchemas.ProcessScriptSourceSchema,
+    Transcript: ZenoRemainingSchemas.TranscriptSchema,
+    Partial_Record_SupportedEmbeddingTypes_Embedding:
+        ZenoRemainingSchemas.Partial_Record_SupportedEmbeddingTypes_EmbeddingSchema,
+    AgentEventDeliveryTarget: ZenoRemainingSchemas.AgentEventDeliveryTargetSchema,
+    WebhookEventDeliveryTargetInput: ZenoRemainingSchemas.WebhookEventDeliveryTargetInputSchema,
+    WorkflowEventDeliveryTargetInput: ZenoRemainingSchemas.WorkflowEventDeliveryTargetInputSchema,
+    SemanticEvaluator: ZenoRemainingSchemas.SemanticEvaluatorSchema,
+    EventIngestSignatureConfig: ZenoRemainingSchemas.EventIngestSignatureConfigSchema,
+    EventIngestTransform: ZenoRemainingSchemas.EventIngestTransformSchema,
+    StartContentObjectExportRequest: ZenoRemainingSchemas.StartContentObjectExportRequestSchema,
+    SemanticEvaluationRecord: ZenoRemainingSchemas.SemanticEvaluationRecordSchema,
+    ListEventDeliveriesPayload: ZenoRemainingSchemas.ListEventDeliveriesPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_8 = {
+    VectorSearchQuery: ZenoRemainingSchemas.VectorSearchQuerySchema,
+    ComplexCollectionSearchQuery: ZenoRemainingSchemas.ComplexCollectionSearchQuerySchema,
+    ConversationFile: ZenoRemainingSchemas.ConversationFileSchema,
+    WorkflowRuleItemArray: ZenoRemainingSchemas.WorkflowRuleItemArraySchema,
+    WorkflowDefinitionRefArray: ZenoRemainingSchemas.WorkflowDefinitionRefArraySchema,
+    Collection: ZenoRemainingSchemas.CollectionSchema,
+    EventIngestChannel: ZenoRemainingSchemas.EventIngestChannelSchema,
+    ContentObjectExportArtifact: ZenoRemainingSchemas.ContentObjectExportArtifactSchema,
+    ProcessState: ZenoRemainingSchemas.ProcessStateSchema,
+    AutonomousRunResponse: ZenoRemainingSchemas.AutonomousRunResponseSchema,
+    ListWorkflowRunsResponse: ZenoRemainingSchemas.ListWorkflowRunsResponseSchema,
+    EventDeliveryQueueSubscriptionSummary: ZenoRemainingSchemas.EventDeliveryQueueSubscriptionSummarySchema,
+    EventDeliveryQueueSummaryPayload: ZenoRemainingSchemas.EventDeliveryQueueSummaryPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_9 = {
+    ContentObjectExportStatusResponse: ZenoRemainingSchemas.ContentObjectExportStatusResponseSchema,
+    TimerTask: ZenoRemainingSchemas.TimerTaskSchema,
+    SignalTask: ZenoRemainingSchemas.SignalTaskSchema,
+    ChildWorkflowTask: ZenoRemainingSchemas.ChildWorkflowTaskSchema,
+    ActivityTask: ZenoRemainingSchemas.ActivityTaskSchema,
+    WorkflowRunEvent: ZenoRemainingSchemas.WorkflowRunEventSchema,
+    WorkflowExecutionStartResultArray: ZenoRemainingSchemas.WorkflowExecutionStartResultArraySchema,
+    WorkflowInput: ZenoRemainingSchemas.WorkflowInputSchema,
+    ViewNavigationResult: ZenoRemainingSchemas.ViewNavigationResultSchema,
+    ViewExecutionQueryPlan: ZenoRemainingSchemas.ViewExecutionQueryPlanSchema,
+    ViewExecutionSearchConfiguration: ZenoRemainingSchemas.ViewExecutionSearchConfigurationSchema,
+    DSLRetryPolicy: ZenoRemainingSchemas.DSLRetryPolicySchema,
+    ActivityFetchSpecMap: ZenoRemainingSchemas.ActivityFetchSpecMapSchema,
+    WorkflowSearchAttributeValueMap: ZenoRemainingSchemas.WorkflowSearchAttributeValueMapSchema,
+    CreateContentObjectPayload: ZenoRemainingSchemas.CreateContentObjectPayloadSchema,
+    EventIngestChannelMutationResponse: ZenoRemainingSchemas.EventIngestChannelMutationResponseSchema,
+    CreateEventIngestChannelPayload: ZenoRemainingSchemas.CreateEventIngestChannelPayloadSchema,
+    AgentRun: ZenoRemainingSchemas.AgentRunSchema,
+    CreateAgentRunPayload: ZenoRemainingSchemas.CreateAgentRunPayloadSchema,
+    ComputeCollectionFacetPayload: ZenoRemainingSchemas.ComputeCollectionFacetPayloadSchema,
+    ProcessScriptResource: ZenoRemainingSchemas.ProcessScriptResourceSchema,
+    Partial_CreateContentObjectPayload: ZenoRemainingSchemas.Partial_CreateContentObjectPayloadSchema,
+    EventSemanticCondition: ZenoRemainingSchemas.EventSemanticConditionSchema,
+    UpdateEventIngestChannelPayload: ZenoRemainingSchemas.UpdateEventIngestChannelPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_10 = {
+    EventDeliveryIntentSummary: ZenoRemainingSchemas.EventDeliveryIntentSummarySchema,
+    ContentObjectApiTypeRef: ZenoRemainingSchemas.ContentObjectApiTypeRefSchema,
+    ComplexSearchQuery: ZenoRemainingSchemas.ComplexSearchQuerySchema,
+    SearchAgentRunsResponse: ZenoRemainingSchemas.SearchAgentRunsResponseSchema,
+    AgentMessageDetails: ZenoRemainingSchemas.AgentMessageDetailsSchema,
+    CompactMessage: ZenoRemainingSchemas.CompactMessageSchema,
+    CollectionArray: ZenoRemainingSchemas.CollectionArraySchema,
+    EventIngestChannelArray: ZenoRemainingSchemas.EventIngestChannelArraySchema,
+    ListContentObjectExportsResponse: ZenoRemainingSchemas.ListContentObjectExportsResponseSchema,
+    WorkflowRunUpdatesResponse: ZenoRemainingSchemas.WorkflowRunUpdatesResponseSchema,
+    EventDeliveryQueueSummaryResponse: ZenoRemainingSchemas.EventDeliveryQueueSummaryResponseSchema,
+    WorkflowTask: ZenoRemainingSchemas.WorkflowTaskSchema,
+    ExportPropertiesPayload: ZenoRemainingSchemas.ExportPropertiesPayloadSchema,
+    ExecuteWorkflowPayload: ZenoRemainingSchemas.ExecuteWorkflowPayloadSchema,
+    ViewNavigationResultMap: ZenoRemainingSchemas.ViewNavigationResultMapSchema,
+    ViewExecutionSearchResult: ZenoRemainingSchemas.ViewExecutionSearchResultSchema,
+    DSLActivityOptions: ZenoRemainingSchemas.DSLActivityOptionsSchema,
+    DSLActivitySpec: ZenoRemainingSchemas.DSLActivitySpecSchema,
+    WorkflowSearchAttributes: ZenoRemainingSchemas.WorkflowSearchAttributesSchema,
+    DSLActivityStep: ZenoRemainingSchemas.DSLActivityStepSchema,
+    ContentObjectApiResponse: ZenoRemainingSchemas.ContentObjectApiResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_11 = {
+    ComputeObjectFacetPayload: ZenoRemainingSchemas.ComputeObjectFacetPayloadSchema,
+    ProcessScriptResourceMap: ZenoRemainingSchemas.ProcessScriptResourceMapSchema,
+    EventSubscriptionFilter: ZenoRemainingSchemas.EventSubscriptionFilterSchema,
+    EventDeliverySummary: ZenoRemainingSchemas.EventDeliverySummarySchema,
+    ContentObjectItemApiResponse: ZenoRemainingSchemas.ContentObjectItemApiResponseSchema,
+    ComplexSearchPayload: ZenoRemainingSchemas.ComplexSearchPayloadSchema,
+    Partial_AgentMessage: ZenoRemainingSchemas.Partial_AgentMessageSchema,
+    ContentObjectItemApiResponseArray: ZenoRemainingSchemas.ContentObjectItemApiResponseArraySchema,
+    AgentRunUpdatesResponse: ZenoRemainingSchemas.AgentRunUpdatesResponseSchema,
+    WorkflowHistory: ZenoRemainingSchemas.WorkflowHistorySchema,
+    ViewHit: ZenoRemainingSchemas.ViewHitSchema,
+    ProcessResourcesDefinition: ZenoRemainingSchemas.ProcessResourcesDefinitionSchema,
+    ListEventDeliveriesResponse: ZenoRemainingSchemas.ListEventDeliveriesResponseSchema,
+    ObjectSearchResponse: ZenoRemainingSchemas.ObjectSearchResponseSchema,
+    PostAgentRunUpdatePayload: ZenoRemainingSchemas.PostAgentRunUpdatePayloadSchema,
+    WorkflowRunWithDetails: ZenoRemainingSchemas.WorkflowRunWithDetailsSchema,
+    ViewExecutionDefinition: ZenoRemainingSchemas.ViewExecutionDefinitionSchema,
+    ViewExperienceConfiguration: ZenoRemainingSchemas.ViewExperienceConfigurationSchema,
+    ViewExecutionResult: ZenoRemainingSchemas.ViewExecutionResultSchema,
+    PreviewViewExperienceRequest: ZenoRemainingSchemas.PreviewViewExperienceRequestSchema,
+    AgentRunResponse: ZenoRemainingSchemas.AgentRunResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_12 = {
+    BranchNodeBranchDefinition: ZenoRemainingSchemas.BranchNodeBranchDefinitionSchema,
+    CreateEventSubscriptionPayload: ZenoRemainingSchemas.CreateEventSubscriptionPayloadSchema,
+    CreateProcessDefinitionPayload: ZenoRemainingSchemas.CreateProcessDefinitionPayloadSchema,
+    DSLChildWorkflowStep: ZenoRemainingSchemas.DSLChildWorkflowStepSchema,
+    DSLWorkflowDefinitionResponse: ZenoRemainingSchemas.DSLWorkflowDefinitionResponseSchema,
+    DSLWorkflowSpec: ZenoRemainingSchemas.DSLWorkflowSpecSchema,
+    DSLWorkflowSpecWithActivities: ZenoRemainingSchemas.DSLWorkflowSpecWithActivitiesSchema,
+    DSLWorkflowSpecWithSteps: ZenoRemainingSchemas.DSLWorkflowSpecWithStepsSchema,
+    DSLWorkflowStep: ZenoRemainingSchemas.DSLWorkflowStepSchema,
+    EventDeliveryTarget: ZenoRemainingSchemas.EventDeliveryTargetSchema,
+    EventDeliveryTargetInput: ZenoRemainingSchemas.EventDeliveryTargetInputSchema,
+    EventSubscription: ZenoRemainingSchemas.EventSubscriptionSchema,
+    EventSubscriptionArray: ZenoRemainingSchemas.EventSubscriptionArraySchema,
+    EventSubscriptionMutationResponse: ZenoRemainingSchemas.EventSubscriptionMutationResponseSchema,
+    ListAgentRunsResponse: ZenoRemainingSchemas.ListAgentRunsResponseSchema,
+    NodeDefinition: ZenoRemainingSchemas.NodeDefinitionSchema,
+    NodeDefinitionMap: ZenoRemainingSchemas.NodeDefinitionMapSchema,
+    ProcessDefinition: ZenoRemainingSchemas.ProcessDefinitionSchema,
+    ProcessDefinitionArray: ZenoRemainingSchemas.ProcessDefinitionArraySchema,
+    ProcessDefinitionBody: ZenoRemainingSchemas.ProcessDefinitionBodySchema,
+    ProcessEventDeliveryTarget: ZenoRemainingSchemas.ProcessEventDeliveryTargetSchema,
+    ProgrammaticRunResponse: ZenoRemainingSchemas.ProgrammaticRunResponseSchema,
+    SupervisedRunResponse: ZenoRemainingSchemas.SupervisedRunResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_SCHEMAS_13 = {
+    UpdateEventSubscriptionPayload: ZenoRemainingSchemas.UpdateEventSubscriptionPayloadSchema,
+    UpdateProcessDefinitionPayload: ZenoRemainingSchemas.UpdateProcessDefinitionPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_REMAINING_PARAMETER_SCHEMAS = {
+    AgentRunInternals: ZenoRemainingSchemas.AgentRunInternalsSchema,
+    AgentRunArtifactPathArray: ZenoRemainingSchemas.AgentRunArtifactPathArraySchema,
+    ContentObjectProcessingPriority: ZenoRemainingSchemas.ContentObjectProcessingPrioritySchema,
+    ContentObjectApiResponseArray: ZenoRemainingSchemas.ContentObjectApiResponseArraySchema,
+    CostExportCsvResponse: ZenoRemainingSchemas.CostExportCsvResponseSchema,
+    AgentRunArtifactUploadHeaders: ZenoRemainingSchemas.AgentRunArtifactUploadHeadersSchema,
+    BindRunWorkflowPayload: ZenoRemainingSchemas.BindRunWorkflowPayloadSchema,
+    CreateContentObjectHeaders: ZenoRemainingSchemas.CreateContentObjectHeadersSchema,
+    CreateContentObjectQuery: ZenoRemainingSchemas.CreateContentObjectQuerySchema,
+    AgentRunArtifactQuery: ZenoRemainingSchemas.AgentRunArtifactQuerySchema,
+    AgentRunDetailsQuery: ZenoRemainingSchemas.AgentRunDetailsQuerySchema,
+    GetObjectRenditionQuery: ZenoRemainingSchemas.GetObjectRenditionQuerySchema,
+    WorkflowRunDetailsQuery: ZenoRemainingSchemas.WorkflowRunDetailsQuerySchema,
+    WorkflowRunUpdatesQuery: ZenoRemainingSchemas.WorkflowRunUpdatesQuerySchema,
+    AgentRunArtifactsQuery: ZenoRemainingSchemas.AgentRunArtifactsQuerySchema,
+    ListAgentRunsQuery: ZenoRemainingSchemas.ListAgentRunsQuerySchema,
+    RecordAgentRunPayload: ZenoRemainingSchemas.RecordAgentRunPayloadSchema,
+    RecordProcessRunPayload: ZenoRemainingSchemas.RecordProcessRunPayloadSchema,
+    RecordRunPayload: ZenoRemainingSchemas.RecordRunPayloadSchema,
+    AgentRunUpdatesQuery: ZenoRemainingSchemas.AgentRunUpdatesQuerySchema,
+    CollectionMembersQuery: ZenoRemainingSchemas.CollectionMembersQuerySchema,
+    ListProcessDefinitionsQuery: ZenoRemainingSchemas.ListProcessDefinitionsQuerySchema,
+    SearchAgentRunsQuery: ZenoRemainingSchemas.SearchAgentRunsQuerySchema,
+    ServerSentEventsResponse: ZenoRemainingSchemas.ServerSentEventsResponseSchema,
+    StreamAgentRunQuery: ZenoRemainingSchemas.StreamAgentRunQuerySchema,
+    StreamEventDeliveriesQuery: ZenoRemainingSchemas.StreamEventDeliveriesQuerySchema,
+    WorkflowRunStreamQuery: ZenoRemainingSchemas.WorkflowRunStreamQuerySchema,
+    UpdateContentObjectHeaders: ZenoRemainingSchemas.UpdateContentObjectHeadersSchema,
+    UpdateContentObjectQuery: ZenoRemainingSchemas.UpdateContentObjectQuerySchema,
+    UpdateAgentRunStatusPayload: ZenoRemainingSchemas.UpdateAgentRunStatusPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 /**
  * Merges the groups, refusing a name that appears in more than one.
  *
@@ -1516,6 +1941,22 @@ const API_SCHEMA_GROUPS = [
     ZENO_DATA_STORE_SCHEMA_SCHEMAS,
     ZENO_COST_SCHEMAS,
     ZENO_BULK_OPERATION_SCHEMAS,
+    ZENO_DOCUMENT_PROCESSING_SCHEMAS,
+    ZENO_COMMAND_SCHEMAS,
+    ZENO_REMAINING_SCHEMAS_1,
+    ZENO_REMAINING_SCHEMAS_2,
+    ZENO_REMAINING_SCHEMAS_3,
+    ZENO_REMAINING_SCHEMAS_4,
+    ZENO_REMAINING_SCHEMAS_5,
+    ZENO_REMAINING_SCHEMAS_6,
+    ZENO_REMAINING_SCHEMAS_7,
+    ZENO_REMAINING_SCHEMAS_8,
+    ZENO_REMAINING_SCHEMAS_9,
+    ZENO_REMAINING_SCHEMAS_10,
+    ZENO_REMAINING_SCHEMAS_11,
+    ZENO_REMAINING_SCHEMAS_12,
+    ZENO_REMAINING_SCHEMAS_13,
+    ZENO_REMAINING_PARAMETER_SCHEMAS,
 ];
 
 /**
@@ -1543,7 +1984,23 @@ type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof ZENO_DATA_STORE_CORE_SCHEMAS &
     typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS &
     typeof ZENO_COST_SCHEMAS &
-    typeof ZENO_BULK_OPERATION_SCHEMAS;
+    typeof ZENO_BULK_OPERATION_SCHEMAS &
+    typeof ZENO_DOCUMENT_PROCESSING_SCHEMAS &
+    typeof ZENO_COMMAND_SCHEMAS &
+    typeof ZENO_REMAINING_SCHEMAS_1 &
+    typeof ZENO_REMAINING_SCHEMAS_2 &
+    typeof ZENO_REMAINING_SCHEMAS_3 &
+    typeof ZENO_REMAINING_SCHEMAS_4 &
+    typeof ZENO_REMAINING_SCHEMAS_5 &
+    typeof ZENO_REMAINING_SCHEMAS_6 &
+    typeof ZENO_REMAINING_SCHEMAS_7 &
+    typeof ZENO_REMAINING_SCHEMAS_8 &
+    typeof ZENO_REMAINING_SCHEMAS_9 &
+    typeof ZENO_REMAINING_SCHEMAS_10 &
+    typeof ZENO_REMAINING_SCHEMAS_11 &
+    typeof ZENO_REMAINING_SCHEMAS_12 &
+    typeof ZENO_REMAINING_SCHEMAS_13 &
+    typeof ZENO_REMAINING_PARAMETER_SCHEMAS;
 
 export type ApiComponentName = keyof ApiSchemaMap;
 
@@ -1846,6 +2303,233 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'BulkObjectCreateResult',
     'BulkOperationResult',
     'BulkOperationPayload',
+    // Zeno rendering and document analysis. Request/response objects reproduce the closed
+    // published components; DocumentPrepOptions stays open by design, and the query follows the
+    // shared query policy of validating declared fields without rejecting unrelated parameters.
+    'GroundedAssistantResponse',
+    'GroundedExtractionRequest',
+    'GroundedVerificationBreakdown',
+    'DocAnalyzerProgressStatus',
+    'RenderMarkdownStartResponse',
+    'PdfRenderingMetadata',
+    'GroundedExtractionResultResponse',
+    'DocAnalyzerProgress',
+    'RenderMarkdownStatusResponse',
+    'RenderMarkdownPayload',
+    'DocAnalyzeRunStatusResponse',
+    // Zeno command responses and their two request payloads are all published closed today.
+    'StartProjectReindexPayload',
+    'ReindexAgentRunsResponse',
+    'ReindexAgentRunsPayload',
+    'IndexingStatusResponse',
+    'DriftAnalysisResult',
+    'DriftAnalysisProgress',
+    'EmbeddingsStatusResponse',
+    'ProjectConfigurationEmbeddingEnablePayload',
+    'GenericCommandResponse',
+    'DriftAnalysisStatusResponse',
+    // Remaining Zeno closure. These objects were already published closed.
+    'HumanTaskDefinition',
+    'ProcessNodeReturnsDefinition',
+    'ProcessContextDefinition',
+    'ProcessScriptInlineSource',
+    'GenerationRunMetadata',
+    'ContentObjectUserPermissions',
+    'RevisionInfo',
+    'ContentSource',
+    'InheritedPropertyMetadata',
+    'TranscriptSegment',
+    'Embedding',
+    'AgentSemanticEvaluator',
+    'InteractionSemanticEvaluator',
+    'EventIngestResourceRule',
+    'CollectionSecuritySettingsResponse',
+    'CollectionMembersUpdateResult',
+    'CollectionMembersUpdatePayload',
+    'CollectionChildrenUpdateResult',
+    'CollectionChildrenUpdatePayload',
+    'UpdateAgentArtifactContentResponse',
+    'UpdateAgentArtifactContentPayload',
+    'TerminateAgentRunResponse',
+    'StartContentObjectExportResponse',
+    'ExportContentObjectsIncludeOptions',
+    'ExportContentObjectsFilter',
+    'SetObjectEmbeddingsResponse',
+    'ContentObjectApiRevision',
+    'InCodeTypeRef',
+    'StoredTypeRef',
+    'EventRef',
+    'RevertProcessDefinitionPayload',
+    'RetryProcessNodePayload',
+    'nd_restart_count_number',
+    'PublishProcessDefinitionPayload',
+    'CollectionPropagationResponse',
+    'ViewSortClause',
+    'ViewResultMedia',
+    'ViewBoardColumn',
+    'ViewTableColumn',
+    'AgenticViewSearchConfiguration',
+    'ViewSearchFieldDefinition',
+    'ViewRangeDefinition',
+    'ViewHierarchyLevel',
+    'ViewTermsNavigation',
+    'ViewCollectionNavigation',
+    'ViewLocationNavigation',
+    'ViewExperienceLayout',
+    'WorkflowUpdatePublishResponse',
+    'PostAgentRunUpdateResponse',
+    'ListWorkflowRunsPayload',
+    'WorkflowRuleItem',
+    'WorkflowDefinitionRef',
+    'ProcessDefinitionRevisionInfo',
+    'WebhookEventDeliveryTarget',
+    'WorkflowEventDeliveryTarget',
+    'ContentObjectExportArtifactFile',
+    'ProcessRunConfig',
+    'ProcessHistoryRef',
+    'NodeHistoryEntry',
+    'ResourceRef',
+    'WorkflowRun',
+    'ProcessHistoryResponse',
+    'ProcessContextResponse',
+    'ContentObjectTextResponse',
+    'GetRenditionResponse',
+    'EventDeliveryQueueFailureSummary',
+    'EventOutboxQueueSummary',
+    'ContentObjectExportResult',
+    'ContentObjectExportProgress',
+    'PendingActivity',
+    'AgentTask',
+    'EventError',
+    'SignalEventProperties',
+    'AgentArtifactContentResponse',
+    'ExportPropertiesResponse',
+    'WorkflowExecutionStartResult',
+    'WorkflowInputFile',
+    'ViewNavigationNode',
+    'ViewHitAnnotation',
+    'ViewExecutionWarning',
+    'ExecuteViewRequest',
+    'DeleteContentObjectResult',
+    'DeleteContentObjectExportResponse',
+    'WorkflowRule',
+    'CreateWorkflowRulePayload',
+    'ActivityFetchSpec',
+    'CreateCollectionPayload',
+    'AgentArtifactUrlResponse',
+    'FindPayload',
+    'WorkflowActionResponse',
+    'AnswerProcessTaskPayload',
+    'SignalAgentResponse',
+    'AdvanceProcessPayload',
+    'BranchDefinition',
+    'ParallelCollectDefinition',
+    'TransitionDefinition',
+    'Transcript',
+    'Partial_Record_SupportedEmbeddingTypes_Embedding',
+    'AgentEventDeliveryTarget',
+    'WebhookEventDeliveryTargetInput',
+    'WorkflowEventDeliveryTargetInput',
+    'EventIngestSignatureConfig',
+    'EventIngestTransform',
+    'StartContentObjectExportRequest',
+    'SemanticEvaluationRecord',
+    'ListEventDeliveriesPayload',
+    'VectorSearchQuery',
+    'ComplexCollectionSearchQuery',
+    'AgentRunSearchHit',
+    'ViewSortOption',
+    'ViewResultField',
+    'ViewTableDisplay',
+    'ViewListDisplay',
+    'ViewKeyTermDefinition',
+    'ViewRangeNavigation',
+    'ViewHierarchyNavigation',
+    'ViewExperienceScope',
+    'ConversationFile',
+    'Collection',
+    'EventIngestChannel',
+    'ContentObjectExportArtifact',
+    'ProcessState',
+    'AutonomousRunResponse',
+    'ListWorkflowRunsResponse',
+    'EventDeliveryQueueSubscriptionSummary',
+    'EventDeliveryQueueSummaryPayload',
+    'ContentObjectExportStatusResponse',
+    'TimerTask',
+    'SignalTask',
+    'ChildWorkflowTask',
+    'ActivityTask',
+    'WorkflowRunEvent',
+    'ViewNavigationResult',
+    'ViewExecutionQueryPlan',
+    'ViewExecutionSearchConfiguration',
+    'DSLRetryPolicy',
+    'CreateContentObjectPayload',
+    'EventIngestChannelMutationResponse',
+    'CreateEventIngestChannelPayload',
+    'AgentRun',
+    'CreateAgentRunPayload',
+    'ComputeCollectionFacetPayload',
+    'ProcessScriptResource',
+    'Partial_CreateContentObjectPayload',
+    'EventSemanticCondition',
+    'UpdateEventIngestChannelPayload',
+    'EventDeliveryIntentSummary',
+    'ComplexSearchQuery',
+    'SearchAgentRunsResponse',
+    'ViewBoardCardConfiguration',
+    'ViewSearchConfiguration',
+    'ListContentObjectExportsResponse',
+    'WorkflowRunUpdatesResponse',
+    'EventDeliveryQueueSummaryResponse',
+    'ExportPropertiesPayload',
+    'ExecuteWorkflowPayload',
+    'ViewExecutionSearchResult',
+    'DSLActivityOptions',
+    'DSLActivitySpec',
+    'DSLActivityStep',
+    'ContentObjectApiResponse',
+    'ComputeObjectFacetPayload',
+    'EventSubscriptionFilter',
+    'EventDeliverySummary',
+    'ContentObjectItemApiResponse',
+    'ComplexSearchPayload',
+    'ViewBoardDisplay',
+    'Partial_AgentMessage',
+    'AgentRunUpdatesResponse',
+    'ViewHit',
+    'ProcessResourcesDefinition',
+    'ListEventDeliveriesResponse',
+    'ObjectSearchResponse',
+    'WorkflowRunWithDetails',
+    'ViewResultsConfiguration',
+    'ViewExecutionDefinition',
+    'ViewExperienceConfiguration',
+    'ViewExecutionResult',
+    'PreviewViewExperienceRequest',
+    'BranchNodeBranchDefinition',
+    'CreateEventSubscriptionPayload',
+    'CreateProcessDefinitionPayload',
+    'DSLChildWorkflowStep',
+    'DSLWorkflowDefinition',
+    'DSLWorkflowDefinitionResponse',
+    'DSLWorkflowSpecWithActivities',
+    'DSLWorkflowSpecWithSteps',
+    'EventSubscription',
+    'EventSubscriptionMutationResponse',
+    'ListAgentRunsResponse',
+    'NodeDefinition',
+    'ProcessDefinition',
+    'ProcessDefinitionBody',
+    'ProcessEventDeliveryTarget',
+    'ProgrammaticRunResponse',
+    'SupervisedRunResponse',
+    'UpdateEventSubscriptionPayload',
+    'UpdateProcessDefinitionPayload',
+    'ViewCardsDisplay',
+    'ViewGalleryDisplay',
+    'CompactMessage',
     // The OAuth closure. Every object in it is published closed today; the ten enums and the two
     // array components take no additionalProperties at all, and `OAuthProviderData`/`OAuthClientData`
     // are composed rather than hoisted so they have no component to list.
@@ -2250,12 +2934,56 @@ export function apiComponentRef(name: ApiComponentName): string {
 }
 
 /**
+ * Explicit TypeScript recursion boundary for schemas whose runtime graph is lazy.
+ *
+ * Zod cannot infer a finite named type through a mutually-recursive graph. The schemas remain the
+ * runtime and OpenAPI authority; these names preserve the recursive TypeScript declarations until
+ * TypeScript can infer recursive aliases without collapsing them to `unknown`.
+ */
+interface ZenoRecursiveComponentTypes {
+    ViewNavigationNode: ViewNavigationNode;
+    AgentRunResponse: AgentRunResponse;
+    AgentRunInternals: AgentRunInternals;
+    BindRunWorkflowPayload: BindRunWorkflowPayload;
+    BranchNodeBranchDefinition: BranchNodeBranchDefinition;
+    CreateEventSubscriptionPayload: CreateEventSubscriptionPayload;
+    CreateProcessDefinitionPayload: CreateProcessDefinitionPayload;
+    DSLChildWorkflowStep: DSLChildWorkflowStep;
+    DSLWorkflowDefinition: DSLWorkflowDefinition;
+    DSLWorkflowDefinitionResponse: DSLWorkflowDefinitionResponse;
+    DSLWorkflowSpec: DSLWorkflowSpec;
+    DSLWorkflowSpecWithActivities: DSLWorkflowTypes.DSLWorkflowSpecWithActivities;
+    DSLWorkflowSpecWithSteps: DSLWorkflowSpecWithSteps;
+    DSLWorkflowStep: DSLWorkflowStep;
+    EventDeliveryTarget: EventDeliveryTarget;
+    EventDeliveryTargetInput: EventDeliveryTargetInput;
+    EventSubscription: EventSubscription;
+    EventSubscriptionArray: EventSubscription[];
+    EventSubscriptionMutationResponse: EventSubscriptionMutationResponse;
+    ListAgentRunsResponse: ListAgentRunsResponse;
+    NodeDefinition: NodeDefinition;
+    NodeDefinitionMap: Record<string, NodeDefinition>;
+    ProcessDefinition: ProcessDefinition;
+    ProcessDefinitionArray: ProcessDefinition[];
+    ProcessDefinitionBody: ProcessDefinitionBody;
+    ProcessEventDeliveryTarget: ProcessEventDeliveryTarget;
+    ProgrammaticRunResponse: ProgrammaticRunResponse;
+    RecordRunPayload: RecordRunPayload;
+    SupervisedRunResponse: SupervisedRunResponse;
+    UpdateAgentRunStatusPayload: UpdateAgentRunStatusPayload;
+    UpdateEventSubscriptionPayload: UpdateEventSubscriptionPayload;
+    UpdateProcessDefinitionPayload: UpdateProcessDefinitionPayload;
+}
+
+/**
  * The wire type a component publishes.
  *
  * `ApiComponentType<'Account'>` is `z.infer<typeof AccountSchema>` — the map is indexed directly
  * rather than dispatched through the groups, which the intersection makes possible.
  */
-export type ApiComponentType<N extends ApiComponentName> = z.infer<ApiSchemaMap[N]>;
+export type ApiComponentType<N extends ApiComponentName> = N extends keyof ZenoRecursiveComponentTypes
+    ? ZenoRecursiveComponentTypes[N]
+    : z.infer<ApiSchemaMap[N]>;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

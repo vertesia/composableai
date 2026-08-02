@@ -1,34 +1,30 @@
-import type { StringValue } from 'ms';
+import type { z } from 'zod';
+import type {
+    ActivityFetchSpecSchema,
+    DSLActivityOptionsSchema,
+    DSLActivitySpecSchema,
+    DSLActivityStepSchema,
+    DSLRetryPolicySchema,
+    DurationValueSchema,
+    WorkflowDefinitionRefSchema,
+    WorkflowInputFileSchema,
+    WorkflowInputSchema,
+} from '../api-schemas/zeno-remaining.js';
 import type { ToolExecutionMetadata } from '../tool-execution.js';
 import type { BaseObject } from './common.js';
 import type { WorkflowExecutionPayload } from './index.js';
 import type { ParentClosePolicyType } from './temporalio.js';
 
-export type DurationValue = StringValue | number;
+export type DurationValue = z.infer<typeof DurationValueSchema>;
 
 /**
  * Discriminator for workflow input type - either object IDs or GCS file URIs
  */
 export type WorkflowInputType = 'objectIds' | 'files';
 
-/**
- * File reference with URL and mimetype
- */
-export interface WorkflowInputFile {
-    url: string;
-    mimetype: string;
-}
+export type WorkflowInputFile = z.infer<typeof WorkflowInputFileSchema>;
 
-/**
- * Discriminated union for workflow inputs.
- * Workflows can accept either a list of object IDs (existing behavior) OR a list of file references (new).
- */
-/**
- * @discriminator inputType
- */
-export type WorkflowInput =
-    | { inputType: 'objectIds'; objectIds: string[] }
-    | { inputType: 'files'; files: WorkflowInputFile[] };
+export type WorkflowInput = z.infer<typeof WorkflowInputSchema>;
 
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.
@@ -41,32 +37,12 @@ export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload<Re
     workflow: DSLWorkflowSpec;
 }
 
-/**
- * The payload for a DSL activity options.
- *
- * @see ActivityOptions in @temporalio/common
- */
-export interface DSLActivityOptions {
-    startToCloseTimeout?: DurationValue;
-    heartbeatTimeout?: DurationValue;
-    scheduleToStartTimeout?: DurationValue;
-    scheduleToCloseTimeout?: DurationValue;
-    retry?: DSLRetryPolicy;
-}
+export type DSLActivityOptions = z.infer<typeof DSLActivityOptionsSchema>;
 
-/**
- * The payload for a DSL retry policy.
- *
- * @see RetryPolicy in @temporalio/common
- */
-export interface DSLRetryPolicy {
-    backoffCoefficient?: number;
-    initialInterval?: DurationValue;
-    maximumAttempts?: number;
-    maximumInterval?: DurationValue;
-    nonRetryableErrorTypes?: string[];
-}
+export type DSLRetryPolicy = z.infer<typeof DSLRetryPolicySchema>;
 
+// Temporal accepts Date values internally, while the HTTP schema documents their JSON string form.
+// Keep the execution type truthful at the Temporal boundary instead of pretending HTTP validation revives dates.
 export type WorkflowSearchAttributeValue = string[] | number[] | boolean[] | Date[];
 export type WorkflowSearchAttributes = Record<string, WorkflowSearchAttributeValue>;
 
@@ -82,38 +58,10 @@ export interface DSLActivityExecutionPayload<ParamsT extends object> extends Wor
     activityGroupId?: string;
 }
 
+// The published schema intentionally leaves array items open. This narrower authoring type is an
+// internal DSL convenience, not a claim made by the HTTP validator.
 export type ImportSpec = (string | Record<string, string>)[];
-export interface ActivityFetchSpec {
-    /**
-     * The data provider name
-     */
-    type: 'document' | 'document_type' | 'interaction_run';
-    /**
-     * An optional URI to the data source.
-     */
-    source?: string;
-    /**
-     * The query to be executed by the data provider
-     */
-    query: Record<string, unknown>;
-    /**
-     * a string of space separated field names.
-     * Prefix a field name with "-" to exclude it from the result.
-     */
-    select?: string;
-
-    /**
-     * The number of results to return. If the result is limited to 1 the result will be a single object
-     */
-    limit?: number;
-
-    /**
-     * How to handle not found objects.
-     * 1. ignore - Ignore and return an empty array for multi objects query (or undefined for single object query) or empty array for multiple objects throw an error.
-     * 2. throw - Throw an error if the object or no objects are found.
-     */
-    on_not_found?: 'ignore' | 'throw';
-}
+export type ActivityFetchSpec = z.infer<typeof ActivityFetchSpecSchema>;
 
 export interface DSLWorkflowStepBase {
     /**
@@ -123,86 +71,27 @@ export interface DSLWorkflowStepBase {
     type: 'activity' | 'workflow';
 }
 
-export interface DSLActivitySpec<PARAMS extends object = Record<string, unknown>> {
-    /**
-     * The name of the activity function
-     */
-    name: string;
-    /**
-     * Title of the activity to be displayed in the UI workflow builder
-     */
-    title?: string;
-    /**
-     * The description of the activity to e displayed in the UI workflow builder
-     */
-    description?: string;
-    /**
-     * Activities parameters. These parameters can be either literals
-     * (hardcoded strings, numbers, booleans, objects, arrays etc.), either
-     * references to the workflow variables.
-     * The workflow variables are built from the workflow params (e.g. the workflow configuration)
-     * and from the result of the previous activities.
-     */
+type DSLActivitySpecWire = z.infer<typeof DSLActivitySpecSchema>;
+
+/** The published activity shape with a caller-specializable parameter bag. */
+export type DSLActivitySpec<PARAMS extends object = Record<string, unknown>> = Omit<
+    DSLActivitySpecWire,
+    'params' | 'import'
+> & {
     params?: PARAMS;
-    /**
-     * The name of the workflow variable that will store the result of the activity
-     * If not specified the result will not be stored
-     * The parameters describe how the actual parameters will be obtained from the workflow execution vars.
-     * since it may contain references to workflow execution vars.
-     */
-    output?: string;
-
-    /**
-     * A JSON expression which evaluate to true or false similar to mongo matches.
-     * We support for now basic expression like: $true, $false, $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin, $regexp
-     * {$eq: {name: value}},
-     * Ex: {$eq: {wfVarName: value}}
-     */
-    condition?: Record<string, unknown>;
-
-    /**
-     * The import spec is used to import data from workflow variables.
-     * The import spec is a list of variable names to import from the workflow context.
-     * You can also use objects to rename the imported variables, or to reference an expression.
-     * Example:
-     * ["runId", {"typeId": "docType.id"}]
-     */
     import?: ImportSpec;
+};
 
-    /**
-     * The fetch phase is used to fetch data from external sources.
-     */
-    fetch?: Record<string, ActivityFetchSpec>;
+type DSLActivityStepWire = z.infer<typeof DSLActivityStepSchema>;
 
-    /**
-     * Projection to apply to the result. Not all activities support this.
-     */
-    projection?: never | Record<string, unknown>;
-
-    // ---------- Optional features not implemented in a first step ------------
-    /**
-     * If true the activity will be executed in parallel with the other activities.
-     * (i.e. the workflow will not wait for the activity to finish before starting the next one)
-     */
-    parallel?: boolean;
-
-    /**
-     * Await for a parallel activity execution to return.
-     */
-    await?: string; //the activity name to await
-
-    /**
-     * Activity options for configuring the activity execution, which overrides the activity options
-     * defined at workflow level.
-     */
-    options?: DSLActivityOptions;
-}
-
-export interface DSLActivityStep<PARAMS extends object = Record<string, unknown>>
-    extends DSLActivitySpec<PARAMS>,
-        DSLWorkflowStepBase {
-    type: 'activity';
-}
+/** The published activity-step shape with a caller-specializable parameter bag. */
+export type DSLActivityStep<PARAMS extends object = Record<string, unknown>> = Omit<
+    DSLActivityStepWire,
+    'params' | 'import'
+> & {
+    params?: PARAMS;
+    import?: ImportSpec;
+};
 
 export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
     type: 'workflow';
@@ -328,14 +217,7 @@ export interface DSLWorkflowDefinitionResponse extends DSLWorkflowDefinition {
     spec_format: 'steps' | 'activities';
 }
 
-export interface WorkflowDefinitionRef {
-    id: string;
-    name: string;
-    description?: string;
-    tags?: string[];
-    created_at: Date;
-    updated_at: Date;
-}
+export type WorkflowDefinitionRef = z.infer<typeof WorkflowDefinitionRefSchema>;
 
 export const WorkflowDefinitionRefPopulate = 'id name description tags created_at updated_at';
 
