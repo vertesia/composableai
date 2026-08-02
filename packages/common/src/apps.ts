@@ -1,4 +1,4 @@
-import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
+import type { JSONSchema, ToolDefinition } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
     AppAccessControlSchema,
@@ -9,7 +9,15 @@ import type {
     AppSourceConfigSchema,
     AppUIConfigSchema,
     MCPOAuthConfigSchema,
+    MCPToolAnnotationsSchema,
     MCPToolCollectionObjectSchema,
+    McpOAuthConnectResponseSchema,
+    McpOAuthDisconnectResponseSchema,
+    McpOAuthTokenRequestSchema,
+    McpOAuthTokenResponseSchema,
+    OAuthAuthorizeResponseSchema,
+    OAuthAuthStatusSchema,
+    OAuthMetadataResponseSchema,
     ToolCollectionAuthTypeSchema,
     ToolCollectionObjectSchema,
     VertesiaSDKToolCollectionObjectSchema,
@@ -163,18 +171,7 @@ export function normalizeToolCollection(collection: ToolCollectionObject, vars?:
 /**
  * Metadata hints from MCP tool annotations (per MCP spec).
  */
-export interface MCPToolAnnotations {
-    /** Human-readable display name for the tool */
-    title?: string;
-    /** If true, the tool does not modify any state */
-    readOnlyHint?: boolean;
-    /** If true, the tool may perform irreversible destructive operations */
-    destructiveHint?: boolean;
-    /** If true, calling the tool multiple times with the same args has no additional effect */
-    idempotentHint?: boolean;
-    /** If true, the tool interacts with external entities outside the local environment */
-    openWorldHint?: boolean;
-}
+export type MCPToolAnnotations = z.infer<typeof MCPToolAnnotationsSchema>;
 
 /**
  * Approval behavior class for a tool exposed to agents.
@@ -1305,57 +1302,30 @@ export type ProjectToolInfo = z.infer<typeof ProjectToolInfoSchema>;
 /**
  * OAuth authentication status for an MCP tool collection
  */
-export interface OAuthAuthStatus {
-    collection_id: string;
-    collection_name: string;
-    authenticated: boolean;
-    mcp_server_url: string;
-    expires_at?: string;
-    scope?: string;
-}
+export type OAuthAuthStatus = z.infer<typeof OAuthAuthStatusSchema>;
 
 /**
  * Response from OAuth authorization endpoint
  */
-export interface OAuthAuthorizeResponse {
-    authorization_url?: string;
-    state?: string;
-    connected?: boolean;
-}
+export type OAuthAuthorizeResponse = z.infer<typeof OAuthAuthorizeResponseSchema>;
 
 export interface McpOAuthCollectionRef {
     app_install_id: string;
     collection_id: string;
 }
 
-export interface McpOAuthTokenRequest {
-    app_install_id?: string;
-    collection_id?: string;
-    mcp_server_url?: string;
-}
+export type McpOAuthTokenRequest = z.infer<typeof McpOAuthTokenRequestSchema>;
 
-export interface McpOAuthTokenResponse {
-    access_token: string;
-}
+export type McpOAuthTokenResponse = z.infer<typeof McpOAuthTokenResponseSchema>;
 
-export interface McpOAuthConnectResponse {
-    success: boolean;
-}
+export type McpOAuthConnectResponse = z.infer<typeof McpOAuthConnectResponseSchema>;
 
-export interface McpOAuthDisconnectResponse {
-    success: boolean;
-    message: string;
-}
+export type McpOAuthDisconnectResponse = z.infer<typeof McpOAuthDisconnectResponseSchema>;
 
 /**
  * Response from OAuth metadata endpoint
  */
-export interface OAuthMetadataResponse {
-    collection_id: string;
-    collection_name: string;
-    mcp_server_url: string;
-    metadata: JSONObject;
-}
+export type OAuthMetadataResponse = z.infer<typeof OAuthMetadataResponseSchema>;
 
 // ============================================================================
 // CompositeApp Shell Configuration Types

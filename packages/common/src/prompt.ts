@@ -6,6 +6,13 @@ import type {
     PromptTemplateSchema,
     PromptTemplateUpdatePayloadSchema,
 } from './api-schemas/interaction.js';
+import type {
+    PromptTemplateForkPayloadSchema,
+    PromptTemplateInteractionsResponseSchema,
+    PromptTemplateInteractionUsageSchema,
+    PromptTemplateInteractionVersionSchema,
+    RenderPromptResponseSchema,
+} from './api-schemas/prompt.js';
 
 export interface ChatPromptSchema {
     role: PromptRole.user | PromptRole.assistant;
@@ -63,26 +70,22 @@ export interface ExecutablePromptTemplate {
 }
 export type PromptTemplate = z.infer<typeof PromptTemplateSchema>;
 
-export interface PromptTemplateForkPayload {
-    keepTags?: boolean;
-    targetProject?: string;
-}
+export type PromptTemplateForkPayload = z.infer<typeof PromptTemplateForkPayloadSchema>;
 
 export type PromptTemplateCreatePayload = z.infer<typeof PromptTemplateCreatePayloadSchema>;
 
 export type PromptTemplateUpdatePayload = z.infer<typeof PromptTemplateUpdatePayloadSchema>;
 
-export interface PromptTemplateInteractionVersion {
-    version: number;
-}
+export type PromptTemplateInteractionVersion = z.infer<typeof PromptTemplateInteractionVersionSchema>;
 
-export interface PromptTemplateInteractionUsage {
-    id: string;
-    name: string;
-    versions: PromptTemplateInteractionVersion[];
-}
+export type PromptTemplateInteractionUsage = z.infer<typeof PromptTemplateInteractionUsageSchema>;
 
-export interface PromptTemplateInteractionsResponse {
-    prompt: string;
-    interactions: PromptTemplateInteractionUsage[];
-}
+export type PromptTemplateInteractionsResponse = z.infer<typeof PromptTemplateInteractionsResponseSchema>;
+
+/**
+ * What `POST /prompts/:id/render` answers with: the segment identity plus the rendered body.
+ *
+ * Stated here for the first time — the endpoint declared its response inline, so there has never
+ * been a name for it on either side of the wire.
+ */
+export type RenderPromptResponse = z.infer<typeof RenderPromptResponseSchema>;

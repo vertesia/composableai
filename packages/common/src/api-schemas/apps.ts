@@ -1,3 +1,4 @@
+import { JSONObjectSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import type { AppUINavItem } from '../apps.js';
 // From the values modules, for the reason `./apikey.js` gives: the enum's members are already
@@ -337,3 +338,92 @@ export const AppManifestSourceSchema = z
  * `@llumiverse/common`, after which the manifest converts with nothing else to decide: every
  * component it references is above.
  */
+
+// The remote MCP connection contracts — wave S4.
+//
+// Eight components covering the OAuth handshake `RemoteMcpConnectionsResource` performs on behalf of
+// a tool collection, plus the tool annotations an aggregated tool carries. They live here rather
+// than in a module of their own because a remote MCP connection is an app installation's, and
+// `MCPToolAnnotations` is referenced from `./tools.js`.
+//
+// Line comments rather than JSDoc blocks throughout: a JSDoc block immediately preceding an exported
+// declaration is picked up by the OpenAPI scanner and published as that component's `description`,
+// which would double up with the `description` stated in `.meta()`.
+
+export const MCPToolAnnotationsSchema = z
+    .strictObject({
+        title: z.string().meta({ description: 'Human-readable display name for the tool' }).optional(),
+        readOnlyHint: z.boolean().meta({ description: 'If true, the tool does not modify any state' }).optional(),
+        destructiveHint: z
+            .boolean()
+            .meta({ description: 'If true, the tool may perform irreversible destructive operations' })
+            .optional(),
+        idempotentHint: z
+            .boolean()
+            .meta({
+                description: 'If true, calling the tool multiple times with the same args has no additional effect',
+            })
+            .optional(),
+        openWorldHint: z
+            .boolean()
+            .meta({ description: 'If true, the tool interacts with external entities outside the local environment' })
+            .optional(),
+    })
+    .meta({ id: 'MCPToolAnnotations', description: 'Metadata hints from MCP tool annotations (per MCP spec).' });
+
+export const McpOAuthTokenResponseSchema = z
+    .strictObject({
+        access_token: z.string(),
+    })
+    .meta({ id: 'McpOAuthTokenResponse' });
+
+export const McpOAuthTokenRequestSchema = z
+    .strictObject({
+        app_install_id: z.string().optional(),
+        collection_id: z.string().optional(),
+        mcp_server_url: z.string().optional(),
+    })
+    .meta({ id: 'McpOAuthTokenRequest' });
+
+export const OAuthAuthStatusSchema = z
+    .strictObject({
+        collection_id: z.string(),
+        collection_name: z.string(),
+        authenticated: z.boolean(),
+        mcp_server_url: z.string(),
+        expires_at: z.string().optional(),
+        scope: z.string().optional(),
+    })
+    .meta({ id: 'OAuthAuthStatus', description: 'OAuth authentication status for an MCP tool collection' });
+
+export const OAuthMetadataResponseSchema = z
+    .strictObject({
+        collection_id: z.string(),
+        collection_name: z.string(),
+        mcp_server_url: z.string(),
+        metadata: JSONObjectSchema,
+    })
+    .meta({ id: 'OAuthMetadataResponse', description: 'Response from OAuth metadata endpoint' });
+
+export const McpOAuthDisconnectResponseSchema = z
+    .strictObject({
+        success: z.boolean(),
+        message: z.string(),
+    })
+    .meta({ id: 'McpOAuthDisconnectResponse' });
+
+export const McpOAuthConnectResponseSchema = z
+    .strictObject({
+        success: z.boolean(),
+    })
+    .meta({ id: 'McpOAuthConnectResponse' });
+
+export const OAuthAuthorizeResponseSchema = z
+    .strictObject({
+        authorization_url: z.string().optional(),
+        state: z.string().optional(),
+        connected: z.boolean().optional(),
+    })
+    .meta({ id: 'OAuthAuthorizeResponse', description: 'Response from OAuth authorization endpoint' });
+
+export const OAuthAuthStatusArraySchema = z.array(OAuthAuthStatusSchema).meta({ id: 'OAuthAuthStatusArray' });

@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import type { InteractionSearchQuerySchema, RunSearchQuerySchema } from './api-schemas/interaction.js';
+import type { PromptSearchQuerySchema } from './api-schemas/prompt.js';
 import type { ExecutionRunStatus } from './interaction.js';
 import type { SearchTypes, SupportedEmbeddingTypes } from './project.js';
 import type { CollectionSearchPayload } from './store/collections.js';
@@ -74,11 +75,7 @@ export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
     chunkable?: boolean;
 }
 
-export interface PromptSearchQuery extends SimpleSearchQuery {
-    role?: string;
-    tags?: string[];
-    matchInteractions?: boolean;
-}
+export type PromptSearchQuery = z.infer<typeof PromptSearchQuerySchema>;
 
 export type InteractionSearchQuery = z.infer<typeof InteractionSearchQuerySchema>;
 

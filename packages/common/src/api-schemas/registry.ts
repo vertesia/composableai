@@ -72,8 +72,39 @@ import {
     AppManifestSourceSchema,
     AppSourceConfigSchema,
     AppUIConfigSchema,
+    MCPToolAnnotationsSchema,
+    McpOAuthConnectResponseSchema,
+    McpOAuthDisconnectResponseSchema,
+    McpOAuthTokenRequestSchema,
+    McpOAuthTokenResponseSchema,
+    OAuthAuthorizeResponseSchema,
+    OAuthAuthStatusArraySchema,
+    OAuthAuthStatusSchema,
+    OAuthMetadataResponseSchema,
     ToolCollectionObjectSchema,
 } from './apps.js';
+import {
+    AuditActionSchema,
+    AuditAggregationDetailFieldSchema,
+    AuditAggregationDetailFilterSchema,
+    AuditAggregationDimensionSchema,
+    AuditAggregationDistinctFieldSchema,
+    AuditAggregationFilterSchema,
+    AuditAggregationGroupSchema,
+    AuditAggregationMetricSchema,
+    AuditAggregationOperationSchema,
+    AuditAggregationQuerySchema,
+    AuditAggregationResolutionSchema,
+    AuditAggregationResponseSchema,
+    AuditAggregationRowSchema,
+    AuditMeterSchema,
+    AuditTrailEventSchema,
+    AuditTrailQuerySchema,
+    AuditTrailResponseSchema,
+    EventCategorySchema,
+    KnownAuditActionSchema,
+    Partial_Record_AuditAggregationDimension_string_nullSchema,
+} from './audit-trail.js';
 import {
     BulkObjectCreateResultSchema,
     BulkObjectDeleteResultSchema,
@@ -448,6 +479,16 @@ import {
     ProjectModelDefaultsSchema,
     ResourceVisibilitySchema,
 } from './project-configuration.js';
+import {
+    ComputePromptFacetPayloadSchema,
+    PromptSearchQuerySchema,
+    PromptTemplateForkPayloadSchema,
+    PromptTemplateInteractionsResponseSchema,
+    PromptTemplateInteractionUsageSchema,
+    PromptTemplateInteractionVersionSchema,
+    PromptTemplateRefArraySchema,
+    RenderPromptResponseSchema,
+} from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import {
     ColumnLayoutSchema,
@@ -478,6 +519,15 @@ import {
     UpdateTaskPayloadSchema,
 } from './task.js';
 import {
+    AggregatedToolArraySchema,
+    AggregatedToolSchema,
+    ListProjectToolsQuerySchema,
+    ToolSourceSchema,
+    ToolValidationResultSchema,
+    ValidateToolNamesPayloadSchema,
+    ValidateToolNamesResponseSchema,
+} from './tools.js';
+import {
     DeleteByIdResultSchema,
     PrincipalIdentitySchema,
     SignupDataSchema,
@@ -487,6 +537,45 @@ import {
     UserRefArraySchema,
     UserSchema,
 } from './user.js';
+import {
+    AgenticViewSearchConfigurationSchema,
+    CreateViewExperienceRequestSchema,
+    UpdateViewExperienceRequestSchema,
+    ViewBoardCardConfigurationSchema,
+    ViewBoardColumnSchema,
+    ViewBoardDisplaySchema,
+    ViewCardsDisplaySchema,
+    ViewCollectionNavigationSchema,
+    ViewDisplayConfigurationSchema,
+    ViewElasticsearchQuerySchema,
+    ViewExperienceArraySchema,
+    ViewExperienceLayoutSchema,
+    ViewExperienceListQuerySchema,
+    ViewExperienceSchema,
+    ViewExperienceSchemaVersionSchema,
+    ViewExperienceScopeSchema,
+    ViewGalleryDisplaySchema,
+    ViewHierarchyLevelSchema,
+    ViewHierarchyNavigationSchema,
+    ViewKeyTermDefinitionSchema,
+    ViewListDisplaySchema,
+    ViewLocationNavigationSchema,
+    ViewNavigationItemSchema,
+    ViewRangeDefinitionSchema,
+    ViewRangeNavigationSchema,
+    ViewResultFieldFormatSchema,
+    ViewResultFieldSchema,
+    ViewResultMediaSchema,
+    ViewResultsConfigurationSchema,
+    ViewSearchConfigurationSchema,
+    ViewSearchFieldDefinitionSchema,
+    ViewSearchFieldTypeSchema,
+    ViewSortClauseSchema,
+    ViewSortOptionSchema,
+    ViewTableColumnSchema,
+    ViewTableDisplaySchema,
+    ViewTermsNavigationSchema,
+} from './views.js';
 
 // ajv-formats is CommonJS with an ESM-style declaration file. Node's interop makes the default
 // import the whole `module.exports` (itself callable), while TypeScript sees the namespace — and
@@ -1156,6 +1245,114 @@ export function mergeComponentGroups(groups: Record<string, z.ZodType>[]): Recor
     return merged;
 }
 
+const PROMPT_AUTHORING_SCHEMAS = {
+    // Wave S4 - the prompt-authoring endpoints: fork, render, search and the interaction usages a
+    // prompt reports. `PromptTemplate` itself and its write payloads live with the interactions,
+    // which is where the prompt tree they reference is defined.
+    RenderPromptResponse: RenderPromptResponseSchema,
+    PromptTemplateInteractionVersion: PromptTemplateInteractionVersionSchema,
+    PromptTemplateForkPayload: PromptTemplateForkPayloadSchema,
+    PromptSearchQuery: PromptSearchQuerySchema,
+    PromptTemplateInteractionUsage: PromptTemplateInteractionUsageSchema,
+    ComputePromptFacetPayload: ComputePromptFacetPayloadSchema,
+    PromptTemplateInteractionsResponse: PromptTemplateInteractionsResponseSchema,
+    PromptTemplateRefArray: PromptTemplateRefArraySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const PROJECT_TOOL_SCHEMAS = {
+    // Wave S4 - the unified project-scoped tool registry: what `GET /tools` aggregates across
+    // builtins, installed apps and interactions, and what `POST /tools/validate` resolves.
+    ToolSource: ToolSourceSchema,
+    ValidateToolNamesPayload: ValidateToolNamesPayloadSchema,
+    ToolValidationResult: ToolValidationResultSchema,
+    AggregatedTool: AggregatedToolSchema,
+    ValidateToolNamesResponse: ValidateToolNamesResponseSchema,
+    AggregatedToolArray: AggregatedToolArraySchema,
+    ListProjectToolsQuery: ListProjectToolsQuerySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const REMOTE_MCP_SCHEMAS = {
+    // Wave S4 - the OAuth handshake a remote MCP tool collection performs. Grouped by the
+    // endpoints that serve it, though the schemas live in `./apps.js` beside the installation
+    // they belong to.
+    MCPToolAnnotations: MCPToolAnnotationsSchema,
+    McpOAuthTokenResponse: McpOAuthTokenResponseSchema,
+    McpOAuthTokenRequest: McpOAuthTokenRequestSchema,
+    OAuthAuthStatus: OAuthAuthStatusSchema,
+    OAuthMetadataResponse: OAuthMetadataResponseSchema,
+    McpOAuthDisconnectResponse: McpOAuthDisconnectResponseSchema,
+    McpOAuthConnectResponse: McpOAuthConnectResponseSchema,
+    OAuthAuthorizeResponse: OAuthAuthorizeResponseSchema,
+    OAuthAuthStatusArray: OAuthAuthStatusArraySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const AUDIT_TRAIL_SCHEMAS = {
+    // Wave S4 - the audit trail: the events the endpoint pages through and the aggregation it
+    // computes over them.
+    AuditMeter: AuditMeterSchema,
+    KnownAuditAction: KnownAuditActionSchema,
+    EventCategory: EventCategorySchema,
+    Partial_Record_AuditAggregationDimension_string_null: Partial_Record_AuditAggregationDimension_string_nullSchema,
+    AuditAggregationDistinctField: AuditAggregationDistinctFieldSchema,
+    AuditAggregationOperation: AuditAggregationOperationSchema,
+    AuditAggregationResolution: AuditAggregationResolutionSchema,
+    AuditAggregationDimension: AuditAggregationDimensionSchema,
+    AuditAggregationDetailField: AuditAggregationDetailFieldSchema,
+    AuditAction: AuditActionSchema,
+    AuditAggregationRow: AuditAggregationRowSchema,
+    AuditAggregationMetric: AuditAggregationMetricSchema,
+    AuditAggregationGroup: AuditAggregationGroupSchema,
+    AuditAggregationDetailFilter: AuditAggregationDetailFilterSchema,
+    AuditTrailEvent: AuditTrailEventSchema,
+    AuditAggregationResponse: AuditAggregationResponseSchema,
+    AuditAggregationFilter: AuditAggregationFilterSchema,
+    AuditTrailResponse: AuditTrailResponseSchema,
+    AuditAggregationQuery: AuditAggregationQuerySchema,
+    AuditTrailQuery: AuditTrailQuerySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const VIEW_EXPERIENCE_SCHEMAS = {
+    // Wave S4 - view experiences: the search, navigation, results and display configuration a
+    // curated content view is assembled from. The largest single closure in the migration so far.
+    ViewExperienceSchemaVersion: ViewExperienceSchemaVersionSchema,
+    ViewSortClause: ViewSortClauseSchema,
+    ViewResultMedia: ViewResultMediaSchema,
+    ViewResultFieldFormat: ViewResultFieldFormatSchema,
+    ViewBoardColumn: ViewBoardColumnSchema,
+    ViewTableColumn: ViewTableColumnSchema,
+    AgenticViewSearchConfiguration: AgenticViewSearchConfigurationSchema,
+    ViewSearchFieldType: ViewSearchFieldTypeSchema,
+    ViewSearchFieldDefinition: ViewSearchFieldDefinitionSchema,
+    ViewRangeDefinition: ViewRangeDefinitionSchema,
+    ViewHierarchyLevel: ViewHierarchyLevelSchema,
+    ViewTermsNavigation: ViewTermsNavigationSchema,
+    ViewCollectionNavigation: ViewCollectionNavigationSchema,
+    ViewLocationNavigation: ViewLocationNavigationSchema,
+    ViewElasticsearchQuery: ViewElasticsearchQuerySchema,
+    ViewExperienceLayout: ViewExperienceLayoutSchema,
+    ViewSortOption: ViewSortOptionSchema,
+    ViewResultField: ViewResultFieldSchema,
+    ViewTableDisplay: ViewTableDisplaySchema,
+    ViewListDisplay: ViewListDisplaySchema,
+    ViewKeyTermDefinition: ViewKeyTermDefinitionSchema,
+    ViewRangeNavigation: ViewRangeNavigationSchema,
+    ViewHierarchyNavigation: ViewHierarchyNavigationSchema,
+    ViewExperienceScope: ViewExperienceScopeSchema,
+    ViewBoardCardConfiguration: ViewBoardCardConfigurationSchema,
+    ViewSearchConfiguration: ViewSearchConfigurationSchema,
+    ViewNavigationItem: ViewNavigationItemSchema,
+    ViewBoardDisplay: ViewBoardDisplaySchema,
+    ViewCardsDisplay: ViewCardsDisplaySchema,
+    ViewGalleryDisplay: ViewGalleryDisplaySchema,
+    ViewDisplayConfiguration: ViewDisplayConfigurationSchema,
+    ViewResultsConfiguration: ViewResultsConfigurationSchema,
+    CreateViewExperienceRequest: CreateViewExperienceRequestSchema,
+    ViewExperience: ViewExperienceSchema,
+    UpdateViewExperienceRequest: UpdateViewExperienceRequestSchema,
+    ViewExperienceArray: ViewExperienceArraySchema,
+    ViewExperienceListQuery: ViewExperienceListQuerySchema,
+} as const satisfies Record<string, z.ZodType>;
+
 /**
  * Every registered component, keyed by the name it publishes under.
  *
@@ -1173,6 +1370,11 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
     INTERACTION_AUTHORING_SCHEMAS,
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
+    PROMPT_AUTHORING_SCHEMAS,
+    PROJECT_TOOL_SCHEMAS,
+    REMOTE_MCP_SCHEMAS,
+    AUDIT_TRAIL_SCHEMAS,
+    VIEW_EXPERIENCE_SCHEMAS,
     ZENO_SCHEMAS,
     ZENO_DASHBOARD_SCHEMAS,
     ZENO_DATA_STORE_CORE_SCHEMAS,
@@ -1191,6 +1393,11 @@ export type ApiComponentName =
     | keyof typeof INTERACTION_AUTHORING_SCHEMAS
     | keyof typeof AGENT_CONVERSATION_SCHEMAS
     | keyof typeof EXECUTION_RUN_SCHEMAS
+    | keyof typeof PROMPT_AUTHORING_SCHEMAS
+    | keyof typeof PROJECT_TOOL_SCHEMAS
+    | keyof typeof REMOTE_MCP_SCHEMAS
+    | keyof typeof AUDIT_TRAIL_SCHEMAS
+    | keyof typeof VIEW_EXPERIENCE_SCHEMAS
     | keyof typeof ZENO_SCHEMAS
     | keyof typeof ZENO_DASHBOARD_SCHEMAS
     | keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
@@ -1664,6 +1871,70 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ResolveInteractionQuery',
     'ExecuteInteractionByEndpointQuery',
     'ExecuteInteractionByEndpointHeaders',
+    // Wave S4 - the prompt-authoring, project-tool, remote-MCP, audit-trail and view-experience
+    // closures. Every name here is published closed by the document this batch converts from.
+    'ValidateToolNamesPayload',
+    'ToolValidationResult',
+    'AggregatedTool',
+    'ValidateToolNamesResponse',
+    'RenderPromptResponse',
+    'PromptTemplateInteractionVersion',
+    'PromptTemplateForkPayload',
+    'PromptSearchQuery',
+    'PromptTemplateInteractionUsage',
+    'ComputePromptFacetPayload',
+    'PromptTemplateInteractionsResponse',
+    'MCPToolAnnotations',
+    'McpOAuthTokenResponse',
+    'McpOAuthTokenRequest',
+    'OAuthAuthStatus',
+    'OAuthMetadataResponse',
+    'McpOAuthDisconnectResponse',
+    'McpOAuthConnectResponse',
+    'OAuthAuthorizeResponse',
+    'AuditMeter',
+    'Partial_Record_AuditAggregationDimension_string_null',
+    'AuditAggregationRow',
+    'AuditAggregationMetric',
+    'AuditAggregationGroup',
+    'AuditAggregationDetailFilter',
+    'AuditTrailEvent',
+    'AuditAggregationResponse',
+    'AuditAggregationFilter',
+    'AuditTrailResponse',
+    'AuditAggregationQuery',
+    'ViewSortClause',
+    'ViewResultMedia',
+    'ViewBoardColumn',
+    'ViewTableColumn',
+    'AgenticViewSearchConfiguration',
+    'ViewSearchFieldDefinition',
+    'ViewRangeDefinition',
+    'ViewHierarchyLevel',
+    'ViewTermsNavigation',
+    'ViewCollectionNavigation',
+    'ViewLocationNavigation',
+    'ViewExperienceLayout',
+    'ViewSortOption',
+    'ViewResultField',
+    'ViewTableDisplay',
+    'ViewListDisplay',
+    'ViewKeyTermDefinition',
+    'ViewRangeNavigation',
+    'ViewHierarchyNavigation',
+    'ViewExperienceScope',
+    'ViewBoardCardConfiguration',
+    'ViewSearchConfiguration',
+    'ViewBoardDisplay',
+    'ViewCardsDisplay',
+    'ViewGalleryDisplay',
+    'ViewResultsConfiguration',
+    'CreateViewExperienceRequest',
+    'ViewExperience',
+    'UpdateViewExperienceRequest',
+    'ListProjectToolsQuery',
+    'AuditTrailQuery',
+    'ViewExperienceListQuery',
 ]);
 
 /**
@@ -1814,19 +2085,29 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeo
                   ? z.infer<(typeof AGENT_CONVERSATION_SCHEMAS)[N]>
                   : N extends keyof typeof EXECUTION_RUN_SCHEMAS
                     ? z.infer<(typeof EXECUTION_RUN_SCHEMAS)[N]>
-                    : N extends keyof typeof ZENO_SCHEMAS
-                      ? z.infer<(typeof ZENO_SCHEMAS)[N]>
-                      : N extends keyof typeof ZENO_DASHBOARD_SCHEMAS
-                        ? z.infer<(typeof ZENO_DASHBOARD_SCHEMAS)[N]>
-                        : N extends keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
-                          ? z.infer<(typeof ZENO_DATA_STORE_CORE_SCHEMAS)[N]>
-                          : N extends keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
-                            ? z.infer<(typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS)[N]>
-                            : N extends keyof typeof ZENO_COST_SCHEMAS
-                              ? z.infer<(typeof ZENO_COST_SCHEMAS)[N]>
-                              : N extends keyof typeof ZENO_BULK_OPERATION_SCHEMAS
-                                ? z.infer<(typeof ZENO_BULK_OPERATION_SCHEMAS)[N]>
-                                : never;
+                    : N extends keyof typeof PROMPT_AUTHORING_SCHEMAS
+                      ? z.infer<(typeof PROMPT_AUTHORING_SCHEMAS)[N]>
+                      : N extends keyof typeof PROJECT_TOOL_SCHEMAS
+                        ? z.infer<(typeof PROJECT_TOOL_SCHEMAS)[N]>
+                        : N extends keyof typeof REMOTE_MCP_SCHEMAS
+                          ? z.infer<(typeof REMOTE_MCP_SCHEMAS)[N]>
+                          : N extends keyof typeof AUDIT_TRAIL_SCHEMAS
+                            ? z.infer<(typeof AUDIT_TRAIL_SCHEMAS)[N]>
+                            : N extends keyof typeof VIEW_EXPERIENCE_SCHEMAS
+                              ? z.infer<(typeof VIEW_EXPERIENCE_SCHEMAS)[N]>
+                              : N extends keyof typeof ZENO_SCHEMAS
+                                ? z.infer<(typeof ZENO_SCHEMAS)[N]>
+                                : N extends keyof typeof ZENO_DASHBOARD_SCHEMAS
+                                  ? z.infer<(typeof ZENO_DASHBOARD_SCHEMAS)[N]>
+                                  : N extends keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
+                                    ? z.infer<(typeof ZENO_DATA_STORE_CORE_SCHEMAS)[N]>
+                                    : N extends keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
+                                      ? z.infer<(typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS)[N]>
+                                      : N extends keyof typeof ZENO_COST_SCHEMAS
+                                        ? z.infer<(typeof ZENO_COST_SCHEMAS)[N]>
+                                        : N extends keyof typeof ZENO_BULK_OPERATION_SCHEMAS
+                                          ? z.infer<(typeof ZENO_BULK_OPERATION_SCHEMAS)[N]>
+                                          : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

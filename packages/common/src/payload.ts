@@ -5,6 +5,7 @@ import type {
     SortOptionSchema,
     SortOrderSchema,
 } from './api-schemas/interaction.js';
+import type { ComputePromptFacetPayloadSchema } from './api-schemas/prompt.js';
 import type { FacetSpec } from './facets.js';
 import type {
     ComplexCollectionSearchQuery,
@@ -74,9 +75,7 @@ export interface ComputeObjectFacetPayload extends ComputeFacetPayload {
     query?: ComplexSearchQuery;
 }
 
-export interface ComputePromptFacetPayload extends ComputeFacetPayload {
-    query?: PromptSearchQuery;
-}
+export type ComputePromptFacetPayload = z.infer<typeof ComputePromptFacetPayloadSchema>;
 
 export interface ComputeRunFacetPayload extends ComputeFacetPayload {
     query?: RunSearchQuery;

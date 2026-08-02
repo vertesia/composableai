@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+import type { EventCategorySchema } from './api-schemas/audit-trail.js';
 import type { AuditMeter } from './audit-trail.js';
 import type { ConversationVisibility, InteractionExecutionConfiguration } from './interaction.js';
 import type { SystemRoles } from './project.js';
@@ -10,7 +12,10 @@ import type {
     WorkflowRuleInputType,
 } from './store/index.js';
 
-export type EventCategory = 'content' | 'workflow' | 'security' | 'billing' | 'system' | 'external';
+// Inferred from `./api-schemas/audit-trail.js`, which is where the schema sits: the audit trail is
+// the only place the category is published, and the converter grouped it with the endpoints that
+// publish it rather than with the event types that carry it.
+export type EventCategory = z.infer<typeof EventCategorySchema>;
 
 export type EventPriority = 'high' | 'normal' | 'low';
 

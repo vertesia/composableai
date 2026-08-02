@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { type ApiComponentName, ApiSchemaComponents, mergeComponentGroups } from './registry.js';
+import { type ApiComponentName, type ApiComponentType, ApiSchemaComponents, mergeComponentGroups } from './registry.js';
+
+/**
+ * `N` when `ApiComponentType` resolves it, and `never` when it does not.
+ *
+ * The conditional that maps a name to its inferred type tests the groups one by one and ends in
+ * `never`, so a group missing from that chain — the third place a new group has to be listed, after
+ * the merge array and the `ApiComponentName` union — makes every name in it resolve to `never`
+ * rather than fail. Distributing this over the whole union turns that into an assignment error on
+ * the list below, which `typecheck:test` reports.
+ */
+type ResolvedName<N extends ApiComponentName> = [ApiComponentType<N>] extends [never] ? never : N;
 
 /**
  * Covers the one way the group split can corrupt the registry.
@@ -49,12 +60,29 @@ describe('mergeComponentGroups', () => {
         );
     });
 
-    it('emits a component from every group', () => {
+    it('emits a component from every group, and resolves its type', () => {
         // The merge takes a list, so a group can be dropped from it as easily as duplicated in it —
         // and dropping one is silent in a different way: `ApiComponentName` still names those
         // components, so the code compiles and only the emitted document loses them. One known name
-        // per group is what notices.
-        const perGroup: ApiComponentName[] = ['Account', 'ProjectModelDefaults', 'OAuthProvider', 'CopyFilePayload'];
+        // per group is what notices — the `satisfies` for the type conditional, the loop for the
+        // merge.
+        const perGroup = [
+            'Account',
+            'ProjectModelDefaults',
+            'OAuthProvider',
+            'ExecutionEnvironment',
+            'JSONValue',
+            'Interaction',
+            'ImprovePromptPayload',
+            'AgentRunnerOptions',
+            'ExecutionRunStatus',
+            'RenderPromptResponse',
+            'AggregatedTool',
+            'OAuthAuthStatus',
+            'AuditTrailResponse',
+            'ViewExperience',
+            'CopyFilePayload',
+        ] as const satisfies readonly ResolvedName<ApiComponentName>[];
 
         for (const name of perGroup) {
             expect(ApiSchemaComponents).toHaveProperty(name);
