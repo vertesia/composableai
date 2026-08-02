@@ -149,6 +149,23 @@ export const ExecutionEnvironmentRefSchema = z
     })
     .meta({ id: 'ExecutionEnvironmentRef' });
 
+export const MigrateInteractionsPayloadSchema = z
+    .strictObject({
+        new_env_id: z.string().meta({ description: 'The new environment ID to set on the interactions.' }),
+        new_model_id: z.string().meta({ description: 'The new model ID to set on the interactions.' }),
+        interaction_ids: z
+            .array(z.string())
+            .meta({ description: 'Draft interaction IDs to migrate to the new environment and model.' }),
+    })
+    .meta({ id: 'MigrateInteractionsPayload' });
+
+export const MigrateInteractionsResultSchema = z
+    .strictObject({
+        matched_count: z.number(),
+        modified_count: z.number(),
+    })
+    .meta({ id: 'MigrateInteractionsResult' });
+
 export const ExecutionEnvironmentConfigUpdatePayloadSchema = z
     .strictObject({
         enabled_models: z.array(AIModelSchema).optional(),

@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type { ContentObjectTypeRefSchema } from '../api-schemas/app-lifecycle.js';
 import type {
+    BucketReadAccessStatusResponseSchema,
     ComplexSearchPayloadSchema,
     ContentObjectApiResponseSchema,
     ContentObjectApiRevisionSchema,
@@ -49,6 +50,8 @@ import type {
     CopyFilePayloadSchema,
     CopyFileResponseSchema,
     DeleteFileResultSchema,
+    EnsureBucketReadAccessPayloadSchema,
+    EnsureBucketReadAccessResponseSchema,
     FileBucketResponseSchema,
     FileDeleteQuerySchema,
     FileListQuerySchema,
@@ -842,21 +845,11 @@ export type GetFileUrlPayload = z.infer<typeof GetFileUrlPayloadSchema>;
 
 export type GetFileUrlResponse = z.infer<typeof GetFileUrlResponseSchema>;
 
-export interface EnsureBucketReadAccessPayload {
-    principal: string;
-}
+export type EnsureBucketReadAccessPayload = z.infer<typeof EnsureBucketReadAccessPayloadSchema>;
 
-export interface EnsureBucketReadAccessResponse {
-    bucket: string;
-    principal: string;
-    granted: boolean;
-}
+export type EnsureBucketReadAccessResponse = z.infer<typeof EnsureBucketReadAccessResponseSchema>;
 
-export interface BucketReadAccessStatusResponse {
-    bucket: string;
-    principal: string;
-    hasAccess: boolean;
-}
+export type BucketReadAccessStatusResponse = z.infer<typeof BucketReadAccessStatusResponseSchema>;
 
 export type FileMetadataResponse = z.infer<typeof FileMetadataResponseSchema>;
 

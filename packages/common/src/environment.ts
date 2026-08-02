@@ -13,6 +13,8 @@ import type {
     LoadBalancingEnvConfigSchema,
     LoadBalancingEnvEntryConfigSchema,
     MediatorEnvConfigSchema,
+    MigrateInteractionsPayloadSchema,
+    MigrateInteractionsResultSchema,
     SupportedProvidersSchema,
     VirtualEnvEntrySchema,
 } from './api-schemas/environment.js';
@@ -117,24 +119,6 @@ export type ExecutionEnvironmentConfigUpdatePayload = z.infer<typeof ExecutionEn
 
 export type EnableEnvironmentModelPayload = z.infer<typeof EnableEnvironmentModelPayloadSchema>;
 
-export interface MigrateInteractionsPayload {
-    /**
-     * The new environment ID to set in the Interactions
-     */
-    new_env_id: string;
-    /**
-     * The new model ID to set in the Interactions
-     */
-    new_model_id: string;
-    /**
-     * The list of Interaction IDs to update.
-     *
-     * The Interactions must be in draft status.
-     */
-    interaction_ids: string[];
-}
+export type MigrateInteractionsPayload = z.infer<typeof MigrateInteractionsPayloadSchema>;
 
-export interface MigrateInteractionsResult {
-    matched_count: number;
-    modified_count: number;
-}
+export type MigrateInteractionsResult = z.infer<typeof MigrateInteractionsResultSchema>;

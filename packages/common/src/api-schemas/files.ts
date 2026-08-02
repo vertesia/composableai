@@ -131,3 +131,29 @@ export const FileDeleteQuerySchema = z
         prefix: z.boolean().optional(),
     })
     .meta({ id: 'FileDeleteQuery' });
+
+export const BucketReadAccessQuerySchema = z
+    .strictObject({
+        principal: z.string(),
+    })
+    .meta({ id: 'BucketReadAccessQuery' });
+
+export const EnsureBucketReadAccessPayloadSchema = BucketReadAccessQuerySchema.meta({
+    id: 'EnsureBucketReadAccessPayload',
+});
+
+export const EnsureBucketReadAccessResponseSchema = z
+    .strictObject({
+        bucket: z.string(),
+        principal: z.string(),
+        granted: z.boolean(),
+    })
+    .meta({ id: 'EnsureBucketReadAccessResponse' });
+
+export const BucketReadAccessStatusResponseSchema = z
+    .strictObject({
+        bucket: z.string(),
+        principal: z.string(),
+        hasAccess: z.boolean(),
+    })
+    .meta({ id: 'BucketReadAccessStatusResponse' });

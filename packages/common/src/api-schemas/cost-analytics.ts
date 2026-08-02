@@ -6,6 +6,29 @@ import { z } from 'zod';
 // narrow.
 const timeBoundarySchema: z.ZodType<string | number> = z.any().meta({ type: ['string', 'number'] });
 
+export const PricingSyncPayloadSchema = z
+    .strictObject({
+        date: z.string().optional(),
+        backfill_from: z.string().optional(),
+    })
+    .meta({ id: 'PricingSyncPayload' });
+
+export const PricingSyncDayResultSchema = z
+    .strictObject({
+        date: z.string(),
+        gcp_list: z.number(),
+        gcp_effective: z.number(),
+        aws_pricing: z.number(),
+    })
+    .meta({ id: 'PricingSyncDayResult' });
+
+export const PricingSyncResultSchema = z
+    .strictObject({
+        days: z.array(PricingSyncDayResultSchema),
+        total_days: z.number(),
+    })
+    .meta({ id: 'PricingSyncResult' });
+
 export const CostAnalyticsQuerySchema = z
     .strictObject({
         from: timeBoundarySchema.meta({ description: 'Start time (ISO string or epoch ms)' }).optional(),
