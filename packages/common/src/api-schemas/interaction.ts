@@ -2281,3 +2281,65 @@ export const ComputedFacetResponseSchema = z
     })
     .catchall(z.unknown().meta({ type: ['array', 'number'] }))
     .meta({ id: 'ComputedFacetResponse' });
+
+const resumeConversationFields = {
+    run: ExecutionRunDocRefSchema,
+    environment: z.string(),
+    options: StatelessExecutionOptionsSchema,
+    conversation: z.unknown(),
+    tools: z.array(ToolDefinitionSchema),
+    strip_options: ConversationStripOptionsSchema.optional(),
+    asyncCompletion: AsyncCompletionOptionsSchema.optional(),
+};
+
+export const ToolResultsPayloadSchema = z
+    .strictObject({ ...resumeConversationFields, results: z.array(ToolResultSchema) })
+    .meta({ id: 'ToolResultsPayload' });
+
+export const UserMessagePayloadSchema = z
+    .strictObject({ ...resumeConversationFields, message: z.string() })
+    .meta({ id: 'UserMessagePayload' });
+
+export const ExecutionResponseSchema = z
+    .strictObject({
+        result: z.array(CompletionResultSchema),
+        token_usage: ExecutionTokenUsageSchema.optional(),
+        tool_use: z.array(ToolUseSchema).optional(),
+        finish_reason: z.string().optional(),
+        error: z
+            .strictObject({
+                code: z.enum(['validation_error', 'json_error', 'content_policy_violation']),
+                message: z.string(),
+                data: z.array(CompletionResultSchema).optional(),
+            })
+            .optional(),
+        original_response: z.unknown().optional(),
+        conversation: z.unknown().optional(),
+        prompt: z.unknown(),
+        execution_time: z.number().optional(),
+        chunks: z.number().optional(),
+    })
+    .meta({ id: 'ExecutionResponse' });
+
+export const ComputeRunFacetPayloadSchema = z
+    .strictObject({ facets: z.array(FacetSpecSchema), query: RunSearchQuerySchema.optional() })
+    .meta({ id: 'ComputeRunFacetPayload' });
+
+export const RunSearchMetaResponseSchema = z
+    .strictObject({
+        count: z.strictObject({ lower_bound: z.number().optional(), total: z.number().optional() }),
+        facet: z.record(
+            z.string(),
+            z.strictObject({
+                buckets: z.array(z.strictObject({ _id: z.string(), count: z.number() })),
+            }),
+        ),
+    })
+    .meta({ id: 'RunSearchMetaResponse' });
+
+export const RunClonePayloadSchema = z
+    .strictObject({
+        source_run_id: z.string(),
+        workflow: z.strictObject({ run_id: z.string(), workflow_id: z.string() }),
+    })
+    .meta({ id: 'RunClonePayload' });

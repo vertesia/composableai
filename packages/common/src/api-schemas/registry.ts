@@ -239,6 +239,9 @@ import {
     ModelPriceComparisonResponseSchema,
     ModelPriceComparisonSchema,
     ModelPricingSchema,
+    PricingSyncDayResultSchema,
+    PricingSyncPayloadSchema,
+    PricingSyncResultSchema,
 } from './cost-analytics.js';
 import {
     CreateDashboardPayloadSchema,
@@ -376,16 +379,22 @@ import {
     LoadBalancingEnvConfigSchema,
     LoadBalancingEnvEntryConfigSchema,
     MediatorEnvConfigSchema,
+    MigrateInteractionsPayloadSchema,
+    MigrateInteractionsResultSchema,
     SupportedProvidersSchema,
     VirtualEnvEntrySchema,
 } from './environment.js';
 import * as EventSchemas from './events.js';
 import {
+    BucketReadAccessQuerySchema,
+    BucketReadAccessStatusResponseSchema,
     BulkUploadUrlsPayloadSchema,
     BulkUploadUrlsResponseSchema,
     CopyFilePayloadSchema,
     CopyFileResponseSchema,
     DeleteFileResultSchema,
+    EnsureBucketReadAccessPayloadSchema,
+    EnsureBucketReadAccessResponseSchema,
     FileBucketResponseSchema,
     FileDeleteQuerySchema,
     FileListQuerySchema,
@@ -436,12 +445,14 @@ import {
     CatalogTagQuerySchema,
     ComputedFacetResponseSchema,
     ComputeInteractionFacetPayloadSchema,
+    ComputeRunFacetPayloadSchema,
     ConversationStateSchema,
     ConversationStripOptionsSchema,
     ConversationVisibilitySchema,
     EmailChannelSchema,
     ExecuteInteractionByEndpointHeadersSchema,
     ExecuteInteractionByEndpointQuerySchema,
+    ExecutionResponseSchema,
     ExecutionRunDocRefSchema,
     ExecutionRunInteractionSchema,
     ExecutionRunRefArraySchema,
@@ -519,8 +530,10 @@ import {
     ResolvedRuntimeConfigSchema,
     ResolveInteractionQuerySchema,
     ResultStorageOptionsSchema,
+    RunClonePayloadSchema,
     RunCreatePayloadSchema,
     RunListQuerySchema,
+    RunSearchMetaResponseSchema,
     RunSearchPayloadSchema,
     RunSearchQuerySchema,
     RunSourceSchema,
@@ -539,9 +552,11 @@ import {
     ToolReferenceSchema,
     ToolResultMetaSchema,
     ToolResultSchema,
+    ToolResultsPayloadSchema,
     UpdateExecutionRunPayloadSchema,
     UsedSkillSchema,
     UserChannelSchema,
+    UserMessagePayloadSchema,
     WorkflowAncestorSchema,
 } from './interaction.js';
 import {
@@ -923,6 +938,8 @@ const ENVIRONMENT_SCHEMAS = {
     ExecutionEnvironmentConfigUpdatePayload: ExecutionEnvironmentConfigUpdatePayloadSchema,
     EnableEnvironmentModelPayload: EnableEnvironmentModelPayloadSchema,
     ListEnvironmentsQuery: ListEnvironmentsQuerySchema,
+    MigrateInteractionsPayload: MigrateInteractionsPayloadSchema,
+    MigrateInteractionsResult: MigrateInteractionsResultSchema,
     // Virtual-environment configuration — the two shapes `config` may take on a virtual provider.
     VirtualEnvEntry: VirtualEnvEntrySchema,
     LoadBalancingEnvConfig: LoadBalancingEnvConfigSchema,
@@ -1150,6 +1167,12 @@ const EXECUTION_RUN_SCHEMAS = {
     // The execution rate limiter.
     RateLimitRequestPayload: RateLimitRequestPayloadSchema,
     RateLimitRequestResponse: RateLimitRequestResponseSchema,
+    ComputeRunFacetPayload: ComputeRunFacetPayloadSchema,
+    RunSearchMetaResponse: RunSearchMetaResponseSchema,
+    ToolResultsPayload: ToolResultsPayloadSchema,
+    UserMessagePayload: UserMessagePayloadSchema,
+    ExecutionResponse: ExecutionResponseSchema,
+    RunClonePayload: RunClonePayloadSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const FILE_STORAGE_SCHEMAS = {
@@ -1170,6 +1193,10 @@ const FILE_STORAGE_SCHEMAS = {
     FileMetadataQuery: FileMetadataQuerySchema,
     FileListQuery: FileListQuerySchema,
     FileDeleteQuery: FileDeleteQuerySchema,
+    BucketReadAccessQuery: BucketReadAccessQuerySchema,
+    BucketReadAccessStatusResponse: BucketReadAccessStatusResponseSchema,
+    EnsureBucketReadAccessPayload: EnsureBucketReadAccessPayloadSchema,
+    EnsureBucketReadAccessResponse: EnsureBucketReadAccessResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const DURABLE_TASK_SCHEMAS = {
@@ -1318,6 +1345,9 @@ const COST_ANALYTICS_SCHEMAS = {
     ModelPriceComparisonResponse: ModelPriceComparisonResponseSchema,
     CostAnalyticsResponse: CostAnalyticsResponseSchema,
     CostRunPriceResponse: CostRunPriceResponseSchema,
+    PricingSyncPayload: PricingSyncPayloadSchema,
+    PricingSyncDayResult: PricingSyncDayResultSchema,
+    PricingSyncResult: PricingSyncResultSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const BULK_CONTENT_OPERATION_SCHEMAS = {
@@ -1637,6 +1667,8 @@ const AGENT_RUN_SCHEMAS = {
     SearchAgentRunsQuery: AgentRunSchemas.SearchAgentRunsQuerySchema,
     StreamAgentRunQuery: AgentRunSchemas.StreamAgentRunQuerySchema,
     UpdateAgentRunStatusPayload: AgentRunSchemas.UpdateAgentRunStatusPayloadSchema,
+    IngestAgentEventsPayload: AgentRunSchemas.IngestAgentEventsPayloadSchema,
+    IngestAgentEventsResponse: AgentRunSchemas.IngestAgentEventsResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const WORKFLOW_RUN_SCHEMAS = {
@@ -1661,6 +1693,12 @@ const WORKFLOW_RUN_SCHEMAS = {
     WorkflowRunDetailsQuery: WorkflowRunSchemas.WorkflowRunDetailsQuerySchema,
     WorkflowRunUpdatesQuery: WorkflowRunSchemas.WorkflowRunUpdatesQuerySchema,
     WorkflowRunStreamQuery: WorkflowRunSchemas.WorkflowRunStreamQuerySchema,
+    ActivityTypeDefinition: WorkflowRunSchemas.ActivityTypeDefinitionSchema,
+    ActivityPropertyDefinition: WorkflowRunSchemas.ActivityPropertyDefinitionSchema,
+    ActivityDefinition: WorkflowRunSchemas.ActivityDefinitionSchema,
+    ActivityCatalog: WorkflowRunSchemas.ActivityCatalogSchema,
+    WorkflowInteractionVars: WorkflowRunSchemas.WorkflowInteractionVarsSchema,
+    ListWorkflowInteractionsResponse: WorkflowRunSchemas.ListWorkflowInteractionsResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const WORKFLOW_TASK_SCHEMAS = {
@@ -1923,6 +1961,17 @@ const SECRET_SCHEMAS = {
     SecretProjectQuery: SecretSchemas.SecretProjectQuerySchema,
     ListSecretsQuery: SecretSchemas.ListSecretsQuerySchema,
     SecretLookupQuery: SecretSchemas.SecretLookupQuerySchema,
+    EventWebhookSigningSecretRequest: SecretSchemas.EventWebhookSigningSecretRequestSchema,
+    EventWebhookSigningSecretResponse: SecretSchemas.EventWebhookSigningSecretResponseSchema,
+    SignEventWebhookRequest: SecretSchemas.SignEventWebhookRequestSchema,
+    SignEventWebhookResponse: SecretSchemas.SignEventWebhookResponseSchema,
+    EventIngestSigningSecretRequest: SecretSchemas.EventIngestSigningSecretRequestSchema,
+    EventIngestSigningSecretResponse: SecretSchemas.EventIngestSigningSecretResponseSchema,
+    VerifyEventIngestSignatureRequest: SecretSchemas.VerifyEventIngestSignatureRequestSchema,
+    VerifyEventIngestSignatureResponse: SecretSchemas.VerifyEventIngestSignatureResponseSchema,
+    GithubInstallationTokenRequest: SecretSchemas.GithubInstallationTokenRequestSchema,
+    GithubInstallationTokenResponse: SecretSchemas.GithubInstallationTokenResponseSchema,
+    InternalSecretDeleteResponse: SecretSchemas.InternalSecretDeleteResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const INTEGRATION_SCHEMAS = {
@@ -3007,6 +3056,40 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ListSecretsResponse',
     'CompositeAppConfig',
     'AppPackage',
+    'BucketReadAccessQuery',
+    'BucketReadAccessStatusResponse',
+    'EnsureBucketReadAccessPayload',
+    'EnsureBucketReadAccessResponse',
+    'MigrateInteractionsPayload',
+    'MigrateInteractionsResult',
+    'PricingSyncPayload',
+    'PricingSyncDayResult',
+    'PricingSyncResult',
+    'ComputeRunFacetPayload',
+    'RunSearchMetaResponse',
+    'ToolResultsPayload',
+    'UserMessagePayload',
+    'ExecutionResponse',
+    'RunClonePayload',
+    'IngestAgentEventsPayload',
+    'IngestAgentEventsResponse',
+    'ActivityTypeDefinition',
+    'ActivityPropertyDefinition',
+    'ActivityDefinition',
+    'ActivityCatalog',
+    'WorkflowInteractionVars',
+    'ListWorkflowInteractionsResponse',
+    'EventWebhookSigningSecretRequest',
+    'EventWebhookSigningSecretResponse',
+    'SignEventWebhookRequest',
+    'SignEventWebhookResponse',
+    'EventIngestSigningSecretRequest',
+    'EventIngestSigningSecretResponse',
+    'VerifyEventIngestSignatureRequest',
+    'VerifyEventIngestSignatureResponse',
+    'GithubInstallationTokenRequest',
+    'GithubInstallationTokenResponse',
+    'InternalSecretDeleteResponse',
 ]);
 
 /**

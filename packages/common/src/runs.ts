@@ -1,6 +1,10 @@
 import type { z } from 'zod';
-import type { ExecutionRunDocRefSchema, RunCreatePayloadSchema } from './api-schemas/interaction.js';
-import type { FacetResult } from './facets.js';
+import type {
+    ExecutionRunDocRefSchema,
+    RunClonePayloadSchema,
+    RunCreatePayloadSchema,
+    RunSearchMetaResponseSchema,
+} from './api-schemas/interaction.js';
 
 /**
  * The run ref is used to identify a run document in the storage
@@ -18,15 +22,7 @@ export type RunCreatePayload = z.infer<typeof RunCreatePayloadSchema>;
  * Creates a new run document with the same interaction/config but fresh status.
  * Used by fork flows to create a new ExecutionRun for the forked workflow.
  */
-export interface RunClonePayload {
-    /** The _id of the source ExecutionRun to clone */
-    source_run_id: string;
-    /** Temporal workflow reference for the new run */
-    workflow: {
-        run_id: string;
-        workflow_id: string;
-    };
-}
+export type RunClonePayload = z.infer<typeof RunClonePayloadSchema>;
 
 /**
  * To be used as a value for a numeric or date filters
@@ -38,10 +34,4 @@ export interface RangeValue {
     lte?: number | string;
 }
 
-export interface RunSearchMetaResponse {
-    count: {
-        lower_bound?: number;
-        total?: number;
-    };
-    facet: Record<string, FacetResult>;
-}
+export type RunSearchMetaResponse = z.infer<typeof RunSearchMetaResponseSchema>;

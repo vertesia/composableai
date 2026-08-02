@@ -7,6 +7,7 @@ import type {
 } from './api-schemas/content.js';
 import type {
     ComputeInteractionFacetPayloadSchema,
+    ComputeRunFacetPayloadSchema,
     RunSearchPayloadSchema,
     SortOptionSchema,
     SortOrderSchema,
@@ -18,7 +19,6 @@ import type {
     ObjectSearchQuery,
     ObjectTypeSearchQuery,
     PromptSearchQuery,
-    RunSearchQuery,
     SimpleSearchQuery,
 } from './query.js';
 
@@ -76,9 +76,7 @@ export type ComputeObjectFacetPayload = z.infer<typeof ComputeObjectFacetPayload
 
 export type ComputePromptFacetPayload = z.infer<typeof ComputePromptFacetPayloadSchema>;
 
-export interface ComputeRunFacetPayload extends ComputeFacetPayload {
-    query?: RunSearchQuery;
-}
+export type ComputeRunFacetPayload = z.infer<typeof ComputeRunFacetPayloadSchema>;
 
 export type ExportPropertiesPayload = z.infer<typeof ExportPropertiesPayloadSchema>;
 

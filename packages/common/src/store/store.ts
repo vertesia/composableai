@@ -1,7 +1,6 @@
 import type { z } from 'zod';
 import type { ContentObjectTypeRefSchema } from '../api-schemas/app-lifecycle.js';
 import type {
-    BucketReadAccessStatusResponseSchema,
     ComplexSearchPayloadSchema,
     ContentObjectApiResponseSchema,
     ContentObjectApiRevisionSchema,
@@ -45,6 +44,7 @@ import type {
     WorkflowRuleSchema,
 } from '../api-schemas/events.js';
 import type {
+    BucketReadAccessStatusResponseSchema,
     BulkUploadUrlsPayloadSchema,
     BulkUploadUrlsResponseSchema,
     CopyFilePayloadSchema,

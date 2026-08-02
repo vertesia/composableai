@@ -6,7 +6,6 @@ import type {
     Modalities,
     ModelOptions,
     StatelessExecutionOptions,
-    ToolDefinition,
     ToolUse,
 } from '@llumiverse/common';
 import type { z } from 'zod';
@@ -69,13 +68,14 @@ import type {
     StreamingTelemetryContextSchema,
     ToolResultMetaSchema,
     ToolResultSchema,
+    ToolResultsPayloadSchema,
+    UserMessagePayloadSchema,
 } from './api-schemas/interaction.js';
 import type { InteractionExecutionConfigurationSchema } from './api-schemas/store.js';
 import type { MCPToolAnnotations } from './apps.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
 import type { ProjectRef } from './project.js';
 import type { ExecutablePromptSegmentDef, PopulatedPromptSegmentDef } from './prompt.js';
-import type { ExecutionRunDocRef } from './runs.js';
 import type { TextArtifactReference } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 
@@ -451,18 +451,6 @@ export type StreamingOptions = z.infer<typeof StreamingOptionsSchema>;
  */
 export type AsyncCompletionOptions = z.infer<typeof AsyncCompletionOptionsSchema>;
 
-interface ResumeConversationPayload {
-    run: ExecutionRunDocRef; // the run created by the first execution.
-    environment: string; // the environment ID
-    options: StatelessExecutionOptions; // the options used on the first execution
-    conversation: unknown; // the conversation state
-    tools: ToolDefinition[]; // the tools to be used
-    /** Configuration for stripping large data from conversation history */
-    strip_options?: ConversationStripOptions;
-    /** Options for async completion and/or streaming LLM response chunks to Redis */
-    asyncCompletion?: AsyncCompletionOptions;
-}
-
 /**
  * The kinds of Vertesia resource an agent tool can report having created, updated, or deleted.
  * Restricted to resources that have a real detail route to navigate to — do not emit a reference
@@ -560,13 +548,9 @@ export type ToolResult = z.infer<typeof ToolResultSchema>;
 /**
  * The payload to sent the tool responses back to the target LLM
  */
-export interface ToolResultsPayload extends ResumeConversationPayload {
-    results: ToolResult[];
-}
+export type ToolResultsPayload = z.infer<typeof ToolResultsPayloadSchema>;
 
-export interface UserMessagePayload extends ResumeConversationPayload {
-    message: string;
-}
+export type UserMessagePayload = z.infer<typeof UserMessagePayloadSchema>;
 
 export type CheckpointConversationPayload = Omit<ToolResultsPayload, 'results' | 'tools'>;
 
