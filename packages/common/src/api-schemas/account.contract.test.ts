@@ -144,6 +144,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AgentSearchScope',
             'AgentSearchScope_Collection',
             'AgentToolApprovalMode',
+            // Wave Z3 — the Zeno data-store closure: sixty-two registry components across thirty-six
+            // request, query and response slots. The two query components are flattened into parameters.
+            'AlterTableOperation',
+            'AlterTablePayload',
             // Wave S2, thirteenth — the studio execution environments: thirty-six components across
             // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
             // results) and registered from @llumiverse/common/schemas rather than redefined here. The
@@ -176,6 +180,9 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AsyncExecutionResult',
             'AsyncInteractionExecutionPayload',
             'AuthTokenResponse',
+            'BatchQueryPayload',
+            'BatchQueryResult',
+            'BatchQueryResultItem',
             // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
             // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
@@ -206,6 +213,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // component of its own; the two query components are expanded into parameters rather than
             // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
             // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
+            'BulkObjectCreateResult',
+            'BulkObjectDeleteResult',
+            'BulkObjectUpdateResult',
+            'BulkOperationPayload',
+            'BulkOperationResponse',
+            'BulkOperationResult',
             'BulkRevokeOAuthGrantsPayload',
             // The intake policy tree, tenth. `ContentTypeIntakePolicy` replaces a hand-written AJV
             // schema and hoists InteractionExecutionConfiguration, the two grounding policies, three
@@ -247,6 +260,15 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'CopyFilePayload',
             'CopyFileResponse',
+            'CostAnalyticsQuery',
+            'CostAnalyticsResponse',
+            'CostByDimension',
+            'CostExportQuery',
+            'CostModelPricesQuery',
+            'CostRunPriceQuery',
+            'CostRunPriceResponse',
+            'CostSummary',
+            'CostTimeSeriesPoint',
             'CountResult',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
@@ -255,6 +277,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
             // an endpoint.
             'CreateContentObjectTypePayload',
+            // Wave Z2 — the zeno dashboard resource. The endpoint roots pull in the two data-source
+            // branches, the legacy panel/query shapes and the version representations together.
+            'CreateDashboardPayload',
+            'CreateDashboardSnapshotPayload',
+            'CreateDataStorePayload',
             // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
             // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
             // component of its own; the two query components are expanded into parameters rather than
@@ -262,9 +289,68 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'CreateOAuthClientPayload',
             'CreateOAuthProviderPayload',
+            'CreateSnapshotPayload',
+            'CreateTablePayload',
+            'CreateTablesPayload',
             'CreateTaskPayload',
             'CreateUserGroupPayload',
+            'Dashboard',
+            'DashboardArchiveResult',
+            'DashboardBulkArchiveResult',
+            'DashboardBulkDeleteResult',
+            'DashboardDataSource',
+            'DashboardElasticsearchDsl',
+            'DashboardElasticsearchResultMapping',
+            'DashboardItem',
+            'DashboardItemArray',
+            'DashboardLayout',
+            'DashboardPanel',
+            'DashboardPanelPosition',
+            'DashboardQuery',
+            'DashboardSqlDataSource',
+            'DashboardStatus',
+            'DashboardStoreElasticsearchDataSource',
+            'DashboardVersion',
+            'DashboardVersionItem',
+            'DashboardVersionItemArray',
+            'DashboardVersioningPayload',
+            'DashboardVersioningStatusResponse',
+            'DataColumn',
+            'DataColumnForAI',
+            'DataColumnForAIMap',
+            'DataColumnType',
+            'DataForeignKey',
+            'DataForeignKeyForAI',
+            'DataIndex',
+            'DataRelationship',
+            'DataRelationshipForAI',
+            'DataRelationshipType',
+            'DataSchema',
+            'DataSchemaForAI',
             'DataSource',
+            'DataStore',
+            'DataStoreArchiveResult',
+            'DataStoreDownloadInfo',
+            'DataStoreFullSchemaResponse',
+            'DataStoreItem',
+            'DataStoreItemArray',
+            'DataStoreMutateRowsPayload',
+            'DataStoreMutateRowsResult',
+            'DataStoreSchemaResponse',
+            'DataStoreStatus',
+            'DataStoreTableDetail',
+            'DataStoreTableDropResult',
+            'DataStoreVersion',
+            'DataStoreVersionArray',
+            'DataStoreVersionTableState',
+            'DataStoreVersionTableStateMap',
+            'DataTable',
+            'DataTableArray',
+            'DataTableForAI',
+            'DataTableForAIMap',
+            'DataTableSemanticType',
+            'DataTableSummary',
+            'DataTableSummaryArray',
             // The IAM closure, converted as the second. PrincipalContext is composed into
             // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'DeleteByIdResult',
@@ -339,6 +425,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'GeneratedInteractionPromptTemplate',
             'GeneratedTestDataRecord',
             'GeneratedTestDataRecordArray',
+            'GetDataStoreTableQuery',
             'GetFileUrlPayload',
             'GetFileUrlResponse',
             'GetUploadUrlPayload',
@@ -358,6 +445,13 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ImagenMaskMode',
             'ImagenOptions',
             'ImagenTaskType',
+            'ImportDataFormat',
+            'ImportDataPayload',
+            'ImportDataSource',
+            'ImportJob',
+            'ImportStatus',
+            'ImportTableData',
+            'ImportTableDataMap',
             'ImprovePromptPayload',
             'ImprovePromptPayloadConfig',
             'InCodePrompt',
@@ -410,6 +504,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'JsonResult',
             'LegacyExecutionRunResult',
             'LegacyPopulatedExecutionRunResult',
+            'ListDataStoreVersionsQuery',
             // Wave S2, thirteenth — the studio execution environments: thirty-six components across
             // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
             // results) and registered from @llumiverse/common/schemas rather than redefined here. The
@@ -448,6 +543,9 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'ModelOptions',
+            'ModelPriceComparison',
+            'ModelPriceComparisonResponse',
+            'ModelPricing',
             // Wave S2, thirteenth — the studio execution environments: thirty-six components across
             // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
             // results) and registered from @llumiverse/common/schemas rather than redefined here. The
@@ -500,6 +598,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'OpenAiThinkingOptions',
             'Partial_ExecutionRunRef',
             'Partial_IntakeVisionProfileSettings',
+            'Partial_Omit_DataColumn_name',
             // The two update payloads of the Project closure, tenth. `Partial<>` of an intercepted
             // canonical alias cannot be derived, so they are registered rather than left to the scanner.
             'Partial_Project',
@@ -544,6 +643,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ProjectTagQuery',
             'ProjectToolInfo',
             'ProjectToolInfoArray',
+            'PromoteDashboardVersionPayload',
             'PromptImprovementResponse',
             'PromptModalities',
             'PromptRole',
@@ -561,6 +661,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'PropertyConditionValue',
             'PropertyConditions',
+            'QueryPayload',
+            'QueryResult',
+            'QueryResultColumn',
+            'QueryValidationError',
+            'QueryValidationPayload',
+            'QueryValidationResult',
             // The quota closure, converted as the first bulk batch.
             'QuotaEffectiveTier',
             'QuotaStandingAdmissionClass',
@@ -616,6 +722,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'RunSource',
             'RunSourceTypes',
             'SchemaRef',
+            'SemanticColumnType',
             'SetFileMetadataPayload',
             'SignupData',
             'SignupPayload',
@@ -626,6 +733,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'StoredCatalogInteractionsQuery',
             'StreamingOptions',
             'StreamingTelemetryContext',
+            'StringArrayMap',
             'StringValueMap',
             'StripeBillingDisabled',
             'StripeBillingEnabled',
@@ -698,6 +806,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'UpdateAccountPayload',
             'UpdateApiKeyPayload',
             'UpdateContentObjectTypePayload',
+            'UpdateDashboardPayload',
             // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
             // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
             // component of its own; the two query components are expanded into parameters rather than
@@ -705,6 +814,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'UpdateOAuthClientPayload',
             'UpdateOAuthProviderPayload',
+            'UpdateSchemaPayload',
             // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
             // an endpoint.
             'UpdateTaskPayload',

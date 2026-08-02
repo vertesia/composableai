@@ -75,11 +75,125 @@ import {
     ToolCollectionObjectSchema,
 } from './apps.js';
 import {
+    BulkObjectCreateResultSchema,
+    BulkObjectDeleteResultSchema,
+    BulkObjectUpdateResultSchema,
+    BulkOperationPayloadSchema,
+    BulkOperationResponseSchema,
+    BulkOperationResultSchema,
+} from './bulk-operation.js';
+import {
     DeleteCountResultSchema,
     MigrationListResponseSchema,
     RunMigrationPayloadSchema,
     RunMigrationResponseSchema,
 } from './commands.js';
+import {
+    CostAnalyticsQuerySchema,
+    CostAnalyticsResponseSchema,
+    CostByDimensionSchema,
+    CostExportQuerySchema,
+    CostModelPricesQuerySchema,
+    CostRunPriceQuerySchema,
+    CostRunPriceResponseSchema,
+    CostSummarySchema,
+    CostTimeSeriesPointSchema,
+    ModelPriceComparisonResponseSchema,
+    ModelPriceComparisonSchema,
+    ModelPricingSchema,
+} from './cost-analytics.js';
+import {
+    CreateDashboardPayloadSchema,
+    CreateDashboardSnapshotPayloadSchema,
+    DashboardArchiveResultSchema,
+    DashboardBulkArchiveResultSchema,
+    DashboardBulkDeleteResultSchema,
+    DashboardDataSourceSchema,
+    DashboardElasticsearchDslSchema,
+    DashboardElasticsearchResultMappingSchema,
+    DashboardItemArraySchema,
+    DashboardItemSchema,
+    DashboardLayoutSchema,
+    DashboardPanelPositionSchema,
+    DashboardPanelSchema,
+    DashboardQuerySchema,
+    DashboardSchema,
+    DashboardSqlDataSourceSchema,
+    DashboardStatusSchema,
+    DashboardStoreElasticsearchDataSourceSchema,
+    DashboardVersionItemArraySchema,
+    DashboardVersionItemSchema,
+    DashboardVersioningPayloadSchema,
+    DashboardVersioningStatusResponseSchema,
+    DashboardVersionSchema,
+    PromoteDashboardVersionPayloadSchema,
+    StringArrayMapSchema,
+    UpdateDashboardPayloadSchema,
+} from './dashboard.js';
+import {
+    AlterTableOperationSchema,
+    AlterTablePayloadSchema,
+    BatchQueryPayloadSchema,
+    BatchQueryResultItemSchema,
+    BatchQueryResultSchema,
+    CreateDataStorePayloadSchema,
+    CreateSnapshotPayloadSchema,
+    CreateTablePayloadSchema,
+    CreateTablesPayloadSchema,
+    DataColumnForAIMapSchema,
+    DataColumnForAISchema,
+    DataColumnSchema,
+    DataColumnTypeSchema,
+    DataForeignKeyForAISchema,
+    DataForeignKeySchema,
+    DataIndexSchema,
+    DataRelationshipForAISchema,
+    DataRelationshipSchema,
+    DataRelationshipTypeSchema,
+    DataSchemaForAISchema,
+    DataSchemaSchema,
+    DataStoreArchiveResultSchema,
+    DataStoreDownloadInfoSchema,
+    DataStoreFullSchemaResponseSchema,
+    DataStoreItemArraySchema,
+    DataStoreItemSchema,
+    DataStoreMutateRowsPayloadSchema,
+    DataStoreMutateRowsResultSchema,
+    DataStoreSchema,
+    DataStoreSchemaResponseSchema,
+    DataStoreStatusSchema,
+    DataStoreTableDetailSchema,
+    DataStoreTableDropResultSchema,
+    DataStoreVersionArraySchema,
+    DataStoreVersionSchema,
+    DataStoreVersionTableStateMapSchema,
+    DataStoreVersionTableStateSchema,
+    DataTableArraySchema,
+    DataTableForAIMapSchema,
+    DataTableForAISchema,
+    DataTableSchema,
+    DataTableSemanticTypeSchema,
+    DataTableSummaryArraySchema,
+    DataTableSummarySchema,
+    GetDataStoreTableQuerySchema,
+    ImportDataFormatSchema,
+    ImportDataPayloadSchema,
+    ImportDataSourceSchema,
+    ImportJobSchema,
+    ImportStatusSchema,
+    ImportTableDataMapSchema,
+    ImportTableDataSchema,
+    ListDataStoreVersionsQuerySchema,
+    Partial_Omit_DataColumn_nameSchema,
+    QueryPayloadSchema,
+    QueryResultColumnSchema,
+    QueryResultSchema,
+    QueryValidationErrorSchema,
+    QueryValidationPayloadSchema,
+    QueryValidationResultSchema,
+    SemanticColumnTypeSchema,
+    UpdateSchemaPayloadSchema,
+} from './data-store.js';
 import {
     EmbeddingsApiAudioInputSchema,
     EmbeddingsApiImageInputSchema,
@@ -883,6 +997,127 @@ const ZENO_SCHEMAS = {
     RunMigrationResponse: RunMigrationResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const ZENO_DASHBOARD_SCHEMAS = {
+    DashboardElasticsearchResultMapping: DashboardElasticsearchResultMappingSchema,
+    DashboardElasticsearchDsl: DashboardElasticsearchDslSchema,
+    DashboardSqlDataSource: DashboardSqlDataSourceSchema,
+    DashboardVersioningStatusResponse: DashboardVersioningStatusResponseSchema,
+    DashboardVersioningPayload: DashboardVersioningPayloadSchema,
+    PromoteDashboardVersionPayload: PromoteDashboardVersionPayloadSchema,
+    DashboardVersionItem: DashboardVersionItemSchema,
+    DashboardStatus: DashboardStatusSchema,
+    DashboardLayout: DashboardLayoutSchema,
+    DashboardPanelPosition: DashboardPanelPositionSchema,
+    DashboardQuery: DashboardQuerySchema,
+    DashboardBulkDeleteResult: DashboardBulkDeleteResultSchema,
+    DashboardArchiveResult: DashboardArchiveResultSchema,
+    CreateDashboardSnapshotPayload: CreateDashboardSnapshotPayloadSchema,
+    DashboardBulkArchiveResult: DashboardBulkArchiveResultSchema,
+    StringArrayMap: StringArrayMapSchema,
+    DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSourceSchema,
+    DashboardVersionItemArray: DashboardVersionItemArraySchema,
+    DashboardItem: DashboardItemSchema,
+    DashboardPanel: DashboardPanelSchema,
+    DashboardDataSource: DashboardDataSourceSchema,
+    DashboardItemArray: DashboardItemArraySchema,
+    DashboardVersion: DashboardVersionSchema,
+    Dashboard: DashboardSchema,
+    CreateDashboardPayload: CreateDashboardPayloadSchema,
+    UpdateDashboardPayload: UpdateDashboardPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_DATA_STORE_CORE_SCHEMAS = {
+    QueryValidationError: QueryValidationErrorSchema,
+    QueryValidationPayload: QueryValidationPayloadSchema,
+    ListDataStoreVersionsQuery: ListDataStoreVersionsQuerySchema,
+    GetDataStoreTableQuery: GetDataStoreTableQuerySchema,
+    DataTableSemanticType: DataTableSemanticTypeSchema,
+    DataIndex: DataIndexSchema,
+    DataForeignKey: DataForeignKeySchema,
+    SemanticColumnType: SemanticColumnTypeSchema,
+    DataColumnType: DataColumnTypeSchema,
+    Partial_Omit_DataColumn_name: Partial_Omit_DataColumn_nameSchema,
+    DataRelationshipType: DataRelationshipTypeSchema,
+    QueryResultColumn: QueryResultColumnSchema,
+    BatchQueryPayload: BatchQueryPayloadSchema,
+    QueryResult: QueryResultSchema,
+    QueryPayload: QueryPayloadSchema,
+    DataStoreMutateRowsResult: DataStoreMutateRowsResultSchema,
+    DataStoreMutateRowsPayload: DataStoreMutateRowsPayloadSchema,
+    DataTableSummary: DataTableSummarySchema,
+    DataStoreVersionTableState: DataStoreVersionTableStateSchema,
+    DataStoreStatus: DataStoreStatusSchema,
+    ImportDataFormat: ImportDataFormatSchema,
+    ImportDataSource: ImportDataSourceSchema,
+    DataRelationshipForAI: DataRelationshipForAISchema,
+    DataForeignKeyForAI: DataForeignKeyForAISchema,
+    DataColumnForAI: DataColumnForAISchema,
+    ImportStatus: ImportStatusSchema,
+    DataStoreTableDropResult: DataStoreTableDropResultSchema,
+    DataStoreArchiveResult: DataStoreArchiveResultSchema,
+    CreateSnapshotPayload: CreateSnapshotPayloadSchema,
+    DataStoreDownloadInfo: DataStoreDownloadInfoSchema,
+    CreateDataStorePayload: CreateDataStorePayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_DATA_STORE_SCHEMA_SCHEMAS = {
+    QueryValidationResult: QueryValidationResultSchema,
+    DataColumn: DataColumnSchema,
+    AlterTableOperation: AlterTableOperationSchema,
+    DataRelationship: DataRelationshipSchema,
+    CreateTablePayload: CreateTablePayloadSchema,
+    BatchQueryResultItem: BatchQueryResultItemSchema,
+    DataTableSummaryArray: DataTableSummaryArraySchema,
+    DataStoreVersionTableStateMap: DataStoreVersionTableStateMapSchema,
+    DataStoreItem: DataStoreItemSchema,
+    ImportTableData: ImportTableDataSchema,
+    DataStoreTableDetail: DataStoreTableDetailSchema,
+    DataColumnForAIMap: DataColumnForAIMapSchema,
+    ImportJob: ImportJobSchema,
+    CreateTablesPayload: CreateTablesPayloadSchema,
+    DataTable: DataTableSchema,
+    AlterTablePayload: AlterTablePayloadSchema,
+    UpdateSchemaPayload: UpdateSchemaPayloadSchema,
+    BatchQueryResult: BatchQueryResultSchema,
+    DataStoreVersion: DataStoreVersionSchema,
+    DataStoreItemArray: DataStoreItemArraySchema,
+    ImportTableDataMap: ImportTableDataMapSchema,
+    DataTableForAI: DataTableForAISchema,
+    DataStoreFullSchemaResponse: DataStoreFullSchemaResponseSchema,
+    DataTableArray: DataTableArraySchema,
+    DataSchema: DataSchemaSchema,
+    DataStoreVersionArray: DataStoreVersionArraySchema,
+    ImportDataPayload: ImportDataPayloadSchema,
+    DataTableForAIMap: DataTableForAIMapSchema,
+    DataStore: DataStoreSchema,
+    DataSchemaForAI: DataSchemaForAISchema,
+    DataStoreSchemaResponse: DataStoreSchemaResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_COST_SCHEMAS = {
+    CostAnalyticsQuery: CostAnalyticsQuerySchema,
+    CostRunPriceQuery: CostRunPriceQuerySchema,
+    CostModelPricesQuery: CostModelPricesQuerySchema,
+    CostExportQuery: CostExportQuerySchema,
+    ModelPricing: ModelPricingSchema,
+    CostTimeSeriesPoint: CostTimeSeriesPointSchema,
+    CostSummary: CostSummarySchema,
+    ModelPriceComparison: ModelPriceComparisonSchema,
+    CostByDimension: CostByDimensionSchema,
+    ModelPriceComparisonResponse: ModelPriceComparisonResponseSchema,
+    CostAnalyticsResponse: CostAnalyticsResponseSchema,
+    CostRunPriceResponse: CostRunPriceResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const ZENO_BULK_OPERATION_SCHEMAS = {
+    BulkObjectDeleteResult: BulkObjectDeleteResultSchema,
+    BulkObjectUpdateResult: BulkObjectUpdateResultSchema,
+    BulkObjectCreateResult: BulkObjectCreateResultSchema,
+    BulkOperationResult: BulkOperationResultSchema,
+    BulkOperationPayload: BulkOperationPayloadSchema,
+    BulkOperationResponse: BulkOperationResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 /**
  * Merges the groups, refusing a name that appears in more than one.
  *
@@ -939,6 +1174,11 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
     ZENO_SCHEMAS,
+    ZENO_DASHBOARD_SCHEMAS,
+    ZENO_DATA_STORE_CORE_SCHEMAS,
+    ZENO_DATA_STORE_SCHEMA_SCHEMAS,
+    ZENO_COST_SCHEMAS,
+    ZENO_BULK_OPERATION_SCHEMAS,
 ]) as Record<ApiComponentName, z.ZodType>;
 
 export type ApiComponentName =
@@ -951,7 +1191,12 @@ export type ApiComponentName =
     | keyof typeof INTERACTION_AUTHORING_SCHEMAS
     | keyof typeof AGENT_CONVERSATION_SCHEMAS
     | keyof typeof EXECUTION_RUN_SCHEMAS
-    | keyof typeof ZENO_SCHEMAS;
+    | keyof typeof ZENO_SCHEMAS
+    | keyof typeof ZENO_DASHBOARD_SCHEMAS
+    | keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
+    | keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
+    | keyof typeof ZENO_COST_SCHEMAS
+    | keyof typeof ZENO_BULK_OPERATION_SCHEMAS;
 
 /**
  * Components that reject undeclared properties.
@@ -1159,6 +1404,94 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'RunMigrationPayload',
     'RunMigrationResponse',
     'MigrationListResponse',
+    // Zeno dashboards. StringArrayMap and the two array wrappers are not object schemas, while the
+    // discriminated unions and enum carry closedness on their object members or no object policy.
+    'DashboardElasticsearchDsl',
+    'DashboardSqlDataSource',
+    'DashboardVersioningStatusResponse',
+    'DashboardVersioningPayload',
+    'PromoteDashboardVersionPayload',
+    'DashboardVersionItem',
+    'DashboardLayout',
+    'DashboardPanelPosition',
+    'DashboardQuery',
+    'DashboardBulkDeleteResult',
+    'DashboardArchiveResult',
+    'CreateDashboardSnapshotPayload',
+    'DashboardBulkArchiveResult',
+    'DashboardStoreElasticsearchDataSource',
+    'DashboardItem',
+    'DashboardPanel',
+    'DashboardVersion',
+    'Dashboard',
+    'CreateDashboardPayload',
+    'UpdateDashboardPayload',
+    // Zeno data stores. Map, array, enum and discriminated-union components carry no component-level
+    // additionalProperties policy; every named object below is already closed in the published spec.
+    'QueryValidationError',
+    'QueryValidationPayload',
+    'ListDataStoreVersionsQuery',
+    'GetDataStoreTableQuery',
+    'DataIndex',
+    'DataForeignKey',
+    'Partial_Omit_DataColumn_name',
+    'QueryResultColumn',
+    'BatchQueryPayload',
+    'QueryResult',
+    'QueryPayload',
+    'DataStoreMutateRowsResult',
+    'DataStoreMutateRowsPayload',
+    'DataTableSummary',
+    'DataStoreVersionTableState',
+    'DataRelationshipForAI',
+    'DataForeignKeyForAI',
+    'DataColumnForAI',
+    'DataStoreTableDropResult',
+    'DataStoreArchiveResult',
+    'CreateSnapshotPayload',
+    'DataStoreDownloadInfo',
+    'CreateDataStorePayload',
+    'QueryValidationResult',
+    'DataColumn',
+    'DataRelationship',
+    'CreateTablePayload',
+    'BatchQueryResultItem',
+    'DataStoreItem',
+    'ImportTableData',
+    'DataStoreTableDetail',
+    'ImportJob',
+    'CreateTablesPayload',
+    'DataTable',
+    'AlterTablePayload',
+    'UpdateSchemaPayload',
+    'BatchQueryResult',
+    'DataStoreVersion',
+    'DataTableForAI',
+    'DataStoreFullSchemaResponse',
+    'DataSchema',
+    'ImportDataPayload',
+    'DataStore',
+    'DataSchemaForAI',
+    // Zeno cost analytics. The GET query components are intentionally open because query
+    // enforcement ignores undeclared parameters; the two request bodies and all responses were
+    // already published closed.
+    'CostAnalyticsQuery',
+    'CostRunPriceQuery',
+    'ModelPricing',
+    'CostTimeSeriesPoint',
+    'CostSummary',
+    'ModelPriceComparison',
+    'CostByDimension',
+    'ModelPriceComparisonResponse',
+    'CostAnalyticsResponse',
+    'CostRunPriceResponse',
+    // Zeno's bulk-operation endpoint. The response union carries closedness on each branch rather
+    // than on the union component itself.
+    'BulkObjectDeleteResult',
+    'BulkObjectUpdateResult',
+    'BulkObjectCreateResult',
+    'BulkOperationResult',
+    'BulkOperationPayload',
     // The OAuth closure. Every object in it is published closed today; the ten enums and the two
     // array components take no additionalProperties at all, and `OAuthProviderData`/`OAuthClientData`
     // are composed rather than hoisted so they have no component to list.
@@ -1483,7 +1816,17 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeo
                     ? z.infer<(typeof EXECUTION_RUN_SCHEMAS)[N]>
                     : N extends keyof typeof ZENO_SCHEMAS
                       ? z.infer<(typeof ZENO_SCHEMAS)[N]>
-                      : never;
+                      : N extends keyof typeof ZENO_DASHBOARD_SCHEMAS
+                        ? z.infer<(typeof ZENO_DASHBOARD_SCHEMAS)[N]>
+                        : N extends keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
+                          ? z.infer<(typeof ZENO_DATA_STORE_CORE_SCHEMAS)[N]>
+                          : N extends keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
+                            ? z.infer<(typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS)[N]>
+                            : N extends keyof typeof ZENO_COST_SCHEMAS
+                              ? z.infer<(typeof ZENO_COST_SCHEMAS)[N]>
+                              : N extends keyof typeof ZENO_BULK_OPERATION_SCHEMAS
+                                ? z.infer<(typeof ZENO_BULK_OPERATION_SCHEMAS)[N]>
+                                : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:
