@@ -1,5 +1,89 @@
 // Runtime schemas for the secrets API domain.
 import { z } from 'zod';
+import { EventCategorySchema } from './audit-trail.js';
+
+export const EventWebhookSigningSecretRequestSchema = z
+    .strictObject({
+        account_id: z.string().optional(),
+        project_id: z.string(),
+    })
+    .meta({ id: 'EventWebhookSigningSecretRequest' });
+
+export const EventWebhookSigningSecretResponseSchema = z
+    .strictObject({
+        subscription_id: z.string(),
+        secret: z.string(),
+        secret_label: z.string(),
+    })
+    .meta({ id: 'EventWebhookSigningSecretResponse' });
+
+export const SignEventWebhookRequestSchema = EventWebhookSigningSecretRequestSchema.extend({
+    delivery_id: z.string(),
+    body: z.string(),
+    event_id: z.string(),
+    event_category: EventCategorySchema,
+    action: z.string(),
+    timestamp: z.number().optional(),
+}).meta({ id: 'SignEventWebhookRequest' });
+
+export const SignEventWebhookResponseSchema = z
+    .strictObject({
+        headers: z.record(z.string(), z.string()),
+        timestamp: z.number(),
+        signature: z.string(),
+    })
+    .meta({ id: 'SignEventWebhookResponse' });
+
+export const EventIngestSigningSecretRequestSchema = z
+    .strictObject({
+        account_id: z.string().optional(),
+        project_id: z.string(),
+    })
+    .meta({ id: 'EventIngestSigningSecretRequest' });
+
+export const EventIngestSigningSecretResponseSchema = z
+    .strictObject({
+        channel_id: z.string(),
+        secret: z.string(),
+        secret_label: z.string(),
+    })
+    .meta({ id: 'EventIngestSigningSecretResponse' });
+
+export const VerifyEventIngestSignatureRequestSchema = EventIngestSigningSecretRequestSchema.extend({
+    body: z.string(),
+    signature_header: z.string(),
+    algorithm: z.enum(['sha256', 'sha1']).optional(),
+    encoding: z.enum(['hex', 'base64']).optional(),
+    prefix: z.string().optional(),
+}).meta({ id: 'VerifyEventIngestSignatureRequest' });
+
+export const VerifyEventIngestSignatureResponseSchema = z
+    .strictObject({
+        valid: z.boolean(),
+    })
+    .meta({ id: 'VerifyEventIngestSignatureResponse' });
+
+export const GithubInstallationTokenRequestSchema = z
+    .strictObject({
+        account_id: z.string().optional(),
+        project_id: z.string(),
+        installation_id: z.string(),
+        repo: z.string(),
+    })
+    .meta({ id: 'GithubInstallationTokenRequest' });
+
+export const GithubInstallationTokenResponseSchema = z
+    .strictObject({
+        token: z.string(),
+        expires_at: z.string().optional(),
+    })
+    .meta({ id: 'GithubInstallationTokenResponse' });
+
+export const InternalSecretDeleteResponseSchema = z
+    .strictObject({
+        deleted: z.literal(true),
+    })
+    .meta({ id: 'InternalSecretDeleteResponse' });
 
 export const WebsiteCredentialTotpAlgorithmSchema = z
     .enum(['SHA1', 'SHA256', 'SHA512'])

@@ -1,15 +1,24 @@
 import type { z } from 'zod';
 import type {
     CreateSecretRequestSchema,
+    EventIngestSigningSecretRequestSchema,
+    EventIngestSigningSecretResponseSchema,
+    EventWebhookSigningSecretRequestSchema,
+    EventWebhookSigningSecretResponseSchema,
+    GithubInstallationTokenRequestSchema,
+    GithubInstallationTokenResponseSchema,
     ListSecretsQuerySchema,
     ListSecretsResponseSchema,
     SecretKindSchema,
     SecretLookupQuerySchema,
     SecretProjectQuerySchema,
     SecretRecordSchema,
+    SignEventWebhookRequestSchema,
+    SignEventWebhookResponseSchema,
     UpdateSecretRequestSchema,
+    VerifyEventIngestSignatureRequestSchema,
+    VerifyEventIngestSignatureResponseSchema,
 } from './api-schemas/secrets.js';
-import type { EventCategory } from './platform-event.js';
 
 // First supported top-level secret kind. OAuth connector grants continue to use
 // the OAuth/MCP token flows and can be materialized later by tools that need them.
@@ -29,70 +38,13 @@ export type CreateSecretRequest = z.infer<typeof CreateSecretRequestSchema>;
 
 export type UpdateSecretRequest = z.infer<typeof UpdateSecretRequestSchema>;
 
-export interface EventWebhookSigningSecretRequest {
-    account_id?: string;
-    project_id: string;
-}
-
-export interface EventWebhookSigningSecretResponse {
-    subscription_id: string;
-    secret: string;
-    secret_label: string;
-}
-
-export interface SignEventWebhookRequest extends EventWebhookSigningSecretRequest {
-    delivery_id: string;
-    body: string;
-    event_id: string;
-    event_category: EventCategory;
-    action: string;
-    timestamp?: number;
-}
-
-export interface SignEventWebhookResponse {
-    headers: Record<string, string>;
-    timestamp: number;
-    signature: string;
-}
-
-export interface EventIngestSigningSecretRequest {
-    account_id?: string;
-    project_id: string;
-}
-
-export interface EventIngestSigningSecretResponse {
-    channel_id: string;
-    secret: string;
-    secret_label: string;
-}
-
-export interface VerifyEventIngestSignatureRequest extends EventIngestSigningSecretRequest {
-    /** Raw request body bytes (exactly as received) the sender signed. */
-    body: string;
-    /** Signature value from the request header. */
-    signature_header: string;
-    algorithm?: 'sha256' | 'sha1';
-    encoding?: 'hex' | 'base64';
-    /** Literal prefix to strip from the header value, e.g. `sha256=`. */
-    prefix?: string;
-}
-
-export interface VerifyEventIngestSignatureResponse {
-    valid: boolean;
-}
-
-export interface GithubInstallationTokenRequest {
-    account_id?: string;
-    project_id: string;
-    /** Numeric GitHub App installation id (from the trusted webhook payload, never agent-supplied). */
-    installation_id: string;
-    /** `owner/name` of the repo to scope the token to. Required — tokens are always repository-scoped. */
-    repo: string;
-}
-
-export interface GithubInstallationTokenResponse {
-    /** Short-lived, repository-scoped GitHub App installation token. */
-    token: string;
-    /** ISO-8601 expiry returned by GitHub, when available. */
-    expires_at?: string;
-}
+export type EventWebhookSigningSecretRequest = z.infer<typeof EventWebhookSigningSecretRequestSchema>;
+export type EventWebhookSigningSecretResponse = z.infer<typeof EventWebhookSigningSecretResponseSchema>;
+export type SignEventWebhookRequest = z.infer<typeof SignEventWebhookRequestSchema>;
+export type SignEventWebhookResponse = z.infer<typeof SignEventWebhookResponseSchema>;
+export type EventIngestSigningSecretRequest = z.infer<typeof EventIngestSigningSecretRequestSchema>;
+export type EventIngestSigningSecretResponse = z.infer<typeof EventIngestSigningSecretResponseSchema>;
+export type VerifyEventIngestSignatureRequest = z.infer<typeof VerifyEventIngestSignatureRequestSchema>;
+export type VerifyEventIngestSignatureResponse = z.infer<typeof VerifyEventIngestSignatureResponseSchema>;
+export type GithubInstallationTokenRequest = z.infer<typeof GithubInstallationTokenRequestSchema>;
+export type GithubInstallationTokenResponse = z.infer<typeof GithubInstallationTokenResponseSchema>;

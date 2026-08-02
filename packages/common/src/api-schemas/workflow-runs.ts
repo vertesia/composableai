@@ -1,11 +1,17 @@
 // Runtime schemas for the workflow runs API domain.
 
-import { JSONValueSchema } from '@llumiverse/common/schemas';
+import { JSONObjectSchema, JSONSchemaSchema, JSONValueSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
+import type { ActivityTypeDefinition } from '../store/activity-catalog.js';
 import { CompactMessageSchema } from './agent-runs.js';
 import { AgentRunStatusSchema, ConversationActivityStateSchema } from './app-lifecycle.js';
 import { WorkflowExecutionStatusSchema } from './document-processing.js';
-import { ConversationVisibilitySchema, InteractionRefSchema } from './interaction.js';
+import {
+    AgentToolApprovalModeSchema,
+    ConversationVisibilitySchema,
+    InteractionRefSchema,
+    UserChannelSchema,
+} from './interaction.js';
 import { nullableStringSchema } from './schema-primitives.js';
 
 export const nd_restart_count_numberSchema = z
@@ -29,6 +35,84 @@ export const WorkflowUpdatePublishResponseSchema = z
         success: z.boolean(),
     })
     .meta({ id: 'WorkflowUpdatePublishResponse' });
+
+const ActivityTypeNameSchema = z.enum([
+    'string',
+    'number',
+    'boolean',
+    'record',
+    'object',
+    'array',
+    'enum',
+    'literal',
+    'union',
+    'promise',
+    'any',
+    'void',
+]);
+
+export const ActivityTypeDefinitionSchema: z.ZodType<ActivityTypeDefinition> = z.lazy(() =>
+    z.strictObject({
+        name: ActivityTypeNameSchema,
+        value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
+        members: z.array(ActivityPropertyDefinitionSchema).optional(),
+        innerType: ActivityTypeDefinitionSchema.optional(),
+        enum: z.union([z.array(z.string()), z.array(z.number())]).optional(),
+        union: z.array(ActivityTypeDefinitionSchema).optional(),
+    }),
+);
+
+export const ActivityPropertyDefinitionSchema = z.strictObject({
+    name: z.string(),
+    type: ActivityTypeDefinitionSchema,
+    optional: z.boolean(),
+    doc: z.string().optional(),
+});
+
+export const ActivityDefinitionSchema = z.strictObject({
+    name: z.string(),
+    title: z.string(),
+    doc: z.string().optional(),
+    paramsType: z.string(),
+    params: z.array(ActivityPropertyDefinitionSchema),
+    returnType: ActivityTypeDefinitionSchema.optional(),
+});
+
+export const ActivityCatalogSchema = z
+    .strictObject({
+        activities: z.array(ActivityDefinitionSchema),
+    })
+    .meta({ id: 'ActivityCatalog' });
+
+export const WorkflowInteractionVarsSchema = z.strictObject({
+    type: z.string(),
+    interaction: z.string(),
+    interactive: z.boolean(),
+    tool_approval_mode: AgentToolApprovalModeSchema.optional(),
+    debug_mode: z.boolean().optional(),
+    non_blocking_subagents: z.boolean().optional(),
+    user_channels: z.array(UserChannelSchema).optional(),
+    data: JSONObjectSchema.optional(),
+    tool_names: z.array(z.string()),
+    config: z.strictObject({
+        environment: z.string(),
+        model: z.string(),
+        model_options: ModelOptionsSchema.optional(),
+    }),
+    interactionParamsSchema: JSONSchemaSchema.optional(),
+    collection_id: z.string().optional(),
+    disabled_mcp_collections: z.array(z.string()).optional(),
+    checkpoint_tokens: z.number().optional(),
+    version: z.number().optional(),
+});
+
+export const ListWorkflowInteractionsResponseSchema = z
+    .strictObject({
+        workflow_id: z.string(),
+        run_id: z.string(),
+        interaction: WorkflowInteractionVarsSchema,
+    })
+    .meta({ id: 'ListWorkflowInteractionsResponse' });
 
 export const ListWorkflowRunsPayloadSchema = z
     .strictObject({
