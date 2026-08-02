@@ -1,5 +1,13 @@
 import type { z } from 'zod';
 import type { DeleteOperationResultSchema } from './api-schemas/apikey.js';
+import type {
+    BulkObjectCreateResultSchema,
+    BulkObjectDeleteResultSchema,
+    BulkObjectUpdateResultSchema,
+    BulkOperationPayloadSchema,
+    BulkOperationResponseSchema,
+    BulkOperationResultSchema,
+} from './api-schemas/bulk-operation.js';
 import type { DeleteCountResultSchema } from './api-schemas/commands.js';
 import type { SuccessResponseSchema } from './api-schemas/oauth.js';
 import type { CountResultSchema } from './api-schemas/project.js';
@@ -58,53 +66,15 @@ export type DeleteOperationResult = z.infer<typeof DeleteOperationResultSchema>;
  */
 export type CountResult = z.infer<typeof CountResultSchema>;
 
-export interface BulkOperationPayload {
-    /**
-     * The operation name
-     */
-    name: 'change_type' | 'create' | 'delete' | 'start_workflow' | 'update';
+export type BulkOperationPayload = z.infer<typeof BulkOperationPayloadSchema>;
 
-    /**
-     * The IDs of the objects to operate on
-     */
-    ids: string[];
+export type BulkOperationResult = z.infer<typeof BulkOperationResultSchema>;
 
-    /**
-     * The operation parameters.
-     */
-    params: Record<string, unknown>;
-}
+export type BulkObjectDeleteResult = z.infer<typeof BulkObjectDeleteResultSchema>;
 
-export interface BulkOperationResult<TOperation extends string = 'generic'> {
-    operation: TOperation;
-    status: 'in_progress' | 'completed' | 'failed';
-}
+export type BulkObjectUpdateResult = z.infer<typeof BulkObjectUpdateResultSchema>;
 
-export interface BulkObjectDeleteResult extends BulkOperationResult<'delete'> {
-    operation: 'delete';
-    /** Number of documents deleted (including revisions) */
-    deleted: number;
-    /** IDs that were not found or user had no permission to delete */
-    failed: string[];
-}
-
-export interface BulkObjectUpdateResult extends BulkOperationResult<'update'> {
-    operation: 'update';
-    /** Number of documents successfully updated */
-    updated: number;
-    /** IDs that were not found, not authorized, or failed to update */
-    failed: string[];
-}
-
-export interface BulkObjectCreateResult extends BulkOperationResult<'create'> {
-    operation: 'create';
-    /** Number of documents successfully created */
-    created: number;
-    /** Successfully created objects with their IDs */
-    objects: { id: string; index?: number; external_id?: string }[];
-    /** Objects that failed to create */
-    failed: { external_id?: string; index: number; error: string }[];
-}
+export type BulkObjectCreateResult = z.infer<typeof BulkObjectCreateResultSchema>;
 
 export interface BulkObjectCreateOptions {
     collection_id?: string;
@@ -121,11 +91,4 @@ export interface BulkObjectUpdateOptions {
     idempotency_key?: string;
 }
 
-/**
- * @discriminator operation
- */
-export type BulkOperationResponse =
-    | BulkOperationResult
-    | BulkObjectCreateResult
-    | BulkObjectUpdateResult
-    | BulkObjectDeleteResult;
+export type BulkOperationResponse = z.infer<typeof BulkOperationResponseSchema>;
