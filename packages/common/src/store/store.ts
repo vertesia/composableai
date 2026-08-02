@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { ContentObjectTypeRefSchema } from '../api-schemas/app-lifecycle.js';
 import type { MarkdownRenditionFormatSchema } from '../api-schemas/document-processing.js';
 import type {
     BulkUploadUrlsPayloadSchema,
@@ -49,7 +50,6 @@ import type {
     ContentObjectExportStatusResponseSchema,
     ContentObjectItemApiResponseSchema,
     ContentObjectTextResponseSchema,
-    ContentObjectTypeRefSchema,
     ContentObjectUserPermissionsSchema,
     ContentSourceSchema,
     CreateContentObjectHeadersSchema,

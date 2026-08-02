@@ -14,6 +14,13 @@
 
 import type { z } from 'zod';
 import type {
+    AgentRunSearchHitSchema,
+    AgentRunStatusSchema,
+    AgentRunTypeSchema,
+    RunKindSchema,
+    RunTypeSchema,
+} from '../api-schemas/app-lifecycle.js';
+import type {
     AgentArtifactContentResponseSchema,
     AgentArtifactUrlResponseSchema,
     AgentRunArchiveStateSchema,
@@ -22,9 +29,6 @@ import type {
     AgentRunArtifactUploadHeadersSchema,
     AgentRunDetailsQuerySchema,
     AgentRunSchema,
-    AgentRunSearchHitSchema,
-    AgentRunStatusSchema,
-    AgentRunTypeSchema,
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
     BindRunWorkflowPayloadSchema,
@@ -34,8 +38,6 @@ import type {
     PostAgentRunUpdateResponseSchema,
     ProcessRunConfigSchema,
     ProcessRunTypeSchema,
-    RunKindSchema,
-    RunTypeSchema,
     SearchAgentRunsQuerySchema,
     SearchAgentRunsResponseSchema,
     SignalAgentResponseSchema,

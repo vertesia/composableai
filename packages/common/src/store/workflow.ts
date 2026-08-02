@@ -1,5 +1,6 @@
 import type { HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
 import type { z } from 'zod';
+import type { ConversationActivityStateSchema } from '../api-schemas/app-lifecycle.js';
 import type { WorkflowExecutionStatusSchema } from '../api-schemas/document-processing.js';
 import type { PlanSchema, PlanTaskSchema, WorkflowAncestorSchema } from '../api-schemas/interaction.js';
 import type {
@@ -8,7 +9,6 @@ import type {
     AgentTaskSchema,
     ChildWorkflowTaskSchema,
     CompactMessageSchema,
-    ConversationActivityStateSchema,
     ConversationFileSchema,
     EventErrorSchema,
     ExecuteWorkflowPayloadSchema,

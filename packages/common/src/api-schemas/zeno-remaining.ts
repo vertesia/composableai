@@ -285,7 +285,7 @@ export const EventPrioritySchema = z.enum(['high', 'normal', 'low']).meta({ id: 
 
 export const ProcessRunTypeSchema = z.enum(['supervised', 'programmatic']).meta({ id: 'ProcessRunType' });
 
-export const AgentRunStatusSchema = AppLifecycleSchemas.AgentRunStatusSchema;
+const AgentRunStatusSchema = AppLifecycleSchemas.AgentRunStatusSchema;
 
 export const AgentDeliveryMatchModeSchema = z.enum(['start', 'signal', 'ensure']).meta({
     id: 'AgentDeliveryMatchMode',
@@ -359,7 +359,7 @@ export const InteractionSemanticEvaluatorSchema = z
             'Evaluates the semantic condition with a single LLM call (no tools). The event envelope — optionally enriched with an excerpt of the content object text — is classified against the instruction.',
     });
 
-export const EventCategorySchema = AuditTrailSchemas.EventCategorySchema;
+const EventCategorySchema = AuditTrailSchemas.EventCategorySchema;
 
 export const EventIngestSignatureEncodingSchema = z
     .enum(['hex', 'base64'])
@@ -542,10 +542,6 @@ export const ContentObjectApiRevisionSchema = z
     })
     .meta({ id: 'ContentObjectApiRevision' });
 
-export const InCodeTypeRefSchema = AppLifecycleSchemas.InCodeTypeRefSchema;
-
-export const StoredTypeRefSchema = AppLifecycleSchemas.StoredTypeRefSchema;
-
 export const scoreAggregationTypesSchema = z.enum(['rrf', 'rsf', 'smart']).meta({ id: 'scoreAggregationTypes' });
 
 export const dynamicScalingTypesSchema = z.enum(['off', 'on']).meta({ id: 'dynamicScalingTypes' });
@@ -561,15 +557,15 @@ export const CollectionStatusSchema = z
     .enum(['active', 'archived'])
     .meta({ id: 'CollectionStatus' }) as z.ZodType<CollectionStatus>;
 
-export const AgentRunTypeSchema = AppLifecycleSchemas.AgentRunTypeSchema;
+const AgentRunTypeSchema = AppLifecycleSchemas.AgentRunTypeSchema;
 
-export const EventRefSchema = AppLifecycleSchemas.EventRefSchema;
+const EventRefSchema = AppLifecycleSchemas.EventRefSchema;
 
-export const ConversationActivityStateSchema = AppLifecycleSchemas.ConversationActivityStateSchema;
+const ConversationActivityStateSchema = AppLifecycleSchemas.ConversationActivityStateSchema;
 
-export const RunKindSchema = AppLifecycleSchemas.RunKindSchema;
+const RunKindSchema = AppLifecycleSchemas.RunKindSchema;
 
-export const RunTypeSchema = AppLifecycleSchemas.RunTypeSchema;
+const RunTypeSchema = AppLifecycleSchemas.RunTypeSchema;
 
 export const RevertProcessDefinitionPayloadSchema = z
     .strictObject({
@@ -617,35 +613,11 @@ export const CollectionPropagationResponseSchema = z
     })
     .meta({ id: 'CollectionPropagationResponse' });
 
-export const ViewSortClauseSchema = ViewSchemas.ViewSortClauseSchema;
+const ViewSearchFieldDefinitionSchema = ViewSchemas.ViewSearchFieldDefinitionSchema;
 
-export const ViewResultMediaSchema = ViewSchemas.ViewResultMediaSchema;
+const ViewElasticsearchQuerySchema = ViewSchemas.ViewElasticsearchQuerySchema;
 
-export const ViewResultFieldFormatSchema = ViewSchemas.ViewResultFieldFormatSchema;
-
-export const ViewBoardColumnSchema = ViewSchemas.ViewBoardColumnSchema;
-
-export const ViewTableColumnSchema = ViewSchemas.ViewTableColumnSchema;
-
-export const AgenticViewSearchConfigurationSchema = ViewSchemas.AgenticViewSearchConfigurationSchema;
-
-export const ViewSearchFieldTypeSchema = ViewSchemas.ViewSearchFieldTypeSchema;
-
-export const ViewSearchFieldDefinitionSchema = ViewSchemas.ViewSearchFieldDefinitionSchema;
-
-export const ViewRangeDefinitionSchema = ViewSchemas.ViewRangeDefinitionSchema;
-
-export const ViewHierarchyLevelSchema = ViewSchemas.ViewHierarchyLevelSchema;
-
-export const ViewTermsNavigationSchema = ViewSchemas.ViewTermsNavigationSchema;
-
-export const ViewCollectionNavigationSchema = ViewSchemas.ViewCollectionNavigationSchema;
-
-export const ViewLocationNavigationSchema = ViewSchemas.ViewLocationNavigationSchema;
-
-export const ViewElasticsearchQuerySchema = ViewSchemas.ViewElasticsearchQuerySchema;
-
-export const ViewExperienceLayoutSchema = ViewSchemas.ViewExperienceLayoutSchema;
+const ViewExperienceLayoutSchema = ViewSchemas.ViewExperienceLayoutSchema;
 
 export const WorkflowUpdatePublishResponseSchema = z
     .strictObject({
@@ -1680,7 +1652,7 @@ export const ListEventDeliveriesPayloadSchema = z
     })
     .meta({ id: 'ListEventDeliveriesPayload' });
 
-export const ContentObjectTypeRefSchema = AppLifecycleSchemas.ContentObjectTypeRefSchema;
+const ContentObjectTypeRefSchema = AppLifecycleSchemas.ContentObjectTypeRefSchema;
 
 export const VectorSearchQuerySchema = z
     .strictObject({
@@ -1706,27 +1678,11 @@ export const ComplexCollectionSearchQuerySchema = z
     })
     .meta({ id: 'ComplexCollectionSearchQuery' });
 
-export const AgentRunSearchHitSchema = AppLifecycleSchemas.AgentRunSearchHitSchema;
+const AgentRunSearchHitSchema = AppLifecycleSchemas.AgentRunSearchHitSchema;
 
-export const ViewSortOptionSchema = ViewSchemas.ViewSortOptionSchema;
+const ViewKeyTermDefinitionSchema = ViewSchemas.ViewKeyTermDefinitionSchema;
 
-export const ViewResultFieldSchema = ViewSchemas.ViewResultFieldSchema;
-
-export const ViewTableDisplaySchema = ViewSchemas.ViewTableDisplaySchema;
-
-export const ViewListDisplaySchema = ViewSchemas.ViewListDisplaySchema;
-
-export const ViewGalleryDisplaySchema = ViewSchemas.ViewGalleryDisplaySchema;
-
-export const ViewCardsDisplaySchema = ViewSchemas.ViewCardsDisplaySchema;
-
-export const ViewKeyTermDefinitionSchema = ViewSchemas.ViewKeyTermDefinitionSchema;
-
-export const ViewRangeNavigationSchema = ViewSchemas.ViewRangeNavigationSchema;
-
-export const ViewHierarchyNavigationSchema = ViewSchemas.ViewHierarchyNavigationSchema;
-
-export const ViewExperienceScopeSchema = ViewSchemas.ViewExperienceScopeSchema;
+const ViewExperienceScopeSchema = ViewSchemas.ViewExperienceScopeSchema;
 
 export const ConversationFileSchema = z
     .strictObject({
@@ -2865,11 +2821,9 @@ export const SearchAgentRunsResponseSchema = z
     })
     .meta({ id: 'SearchAgentRunsResponse', description: 'Response from the agent runs search endpoint.' });
 
-export const ViewBoardCardConfigurationSchema = ViewSchemas.ViewBoardCardConfigurationSchema;
+const ViewSearchConfigurationSchema = ViewSchemas.ViewSearchConfigurationSchema;
 
-export const ViewSearchConfigurationSchema = ViewSchemas.ViewSearchConfigurationSchema;
-
-export const ViewNavigationItemSchema = ViewSchemas.ViewNavigationItemSchema;
+const ViewNavigationItemSchema = ViewSchemas.ViewNavigationItemSchema;
 
 export const AgentMessageDetailsSchema = z
     .looseObject({
@@ -3342,8 +3296,6 @@ export const ComplexSearchPayloadSchema = z
     })
     .meta({ id: 'ComplexSearchPayload' });
 
-export const ViewBoardDisplaySchema = ViewSchemas.ViewBoardDisplaySchema;
-
 export const Partial_AgentMessageSchema = z
     .strictObject({
         timestamp: z.number().optional(),
@@ -3411,8 +3363,6 @@ export const ObjectSearchResponseSchema = z
     })
     .meta({ id: 'ObjectSearchResponse' });
 
-export const ViewDisplayConfigurationSchema = ViewSchemas.ViewDisplayConfigurationSchema;
-
 export const PostAgentRunUpdatePayloadSchema = Partial_AgentMessageSchema.meta({
     id: 'PostAgentRunUpdatePayload',
     description: "Payload for posting an update into an agent's workflow stream.",
@@ -3464,7 +3414,7 @@ export const WorkflowRunWithDetailsSchema = z
     })
     .meta({ id: 'WorkflowRunWithDetails' });
 
-export const ViewResultsConfigurationSchema = ViewSchemas.ViewResultsConfigurationSchema;
+const ViewResultsConfigurationSchema = ViewSchemas.ViewResultsConfigurationSchema;
 
 export const ViewExecutionDefinitionSchema = z
     .strictObject({

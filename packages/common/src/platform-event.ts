@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { EventRefSchema } from './api-schemas/app-lifecycle.js';
 import type { EventCategorySchema } from './api-schemas/audit-trail.js';
 import type {
     AgentDeliveryMatchModeSchema,
@@ -24,7 +25,6 @@ import type {
     EventOutboxQueueSummarySchema,
     EventOutboxStatusSchema,
     EventPrioritySchema,
-    EventRefSchema,
     EventSemanticConditionSchema,
     EventSubscriptionFilterSchema,
     InteractionSemanticEvaluatorSchema,
