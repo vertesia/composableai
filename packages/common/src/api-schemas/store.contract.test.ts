@@ -304,7 +304,7 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
         // `config` was `additionalProperties: true` in the hand-written schema while
         // `InteractionExecutionConfiguration` has always been published closed. A stored policy
         // carrying an undeclared key there is now rejected at write time.
-        expect(published.InteractionExecutionConfiguration.additionalProperties).toBe(false);
+        expect(ApiSchemaComponents.InteractionExecutionConfiguration.additionalProperties).toBe(false);
         expect(validate({ extraction: { config: { model: 'claude-sonnet-4-5' } } }), errors()).toBe(true);
         expect(validate({ extraction: { config: { temperature: 0.5 } } })).toBe(false);
         expect(validate({ extraction: { config: { http_timeout: { socketTimeout: 1000 } } } })).toBe(false);
@@ -314,7 +314,7 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
         // Same class: `model_options` was `{type: object, additionalProperties: true}` in the
         // hand-written schema and `$ref: ModelOptions` in the published component. It now has to name
         // a driver through `_option_id`, which is the discriminator generated clients already use.
-        expect(published.ContentTypeIntakePolicy).toBeDefined();
+        expect(ApiSchemaComponents.ContentTypeIntakePolicy).toBeDefined();
         expect(
             validate({
                 extraction: { config: { model_options: { _option_id: 'openai-text', temperature: 0.5 } } },
