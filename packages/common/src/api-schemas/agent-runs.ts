@@ -3,6 +3,7 @@
 import { ExecutionTokenUsageSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import type { AgentMessageType, FileProcessingStatus } from '../store/workflow.js';
+import { type AgentEvent, AgentEventType, LlmCallType, TelemetryToolType } from '../workflow-analytics.js';
 import * as AppLifecycleSchemas from './app-lifecycle.js';
 import {
     AgentRunStatusSchema,
@@ -32,6 +33,106 @@ import {
 import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { nullableStringSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
+
+const agentEventBase = {
+    timestamp: z.string(),
+    runId: z.string(),
+    agentRunId: z.string().optional(),
+    model: z.string(),
+    environmentId: z.string(),
+    environmentType: z.string(),
+    interactionId: z.string(),
+    parentRunId: z.string().optional(),
+    ancestorRunIds: z.array(z.string()).optional(),
+};
+
+const AgentRunStartedEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.AgentRunStarted),
+    interactive: z.boolean(),
+    taskId: z.string().optional(),
+    userChannels: z.array(z.string()).optional(),
+});
+
+const AgentRunCompletedEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.AgentRunCompleted),
+    success: z.boolean(),
+    durationMs: z.number(),
+    errorType: z.string().optional(),
+    errorMessage: z.string().optional(),
+    totalIterations: z.number(),
+    totalToolCalls: z.number(),
+    totalLlmCalls: z.number(),
+    totalTokens: z
+        .strictObject({
+            input: z.number(),
+            output: z.number(),
+            total: z.number(),
+        })
+        .optional(),
+    endConversation: z
+        .strictObject({
+            status: z.enum(['success', 'failure']),
+            reason: z.string().optional(),
+        })
+        .optional(),
+});
+
+const LlmCallEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.LlmCall),
+    promptTokens: z.number(),
+    promptCachedTokens: z.number().optional(),
+    promptCacheWriteTokens: z.number().optional(),
+    completionTokens: z.number(),
+    totalTokens: z.number(),
+    durationMs: z.number(),
+    success: z.boolean(),
+    streamingEnabled: z.boolean(),
+    toolUseCount: z.number(),
+    callType: z.enum(LlmCallType),
+    attemptNumber: z.number().optional(),
+    errorType: z.string().optional(),
+});
+
+const ToolCallEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.ToolCall),
+    toolName: z.string(),
+    toolUseId: z.string(),
+    toolType: z.enum(TelemetryToolType),
+    iteration: z.number(),
+    parameters: z.record(z.string(), z.unknown()).optional(),
+    parametersSizeBytes: z.number().optional(),
+    success: z.boolean(),
+    durationMs: z.number(),
+    resultSizeBytes: z.number().optional(),
+    errorType: z.string().optional(),
+    errorMessage: z.string().optional(),
+    spawnedChildWorkflow: z.boolean().optional(),
+});
+
+export const AgentEventSchema: z.ZodType<AgentEvent> = z.discriminatedUnion('eventType', [
+    AgentRunStartedEventSchema,
+    AgentRunCompletedEventSchema,
+    LlmCallEventSchema,
+    ToolCallEventSchema,
+]);
+
+export const IngestAgentEventsPayloadSchema = z
+    .strictObject({
+        events: z.array(AgentEventSchema),
+    })
+    .meta({ id: 'IngestAgentEventsPayload' });
+
+export const IngestAgentEventsResponseSchema = z
+    .strictObject({
+        ingested: z.number(),
+        status: z.string().optional(),
+        error: z.string().optional(),
+    })
+    .meta({ id: 'IngestAgentEventsResponse' });
 
 export const AgentMessageTypeSchema = z
     .union([

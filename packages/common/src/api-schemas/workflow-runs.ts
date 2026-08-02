@@ -51,32 +51,38 @@ const ActivityTypeNameSchema = z.enum([
     'void',
 ]);
 
-export const ActivityTypeDefinitionSchema: z.ZodType<ActivityTypeDefinition> = z.lazy(() =>
-    z.strictObject({
-        name: ActivityTypeNameSchema,
-        value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
-        members: z.array(ActivityPropertyDefinitionSchema).optional(),
-        innerType: ActivityTypeDefinitionSchema.optional(),
-        enum: z.union([z.array(z.string()), z.array(z.number())]).optional(),
-        union: z.array(ActivityTypeDefinitionSchema).optional(),
-    }),
-);
+export const ActivityTypeDefinitionSchema: z.ZodType<ActivityTypeDefinition> = z
+    .lazy(() =>
+        z.strictObject({
+            name: ActivityTypeNameSchema,
+            value: z.union([z.string(), z.boolean(), z.number(), z.null()]),
+            members: z.array(ActivityPropertyDefinitionSchema).optional(),
+            innerType: ActivityTypeDefinitionSchema.optional(),
+            enum: z.union([z.array(z.string()), z.array(z.number())]).optional(),
+            union: z.array(ActivityTypeDefinitionSchema).optional(),
+        }),
+    )
+    .meta({ id: 'ActivityTypeDefinition' });
 
-export const ActivityPropertyDefinitionSchema = z.strictObject({
-    name: z.string(),
-    type: ActivityTypeDefinitionSchema,
-    optional: z.boolean(),
-    doc: z.string().optional(),
-});
+export const ActivityPropertyDefinitionSchema = z
+    .strictObject({
+        name: z.string(),
+        type: ActivityTypeDefinitionSchema,
+        optional: z.boolean(),
+        doc: z.string().optional(),
+    })
+    .meta({ id: 'ActivityPropertyDefinition' });
 
-export const ActivityDefinitionSchema = z.strictObject({
-    name: z.string(),
-    title: z.string(),
-    doc: z.string().optional(),
-    paramsType: z.string(),
-    params: z.array(ActivityPropertyDefinitionSchema),
-    returnType: ActivityTypeDefinitionSchema.optional(),
-});
+export const ActivityDefinitionSchema = z
+    .strictObject({
+        name: z.string(),
+        title: z.string(),
+        doc: z.string().optional(),
+        paramsType: z.string(),
+        params: z.array(ActivityPropertyDefinitionSchema),
+        returnType: ActivityTypeDefinitionSchema.optional(),
+    })
+    .meta({ id: 'ActivityDefinition' });
 
 export const ActivityCatalogSchema = z
     .strictObject({
@@ -84,27 +90,29 @@ export const ActivityCatalogSchema = z
     })
     .meta({ id: 'ActivityCatalog' });
 
-export const WorkflowInteractionVarsSchema = z.strictObject({
-    type: z.string(),
-    interaction: z.string(),
-    interactive: z.boolean(),
-    tool_approval_mode: AgentToolApprovalModeSchema.optional(),
-    debug_mode: z.boolean().optional(),
-    non_blocking_subagents: z.boolean().optional(),
-    user_channels: z.array(UserChannelSchema).optional(),
-    data: JSONObjectSchema.optional(),
-    tool_names: z.array(z.string()),
-    config: z.strictObject({
-        environment: z.string(),
-        model: z.string(),
-        model_options: ModelOptionsSchema.optional(),
-    }),
-    interactionParamsSchema: JSONSchemaSchema.optional(),
-    collection_id: z.string().optional(),
-    disabled_mcp_collections: z.array(z.string()).optional(),
-    checkpoint_tokens: z.number().optional(),
-    version: z.number().optional(),
-});
+export const WorkflowInteractionVarsSchema = z
+    .strictObject({
+        type: z.string(),
+        interaction: z.string(),
+        interactive: z.boolean(),
+        tool_approval_mode: AgentToolApprovalModeSchema.optional(),
+        debug_mode: z.boolean().optional(),
+        non_blocking_subagents: z.boolean().optional(),
+        user_channels: z.array(UserChannelSchema).optional(),
+        data: JSONObjectSchema.optional(),
+        tool_names: z.array(z.string()),
+        config: z.strictObject({
+            environment: z.string(),
+            model: z.string(),
+            model_options: ModelOptionsSchema.optional(),
+        }),
+        interactionParamsSchema: JSONSchemaSchema.optional(),
+        collection_id: z.string().optional(),
+        disabled_mcp_collections: z.array(z.string()).optional(),
+        checkpoint_tokens: z.number().optional(),
+        version: z.number().optional(),
+    })
+    .meta({ id: 'WorkflowInteractionVars' });
 
 export const ListWorkflowInteractionsResponseSchema = z
     .strictObject({

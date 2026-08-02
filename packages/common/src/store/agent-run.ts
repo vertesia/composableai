@@ -25,6 +25,8 @@ import type {
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
     CreateAgentRunPayloadSchema,
+    IngestAgentEventsPayloadSchema,
+    IngestAgentEventsResponseSchema,
     ListAgentRunsQuerySchema,
     PostAgentRunUpdatePayloadSchema,
     PostAgentRunUpdateResponseSchema,
@@ -52,7 +54,6 @@ import type {
     RunSource,
 } from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
-import type { AgentEvent } from '../workflow-analytics.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type { StopSignal, UserInputSignal } from './signals.js';
@@ -413,18 +414,12 @@ export type UpdateAgentArtifactContentResponse = z.infer<typeof UpdateAgentArtif
 /**
  * Telemetry ingestion payload for an agent run.
  */
-export interface IngestAgentEventsPayload {
-    events: AgentEvent[];
-}
+export type IngestAgentEventsPayload = z.infer<typeof IngestAgentEventsPayloadSchema>;
 
 /**
  * Telemetry ingestion response for an agent run.
  */
-export interface IngestAgentEventsResponse {
-    ingested: number;
-    status?: string;
-    error?: string;
-}
+export type IngestAgentEventsResponse = z.infer<typeof IngestAgentEventsResponseSchema>;
 
 /**
  * History event payload emitted by the agent details SSE stream.
