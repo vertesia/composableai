@@ -11,7 +11,10 @@
  */
 export * from './account.js';
 export * from './adapter.js';
+export * from './analytics.js';
 export * from './apikey.js';
+export * from './embeddings.js';
+export * from './environment.js';
 export * from './parameters.js';
 export * from './quota.js';
 export * from './registry.js';

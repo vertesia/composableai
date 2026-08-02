@@ -54,7 +54,7 @@ describe('mergeComponentGroups', () => {
         // and dropping one is silent in a different way: `ApiComponentName` still names those
         // components, so the code compiles and only the emitted document loses them. One known name
         // per group is what notices.
-        const perGroup: ApiComponentName[] = ['Account', 'ProjectModelDefaults', 'CopyFilePayload'];
+        const perGroup: ApiComponentName[] = ['Account', 'ProjectModelDefaults', 'OAuthProvider', 'CopyFilePayload'];
 
         for (const name of perGroup) {
             expect(ApiSchemaComponents).toHaveProperty(name);

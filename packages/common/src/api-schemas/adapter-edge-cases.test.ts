@@ -309,3 +309,54 @@ describe('description is emitted last', () => {
         expect(Object.keys(components.Tier)).toEqual(['type', 'description']);
     });
 });
+
+describe('hoisting a union and its members', () => {
+    /**
+     * A discriminated union's `discriminator` is SYNTHESIZED from its members, so the members have to
+     * be registered before the union that references them. `$defs` order is whatever Zod emitted, and
+     * the same union is routinely reachable from two roots — once where its members happen to come
+     * first and once where they do not. Hoisting in declaration order made those two emissions differ,
+     * and the adapter then reported a component "defined twice with different shapes" that nobody had
+     * defined twice. Wave S2 hit it on `EmbeddingsApiInput`.
+     */
+    const MEMBERS = {
+        Text: { $id: 'Text', type: 'object', properties: { kind: { const: 'text' } }, required: ['kind'] },
+        Image: { $id: 'Image', type: 'object', properties: { kind: { const: 'image' } }, required: ['kind'] },
+    };
+    const UNION = { $id: 'Input', anyOf: [{ $ref: '#/$defs/Text' }, { $ref: '#/$defs/Image' }] };
+
+    it('synthesizes the discriminator whichever order $defs lists them in', () => {
+        const unionFirst = toOpenApiComponents({
+            Request: {
+                type: 'object',
+                properties: { input: { $ref: '#/$defs/Input' } },
+                $defs: { Input: UNION, ...MEMBERS },
+            },
+        });
+        const membersFirst = toOpenApiComponents({
+            Request: {
+                type: 'object',
+                properties: { input: { $ref: '#/$defs/Input' } },
+                $defs: { ...MEMBERS, Input: UNION },
+            },
+        });
+
+        expect(unionFirst.Input).toEqual(membersFirst.Input);
+        expect(unionFirst.Input).toMatchObject({ discriminator: { propertyName: 'kind' }, required: ['kind'] });
+    });
+
+    it('emits the same union from a root that declares it and a root that references it', () => {
+        // The shape that actually threw: one root IS the union, another reaches it through a property.
+        // `register` compares fingerprints, so two spellings of the same component are a hard failure.
+        expect(() =>
+            toOpenApiComponents({
+                Request: {
+                    type: 'object',
+                    properties: { input: { $ref: '#/$defs/Input' } },
+                    $defs: { Input: UNION, ...MEMBERS },
+                },
+                Input: { ...UNION, $defs: MEMBERS },
+            }),
+        ).not.toThrow();
+    });
+});

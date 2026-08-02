@@ -6,7 +6,7 @@ import { ApiSchemaComponents, validateApiRequest, validateApiResponse } from './
  * The OAuth contracts, pinned where converting them changed what the document says or where the
  * conversion had a choice to make.
  *
- * The provider/client/grant closure is 30 components and almost all of it re-emits byte-identically;
+ * The provider/client/grant closure is 31 components and almost all of it re-emits byte-identically;
  * what is asserted here is the handful of places it does not, plus the request/response secret split
  * that is the reason these components are shaped the way they are.
  */

@@ -2,7 +2,21 @@
 // types, and a second declaration in this repository would be a copy that compiles — the drift this
 // migration exists to remove. They have no local `./*.ts` module for the same reason: there is
 // nothing local to declare.
-import { HttpTimeoutOptionsSchema, JSONSchemaSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
+import {
+    AIModelArraySchema,
+    AIModelSchema,
+    AIModelStatusSchema,
+    EmbeddingOutputSchema,
+    EmbeddingResultItemSchema,
+    EmbeddingsResultSchema,
+    EmbeddingsTokenUsageSchema,
+    EmbeddingTaskTypeSchema,
+    HttpTimeoutOptionsSchema,
+    JSONSchemaSchema,
+    ModelOptionsSchema,
+    ModelSearchPayloadSchema,
+    ModelTypeSchema,
+} from '@llumiverse/common/schemas';
 import type { ValidateFunction } from 'ajv/dist/2020.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
@@ -17,6 +31,14 @@ import {
 } from './access-control.js';
 import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
 import { findUnprunablePaths, type JsonObject, pruneToSchema, toOpenApiComponents } from './adapter.js';
+import {
+    AnalyticsAxisSchema,
+    RunAnalyticsGroupBySchema,
+    RunAnalyticsQuerySchema,
+    RunAnalyticsResultArraySchema,
+    RunAnalyticsResultSchema,
+    TimeResolutionSchema,
+} from './analytics.js';
 import {
     ApiKeyArraySchema,
     ApiKeyListQuerySchema,
@@ -44,6 +66,30 @@ import {
     RunMigrationPayloadSchema,
     RunMigrationResponseSchema,
 } from './commands.js';
+import {
+    EmbeddingsApiAudioInputSchema,
+    EmbeddingsApiImageInputSchema,
+    EmbeddingsApiInputSchema,
+    EmbeddingsApiRequestSchema,
+    EmbeddingsApiSourceSchema,
+    EmbeddingsApiTextInputSchema,
+    EmbeddingsApiVideoInputSchema,
+} from './embeddings.js';
+import {
+    EnableEnvironmentModelPayloadSchema,
+    ExecutionEnvironmentArraySchema,
+    ExecutionEnvironmentConfigUpdatePayloadSchema,
+    ExecutionEnvironmentCreatePayloadSchema,
+    ExecutionEnvironmentSchema,
+    ExecutionEnvironmentSettingsSchema,
+    ExecutionEnvironmentUpdatePayloadSchema,
+    ListEnvironmentsQuerySchema,
+    LoadBalancingEnvConfigSchema,
+    LoadBalancingEnvEntryConfigSchema,
+    MediatorEnvConfigSchema,
+    SupportedProvidersSchema,
+    VirtualEnvEntrySchema,
+} from './environment.js';
 import {
     BulkUploadUrlsPayloadSchema,
     BulkUploadUrlsResponseSchema,
@@ -386,6 +432,65 @@ const OAUTH_SCHEMAS = {
     OAuthGrantRevokeResponse: OAuthGrantRevokeResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+/**
+ * Wave S2 — the studio execution environments, and everything the twenty slots across
+ * `/environments` name.
+ *
+ * A fifth group, for the same reason the fourth exists: the declaration emit refuses a group much
+ * past thirty entries, and this is thirty-six.
+ *
+ * Half of it is llumiverse's rather than Vertesia's. `AIModel` and the embedding results describe
+ * what a driver produces, so their schemas live in `@llumiverse/common/schemas` and are registered
+ * from there — the same arrangement `ModelOptions` and `JSONSchema` already use. Registering them
+ * here rather than defining them here is the whole point: one definition, whichever package owns it.
+ */
+const ENVIRONMENT_SCHEMAS = {
+    // The environment itself. `ExecutionEnvironmentRef` is a projection the UI reads and no endpoint
+    // returns, so it stays a plain interface with no component.
+    SupportedProviders: SupportedProvidersSchema,
+    ExecutionEnvironment: ExecutionEnvironmentSchema,
+    ExecutionEnvironmentArray: ExecutionEnvironmentArraySchema,
+    ExecutionEnvironmentSettings: ExecutionEnvironmentSettingsSchema,
+    ExecutionEnvironmentCreatePayload: ExecutionEnvironmentCreatePayloadSchema,
+    ExecutionEnvironmentUpdatePayload: ExecutionEnvironmentUpdatePayloadSchema,
+    ExecutionEnvironmentConfigUpdatePayload: ExecutionEnvironmentConfigUpdatePayloadSchema,
+    EnableEnvironmentModelPayload: EnableEnvironmentModelPayloadSchema,
+    ListEnvironmentsQuery: ListEnvironmentsQuerySchema,
+    // Virtual-environment configuration — the two shapes `config` may take on a virtual provider.
+    VirtualEnvEntry: VirtualEnvEntrySchema,
+    LoadBalancingEnvConfig: LoadBalancingEnvConfigSchema,
+    LoadBalancingEnvEntryConfig: LoadBalancingEnvEntryConfigSchema,
+    MediatorEnvConfig: MediatorEnvConfigSchema,
+    // Models, from `@llumiverse/common/schemas`. `ModelSearchPayload` is a query contract, so it is
+    // expanded into four parameters rather than published as a component body.
+    AIModel: AIModelSchema,
+    AIModelArray: AIModelArraySchema,
+    AIModelStatus: AIModelStatusSchema,
+    ModelType: ModelTypeSchema,
+    ModelSearchPayload: ModelSearchPayloadSchema,
+    // Run analytics, shared with the project-level `/analytics` endpoint.
+    RunAnalyticsQuery: RunAnalyticsQuerySchema,
+    RunAnalyticsResult: RunAnalyticsResultSchema,
+    RunAnalyticsResultArray: RunAnalyticsResultArraySchema,
+    RunAnalyticsGroupBy: RunAnalyticsGroupBySchema,
+    AnalyticsAxis: AnalyticsAxisSchema,
+    TimeResolution: TimeResolutionSchema,
+    // Embeddings. The request is Vertesia's (a JSON-friendly source rather than a stream); the
+    // result is llumiverse's, unchanged on the wire.
+    EmbeddingsApiRequest: EmbeddingsApiRequestSchema,
+    EmbeddingsApiInput: EmbeddingsApiInputSchema,
+    EmbeddingsApiSource: EmbeddingsApiSourceSchema,
+    EmbeddingsApiTextInput: EmbeddingsApiTextInputSchema,
+    EmbeddingsApiImageInput: EmbeddingsApiImageInputSchema,
+    EmbeddingsApiVideoInput: EmbeddingsApiVideoInputSchema,
+    EmbeddingsApiAudioInput: EmbeddingsApiAudioInputSchema,
+    EmbeddingTaskType: EmbeddingTaskTypeSchema,
+    EmbeddingsResult: EmbeddingsResultSchema,
+    EmbeddingResultItem: EmbeddingResultItemSchema,
+    EmbeddingOutput: EmbeddingOutputSchema,
+    EmbeddingsTokenUsage: EmbeddingsTokenUsageSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const ZENO_SCHEMAS = {
     // Wave Z1 — zeno files, durable tasks, the content-type catalog and the migration commands.
     // Converted in bulk by `packages/api-specs/scripts/convert-to-zod.mjs` from the published
@@ -488,6 +593,7 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
     OAUTH_SCHEMAS,
+    ENVIRONMENT_SCHEMAS,
     ZENO_SCHEMAS,
 ]) as Record<ApiComponentName, z.ZodType>;
 
@@ -495,6 +601,7 @@ export type ApiComponentName =
     | keyof typeof IAM_AND_ACCOUNT_SCHEMAS
     | keyof typeof PROJECT_AND_APP_SCHEMAS
     | keyof typeof OAUTH_SCHEMAS
+    | keyof typeof ENVIRONMENT_SCHEMAS
     | keyof typeof ZENO_SCHEMAS;
 
 /**
@@ -726,6 +833,38 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // Expanded into parameters rather than published, like the zeno and project query components.
     'ListOAuthGrantsQuery',
     'RevokeOAuthGrantQuery',
+    // The environment closure. Every object here is published closed today EXCEPT
+    // `ExecutionEnvironmentSettings`, which carries an index signature and publishes
+    // `additionalProperties: {}` so a driver-specific setting this build has never heard of still
+    // round-trips; it is deliberately absent from this list. The six enums take no
+    // additionalProperties at all.
+    'ExecutionEnvironment',
+    'ExecutionEnvironmentCreatePayload',
+    'ExecutionEnvironmentUpdatePayload',
+    'ExecutionEnvironmentConfigUpdatePayload',
+    'EnableEnvironmentModelPayload',
+    'VirtualEnvEntry',
+    'LoadBalancingEnvConfig',
+    'LoadBalancingEnvEntryConfig',
+    'MediatorEnvConfig',
+    'AIModel',
+    'RunAnalyticsQuery',
+    'RunAnalyticsResult',
+    'AnalyticsAxis',
+    'EmbeddingsApiRequest',
+    'EmbeddingsApiSource',
+    'EmbeddingsApiTextInput',
+    'EmbeddingsApiImageInput',
+    'EmbeddingsApiVideoInput',
+    'EmbeddingsApiAudioInput',
+    'EmbeddingsResult',
+    'EmbeddingResultItem',
+    'EmbeddingOutput',
+    'EmbeddingsTokenUsage',
+    // Expanded into parameters. `ListEnvironmentsQuery` and `ModelSearchPayload` are the two the
+    // `/environments` resources take.
+    'ListEnvironmentsQuery',
+    'ModelSearchPayload',
 ]);
 
 /**
@@ -864,9 +1003,11 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeo
       ? z.infer<(typeof PROJECT_AND_APP_SCHEMAS)[N]>
       : N extends keyof typeof OAUTH_SCHEMAS
         ? z.infer<(typeof OAUTH_SCHEMAS)[N]>
-        : N extends keyof typeof ZENO_SCHEMAS
-          ? z.infer<(typeof ZENO_SCHEMAS)[N]>
-          : never;
+        : N extends keyof typeof ENVIRONMENT_SCHEMAS
+          ? z.infer<(typeof ENVIRONMENT_SCHEMAS)[N]>
+          : N extends keyof typeof ZENO_SCHEMAS
+            ? z.infer<(typeof ZENO_SCHEMAS)[N]>
+            : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

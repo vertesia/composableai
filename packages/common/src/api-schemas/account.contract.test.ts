@@ -100,10 +100,20 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // Batches convert whole `$ref` closures, so the list grows in groups rather than one
             // name at a time. The comments say which batch each group arrived with; sort order is
             // alphabetical, so a group is not contiguous and the note sits at its first member.
+            // Batches convert whole `$ref` closures, so the list grows in groups rather than one
+            // name at a time. The comments say which batch each group arrived with; sort order is
+            // alphabetical, so a group is not contiguous and the note sits at its first member.
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'ACECreatePayload',
             'ACEUpdatePayload',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'AIModel',
+            'AIModelArray',
+            'AIModelStatus',
             'AbacScope',
             'AccessControlEntry',
             'AccessControlEntryArray',
@@ -122,6 +132,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AceConditions',
             'AgentCheckpointConfiguration',
             'AgentProjectConfiguration',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'AnalyticsAxis',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
@@ -232,6 +247,29 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'DeleteOperationResult',
             'DurableTaskStatus',
             'ElasticsearchBackend',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'EmbeddingOutput',
+            'EmbeddingResultItem',
+            'EmbeddingTaskType',
+            'EmbeddingsApiAudioInput',
+            'EmbeddingsApiImageInput',
+            'EmbeddingsApiInput',
+            'EmbeddingsApiRequest',
+            'EmbeddingsApiSource',
+            'EmbeddingsApiTextInput',
+            'EmbeddingsApiVideoInput',
+            'EmbeddingsResult',
+            'EmbeddingsTokenUsage',
+            'EnableEnvironmentModelPayload',
+            'ExecutionEnvironment',
+            'ExecutionEnvironmentArray',
+            'ExecutionEnvironmentConfigUpdatePayload',
+            'ExecutionEnvironmentCreatePayload',
+            'ExecutionEnvironmentSettings',
+            'ExecutionEnvironmentUpdatePayload',
             // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
             // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
@@ -279,6 +317,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'JSONSchema',
             'JSONSchemaProperties',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'ListEnvironmentsQuery',
             // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
             // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
             // component of its own; the two query components are expanded into parameters rather than
@@ -289,8 +332,19 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ListProjectsQuery',
             'ListTasksQuery',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'LoadBalancingEnvConfig',
+            'LoadBalancingEnvEntryConfig',
             'MCPOAuthConfig',
             'MCPToolCollectionObject',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'MediatorEnvConfig',
             'MigrationListResponse',
             'ModalityDefaults',
             'ModelDefault',
@@ -299,6 +353,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'ModelOptions',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'ModelSearchPayload',
+            'ModelType',
             'NovaCanvasOptions',
             // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
             // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
@@ -414,6 +474,14 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'RoleDefinition',
             'RoleDefinitionArray',
             'RoleDomain',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'RunAnalyticsGroupBy',
+            'RunAnalyticsQuery',
+            'RunAnalyticsResult',
+            'RunAnalyticsResultArray',
             'RunDataStorageLevel',
             'RunMigrationPayload',
             'RunMigrationResponse',
@@ -433,6 +501,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
             // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'SupportedIntegrations',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'SupportedProviders',
             'SystemDefaults',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
@@ -453,6 +526,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'TaskSource',
             'TextFallbackOptions',
             'ThinkingLevel',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'TimeResolution',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
@@ -509,6 +587,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'VertexAIClaudeOptions',
             'VertexAIGeminiOptions',
             'VertexAIGrokOptions',
+            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
+            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
+            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
+            // two query components are expanded into parameters rather than published.
+            'VirtualEnvEntry',
         ]);
     });
 

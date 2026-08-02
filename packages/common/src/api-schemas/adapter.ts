@@ -133,6 +133,25 @@ function synthesizeDiscriminator(node: JsonObject, components: Record<string, Js
     }
 }
 
+/**
+ * Definition entries in an order that lets a discriminator be synthesized.
+ *
+ * A union's `discriminator` is read off its MEMBERS, so a union hoisted before them registers
+ * without one. That is invisible until the same union is registered twice — once as a root, where
+ * Zod happens to emit its members first, and once inside a component that references it, where it
+ * does not — at which point the two shapes disagree and `register` reports a conflict on a
+ * component nobody wrote twice.
+ *
+ * A discriminated union's branches are objects, never unions themselves, so hoisting non-unions
+ * first is enough to make the result independent of the order Zod emitted `$defs` in.
+ */
+function inHoistOrder(block: JsonObject): [string, unknown][] {
+    const entries = Object.entries(block);
+    const isUnion = (schema: unknown) =>
+        isPlainObject(schema) && (Array.isArray(schema.oneOf) || Array.isArray(schema.anyOf));
+    return [...entries.filter(([, schema]) => !isUnion(schema)), ...entries.filter(([, schema]) => isUnion(schema))];
+}
+
 interface HoistContext {
     components: Record<string, JsonObject>;
     rootName: string;
@@ -167,7 +186,7 @@ function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
         // Hoist sibling definition blocks first so members can reference each other.
         for (const block of [$defs, definitions]) {
             if (!isPlainObject(block)) continue;
-            for (const [name, schema] of Object.entries(block)) {
+            for (const [name, schema] of inHoistOrder(block)) {
                 hoist(name, schema, ctx);
             }
         }

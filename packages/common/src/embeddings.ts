@@ -1,72 +1,34 @@
-import type { EmbeddingsResult, EmbeddingTaskType } from '@llumiverse/common';
+import type { EmbeddingsResult } from '@llumiverse/common';
+import type { z } from 'zod';
+import type {
+    EmbeddingsApiAudioInputSchema,
+    EmbeddingsApiImageInputSchema,
+    EmbeddingsApiInputSchema,
+    EmbeddingsApiRequestSchema,
+    EmbeddingsApiSourceSchema,
+    EmbeddingsApiTextInputSchema,
+    EmbeddingsApiVideoInputSchema,
+} from './api-schemas/embeddings.js';
 
 /**
- * Wire-format inputs accepted by the studio-server embeddings endpoint.
- * Mirror of @llumiverse/common's EmbeddingInput, but binary modalities
- * carry a JSON-friendly source (URL or base64) instead of a DataSource.
- *
- * The server wraps each source in a Base64DataSource or URLDataSource
- * before passing the request to the llumiverse driver.
+ * The embeddings request types, inferred from `./api-schemas/embeddings.js`. Their documentation
+ * moved with them: a doc comment above one of these would be published on top of the schema's own
+ * `description`, which is how the union's description came to be the truncated `"…Mirror of"` the
+ * document carried until wave S2.
  */
-export type EmbeddingsApiInput =
-    | EmbeddingsApiTextInput
-    | EmbeddingsApiImageInput
-    | EmbeddingsApiVideoInput
-    | EmbeddingsApiAudioInput;
+export type EmbeddingsApiInput = z.infer<typeof EmbeddingsApiInputSchema>;
 
-export interface EmbeddingsApiSource {
-    /** Display name for the source (defaults to "embedding-input"). */
-    name?: string;
-    /** MIME type of the binary content. Required for most providers. */
-    mime_type?: string;
-    /**
-     * Provider-native URL the driver may pass through directly:
-     * - gs:// or https://storage.googleapis.com/ for Vertex AI
-     * - s3:// or https://*.amazonaws.com for Bedrock
-     * - https:// for fetch fallback
-     * Mutually exclusive with base64.
-     */
-    url?: string;
-    /** Base64-encoded bytes. Mutually exclusive with url. */
-    base64?: string;
-}
+export type EmbeddingsApiSource = z.infer<typeof EmbeddingsApiSourceSchema>;
 
-export interface EmbeddingsApiTextInput {
-    type: 'text';
-    text: string;
-    task_type?: EmbeddingTaskType;
-    title?: string;
-}
+export type EmbeddingsApiTextInput = z.infer<typeof EmbeddingsApiTextInputSchema>;
 
-export interface EmbeddingsApiImageInput {
-    type: 'image';
-    source: EmbeddingsApiSource;
-}
+export type EmbeddingsApiImageInput = z.infer<typeof EmbeddingsApiImageInputSchema>;
 
-export interface EmbeddingsApiVideoInput {
-    type: 'video';
-    source: EmbeddingsApiSource;
-    start_sec?: number;
-    length_sec?: number;
-    interval_sec?: number;
-    use_fixed_length_sec?: boolean;
-    min_clip_sec?: number;
-    embedding_option?: ('visual-text' | 'visual-image' | 'audio')[];
-}
+export type EmbeddingsApiVideoInput = z.infer<typeof EmbeddingsApiVideoInputSchema>;
 
-export interface EmbeddingsApiAudioInput {
-    type: 'audio';
-    source: EmbeddingsApiSource;
-    start_sec?: number;
-    length_sec?: number;
-}
+export type EmbeddingsApiAudioInput = z.infer<typeof EmbeddingsApiAudioInputSchema>;
 
-export interface EmbeddingsApiRequest {
-    inputs: EmbeddingsApiInput[];
-    model?: string;
-    task_type?: EmbeddingTaskType;
-    dimensions?: number;
-}
+export type EmbeddingsApiRequest = z.infer<typeof EmbeddingsApiRequestSchema>;
 
 /**
  * Wire-format result. Identical to @llumiverse/common's EmbeddingsResult
