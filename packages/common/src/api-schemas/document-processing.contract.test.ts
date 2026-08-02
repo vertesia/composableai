@@ -44,7 +44,7 @@ describe('rendering and document-processing API contracts', () => {
             validateApiResponse('RenderMarkdownStartResponse', {
                 workflow_id: 'render:1',
                 workflow_run_id: 'run-1',
-                status: WorkflowExecutionStatus.PAUSED,
+                status: WorkflowExecutionStatus.TIMED_OUT,
                 format: MarkdownRenditionFormat.pdf,
             }).valid,
         ).toBe(true);

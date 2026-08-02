@@ -507,6 +507,18 @@ import {
     UserRefArraySchema,
     UserSchema,
 } from './user.js';
+import {
+    DriftAnalysisProgressSchema,
+    DriftAnalysisResultSchema,
+    DriftAnalysisStatusResponseSchema,
+    EmbeddingsStatusResponseSchema,
+    GenericCommandResponseSchema,
+    IndexingStatusResponseSchema,
+    ProjectConfigurationEmbeddingEnablePayloadSchema,
+    ReindexAgentRunsPayloadSchema,
+    ReindexAgentRunsResponseSchema,
+    StartProjectReindexPayloadSchema,
+} from './zeno-commands.js';
 
 // ajv-formats is CommonJS with an ESM-style declaration file. Node's interop makes the default
 // import the whole `module.exports` (itself callable), while TypeScript sees the namespace — and
@@ -1159,6 +1171,19 @@ const ZENO_DOCUMENT_PROCESSING_SCHEMAS = {
     DocAnalyzeRunStatusResponse: DocAnalyzeRunStatusResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const ZENO_COMMAND_SCHEMAS = {
+    StartProjectReindexPayload: StartProjectReindexPayloadSchema,
+    ReindexAgentRunsResponse: ReindexAgentRunsResponseSchema,
+    ReindexAgentRunsPayload: ReindexAgentRunsPayloadSchema,
+    IndexingStatusResponse: IndexingStatusResponseSchema,
+    DriftAnalysisResult: DriftAnalysisResultSchema,
+    DriftAnalysisProgress: DriftAnalysisProgressSchema,
+    EmbeddingsStatusResponse: EmbeddingsStatusResponseSchema,
+    ProjectConfigurationEmbeddingEnablePayload: ProjectConfigurationEmbeddingEnablePayloadSchema,
+    GenericCommandResponse: GenericCommandResponseSchema,
+    DriftAnalysisStatusResponse: DriftAnalysisStatusResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 /**
  * Merges the groups, refusing a name that appears in more than one.
  *
@@ -1221,6 +1246,7 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
     ZENO_COST_SCHEMAS,
     ZENO_BULK_OPERATION_SCHEMAS,
     ZENO_DOCUMENT_PROCESSING_SCHEMAS,
+    ZENO_COMMAND_SCHEMAS,
 ]) as Record<ApiComponentName, z.ZodType>;
 
 export type ApiComponentName =
@@ -1239,7 +1265,8 @@ export type ApiComponentName =
     | keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
     | keyof typeof ZENO_COST_SCHEMAS
     | keyof typeof ZENO_BULK_OPERATION_SCHEMAS
-    | keyof typeof ZENO_DOCUMENT_PROCESSING_SCHEMAS;
+    | keyof typeof ZENO_DOCUMENT_PROCESSING_SCHEMAS
+    | keyof typeof ZENO_COMMAND_SCHEMAS;
 
 /**
  * Components that reject undeclared properties.
@@ -1549,6 +1576,17 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'RenderMarkdownStatusResponse',
     'RenderMarkdownPayload',
     'DocAnalyzeRunStatusResponse',
+    // Zeno command responses and their two request payloads are all published closed today.
+    'StartProjectReindexPayload',
+    'ReindexAgentRunsResponse',
+    'ReindexAgentRunsPayload',
+    'IndexingStatusResponse',
+    'DriftAnalysisResult',
+    'DriftAnalysisProgress',
+    'EmbeddingsStatusResponse',
+    'ProjectConfigurationEmbeddingEnablePayload',
+    'GenericCommandResponse',
+    'DriftAnalysisStatusResponse',
     // The OAuth closure. Every object in it is published closed today; the ten enums and the two
     // array components take no additionalProperties at all, and `OAuthProviderData`/`OAuthClientData`
     // are composed rather than hoisted so they have no component to list.
@@ -1885,7 +1923,9 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeo
                                 ? z.infer<(typeof ZENO_BULK_OPERATION_SCHEMAS)[N]>
                                 : N extends keyof typeof ZENO_DOCUMENT_PROCESSING_SCHEMAS
                                   ? z.infer<(typeof ZENO_DOCUMENT_PROCESSING_SCHEMAS)[N]>
-                                  : never;
+                                  : N extends keyof typeof ZENO_COMMAND_SCHEMAS
+                                    ? z.infer<(typeof ZENO_COMMAND_SCHEMAS)[N]>
+                                    : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

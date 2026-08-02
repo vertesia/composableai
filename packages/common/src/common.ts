@@ -12,6 +12,7 @@ import type { DeleteCountResultSchema } from './api-schemas/commands.js';
 import type { SuccessResponseSchema } from './api-schemas/oauth.js';
 import type { CountResultSchema } from './api-schemas/project.js';
 import type { DeleteByIdResultSchema } from './api-schemas/user.js';
+import type { GenericCommandResponseSchema } from './api-schemas/zeno-commands.js';
 import type { ContentObjectProcessingPriority } from './store/store.js';
 
 export interface FindPayload {
@@ -23,12 +24,7 @@ export interface FindPayload {
     from_root?: string;
 }
 
-export interface GenericCommandResponse {
-    status: string;
-    message: string;
-    err?: unknown;
-    details?: unknown;
-}
+export type GenericCommandResponse = z.infer<typeof GenericCommandResponseSchema>;
 
 /**
  * Derived from `DeleteByIdResultSchema`. Shared by eight studio delete endpoints; only `DeleteUser`

@@ -23,3 +23,4 @@ export * from './environment.js';
 export * from './parameters.js';
 export * from './quota.js';
 export * from './registry.js';
+export * from './zeno-commands.js';
