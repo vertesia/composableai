@@ -339,7 +339,7 @@ export const AppManifestSourceSchema = z
  * component it references is above.
  */
 
-// The remote MCP connection contracts — wave S4.
+// The remote MCP connection contracts.
 //
 // Eight components covering the OAuth handshake `RemoteMcpConnectionsResource` performs on behalf of
 // a tool collection, plus the tool annotations an aggregated tool carries. They live here rather

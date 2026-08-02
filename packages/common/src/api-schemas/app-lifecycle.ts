@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { AppAccessControlSchema, AppAvailableInSchema, MCPToolAnnotationsSchema } from './apps.js';
 import { EventCategorySchema } from './audit-trail.js';
 
-// The app lifecycle contracts — wave S5: versions, builds, scaffolds, git repositories, development
-// tasks, installations and inspection. `./apps.js` holds the manifest itself and the tool-collection
+// The app lifecycle contracts: versions, builds, scaffolds, git repositories, development tasks,
+// installations and inspection. `./apps.js` holds the manifest itself and the tool-collection
 // leaves it reaches; this holds everything an app *does* after it exists.
 //
 // `AppManifest` and `AppManifestData` are still derived, and so is every slot that embeds one

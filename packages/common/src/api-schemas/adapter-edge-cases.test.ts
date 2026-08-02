@@ -317,7 +317,7 @@ describe('hoisting a union and its members', () => {
      * the same union is routinely reachable from two roots — once where its members happen to come
      * first and once where they do not. Hoisting in declaration order made those two emissions differ,
      * and the adapter then reported a component "defined twice with different shapes" that nobody had
-     * defined twice. Wave S2 hit it on `EmbeddingsApiInput`.
+     * defined twice. `EmbeddingsApiInput` was the first to hit it.
      */
     const MEMBERS = {
         Text: { $id: 'Text', type: 'object', properties: { kind: { const: 'text' } }, required: ['kind'] },

@@ -129,9 +129,8 @@ export const ExecutionEnvironmentArraySchema = z
  * {@link ExecutionEnvironmentSchema} minus the secret (`apiKey`, `apikey_hint`) and the
  * provider-specific `config`/`settings` blocks.
  *
- * Wave S2 left this a plain interface because no environment endpoint returned it. Wave S3 gave it
- * a component: `ResolvedInteractionExecutionInfo` refs it, and a canonical component may not `$ref`
- * a TypeScript-derived one.
+ * No environment endpoint returns it; it has a component because `ResolvedInteractionExecutionInfo`
+ * refs it, and a canonical component may not `$ref` a TypeScript-derived one.
  */
 export const ExecutionEnvironmentRefSchema = z
     .strictObject({

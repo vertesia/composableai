@@ -394,8 +394,8 @@ export const ContentTypeIntakePolicySchema = z
 
 /*
  * Content-type catalog components, converted from the published document by
- * `packages/api-specs/scripts/convert-to-zod.mjs` (wave Z1). The conversion is mechanical: each
- * body below re-emits byte-identically to the component it replaces.
+ * `packages/api-specs/scripts/convert-to-zod.mjs`. The conversion is mechanical: each body below
+ * re-emits byte-identically to the component it replaces.
  */
 export const ColumnLayoutSchema = z
     .strictObject({
@@ -541,8 +541,8 @@ export const ContentObjectTypeItemArraySchema = z
     .meta({ id: 'ContentObjectTypeItemArray' });
 
 /*
- * The three shapes below were derived from mapped types until wave Z1: `InCodeTypeDefinition` was
- * published as `Pick_ContentObjectTypeItem_id_name_...`, and `ContentObjectType` and
+ * The three shapes below were once derived from mapped types: `InCodeTypeDefinition` was published
+ * as `Pick_ContentObjectTypeItem_id_name_...`, and `ContentObjectType` and
  * `CreateContentObjectTypePayload` were an `extends` and an `Omit<>` over it. A mapped type over a
  * canonical alias resolves to `{}`, so they are authored — and composed, so they cannot drift.
  */

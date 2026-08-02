@@ -97,20 +97,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
         // grows by one line per hoisted schema as batches convert, which is the point: each addition is
         // a new public component name and wants a reviewer to see it.
         expect(Object.keys(ApiSchemaComponents).sort()).toEqual([
-            // Batches convert whole `$ref` closures, so the list grows in groups rather than one
-            // name at a time. The comments say which batch each group arrived with; sort order is
-            // alphabetical, so a group is not contiguous and the note sits at its first member.
-            // Batches convert whole `$ref` closures, so the list grows in groups rather than one
-            // name at a time. The comments say which batch each group arrived with; sort order is
-            // alphabetical, so a group is not contiguous and the note sits at its first member.
-            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
-            // because an ACE $refs AceConditions which $refs PropertyConditions.
             'ACECreatePayload',
             'ACEUpdatePayload',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'AIModel',
             'AIModelArray',
             'AIModelStatus',
@@ -121,78 +109,30 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AccessControlResourceType',
             'Account',
             'AccountBilling',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'AccountProjectsResponse',
             'AccountRef',
             'AccountType',
-            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
-            // because an ACE $refs AceConditions which $refs PropertyConditions.
             'AceConditions',
             'AgentCheckpointConfiguration',
             'AgentProjectConfiguration',
-            // Wave S3, fourteenth — the interactions, executions and runs: a hundred and thirty-one
-            // components across sixty-seven slots, the largest wave so far. The prompt tree, the
-            // execution payloads and the run shapes convert together because they reference each
-            // other; the four query components and the one header component are expanded into
-            // parameters rather than published as bodies.
             'AgentResourceAction',
             'AgentResourceReference',
             'AgentResourceType',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AgentRunSearchHit',
             'AgentRunStatus',
             'AgentRunType',
-            // Wave S3, fourteenth — the interactions, executions and runs: a hundred and thirty-one
-            // components across sixty-seven slots, the largest wave so far. The prompt tree, the
-            // execution payloads and the run shapes convert together because they reference each
-            // other; the four query components and the one header component are expanded into
-            // parameters rather than published as bodies.
             'AgentRunnerOptions',
             'AgentSearchScope',
             'AgentSearchScope_Collection',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AgentToolApprovalClass',
-            // Wave S3, fourteenth — the interactions, executions and runs: a hundred and thirty-one
-            // components across sixty-seven slots, the largest wave so far. The prompt tree, the
-            // execution payloads and the run shapes convert together because they reference each
-            // other; the four query components and the one header component are expanded into
-            // parameters rather than published as bodies.
             'AgentToolApprovalMode',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AgentToolDefinition',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'AgenticViewSearchConfiguration',
             'AggregatedTool',
             'AggregatedToolArray',
-            // Wave Z3 — the Zeno data-store closure: sixty-two registry components across thirty-six
-            // request, query and response slots. The two query components are flattened into parameters.
             'AlterTableOperation',
             'AlterTablePayload',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'AnalyticsAxis',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'ApiKey',
             'ApiKeyArray',
             'ApiKeyListQuery',
@@ -200,37 +140,16 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ApiKeyReadResponse',
             'ApiKeyTypes',
             'ApiKeyWithValue',
-            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
-            // still derived, and these are the components their derived bodies now `$ref`.
             'AppAccessControl',
             'AppAvailableIn',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AppBuildProgress',
             'AppBuildProgressStatus',
             'AppBuildTrigger',
-            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
-            // still derived, and these are the components their derived bodies now `$ref`.
             'AppCapabilities',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AppDevelopmentTask',
             'AppDevelopmentTaskDetails',
             'AppDevelopmentTaskList',
-            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
-            // still derived, and these are the components their derived bodies now `$ref`.
             'AppGitSourceConfig',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AppInspectionCapabilityReport',
             'AppInspectionIssue',
             'AppInspectionResult',
@@ -240,14 +159,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AppInstallationProjectsQuery',
             'AppInstallationProviderBinding',
             'AppInstallationsQuery',
-            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
-            // still derived, and these are the components their derived bodies now `$ref`.
             'AppManifestSource',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AppOAuthCollectionParams',
             'AppOAuthProviderParams',
             'AppPackageScope',
@@ -262,25 +174,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AppScaffoldModule',
             'AppScaffoldProgress',
             'AppScaffoldProgressStatus',
-            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
-            // still derived, and these are the components their derived bodies now `$ref`.
             'AppSourceConfig',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AppToolCollection',
             'AppToolCollectionArray',
-            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
-            // still derived, and these are the components their derived bodies now `$ref`.
             'AppUIConfig',
             'AppUINavItem',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'AppVersionGitRefType',
             'AppVersionGitSource',
             'AppVersionKind',
@@ -290,18 +188,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AppVersionStorage',
             'AppVersionTarget',
             'AppVersionUrls',
-            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
-            // still derived, and these are the components their derived bodies now `$ref`.
             'AsyncCompletionMode',
             'AsyncCompletionOptions',
             'AsyncConversationExecutionPayload',
             'AsyncExecutionPayload',
             'AsyncExecutionResult',
             'AsyncInteractionExecutionPayload',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'AuditAction',
             'AuditAggregationDetailField',
             'AuditAggregationDetailFilter',
@@ -319,16 +211,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'AuditTrailEvent',
             'AuditTrailQuery',
             'AuditTrailResponse',
-            // The app-manifest leaves, tenth. No slot moved: `AppManifestData` and `AppManifest` are
-            // still derived, and these are the components their derived bodies now `$ref`.
             'AuthTokenResponse',
             'BatchQueryPayload',
             'BatchQueryResult',
             'BatchQueryResultItem',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'BedrockAI21Options',
             'BedrockClaudeOptions',
             'BedrockCohereCommandOptions',
@@ -340,21 +226,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'BedrockMistralOptions',
             'BedrockNovaOptions',
             'BedrockPalmyraOptions',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'BillingMethod',
-            // The ProjectConfiguration leaves, ninth — sixteen components hoisted by the configuration
-            // rather than named by an endpoint, converted ahead of `Project` and `ProjectConfiguration`
-            // themselves, which still reach the intake-policy tree.
             'BrowserUseProjectConfiguration',
             'BrowserUseRiskPolicy',
             'BrowserUseScreenshotCapture',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'BulkObjectCreateResult',
             'BulkObjectDeleteResult',
             'BulkObjectUpdateResult',
@@ -362,13 +237,6 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'BulkOperationResponse',
             'BulkOperationResult',
             'BulkRevokeOAuthGrantsPayload',
-            // The intake policy tree, tenth. `ContentTypeIntakePolicy` replaces a hand-written AJV
-            // schema and hoists InteractionExecutionConfiguration, the two grounding policies, three
-            // enums and the embedding-switch map. ProjectIntakeConfiguration converts with it:
-            // `vision_profiles` was a mapped type over IntakeVisionDetail, and a mapped type cannot
-            // be keyed by an alias the generator treats as opaque.
-            // Wave Z1, eleventh — the zeno files, durable-task, content-type-catalog and migration closures,
-            // converted in bulk from the published document rather than transcribed one property at a time.
             'BulkUploadUrlsPayload',
             'BulkUploadUrlsResponse',
             'CachePolicy',
@@ -379,22 +247,9 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'CompleteTaskPayload',
             'CompletionResult',
             'ComputeInteractionFacetPayload',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'ComputePromptFacetPayload',
-            // The intake policy tree, tenth. `ContentTypeIntakePolicy` replaces a hand-written AJV
-            // schema and hoists InteractionExecutionConfiguration, the two grounding policies, three
-            // enums and the embedding-switch map. ProjectIntakeConfiguration converts with it:
-            // `vision_profiles` was a mapped type over IntakeVisionDetail, and a mapped type cannot
-            // be keyed by an alias the generator treats as opaque.
-            // Wave Z1, eleventh — the zeno files, durable-task, content-type-catalog and migration closures,
-            // converted in bulk from the published document rather than transcribed one property at a time.
             'ComputedFacetResponse',
             'ConfigModes',
-            // Also wave Z1: the two content-type shapes a mapped type used to derive, plus InCodeTypeDefinition,
-            // which replaces the generated `Pick_ContentObjectTypeItem_...` component name.
             'ContentObjectType',
             'ContentObjectTypeCatalogEntry',
             'ContentObjectTypeCatalogEntryArray',
@@ -402,32 +257,16 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ContentObjectTypeItem',
             'ContentObjectTypeItemArray',
             'ContentObjectTypeListQuery',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'ContentObjectTypeRef',
-            // Also wave Z1: the two content-type shapes a mapped type used to derive, plus InCodeTypeDefinition,
-            // which replaces the generated `Pick_ContentObjectTypeItem_...` component name.
             'ContentObjectTypeStatus',
             'ContentTypeEditingPolicy',
             'ContentTypeExtractionGroundingPolicy',
             'ContentTypeExtractionGroundingReviewPolicy',
             'ContentTypeIntakePolicy',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'ConversationActivityState',
-            // Also wave Z1: the two content-type shapes a mapped type used to derive, plus InCodeTypeDefinition,
-            // which replaces the generated `Pick_ContentObjectTypeItem_...` component name.
             'ConversationState',
             'ConversationStripOptions',
             'ConversationVisibility',
-            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
-            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'CopyFilePayload',
             'CopyFileResponse',
             'CostAnalyticsQuery',
@@ -440,23 +279,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'CostSummary',
             'CostTimeSeriesPoint',
             'CountResult',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'CreateApiKeyPayload',
-            // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
-            // an endpoint.
             'CreateContentObjectTypePayload',
-            // Wave Z2 — the zeno dashboard resource. The endpoint roots pull in the two data-source
-            // branches, the legacy panel/query shapes and the version representations together.
             'CreateDashboardPayload',
             'CreateDashboardSnapshotPayload',
             'CreateDataStorePayload',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'CreateOAuthClientPayload',
             'CreateOAuthProviderPayload',
             'CreateSnapshotPayload',
@@ -464,16 +291,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'CreateTablesPayload',
             'CreateTaskPayload',
             'CreateUserGroupPayload',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'CreateViewExperienceRequest',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'Dashboard',
             'DashboardArchiveResult',
             'DashboardBulkArchiveResult',
@@ -531,28 +349,14 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'DataTableSemanticType',
             'DataTableSummary',
             'DataTableSummaryArray',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'DeleteAppVersionResponse',
-            // The IAM closure, converted as the second. PrincipalContext is composed into
-            // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'DeleteByIdResult',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'DeleteCountResult',
             'DeleteFileResult',
             'DeleteOperationResult',
             'DurableTaskStatus',
             'ElasticsearchBackend',
             'EmailChannel',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'EmbeddingOutput',
             'EmbeddingResultItem',
             'EmbeddingTaskType',
@@ -566,21 +370,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'EmbeddingsResult',
             'EmbeddingsTokenUsage',
             'EnableEnvironmentModelPayload',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'EventCategory',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'EventRef',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'ExecuteInteractionByEndpointHeaders',
             'ExecuteInteractionByEndpointQuery',
             'ExecutionEnvironment',
@@ -598,30 +389,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ExecutionRunStatus',
             'ExecutionRunWorkflow',
             'ExecutionTokenUsage',
-            // The S3 review corrections. Six components describe listings and an export that were
-            // published as `Interaction`/`InteractionArray` while returning projections; three
-            // describe the run-with-result shapes the completion endpoints return, enforced at
-            // runtime only because those endpoints publish as route variants; `RunListQuery` states
-            // the filters `GET /runs` actually applies.
             'ExportedPromptTemplateRef',
             'ExternalizedToolInputRef',
             'ExternalizedToolInputRefs',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'Extract_AppVersionGitRefType_branch_tag_commit',
-            // The S3 review corrections. Six components describe listings and an export that were
-            // published as `Interaction`/`InteractionArray` while returning projections; three
-            // describe the run-with-result shapes the completion endpoints return, enforced at
-            // runtime only because those endpoints publish as route variants; `RunListQuery` states
-            // the filters `GET /runs` actually applies.
             'FacetSpec',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'FileBucketResponse',
             'FileDeleteQuery',
             'FileListQuery',
@@ -642,18 +414,9 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'GetFileUrlResponse',
             'GetUploadUrlPayload',
             'GroqOptions',
-            // The Project closure, ninth — also declared in @llumiverse/common, because that is where
-            // the type is. `InteractionExecutionConfiguration.http_timeout` references it, so it has to
-            // convert before that does.
             'HttpTimeoutOptions',
-            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
-            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ICreateProjectPayload',
             'ImageResult',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'ImagenMaskMode',
             'ImagenOptions',
             'ImagenTaskType',
@@ -668,16 +431,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ImprovePromptPayloadConfig',
             'InCodePrompt',
             'InCodeTypeDefinition',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'InCodeTypeRef',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'InitialToolCall',
             'IntakePageRanges',
             'IntakePageScope',
@@ -708,134 +462,57 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'InteractionVisibility',
             'InteractionsExportPayload',
             'InteractiveChannel',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'InviteAcceptanceResponse',
             'InviteDeclineResponse',
             'InviteUserRequestPayload',
             'InviteUserResponsePayload',
             'JSONObject',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'JSONSchema',
             'JSONSchemaProperties',
             'JSONValue',
             'JsonResult',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'KnownAuditAction',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'LegacyExecutionRunResult',
             'LegacyPopulatedExecutionRunResult',
             'ListDataStoreVersionsQuery',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'ListEnvironmentsQuery',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'ListOAuthGrantsQuery',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'ListProjectToolsQuery',
-            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
-            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'ListProjectsQuery',
             'ListTasksQuery',
             'LlmCallType',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'LoadBalancingEnvConfig',
             'LoadBalancingEnvEntryConfig',
             'MCPOAuthConfig',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'MCPToolAnnotations',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'MCPToolCollectionObject',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'McpOAuthConnectResponse',
             'McpOAuthDisconnectResponse',
             'McpOAuthTokenRequest',
             'McpOAuthTokenResponse',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'MediatorEnvConfig',
             'MigrationListResponse',
             'Modalities',
             'ModalityDefaults',
             'ModelDefault',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'ModelOptions',
             'ModelPriceComparison',
             'ModelPriceComparisonResponse',
             'ModelPricing',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'ModelSearchPayload',
             'ModelSource',
             'ModelType',
             'NamedInteractionExecutionPayload',
             'NovaCanvasOptions',
             'NumberValueMap',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'OAuthAuthStatus',
             'OAuthAuthStatusArray',
             'OAuthAuthorizeResponse',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'OAuthClient',
             'OAuthClientArray',
             'OAuthClientCreateResponse',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'OAuthClientCredentials',
             'OAuthClientCredentialsMap',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'OAuthClientScopeMetadata',
             'OAuthClientStatus',
             'OAuthClientType',
@@ -846,16 +523,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'OAuthGrantSortOrder',
             'OAuthGrantStatus',
             'OAuthGrantType',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'OAuthMetadataResponse',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'OAuthProjectBindingMode',
             'OAuthProvider',
             'OAuthProviderAccessTokenResponse',
@@ -866,14 +534,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'OAuthRegistrationSource',
             'OAuthResponseType',
             'OAuthTokenEndpointAuthMethod',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'OnboardingProgress',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'OpenAiDalleOptions',
             'OpenAiGptImageOptions',
             'OpenAiTextOptions',
@@ -881,54 +542,34 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'Partial_ExecutionRunRef',
             'Partial_IntakeVisionProfileSettings',
             'Partial_Omit_DataColumn_name',
-            // The two update payloads of the Project closure, tenth. `Partial<>` of an intercepted
-            // canonical alias cannot be derived, so they are registered rather than left to the scanner.
             'Partial_Project',
             'Partial_ProjectConfiguration',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'Partial_Record_AuditAggregationDimension_string_null',
-            // The two update payloads of the Project closure, tenth. `Partial<>` of an intercepted
-            // canonical alias cannot be derived, so they are registered rather than left to the scanner.
             'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings',
             'Partial_Record_SupportedEmbeddingTypes_boolean',
             'PendingMcpConnection',
             'PendingToolApprovalResults',
-            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
-            // because an ACE $refs AceConditions which $refs PropertyConditions.
             'Permission',
             'Plan',
             'PlanTask',
             'PopulatedExecutionRunResult',
-            // The IAM closure, converted as the second. PrincipalContext is composed into
-            // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'PrincipalIdentity',
-            // The two roots of the Project closure, tenth — converted last, after every component
-            // they reach. `Project` also corrects `integrations` to a plain map and the timestamps to
-            // strings, which is what the wire has always carried.
             'Project',
             'ProjectConfiguration',
             'ProjectConfigurationEmbedding',
             'ProjectIndexingConfiguration',
             'ProjectIntakeConfiguration',
             'ProjectIntakeSniffConfiguration',
-            // The Projects closure, sixth: the slots that needed nothing from the two roots above.
             'ProjectIntegrationListEntry',
             'ProjectIntegrationListResponse',
             'ProjectModelDefaults',
             'ProjectPluginsUpdatePayload',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'ProjectRef',
             'ProjectRefArray',
             'ProjectSearchPropertyMapping',
             'ProjectSearchPropertyMappingMap',
             'ProjectSearchPropertyType',
             'ProjectSearchTier',
-            // The Projects closure, sixth.
             'ProjectTagQuery',
             'ProjectToolInfo',
             'ProjectToolInfoArray',
@@ -936,12 +577,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'PromptImprovementResponse',
             'PromptModalities',
             'PromptRole',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'PromptSearchQuery',
-            // The Projects closure, sixth.
             'PromptSegment',
             'PromptSegmentDef',
             'PromptSegmentDefType',
@@ -950,25 +586,13 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'PromptStatus',
             'PromptTemplate',
             'PromptTemplateCreatePayload',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'PromptTemplateForkPayload',
             'PromptTemplateInteractionUsage',
             'PromptTemplateInteractionVersion',
             'PromptTemplateInteractionsResponse',
-            // The Projects closure, sixth.
             'PromptTemplateRef',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'PromptTemplateRefArray',
-            // The Projects closure, sixth.
             'PromptTemplateUpdatePayload',
-            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
-            // because an ACE $refs AceConditions which $refs PropertyConditions.
             'PropertyConditionValue',
             'PropertyConditions',
             'QueryPayload',
@@ -977,7 +601,6 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'QueryValidationError',
             'QueryValidationPayload',
             'QueryValidationResult',
-            // The quota closure, converted as the first bulk batch.
             'QuotaEffectiveTier',
             'QuotaStandingAdmissionClass',
             'QuotaStandingResource',
@@ -987,19 +610,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'QuotaTierResponse',
             'RateLimitRequestPayload',
             'RateLimitRequestResponse',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'ReasoningEffort',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'RenderPromptResponse',
-            // The app-manifest closure, ninth — the rendering templates convert first because they are
-            // a leaf of it: AppManifestData embeds the Ref, and a derived component may $ref a
-            // canonical one.
             'RenderingTemplateDefinition',
             'RenderingTemplateDefinitionRef',
             'ResolveInteractionQuery',
@@ -1008,37 +620,17 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ResolvedRuntimeConfig',
             'ResourceVisibility',
             'ResultStorageOptions',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'RevokeOAuthGrantQuery',
-            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
-            // because an ACE $refs AceConditions which $refs PropertyConditions.
             'RoleDefinition',
             'RoleDefinitionArray',
             'RoleDomain',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'RunAnalyticsGroupBy',
             'RunAnalyticsQuery',
             'RunAnalyticsResult',
             'RunAnalyticsResultArray',
             'RunCreatePayload',
             'RunDataStorageLevel',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'RunKind',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'RunListQuery',
             'RunMigrationPayload',
             'RunMigrationResponse',
@@ -1046,16 +638,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'RunSearchQuery',
             'RunSource',
             'RunSourceTypes',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'RunType',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'SchemaRef',
             'SemanticColumnType',
             'SetFileMetadataPayload',
@@ -1064,31 +647,13 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'SkillContextTriggers',
             'SortOption',
             'SortOrder',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'StartAppBuildRequest',
             'StartAppBuildResponse',
             'StartAppScaffoldRequest',
             'StartAppScaffoldResponse',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'StatelessExecutionOptions',
             'StoredCatalogInteractionsQuery',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'StoredTypeRef',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'StreamingOptions',
             'StreamingTelemetryContext',
             'StringArrayMap',
@@ -1096,39 +661,14 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'StripeBillingDisabled',
             'StripeBillingEnabled',
             'StripeBillingStatusResponse',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'SuccessResponse',
-            // The Projects closure, sixth and deliberately partial: Project and ProjectConfiguration reach
-            // ModelOptions in @llumiverse/common, which no canonical component may $ref.
             'SupportedIntegrations',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'SupportedProviders',
             'SystemDefaults',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'SystemPackageQuery',
-            // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
-            // because an ACE $refs AceConditions which $refs PropertyConditions.
             'SystemRoleDefinition',
             'SystemRoleDefinitionArray',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'SystemRoles',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'Task',
             'TaskArray',
             'TaskField',
@@ -1139,133 +679,53 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'TextFallbackOptions',
             'TextResult',
             'ThinkingLevel',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'TimeResolution',
             'ToolApprovalGrant',
             'ToolApprovalGrantMap',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'ToolCollectionAuthType',
             'ToolCollectionObject',
             'ToolDefinition',
             'ToolReference',
             'ToolResult',
             'ToolResultMeta',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'ToolSource',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'ToolUse',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'ToolValidationResult',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'TransientTokenType',
             'TransientToken_UserInviteTokenData_',
             'TransientToken_UserInviteTokenData_Array',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'TwelvelabsPegasusOptions',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'UpdateAccountPayload',
             'UpdateApiKeyPayload',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'UpdateAppInstallationToolAllowlistPayload',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'UpdateContentObjectTypePayload',
             'UpdateDashboardPayload',
-            // Wave S1, twelfth — the studio OAuth surface: providers, clients and grants, thirty-one
-            // components across twenty-nine slots. The ten enums each have a TypeScript name and so a
-            // component of its own; the two query components are expanded into parameters rather than
-            // published. `Partial_CreateOAuthProviderPayload` LEFT the document in the same wave —
-            // `UpdateOAuthProviderPayload` is defined where it is named now, so the invented name is gone.
             'UpdateOAuthClientPayload',
             'UpdateOAuthProviderPayload',
             'UpdateSchemaPayload',
-            // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
-            // an endpoint.
             'UpdateTaskPayload',
             'UpdateUserGroupPayload',
-            // The IAM closure, converted as the second. PrincipalContext is composed into
-            // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'UpdateUserPayload',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'UpdateViewExperienceRequest',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'UpsertAppVersionRequest',
-            // The IAM closure, converted as the second. PrincipalContext is composed into
-            // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'UsedSkill',
             'User',
             'UserArray',
             'UserChannel',
-            // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
-            // an endpoint.
             'UserGroup',
             'UserGroupArray',
             'UserGroupRef',
-            // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
-            // shared with slots that have NOT converted, which is safe only because the emitted JSON is
-            // byte-identical to what the scanner derives.
             'UserInviteTokenData',
-            // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
-            // an endpoint.
             'UserRef',
             'UserRefArray',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'ValidateToolNamesPayload',
             'ValidateToolNamesResponse',
-            // Wave S5, sixteenth — the app lifecycle: versions, builds, scaffolds, git repositories,
-            // development tasks, installations and inspection. Sixty-two components across twenty-nine
-            // slots. `AppManifest` and everything that embeds one stays derived, blocked on settling
-            // `JSONSchema.type` in @llumiverse/common; the three query components are expanded into
-            // parameters rather than published as bodies, and were hand-authored for that reason.
             'ValidateUrlRequest',
             'ValidateUrlResponse',
-            // The llumiverse leaves, seventh — ModelOptions with its twenty-three driver option sets and
-            // four enums, and JSONSchema with its property map. Named by no endpoint yet: they are
-            // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
-            // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'VertesiaSDKToolCollectionObject',
             'VertexAIClaudeOptions',
             'VertexAIGeminiOptions',
             'VertexAIGrokOptions',
-            // Wave S4, fifteenth — the prompt-authoring, project-tool, remote-MCP, audit-trail and
-            // view-experience endpoints: eighty-one components across thirty-eight slots. Views is the
-            // largest single closure so far; the three query components are expanded into parameters
-            // rather than published as bodies, and were hand-authored for that reason.
             'ViewBoardCardConfiguration',
             'ViewBoardColumn',
             'ViewBoardDisplay',
@@ -1300,10 +760,6 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ViewTableColumn',
             'ViewTableDisplay',
             'ViewTermsNavigation',
-            // Wave S2, thirteenth — the studio execution environments: thirty-six components across
-            // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
-            // results) and registered from @llumiverse/common/schemas rather than redefined here. The
-            // two query components are expanded into parameters rather than published.
             'VirtualEnvEntry',
             'WorkflowAncestor',
         ]);

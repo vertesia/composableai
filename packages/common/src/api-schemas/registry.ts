@@ -671,15 +671,15 @@ const addFormats = ajvFormats.default;
  * into `lib/*.d.ts`, and a Zod schema's type is deeply structural: two hundred of them is the limit.
  * With most of the migration still ahead, raising the ceiling once is not a fix.
  *
- * So the object is declared in groups small enough to serialize, and the two public types are
- * assembled from them: the name union is a union of `keyof`, and the wire type is a conditional that
- * dispatches to the group a name belongs to. Both are exactly what they were — a name is still one
- * of these keys, and `ApiComponentType<'Account'>` is still `z.infer<typeof AccountSchema>`.
+ * So the object is declared in groups small enough to serialize, and `ApiSchemaMap` puts them back
+ * together as an intersection — which the compiler emits as the type expression it was written as,
+ * with no inferred node to serialize. A name is still one of these keys and
+ * `ApiComponentType<'Account'>` is still `z.infer<typeof AccountSchema>`.
  *
  * Adding a component means putting it in whichever group fits and nothing else. Add a group when one
- * approaches the size the others already prove is safe, and add its two lines to the types below.
- * The grouping is a compiler accommodation and carries no meaning: nothing reads a component's group,
- * and a component may move between groups freely.
+ * approaches the size the others already prove is safe, and add its line to `API_SCHEMA_GROUPS` and
+ * to `ApiSchemaMap`. The grouping is a compiler accommodation and carries no meaning: nothing reads a
+ * component's group, and a component may move between groups freely.
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
     Account: AccountSchema,
@@ -793,7 +793,7 @@ const PROJECT_AND_APP_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 /**
- * Wave S1 — the studio OAuth surface: providers, clients, grants.
+ * The studio OAuth surface: providers, clients, grants.
  *
  * A group of its own rather than an addition to one above, for the reason stated on the grouping
  * note: thirty-one components is most of what a group can hold before the declaration emit refuses
@@ -846,8 +846,7 @@ const OAUTH_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 /**
- * Wave S2 — the studio execution environments, and everything the twenty slots across
- * `/environments` name.
+ * The studio execution environments, and everything the twenty slots across `/environments` name.
  *
  * A fifth group, for the same reason the fourth exists: the declaration emit refuses a group much
  * past thirty entries, and this is thirty-six.
@@ -858,9 +857,8 @@ const OAUTH_SCHEMAS = {
  * here rather than defining them here is the whole point: one definition, whichever package owns it.
  */
 const ENVIRONMENT_SCHEMAS = {
-    // The environment itself. `ExecutionEnvironmentRef` is the secret-free projection; wave S2 left
-    // it a plain interface because no environment endpoint returned it, and wave S3 registered it
-    // because `ResolvedInteractionExecutionInfo` refs it.
+    // The environment itself. `ExecutionEnvironmentRef` is the secret-free projection: no
+    // environment endpoint returns it, but `ResolvedInteractionExecutionInfo` refs it.
     SupportedProviders: SupportedProvidersSchema,
     ExecutionEnvironmentRef: ExecutionEnvironmentRefSchema,
     ExecutionEnvironment: ExecutionEnvironmentSchema,
@@ -907,16 +905,16 @@ const ENVIRONMENT_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 /**
- * Wave S3 — interactions, prompts, runs and agent conversations: the sixty-eight slots across the
- * six `/interactions`, `/runs` and `/execute` resources.
+ * Interactions, prompts, runs and agent conversations: the sixty-eight slots across the six
+ * `/interactions`, `/runs` and `/execute` resources.
  *
- * One wave rather than six, because it is one closure. `Interaction` reaches `PromptSegmentDef`
- * reaches `PromptTemplate`; `InteractionExecutionResult` reaches `ExecutionRun` reaches
- * `ConversationState` reaches the agent plan, the channels and the tool-approval types. A canonical
- * component may not `$ref` a TypeScript-derived one, so the closure converts together or not at all.
+ * These are one closure, not six. `Interaction` reaches `PromptSegmentDef` reaches
+ * `PromptTemplate`; `InteractionExecutionResult` reaches `ExecutionRun` reaches `ConversationState`
+ * reaches the agent plan, the channels and the tool-approval types. A canonical component may not
+ * `$ref` a TypeScript-derived one, so the closure holds together or not at all.
  *
- * A hundred and twenty-nine components is far past what one group serializes, so it arrives as five,
- * split along the lines the closure already has. The split is still only a compiler accommodation:
+ * A hundred and twenty-nine components is far past what one group serializes, so it is five, split
+ * along the lines the closure already has. The split is still only a compiler accommodation:
  * nothing reads a component's group.
  *
  * The completion group is llumiverse's. A prompt segment, a tool call and a completion result are
@@ -1101,9 +1099,7 @@ const EXECUTION_RUN_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const ZENO_SCHEMAS = {
-    // Wave Z1 — zeno files, durable tasks, the content-type catalog and the migration commands.
-    // Converted in bulk by `packages/api-specs/scripts/convert-to-zod.mjs` from the published
-    // document, so every body here re-emits byte-identically to the component it replaces.
+    // Zeno files, durable tasks, the content-type catalog and the migration commands.
     StringValueMap: StringValueMapSchema,
     CopyFilePayload: CopyFilePayloadSchema,
     CopyFileResponse: CopyFileResponseSchema,
@@ -1278,8 +1274,8 @@ const ZENO_BULK_OPERATION_SCHEMAS = {
  * Merges the groups, refusing a name that appears in more than one.
  *
  * A spread would accept the duplicate and keep the LAST group's schema, while
- * {@link ApiComponentType} — a conditional that tests the groups in order — would resolve to the
- * FIRST group's. That is the exact type/runtime split this registry exists to make impossible:
+ * {@link ApiComponentType} — which indexes the intersection of the groups — would resolve to the
+ * intersection of BOTH. That is the exact type/runtime split this registry exists to make impossible:
  * validation would enforce one shape while every handler was typed against another, and nothing
  * downstream would report it. Registering a component twice is always a mistake, so it fails loudly
  * at module load rather than being resolved by an ordering rule nobody can see.
@@ -1313,9 +1309,9 @@ export function mergeComponentGroups(groups: Record<string, z.ZodType>[]): Recor
 }
 
 const PROMPT_AUTHORING_SCHEMAS = {
-    // Wave S4 - the prompt-authoring endpoints: fork, render, search and the interaction usages a
-    // prompt reports. `PromptTemplate` itself and its write payloads live with the interactions,
-    // which is where the prompt tree they reference is defined.
+    // The prompt-authoring endpoints: fork, render, search and the interaction usages a prompt
+    // reports. `PromptTemplate` itself and its write payloads live with the interactions, which is
+    // where the prompt tree they reference is defined.
     RenderPromptResponse: RenderPromptResponseSchema,
     PromptTemplateInteractionVersion: PromptTemplateInteractionVersionSchema,
     PromptTemplateForkPayload: PromptTemplateForkPayloadSchema,
@@ -1327,7 +1323,7 @@ const PROMPT_AUTHORING_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const PROJECT_TOOL_SCHEMAS = {
-    // Wave S4 - the unified project-scoped tool registry: what `GET /tools` aggregates across
+    // The unified project-scoped tool registry: what `GET /tools` aggregates across
     // builtins, installed apps and interactions, and what `POST /tools/validate` resolves.
     ToolSource: ToolSourceSchema,
     ValidateToolNamesPayload: ValidateToolNamesPayloadSchema,
@@ -1339,7 +1335,7 @@ const PROJECT_TOOL_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const REMOTE_MCP_SCHEMAS = {
-    // Wave S4 - the OAuth handshake a remote MCP tool collection performs. Grouped by the
+    // The OAuth handshake a remote MCP tool collection performs. Grouped by the
     // endpoints that serve it, though the schemas live in `./apps.js` beside the installation
     // they belong to.
     MCPToolAnnotations: MCPToolAnnotationsSchema,
@@ -1354,7 +1350,7 @@ const REMOTE_MCP_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const AUDIT_TRAIL_SCHEMAS = {
-    // Wave S4 - the audit trail: the events the endpoint pages through and the aggregation it
+    // The audit trail: the events the endpoint pages through and the aggregation it
     // computes over them.
     AuditMeter: AuditMeterSchema,
     KnownAuditAction: KnownAuditActionSchema,
@@ -1379,7 +1375,7 @@ const AUDIT_TRAIL_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const VIEW_EXPERIENCE_SCHEMAS = {
-    // Wave S4 - view experiences: the search, navigation, results and display configuration a
+    // View experiences: the search, navigation, results and display configuration a
     // curated content view is assembled from. The largest single closure in the migration so far.
     ViewExperienceSchemaVersion: ViewExperienceSchemaVersionSchema,
     ViewSortClause: ViewSortClauseSchema,
@@ -1428,7 +1424,7 @@ const VIEW_EXPERIENCE_SCHEMAS = {
  * re-creating the type the split exists to avoid.
  */
 const APP_LIFECYCLE_SCHEMAS = {
-    // Wave S5 - what an app does once it exists: versions, builds, scaffolds, git repositories,
+    // What an app does once it exists: versions, builds, scaffolds, git repositories,
     // development tasks, installations and inspection. The manifest itself is still derived; see
     // the note in `./app-lifecycle.js` for what blocks it.
     UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayloadSchema,
@@ -1498,7 +1494,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     SystemPackageQuery: SystemPackageQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponentGroups([
+const API_SCHEMA_GROUPS = [
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
     OAUTH_SCHEMAS,
@@ -1520,30 +1516,41 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
     ZENO_DATA_STORE_SCHEMA_SCHEMAS,
     ZENO_COST_SCHEMAS,
     ZENO_BULK_OPERATION_SCHEMAS,
-]) as Record<ApiComponentName, z.ZodType>;
+];
 
-export type ApiComponentName =
-    | keyof typeof IAM_AND_ACCOUNT_SCHEMAS
-    | keyof typeof PROJECT_AND_APP_SCHEMAS
-    | keyof typeof OAUTH_SCHEMAS
-    | keyof typeof ENVIRONMENT_SCHEMAS
-    | keyof typeof LLM_COMPLETION_SCHEMAS
-    | keyof typeof INTERACTION_SCHEMAS
-    | keyof typeof INTERACTION_AUTHORING_SCHEMAS
-    | keyof typeof AGENT_CONVERSATION_SCHEMAS
-    | keyof typeof EXECUTION_RUN_SCHEMAS
-    | keyof typeof PROMPT_AUTHORING_SCHEMAS
-    | keyof typeof PROJECT_TOOL_SCHEMAS
-    | keyof typeof REMOTE_MCP_SCHEMAS
-    | keyof typeof AUDIT_TRAIL_SCHEMAS
-    | keyof typeof VIEW_EXPERIENCE_SCHEMAS
-    | keyof typeof APP_LIFECYCLE_SCHEMAS
-    | keyof typeof ZENO_SCHEMAS
-    | keyof typeof ZENO_DASHBOARD_SCHEMAS
-    | keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
-    | keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
-    | keyof typeof ZENO_COST_SCHEMAS
-    | keyof typeof ZENO_BULK_OPERATION_SCHEMAS;
+/**
+ * The registry as one type: the groups intersected, which is what a single object literal would
+ * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
+ * intersected with a second schema.
+ */
+type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
+    typeof PROJECT_AND_APP_SCHEMAS &
+    typeof OAUTH_SCHEMAS &
+    typeof ENVIRONMENT_SCHEMAS &
+    typeof LLM_COMPLETION_SCHEMAS &
+    typeof INTERACTION_SCHEMAS &
+    typeof INTERACTION_AUTHORING_SCHEMAS &
+    typeof AGENT_CONVERSATION_SCHEMAS &
+    typeof EXECUTION_RUN_SCHEMAS &
+    typeof PROMPT_AUTHORING_SCHEMAS &
+    typeof PROJECT_TOOL_SCHEMAS &
+    typeof REMOTE_MCP_SCHEMAS &
+    typeof AUDIT_TRAIL_SCHEMAS &
+    typeof VIEW_EXPERIENCE_SCHEMAS &
+    typeof APP_LIFECYCLE_SCHEMAS &
+    typeof ZENO_SCHEMAS &
+    typeof ZENO_DASHBOARD_SCHEMAS &
+    typeof ZENO_DATA_STORE_CORE_SCHEMAS &
+    typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS &
+    typeof ZENO_COST_SCHEMAS &
+    typeof ZENO_BULK_OPERATION_SCHEMAS;
+
+export type ApiComponentName = keyof ApiSchemaMap;
+
+const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponentGroups(API_SCHEMA_GROUPS) as Record<
+    ApiComponentName,
+    z.ZodType
+>;
 
 /**
  * Components that reject undeclared properties.
@@ -1706,9 +1713,9 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'MCPOAuthConfig',
     'MCPToolCollectionObject',
     'VertesiaSDKToolCollectionObject',
-    // Wave Z1. Every one is published closed today; `StringValueMap`, `MigrationListResponse`,
-    // `TaskArray`, the two content-type array wrappers and the three enums are not objects and take
-    // none.
+    // The zeno file, task, content-type and migration components. Every one is published closed
+    // today; `StringValueMap`, `MigrationListResponse`, `TaskArray`, the two content-type array
+    // wrappers and the three enums are not objects and take none.
     'CopyFilePayload',
     'CopyFileResponse',
     'DeleteFileResult',
@@ -1895,8 +1902,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // `/environments` resources take.
     'ListEnvironmentsQuery',
     'ModelSearchPayload',
-    // Wave S3 — the interaction, prompt, run and agent-conversation closure. Every name here is
-    // published closed today.
+    // The interaction, prompt, run and agent-conversation closure. Every name here is published
+    // closed today.
     //
     // What is deliberately absent, and why, because the list is long enough that absence has to be
     // readable: the enums and string constants (`InteractionStatus`, `PromptStatus`, `TemplateType`,
@@ -2011,8 +2018,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ResolveInteractionQuery',
     'ExecuteInteractionByEndpointQuery',
     'ExecuteInteractionByEndpointHeaders',
-    // Wave S4 - the prompt-authoring, project-tool, remote-MCP, audit-trail and view-experience
-    // closures. Every name here is published closed by the document this batch converts from.
+    // The prompt-authoring, project-tool, remote-MCP, audit-trail and view-experience closures.
+    // Every name here is published closed today.
     'ValidateToolNamesPayload',
     'ToolValidationResult',
     'AggregatedTool',
@@ -2245,53 +2252,10 @@ export function apiComponentRef(name: ApiComponentName): string {
 /**
  * The wire type a component publishes.
  *
- * The conditional dispatches to whichever group holds the name. It reads as more machinery than
- * `z.infer<(typeof API_SCHEMAS)[N]>`, and it resolves to exactly that — see the note on the groups
- * for why the single object cannot be the source.
+ * `ApiComponentType<'Account'>` is `z.infer<typeof AccountSchema>` — the map is indexed directly
+ * rather than dispatched through the groups, which the intersection makes possible.
  */
-export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeof IAM_AND_ACCOUNT_SCHEMAS
-    ? z.infer<(typeof IAM_AND_ACCOUNT_SCHEMAS)[N]>
-    : N extends keyof typeof PROJECT_AND_APP_SCHEMAS
-      ? z.infer<(typeof PROJECT_AND_APP_SCHEMAS)[N]>
-      : N extends keyof typeof OAUTH_SCHEMAS
-        ? z.infer<(typeof OAUTH_SCHEMAS)[N]>
-        : N extends keyof typeof ENVIRONMENT_SCHEMAS
-          ? z.infer<(typeof ENVIRONMENT_SCHEMAS)[N]>
-          : N extends keyof typeof LLM_COMPLETION_SCHEMAS
-            ? z.infer<(typeof LLM_COMPLETION_SCHEMAS)[N]>
-            : N extends keyof typeof INTERACTION_SCHEMAS
-              ? z.infer<(typeof INTERACTION_SCHEMAS)[N]>
-              : N extends keyof typeof INTERACTION_AUTHORING_SCHEMAS
-                ? z.infer<(typeof INTERACTION_AUTHORING_SCHEMAS)[N]>
-                : N extends keyof typeof AGENT_CONVERSATION_SCHEMAS
-                  ? z.infer<(typeof AGENT_CONVERSATION_SCHEMAS)[N]>
-                  : N extends keyof typeof EXECUTION_RUN_SCHEMAS
-                    ? z.infer<(typeof EXECUTION_RUN_SCHEMAS)[N]>
-                    : N extends keyof typeof PROMPT_AUTHORING_SCHEMAS
-                      ? z.infer<(typeof PROMPT_AUTHORING_SCHEMAS)[N]>
-                      : N extends keyof typeof PROJECT_TOOL_SCHEMAS
-                        ? z.infer<(typeof PROJECT_TOOL_SCHEMAS)[N]>
-                        : N extends keyof typeof REMOTE_MCP_SCHEMAS
-                          ? z.infer<(typeof REMOTE_MCP_SCHEMAS)[N]>
-                          : N extends keyof typeof AUDIT_TRAIL_SCHEMAS
-                            ? z.infer<(typeof AUDIT_TRAIL_SCHEMAS)[N]>
-                            : N extends keyof typeof VIEW_EXPERIENCE_SCHEMAS
-                              ? z.infer<(typeof VIEW_EXPERIENCE_SCHEMAS)[N]>
-                              : N extends keyof typeof APP_LIFECYCLE_SCHEMAS
-                                ? z.infer<(typeof APP_LIFECYCLE_SCHEMAS)[N]>
-                                : N extends keyof typeof ZENO_SCHEMAS
-                                  ? z.infer<(typeof ZENO_SCHEMAS)[N]>
-                                  : N extends keyof typeof ZENO_DASHBOARD_SCHEMAS
-                                    ? z.infer<(typeof ZENO_DASHBOARD_SCHEMAS)[N]>
-                                    : N extends keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
-                                      ? z.infer<(typeof ZENO_DATA_STORE_CORE_SCHEMAS)[N]>
-                                      : N extends keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
-                                        ? z.infer<(typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS)[N]>
-                                        : N extends keyof typeof ZENO_COST_SCHEMAS
-                                          ? z.infer<(typeof ZENO_COST_SCHEMAS)[N]>
-                                          : N extends keyof typeof ZENO_BULK_OPERATION_SCHEMAS
-                                            ? z.infer<(typeof ZENO_BULK_OPERATION_SCHEMAS)[N]>
-                                            : never;
+export type ApiComponentType<N extends ApiComponentName> = z.infer<ApiSchemaMap[N]>;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:
