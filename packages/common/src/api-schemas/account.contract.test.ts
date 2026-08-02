@@ -311,6 +311,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'ExecutionRunStatus',
             'ExecutionRunWorkflow',
             'ExecutionTokenUsage',
+            // The S3 review corrections. Six components describe listings and an export that were
+            // published as `Interaction`/`InteractionArray` while returning projections; three
+            // describe the run-with-result shapes the completion endpoints return, enforced at
+            // runtime only because those endpoints publish as route variants; `RunListQuery` states
+            // the filters `GET /runs` actually applies.
+            'ExportedPromptTemplateRef',
             'ExternalizedToolInputRef',
             'ExternalizedToolInputRefs',
             'FacetSpec',
@@ -371,9 +377,13 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'InteractionExecutionPayload',
             'InteractionExecutionResult',
             'InteractionForkPayload',
+            'InteractionName',
+            'InteractionNameArray',
             'InteractionPublishPayload',
             'InteractionRef',
             'InteractionRefArray',
+            'InteractionRefWithSchema',
+            'InteractionRefWithSchemaArray',
             'InteractionSearchQuery',
             'InteractionStatus',
             'InteractionTags',
@@ -398,6 +408,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'JSONSchemaProperties',
             'JSONValue',
             'JsonResult',
+            'LegacyExecutionRunResult',
+            'LegacyPopulatedExecutionRunResult',
             // Wave S2, thirteenth — the studio execution environments: thirty-six components across
             // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
             // results) and registered from @llumiverse/common/schemas rather than redefined here. The
@@ -501,6 +513,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'Permission',
             'Plan',
             'PlanTask',
+            'PopulatedExecutionRunResult',
             // The IAM closure, converted as the second. PrincipalContext is composed into
             // PrincipalIdentity rather than hoisted, so it is a public type with no component.
             'PrincipalIdentity',
@@ -537,6 +550,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'PromptSegment',
             'PromptSegmentDef',
             'PromptSegmentDefType',
+            'PromptSegmentRef_ExportedPromptTemplateRef',
             'PromptSegmentRef_PromptTemplateRef',
             'PromptStatus',
             'PromptTemplate',
@@ -594,6 +608,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'RunAnalyticsResultArray',
             'RunCreatePayload',
             'RunDataStorageLevel',
+            'RunListQuery',
             'RunMigrationPayload',
             'RunMigrationResponse',
             'RunSearchPayload',
