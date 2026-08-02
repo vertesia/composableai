@@ -1,6 +1,6 @@
 import { VertesiaClient } from '@vertesia/client';
 import type { Command } from 'commander';
-import { ensureProfileAccessToken } from './profiles/auth.js';
+import { createProfileAuthProvider, ensureProfileAccessToken } from './profiles/auth.js';
 import { config, type Profile } from './profiles/index.js';
 import { isKeyringAvailable } from './profiles/keyring.js';
 
@@ -65,8 +65,8 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
     }
 
     if (!env.apikey && profile) {
-        env.apikey = await ensureProfileAccessToken(profile);
-        if (!env.apikey && !profile.apikey) {
+        const profileToken = await ensureProfileAccessToken(profile);
+        if (!profileToken && !profile.apikey) {
             if (!isKeyringAvailable()) {
                 throw new Error(
                     'No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY or VERTESIA_TOKEN instead.',
@@ -76,6 +76,14 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
                 'No auth token is stored for the selected profile. Run `vertesia auth refresh` to authenticate again.',
             );
         }
+        // A profile configured with a long-lived API key uses it directly.
+        if (!profileToken && profile.apikey) {
+            return new VertesiaClient({ ...env, apikey: profile.apikey });
+        }
+        // A profile access token is short-lived. Resolve it per request through the profile
+        // refresh path instead of pinning the token captured here, so commands that run longer
+        // than the token TTL (`agents stream`, workflow tails) keep working.
+        return new VertesiaClient({ ...env, apikey: undefined }).withAuthCallback(createProfileAuthProvider(profile));
     }
 
     return new VertesiaClient(env);
