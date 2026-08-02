@@ -39,6 +39,7 @@ export {
 } from './AskUserWidget';
 export * from './JumpingDots';
 export {
+    type AgentMessageFilter,
     ModernAgentConversation,
     type ModernAgentConversationProps,
     type SendAgentMessageFn,

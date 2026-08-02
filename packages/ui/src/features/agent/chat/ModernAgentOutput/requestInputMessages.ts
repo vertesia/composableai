@@ -96,6 +96,65 @@ export function getRequestInputMessageKey(message: AgentMessage): string {
         .join('|');
 }
 
+export function getRequestInputId(message: AgentMessage): string | undefined {
+    const details = message.details as Record<string, unknown> | undefined;
+    const requestId = details?.request_id ?? details?.tool_use_id;
+    return typeof requestId === 'string' && requestId ? requestId : undefined;
+}
+
+export function getRequestInputResolutionKey(message: AgentMessage): string {
+    return getRequestInputId(message) ?? getRequestInputMessageKey(message);
+}
+
+const ANSWERED_REQUEST_INPUT_STORAGE_PREFIX = 'vertesia:answered-request-input:';
+
+function getAnsweredRequestInputStorageKey(agentRunId: string, requestId: string): string {
+    return `${ANSWERED_REQUEST_INPUT_STORAGE_PREFIX}${agentRunId}:${requestId}`;
+}
+
+export function markRequestInputIdAnsweredForSession(agentRunId: string, requestId: string): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+        window.sessionStorage.setItem(getAnsweredRequestInputStorageKey(agentRunId, requestId), '1');
+    } catch {
+        // Session storage can be unavailable in privacy-restricted browser contexts.
+    }
+}
+
+export function clearRequestInputIdAnsweredForSession(agentRunId: string, requestId: string): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+        window.sessionStorage.removeItem(getAnsweredRequestInputStorageKey(agentRunId, requestId));
+    } catch {
+        // Session storage can be unavailable in privacy-restricted browser contexts.
+    }
+}
+
+export function isRequestInputAnsweredForSession(agentRunId: string, message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.REQUEST_INPUT) return false;
+
+    const requestId = getRequestInputId(message);
+    if (!requestId || typeof window === 'undefined') return false;
+
+    try {
+        return window.sessionStorage.getItem(getAnsweredRequestInputStorageKey(agentRunId, requestId)) === '1';
+    } catch {
+        return false;
+    }
+}
+
+function getRequestInputResponseId(message: AgentMessage): string | undefined {
+    if (message.type !== AgentMessageType.QUESTION) return undefined;
+
+    const details = getRecord(message.details);
+    const metadata = getRecord(details?.metadata);
+    const response = getRecord(details?.request_input_response) ?? getRecord(metadata?.request_input_response);
+    const requestId = response?.request_id;
+    return typeof requestId === 'string' && requestId ? requestId : undefined;
+}
+
 export function getRequestInputAnswerMessageKey(message: AgentMessage): string {
     const details = message.details as Record<string, unknown> | undefined;
     const keyParts = [
@@ -114,9 +173,21 @@ export function getRequestInputAnswerMessageKey(message: AgentMessage): string {
 
 export function getAnsweredRequestInputKeys(messages: AgentMessage[]): Set<string> {
     const answered = new Set<string>();
+    const latestResponseIndexByRequestId = new Map<string, number>();
+    messages.forEach((message, index) => {
+        const requestId = getRequestInputResponseId(message);
+        if (requestId) latestResponseIndexByRequestId.set(requestId, index);
+    });
 
     messages.forEach((message, index) => {
         if (message.type !== AgentMessageType.REQUEST_INPUT) return;
+
+        const requestId = getRequestInputId(message);
+        const correlatedResponseIndex = requestId ? latestResponseIndexByRequestId.get(requestId) : undefined;
+        if (correlatedResponseIndex !== undefined && correlatedResponseIndex > index) {
+            answered.add(getRequestInputMessageKey(message));
+            return;
+        }
 
         const workstreamId = getWorkstreamId(message);
         for (let nextIndex = index + 1; nextIndex < messages.length; nextIndex += 1) {
@@ -125,13 +196,50 @@ export function getAnsweredRequestInputKeys(messages: AgentMessage[]): Set<strin
 
             if (nextMessage.type === AgentMessageType.REQUEST_INPUT) break;
             if (nextMessage.type === AgentMessageType.QUESTION) {
-                answered.add(getRequestInputMessageKey(message));
+                if (!getRequestInputResponseId(nextMessage)) {
+                    answered.add(getRequestInputMessageKey(message));
+                }
                 break;
             }
         }
     });
 
     return answered;
+}
+
+export function getRequestInputResponseMetadata(
+    message: AgentMessage,
+    metadata?: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+    const requestId = getRequestInputId(message);
+    if (!requestId) return metadata;
+
+    return {
+        ...metadata,
+        request_input_response: { request_id: requestId },
+    };
+}
+
+export function sendRequestInputResponse(
+    onSendMessage: ((message: string, metadata?: Record<string, unknown>) => void) | undefined,
+    requestMessage: AgentMessage,
+    response: string,
+    metadata?: Record<string, unknown>,
+): void {
+    if (!onSendMessage) return;
+
+    const responseMetadata = getRequestInputResponseMetadata(requestMessage, metadata);
+    if (responseMetadata) {
+        onSendMessage(response, responseMetadata);
+    } else {
+        onSendMessage(response);
+    }
+}
+
+export function getRequestInputResponseIdFromMetadata(metadata?: Record<string, unknown>): string | undefined {
+    const response = getRecord(metadata?.request_input_response);
+    const requestId = response?.request_id;
+    return typeof requestId === 'string' && requestId ? requestId : undefined;
 }
 
 export function getResolvedToolApprovalKeys(messages: AgentMessage[]): Set<string> {
@@ -300,6 +408,7 @@ export function isRequestInputAnswered(message: AgentMessage, answeredRequestInp
 export function getPendingRequestInputMessage(
     messages: AgentMessage[],
     workstreamId = 'main',
+    locallyAnsweredRequestInputKeys?: ReadonlySet<string>,
 ): RequestInputMessageWithUx | undefined {
     const answeredRequestInputKeys = getAnsweredRequestInputKeys(messages);
     const resolvedToolApprovalKeys = getResolvedToolApprovalKeys(messages);
@@ -308,6 +417,7 @@ export function getPendingRequestInputMessage(
         const message = messages[index];
         if (!hasRequestInputUx(message)) continue;
         if (getWorkstreamId(message) !== workstreamId) continue;
+        if (locallyAnsweredRequestInputKeys?.has(getRequestInputResolutionKey(message))) continue;
         if (isRequestInputAnswered(message, answeredRequestInputKeys)) continue;
         if (isRequestInputResolvedByToolApprovalEvent(message, resolvedToolApprovalKeys)) continue;
         return message;

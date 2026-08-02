@@ -1,9 +1,9 @@
 import { Button, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { UserSessionContext } from '@vertesia/ui/session';
-import { FileTextIcon, ImageIcon, XIcon } from 'lucide-react';
+import { ChevronDown, FileTextIcon, ImageIcon, XIcon } from 'lucide-react';
 import type React from 'react';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useId, useState } from 'react';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache';
 
@@ -26,6 +26,7 @@ const TEXT_EXTENSIONS = new Set([
     'yaml',
     'yml',
 ]);
+const DEFAULT_COLLAPSED_ATTACHMENT_COUNT = 3;
 
 export interface AttachmentPreviewItem {
     id: string;
@@ -374,11 +375,24 @@ export function AttachmentPreviewList({
     StoreLinkComponent,
     CollectionLinkComponent,
 }: AttachmentPreviewListProps) {
+    const { t } = useUITranslation();
+    const [isExpanded, setIsExpanded] = useState(false);
+    const attachmentListId = useId();
+    const isCollapsible = variant === 'composer' && items.length > DEFAULT_COLLAPSED_ATTACHMENT_COUNT;
+    const visibleItems = isCollapsible && !isExpanded ? items.slice(0, DEFAULT_COLLAPSED_ATTACHMENT_COUNT) : items;
+    const hiddenItemCount = items.length - DEFAULT_COLLAPSED_ATTACHMENT_COUNT;
+
+    useEffect(() => {
+        if (items.length <= DEFAULT_COLLAPSED_ATTACHMENT_COUNT) {
+            setIsExpanded(false);
+        }
+    }, [items.length]);
+
     if (items.length === 0) return null;
 
     return (
-        <div className={cn('flex flex-wrap gap-2', align === 'end' && 'justify-end', className)}>
-            {items.map((item) => (
+        <div id={attachmentListId} className={cn('flex flex-wrap gap-2', align === 'end' && 'justify-end', className)}>
+            {visibleItems.map((item) => (
                 <AttachmentPreview
                     key={item.id}
                     item={item}
@@ -390,6 +404,24 @@ export function AttachmentPreviewList({
                     CollectionLinkComponent={CollectionLinkComponent}
                 />
             ))}
+            {isCollapsible && (
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-controls={attachmentListId}
+                    aria-expanded={isExpanded}
+                    onClick={() => setIsExpanded((expanded) => !expanded)}
+                    className="h-8 shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted"
+                >
+                    {!isExpanded && <span>+{hiddenItemCount}</span>}
+                    {isExpanded ? t('agent.showLess') : t('agent.showMore')}
+                    <ChevronDown
+                        className={cn('size-3.5 transition-transform', isExpanded && 'rotate-180')}
+                        aria-hidden="true"
+                    />
+                </Button>
+            )}
         </div>
     );
 }

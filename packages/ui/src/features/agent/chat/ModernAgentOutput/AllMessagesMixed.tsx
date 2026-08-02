@@ -68,6 +68,7 @@ import {
     isToolApprovalRequestInput,
     isToolApprovalRequestInputHidden,
     type RequestInputMessageWithUx,
+    sendRequestInputResponse,
 } from './requestInputMessages';
 import {
     interleaveTurnSummaries,
@@ -92,6 +93,7 @@ import {
     getWorkstreamId,
     groupMessagesWithStreaming,
     isInProgress,
+    isToolActivityMessage,
     isToolPreambleMessage,
     isUserStoppedMessage,
     mergeConsecutiveToolGroups,
@@ -753,13 +755,22 @@ function SummaryMessage({
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}
                     onSelect={(optionId) =>
-                        onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                        sendRequestInputResponse(
+                            onSendMessage,
+                            message,
+                            optionId,
+                            getToolApprovalResponseMetadata(message, optionId),
+                        )
                     }
-                    onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                    onMultiSelect={(optionIds) =>
+                        sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
+                    }
                     allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
                     placeholder={uxConfig.free_response?.placeholder}
                     submitLabel={uxConfig.free_response?.submit_label}
-                    onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
+                    onSubmit={(value) =>
+                        sendRequestInputResponse(onSendMessage, message, value, uxConfig.free_response?.metadata)
+                    }
                     hideBorder
                     compact
                     answered={requestInputAnswered}
@@ -2273,19 +2284,32 @@ function SummaryActivityRow({
                                                 variant={uxConfig.variant}
                                                 multiSelect={uxConfig.multiSelect}
                                                 onSelect={(optionId) =>
-                                                    onSendMessage?.(
+                                                    sendRequestInputResponse(
+                                                        onSendMessage,
+                                                        message,
                                                         optionId,
                                                         getToolApprovalResponseMetadata(message, optionId),
                                                     )
                                                 }
-                                                onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                                onMultiSelect={(optionIds) =>
+                                                    sendRequestInputResponse(
+                                                        onSendMessage,
+                                                        message,
+                                                        optionIds.join(', '),
+                                                    )
+                                                }
                                                 allowFreeResponse={
                                                     !uxConfig.options?.length || !!uxConfig.free_response
                                                 }
                                                 placeholder={uxConfig.free_response?.placeholder}
                                                 submitLabel={uxConfig.free_response?.submit_label}
                                                 onSubmit={(value) =>
-                                                    onSendMessage?.(value, uxConfig.free_response?.metadata)
+                                                    sendRequestInputResponse(
+                                                        onSendMessage,
+                                                        message,
+                                                        value,
+                                                        uxConfig.free_response?.metadata,
+                                                    )
                                                 }
                                                 hideBorder
                                                 compact
@@ -2663,18 +2687,23 @@ function AllMessagesMixedComponent({
         });
     }, []);
 
+    const previousActiveWorkstreamRef = useRef(activeWorkstream);
+    useEffect(() => {
+        if (previousActiveWorkstreamRef.current === activeWorkstream) return;
+        previousActiveWorkstreamRef.current = activeWorkstream;
+        requestAnimationFrame(scrollToTop);
+    }, [activeWorkstream, scrollToTop]);
+
     const handleSelectWorkstream = useCallback(
         (workstreamId: string) => {
             setActiveWorkstream(workstreamId);
-            requestAnimationFrame(scrollToTop);
         },
-        [scrollToTop, setActiveWorkstream],
+        [setActiveWorkstream],
     );
 
     const handleShowMainAgentChat = useCallback(() => {
         setActiveWorkstream('all');
-        requestAnimationFrame(scrollToTop);
-    }, [scrollToTop, setActiveWorkstream]);
+    }, [setActiveWorkstream]);
 
     useEffect(() => {
         if (activeWorkstream !== 'all' && !workstreams.has(activeWorkstream)) {
@@ -2944,6 +2973,18 @@ function AllMessagesMixedComponent({
         // completed until the agent posts its next message.
         return !isDisplayCompleted || hasOpenUserTurn(completionDisplayMessages);
     }, [completionDisplayMessages, isDisplayCompleted]);
+
+    const showPostToolThinking = useMemo(() => {
+        if (!isAgentWorking || incompleteStreaming.length > 0) return false;
+
+        const latestSummaryItem = summaryConversationItems[summaryConversationItems.length - 1];
+        const latestMessage = completionDisplayMessages[completionDisplayMessages.length - 1];
+        const latestMessageShowsThinking =
+            latestMessage !== undefined &&
+            (latestMessage.details?.display_role === 'thinking' ||
+                (isToolActivityMessage(latestMessage) && latestMessage.details?.tool_status === 'completed'));
+        return latestSummaryItem?.type === 'work' && latestSummaryItem.isActive && latestMessageShowsThinking;
+    }, [completionDisplayMessages, incompleteStreaming.length, isAgentWorking, summaryConversationItems]);
 
     const showActivityFallback = shouldShowSummaryActivityFallback(
         summaryConversationItems,
@@ -3661,6 +3702,17 @@ function AllMessagesMixedComponent({
                                     artifactRunId={artifactRunId}
                                 />
                             ))}
+                            {showPostToolThinking && (
+                                <div
+                                    className={cn(
+                                        'mx-auto w-full max-w-3xl px-1 text-sm text-muted',
+                                        workingIndicatorClassName,
+                                    )}
+                                    data-testid="post-tool-thinking-indicator"
+                                >
+                                    {t('agent.thinking')}
+                                </div>
+                            )}
                             {/* Activity fallback - shown before any tool/thought message has arrived */}
                             {showActivityFallback && !showInitialRequestWaitingCard && (
                                 <SummaryActivityRow
