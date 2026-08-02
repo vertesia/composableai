@@ -17,6 +17,7 @@ export * from './bulk-operation.js';
 export * from './cost-analytics.js';
 export * from './dashboard.js';
 export * from './data-store.js';
+export * from './document-processing.js';
 export * from './embeddings.js';
 export * from './environment.js';
 export * from './parameters.js';

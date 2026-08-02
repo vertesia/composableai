@@ -195,6 +195,26 @@ import {
     UpdateSchemaPayloadSchema,
 } from './data-store.js';
 import {
+    DocAnalyzeRunStatusResponseSchema,
+    DocAnalyzerProgressSchema,
+    DocAnalyzerProgressStatusSchema,
+    DocProcessorOutputFormatSchema,
+    DocumentPrepOptionsSchema,
+    DocumentProcessingPhaseSchema,
+    GroundedAssistantResponseSchema,
+    GroundedExtractionRequestSchema,
+    GroundedExtractionResultResponseSchema,
+    GroundedExtractionVerdictSchema,
+    GroundedVerificationBreakdownSchema,
+    MarkdownRenditionFormatSchema,
+    PdfRenderingMetadataSchema,
+    RenderMarkdownPayloadSchema,
+    RenderMarkdownStartResponseSchema,
+    RenderMarkdownStatusQuerySchema,
+    RenderMarkdownStatusResponseSchema,
+    WorkflowExecutionStatusSchema,
+} from './document-processing.js';
+import {
     EmbeddingsApiAudioInputSchema,
     EmbeddingsApiImageInputSchema,
     EmbeddingsApiInputSchema,
@@ -1095,6 +1115,27 @@ const ZENO_BULK_OPERATION_SCHEMAS = {
     BulkOperationResponse: BulkOperationResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const ZENO_DOCUMENT_PROCESSING_SCHEMAS = {
+    GroundedAssistantResponse: GroundedAssistantResponseSchema,
+    GroundedExtractionRequest: GroundedExtractionRequestSchema,
+    GroundedVerificationBreakdown: GroundedVerificationBreakdownSchema,
+    GroundedExtractionVerdict: GroundedExtractionVerdictSchema,
+    DocProcessorOutputFormat: DocProcessorOutputFormatSchema,
+    DocAnalyzerProgressStatus: DocAnalyzerProgressStatusSchema,
+    DocumentProcessingPhase: DocumentProcessingPhaseSchema,
+    WorkflowExecutionStatus: WorkflowExecutionStatusSchema,
+    DocumentPrepOptions: DocumentPrepOptionsSchema,
+    MarkdownRenditionFormat: MarkdownRenditionFormatSchema,
+    RenderMarkdownStatusQuery: RenderMarkdownStatusQuerySchema,
+    RenderMarkdownStartResponse: RenderMarkdownStartResponseSchema,
+    PdfRenderingMetadata: PdfRenderingMetadataSchema,
+    GroundedExtractionResultResponse: GroundedExtractionResultResponseSchema,
+    DocAnalyzerProgress: DocAnalyzerProgressSchema,
+    RenderMarkdownStatusResponse: RenderMarkdownStatusResponseSchema,
+    RenderMarkdownPayload: RenderMarkdownPayloadSchema,
+    DocAnalyzeRunStatusResponse: DocAnalyzeRunStatusResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 /**
  * Merges the groups, refusing a name that appears in more than one.
  *
@@ -1156,6 +1197,7 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
     ZENO_DATA_STORE_SCHEMA_SCHEMAS,
     ZENO_COST_SCHEMAS,
     ZENO_BULK_OPERATION_SCHEMAS,
+    ZENO_DOCUMENT_PROCESSING_SCHEMAS,
 ]) as Record<ApiComponentName, z.ZodType>;
 
 export type ApiComponentName =
@@ -1173,7 +1215,8 @@ export type ApiComponentName =
     | keyof typeof ZENO_DATA_STORE_CORE_SCHEMAS
     | keyof typeof ZENO_DATA_STORE_SCHEMA_SCHEMAS
     | keyof typeof ZENO_COST_SCHEMAS
-    | keyof typeof ZENO_BULK_OPERATION_SCHEMAS;
+    | keyof typeof ZENO_BULK_OPERATION_SCHEMAS
+    | keyof typeof ZENO_DOCUMENT_PROCESSING_SCHEMAS;
 
 /**
  * Components that reject undeclared properties.
@@ -1469,6 +1512,20 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'BulkObjectCreateResult',
     'BulkOperationResult',
     'BulkOperationPayload',
+    // Zeno rendering and document analysis. Request/response objects reproduce the closed
+    // published components; DocumentPrepOptions stays open by design, and the query follows the
+    // shared query policy of validating declared fields without rejecting unrelated parameters.
+    'GroundedAssistantResponse',
+    'GroundedExtractionRequest',
+    'GroundedVerificationBreakdown',
+    'DocAnalyzerProgressStatus',
+    'RenderMarkdownStartResponse',
+    'PdfRenderingMetadata',
+    'GroundedExtractionResultResponse',
+    'DocAnalyzerProgress',
+    'RenderMarkdownStatusResponse',
+    'RenderMarkdownPayload',
+    'DocAnalyzeRunStatusResponse',
     // The OAuth closure. Every object in it is published closed today; the ten enums and the two
     // array components take no additionalProperties at all, and `OAuthProviderData`/`OAuthClientData`
     // are composed rather than hoisted so they have no component to list.
@@ -1795,7 +1852,9 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeo
                               ? z.infer<(typeof ZENO_COST_SCHEMAS)[N]>
                               : N extends keyof typeof ZENO_BULK_OPERATION_SCHEMAS
                                 ? z.infer<(typeof ZENO_BULK_OPERATION_SCHEMAS)[N]>
-                                : never;
+                                : N extends keyof typeof ZENO_DOCUMENT_PROCESSING_SCHEMAS
+                                  ? z.infer<(typeof ZENO_DOCUMENT_PROCESSING_SCHEMAS)[N]>
+                                  : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { MarkdownRenditionFormatSchema } from '../api-schemas/document-processing.js';
 import type {
     BulkUploadUrlsPayloadSchema,
     BulkUploadUrlsResponseSchema,
@@ -1004,10 +1005,12 @@ export enum ImageRenditionFormat {
     webp = 'webp',
 }
 
-export enum MarkdownRenditionFormat {
-    docx = 'docx',
-    pdf = 'pdf',
-}
+export const MarkdownRenditionFormat = {
+    docx: 'docx',
+    pdf: 'pdf',
+} as const;
+
+export type MarkdownRenditionFormat = z.infer<typeof MarkdownRenditionFormatSchema>;
 
 export interface GetRenditionParams {
     format: ImageRenditionFormat | MarkdownRenditionFormat;

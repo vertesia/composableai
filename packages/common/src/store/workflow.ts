@@ -1,5 +1,6 @@
 import type { ExecutionTokenUsage, HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
 import type { z } from 'zod';
+import type { WorkflowExecutionStatusSchema } from '../api-schemas/document-processing.js';
 import type { PlanSchema, PlanTaskSchema, WorkflowAncestorSchema } from '../api-schemas/interaction.js';
 import type {
     AgentResourceReference,
@@ -692,16 +693,32 @@ export interface DocumentActionConfig {
     parentId?: string; //parentId for the created doc
 }
 
-export enum WorkflowExecutionStatus {
-    UNKNOWN = 0,
-    RUNNING = 1,
-    COMPLETED = 2,
-    FAILED = 3,
-    CANCELED = 4,
-    TERMINATED = 5,
-    CONTINUED_AS_NEW = 6,
-    TIMED_OUT = 7,
-}
+export const WorkflowExecutionStatusValues = {
+    UNKNOWN: 0,
+    RUNNING: 1,
+    COMPLETED: 2,
+    FAILED: 3,
+    CANCELED: 4,
+    TERMINATED: 5,
+    CONTINUED_AS_NEW: 6,
+    TIMED_OUT: 7,
+} as const;
+
+// Keep numeric reverse lookup for existing callers without treating newer Temporal-only status
+// codes as part of Vertesia's published enum. Unknown numeric codes therefore read as undefined.
+export const WorkflowExecutionStatus: typeof WorkflowExecutionStatusValues & Readonly<Record<number, string>> = {
+    ...WorkflowExecutionStatusValues,
+    0: 'UNKNOWN',
+    1: 'RUNNING',
+    2: 'COMPLETED',
+    3: 'FAILED',
+    4: 'CANCELED',
+    5: 'TERMINATED',
+    6: 'CONTINUED_AS_NEW',
+    7: 'TIMED_OUT',
+};
+
+export type WorkflowExecutionStatus = z.infer<typeof WorkflowExecutionStatusSchema>;
 
 /**
  * Basic response for anything run with an async workflow

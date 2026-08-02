@@ -360,6 +360,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'DeleteCountResult',
             'DeleteFileResult',
             'DeleteOperationResult',
+            'DocAnalyzeRunStatusResponse',
+            'DocAnalyzerProgress',
+            'DocAnalyzerProgressStatus',
+            'DocProcessorOutputFormat',
+            'DocumentPrepOptions',
+            'DocumentProcessingPhase',
             'DurableTaskStatus',
             'ElasticsearchBackend',
             'EmailChannel',
@@ -424,6 +430,11 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'GetFileUrlResponse',
             'GetUploadUrlPayload',
             'GroqOptions',
+            'GroundedAssistantResponse',
+            'GroundedExtractionRequest',
+            'GroundedExtractionResultResponse',
+            'GroundedExtractionVerdict',
+            'GroundedVerificationBreakdown',
             // The Project closure, ninth — also declared in @llumiverse/common, because that is where
             // the type is. `InteractionExecutionConfiguration.http_timeout` references it, so it has to
             // convert before that does.
@@ -517,6 +528,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'LoadBalancingEnvEntryConfig',
             'MCPOAuthConfig',
             'MCPToolCollectionObject',
+            'MarkdownRenditionFormat',
             // Wave S2, thirteenth — the studio execution environments: thirty-six components across
             // twenty slots, spanning three repositories. Half is llumiverse's (AIModel, the embedding
             // results) and registered from @llumiverse/common/schemas rather than redefined here. The
@@ -593,6 +605,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             'Partial_ProjectConfiguration',
             'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings',
             'Partial_Record_SupportedEmbeddingTypes_boolean',
+            'PdfRenderingMetadata',
             'PendingMcpConnection',
             'PendingToolApprovalResults',
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
@@ -668,6 +681,10 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // registered ahead of Project and ProjectConfiguration, which cannot convert while they $ref a
             // TypeScript-derived ModelOptions. Their schemas live in @llumiverse/common, not here.
             'ReasoningEffort',
+            'RenderMarkdownPayload',
+            'RenderMarkdownStartResponse',
+            'RenderMarkdownStatusQuery',
+            'RenderMarkdownStatusResponse',
             // The app-manifest closure, ninth — the rendering templates convert first because they are
             // a leaf of it: AppManifestData embeds the Ref, and a derived component may $ref a
             // canonical one.
@@ -838,6 +855,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // two query components are expanded into parameters rather than published.
             'VirtualEnvEntry',
             'WorkflowAncestor',
+            'WorkflowExecutionStatus',
         ]);
     });
 
