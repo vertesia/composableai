@@ -1,7 +1,8 @@
+// Runtime schemas for the app runtime API domain.
+
 import type { JSONSchema } from '@llumiverse/common';
 import { z } from 'zod';
 import type { CompositeAppMenuNavItem } from '../apps.js';
-import { SupportedIntegrations } from '../integrations.js';
 import type { InCodeProcessDefinition } from '../store/process.js';
 import {
     AgentToolDefinitionSchema,
@@ -25,157 +26,22 @@ import {
     DashboardQuerySchema,
 } from './dashboard.js';
 import { StringValueMapSchema } from './files.js';
+import { RemoteActivityDefinitionSchema } from './integrations.js';
 import { CatalogInteractionRefSchema } from './interaction.js';
+import { ProcessDefinitionBodySchema } from './process.js';
 import { RenderingTemplateDefinitionRefSchema } from './project.js';
 import { InCodeTypeDefinitionSchema } from './store.js';
-import {
-    DSLActivityOptionsSchema,
-    ProcessDefinitionBodySchema,
-    ViewExperienceConfigurationSchema,
-} from './zeno-remaining.js';
+import { ViewExperienceConfigurationSchema } from './view-execution.js';
 
 const JSONSchemaRefSchema: z.ZodType<JSONSchema> = z.any().meta({
     $ref: '#/components/schemas/JSONSchema',
 });
-
-/**
- * Generated from the published components by `scripts/convert-to-zod.mjs`, then reviewed.
- *
- * Every schema below was checked against the document it replaces: `--verify` re-emits this
- * module through the registry adapter and diffs it, so the shapes are the shipped ones.
- */
-export const WebsiteCredentialTotpAlgorithmSchema = z
-    .enum(['SHA1', 'SHA256', 'SHA512'])
-    .meta({ id: 'WebsiteCredentialTotpAlgorithm' });
-
-export const WebsiteCredentialTotpMetadataSchema = z
-    .strictObject({
-        algorithm: WebsiteCredentialTotpAlgorithmSchema.optional(),
-        digits: z
-            .union([z.literal(6), z.literal(8)])
-            .meta({ anyOf: undefined, type: 'number', enum: [6, 8] })
-            .optional(),
-        period: z.number().optional(),
-        issuer: z.string().optional(),
-        account: z.string().optional(),
-    })
-    .meta({ id: 'WebsiteCredentialTotpMetadata' });
-
-export const WebsiteCredentialSecretInputSchema = z
-    .strictObject({
-        username: z
-            .string()
-            .meta({
-                description:
-                    'Optional encrypted username. Prefer metadata.username unless the username itself is sensitive.',
-            })
-            .optional(),
-        password: z.string().optional(),
-        totp: z
-            .strictObject({
-                seed: z.string(),
-                algorithm: WebsiteCredentialTotpAlgorithmSchema.optional(),
-                digits: z
-                    .union([z.literal(6), z.literal(8)])
-                    .meta({ anyOf: undefined, type: 'number', enum: [6, 8] })
-                    .optional(),
-                period: z.number().optional(),
-                issuer: z.string().optional(),
-                account: z.string().optional(),
-            })
-            .optional(),
-        oauth: z
-            .strictObject({
-                provider_id: z.string().optional(),
-                token_owner: z.enum(['user', 'project']).optional(),
-                token_ref: z.string().optional(),
-            })
-            .meta({
-                description: 'Future OAuth materialization hook. The token itself remains in the OAuth secret store.',
-            })
-            .optional(),
-    })
-    .meta({ id: 'WebsiteCredentialSecretInput' });
-
-export const WebsiteCredentialCapabilitySchema = z
-    .enum(['password', 'totp', 'oauth'])
-    .meta({ id: 'WebsiteCredentialCapability' });
-
-export const WebsiteCredentialWebsiteSchema = z
-    .strictObject({
-        host: z.string().meta({ description: 'Hostname this credential is allowed on. Subdomains match.' }),
-        login_url: z.string().meta({ description: 'Optional login URL used by agents as a hint.' }).optional(),
-        allowed_origins: z
-            .array(z.string())
-            .meta({ description: 'Optional narrower origin allowlist for this credential.' })
-            .optional(),
-    })
-    .meta({ id: 'WebsiteCredentialWebsite' });
-
-export const SecretKindSchema = z.literal('website_credential').meta({ id: 'SecretKind' });
-
-export const SecretProjectQuerySchema = z
-    .object({
-        project_id: z
-            .string()
-            .meta({
-                description: 'Project scope for top-level secret APIs. Must match the authenticated project context.',
-            })
-            .optional(),
-    })
-    .meta({ id: 'SecretProjectQuery' });
-
-export const ListSecretsQuerySchema = SecretProjectQuerySchema.extend({
-    kind: SecretKindSchema.optional(),
-    host: z.string().optional(),
-    enabled: z.boolean().optional(),
-}).meta({ id: 'ListSecretsQuery' });
-
-export const SecretLookupQuerySchema = SecretProjectQuerySchema.extend({
-    kind: SecretKindSchema.optional(),
-}).meta({ id: 'SecretLookupQuery' });
 
 export const RenderPromptPayloadSchema = z.looseObject({}).meta({ id: 'RenderPromptPayload' });
 
 export const ProjectPluginArraySchema = z.array(z.string()).meta({ id: 'ProjectPluginArray' });
 
 export const BinaryFileResponseSchema = z.string().meta({ id: 'BinaryFileResponse', format: 'binary' });
-
-export const SupportedIntegrations_ask_user_webhookSchema = z
-    .literal(SupportedIntegrations.ask_user_webhook)
-    .meta({ id: 'SupportedIntegrations_ask_user_webhook' });
-
-export const SupportedIntegrations_resendSchema = z
-    .literal(SupportedIntegrations.resend)
-    .meta({ id: 'SupportedIntegrations_resend' });
-
-export const SupportedIntegrations_linkupSchema = z
-    .literal(SupportedIntegrations.linkup)
-    .meta({ id: 'SupportedIntegrations_linkup' });
-
-export const SupportedIntegrations_exaSchema = z
-    .literal(SupportedIntegrations.exa)
-    .meta({ id: 'SupportedIntegrations_exa' });
-
-export const SupportedIntegrations_serperSchema = z
-    .literal(SupportedIntegrations.serper)
-    .meta({ id: 'SupportedIntegrations_serper' });
-
-export const SupportedIntegrations_magic_pdfSchema = z
-    .literal(SupportedIntegrations.magic_pdf)
-    .meta({ id: 'SupportedIntegrations_magic_pdf' });
-
-export const SupportedIntegrations_awsSchema = z
-    .literal(SupportedIntegrations.aws)
-    .meta({ id: 'SupportedIntegrations_aws' });
-
-export const SupportedIntegrations_githubSchema = z
-    .literal(SupportedIntegrations.github)
-    .meta({ id: 'SupportedIntegrations_github' });
-
-export const SupportedIntegrations_gladiaSchema = z
-    .literal(SupportedIntegrations.gladia)
-    .meta({ id: 'SupportedIntegrations_gladia' });
 
 export const CompositeAppNavItemPermissionsSchema = z
     .strictObject({
@@ -350,42 +216,9 @@ export const CompositeAppCardOverridesSchema = z
 
 export const MCPOAuthConfigMapSchema = z.object({}).catchall(MCPOAuthConfigSchema).meta({ id: 'MCPOAuthConfigMap' });
 
-export const WebsiteCredentialRecordSchema = z
-    .strictObject({
-        id: z.string(),
-        credential_ref: z.string(),
-        project: z.string(),
-        name: z.string(),
-        websites: z.array(WebsiteCredentialWebsiteSchema),
-        username: z.string().optional(),
-        username_hint: z.string().optional(),
-        username_secret_enabled: z.boolean(),
-        properties: z.looseObject({}).optional(),
-        tags: z.array(z.string()).optional(),
-        enabled: z.boolean().optional(),
-        capabilities: z.array(WebsiteCredentialCapabilitySchema).optional(),
-        notes: z.string().optional(),
-        totp_metadata: WebsiteCredentialTotpMetadataSchema.optional(),
-        expires_at: z
-            .string()
-            .meta({
-                description:
-                    'Optional ISO timestamp after which the credential is no longer usable. Expired credentials are hidden from lookup and cannot be filled.',
-            })
-            .optional(),
-        created_at: z.string().optional(),
-        updated_at: z.string().optional(),
-        has_username_secret: z.boolean(),
-        has_password: z.boolean(),
-        has_totp: z.boolean(),
-        has_oauth: z.boolean(),
-        password_hint: z.string().optional(),
-    })
-    .meta({ id: 'WebsiteCredentialRecord' });
-
 export const InCodeViewDefinitionSchema = z
     .strictObject({
-        id: z.string().meta({ description: 'App-local id. Studio normalizes it to app:<app-name>:<id>.' }),
+        id: z.string().meta({ description: 'App-local id. The platform normalizes it to app:<app-name>:<id>.' }),
         name: z.string().meta({ description: 'App-local name used for lookup and diagnostics.' }),
         title: z.string().optional(),
         description: z.string().optional(),
@@ -409,7 +242,7 @@ export const InCodeProcessDefinitionSchema: z.ZodType<InCodeProcessDefinition> =
     .strictObject({
         id: z.string().meta({
             description:
-                'Process identifier exposed by an app package. App-local ids are normalized by Studio to `app:<app-name>:<id>` when returned to callers.',
+                'Process identifier exposed by an app package. App-local ids are normalized by the platform to `app:<app-name>:<id>` when returned to callers.',
         }),
         name: z.string().meta({ description: 'Human-readable or app-local process name.' }),
         title: z.string().optional(),
@@ -455,140 +288,6 @@ export const AppInstallationSchema = z
     })
     .meta({ id: 'AppInstallation' });
 
-export const AskUserWebhookConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_ask_user_webhookSchema,
-        enabled: z.boolean(),
-        webhook_url: z.string().meta({ description: 'Webhook URL to receive ask_user events' }),
-        has_webhook_secret: z.boolean().optional(),
-        webhook_secret_hint: z.string().optional(),
-        events: z
-            .array(z.enum(['requested', 'resolved']))
-            .meta({ description: "Which events to send: ['requested', 'resolved'] or subset (default: both)" })
-            .optional(),
-        custom_headers: StringValueMapSchema.meta({
-            description: 'Custom headers to include in webhook requests',
-        }).optional(),
-    })
-    .meta({
-        id: 'AskUserWebhookConfiguration',
-        description:
-            'Configuration for ask_user webhook notifications. Sends webhooks when agents call ask_user and when users respond.',
-    });
-
-export const ResendConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_resendSchema,
-        enabled: z.boolean(),
-        has_api_key: z.boolean().optional(),
-        api_key_hint: z.string().optional(),
-        email_domain: z
-            .string()
-            .meta({ description: 'Domain for email (both sending and receiving). Must be verified in Resend.' }),
-        default_from_name: z
-            .string()
-            .meta({ description: 'Default display name for outgoing emails (e.g., "Vertesia - Project Name")' })
-            .optional(),
-        has_webhook_secret: z.boolean().optional(),
-        webhook_secret_hint: z.string().optional(),
-        allowed_sender_domains: z
-            .array(z.string())
-            .meta({ description: 'Domains allowed to send emails TO start agents (for inbound validation)' })
-            .optional(),
-        require_project_access: z
-            .boolean()
-            .meta({ description: 'Require sender to have project access to start agents via email (default: true)' })
-            .optional(),
-        require_email_auth: z
-            .boolean()
-            .meta({ description: 'Require DKIM/SPF authentication to pass for inbound emails (default: true)' })
-            .optional(),
-    })
-    .meta({ id: 'ResendConfiguration' });
-
-export const LinkupConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_linkupSchema,
-        enabled: z.boolean(),
-        has_api_key: z.boolean().optional(),
-        api_key_hint: z.string().optional(),
-    })
-    .meta({ id: 'LinkupConfiguration' });
-
-export const ExaConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_exaSchema,
-        enabled: z.boolean(),
-        has_api_key: z.boolean().optional(),
-        api_key_hint: z.string().optional(),
-    })
-    .meta({ id: 'ExaConfiguration' });
-
-export const SerperConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_serperSchema,
-        enabled: z.boolean(),
-        has_api_key: z.boolean().optional(),
-        api_key_hint: z.string().optional(),
-        url: z.string().optional(),
-    })
-    .meta({ id: 'SerperConfiguration' });
-
-export const GithubConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_githubSchema,
-        enabled: z.boolean(),
-        github_app_id: z
-            .string()
-            .meta({ description: 'Numeric GitHub App id used to mint installation tokens (non-secret).' })
-            .optional(),
-        allowed_repositories: z.array(z.string()),
-        has_github_app_private_key: z
-            .boolean()
-            .meta({
-                description:
-                    'True when a GitHub App private key is stored for the project (the key itself is never returned).',
-            })
-            .optional(),
-    })
-    .meta({ id: 'GithubConfiguration' });
-
-export const GladiaConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_gladiaSchema,
-        enabled: z.boolean(),
-        has_api_key: z.boolean().optional(),
-        api_key_hint: z.string().optional(),
-        url: z.string().optional(),
-    })
-    .meta({ id: 'GladiaConfiguration' });
-
-export const RemoteActivityDefinitionSchema = z
-    .strictObject({
-        name: z.string().meta({ description: 'Activity name (snake_case, unique within the collection)' }),
-        collection: z.string().meta({ description: 'Collection name this activity belongs to' }).optional(),
-        title: z.string().meta({ description: 'Display title' }).optional(),
-        description: z.string().meta({ description: 'Description of what the activity does' }).optional(),
-        input_schema: z
-            .looseObject({})
-            .meta({ description: 'JSON Schema for the activity input parameters' })
-            .optional(),
-        output_schema: z.looseObject({}).meta({ description: 'JSON Schema for the activity output' }).optional(),
-        url: z
-            .string()
-            .meta({
-                description:
-                    'The activity execution URL. Can be absolute or relative to the tool server base URL. If not provided, the collection-specific activities endpoint is used.',
-            })
-            .optional(),
-        options: DSLActivityOptionsSchema.meta({ description: 'Suggested timeout and retry configuration' }).optional(),
-    })
-    .meta({
-        id: 'RemoteActivityDefinition',
-        description:
-            'Definition of a remote activity exposed by a tool server for use in DSL workflows. Remote activities are identified in workflow steps using colon-separated names: `app:<app_name>:<collection>:<activity_name>` (e.g. `app:my-nlp-app:examples:word_count`).',
-    });
-
 export const AppWidgetInfoSchema = z
     .strictObject({
         collection: z.string(),
@@ -625,63 +324,6 @@ export const AppDashboardDefinitionSchema = z
         description:
             'Dashboard definition contributed by an app package.\n\nApp dashboard IDs are local to the app. The platform exposes them as `app:<app_name>:<id>` when listing or retrieving dashboards.',
     });
-
-export const WebsiteCredentialFillResponseSchema = z
-    .strictObject({
-        ok: z.boolean(),
-        credential_ref: z.string(),
-        url: z.string(),
-        title: z.string(),
-        filled: z.strictObject({
-            username: z.boolean(),
-            password: z.boolean(),
-            totp: z.boolean(),
-            submitted: z.boolean(),
-        }),
-    })
-    .meta({ id: 'WebsiteCredentialFillResponse' });
-
-export const WebsiteCredentialFillRequestSchema = z
-    .strictObject({
-        username_target_id: z.string().optional(),
-        password_target_id: z.string().optional(),
-        totp_target_id: z.string().optional(),
-        submit_target_id: z.string().optional(),
-        browser_workflow_id: z.string().meta({
-            description:
-                'Browser-use parent workflow id. The API resolves the Daytona sandbox and observes the current page server-side before decrypting the credential.',
-        }),
-    })
-    .meta({ id: 'WebsiteCredentialFillRequest' });
-
-export const ok_booleanSchema = z
-    .strictObject({
-        ok: z.boolean(),
-    })
-    .meta({ id: 'ok_boolean' });
-
-export const WebsiteCredentialMetadataSchema = z
-    .strictObject({
-        name: z.string(),
-        websites: z.array(WebsiteCredentialWebsiteSchema),
-        username: z.string().optional(),
-        username_hint: z.string().optional(),
-        username_secret: z.boolean().optional(),
-        properties: z.looseObject({}).optional(),
-        tags: z.array(z.string()).optional(),
-        enabled: z.boolean().optional(),
-        capabilities: z.array(WebsiteCredentialCapabilitySchema).optional(),
-        notes: z.string().optional(),
-        totp: WebsiteCredentialTotpMetadataSchema.optional(),
-        expires_at: z
-            .string()
-            .meta({
-                description:
-                    'Optional ISO timestamp after which the credential is no longer usable. Expired credentials are hidden from lookup and cannot be filled.',
-            })
-            .optional(),
-    })
-    .meta({ id: 'WebsiteCredentialMetadata' });
 
 export const AppManifestDataSchema = z
     .strictObject({
@@ -782,158 +424,6 @@ export const AppManifestDataSchema = z
         }).optional(),
     })
     .meta({ id: 'AppManifestData' });
-
-export const Partial_WebsiteCredentialMetadataSchema = z
-    .strictObject({
-        name: z.string().optional(),
-        websites: z.array(WebsiteCredentialWebsiteSchema).optional(),
-        username: z.string().optional(),
-        username_hint: z.string().optional(),
-        username_secret: z.boolean().optional(),
-        properties: z.looseObject({}).optional(),
-        tags: z.array(z.string()).optional(),
-        enabled: z.boolean().optional(),
-        capabilities: z.array(WebsiteCredentialCapabilitySchema).optional(),
-        notes: z.string().optional(),
-        totp: WebsiteCredentialTotpMetadataSchema.optional(),
-        expires_at: z
-            .string()
-            .meta({
-                description:
-                    'Optional ISO timestamp after which the credential is no longer usable. Expired credentials are hidden from lookup and cannot be filled.',
-            })
-            .optional(),
-    })
-    .meta({ id: 'Partial_WebsiteCredentialMetadata' });
-
-export const AskUserWebhookConfigurationInputSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_ask_user_webhookSchema,
-        enabled: z.boolean(),
-        webhook_url: z.string().meta({ description: 'Webhook URL to receive ask_user events' }),
-        webhook_secret: z
-            .string()
-            .meta({ description: 'Secret for signing webhook payloads (HMAC-SHA256)' })
-            .optional(),
-        events: z
-            .array(z.enum(['requested', 'resolved']))
-            .meta({ description: "Which events to send: ['requested', 'resolved'] or subset (default: both)" })
-            .optional(),
-        custom_headers: StringValueMapSchema.meta({
-            description: 'Custom headers to include in webhook requests',
-        }).optional(),
-    })
-    .meta({
-        id: 'AskUserWebhookConfigurationInput',
-        description:
-            'Configuration for ask_user webhook notifications. Sends webhooks when agents call ask_user and when users respond.',
-    });
-
-export const ResendConfigurationInputSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_resendSchema,
-        enabled: z.boolean(),
-        api_key: z.string().meta({ description: 'Resend API key for sending emails' }).optional(),
-        email_domain: z
-            .string()
-            .meta({ description: 'Domain for email (both sending and receiving). Must be verified in Resend.' }),
-        default_from_name: z
-            .string()
-            .meta({ description: 'Default display name for outgoing emails (e.g., "Vertesia - Project Name")' })
-            .optional(),
-        webhook_secret: z
-            .string()
-            .meta({
-                description: 'Webhook secret for validating inbound email webhooks (required for receiving emails)',
-            })
-            .optional(),
-        allowed_sender_domains: z
-            .array(z.string())
-            .meta({ description: 'Domains allowed to send emails TO start agents (for inbound validation)' })
-            .optional(),
-        require_project_access: z
-            .boolean()
-            .meta({ description: 'Require sender to have project access to start agents via email (default: true)' })
-            .optional(),
-        require_email_auth: z
-            .boolean()
-            .meta({ description: 'Require DKIM/SPF authentication to pass for inbound emails (default: true)' })
-            .optional(),
-    })
-    .meta({ id: 'ResendConfigurationInput' });
-
-export const LinkupConfigurationInputSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_linkupSchema,
-        enabled: z.boolean(),
-        api_key: z.string().optional(),
-    })
-    .meta({ id: 'LinkupConfigurationInput' });
-
-export const ExaConfigurationInputSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_exaSchema,
-        enabled: z.boolean(),
-        api_key: z.string().optional(),
-    })
-    .meta({ id: 'ExaConfigurationInput' });
-
-export const SerperConfigurationInputSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_serperSchema,
-        enabled: z.boolean(),
-        api_key: z.string().optional(),
-        url: z.string().optional(),
-    })
-    .meta({ id: 'SerperConfigurationInput' });
-
-export const MagicPdfConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_magic_pdfSchema,
-        enabled: z.boolean(),
-        default_features: z.array(z.string()).optional(),
-        default_zones: z.array(z.string()).optional(),
-    })
-    .meta({ id: 'MagicPdfConfiguration' });
-
-export const AwsConfigurationSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_awsSchema,
-        enabled: z.boolean(),
-        s3_role_arn: z.string(),
-    })
-    .meta({ id: 'AwsConfiguration' });
-
-export const GithubConfigurationInputSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_githubSchema,
-        enabled: z.boolean(),
-        github_app_id: z
-            .string()
-            .meta({ description: 'Numeric GitHub App id used to mint installation tokens (non-secret).' })
-            .optional(),
-        allowed_repositories: z
-            .array(z.string())
-            .meta({
-                description:
-                    'Allow-list of `owner/name` repos the bot may mint installation tokens for (default-deny when empty).',
-            })
-            .optional(),
-        private_key: z
-            .string()
-            .meta({ description: 'GitHub App private key (PEM). Write-only; never returned. Empty string clears it.' })
-            .optional(),
-    })
-    .meta({ id: 'GithubConfigurationInput' });
-
-export const GladiaConfigurationInputSchema = z
-    .strictObject({
-        integration: SupportedIntegrations_gladiaSchema,
-        enabled: z.boolean(),
-        api_key: z.string().optional(),
-        url: z.string().optional(),
-    })
-    .meta({ id: 'GladiaConfigurationInput' });
 
 export const CompositeAppMenuNavItemSchema: z.ZodType<CompositeAppMenuNavItem> = z
     .strictObject({
@@ -1117,22 +607,6 @@ export const AppManifestSchema = z
     })
     .meta({ id: 'AppManifest' });
 
-export const SecretRecordSchema = z
-    .strictObject({
-        id: z.string(),
-        secret_ref: z.string(),
-        kind: SecretKindSchema,
-        project: z.string(),
-        name: z.string(),
-        enabled: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-        properties: z.looseObject({}).optional(),
-        created_at: z.string().optional(),
-        updated_at: z.string().optional(),
-        details: WebsiteCredentialRecordSchema.optional(),
-    })
-    .meta({ id: 'SecretRecord' });
-
 export const InCodeViewDefinitionArraySchema = z
     .array(InCodeViewDefinitionSchema)
     .meta({ id: 'InCodeViewDefinitionArray' });
@@ -1225,91 +699,7 @@ export const AppInstallationListEntrySchema = z
     })
     .meta({ id: 'AppInstallationListEntry' });
 
-export const ProjectIntegrationConfigResponseSchema = z
-    .discriminatedUnion('integration', [
-        GladiaConfigurationSchema,
-        GithubConfigurationSchema,
-        AwsConfigurationSchema,
-        MagicPdfConfigurationSchema,
-        SerperConfigurationSchema,
-        ExaConfigurationSchema,
-        LinkupConfigurationSchema,
-        ResendConfigurationSchema,
-        AskUserWebhookConfigurationSchema,
-    ])
-    .meta({
-        id: 'ProjectIntegrationConfigResponse',
-        type: 'object',
-        required: ['integration'],
-        discriminator: {
-            propertyName: 'integration',
-            mapping: {
-                ask_user_webhook: '#/components/schemas/AskUserWebhookConfiguration',
-                aws: '#/components/schemas/AwsConfiguration',
-                exa: '#/components/schemas/ExaConfiguration',
-                github: '#/components/schemas/GithubConfiguration',
-                gladia: '#/components/schemas/GladiaConfiguration',
-                linkup: '#/components/schemas/LinkupConfiguration',
-                magic_pdf: '#/components/schemas/MagicPdfConfiguration',
-                resend: '#/components/schemas/ResendConfiguration',
-                serper: '#/components/schemas/SerperConfiguration',
-            },
-        },
-    });
-
 export const AppWidgetInfoMapSchema = z.object({}).catchall(AppWidgetInfoSchema).meta({ id: 'AppWidgetInfoMap' });
-
-export const CreateSecretRequestSchema = z
-    .strictObject({
-        kind: SecretKindSchema,
-        metadata: WebsiteCredentialMetadataSchema,
-        secret: WebsiteCredentialSecretInputSchema.optional(),
-    })
-    .meta({ id: 'CreateSecretRequest' });
-
-export const UpdateSecretRequestSchema = z
-    .strictObject({
-        kind: SecretKindSchema.optional(),
-        metadata: Partial_WebsiteCredentialMetadataSchema.optional(),
-        secret: WebsiteCredentialSecretInputSchema.optional(),
-        clear_username_secret: z.boolean().optional(),
-        clear_password: z.boolean().optional(),
-        clear_totp: z.boolean().optional(),
-        clear_oauth: z.boolean().optional(),
-    })
-    .meta({ id: 'UpdateSecretRequest' });
-
-export const ProjectIntegrationConfigRequestSchema = z
-    .discriminatedUnion('integration', [
-        GladiaConfigurationInputSchema,
-        GithubConfigurationInputSchema,
-        AwsConfigurationSchema,
-        MagicPdfConfigurationSchema,
-        SerperConfigurationInputSchema,
-        ExaConfigurationInputSchema,
-        LinkupConfigurationInputSchema,
-        ResendConfigurationInputSchema,
-        AskUserWebhookConfigurationInputSchema,
-    ])
-    .meta({
-        id: 'ProjectIntegrationConfigRequest',
-        type: 'object',
-        required: ['integration'],
-        discriminator: {
-            propertyName: 'integration',
-            mapping: {
-                ask_user_webhook: '#/components/schemas/AskUserWebhookConfigurationInput',
-                aws: '#/components/schemas/AwsConfiguration',
-                exa: '#/components/schemas/ExaConfigurationInput',
-                github: '#/components/schemas/GithubConfigurationInput',
-                gladia: '#/components/schemas/GladiaConfigurationInput',
-                linkup: '#/components/schemas/LinkupConfigurationInput',
-                magic_pdf: '#/components/schemas/MagicPdfConfiguration',
-                resend: '#/components/schemas/ResendConfigurationInput',
-                serper: '#/components/schemas/SerperConfigurationInput',
-            },
-        },
-    });
 
 export const CompositeAppMenuSectionSchema = z
     .strictObject({
@@ -1333,12 +723,6 @@ export const PromoteAppVersionResponseSchema = z
         app: AppManifestSchema.optional(),
     })
     .meta({ id: 'PromoteAppVersionResponse' });
-
-export const ListSecretsResponseSchema = z
-    .strictObject({
-        secrets: z.array(SecretRecordSchema),
-    })
-    .meta({ id: 'ListSecretsResponse' });
 
 export const AppInstallationWithManifestArraySchema = z
     .array(AppInstallationWithManifestSchema)
@@ -1471,7 +855,7 @@ export const AppPackageSchema = z
     })
     .meta({ id: 'AppPackage' });
 
-export const Partial_Omit_CompositeAppConfig_id_projectSchema = z
+export const CompositeAppConfigPayloadSchema = z
     .strictObject({
         card: CompositeAppCardOverridesSchema.meta({
             description: 'Card display overrides (includes visibility)',
@@ -1534,8 +918,4 @@ export const Partial_Omit_CompositeAppConfig_id_projectSchema = z
             })
             .optional(),
     })
-    .meta({ id: 'Partial_Omit_CompositeAppConfig_id_project' });
-
-export const CompositeAppConfigPayloadSchema = Partial_Omit_CompositeAppConfig_id_projectSchema.meta({
-    id: 'CompositeAppConfigPayload',
-});
+    .meta({ id: 'CompositeAppConfigPayload' });

@@ -1,11 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Generated from the published components by `scripts/convert-to-zod.mjs`, then reviewed.
- *
- * Every schema below was checked against the document it replaces: `--verify` re-emits this
- * module through the registry adapter and diffs it, so the shapes are the shipped ones.
- */
 export const BulkObjectDeleteResultSchema = z
     .strictObject({
         operation: z.literal('delete'),

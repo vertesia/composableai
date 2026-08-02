@@ -102,12 +102,12 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         // intercepted canonical alias is OPAQUE to the generator, so `Partial<>` over one cannot be
         // expanded — it collapses to `{}`, an empty schema that accepts anything, without an error.
         // Registering them is what keeps the request bodies described AND makes them enforced.
-        for (const name of ['Partial_Project', 'Partial_ProjectConfiguration']) {
+        for (const name of ['UpdateProjectPayload', 'UpdateProjectConfigurationPayload']) {
             expect(Object.keys(ApiSchemaComponents), name).toContain(name);
         }
         // `.partial()` of the root, not a restatement: same properties, none required.
         const project = ApiSchemaComponents.Project as JsonObject;
-        const partial = ApiSchemaComponents.Partial_Project as JsonObject;
+        const partial = ApiSchemaComponents.UpdateProjectPayload as JsonObject;
         expect(Object.keys(partial.properties as JsonObject)).toEqual(Object.keys(project.properties as JsonObject));
         expect(partial.required).toBeUndefined();
         expect(partial.additionalProperties).toBe(false);
@@ -148,11 +148,8 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         expect(Object.keys(ApiSchemaComponents)).toContain('ProjectIntakeConfiguration');
         const intake = ApiSchemaComponents.ProjectIntakeConfiguration as JsonObject;
         const properties = intake.properties as Record<string, JsonObject>;
-        expect(properties.vision_profiles.$ref).toBe(
-            apiComponentRef('Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings' as never),
-        );
-        const map =
-            ApiSchemaComponents.Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings as JsonObject;
+        expect(properties.vision_profiles.$ref).toBe(apiComponentRef('IntakeVisionProfileSettingsMap' as never));
+        const map = ApiSchemaComponents.IntakeVisionProfileSettingsMap as JsonObject;
         // The three keys are restated in the schema rather than derived from the enum, so this is
         // what fails if a detail name is added to `IntakeVisionDetail` and not to the map.
         expect(Object.keys(map.properties as JsonObject).sort()).toEqual(['high', 'low', 'standard']);

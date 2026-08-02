@@ -3,21 +3,10 @@ import { z } from 'zod';
 // types from the schemas below, so importing them here would invert the dependency.
 import { ApiKeyTypes } from '../apikey-values.js';
 import { SystemRoles } from '../project-values.js';
+import { ProjectSchema } from './project.js';
 
 /**
- * Runtime API schemas for the API key endpoints — converted as the fifth bulk batch, together with
- * the account invite and onboarding slots.
- *
- * The list query came first, on its own, because it exercises the query-parameter path: the scanner
- * expands an object schema into individual `in: query` parameters rather than referencing it, so a
- * canonical component has to survive that expansion with its enum and optionality intact.
- *
- * `ProjectRef` lives here rather than in a projects module because this batch is what forces it
- * canonical — every API key embeds one, and a canonical component cannot `$ref` a TypeScript-derived
- * one. It is the first component shared with slots in a LATER batch (`ProjectsResource.listProjects`
- * and `AppsResource.getAppInstallationProjects` both publish `ProjectRefArray`), which is safe only
- * because the emitted JSON is byte-identical to what the scanner derives — the generator fails the
- * build otherwise.
+ * Runtime API schemas for API key endpoints and their compact project reference.
  */
 
 export const ApiKeyListQuerySchema = z
@@ -35,9 +24,8 @@ export const ApiKeyReadQuerySchema = z
 
 /**
  * `z.literal` rather than `z.enum`, because the enum has exactly one member and the document
- * publishes it as `const: 'sk'`. A one-member `enum: ['sk']` would validate identically and diff —
- * and this component is still derived by slots that have not converted, where the generator requires
- * the two definitions to be byte-identical.
+ * publishes it as `const: 'sk'`. A one-member `enum: ['sk']` would validate identically but change
+ * the generated contract.
  */
 export const ApiKeyTypesSchema = z.literal(ApiKeyTypes.secret).meta({ id: 'ApiKeyTypes' });
 
@@ -46,15 +34,11 @@ export const SystemRolesSchema = z.enum(SystemRoles).meta({ id: 'SystemRoles' })
 /**
  * The compact project shape embedded in other resources' responses.
  *
- * Written out rather than picked from a project schema, because there is no project schema yet —
- * `Project` converts in a later batch. When it does, this becomes its `.pick()`, and the byte
- * identity asserted in `apikey.contract.test.ts` is what will catch any drift in the meantime.
+ * Kept as a documented bridge because its recursive consumers require the named public interface;
+ * `apikey.contract.test.ts` asserts exact parity with the project projection.
  */
-export const ProjectRefSchema = z
-    .object({
-        id: z.string(),
-        name: z.string(),
-        account: z.string(),
+export const ProjectRefSchema = ProjectSchema.pick({ id: true, name: true, account: true })
+    .extend({
         restricted: z
             .boolean()
             .optional()
@@ -194,8 +178,7 @@ export const AuthTokenResponseSchema = z.object({ token: z.string() }).meta({ id
 
 /**
  * The raw Mongo delete acknowledgement, published as-is — `deletedCount` is `number` rather than
- * `integer` because that is what the derived component said, and this conversion reproduces the
- * contract rather than renegotiating it.
+ * `integer` because that is the public contract.
  */
 export const DeleteOperationResultSchema = z
     .object({

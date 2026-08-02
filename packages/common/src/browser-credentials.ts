@@ -9,7 +9,7 @@ import type {
     WebsiteCredentialTotpAlgorithmSchema,
     WebsiteCredentialTotpMetadataSchema,
     WebsiteCredentialWebsiteSchema,
-} from './api-schemas/studio-remaining.js';
+} from './api-schemas/secrets.js';
 export type WebsiteCredentialCapability = z.infer<typeof WebsiteCredentialCapabilitySchema>;
 
 export type WebsiteCredentialTotpAlgorithm = z.infer<typeof WebsiteCredentialTotpAlgorithmSchema>;

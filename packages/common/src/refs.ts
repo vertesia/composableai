@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { ResourceRefSchema } from './api-schemas/zeno-remaining.js';
+import type { ResourceRefSchema } from './api-schemas/agent-runs.js';
 
 export enum ResolvableRefType {
     project = 'Project',

@@ -8,12 +8,11 @@ import type {
     BulkOperationResponseSchema,
     BulkOperationResultSchema,
 } from './api-schemas/bulk-operation.js';
-import type { DeleteCountResultSchema } from './api-schemas/commands.js';
+import type { DeleteCountResultSchema, GenericCommandResponseSchema } from './api-schemas/commands.js';
+import type { FindPayloadSchema } from './api-schemas/content.js';
 import type { SuccessResponseSchema } from './api-schemas/oauth.js';
 import type { CountResultSchema } from './api-schemas/project.js';
 import type { DeleteByIdResultSchema } from './api-schemas/user.js';
-import type { GenericCommandResponseSchema } from './api-schemas/zeno-commands.js';
-import type { FindPayloadSchema } from './api-schemas/zeno-remaining.js';
 import type { ContentObjectProcessingPriority } from './store/store.js';
 
 export type FindPayload = z.infer<typeof FindPayloadSchema>;

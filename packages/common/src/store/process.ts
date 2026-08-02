@@ -29,7 +29,7 @@ import type {
     RevertProcessDefinitionPayloadSchema,
     TransitionDefinitionSchema,
     TransitionTriggerSchema,
-} from '../api-schemas/zeno-remaining.js';
+} from '../api-schemas/process.js';
 import type { JSONSchema } from '../json-schema.js';
 
 export type JsonLogicRule = z.infer<typeof JsonLogicRuleSchema>;

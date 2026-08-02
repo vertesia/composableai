@@ -4,19 +4,7 @@ import { ResourceVisibility } from '../project-values.js';
 import { ContentTypeIntakePolicySchema } from './store.js';
 
 /**
- * Runtime API schemas for the leaves of the `ProjectConfiguration` closure — the ninth batch.
- *
- * `Project` and `ProjectConfiguration` themselves are NOT here. They reach
- * `InteractionExecutionConfiguration` (and through it the intake policy tree in `../store/store.ts`),
- * which is its own slice of work; what converts here is everything under the configuration that
- * depends on nothing outside this module. Each of these is a published component today, hoisted by
- * `ProjectConfiguration` rather than named by an endpoint, so converting them changes no slot — it
- * removes the TypeScript declaration as the source of a contract and lets the two remaining
- * configuration components convert against canonical `$ref`s.
- *
- * Descriptions are the ones the derived components already carry, moved from TSDoc onto the schema:
- * the published document is what has to stay unchanged, and `.meta()` is where a canonical component
- * gets its description from.
+ * Runtime API schemas for project configuration and its nested policies.
  */
 
 export const ModelDefaultSchema = z
@@ -315,12 +303,9 @@ export const ProjectIntakeSniffConfigurationSchema = z
 /**
  * A project's override for one platform vision profile.
  *
- * `Partial_IntakeVisionProfileSettings` is the name the scanner synthesized for
- * `Partial<IntakeVisionProfileSettings>`; the unpartialled interface was never published, because
- * nothing on the wire ever holds a complete profile — the platform defaults supply what a project
- * leaves out. So there is one schema here, and it is the partial one.
+ * Nothing on the wire holds a complete profile: platform defaults supply what a project leaves out.
  */
-export const PartialIntakeVisionProfileSettingsSchema = z
+export const IntakeVisionProfileSettingsUpdateSchema = z
     .strictObject({
         dpi: z.number().optional().meta({ description: 'Render resolution in dots per inch.' }),
         max_hw: z
@@ -332,7 +317,7 @@ export const PartialIntakeVisionProfileSettingsSchema = z
             description: 'grayscale renders gray always; auto keeps color when the plan asks for it.',
         }),
     })
-    .meta({ id: 'Partial_IntakeVisionProfileSettings' });
+    .meta({ id: 'IntakeVisionProfileSettingsUpdate' });
 
 /**
  * Per-detail-name overrides, spelled out rather than written over the `IntakeVisionDetail` enum.
@@ -347,13 +332,13 @@ export const PartialIntakeVisionProfileSettingsSchema = z
  * `project.contract.test.ts` rather than derived from it, so adding a detail name to the platform
  * fails a test instead of silently publishing a map that cannot hold it.
  */
-export const ProjectVisionProfileOverridesSchema = z
+export const IntakeVisionProfileSettingsMapSchema = z
     .strictObject({
-        low: PartialIntakeVisionProfileSettingsSchema.optional(),
-        standard: PartialIntakeVisionProfileSettingsSchema.optional(),
-        high: PartialIntakeVisionProfileSettingsSchema.optional(),
+        low: IntakeVisionProfileSettingsUpdateSchema.optional(),
+        standard: IntakeVisionProfileSettingsUpdateSchema.optional(),
+        high: IntakeVisionProfileSettingsUpdateSchema.optional(),
     })
-    .meta({ id: 'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings' });
+    .meta({ id: 'IntakeVisionProfileSettingsMap' });
 
 export const ProjectIntakeConfigurationSchema = z
     .strictObject({
@@ -377,7 +362,7 @@ export const ProjectIntakeConfigurationSchema = z
                 '`intake` block wins field-by-field over these defaults, which in turn win over the legacy flat ' +
                 'fields below. `identification` is type-specific and ignored here.',
         }),
-        vision_profiles: ProjectVisionProfileOverridesSchema.optional().meta({
+        vision_profiles: IntakeVisionProfileSettingsMapSchema.optional().meta({
             description:
                 'Project overrides for the platform vision detail profiles used by intake visual extraction ' +
                 '(`low`/`standard`/`high`). Partial: omitted profiles or fields inherit the platform defaults. ' +

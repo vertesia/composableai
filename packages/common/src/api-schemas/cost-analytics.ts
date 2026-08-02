@@ -98,12 +98,6 @@ export const CostExportQuerySchema = z
     })
     .meta({ id: 'CostExportQuery' });
 
-/**
- * Generated from the published components by `scripts/convert-to-zod.mjs`, then reviewed.
- *
- * Every schema below was checked against the document it replaces: `--verify` re-emits this
- * module through the registry adapter and diffs it, so the shapes are the shipped ones.
- */
 export const ModelPricingSchema = z
     .strictObject({
         model: z.string(),

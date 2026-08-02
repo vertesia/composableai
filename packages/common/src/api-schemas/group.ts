@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 /**
- * Runtime API schemas for the IAM user-group endpoints — the third bulk batch.
+ * Runtime API schemas for the IAM user-group endpoints.
  *
- * Like the user batch this crosses a persistence boundary, and the gap between document and wire is
+ * These contracts cross a persistence boundary, and the gap between document and wire is
  * wider here. Three things the stored document carries are NOT in this contract and never were:
  * `members` (the model marks it `select: false`, yet two handlers `populate()` it straight back into
  * the response), `_id`, and `__v`. `UserGroup` is published `additionalProperties: false`, so those

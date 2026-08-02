@@ -4,35 +4,7 @@ import { SupportedIntegrations } from '../integrations.js';
 import { ProjectConfigurationSchema } from './project-configuration.js';
 
 /**
- * Runtime API schemas for the Projects resources — the sixth batch.
- *
- * This batch is deliberately PARTIAL, and the reason is worth stating precisely, because it is the
- * first time the closure rule has stopped a resource rather than merely enlarged it.
- *
- * `ProjectResource` publishes 33 slots. Sixteen of them are here. The other seventeen hang off four
- * closures that cannot convert yet:
- *
- *  - `Project`, `Partial_Project`, `ProjectConfiguration` and `Partial_ProjectConfiguration` reach
- *    `InteractionExecutionConfiguration.model_options`, which is `ModelOptions` — the union of every
- *    llumiverse driver's options, declared in `@llumiverse/common`. A canonical component may not
- *    `$ref` a TypeScript-derived one, so converting `Project` means converting a separately
- *    published package in a nested submodule with its own release cadence. That is a release
- *    decision, not a refactor.
- *  - `InCodeTypeDefinition` and `InCodeViewDefinition` reach the same union by the same route.
- *  - `InCodeProcessDefinition` reaches `JSONSchema`, also from `@llumiverse/common`.
- *  - `RenderingTemplateDefinition` and its `Ref` are embedded in `AppManifestData.templates`, so the
- *    scanner still derives them for `AppManifest`. The derived `Ref` is an `Omit<>`, which the
- *    scanner emits with alphabetized `required` and `additionalProperties` before `properties` — an
- *    ordering Zod cannot reproduce, and the generator requires a canonical/derived pair to be
- *    byte-identical. It converts when `AppManifest` does.
- *
- * `CompositeAppConfig` (18 components) and the integration config union (20) are self-contained in
- * this package and blocked by nothing but size; they are the natural next slice.
- *
- * Two of those statements have since been overtaken, and are kept because they record why the
- * boundary was drawn where it was. The `ModelOptions` blocker was removed by the seventh batch, and
- * the rendering templates converted with the ninth once the canonical/derived comparison stopped
- * being sensitive to key order — see the bottom of this file and `./project-configuration.ts`.
+ * Runtime API schemas for projects and project-scoped definitions.
  */
 
 /**
@@ -188,20 +160,20 @@ export const RenderingTemplateDefinitionRefSchema = z
 /**
  * The project itself — the component `GetProject`, `UpdateProject` and `CreateProject` all return.
  *
- * Converting it corrects two declarations that no HTTP response has ever matched. `integrations` was
+ * This schema corrects two declarations that no HTTP response ever matched. `integrations` was
  * `Map<string, unknown>` and the timestamps were `Date`; JSON carries neither, so a caller writing
  * `project.integrations.get(id)` or `project.created_at.getTime()` got a `TypeError` against a shape
  * TypeScript had promised. Both are source-breaking corrections for SDK consumers and wire-neutral —
  * proved by `apps/studio-server/src/api/projects/project-wire-shape.test.ts`, which serializes a real
  * `ProjectModel` document the way the handler does. Operation 24 of the 1.5 deployment runbook.
  *
- * The published document is unchanged by the conversion. `Map<string, unknown>` was already emitted
+ * The published wire shape remains the same. `Map<string, unknown>` was already emitted
  * as an open object, and the timestamps as `format: date-time` strings — which is why they carry
  * `.meta({ format: 'date-time' })`: a bare `z.string()` would silently drop the format and narrow
  * `OffsetDateTime`/`time.Time` to `String` in the generated clients. `z.iso.datetime()` would keep
  * the format but also publish its validation regex as a `pattern`, which is a new constraint on a
  * component that never had one — the same class of change as the intake bounds, and not one to make
- * by accident while converting.
+ * accidentally.
  *
  * `integrations` stays an open `z.record()` on purpose. Its values are per-integration configuration
  * objects with no common shape, and `SupportedIntegrations` is not a closed key set for stored data —
@@ -232,19 +204,11 @@ export const ProjectSchema = z
 /**
  * The `UpdateProject` and `UpdateProjectConfiguration` request bodies.
  *
- * They were `apiSchema<Partial<Project>>()` and `apiSchema<Partial<ProjectConfiguration>>()`, which
- * the scanner expanded from the TypeScript declarations. That stops working the moment `Project`
- * becomes a canonical alias: an intercepted alias is OPAQUE to the generator, so `Partial<>` over one
- * cannot be expanded and the component silently collapses to `{}` — an empty schema accepts
- * anything, so the request body would have gone from fully described to unconstrained without a
- * single error. Declaring them here restores the exact components and makes them enforced instead of
- * merely published.
- *
- * `.partial()` rather than a restatement: a field added to `Project` must appear in its update
- * payload, and a hand-written twin is exactly the drift this migration removes.
+ * `.partial()` keeps both update contracts tied to the corresponding response contract, so a field
+ * added to either source schema is available to its update payload without a hand-written twin.
  */
-export const PartialProjectSchema = ProjectSchema.partial().meta({ id: 'Partial_Project' });
+export const UpdateProjectPayloadSchema = ProjectSchema.partial().meta({ id: 'UpdateProjectPayload' });
 
-export const PartialProjectConfigurationSchema = ProjectConfigurationSchema.partial().meta({
-    id: 'Partial_ProjectConfiguration',
+export const UpdateProjectConfigurationPayloadSchema = ProjectConfigurationSchema.partial().meta({
+    id: 'UpdateProjectConfigurationPayload',
 });

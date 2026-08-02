@@ -5,12 +5,6 @@ import { ElasticsearchBackendSchema, ProjectSearchTierSchema } from './project-c
 const nullableStringSchema: z.ZodType<string | null> = z.any().meta({ type: ['string', 'null'] });
 const nullableNumberSchema: z.ZodType<number | null> = z.any().meta({ type: ['number', 'null'] });
 
-/**
- * Generated from the published components by `scripts/convert-to-zod.mjs`, then reviewed.
- *
- * Every schema below was checked against the document it replaces: `--verify` re-emits this
- * module through the registry adapter and diffs it, so the shapes are the shipped ones.
- */
 export const StartProjectReindexPayloadSchema = z
     .strictObject({
         shard_size: z.number().optional(),
@@ -227,38 +221,6 @@ export const DriftAnalysisProgressSchema = z
         estimated_seconds_remaining: nullableNumberSchema,
     })
     .meta({ id: 'DriftAnalysisProgress' });
-
-export const EmbeddingsStatusResponseSchema = z
-    .strictObject({
-        status: z.string(),
-        embeddingRunsInProgress: z.number().optional(),
-        totalIndexableObjects: z.number().optional(),
-        embeddingsModels: z.array(z.string()).optional(),
-        objectsWithEmbeddings: z.number().optional(),
-        vectorIndex: z.strictObject({
-            status: z.enum(['READY', 'PENDING', 'DELETING', 'ABSENT']),
-            name: z.string().optional(),
-            type: z.string().optional(),
-        }),
-    })
-    .meta({ id: 'EmbeddingsStatusResponse' });
-
-export const ProjectConfigurationEmbeddingEnablePayloadSchema = z
-    .strictObject({
-        environment: z.string(),
-        max_tokens: z.number().optional(),
-        model: z.string().optional(),
-    })
-    .meta({ id: 'ProjectConfigurationEmbeddingEnablePayload' });
-
-export const GenericCommandResponseSchema = z
-    .strictObject({
-        status: z.string(),
-        message: z.string(),
-        err: z.unknown().optional(),
-        details: z.unknown().optional(),
-    })
-    .meta({ id: 'GenericCommandResponse' });
 
 export const DriftAnalysisStatusResponseSchema = z
     .strictObject({

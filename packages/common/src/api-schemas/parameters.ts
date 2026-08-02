@@ -90,9 +90,8 @@ const MAX_TARGET_DEPTH = 8;
  * parameter as a value the published schema never describes.
  *
  * Deliberately WIDER than JSON's own number grammar, which rejects `'01'`, `'+1'`, `'1.'` and
- * `'.5'`. Those denote one number unambiguously, and the handlers being converted reach the same
- * value today through `parseInt`/`Number` — so accepting them keeps conversion behaviour-preserving
- * where it can be, and the strictness that remains is only where the text is genuinely not a number.
+ * `'.5'`. Those denote one number unambiguously and match the handlers' existing `parseInt`/`Number`
+ * behavior; the remaining strictness applies only where the text is genuinely not a number.
  *
  * Anything rejected here is left as the original string, which the component then reports as a type
  * error naming the parameter.

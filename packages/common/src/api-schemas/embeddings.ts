@@ -88,3 +88,26 @@ export const EmbeddingsApiRequestSchema = z
         dimensions: z.number().optional(),
     })
     .meta({ id: 'EmbeddingsApiRequest' });
+
+export const EmbeddingsStatusResponseSchema = z
+    .strictObject({
+        status: z.string(),
+        embeddingRunsInProgress: z.number().optional(),
+        totalIndexableObjects: z.number().optional(),
+        embeddingsModels: z.array(z.string()).optional(),
+        objectsWithEmbeddings: z.number().optional(),
+        vectorIndex: z.strictObject({
+            status: z.enum(['READY', 'PENDING', 'DELETING', 'ABSENT']),
+            name: z.string().optional(),
+            type: z.string().optional(),
+        }),
+    })
+    .meta({ id: 'EmbeddingsStatusResponse' });
+
+export const ProjectConfigurationEmbeddingEnablePayloadSchema = z
+    .strictObject({
+        environment: z.string(),
+        max_tokens: z.number().optional(),
+        model: z.string().optional(),
+    })
+    .meta({ id: 'ProjectConfigurationEmbeddingEnablePayload' });

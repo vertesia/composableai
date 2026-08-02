@@ -1,4 +1,4 @@
-import type { AppDashboardDefinitionSchema } from './api-schemas/studio-remaining.js';
+import type { AppDashboardDefinitionSchema } from './api-schemas/app-runtime.js';
 /**
  * Data Platform Types
  *

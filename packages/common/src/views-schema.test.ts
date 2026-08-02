@@ -1,7 +1,7 @@
 import Ajv from 'ajv';
 import { assertType, describe, expect, it } from 'vitest';
 import type { z } from 'zod';
-import type { ViewExperienceConfigurationSchema } from './api-schemas/zeno-remaining.js';
+import type { ViewExperienceConfigurationSchema } from './api-schemas/view-execution.js';
 import { validateViewConfiguration } from './view-configuration-validation.js';
 import { type ViewExperienceConfiguration, type ViewNavigationItem, viewExperienceRoute } from './views.js';
 import {

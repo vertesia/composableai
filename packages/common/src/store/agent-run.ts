@@ -14,13 +14,6 @@
 
 import type { z } from 'zod';
 import type {
-    AgentRunSearchHitSchema,
-    AgentRunStatusSchema,
-    AgentRunTypeSchema,
-    RunKindSchema,
-    RunTypeSchema,
-} from '../api-schemas/app-lifecycle.js';
-import type {
     AgentArtifactContentResponseSchema,
     AgentArtifactUrlResponseSchema,
     AgentRunArchiveStateSchema,
@@ -31,13 +24,10 @@ import type {
     AgentRunSchema,
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
-    BindRunWorkflowPayloadSchema,
     CreateAgentRunPayloadSchema,
     ListAgentRunsQuerySchema,
     PostAgentRunUpdatePayloadSchema,
     PostAgentRunUpdateResponseSchema,
-    ProcessRunConfigSchema,
-    ProcessRunTypeSchema,
     SearchAgentRunsQuerySchema,
     SearchAgentRunsResponseSchema,
     SignalAgentResponseSchema,
@@ -45,7 +35,16 @@ import type {
     TerminateAgentRunResponseSchema,
     UpdateAgentArtifactContentPayloadSchema,
     UpdateAgentArtifactContentResponseSchema,
-} from '../api-schemas/zeno-remaining.js';
+} from '../api-schemas/agent-runs.js';
+import type {
+    AgentRunSearchHitSchema,
+    AgentRunStatusSchema,
+    AgentRunTypeSchema,
+    RunKindSchema,
+    RunTypeSchema,
+} from '../api-schemas/app-lifecycle.js';
+import type { ProcessRunConfigSchema, ProcessRunTypeSchema } from '../api-schemas/process.js';
+import type { BindRunWorkflowPayloadSchema } from '../api-schemas/workflow-runs.js';
 import type {
     ConversationVisibility,
     InitialToolCall,

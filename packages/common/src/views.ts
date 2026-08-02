@@ -1,5 +1,18 @@
 import type { z } from 'zod';
-import type { InCodeViewDefinitionSchema } from './api-schemas/studio-remaining.js';
+import type { InCodeViewDefinitionSchema } from './api-schemas/app-runtime.js';
+import type {
+    ExecuteViewRequestSchema,
+    PreviewViewExperienceRequestSchema,
+    ViewExecutionDefinitionSchema,
+    ViewExecutionQueryPlanSchema,
+    ViewExecutionResultSchema,
+    ViewExecutionSearchConfigurationSchema,
+    ViewExecutionSearchResultSchema,
+    ViewExecutionWarningSchema,
+    ViewHitAnnotationSchema,
+    ViewHitSchema,
+    ViewQueryPlanningFailureCodeSchema,
+} from './api-schemas/view-execution.js';
 import type {
     AgenticViewSearchConfigurationSchema,
     CreateViewExperienceRequestSchema,
@@ -37,19 +50,6 @@ import type {
     ViewTableDisplaySchema,
     ViewTermsNavigationSchema,
 } from './api-schemas/views.js';
-import type {
-    ExecuteViewRequestSchema,
-    PreviewViewExperienceRequestSchema,
-    ViewExecutionDefinitionSchema,
-    ViewExecutionQueryPlanSchema,
-    ViewExecutionResultSchema,
-    ViewExecutionSearchConfigurationSchema,
-    ViewExecutionSearchResultSchema,
-    ViewExecutionWarningSchema,
-    ViewHitAnnotationSchema,
-    ViewHitSchema,
-    ViewQueryPlanningFailureCodeSchema,
-} from './api-schemas/zeno-remaining.js';
 
 export const VIEW_EXPERIENCE_SCHEMA_VERSION = 1 as const;
 

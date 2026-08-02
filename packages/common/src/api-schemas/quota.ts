@@ -1,22 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Runtime API schemas for the quota endpoints — the first resource converted in bulk.
- *
- * Both slots are `response:200`, which is why this resource went first. Responses are DETECTED rather
- * than prevented outside local development, so converting one cannot reject a caller's request: the
- * worst case is a logged warning about our own drift. That makes it the cheapest place to establish
- * the conversion method before touching a request body.
- *
- * The published document must not move. Every description below is the TSDoc text the scanner
- * currently derives, carried across verbatim, and the `id` on each nested schema reproduces the
- * component the document already `$ref`s. `check:openapi` diffs the regenerated spec against the
- * committed one, so any drift from the shapes in `../rate-limiter.ts` fails the build rather than
- * silently renegotiating a public contract.
- *
- * The whole `$ref` closure moves together and has to: the registry must be self-contained, so a
- * canonical component referencing a TypeScript-derived one is a generation error. That is why a
- * two-slot resource brings six schemas.
+ * Runtime API schemas for quota standing and tier endpoints.
  */
 
 /**
@@ -34,10 +19,7 @@ export const QuotaEffectiveTierSchema = z.string().meta({
 /**
  * Descriptions go in `.meta()`, not in TSDoc comments.
  *
- * Zod does not read comments, so a `/** *\/` block here would document the source and publish nothing —
- * quietly dropping text the document already carries. The component description below is the TSDoc
- * block that sits above `QuotaStandingWindow` in `../rate-limiter.ts`, which is where the scanner
- * currently attaches it.
+ * Zod does not read comments, so public descriptions belong in schema metadata.
  */
 export const QuotaStandingWindowSchema = z
     .object({
@@ -128,9 +110,9 @@ export const QuotaTierResponseSchema = z
  * The public quota types, inferred rather than written.
  *
  * Every schema in the closure gets one — not only the two the endpoints return. A hand-written
- * `QuotaStandingWindow` sitting beside an inferred `QuotaStandingResponse` would be exactly the
- * drift this migration exists to remove: two definitions of one contract, only one of which OpenAPI
- * publishes and AJV compiles. `../rate-limiter.ts` re-exports these under their public names.
+ * `QuotaStandingWindow` sitting beside an inferred `QuotaStandingResponse` would create two
+ * definitions of one contract, only one of which OpenAPI publishes and AJV compiles.
+ * `../rate-limiter.ts` re-exports these under their public names.
  */
 export type QuotaEffectiveTierFromSchema = z.infer<typeof QuotaEffectiveTierSchema>;
 export type QuotaStandingWindowFromSchema = z.infer<typeof QuotaStandingWindowSchema>;

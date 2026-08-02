@@ -8,7 +8,7 @@ import type {
     SecretProjectQuerySchema,
     SecretRecordSchema,
     UpdateSecretRequestSchema,
-} from './api-schemas/studio-remaining.js';
+} from './api-schemas/secrets.js';
 import type { EventCategory } from './platform-event.js';
 
 // First supported top-level secret kind. OAuth connector grants continue to use

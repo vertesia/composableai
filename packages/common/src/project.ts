@@ -1,6 +1,19 @@
 import type { z } from 'zod';
 import type { ProjectRefSchema } from './api-schemas/apikey.js';
 import type {
+    EmbeddingsStatusResponseSchema,
+    ProjectConfigurationEmbeddingEnablePayloadSchema,
+} from './api-schemas/embeddings.js';
+import type {
+    DriftAnalysisProgressSchema,
+    DriftAnalysisResultSchema,
+    DriftAnalysisStatusResponseSchema,
+    IndexingStatusResponseSchema,
+    ReindexAgentRunsPayloadSchema,
+    ReindexAgentRunsResponseSchema,
+    StartProjectReindexPayloadSchema,
+} from './api-schemas/indexing.js';
+import type {
     CreateProjectPayloadFromSchema,
     ListProjectsQuerySchema,
     ProjectIntegrationListEntrySchema,
@@ -29,17 +42,6 @@ import type {
     ProjectSearchTierSchema,
     SystemDefaultsSchema,
 } from './api-schemas/project-configuration.js';
-import type {
-    DriftAnalysisProgressSchema,
-    DriftAnalysisResultSchema,
-    DriftAnalysisStatusResponseSchema,
-    EmbeddingsStatusResponseSchema,
-    IndexingStatusResponseSchema,
-    ProjectConfigurationEmbeddingEnablePayloadSchema,
-    ReindexAgentRunsPayloadSchema,
-    ReindexAgentRunsResponseSchema,
-    StartProjectReindexPayloadSchema,
-} from './api-schemas/zeno-commands.js';
 import type { AccountRef } from './user.js';
 import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
 

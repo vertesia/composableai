@@ -1,17 +1,17 @@
 import type { z } from 'zod';
 import type {
+    ComputeCollectionFacetPayloadSchema,
+    ComputeObjectFacetPayloadSchema,
+    ExportPropertiesPayloadSchema,
+    ExportPropertiesResponseSchema,
+} from './api-schemas/content.js';
+import type {
     ComputeInteractionFacetPayloadSchema,
     RunSearchPayloadSchema,
     SortOptionSchema,
     SortOrderSchema,
 } from './api-schemas/interaction.js';
 import type { ComputePromptFacetPayloadSchema } from './api-schemas/prompt.js';
-import type {
-    ComputeCollectionFacetPayloadSchema,
-    ComputeObjectFacetPayloadSchema,
-    ExportPropertiesPayloadSchema,
-    ExportPropertiesResponseSchema,
-} from './api-schemas/zeno-remaining.js';
 import type { FacetSpec } from './facets.js';
 import type {
     InteractionSearchQuery,

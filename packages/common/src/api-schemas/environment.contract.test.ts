@@ -126,7 +126,7 @@ describe('the model search query', () => {
     /**
      * `text` was published `required: true` and is optional now. The interface declared it
      * non-optional, but `EnvironmentsApi.listModels(id, payload?)` takes the payload optionally and
-     * three Studio call sites pass nothing — so enforcing the requirement the document stated would
+     * three existing call sites pass nothing — so enforcing the requirement the document stated would
      * have 400'd the UI on a parameter the server never wanted.
      */
     it('takes no required parameter', () => {

@@ -108,10 +108,7 @@ export type ExecutionEnvironment = z.infer<typeof ExecutionEnvironmentSchema>;
 
 export type ExecutionEnvironmentRef = z.infer<typeof ExecutionEnvironmentRefSchema>;
 
-// The two write payloads used to be `Omit`/`Partial<Omit<...>>` of the read shape. They are stated
-// where they are named now, from the same field list the schema composes them from: a mapped type
-// over a canonical alias collapses to `{}` in the published document, and the derived component it
-// produced (`Partial_Omit_ExecutionEnvironment_...`) was invented rather than named by anyone.
+// Write payloads have their own named schemas because their fields differ from the read response.
 export type ExecutionEnvironmentCreatePayload = z.infer<typeof ExecutionEnvironmentCreatePayloadSchema>;
 
 export type ExecutionEnvironmentUpdatePayload = z.infer<typeof ExecutionEnvironmentUpdatePayloadSchema>;

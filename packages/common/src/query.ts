@@ -1,6 +1,4 @@
 import type { z } from 'zod';
-import type { InteractionSearchQuerySchema, RunSearchQuerySchema } from './api-schemas/interaction.js';
-import type { PromptSearchQuerySchema } from './api-schemas/prompt.js';
 import type {
     ComplexCollectionSearchQuerySchema,
     ComplexSearchQuerySchema,
@@ -8,7 +6,9 @@ import type {
     EmbeddingSearchConfigSchema,
     scoreAggregationTypesSchema,
     VectorSearchQuerySchema,
-} from './api-schemas/zeno-remaining.js';
+} from './api-schemas/content.js';
+import type { InteractionSearchQuerySchema, RunSearchQuerySchema } from './api-schemas/interaction.js';
+import type { PromptSearchQuerySchema } from './api-schemas/prompt.js';
 import type { ExecutionRunStatus } from './interaction.js';
 
 export type EmbeddingSearchConfig = z.infer<typeof EmbeddingSearchConfigSchema>;

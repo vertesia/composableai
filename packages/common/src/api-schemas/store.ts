@@ -4,18 +4,13 @@ import { z } from 'zod';
 import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
 
 /**
- * Runtime API schemas for the content-intake policy tree — the ninth batch, second slice.
- *
- * This is the closure that stood between the `ProjectConfiguration` leaves and `Project` itself:
- * `ProjectIntakeConfiguration.default_policy` is `ContentTypeIntakePolicy`, which reaches
- * `InteractionExecutionConfiguration`, which reaches `ModelOptions` and `HttpTimeoutOptions` in
- * `@llumiverse/common` — both already canonical.
+ * Runtime API schemas for the content-intake policy tree.
  *
  * `ContentTypeIntakePolicy` was stated three times before this: the interface in `../store/store.ts`,
  * the component the scanner derived from it, and a 287-line hand-written
  * `JSONSchemaType<ContentTypeIntakePolicy>` beside the interface, compiled by zeno-server, by a
- * workflow tool and by the Studio intake-policy editor. This module is now the only authored
- * statement; the JSON that AJV and Monaco need is GENERATED from it through the same adapter that
+ * workflow tool and by the intake-policy editor. This module is now the only authored
+ * statement; the JSON that AJV and Monaco need is generated from it through the same adapter that
  * produces the OpenAPI components — see `../store/intake-policy-schema.generated.ts`.
  *
  * The hand-written schema was also more permissive than the contract it was supposed to enforce: it
@@ -221,17 +216,15 @@ export const ContentTypeExtractionGroundingPolicySchema = z
 /**
  * Per-type embedding switches.
  *
- * Published as `Partial_Record_SupportedEmbeddingTypes_boolean` — the name the scanner synthesizes
- * for `Partial<Record<SupportedEmbeddingTypes, boolean>>`. Like `ProjectSearchPropertyMappingMap` it
- * has no TypeScript name of its own, so it is registered without a public alias.
+ * It has no standalone public TypeScript type, so it is registered without a public alias.
  */
-export const IntakeEmbeddingSwitchesSchema = z
+export const EmbeddingTypeEnabledMapSchema = z
     .strictObject({
         text: z.boolean().optional(),
         image: z.boolean().optional(),
         properties: z.boolean().optional(),
     })
-    .meta({ id: 'Partial_Record_SupportedEmbeddingTypes_boolean' });
+    .meta({ id: 'EmbeddingTypeEnabledMap' });
 
 export const ContentTypeIntakePolicySchema = z
     .strictObject({
@@ -376,7 +369,7 @@ export const ContentTypeIntakePolicySchema = z
         rendering_template: z.string().optional().meta({
             description: 'Handlebars template used to materialize extracted properties into object text.',
         }),
-        embeddings: IntakeEmbeddingSwitchesSchema.optional().meta({
+        embeddings: EmbeddingTypeEnabledMapSchema.optional().meta({
             description: 'Per-type embedding switches. Unspecified values inherit the project policy.',
         }),
         generate_toc: z.boolean().optional().meta({
@@ -392,11 +385,6 @@ export const ContentTypeIntakePolicySchema = z
         description: 'Per-content-type policy for the standard intake workflows.',
     });
 
-/*
- * Content-type catalog components, converted from the published document by
- * `packages/api-specs/scripts/convert-to-zod.mjs`. The conversion is mechanical: each body below
- * re-emits byte-identically to the component it replaces.
- */
 export const ColumnLayoutSchema = z
     .strictObject({
         field: z.string().meta({ description: 'The path of the field to use (e.g. "properties.title")' }),
@@ -567,7 +555,7 @@ export const CreateContentObjectTypePayloadSchema = z
  * The update payload, which is the create payload with nothing required.
  *
  * `PUT /types/:typeId` published `CreateContentObjectTypePayload` — including its `required: ['name']`
- * — while every caller has always sent a single field: the Studio type editor sends `{ object_schema }`,
+ * — while every caller has always sent a single field: the type editor sends `{ object_schema }`,
  * `{ editing }` or `{ intake }`, and the `create_or_update_object_type` agent tool sends whatever the
  * model changed. Nothing enforced the document, so the disagreement was invisible; enforcing it made
  * the documented contract reject the only shape anyone sends.

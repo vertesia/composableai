@@ -235,7 +235,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             description: 'Handlebars template used to materialize extracted properties into object text.',
         },
         embeddings: {
-            $ref: '#/$defs/Partial_Record_SupportedEmbeddingTypes_boolean',
+            $ref: '#/$defs/EmbeddingTypeEnabledMap',
             description: 'Per-type embedding switches. Unspecified values inherit the project policy.',
         },
         generate_toc: {
@@ -1240,7 +1240,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             required: ['_option_id'],
             additionalProperties: false,
         },
-        Partial_Record_SupportedEmbeddingTypes_boolean: {
+        EmbeddingTypeEnabledMap: {
             type: 'object',
             properties: {
                 text: {

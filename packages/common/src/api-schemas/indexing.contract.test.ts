@@ -10,23 +10,22 @@ import type {
     StartProjectReindexPayload,
 } from '../project.js';
 import { WorkflowExecutionStatus } from '../store/workflow.js';
-import { validateApiRequest, validateApiResponse } from './registry.js';
+import type { GenericCommandResponseSchema } from './commands.js';
+import type { EmbeddingsStatusResponseSchema, ProjectConfigurationEmbeddingEnablePayloadSchema } from './embeddings.js';
 import type {
     DriftAnalysisStatusResponseSchema,
-    EmbeddingsStatusResponseSchema,
-    GenericCommandResponseSchema,
     IndexingStatusResponseSchema,
-    ProjectConfigurationEmbeddingEnablePayloadSchema,
     ReindexAgentRunsPayloadSchema,
     ReindexAgentRunsResponseSchema,
     StartProjectReindexPayloadSchema,
-} from './zeno-commands.js';
+} from './indexing.js';
+import { validateApiRequest, validateApiResponse } from './registry.js';
 
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 function assertType<T extends true>(_value: T): void {}
 
-describe('Zeno command API contracts', () => {
-    it('derives every public command type from its schema', () => {
+describe('indexing and embedding API contracts', () => {
+    it('derives every public type from its domain schema', () => {
         assertType<Equals<GenericCommandResponse, typeof GenericCommandResponseSchema._output>>(true);
         assertType<Equals<EmbeddingsStatusResponse, typeof EmbeddingsStatusResponseSchema._output>>(true);
         assertType<Equals<IndexingStatusResponse, typeof IndexingStatusResponseSchema._output>>(true);

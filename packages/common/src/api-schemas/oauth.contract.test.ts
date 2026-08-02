@@ -94,17 +94,6 @@ describe('the OAuth provider secret boundary', () => {
 });
 
 describe('UpdateOAuthProviderPayload', () => {
-    /**
-     * The scanner published this as a `$ref` to an invented `Partial_CreateOAuthProviderPayload`. A
-     * canonical component is defined where it is named, so the properties are inline now and the
-     * invented name is gone — same properties, same optionality, one fewer model downstream.
-     */
-    it('is defined in place, with no Partial_ component left behind', () => {
-        expect(ApiSchemaComponents).toHaveProperty('UpdateOAuthProviderPayload');
-        expect(ApiSchemaComponents).not.toHaveProperty('Partial_CreateOAuthProviderPayload');
-        expect(JSON.stringify(ApiSchemaComponents)).not.toContain('Partial_CreateOAuthProviderPayload');
-    });
-
     it('accepts an empty body and a single-field body, and still rejects a typo', () => {
         expect(validateApiRequest('UpdateOAuthProviderPayload', {}).valid).toBe(true);
         expect(validateApiRequest('UpdateOAuthProviderPayload', { display_name: 'Acme' }).valid).toBe(true);

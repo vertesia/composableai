@@ -797,13 +797,9 @@ export const AppVersionRecordArraySchema = z.array(AppVersionRecordSchema).meta(
 
 export const AppToolCollectionArraySchema = z.array(AppToolCollectionSchema).meta({ id: 'AppToolCollectionArray' });
 
-// Hand-authored, not converted: a query contract has no component BODY in the published document —
-// the scanner expands it into `parameters` — so the converter has nothing to read. Each is written
-// from the declaration it replaces, and states only what the handler actually applies.
+// Query contracts are registry components even though the scanner expands them into parameters.
 
-// `AppInstallationKind` has a TypeScript name and so gets a component of its own, the way the other
-// named enums in this wave do. It was previously inlined into the parameter, being reachable from
-// nothing but this query.
+// `AppInstallationKind` has a TypeScript name and therefore gets a reusable component of its own.
 export const AppInstallationKindSchema = z
     .enum(['ui', 'tools', 'all'])
     .meta({ id: 'AppInstallationKind', description: 'Which app contributions an installation listing is for.' });

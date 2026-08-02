@@ -126,9 +126,7 @@ export const ValidateToolNamesResponseSchema = z
 
 export const AggregatedToolArraySchema = z.array(AggregatedToolSchema).meta({ id: 'AggregatedToolArray' });
 
-// Hand-authored, not converted: a query contract has no component BODY in the published document —
-// the scanner expands it into `parameters` — so the converter has nothing to read. Written from the
-// `ListProjectToolsQuery` declaration it replaces.
+// Query contracts are registry components even though the scanner expands them into parameters.
 export const ListProjectToolsQuerySchema = z
     .strictObject({
         sources: z.array(ToolSourceSchema).meta({ description: 'Include only these sources.' }).optional(),

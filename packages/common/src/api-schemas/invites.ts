@@ -6,17 +6,7 @@ import { ProjectRefSchema, SystemRolesSchema } from './apikey.js';
 import { UserRefSchema } from './user.js';
 
 /**
- * Runtime API schemas for the account invite, onboarding and project-listing endpoints — the account
- * half of the fifth bulk batch.
- *
- * This batch contains the migration's first outright WRONG published component rather than a merely
- * incomplete one. `TransientToken_UserInviteTokenData_Array` is what the scanner made of
- * `TransientToken<UserInviteTokenData>[]`: it dropped the generic parameter, so the component
- * declares neither `type` nor `data` — the entire invite payload — and it describes a single object
- * although all three endpoints return an array. The endpoints have always sent the full populated
- * documents, so every one of those responses violated its own schema. Publishing the real shape is
- * the fix, and it is a breaking change for generated clients precisely because the old one was
- * unusable.
+ * Runtime API schemas for account invites, onboarding, and project listings.
  */
 
 export const TransientTokenTypeSchema = z.enum(TransientTokenType).meta({ id: 'TransientTokenType' });
@@ -27,8 +17,7 @@ export const TransientTokenTypeSchema = z.enum(TransientTokenType).meta({ id: 'T
  * Picked from {@link AccountSchema} rather than restated, for the reason `UserRef` is picked from
  * `User`: two declarations of one projection can only drift. `.pick()` keeps the parent's property
  * order and drops its `meta.id`, so this still publishes as its own component rather than a `$ref`,
- * and the emitted JSON stays byte-identical to what the scanner derives — which it must, because
- * `Interaction` and `PromptTemplate` still reference `AccountRef` and have not converted.
+ * and the emitted JSON stays stable.
  *
  * `AccountRefPopulate` is the Mongoose projection that produces it; the two are meant to stay in
  * step.

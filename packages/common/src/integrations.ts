@@ -18,7 +18,7 @@ import type {
     ResendConfigurationSchema,
     SerperConfigurationInputSchema,
     SerperConfigurationSchema,
-} from './api-schemas/studio-remaining.js';
+} from './api-schemas/integrations.js';
 export interface IntegrationConfigurationBase<TIntegration extends SupportedIntegrations = SupportedIntegrations> {
     integration: TIntegration;
     enabled: boolean;

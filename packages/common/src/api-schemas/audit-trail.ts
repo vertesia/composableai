@@ -31,7 +31,7 @@ export const EventCategorySchema = z
     .enum(['content', 'workflow', 'security', 'billing', 'system', 'external'])
     .meta({ id: 'EventCategory' });
 
-export const Partial_Record_AuditAggregationDimension_string_nullSchema = z
+export const AuditAggregationDimensionMapSchema = z
     .strictObject({
         time: z.string().nullable().optional(),
         action: z.string().nullable().optional(),
@@ -45,7 +45,7 @@ export const Partial_Record_AuditAggregationDimension_string_nullSchema = z
         'details.rule_id': z.string().nullable().optional(),
         model: z.string().nullable().optional(),
     })
-    .meta({ id: 'Partial_Record_AuditAggregationDimension_string_null' });
+    .meta({ id: 'AuditAggregationDimensionMap' });
 
 export const AuditAggregationDistinctFieldSchema = z
     .enum(['resource_id', 'request_id'])
@@ -71,7 +71,7 @@ export const AuditActionSchema = z.union([KnownAuditActionSchema, z.string()]).m
 
 export const AuditAggregationRowSchema = z
     .strictObject({
-        dimensions: Partial_Record_AuditAggregationDimension_string_nullSchema,
+        dimensions: AuditAggregationDimensionMapSchema,
         metrics: NumberValueMapSchema,
     })
     .meta({ id: 'AuditAggregationRow' });
@@ -200,9 +200,7 @@ export const AuditAggregationQuerySchema = z
             'Safe audit aggregation query. The server always applies the authenticated account scope and, for project-scoped principals, replaces projectId with the authenticated project.',
     });
 
-// Hand-authored, not converted: a query contract has no component BODY in the published document —
-// the scanner expands it into `parameters` — so the converter has nothing to read. Written from the
-// `AuditTrailQuery` declaration it replaces, whose fields `listEvents` reads one for one.
+// Query contracts are registry components even though the scanner expands them into parameters.
 export const AuditTrailQuerySchema = z
     .strictObject({
         actions: z.array(AuditActionSchema).meta({ description: 'Filter by action types' }).optional(),

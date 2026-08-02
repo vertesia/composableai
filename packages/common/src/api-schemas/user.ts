@@ -1,15 +1,11 @@
 import { z } from 'zod';
 
 /**
- * Runtime API schemas for the IAM user endpoints — the second bulk batch.
+ * Runtime API schemas for the IAM user endpoints.
  *
- * Unlike the quota batch, this one crosses a persistence boundary: `User` is served from a Mongoose
+ * `User` is served from a Mongoose
  * document, so the published schema and the stored document are genuinely different shapes and the
  * server maps between them explicitly. What is declared here is the WIRE contract only.
- *
- * `DeleteByIdResult` is the first component shared beyond its own batch — eight studio slots publish
- * it, and all eight had to convert at once. See the note on {@link DeleteByIdResultSchema} for why a
- * shared component cannot move one slot at a time.
  */
 
 /**
@@ -95,10 +91,7 @@ export const UserSchema = z
  * The account members listing, published as its own component because the document already carries
  * `UserArray` — an array named at the top level rather than inlined at the use site.
  *
- * It exists in this batch because `User` became canonical: a legacy array slot whose items `$ref` a
- * canonical component publishes the new contract without enforcing it, so a member document missing
- * timestamps or carrying a null would violate the nested contract silently. Converting the array is
- * what closes that gap.
+ * Naming the array keeps its item contract reusable and runtime-enforced as one unit.
  */
 export const UserArraySchema = z.array(UserSchema).meta({ id: 'UserArray' });
 
@@ -160,8 +153,7 @@ export const UpdateUserPayloadSchema = UserSchema.pick({
     .meta({ id: 'UpdateUserPayload' });
 
 /**
- * Shared by eight studio delete endpoints, and all eight converted together — a shared component
- * cannot be migrated one slot at a time.
+ * Shared by eight studio delete endpoints.
  *
  * The byte-identity guard in the generator does not make it safe to leave the others behind: the
  * public `DeleteByIdResult` is now an alias inferred from this schema, so the TypeScript derivation

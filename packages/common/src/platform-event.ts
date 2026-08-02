@@ -43,7 +43,7 @@ import type {
     WebhookSigningModeSchema,
     WorkflowEventDeliveryTargetInputSchema,
     WorkflowEventDeliveryTargetSchema,
-} from './api-schemas/zeno-remaining.js';
+} from './api-schemas/events.js';
 import type { AuditMeter } from './audit-trail.js';
 import type { ConversationVisibility } from './interaction.js';
 import type { SystemRoles } from './project.js';

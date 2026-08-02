@@ -312,8 +312,7 @@ export const ViewBoardDisplaySchema = z
     })
     .meta({ id: 'ViewBoardDisplay' });
 
-// Hand-authored, not converted: the bulk converter refuses a non-string enum, and both of these
-// carry `columns` as a numeric one. `z.literal([...])` is the spelling that emits `type: number`
+// Both display contracts carry `columns` as a numeric enum. `z.literal([...])` emits `type: number`
 // with the same `enum` list the document already publishes — a `z.union` of literals would emit
 // `anyOf`, and a plain `z.number()` would drop the constraint.
 const VIEW_DISPLAY_COLUMNS = z.literal([2, 3, 4, 5, 6]).optional();
@@ -423,9 +422,7 @@ export const UpdateViewExperienceRequestSchema = z
 
 export const ViewExperienceArraySchema = z.array(ViewExperienceSchema).meta({ id: 'ViewExperienceArray' });
 
-// Hand-authored, not converted: a query contract has no component BODY in the published document —
-// the scanner expands it into `parameters` — so the converter has nothing to read. Written from the
-// `ViewExperienceListQuery` declaration it replaces, which is what `ListViews` reads.
+// Query contracts are registry components even though the scanner expands them into parameters.
 export const ViewExperienceListQuerySchema = z
     .strictObject({
         limit: z

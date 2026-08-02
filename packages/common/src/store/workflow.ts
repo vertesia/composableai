@@ -1,15 +1,18 @@
 import type { HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
 import type { z } from 'zod';
+import type {
+    AgentMessageDetailsSchema,
+    CompactMessageSchema,
+    ConversationFileSchema,
+} from '../api-schemas/agent-runs.js';
 import type { ConversationActivityStateSchema } from '../api-schemas/app-lifecycle.js';
 import type { WorkflowExecutionStatusSchema } from '../api-schemas/document-processing.js';
 import type { PlanSchema, PlanTaskSchema, WorkflowAncestorSchema } from '../api-schemas/interaction.js';
+import type { WorkflowExecutionStartResultSchema } from '../api-schemas/process.js';
 import type {
     ActivityTaskSchema,
-    AgentMessageDetailsSchema,
     AgentTaskSchema,
     ChildWorkflowTaskSchema,
-    CompactMessageSchema,
-    ConversationFileSchema,
     EventErrorSchema,
     ExecuteWorkflowPayloadSchema,
     ListWorkflowRunsPayloadSchema,
@@ -19,7 +22,6 @@ import type {
     SignalTaskSchema,
     TimerTaskSchema,
     WorkflowActionResponseSchema,
-    WorkflowExecutionStartResultSchema,
     WorkflowHistorySchema,
     WorkflowQueryResultSchema,
     WorkflowRunDetailsQuerySchema,
@@ -31,7 +33,7 @@ import type {
     WorkflowRunWithDetailsSchema,
     WorkflowTaskSchema,
     WorkflowUpdatePublishResponseSchema,
-} from '../api-schemas/zeno-remaining.js';
+} from '../api-schemas/workflow-runs.js';
 import type { AgentResourceReference, InteractionExecutionConfiguration, UserChannel } from '../interaction.js';
 import { normalizeAgentResources } from '../interaction.js';
 import type { JSONObject } from '../json.js';

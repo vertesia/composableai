@@ -6,10 +6,12 @@ import type {
     DSLActivityStepSchema,
     DSLRetryPolicySchema,
     DurationValueSchema,
+} from '../api-schemas/process.js';
+import type {
     WorkflowDefinitionRefSchema,
     WorkflowInputFileSchema,
     WorkflowInputSchema,
-} from '../api-schemas/zeno-remaining.js';
+} from '../api-schemas/workflow-runs.js';
 import type { ToolExecutionMetadata } from '../tool-execution.js';
 import type { BaseObject } from './common.js';
 import type { WorkflowExecutionPayload } from './index.js';

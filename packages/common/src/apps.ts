@@ -51,33 +51,6 @@ import type {
     ValidateUrlResponseSchema,
 } from './api-schemas/app-lifecycle.js';
 import type {
-    AppAccessControlSchema,
-    AppAvailableInSchema,
-    AppCapabilitiesSchema,
-    AppGitSourceConfigSchema,
-    AppManifestSourceSchema,
-    AppSourceConfigSchema,
-    AppUIConfigSchema,
-    MCPOAuthConfigSchema,
-    MCPToolAnnotationsSchema,
-    MCPToolCollectionObjectSchema,
-    McpOAuthConnectResponseSchema,
-    McpOAuthDisconnectResponseSchema,
-    McpOAuthTokenRequestSchema,
-    McpOAuthTokenResponseSchema,
-    OAuthAuthorizeResponseSchema,
-    OAuthAuthStatusSchema,
-    OAuthMetadataResponseSchema,
-    ToolCollectionAuthTypeSchema,
-    ToolCollectionObjectSchema,
-    VertesiaSDKToolCollectionObjectSchema,
-} from './api-schemas/apps.js';
-import type {
-    ProjectToolInfoSchema,
-    RenderingTemplateDefinitionRefSchema,
-    RenderingTemplateDefinitionSchema,
-} from './api-schemas/project.js';
-import type {
     AppInstallationListEntrySchema,
     AppInstallationSchema,
     AppInstallationWithManifestSchema,
@@ -104,8 +77,35 @@ import type {
     CompositeAppThemeOverridesSchema,
     CompositeAppUserMenuOverridesSchema,
     PromoteAppVersionResponseSchema,
-    RemoteActivityDefinitionSchema,
-} from './api-schemas/studio-remaining.js';
+} from './api-schemas/app-runtime.js';
+import type {
+    AppAccessControlSchema,
+    AppAvailableInSchema,
+    AppCapabilitiesSchema,
+    AppGitSourceConfigSchema,
+    AppManifestSourceSchema,
+    AppSourceConfigSchema,
+    AppUIConfigSchema,
+    MCPOAuthConfigSchema,
+    MCPToolAnnotationsSchema,
+    MCPToolCollectionObjectSchema,
+    McpOAuthConnectResponseSchema,
+    McpOAuthDisconnectResponseSchema,
+    McpOAuthTokenRequestSchema,
+    McpOAuthTokenResponseSchema,
+    OAuthAuthorizeResponseSchema,
+    OAuthAuthStatusSchema,
+    OAuthMetadataResponseSchema,
+    ToolCollectionAuthTypeSchema,
+    ToolCollectionObjectSchema,
+    VertesiaSDKToolCollectionObjectSchema,
+} from './api-schemas/apps.js';
+import type { RemoteActivityDefinitionSchema } from './api-schemas/integrations.js';
+import type {
+    ProjectToolInfoSchema,
+    RenderingTemplateDefinitionRefSchema,
+    RenderingTemplateDefinitionSchema,
+} from './api-schemas/project.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;

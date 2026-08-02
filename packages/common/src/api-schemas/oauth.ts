@@ -18,8 +18,8 @@ import { z } from 'zod';
  *
  * `z.boolean()`, not `z.literal(true)`, and that is what the document has always published: the
  * scanner widened the declared `success: true` to `type: boolean` on the way out. Publishing the
- * literal would newly forbid `{ success: false }` for every existing client, which is a contract
- * change this migration has no business making — the handlers return `true` either way.
+ * literal would newly forbid `{ success: false }` for every existing client, while the handlers
+ * return `true` either way.
  */
 export const SuccessResponseSchema = z
     .strictObject({
@@ -118,14 +118,8 @@ export const CreateOAuthProviderPayloadSchema = z
     });
 
 /**
- * `.partial()` of the create payload, which is what `Partial<CreateOAuthProviderPayload>` said and
- * what the handler does — it writes only the fields the body names.
- *
- * The document changes shape here without changing meaning. The scanner published this as a `$ref`
- * to a component it invented called `Partial_CreateOAuthProviderPayload`; a canonical component is
- * defined where it is named, so the properties are now inline under `UpdateOAuthProviderPayload` and
- * the invented name is gone. Same properties, same order, same optionality — one fewer model in the
- * generated clients.
+ * The update contract shares the create fields but makes each optional; the handler writes only the
+ * fields present in the request.
  */
 export const UpdateOAuthProviderPayloadSchema = CreateOAuthProviderPayloadSchema.partial().meta({
     id: 'UpdateOAuthProviderPayload',

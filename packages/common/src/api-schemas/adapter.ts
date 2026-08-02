@@ -382,8 +382,7 @@ function eachSubschema(node: JsonObject, visit: (child: JsonObject) => void): vo
  * Strictness is declared per component, but an object nested inline in one is not a component — it has
  * no name to list — so without this it stayed open while its parent closed. The TypeScript-derived
  * generator closed every object it emitted, so the document already publishes those inline objects
- * closed (`QuotaStandingResponse.admission` and `.llm` are the first two converted), and leaving them
- * open would have loosened a published contract on the way to reproducing it.
+ * closed, and leaving them open would loosen the published contract.
  *
  * An existing `additionalProperties` is never overwritten: `true` or a subschema is a deliberate
  * statement about the extras — a `Record<string, string>` value type, say — and replacing it with
@@ -400,10 +399,9 @@ function closeObjects(node: JsonObject): void {
 /**
  * Puts `description` last on every subschema, which is where the published document has it.
  *
- * Key order carries no meaning to any consumer, but it decides byte-identity — and byte-identity is
- * how a conversion proves it reproduced the published contract rather than renegotiating it. The
- * scanner's TypeScript-derived output puts `description` last in 2140 of 2143 places, so matching that
- * is what lets a converted component diff clean. Zod emits it wherever `.meta()` happened to land, and
+ * Key order carries no meaning to consumers, but stable ordering keeps generated artifacts readable.
+ * The scanner's TypeScript-derived output puts `description` last, while Zod emits it wherever
+ * `.meta()` happened to land, and
  * the strict policy above appends `additionalProperties` after that, so without this pass a described
  * `$ref` property emitted `{description, $ref}` against the document's `{$ref, description}` and every
  * closed component with a description emitted `{description, additionalProperties}`.

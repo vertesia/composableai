@@ -9,7 +9,7 @@ import type {
     CollectionSchema,
     CollectionSecuritySettingsResponseSchema,
     CreateCollectionPayloadSchema,
-} from '../api-schemas/zeno-remaining.js';
+} from '../api-schemas/content.js';
 import type { BaseObject } from './common.js';
 import type { ColumnLayout, ContentObjectTypeRef } from './store.js';
 

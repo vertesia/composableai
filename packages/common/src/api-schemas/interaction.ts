@@ -30,11 +30,6 @@ import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } fr
 /**
  * Interactions, their prompts, and the runs they produce.
  *
- * One closure, converted in one wave, because it is one: `Interaction` reaches `PromptSegmentDef`
- * reaches `PromptTemplate`, and `InteractionExecutionResult` reaches `ExecutionRun` reaches
- * `ConversationState` reaches the agent plan and channel types. A canonical component may not
- * `$ref` a TypeScript-derived one, so the closure converts together or not at all.
- *
  * Declaration order is dependency order — a schema referenced by another is declared before it —
  * which is why this file does not read alphabetically.
  */
@@ -1744,7 +1739,7 @@ export const ConversationStateSchema = z
             'Conversation state passed between workflow activities: the activity-safe, per-turn dynamic subset of a multi-turn agent conversation. Rides every conversation activity payload, so it deliberately excludes anything large or fetchable — the conversation history and tool definitions live in artifact storage (referenced via `tool_reference` / the conversation storage id), and catalog/activation data lives in the workflow-memory  {@link  ConversationCatalogState }  (persisted as catalog.json).',
     });
 
-export const Partial_ExecutionRunRefSchema = z
+export const UpdateExecutionRunPayloadSchema = z
     .strictObject({
         id: z.string().optional(),
         parent: z
@@ -1794,7 +1789,7 @@ export const Partial_ExecutionRunRefSchema = z
         }).optional(),
         interaction: InteractionRefSchema.optional(),
     })
-    .meta({ id: 'Partial_ExecutionRunRef' });
+    .meta({ id: 'UpdateExecutionRunPayload' });
 
 export const ExecutionRunRefArraySchema = z.array(ExecutionRunRefSchema).meta({ id: 'ExecutionRunRefArray' });
 
@@ -1809,7 +1804,7 @@ export const AsyncCompletionOptionsSchema = z
             .string()
             .meta({
                 description:
-                    'Temporal task token for async activity completion (base64url encoded). When provided, Studio will complete the activity after execution finishes, allowing the worker to release the activity slot immediately.',
+                    'Temporal task token for async activity completion (base64url encoded). When provided, the platform completes the activity after execution finishes, allowing the worker to release the activity slot immediately.',
             })
             .optional(),
         activity_id: z
@@ -1821,22 +1816,22 @@ export const AsyncCompletionOptionsSchema = z
             .optional(),
         current_state: ConversationStateSchema.meta({
             description:
-                'Current conversation state to merge with execution result. Studio will store the conversation and complete the activity with merged state. Required when task_token is provided.',
+                'Current conversation state to merge with execution result. The platform stores the conversation and completes the activity with merged state. Required when task_token is provided.',
         }).optional(),
         heartbeat_interval_ms: z
             .number()
             .meta({
                 description:
-                    'Interval in milliseconds for sending heartbeats to Temporal during streaming. When provided, Studio will send periodic heartbeats to keep the activity alive. Recommended: 10000 (10 seconds). Activity heartbeat timeout should be ~3x this value.',
+                    'Interval in milliseconds for sending heartbeats to Temporal during streaming. When provided, the platform sends periodic heartbeats to keep the activity alive. Recommended: 10000 (10 seconds). Activity heartbeat timeout should be ~3x this value.',
             })
             .optional(),
         telemetry: StreamingTelemetryContextSchema.meta({
             description:
-                'Telemetry context for sending LlmCallEvent after streaming completes. Studio will use this to send token usage telemetry since the activity exits before the response is available in async completion mode.',
+                'Telemetry context for sending LlmCallEvent after streaming completes. The platform uses this to send token usage telemetry since the activity exits before the response is available in async completion mode.',
         }).optional(),
         result_storage: ResultStorageOptionsSchema.meta({
             description:
-                'Storage options for inference result. When provided, Studio will store the result to the specified path after inference completes (before completing the Temporal activity).',
+                'Storage options for inference result. When provided, the platform stores the result at the specified path after inference completes (before completing the Temporal activity).',
         }).optional(),
         completion_mode: AsyncCompletionModeSchema.meta({
             description:
@@ -2237,15 +2232,7 @@ export const AsyncExecutionPayloadSchema = z
     .discriminatedUnion('type', [AsyncConversationExecutionPayloadSchema, AsyncInteractionExecutionPayloadSchema])
     .meta({ id: 'AsyncExecutionPayload' });
 
-/**
- * Hand-authored, not converted.
- *
- * The bulk converter reads component BODIES out of the published document. Query and header
- * contracts have no body there — the scanner expands them into `parameters` — and
- * `ComputedFacetResponse` uses a type union the converter refuses to guess at. These six are
- * therefore written from the TypeScript declarations they replace, in `interaction.ts` and
- * `facets.ts`.
- */
+/** Query, header, and computed-facet contracts that are authored directly from their wire shapes. */
 
 export const CatalogTagQuerySchema = z
     .strictObject({

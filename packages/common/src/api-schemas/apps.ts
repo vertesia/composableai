@@ -6,21 +6,7 @@ import type { AppUINavItem } from '../apps.js';
 import { APP_CAPABILITIES, PREFERRED_SECTIONS } from '../apps.js';
 
 /**
- * Runtime API schemas for the app-manifest LEAVES — the tenth batch.
- *
- * Thirteen components, no endpoint slot: `AppManifestData` and `AppManifest` are still derived from
- * TypeScript, and what converts here is everything they reach. That split is deliberate rather than
- * unfinished — see the note at the bottom of this file for the one blocker, which is not in this
- * package. Their derived components now carry `$ref`s to these bodies, so the conversion is visible
- * in the published document without changing a single shape: every component below emits
- * byte-identically to what the scanner derived, apart from the order of two `required` arrays and
- * the key order of the union node, neither of which any consumer can observe.
- *
- * The descriptions are reproduced VERBATIM from the published document, artifacts included — the
- * `access_control` one really does contain `{@link  AppAccessControl }` with its doubled spaces,
- * because that is what the TSDoc-to-OpenAPI pass emitted and what clients have been reading. A
- * conversion that quietly reworded documentation would make the spec diff unreadable exactly where
- * it needs to be legible. Fix the wording afterwards, deliberately, if it is worth a contract diff.
+ * Runtime API schemas for app manifests and their nested definitions.
  */
 
 export const AppCapabilitiesSchema = z.enum(APP_CAPABILITIES).meta({ id: 'AppCapabilities' });
@@ -310,8 +296,8 @@ export const AppSourceConfigSchema = z
 
 /**
  * What `AppManifest.source` narrows to: the same `kind: 'git'` envelope, but with the git block
- * required and inline rather than referenced. Two shapes for one concept is not something this
- * conversion introduced — it reproduces what both components already publish.
+ * required and inline rather than referenced. Both components deliberately publish these distinct
+ * shapes.
  */
 export const AppManifestSourceSchema = z
     .strictObject({

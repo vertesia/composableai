@@ -10,28 +10,12 @@ import {
 } from '../access-control-values.js';
 
 /**
- * Runtime API schemas for the IAM roles and access-control endpoints — the fourth bulk batch.
- *
- * Nine slots across three resources, and the reason they convert together is the `$ref` closure: an
- * ACE references `AceConditions`, which references `PropertyConditions`, and the registry has to be
- * self-contained, so the whole graph moves at once. The role catalog joins them because
- * `SystemRoleDefinition` publishes `Permission[]`, and `Permission` is the same enum an ACE's role
- * vocabulary is drawn from.
- *
- * Two documented shape changes come out of this batch, both spelling rather than contract:
- *   - `PropertyConditions` was published as a `$ref` to a synthesized `PropertyConditionValueMap`
- *     component — an artifact of deriving a `Record<>` type alias through a second alias. It is now
- *     the map itself, and `PropertyConditionValueMap` disappears.
- *   - `required` arrays that the TypeScript scanner emitted alphabetically (the ones it derived
- *     through `Omit`/`extends`) now follow property order, which is what every hand-declared
- *     component already published. JSON Schema attaches no meaning to the order.
+ * Runtime API schemas for IAM roles and access-control entries.
  */
 
 /**
  * The permission vocabulary, hoisted so `SystemRoleDefinition` publishes one reusable enum rather
- * than an inline copy per property. Shared with slots that have not converted yet, which is safe
- * precisely because it is byte-identical to what the scanner derives — the generator fails the build
- * if a canonical and a derived component under one name ever differ.
+ * than an inline copy per property.
  */
 export const PermissionSchema = z.enum(Permission).meta({ id: 'Permission' });
 

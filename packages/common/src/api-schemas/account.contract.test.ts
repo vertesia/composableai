@@ -3,11 +3,20 @@ import { describe, expect, it } from 'vitest';
 import type { StripeBillingStatusResponse } from '../meters.js';
 import { type Account, BillingMethod, type QuotaTier, type UpdateAccountPayload } from '../user.js';
 import { type JsonObject, SchemaAdapterError, toOpenApiComponents } from './adapter.js';
+import * as AgentRunSchemas from './agent-runs.js';
+import * as AppRuntimeSchemas from './app-runtime.js';
+import * as CommandSchemas from './commands.js';
+import * as ContentSchemas from './content.js';
 import * as DocumentProcessingSchemas from './document-processing.js';
+import * as EmbeddingSchemas from './embeddings.js';
+import * as EventSchemas from './events.js';
+import * as IndexingSchemas from './indexing.js';
+import * as IntegrationSchemas from './integrations.js';
+import * as ProcessSchemas from './process.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
-import * as StudioRemainingSchemas from './studio-remaining.js';
-import * as ZenoCommandSchemas from './zeno-commands.js';
-import * as ZenoRemainingSchemas from './zeno-remaining.js';
+import * as SecretSchemas from './secrets.js';
+import * as ViewExecutionSchemas from './view-execution.js';
+import * as WorkflowRunSchemas from './workflow-runs.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -555,14 +564,14 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
                     'OpenAiGptImageOptions',
                     'OpenAiTextOptions',
                     'OpenAiThinkingOptions',
-                    'Partial_ExecutionRunRef',
-                    'Partial_IntakeVisionProfileSettings',
-                    'Partial_Omit_DataColumn_name',
-                    'Partial_Project',
-                    'Partial_ProjectConfiguration',
-                    'Partial_Record_AuditAggregationDimension_string_null',
-                    'Partial_Record_IntakeVisionDetail_Partial_IntakeVisionProfileSettings',
-                    'Partial_Record_SupportedEmbeddingTypes_boolean',
+                    'UpdateExecutionRunPayload',
+                    'IntakeVisionProfileSettingsUpdate',
+                    'DataColumnUpdate',
+                    'UpdateProjectPayload',
+                    'UpdateProjectConfigurationPayload',
+                    'AuditAggregationDimensionMap',
+                    'IntakeVisionProfileSettingsMap',
+                    'EmbeddingTypeEnabledMap',
                     'PendingMcpConnection',
                     'PendingToolApprovalResults',
                     'Permission',
@@ -779,10 +788,19 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
                     'VirtualEnvEntry',
                     'WorkflowAncestor',
                     ...[
+                        AgentRunSchemas,
+                        AppRuntimeSchemas,
+                        CommandSchemas,
+                        ContentSchemas,
                         DocumentProcessingSchemas,
-                        StudioRemainingSchemas,
-                        ZenoCommandSchemas,
-                        ZenoRemainingSchemas,
+                        EmbeddingSchemas,
+                        EventSchemas,
+                        IndexingSchemas,
+                        IntegrationSchemas,
+                        ProcessSchemas,
+                        SecretSchemas,
+                        ViewExecutionSchemas,
+                        WorkflowRunSchemas,
                     ].flatMap((schemas) =>
                         Object.keys(schemas)
                             .filter((name) => name.endsWith('Schema'))

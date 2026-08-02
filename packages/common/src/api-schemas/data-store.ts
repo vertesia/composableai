@@ -2,12 +2,6 @@ import { z } from 'zod';
 import { DataColumnType, DataStoreStatus, ImportStatus, SemanticColumnType } from '../data-platform.js';
 import { NumberValueMapSchema } from './interaction.js';
 
-/**
- * Generated from the published components by `scripts/convert-to-zod.mjs`, then reviewed.
- *
- * Every schema below was checked against the document it replaces: `--verify` re-emits this
- * module through the registry adapter and diffs it, so the shapes are the shipped ones.
- */
 export const QueryValidationErrorSchema = z
     .strictObject({
         query: z.string(),
@@ -69,7 +63,7 @@ export const DataColumnTypeSchema = z
     .enum(DataColumnType)
     .meta({ id: 'DataColumnType', description: 'Supported column data types for DuckDB tables.' });
 
-export const Partial_Omit_DataColumn_nameSchema = z
+export const DataColumnUpdateSchema = z
     .strictObject({
         type: DataColumnTypeSchema.meta({ description: 'Data type' }).optional(),
         description: z.string().meta({ description: 'Human-readable description' }).optional(),
@@ -84,7 +78,7 @@ export const Partial_Omit_DataColumn_nameSchema = z
         semantic_type: SemanticColumnTypeSchema.meta({ description: 'Semantic type for AI understanding' }).optional(),
         examples: z.array(z.string()).meta({ description: 'Example values for AI context' }).optional(),
     })
-    .meta({ id: 'Partial_Omit_DataColumn_name' });
+    .meta({ id: 'DataColumnUpdate' });
 
 export const DataRelationshipTypeSchema = z
     .enum(['one-to-one', 'one-to-many', 'many-to-many'])
@@ -301,7 +295,7 @@ export const AlterTableOperationSchema = z
         z.strictObject({
             op: z.literal('modify_column'),
             column: z.string(),
-            updates: Partial_Omit_DataColumn_nameSchema,
+            updates: DataColumnUpdateSchema,
         }),
     ])
     .meta({

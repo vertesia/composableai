@@ -15,7 +15,7 @@ function assertType<T extends true>(_ok: T): void {}
 /**
  * The intake policy is now stated once, in Zod, and reaches its consumers three ways: as the
  * published OpenAPI component, as the checked-in JSON artifact that zeno-server / the workflow tool /
- * the Studio editor compile, and as the TypeScript type. This file is the gate that keeps all three
+ * the web editor compiles, and as the TypeScript type. This file is the gate that keeps all three
  * the same statement.
  *
  * It also pins the behaviour changes the conversion makes, because the schema it replaced was
