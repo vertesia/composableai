@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { InCodeViewDefinitionSchema } from './api-schemas/studio-remaining.js';
 import type {
     AgenticViewSearchConfigurationSchema,
     CreateViewExperienceRequestSchema,
@@ -220,16 +221,7 @@ export function getPersistedViewExperienceConfiguration(
 }
 
 /** A View definition contributed by application code through the app package endpoint. */
-export interface InCodeViewDefinition {
-    /** App-local id. Studio normalizes it to app:<app-name>:<id>. */
-    id: string;
-    /** App-local name used for lookup and diagnostics. */
-    name: string;
-    title?: string;
-    description?: string;
-    tags?: string[];
-    definition: ViewExperienceConfiguration;
-}
+export type InCodeViewDefinition = z.infer<typeof InCodeViewDefinitionSchema>;
 
 export type ViewExperience = z.infer<typeof ViewExperienceSchema>;
 

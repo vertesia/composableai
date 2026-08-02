@@ -29,6 +29,12 @@ export interface AdapterOptions {
      * API change. Only new endpoints should opt in to 'closed'.
      */
     strictComponents?: ReadonlySet<string>;
+    /**
+     * Already-published components that roots may reference without redefining. They participate in
+     * reference resolution and discriminator synthesis, but are not copied into the returned map or
+     * subjected to this adaptation pass.
+     */
+    referenceComponents?: Readonly<Record<string, JsonObject>>;
 }
 
 export class SchemaAdapterError extends Error {}
@@ -154,6 +160,7 @@ function inHoistOrder(block: JsonObject): [string, unknown][] {
 
 interface HoistContext {
     components: Record<string, JsonObject>;
+    referenceComponents: Readonly<Record<string, JsonObject>>;
     rootName: string;
     /** Component name -> serialized shape, for detecting conflicting definitions. */
     seen: Map<string, string>;
@@ -208,7 +215,7 @@ function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
                     : walk(child, ctx, false);
         }
 
-        synthesizeDiscriminator(out, ctx.components);
+        synthesizeDiscriminator(out, { ...ctx.referenceComponents, ...ctx.components });
 
         // A nested schema carrying its own $id is a named component: hoist it and leave a reference.
         if (typeof $id === 'string' && !isRoot) {
@@ -257,7 +264,10 @@ function hoist(name: string, schema: unknown, ctx: HoistContext): void {
 }
 
 /** Every `$ref` must land on a component that exists, or the spec ships a dangling pointer. */
-function assertReferencesResolve(components: Readonly<Record<string, JsonObject>>): void {
+function assertReferencesResolve(
+    components: Readonly<Record<string, JsonObject>>,
+    referenceComponents: Readonly<Record<string, JsonObject>>,
+): void {
     const visit = (node: unknown, owner: string): void => {
         if (Array.isArray(node)) {
             for (const item of node) visit(item, owner);
@@ -267,7 +277,7 @@ function assertReferencesResolve(components: Readonly<Record<string, JsonObject>
         const ref = node[REF];
         if (typeof ref === 'string') {
             const name = ref.startsWith(COMPONENT_PREFIX) ? ref.slice(COMPONENT_PREFIX.length) : undefined;
-            if (name === undefined || !components[name]) {
+            if (name === undefined || (!components[name] && !referenceComponents[name])) {
                 throw new SchemaAdapterError(
                     `Component '${owner}' references '${ref}', which is not a known component.`,
                 );
@@ -287,7 +297,13 @@ export function toOpenApiComponents(
     roots: Readonly<Record<string, unknown>>,
     options: AdapterOptions = {},
 ): Record<string, JsonObject> {
-    const ctx: HoistContext = { components: {}, rootName: '', seen: new Map(), pending: new Set() };
+    const ctx: HoistContext = {
+        components: {},
+        referenceComponents: options.referenceComponents ?? {},
+        rootName: '',
+        seen: new Map(),
+        pending: new Set(),
+    };
     for (const [name, schema] of Object.entries(roots)) {
         if (!isPlainObject(schema)) {
             throw new SchemaAdapterError(`Component '${name}' is not an object schema.`);
@@ -326,7 +342,7 @@ export function toOpenApiComponents(
         moveDescriptionsLast(schema);
     }
 
-    assertReferencesResolve(ctx.components);
+    assertReferencesResolve(ctx.components, ctx.referenceComponents);
     return ctx.components;
 }
 

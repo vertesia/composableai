@@ -211,7 +211,7 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         ]);
         // `AppManifestData.templates` stays derived and now `$ref`s the canonical Ref — the closure
         // rule only forbids the other direction.
-        expect(Object.keys(ApiSchemaComponents)).not.toContain('AppManifest');
+        expect(Object.keys(ApiSchemaComponents)).toContain('AppManifest');
         const ref: RenderingTemplateDefinitionRef = {
             path: '/api/v1/projects/p/apps/templates/deck',
             id: 'acme:deck',

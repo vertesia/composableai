@@ -5,6 +5,7 @@ import { type Account, BillingMethod, type QuotaTier, type UpdateAccountPayload 
 import { type JsonObject, SchemaAdapterError, toOpenApiComponents } from './adapter.js';
 import * as DocumentProcessingSchemas from './document-processing.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
+import * as StudioRemainingSchemas from './studio-remaining.js';
 import * as ZenoCommandSchemas from './zeno-commands.js';
 import * as ZenoRemainingSchemas from './zeno-remaining.js';
 
@@ -117,6 +118,16 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
                     'AccountProjectsResponse',
                     'AccountRef',
                     'AccountType',
+                    'AgentTokenRequest',
+                    'ApiKeyTokenRequest',
+                    'EnvironmentTokenRequest',
+                    'IssueTokenRequest',
+                    'IssueTokenResponse',
+                    'ProjectTokenRequest',
+                    'ServiceAccountTokenRequest',
+                    'SigningAlgorithm',
+                    'UserTokenRequest',
+                    'error_string_message_string',
                     'AceConditions',
                     'AgentCheckpointConfiguration',
                     'AgentProjectConfiguration',
@@ -767,7 +778,12 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
                     'ViewTermsNavigation',
                     'VirtualEnvEntry',
                     'WorkflowAncestor',
-                    ...[DocumentProcessingSchemas, ZenoCommandSchemas, ZenoRemainingSchemas].flatMap((schemas) =>
+                    ...[
+                        DocumentProcessingSchemas,
+                        StudioRemainingSchemas,
+                        ZenoCommandSchemas,
+                        ZenoRemainingSchemas,
+                    ].flatMap((schemas) =>
                         Object.keys(schemas)
                             .filter((name) => name.endsWith('Schema'))
                             .map((name) => name.slice(0, -'Schema'.length)),

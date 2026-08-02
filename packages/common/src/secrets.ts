@@ -1,64 +1,33 @@
+import type { z } from 'zod';
 import type {
-    WebsiteCredentialMetadata,
-    WebsiteCredentialRecord,
-    WebsiteCredentialSecretInput,
-} from './browser-credentials.js';
+    CreateSecretRequestSchema,
+    ListSecretsQuerySchema,
+    ListSecretsResponseSchema,
+    SecretKindSchema,
+    SecretLookupQuerySchema,
+    SecretProjectQuerySchema,
+    SecretRecordSchema,
+    UpdateSecretRequestSchema,
+} from './api-schemas/studio-remaining.js';
 import type { EventCategory } from './platform-event.js';
 
 // First supported top-level secret kind. OAuth connector grants continue to use
 // the OAuth/MCP token flows and can be materialized later by tools that need them.
-export type SecretKind = 'website_credential';
+export type SecretKind = z.infer<typeof SecretKindSchema>;
 
-export interface SecretProjectQuery {
-    /**
-     * Project scope for top-level secret APIs. Must match the authenticated project context.
-     */
-    project_id?: string;
-}
+export type SecretProjectQuery = z.infer<typeof SecretProjectQuerySchema>;
 
-export interface ListSecretsQuery extends SecretProjectQuery {
-    kind?: SecretKind;
-    host?: string;
-    enabled?: boolean;
-}
+export type ListSecretsQuery = z.infer<typeof ListSecretsQuerySchema>;
 
-export interface SecretLookupQuery extends SecretProjectQuery {
-    kind?: SecretKind;
-}
+export type SecretLookupQuery = z.infer<typeof SecretLookupQuerySchema>;
 
-export interface SecretRecord {
-    id: string;
-    secret_ref: string;
-    kind: SecretKind;
-    project: string;
-    name: string;
-    enabled?: boolean;
-    tags?: string[];
-    properties?: Record<string, unknown>;
-    created_at?: string;
-    updated_at?: string;
-    details?: WebsiteCredentialRecord;
-}
+export type SecretRecord = z.infer<typeof SecretRecordSchema>;
 
-export interface ListSecretsResponse {
-    secrets: SecretRecord[];
-}
+export type ListSecretsResponse = z.infer<typeof ListSecretsResponseSchema>;
 
-export interface CreateSecretRequest {
-    kind: SecretKind;
-    metadata: WebsiteCredentialMetadata;
-    secret?: WebsiteCredentialSecretInput;
-}
+export type CreateSecretRequest = z.infer<typeof CreateSecretRequestSchema>;
 
-export interface UpdateSecretRequest {
-    kind?: SecretKind;
-    metadata?: Partial<WebsiteCredentialMetadata>;
-    secret?: WebsiteCredentialSecretInput;
-    clear_username_secret?: boolean;
-    clear_password?: boolean;
-    clear_totp?: boolean;
-    clear_oauth?: boolean;
-}
+export type UpdateSecretRequest = z.infer<typeof UpdateSecretRequestSchema>;
 
 export interface EventWebhookSigningSecretRequest {
     account_id?: string;

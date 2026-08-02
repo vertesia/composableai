@@ -1,3 +1,4 @@
+import type { AppDashboardDefinitionSchema } from './api-schemas/studio-remaining.js';
 /**
  * Data Platform Types
  *
@@ -538,34 +539,7 @@ export type DashboardDataSource = z.infer<typeof DashboardDataSourceSchema>;
  * App dashboard IDs are local to the app. The platform exposes them as
  * `app:<app_name>:<id>` when listing or retrieving dashboards.
  */
-export interface AppDashboardDefinition {
-    /** Local app dashboard ID. */
-    id: string;
-    /** Machine-friendly dashboard name. Defaults to `id`. */
-    name?: string;
-    /** Display title. Defaults to `name` or `id`. */
-    title?: string;
-    /** User-facing description. */
-    description?: string;
-    /** Tags for discovery and filtering. */
-    tags?: string[];
-    /** Data source used to populate Vega `data.values`. */
-    dataSource?: DashboardDataSource;
-    /** SQL query shortcut for app dashboards backed by data stores. */
-    query?: string;
-    /** Maximum SQL rows to return. */
-    queryLimit?: number;
-    /** Default values for SQL {{param}} placeholders. */
-    queryParameters?: Record<string, string>;
-    /** Complete Vega-Lite specification for the dashboard. */
-    spec?: Record<string, unknown>;
-    /** Legacy named SQL queries. */
-    queries?: DashboardQuery[];
-    /** Legacy panel definitions. */
-    panels?: DashboardPanel[];
-    /** Legacy dashboard layout. */
-    layout?: DashboardLayout;
-}
+export type AppDashboardDefinition = z.infer<typeof AppDashboardDefinitionSchema>;
 
 /**
  * Summary view of a dashboard (for listings).

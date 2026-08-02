@@ -630,6 +630,8 @@ import {
     InCodeTypeDefinitionSchema,
     UpdateContentObjectTypePayloadSchema,
 } from './store.js';
+import * as StsSchemas from './sts.js';
+import * as StudioRemainingSchemas from './studio-remaining.js';
 import {
     CompleteTaskPayloadSchema,
     CreateTaskPayloadSchema,
@@ -1919,6 +1921,125 @@ const APP_LIFECYCLE_SCHEMAS = {
     SystemPackageQuery: SystemPackageQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const STUDIO_REMAINING_SCHEMAS_1 = {
+    WebsiteCredentialTotpAlgorithm: StudioRemainingSchemas.WebsiteCredentialTotpAlgorithmSchema,
+    WebsiteCredentialTotpMetadata: StudioRemainingSchemas.WebsiteCredentialTotpMetadataSchema,
+    WebsiteCredentialSecretInput: StudioRemainingSchemas.WebsiteCredentialSecretInputSchema,
+    WebsiteCredentialCapability: StudioRemainingSchemas.WebsiteCredentialCapabilitySchema,
+    WebsiteCredentialWebsite: StudioRemainingSchemas.WebsiteCredentialWebsiteSchema,
+    SecretKind: StudioRemainingSchemas.SecretKindSchema,
+    SupportedIntegrations_ask_user_webhook: StudioRemainingSchemas.SupportedIntegrations_ask_user_webhookSchema,
+    SupportedIntegrations_resend: StudioRemainingSchemas.SupportedIntegrations_resendSchema,
+    SupportedIntegrations_linkup: StudioRemainingSchemas.SupportedIntegrations_linkupSchema,
+    SupportedIntegrations_exa: StudioRemainingSchemas.SupportedIntegrations_exaSchema,
+    SupportedIntegrations_serper: StudioRemainingSchemas.SupportedIntegrations_serperSchema,
+    SupportedIntegrations_magic_pdf: StudioRemainingSchemas.SupportedIntegrations_magic_pdfSchema,
+    SupportedIntegrations_aws: StudioRemainingSchemas.SupportedIntegrations_awsSchema,
+    SupportedIntegrations_github: StudioRemainingSchemas.SupportedIntegrations_githubSchema,
+    SupportedIntegrations_gladia: StudioRemainingSchemas.SupportedIntegrations_gladiaSchema,
+    CompositeAppNavItemPermissions: StudioRemainingSchemas.CompositeAppNavItemPermissionsSchema,
+    CompositeAppEntry: StudioRemainingSchemas.CompositeAppEntrySchema,
+    CompositeAppHomePlugin: StudioRemainingSchemas.CompositeAppHomePluginSchema,
+    CompositeAppThemeOverrides: StudioRemainingSchemas.CompositeAppThemeOverridesSchema,
+    CompositeAppHeaderItemTarget: StudioRemainingSchemas.CompositeAppHeaderItemTargetSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const STUDIO_REMAINING_SCHEMAS_2 = {
+    CompositeAppHeaderItemKind: StudioRemainingSchemas.CompositeAppHeaderItemKindSchema,
+    CompositeAppUserMenuOverrides: StudioRemainingSchemas.CompositeAppUserMenuOverridesSchema,
+    CompositeAppHeaderOverrides: StudioRemainingSchemas.CompositeAppHeaderOverridesSchema,
+    CompositeAppSidebarOverrides: StudioRemainingSchemas.CompositeAppSidebarOverridesSchema,
+    CompositeAppSwitchersOverrides: StudioRemainingSchemas.CompositeAppSwitchersOverridesSchema,
+    CompositeAppMessageStyle: StudioRemainingSchemas.CompositeAppMessageStyleSchema,
+    CompositeAppLogoOverrides: StudioRemainingSchemas.CompositeAppLogoOverridesSchema,
+    CompositeAppCardOverrides: StudioRemainingSchemas.CompositeAppCardOverridesSchema,
+    MCPOAuthConfigMap: StudioRemainingSchemas.MCPOAuthConfigMapSchema,
+    WebsiteCredentialRecord: StudioRemainingSchemas.WebsiteCredentialRecordSchema,
+    InCodeViewDefinition: StudioRemainingSchemas.InCodeViewDefinitionSchema,
+    InCodeTypeDefinitionArray: StudioRemainingSchemas.InCodeTypeDefinitionArraySchema,
+    RenderingTemplateDefinitionRefArray: StudioRemainingSchemas.RenderingTemplateDefinitionRefArraySchema,
+    InCodeProcessDefinition: StudioRemainingSchemas.InCodeProcessDefinitionSchema,
+    AppInstallation: StudioRemainingSchemas.AppInstallationSchema,
+    AskUserWebhookConfiguration: StudioRemainingSchemas.AskUserWebhookConfigurationSchema,
+    ResendConfiguration: StudioRemainingSchemas.ResendConfigurationSchema,
+    LinkupConfiguration: StudioRemainingSchemas.LinkupConfigurationSchema,
+    ExaConfiguration: StudioRemainingSchemas.ExaConfigurationSchema,
+    SerperConfiguration: StudioRemainingSchemas.SerperConfigurationSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const STUDIO_REMAINING_SCHEMAS_3 = {
+    GithubConfiguration: StudioRemainingSchemas.GithubConfigurationSchema,
+    GladiaConfiguration: StudioRemainingSchemas.GladiaConfigurationSchema,
+    RemoteActivityDefinition: StudioRemainingSchemas.RemoteActivityDefinitionSchema,
+    AppWidgetInfo: StudioRemainingSchemas.AppWidgetInfoSchema,
+    AppDashboardDefinition: StudioRemainingSchemas.AppDashboardDefinitionSchema,
+    WebsiteCredentialFillResponse: StudioRemainingSchemas.WebsiteCredentialFillResponseSchema,
+    WebsiteCredentialFillRequest: StudioRemainingSchemas.WebsiteCredentialFillRequestSchema,
+    ok_boolean: StudioRemainingSchemas.ok_booleanSchema,
+    WebsiteCredentialMetadata: StudioRemainingSchemas.WebsiteCredentialMetadataSchema,
+    AppManifestData: StudioRemainingSchemas.AppManifestDataSchema,
+    Partial_WebsiteCredentialMetadata: StudioRemainingSchemas.Partial_WebsiteCredentialMetadataSchema,
+    AskUserWebhookConfigurationInput: StudioRemainingSchemas.AskUserWebhookConfigurationInputSchema,
+    ResendConfigurationInput: StudioRemainingSchemas.ResendConfigurationInputSchema,
+    LinkupConfigurationInput: StudioRemainingSchemas.LinkupConfigurationInputSchema,
+    ExaConfigurationInput: StudioRemainingSchemas.ExaConfigurationInputSchema,
+    SerperConfigurationInput: StudioRemainingSchemas.SerperConfigurationInputSchema,
+    MagicPdfConfiguration: StudioRemainingSchemas.MagicPdfConfigurationSchema,
+    AwsConfiguration: StudioRemainingSchemas.AwsConfigurationSchema,
+    GithubConfigurationInput: StudioRemainingSchemas.GithubConfigurationInputSchema,
+    GladiaConfigurationInput: StudioRemainingSchemas.GladiaConfigurationInputSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const STUDIO_REMAINING_SCHEMAS_4 = {
+    CompositeAppMenuNavItem: StudioRemainingSchemas.CompositeAppMenuNavItemSchema,
+    CompositeAppHeaderItem: StudioRemainingSchemas.CompositeAppHeaderItemSchema,
+    CompositeAppMessageOverrides: StudioRemainingSchemas.CompositeAppMessageOverridesSchema,
+    AppManifest: StudioRemainingSchemas.AppManifestSchema,
+    SecretRecord: StudioRemainingSchemas.SecretRecordSchema,
+    InCodeViewDefinitionArray: StudioRemainingSchemas.InCodeViewDefinitionArraySchema,
+    InCodeProcessDefinitionArray: StudioRemainingSchemas.InCodeProcessDefinitionArraySchema,
+    AppManifestArray: StudioRemainingSchemas.AppManifestArraySchema,
+    AppInstallationWithManifest: StudioRemainingSchemas.AppInstallationWithManifestSchema,
+    AppInstallationArray: StudioRemainingSchemas.AppInstallationArraySchema,
+    AppInstallationListEntry: StudioRemainingSchemas.AppInstallationListEntrySchema,
+    ProjectIntegrationConfigResponse: StudioRemainingSchemas.ProjectIntegrationConfigResponseSchema,
+    AppWidgetInfoMap: StudioRemainingSchemas.AppWidgetInfoMapSchema,
+    CreateSecretRequest: StudioRemainingSchemas.CreateSecretRequestSchema,
+    UpdateSecretRequest: StudioRemainingSchemas.UpdateSecretRequestSchema,
+    ProjectIntegrationConfigRequest: StudioRemainingSchemas.ProjectIntegrationConfigRequestSchema,
+    CompositeAppMenuSection: StudioRemainingSchemas.CompositeAppMenuSectionSchema,
+    PromoteAppVersionResponse: StudioRemainingSchemas.PromoteAppVersionResponseSchema,
+    ListSecretsResponse: StudioRemainingSchemas.ListSecretsResponseSchema,
+    AppInstallationWithManifestArray: StudioRemainingSchemas.AppInstallationWithManifestArraySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const STUDIO_REMAINING_SCHEMAS_5 = {
+    AppInstallationListEntryArray: StudioRemainingSchemas.AppInstallationListEntryArraySchema,
+    CompositeAppConfig: StudioRemainingSchemas.CompositeAppConfigSchema,
+    AppPackage: StudioRemainingSchemas.AppPackageSchema,
+    Partial_Omit_CompositeAppConfig_id_project: StudioRemainingSchemas.Partial_Omit_CompositeAppConfig_id_projectSchema,
+    CompositeAppConfigPayload: StudioRemainingSchemas.CompositeAppConfigPayloadSchema,
+    SecretProjectQuery: StudioRemainingSchemas.SecretProjectQuerySchema,
+    ListSecretsQuery: StudioRemainingSchemas.ListSecretsQuerySchema,
+    SecretLookupQuery: StudioRemainingSchemas.SecretLookupQuerySchema,
+    RenderPromptPayload: StudioRemainingSchemas.RenderPromptPayloadSchema,
+    ProjectPluginArray: StudioRemainingSchemas.ProjectPluginArraySchema,
+    BinaryFileResponse: StudioRemainingSchemas.BinaryFileResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const STS_SCHEMAS = {
+    SigningAlgorithm: StsSchemas.SigningAlgorithmSchema,
+    ApiKeyTokenRequest: StsSchemas.ApiKeyTokenRequestSchema,
+    UserTokenRequest: StsSchemas.UserTokenRequestSchema,
+    ProjectTokenRequest: StsSchemas.ProjectTokenRequestSchema,
+    EnvironmentTokenRequest: StsSchemas.EnvironmentTokenRequestSchema,
+    AgentTokenRequest: StsSchemas.AgentTokenRequestSchema,
+    ServiceAccountTokenRequest: StsSchemas.ServiceAccountTokenRequestSchema,
+    IssueTokenRequest: StsSchemas.IssueTokenRequestSchema,
+    IssueTokenResponse: StsSchemas.IssueTokenResponseSchema,
+    error_string_message_string: StsSchemas.IssueTokenUnavailableResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const API_SCHEMA_GROUPS = [
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -1935,6 +2056,12 @@ const API_SCHEMA_GROUPS = [
     AUDIT_TRAIL_SCHEMAS,
     VIEW_EXPERIENCE_SCHEMAS,
     APP_LIFECYCLE_SCHEMAS,
+    STUDIO_REMAINING_SCHEMAS_1,
+    STUDIO_REMAINING_SCHEMAS_2,
+    STUDIO_REMAINING_SCHEMAS_3,
+    STUDIO_REMAINING_SCHEMAS_4,
+    STUDIO_REMAINING_SCHEMAS_5,
+    STS_SCHEMAS,
     ZENO_SCHEMAS,
     ZENO_DASHBOARD_SCHEMAS,
     ZENO_DATA_STORE_CORE_SCHEMAS,
@@ -1979,6 +2106,12 @@ type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof AUDIT_TRAIL_SCHEMAS &
     typeof VIEW_EXPERIENCE_SCHEMAS &
     typeof APP_LIFECYCLE_SCHEMAS &
+    typeof STUDIO_REMAINING_SCHEMAS_1 &
+    typeof STUDIO_REMAINING_SCHEMAS_2 &
+    typeof STUDIO_REMAINING_SCHEMAS_3 &
+    typeof STUDIO_REMAINING_SCHEMAS_4 &
+    typeof STUDIO_REMAINING_SCHEMAS_5 &
+    typeof STS_SCHEMAS &
     typeof ZENO_SCHEMAS &
     typeof ZENO_DASHBOARD_SCHEMAS &
     typeof ZENO_DATA_STORE_CORE_SCHEMAS &
@@ -2026,6 +2159,16 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'UpdateAccountPayload',
     'StripeBillingEnabled',
     'StripeBillingDisabled',
+    // STS token contracts. The request root is a discriminated union; its six object branches and
+    // both response objects are the closed components that carry the property policy.
+    'ApiKeyTokenRequest',
+    'UserTokenRequest',
+    'ProjectTokenRequest',
+    'EnvironmentTokenRequest',
+    'AgentTokenRequest',
+    'ServiceAccountTokenRequest',
+    'IssueTokenResponse',
+    'error_string_message_string',
     'ApiKeyListQuery',
     // The quota closure. Every object here is published closed today, so all of them are listed;
     // QuotaEffectiveTier is a string and takes no additionalProperties at all.
@@ -2808,6 +2951,63 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppInstallationsQuery',
     'AppInstallationProjectsQuery',
     'SystemPackageQuery',
+    'WebsiteCredentialTotpMetadata',
+    'WebsiteCredentialSecretInput',
+    'WebsiteCredentialWebsite',
+    'CompositeAppNavItemPermissions',
+    'CompositeAppEntry',
+    'CompositeAppHomePlugin',
+    'CompositeAppThemeOverrides',
+    'CompositeAppUserMenuOverrides',
+    'CompositeAppHeaderOverrides',
+    'CompositeAppSidebarOverrides',
+    'CompositeAppSwitchersOverrides',
+    'CompositeAppLogoOverrides',
+    'CompositeAppCardOverrides',
+    'WebsiteCredentialRecord',
+    'InCodeViewDefinition',
+    'InCodeProcessDefinition',
+    'AppInstallation',
+    'AskUserWebhookConfiguration',
+    'ResendConfiguration',
+    'LinkupConfiguration',
+    'ExaConfiguration',
+    'SerperConfiguration',
+    'GithubConfiguration',
+    'GladiaConfiguration',
+    'RemoteActivityDefinition',
+    'AppWidgetInfo',
+    'AppDashboardDefinition',
+    'WebsiteCredentialFillResponse',
+    'WebsiteCredentialFillRequest',
+    'ok_boolean',
+    'WebsiteCredentialMetadata',
+    'AppManifestData',
+    'Partial_WebsiteCredentialMetadata',
+    'AskUserWebhookConfigurationInput',
+    'ResendConfigurationInput',
+    'LinkupConfigurationInput',
+    'ExaConfigurationInput',
+    'SerperConfigurationInput',
+    'MagicPdfConfiguration',
+    'AwsConfiguration',
+    'GithubConfigurationInput',
+    'GladiaConfigurationInput',
+    'CompositeAppMenuNavItem',
+    'CompositeAppHeaderItem',
+    'CompositeAppMessageOverrides',
+    'AppManifest',
+    'SecretRecord',
+    'AppInstallationWithManifest',
+    'AppInstallationListEntry',
+    'CreateSecretRequest',
+    'UpdateSecretRequest',
+    'CompositeAppMenuSection',
+    'PromoteAppVersionResponse',
+    'ListSecretsResponse',
+    'CompositeAppConfig',
+    'AppPackage',
+    'Partial_Omit_CompositeAppConfig_id_project',
 ]);
 
 /**
@@ -2859,13 +3059,33 @@ export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = toOpenA
  */
 export function emitCanonicalComponent(name: string, schema: z.ZodType): JsonObject | undefined {
     const raw = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' });
-    // The adapter validates the strict list against the components actually emitted, and this emits
-    // ONE root rather than the whole registry — so the list has to be narrowed to what this root
-    // produces, or every name closed elsewhere in the registry reads as an unknown component. The
-    // first pass exists only to learn those names; the second is the emission that gets compared.
-    const produced = new Set(Object.keys(toOpenApiComponents({ [name]: raw })));
+    // A schema may deliberately reference an already-canonical neighbour without embedding its
+    // body (AppManifestData.settings_schema -> JSONSchema is the first live case). Supply the
+    // registry as the reference environment while replacing only the root under examination. The
+    // compared root still comes from `schema`; a disagreeing embedded definition still collides and
+    // fails, while a bare canonical pointer can resolve exactly as it does in the published document.
+    const referenceEnvironment = Object.fromEntries(
+        Object.entries(ApiSchemaComponents).filter(([component]) => component !== name),
+    );
+    const produced = new Set(
+        Object.keys(toOpenApiComponents({ [name]: raw }, { referenceComponents: referenceEnvironment })),
+    );
     const strictComponents = new Set([...STRICT_COMPONENTS].filter((component) => produced.has(component)));
-    return toOpenApiComponents({ [name]: raw }, { strictComponents })[name];
+    const emitted = toOpenApiComponents(
+        { [name]: raw },
+        { strictComponents, referenceComponents: referenceEnvironment },
+    );
+    for (const [component, body] of Object.entries(emitted)) {
+        if (component === name) continue;
+        const published = ApiSchemaComponents[component];
+        if (published && JSON.stringify(body) !== JSON.stringify(published)) {
+            throw new Error(
+                `Component '${component}' is defined twice with different shapes (seen while adapting '${name}'). ` +
+                    'Component names must be globally unique.',
+            );
+        }
+    }
+    return emitted[name];
 }
 
 /**

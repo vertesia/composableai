@@ -1,4 +1,3 @@
-import type { JSONSchema } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
     AgentToolApprovalClassSchema,
@@ -78,10 +77,35 @@ import type {
     RenderingTemplateDefinitionRefSchema,
     RenderingTemplateDefinitionSchema,
 } from './api-schemas/project.js';
-import type { AppDashboardDefinition } from './data-platform.js';
-import type { CatalogInteractionRef } from './interaction.js';
-import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
-import type { InCodeViewDefinition } from './views.js';
+import type {
+    AppInstallationListEntrySchema,
+    AppInstallationSchema,
+    AppInstallationWithManifestSchema,
+    AppManifestDataSchema,
+    AppManifestSchema,
+    AppPackageSchema,
+    AppWidgetInfoSchema,
+    CompositeAppCardOverridesSchema,
+    CompositeAppConfigPayloadSchema,
+    CompositeAppConfigSchema,
+    CompositeAppEntrySchema,
+    CompositeAppHeaderItemKindSchema,
+    CompositeAppHeaderItemSchema,
+    CompositeAppHeaderItemTargetSchema,
+    CompositeAppHeaderOverridesSchema,
+    CompositeAppHomePluginSchema,
+    CompositeAppLogoOverridesSchema,
+    CompositeAppMenuSectionSchema,
+    CompositeAppMessageOverridesSchema,
+    CompositeAppMessageStyleSchema,
+    CompositeAppNavItemPermissionsSchema,
+    CompositeAppSidebarOverridesSchema,
+    CompositeAppSwitchersOverridesSchema,
+    CompositeAppThemeOverridesSchema,
+    CompositeAppUserMenuOverridesSchema,
+    PromoteAppVersionResponseSchema,
+    RemoteActivityDefinitionSchema,
+} from './api-schemas/studio-remaining.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
@@ -233,27 +257,7 @@ export type AgentToolDefinition = z.infer<typeof AgentToolDefinitionSchema>;
  * Remote activities are identified in workflow steps using colon-separated names:
  * `app:<app_name>:<collection>:<activity_name>` (e.g. `app:my-nlp-app:examples:word_count`).
  */
-export interface RemoteActivityDefinition {
-    /** Activity name (snake_case, unique within the collection) */
-    name: string;
-    /** Collection name this activity belongs to */
-    collection?: string;
-    /** Display title */
-    title?: string;
-    /** Description of what the activity does */
-    description?: string;
-    /** JSON Schema for the activity input parameters */
-    input_schema?: Record<string, unknown>;
-    /** JSON Schema for the activity output */
-    output_schema?: Record<string, unknown>;
-    /**
-     * The activity execution URL. Can be absolute or relative to the tool server base URL.
-     * If not provided, the collection-specific activities endpoint is used.
-     */
-    url?: string;
-    /** Suggested timeout and retry configuration */
-    options?: DSLActivityOptions;
-}
+export type RemoteActivityDefinition = z.infer<typeof RemoteActivityDefinitionSchema>;
 
 /**
  * Canonical app capabilities Studio renders/supports. The public type is derived from
@@ -392,10 +396,7 @@ export interface AppVersionListQuery {
     limit?: number;
 }
 
-export interface PromoteAppVersionResponse {
-    version: AppVersionRecord;
-    app?: AppManifest;
-}
+export type PromoteAppVersionResponse = z.infer<typeof PromoteAppVersionResponseSchema>;
 
 export type StartAppBuildRequest = z.infer<typeof StartAppBuildRequestSchema>;
 
@@ -491,150 +492,7 @@ export function effectiveAppAccessControl(
 // in `@llumiverse/common`, not one to work around here.
 //
 // Everything this interface REFERENCES converted: the fields below now carry canonical components.
-export interface AppManifestData {
-    /**
-     * The name of the app, used as the id in the system.
-     * Must be in kebab case (e.g. my-app).
-     */
-    name: string;
-
-    /**
-     * Visibility level of the app:
-     * - "public": visible to all accounts
-     * - "private": visible only to the owning account
-     * - "vertesia": visible only to Vertesia team members (any project)
-     */
-    visibility: 'public' | 'private' | 'vertesia';
-
-    title: string;
-    description: string;
-    publisher: string;
-
-    /**
-     * A svg icon for the app.
-     */
-    icon?: string;
-
-    /**
-     * A color name to be used as the color of the app card (e.g. blue, red, green, etc.)
-     * If not specified a random color will be picked.
-     */
-    color?: string;
-
-    /**
-     * Optional preview screenshot for the app-management UI, captured by the builder during a
-     * build/QA run. Resolved client-side from the owning agent run's artifact storage, so it
-     * carries both the run id and the artifact path.
-     */
-    preview_screenshot?: {
-        /** Agent run id whose artifact storage holds the screenshot. */
-        agent_run_id: string;
-        /** Artifact path within that storage, e.g. "preview-checks/app-preview-<ts>.png". */
-        artifact: string;
-    };
-
-    status: 'beta' | 'stable' | 'deprecated';
-
-    /**
-     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities
-     * then the ui configuration will be fetched from the endpoint property.
-     */
-    ui?: AppUIConfig;
-
-    /**
-     * A list of tool collections endpoints to be used by this app.
-     * Prefer using endpoint over tool_collections.
-     */
-    tool_collections?: ToolCollectionObject[];
-
-    /**
-     * Named OAuth providers shared across multiple MCP tool collections.
-     * Keys must be kebab-case identifiers. Each value is an MCPOAuthConfig blueprint.
-     * Collections reference a provider via MCPToolCollectionObject.oauth_provider.
-     * One OAuth provider is created per provider at install time; all referencing
-     * collections share that app via AppInstallation.provider_bindings.
-     */
-    oauth_providers?: Record<string, MCPOAuthConfig>;
-
-    /**
-     * An URL providing interactions definitions in JSON format.
-     * The URL must provide 2 endpoints:
-     * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
-     * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
-     * This feature is for advanced composition of interactions. Prefer using endpoint.
-     */
-    interactions?: string;
-
-    /**
-     * A JSON chema for the app installation settings.
-     * @deprecated Use endpoint to provide settings_schema instead
-     */
-    settings_schema?: JSONSchema;
-
-    /** The following API is part of the second version of the manifest and deprectaes similar properties included directly in the manifest */
-
-    /**
-     * Describe the capabiltities of this app - which kind of contributions it provides.
-     */
-    capabilities?: AppCapabilities[];
-
-    /**
-     * The app endpoint URL
-     * This URL should return a JSON object describing the contributions provided by the app.
-     * The object shape must satisfies AppPackage interface.
-     * The endpoint must support GET method and a `scope` parameter to filter which resources are included in the returned AppPackage:
-     * The supported scope values are:
-     * - ui
-     * - tools
-     * - interactions
-     * - types
-     * - processes
-     * - templates
-     * - dashboards
-     * - settings
-     * - all (the default if no scope is provided)
-     *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
-     *
-     * Example:
-     * - ?scope=ui,tools - returns only the UI configuration
-     */
-    endpoint?: string;
-
-    /**
-     * Optional endpoint overrides keyed by environment name.
-     * When resolving the app endpoint, if the current environment name matches a key,
-     * the corresponding URL is used instead of the main `endpoint`.
-     * Only dev environment names are allowed as keys (starting with "desktop-" or "dev-").
-     */
-    endpoint_overrides?: Record<string, string>;
-
-    /**
-     * Optional app version string (e.g. "1.0.0") — informational.
-     */
-    version?: string;
-
-    /**
-     * Source repository configuration for apps generated and maintained through
-     * AppGen. Branches are mutable development lanes; immutable app versions
-     * record their exact source commit in AppVersionRecord.source_commit and
-     * AppVersionRecord.storage.source_git.
-     */
-    source?: AppSourceConfig;
-
-    /**
-     * Free-form tags used for classification and filtering. Platform apps
-     * carry `"system"` so UIs can skip install/uninstall/manage-permission
-     * controls that don't apply to synthetic installations.
-     */
-    tags?: string[];
-
-    /**
-     * Access control policy for the app. Defaults to 'all' (ACE-gated everywhere)
-     * when undefined. See {@link AppAccessControl} for semantics. May be overridden
-     * on the AppInstallation.
-     */
-    access_control?: AppAccessControl;
-}
+export type AppManifestData = z.infer<typeof AppManifestDataSchema>;
 
 export type AppGitSourceConfig = z.infer<typeof AppGitSourceConfigSchema>;
 
@@ -749,72 +607,7 @@ export const APP_PACKAGE_SCOPES = [
 ] as const;
 
 export type AppPackageScope = (typeof APP_PACKAGE_SCOPES)[number];
-export interface AppPackage {
-    /**
-     * The UI configuration of the app
-     */
-    ui?: AppUIConfig;
-
-    /**
-     * A list of tools exposed by the app.
-     */
-    tools?: AgentToolDefinition[];
-
-    /**
-     * A list of skills (`learn_*` tools) exposed by the app. Kept separate from
-     * `tools` so clients can render them distinctly — consumers that don't care
-     * (e.g. the worker building a combined tool registry) should concatenate
-     * the two lists.
-     */
-    skills?: AgentToolDefinition[];
-
-    /**
-     * A list of interactions exposed by the app
-     */
-    interactions?: CatalogInteractionRef[];
-
-    /**
-     * A list of types.
-     */
-    types?: InCodeTypeDefinition[];
-
-    /**
-     * A list of process definitions exposed by the app.
-     */
-    processes?: InCodeProcessDefinition[];
-
-    /**
-     * View Experiences exposed by the app as in-code definitions.
-     */
-    views?: InCodeViewDefinition[];
-
-    /**
-     * Templates provided by the app.
-     */
-    templates?: RenderingTemplateDefinitionRef[];
-
-    /**
-     * Dashboards provided by the app.
-     */
-    dashboards?: AppDashboardDefinition[];
-
-    /**
-     * Widgets provided by the app.
-     */
-    widgets?: Record<string, AppWidgetInfo>;
-
-    /**
-     * Remote activities exposed by the app for use in DSL workflows.
-     * Activities are discovered via `?scope=activities` and referenced in workflow steps
-     * using colon-separated names: `app:<app_name>:<collection>:<activity_name>`.
-     */
-    activities?: RemoteActivityDefinition[];
-
-    /**
-     * A JSON chema for the app installation settings.
-     */
-    settings_schema?: JSONSchema;
-}
+export type AppPackage = z.infer<typeof AppPackageSchema>;
 
 /**
  * A single diagnostic produced while inspecting an app's registration state.
@@ -836,25 +629,13 @@ export type AppInspectionCapabilityReport = z.infer<typeof AppInspectionCapabili
  */
 export type AppInspectionResult = z.infer<typeof AppInspectionResultSchema>;
 
-export interface AppWidgetInfo {
-    collection: string;
-    skill: string;
-    url: string;
-}
+export type AppWidgetInfo = z.infer<typeof AppWidgetInfoSchema>;
 
 export type RenderingTemplateDefinition = z.infer<typeof RenderingTemplateDefinitionSchema>;
 
 export type RenderingTemplateDefinitionRef = z.infer<typeof RenderingTemplateDefinitionRefSchema>;
 
-export interface AppManifest extends AppManifestData {
-    id: string;
-    /** The owning account. Undefined for apps imported from a master region. */
-    account?: string;
-    /** Source metadata for generated or synced app manifests. */
-    source?: AppManifestSource;
-    created_at: string;
-    updated_at: string;
-}
+export type AppManifest = z.infer<typeof AppManifestSchema>;
 
 export type AppManifestSource = z.infer<typeof AppManifestSourceSchema>;
 
@@ -872,53 +653,11 @@ export type AppInstallationOAuthBinding = z.infer<typeof AppInstallationOAuthBin
  */
 export type AppInstallationProviderBinding = z.infer<typeof AppInstallationProviderBindingSchema>;
 
-export interface AppInstallation {
-    id: string;
-    project: string; // the project where the app is installed
-    manifest: string; // the app manifest
-    settings?: Record<string, unknown>; // settings for the app installation
-    /**
-     * Admin-managed allowlist of tool names permitted for this installation.
-     * When undefined, all tools from the app are permitted.
-     * When set, only listed tool names are available for agent configuration and execution.
-     */
-    tool_allowlist?: string[];
-    /**
-     * OAuth bindings created at install time via oauth_config provisioning.
-     * Maps collection identity (id or name) → OAuth provider ObjectId.
-     * Used by the runtime to resolve the correct OAuth provider without relying on manifest names.
-     */
-    oauth_bindings?: AppInstallationOAuthBinding[];
-    /**
-     * OAuth bindings created at install time via oauth_providers provisioning.
-     * Maps provider key → OAuth provider ObjectId.
-     * Multiple collections sharing the same provider all resolve to the same OAuth provider.
-     */
-    provider_bindings?: AppInstallationProviderBinding[];
-    /**
-     * Per-installation override of the manifest's access_control policy.
-     * When set, takes precedence over the manifest value. When undefined, the
-     * manifest value (or 'all' default) applies.
-     */
-    access_control?: AppAccessControl;
-    created_at: string;
-    updated_at: string;
-}
+export type AppInstallation = z.infer<typeof AppInstallationSchema>;
 
-export interface AppInstallationWithManifest extends Omit<AppInstallation, 'manifest'> {
-    manifest: AppManifest; // the app manifest data
-    /**
-     * Computed by the server: ids of MCP tool collections for this installation that require OAuth.
-     * Accounts for all three signals: manifest auth:'oauth', manifest oauth_app, and oauth_bindings.
-     * Populated by the GET /installations/all endpoint.
-     */
-    oauth_collection_ids?: string[];
-}
+export type AppInstallationWithManifest = z.infer<typeof AppInstallationWithManifestSchema>;
 
-export interface AppInstallationListEntry extends Omit<AppInstallation, 'manifest'> {
-    manifest: AppManifest | null;
-    oauth_collection_ids?: string[];
-}
+export type AppInstallationListEntry = z.infer<typeof AppInstallationListEntrySchema>;
 
 export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
     manifest: null;
@@ -984,46 +723,24 @@ export type OAuthMetadataResponse = z.infer<typeof OAuthMetadataResponseSchema>;
  * Configuration entry for an individual app in the CompositeApp shell.
  * References an app installation by name.
  */
-export interface CompositeAppEntry {
-    /** App installation name (must match an installed app) */
-    appName: string;
-}
+export type CompositeAppEntry = z.infer<typeof CompositeAppEntrySchema>;
 
 /**
  * Logo overrides for the CompositeApp shell header.
  * When provided, these URLs replace the default Vertesia logo.
  */
-export interface CompositeAppLogoOverrides {
-    /** URL for light mode logo (overrides default Vertesia logo) */
-    lightModeUrl?: string;
-    /** URL for dark mode logo (overrides default Vertesia logo) */
-    darkModeUrl?: string;
-    /** Whether to hide the Vertesia footer logo in the sidebar when header logo is overridden (defaults to false) */
-    hideFooterLogo?: boolean;
-}
+export type CompositeAppLogoOverrides = z.infer<typeof CompositeAppLogoOverridesSchema>;
 
 /**
  * Message banner overrides for the shell header.
  */
-export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
-export interface CompositeAppMessageOverrides {
-    /** Message text to display */
-    text?: string;
-    /** Whether the message is visible (defaults to true) */
-    visible?: boolean;
-    /** Text color style. Uses semantic colors */
-    style?: CompositeAppMessageStyle;
-}
+export type CompositeAppMessageStyle = z.infer<typeof CompositeAppMessageStyleSchema>;
+export type CompositeAppMessageOverrides = z.infer<typeof CompositeAppMessageOverridesSchema>;
 
 /**
  * Switcher visibility overrides for the CompositeApp header.
  */
-export interface CompositeAppSwitchersOverrides {
-    /** Whether to hide the organization switcher (defaults to false) */
-    hideOrganization?: boolean;
-    /** Whether to hide the project switcher (defaults to false) */
-    hideProject?: boolean;
-}
+export type CompositeAppSwitchersOverrides = z.infer<typeof CompositeAppSwitchersOverridesSchema>;
 
 /**
  * Header button visibility overrides for the CompositeApp header.
@@ -1032,14 +749,7 @@ export interface CompositeAppSwitchersOverrides {
  * Retained for backward compatibility and to seed the default header menu when no
  * `headerMenu` has been configured yet.
  */
-export interface CompositeAppHeaderOverrides {
-    /** Whether to hide the App Portal button (defaults to false) */
-    hideAppPortal?: boolean;
-    /** Whether to hide the Docs button (defaults to false) */
-    hideDocs?: boolean;
-    /** Whether to hide the Help button (defaults to false) */
-    hideHelp?: boolean;
-}
+export type CompositeAppHeaderOverrides = z.infer<typeof CompositeAppHeaderOverridesSchema>;
 
 /**
  * User menu overrides for the CompositeApp.
@@ -1048,32 +758,17 @@ export interface CompositeAppHeaderOverrides {
  * Retained for backward compatibility and to seed the default header menu when no
  * `headerMenu` has been configured yet.
  */
-export interface CompositeAppUserMenuOverrides {
-    /** Whether to hide the User Menu (defaults to false) */
-    hidden?: boolean;
-}
+export type CompositeAppUserMenuOverrides = z.infer<typeof CompositeAppUserMenuOverridesSchema>;
 
 /**
  * Theme overrides for the CompositeApp.
  */
-export interface CompositeAppThemeOverrides {
-    /** When true, forces light mode and disables dark mode (defaults to false) */
-    disableDarkMode?: boolean;
-}
+export type CompositeAppThemeOverrides = z.infer<typeof CompositeAppThemeOverridesSchema>;
 
 /**
  * Sidebar display overrides for the CompositeApp.
  */
-export interface CompositeAppSidebarOverrides {
-    /** Whether to hide section title headers in the sidebar (defaults to false) */
-    hideSectionHeaders?: boolean;
-    /** Whether menu items auto-collapse when navigating (accordion behavior). When false, all items stay expanded. Defaults to true. */
-    autoCollapse?: boolean;
-    /** Whether settings section items auto-collapse when navigating. Independent of autoCollapse which handles all other items. Defaults to true. */
-    autoCollapseSettings?: boolean;
-    /** Whether footer section items auto-collapse when navigating. Independent of autoCollapse which handles all other items. Defaults to true. */
-    autoCollapseFooter?: boolean;
-}
+export type CompositeAppSidebarOverrides = z.infer<typeof CompositeAppSidebarOverridesSchema>;
 
 /**
  * Card display overrides for the CompositeApp in the App Portal.
@@ -1081,18 +776,7 @@ export interface CompositeAppSidebarOverrides {
  * Allows customers to customize the app portal card (not otherwise possible if using a
  * shared, Vertesia-managed manifest across accounts).
  */
-export interface CompositeAppCardOverrides {
-    /** Whether to show the CompositeApp card in App Portal (default: false) */
-    visible?: boolean;
-    /** Override the card label (default: "Composite App") */
-    label?: string;
-    /** Override the card description */
-    description?: string;
-    /** Override the card icon (Lucide icon name or SVG content string) */
-    icon?: string;
-    /** Override the card color (e.g., "blue", "red", "purple") */
-    color?: string;
-}
+export type CompositeAppCardOverrides = z.infer<typeof CompositeAppCardOverridesSchema>;
 
 // ============================================================================
 // Sidebar Menu Types
@@ -1105,14 +789,7 @@ export interface CompositeAppCardOverrides {
  * access is granted when the user matches ANY list (OR logic).
  * All empty/absent means visible to everyone. Admin users bypass all checks.
  */
-export interface CompositeAppNavItemPermissions {
-    /** Group IDs whose members can see this item. */
-    groupsAllowed?: string[];
-    /** User IDs who can see this item. */
-    usersAllowed?: string[];
-    /** SystemRoles values (e.g. "developer", "manager") whose holders can see this item. */
-    rolesAllowed?: string[];
-}
+export type CompositeAppNavItemPermissions = z.infer<typeof CompositeAppNavItemPermissionsSchema>;
 
 /**
  * A navigable item in the sidebar menu.
@@ -1150,23 +827,9 @@ export interface CompositeAppMenuNavItem {
  * A top-level section heading in the sidebar menu.
  * Sections are always at root level and contain nav-items.
  */
-export interface CompositeAppMenuSection {
-    /** Stable unique identifier */
-    id: string;
-    /** Section heading label */
-    label: string;
-    /** When true, this section and its items are hidden from the sidebar */
-    hidden?: boolean;
-    /** Ordered nav-items within this section */
-    items: CompositeAppMenuNavItem[];
-}
+export type CompositeAppMenuSection = z.infer<typeof CompositeAppMenuSectionSchema>;
 
-export interface CompositeAppHomePlugin {
-    /** The app name to use as the home page */
-    appName: string;
-    /** Optional route within the app (e.g. "/dashboard"). Defaults to "/" */
-    appRoute?: string;
-}
+export type CompositeAppHomePlugin = z.infer<typeof CompositeAppHomePluginSchema>;
 
 // ============================================================================
 // Header Menu Types
@@ -1178,10 +841,10 @@ export interface CompositeAppHomePlugin {
  * header and cannot be deleted (only hidden/customized); `custom` items are fully
  * user-defined buttons.
  */
-export type CompositeAppHeaderItemKind = 'app_portal' | 'docs' | 'help' | 'user_menu' | 'custom';
+export type CompositeAppHeaderItemKind = z.infer<typeof CompositeAppHeaderItemKindSchema>;
 
 /** Where a header link opens. */
-export type CompositeAppHeaderItemTarget = '_self' | '_blank';
+export type CompositeAppHeaderItemTarget = z.infer<typeof CompositeAppHeaderItemTargetSchema>;
 
 /** Stable identifiers for the built-in header items. */
 export const COMPOSITE_APP_HEADER_BUILTIN_IDS = ['app_portal', 'docs', 'help', 'user_menu'] as const;
@@ -1194,80 +857,16 @@ export const COMPOSITE_APP_HEADER_BUILTIN_IDS = ['app_portal', 'docs', 'help', '
  * The `user_menu` item is special — it renders the account dropdown, so its `icon`,
  * `href`, and `target` are ignored.
  */
-export interface CompositeAppHeaderItem {
-    /** Stable unique identifier. Built-ins use their kind as id (e.g. "app_portal"). */
-    id: string;
-    /** Item kind. `custom` for user-added buttons; otherwise one of the four built-ins. */
-    kind: CompositeAppHeaderItemKind;
-    /** Display label, used as the button tooltip / accessible name. */
-    label: string;
-    /** Lucide icon name or SVG content string. Ignored for `user_menu`. */
-    icon?: string;
-    /** Destination route ("/...") or external URL. Ignored for `user_menu`. */
-    href?: string;
-    /** Where to open the link (defaults to "_self"). Ignored for `user_menu`. */
-    target?: CompositeAppHeaderItemTarget;
-    /** When true, this item is hidden from the header. */
-    hidden?: boolean;
-    /** Optional access control settings for this header item. */
-    permissions?: CompositeAppNavItemPermissions;
-}
+export type CompositeAppHeaderItem = z.infer<typeof CompositeAppHeaderItemSchema>;
 
 /**
  * CompositeApp shell configuration.
  * This is the main configuration interface for storing CompositeApp settings.
  * Used as the MongoDB model for persisting CompositeApp configurations.
  */
-export interface CompositeAppConfig {
-    /**
-     * The unique identifier for this CompositeApp configuration
-     * Undefined if the configuration doesn't exists yet.
-     */
-    id?: string;
-    /** The project this CompositeApp belongs to */
-    project: string;
-    /** Card display overrides (includes visibility) */
-    card?: CompositeAppCardOverrides;
-    /** Optional logo overrides (replaces default Vertesia logo) */
-    logo?: CompositeAppLogoOverrides;
-    /** Optional message banner overrides */
-    message?: CompositeAppMessageOverrides;
-    /** Optional switcher visibility overrides */
-    switchers?: CompositeAppSwitchersOverrides;
-    /** Optional sidebar display overrides */
-    sidebar?: CompositeAppSidebarOverrides;
-    /**
-     * @deprecated Use `headerMenu` instead. Optional header button visibility overrides.
-     * Still read to seed `headerMenu` defaults for configs saved before the header menu existed.
-     */
-    header?: CompositeAppHeaderOverrides;
-    /**
-     * @deprecated Use the `user_menu` item in `headerMenu` instead. Optional user menu overrides.
-     * Still read to seed `headerMenu` defaults for configs saved before the header menu existed.
-     */
-    userMenu?: CompositeAppUserMenuOverrides;
-    /**
-     * Optional free-form header menu. When present, the header renders from this ordered
-     * list instead of the legacy `header`/`userMenu` flags. Built-in items (App Portal,
-     * Docs, Help, User Menu) can be hidden/relabeled/re-icon'd/redirected; custom items
-     * are arbitrary buttons.
-     */
-    headerMenu?: CompositeAppHeaderItem[];
-    /** Optional theme overrides (e.g. disable dark mode) */
-    theme?: CompositeAppThemeOverrides;
-    /** Optional home page override. When set, redirects "/" to the specified app route instead of the dashboard. Send null to unset. */
-    homePlugin?: CompositeAppHomePlugin | null;
-    /** List of apps to include in the CompositeApp (used for installation tracking and fallback sidebar) */
-    apps: CompositeAppEntry[];
-    /**
-     * Optional sidebar menu. When present, the sidebar renders from this
-     * instead of the apps-based pipeline. Top-level array is sections;
-     * each section contains nav-items.
-     */
-    menu?: CompositeAppMenuSection[];
-}
+export type CompositeAppConfig = z.infer<typeof CompositeAppConfigSchema>;
 
-export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
+export type CompositeAppConfigPayload = z.infer<typeof CompositeAppConfigPayloadSchema>;
 
 export type ValidateUrlRequest = z.infer<typeof ValidateUrlRequestSchema>;
 

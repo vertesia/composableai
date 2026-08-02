@@ -1,124 +1,72 @@
+import type { z } from 'zod';
+import type {
+    AskUserWebhookConfigurationInputSchema,
+    AskUserWebhookConfigurationSchema,
+    AwsConfigurationSchema,
+    ExaConfigurationInputSchema,
+    ExaConfigurationSchema,
+    GithubConfigurationInputSchema,
+    GithubConfigurationSchema,
+    GladiaConfigurationInputSchema,
+    GladiaConfigurationSchema,
+    LinkupConfigurationInputSchema,
+    LinkupConfigurationSchema,
+    MagicPdfConfigurationSchema,
+    ProjectIntegrationConfigRequestSchema,
+    ProjectIntegrationConfigResponseSchema,
+    ResendConfigurationInputSchema,
+    ResendConfigurationSchema,
+    SerperConfigurationInputSchema,
+    SerperConfigurationSchema,
+} from './api-schemas/studio-remaining.js';
 export interface IntegrationConfigurationBase<TIntegration extends SupportedIntegrations = SupportedIntegrations> {
     integration: TIntegration;
     enabled: boolean;
 }
 
-export interface GladiaConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.gladia> {
-    api_key?: string;
-    url?: string;
-}
+export type GladiaConfigurationInput = z.infer<typeof GladiaConfigurationInputSchema>;
 
-export interface GladiaConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.gladia> {
-    has_api_key?: boolean;
-    api_key_hint?: string;
-    url?: string;
-}
+export type GladiaConfiguration = z.infer<typeof GladiaConfigurationSchema>;
 
 export interface GladiaConfigurationWithSecrets extends GladiaConfiguration {
     api_key?: string;
 }
 
-export interface GithubConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.github> {
-    /** Numeric GitHub App id used to mint installation tokens (non-secret). */
-    github_app_id?: string;
-    /** Allow-list of `owner/name` repos the bot may mint installation tokens for (default-deny when empty). */
-    allowed_repositories?: string[];
-    /** GitHub App private key (PEM). Write-only; never returned. Empty string clears it. */
-    private_key?: string;
-}
+export type GithubConfigurationInput = z.infer<typeof GithubConfigurationInputSchema>;
 
-export interface GithubConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.github> {
-    /** Numeric GitHub App id used to mint installation tokens (non-secret). */
-    github_app_id?: string;
-    allowed_repositories: string[];
-    /** True when a GitHub App private key is stored for the project (the key itself is never returned). */
-    has_github_app_private_key?: boolean;
-}
+export type GithubConfiguration = z.infer<typeof GithubConfigurationSchema>;
 
-export interface AwsConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.aws> {
-    s3_role_arn: string;
-}
+export type AwsConfiguration = z.infer<typeof AwsConfigurationSchema>;
 
-export interface MagicPdfConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.magic_pdf> {
-    // No additional configuration
-    default_features?: string[];
-    default_zones?: string[];
-}
+export type MagicPdfConfiguration = z.infer<typeof MagicPdfConfigurationSchema>;
 
-export interface SerperConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.serper> {
-    api_key?: string;
-    url?: string;
-}
+export type SerperConfigurationInput = z.infer<typeof SerperConfigurationInputSchema>;
 
-export interface SerperConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.serper> {
-    has_api_key?: boolean;
-    api_key_hint?: string;
-    url?: string;
-}
+export type SerperConfiguration = z.infer<typeof SerperConfigurationSchema>;
 
 export interface SerperConfigurationWithSecrets extends SerperConfiguration {
     api_key?: string;
 }
 
-export interface ExaConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.exa> {
-    api_key?: string;
-}
+export type ExaConfigurationInput = z.infer<typeof ExaConfigurationInputSchema>;
 
-export interface ExaConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.exa> {
-    has_api_key?: boolean;
-    api_key_hint?: string;
-}
+export type ExaConfiguration = z.infer<typeof ExaConfigurationSchema>;
 
 export interface ExaConfigurationWithSecrets extends ExaConfiguration {
     api_key?: string;
 }
 
-export interface LinkupConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.linkup> {
-    api_key?: string;
-}
+export type LinkupConfigurationInput = z.infer<typeof LinkupConfigurationInputSchema>;
 
-export interface LinkupConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.linkup> {
-    has_api_key?: boolean;
-    api_key_hint?: string;
-}
+export type LinkupConfiguration = z.infer<typeof LinkupConfigurationSchema>;
 
 export interface LinkupConfigurationWithSecrets extends LinkupConfiguration {
     api_key?: string;
 }
 
-export interface ResendConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.resend> {
-    /** Resend API key for sending emails */
-    api_key?: string;
-    /** Domain for email (both sending and receiving). Must be verified in Resend. */
-    email_domain: string;
-    /** Default display name for outgoing emails (e.g., "Vertesia - Project Name") */
-    default_from_name?: string;
-    /** Webhook secret for validating inbound email webhooks (required for receiving emails) */
-    webhook_secret?: string;
-    /** Domains allowed to send emails TO start agents (for inbound validation) */
-    allowed_sender_domains?: string[];
-    /** Require sender to have project access to start agents via email (default: true) */
-    require_project_access?: boolean;
-    /** Require DKIM/SPF authentication to pass for inbound emails (default: true) */
-    require_email_auth?: boolean;
-}
+export type ResendConfigurationInput = z.infer<typeof ResendConfigurationInputSchema>;
 
-export interface ResendConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.resend> {
-    has_api_key?: boolean;
-    api_key_hint?: string;
-    /** Domain for email (both sending and receiving). Must be verified in Resend. */
-    email_domain: string;
-    /** Default display name for outgoing emails (e.g., "Vertesia - Project Name") */
-    default_from_name?: string;
-    has_webhook_secret?: boolean;
-    webhook_secret_hint?: string;
-    /** Domains allowed to send emails TO start agents (for inbound validation) */
-    allowed_sender_domains?: string[];
-    /** Require sender to have project access to start agents via email (default: true) */
-    require_project_access?: boolean;
-    /** Require DKIM/SPF authentication to pass for inbound emails (default: true) */
-    require_email_auth?: boolean;
-}
+export type ResendConfiguration = z.infer<typeof ResendConfigurationSchema>;
 
 export interface ResendConfigurationWithSecrets extends ResendConfiguration {
     /** Resend API key for sending emails */
@@ -131,33 +79,13 @@ export interface ResendConfigurationWithSecrets extends ResendConfiguration {
  * Configuration for ask_user webhook notifications.
  * Sends webhooks when agents call ask_user and when users respond.
  */
-export interface AskUserWebhookConfigurationInput
-    extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
-    /** Webhook URL to receive ask_user events */
-    webhook_url: string;
-    /** Secret for signing webhook payloads (HMAC-SHA256) */
-    webhook_secret?: string;
-    /** Which events to send: ['requested', 'resolved'] or subset (default: both) */
-    events?: ('requested' | 'resolved')[];
-    /** Custom headers to include in webhook requests */
-    custom_headers?: Record<string, string>;
-}
+export type AskUserWebhookConfigurationInput = z.infer<typeof AskUserWebhookConfigurationInputSchema>;
 
 /**
  * Configuration for ask_user webhook notifications.
  * Sends webhooks when agents call ask_user and when users respond.
  */
-export interface AskUserWebhookConfiguration
-    extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
-    /** Webhook URL to receive ask_user events */
-    webhook_url: string;
-    has_webhook_secret?: boolean;
-    webhook_secret_hint?: string;
-    /** Which events to send: ['requested', 'resolved'] or subset (default: both) */
-    events?: ('requested' | 'resolved')[];
-    /** Custom headers to include in webhook requests */
-    custom_headers?: Record<string, string>;
-}
+export type AskUserWebhookConfiguration = z.infer<typeof AskUserWebhookConfigurationSchema>;
 
 export interface AskUserWebhookConfigurationWithSecrets extends AskUserWebhookConfiguration {
     /** Secret for signing webhook payloads (HMAC-SHA256) */
@@ -179,30 +107,12 @@ export enum SupportedIntegrations {
 /**
  * @discriminator integration
  */
-export type ProjectIntegrationConfigRequest =
-    | GladiaConfigurationInput
-    | GithubConfigurationInput
-    | AwsConfiguration
-    | MagicPdfConfiguration
-    | SerperConfigurationInput
-    | ExaConfigurationInput
-    | LinkupConfigurationInput
-    | ResendConfigurationInput
-    | AskUserWebhookConfigurationInput;
+export type ProjectIntegrationConfigRequest = z.infer<typeof ProjectIntegrationConfigRequestSchema>;
 
 /**
  * @discriminator integration
  */
-export type ProjectIntegrationConfigResponse =
-    | GladiaConfiguration
-    | GithubConfiguration
-    | AwsConfiguration
-    | MagicPdfConfiguration
-    | SerperConfiguration
-    | ExaConfiguration
-    | LinkupConfiguration
-    | ResendConfiguration
-    | AskUserWebhookConfiguration;
+export type ProjectIntegrationConfigResponse = z.infer<typeof ProjectIntegrationConfigResponseSchema>;
 
 export type ProjectIntegrationConfigWithSecrets =
     | GladiaConfigurationWithSecrets

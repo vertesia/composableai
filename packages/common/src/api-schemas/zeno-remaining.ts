@@ -3812,7 +3812,17 @@ export const NodeDefinitionSchema: z.ZodType = z
         collect: z.union([z.string(), ParallelCollectDefinitionSchema]).optional(),
         failure_policy: ParallelFailurePolicySchema.optional(),
         join: BranchJoinPolicySchema.optional(),
-        branches: z.array(z.union([BranchDefinitionSchema, z.lazy(() => BranchNodeBranchDefinitionSchema)])).optional(),
+        branches: z
+            .array(
+                z.union([BranchDefinitionSchema, z.lazy(() => BranchNodeBranchDefinitionSchema)]).meta({
+                    anyOf: undefined,
+                    oneOf: [
+                        { $ref: '#/components/schemas/BranchDefinition' },
+                        { $ref: '#/components/schemas/BranchNodeBranchDefinition' },
+                    ],
+                }),
+            )
+            .optional(),
         metadata: ProcessDefinitionMetadataSchema.optional(),
     })
     .meta({ id: 'NodeDefinition' });

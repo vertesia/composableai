@@ -22,6 +22,23 @@ describe('reference integrity', () => {
         });
         expect(Object.keys(components).sort()).toEqual(['Account', 'AccountBilling']);
     });
+
+    it('resolves a reference against an external component without republishing it', () => {
+        const components = toOpenApiComponents(
+            {
+                AppManifest: {
+                    type: 'object',
+                    properties: { settings_schema: { $ref: '#/components/schemas/JSONSchema' } },
+                },
+            },
+            { referenceComponents: { JSONSchema: { type: 'object' } } },
+        );
+
+        expect(Object.keys(components)).toEqual(['AppManifest']);
+        expect((components.AppManifest.properties as JsonObject).settings_schema).toEqual({
+            $ref: '#/components/schemas/JSONSchema',
+        });
+    });
 });
 
 describe('additionalProperties policy', () => {
