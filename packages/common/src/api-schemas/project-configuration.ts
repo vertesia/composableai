@@ -127,6 +127,44 @@ export const ProjectSearchPropertyMappingMapSchema = z
     .catchall(ProjectSearchPropertyMappingSchema)
     .meta({ id: 'ProjectSearchPropertyMappingMap' });
 
+export const AgentCheckpointConfigurationSchema = z
+    .strictObject({
+        context_threshold: z
+            .number()
+            .optional()
+            .meta({
+                description:
+                    "Fraction of the model's context window to use before the conversation is summarized and " +
+                    'compacted (0-1, e.g. 0.95). Model-independent: applies to whatever model each run uses. ' +
+                    'Setting it replaces the default hard cap — a project asking for 0.95 of a 1M-window model ' +
+                    'checkpoints at 950k. Clamped at runtime to 0.95 so the prompt still fits.',
+            }),
+        max_tokens: z
+            .number()
+            .optional()
+            .meta({
+                description:
+                    'Absolute hard cap in tokens, regardless of the window fraction. Alone it acts as the ' +
+                    'threshold; combined with context_threshold the lower of the two wins. Clamped at runtime to ' +
+                    "95% of the model's window. Unset means the default cap (500k), or no cap beyond the 95% " +
+                    'clamp when context_threshold is set.',
+            }),
+    })
+    .meta({ id: 'AgentCheckpointConfiguration' });
+
+export const AgentProjectConfigurationSchema = z
+    .strictObject({
+        checkpoint: AgentCheckpointConfigurationSchema.optional().meta({
+            description: 'Conversation checkpoint (context compaction) tuning.',
+        }),
+    })
+    .meta({
+        id: 'AgentProjectConfiguration',
+        description:
+            'Agent runtime configuration, scoped under project configuration so agent settings have one home ' +
+            '(`configuration.agent`).',
+    });
+
 export const ProjectIndexingConfigurationSchema = z
     .object({
         enabled: z
@@ -412,6 +450,9 @@ export const ProjectConfigurationSchema = z
                     'Enable real-time streaming of agent LLM responses to clients. When enabled, LLM responses ' +
                     'are streamed chunk-by-chunk via Redis pub/sub. Defaults to true if not specified.',
             }),
+        agent: AgentProjectConfigurationSchema.optional().meta({
+            description: 'Agent runtime configuration for this project.',
+        }),
         indexing: ProjectIndexingConfigurationSchema.optional().meta({
             description:
                 'Indexing configuration for this project. Controls whether indexing and querying are enabled ' +

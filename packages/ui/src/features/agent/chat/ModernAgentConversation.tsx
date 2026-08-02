@@ -137,8 +137,13 @@ function toContextWindowUsage(messages: AgentMessage[]): ContextWindowUsage | un
         const details = messages[index].details;
         if (!details) continue;
 
-        const tokenUsage = details.token_usage as { total?: unknown } | undefined;
-        const usedTokens = getNumberDetail(tokenUsage?.total);
+        const tokenUsage = details.token_usage as { prompt?: unknown; total?: unknown } | undefined;
+        // Mirror the server's checkpoint trigger (getContextPressureTokens):
+        // the last call's prompt size is the actual context; `total` includes
+        // reasoning output that never re-enters context and would overstate
+        // pressure on reasoning models. Fall back to total when no breakdown.
+        const promptTokens = getNumberDetail(tokenUsage?.prompt);
+        const usedTokens = promptTokens && promptTokens > 0 ? promptTokens : getNumberDetail(tokenUsage?.total);
         const checkpointTokens =
             getNumberDetail(details.checkpoint_threshold) ?? getNumberDetail(details.checkpoint_at);
 

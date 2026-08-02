@@ -34,6 +34,7 @@ import type {
     IntakePageRangesSchema,
     IntakePageScopeSchema,
     IntakeVisionDetailSchema,
+    UpdateContentObjectTypePayloadSchema,
 } from '../api-schemas/store.js';
 import type { ComputedFacetResponse } from '../facets.js';
 import type { JSONObject } from '../json.js';
@@ -939,6 +940,8 @@ export function isInCodeType(typeId: string): boolean {
 }
 
 export type CreateContentObjectTypePayload = z.infer<typeof CreateContentObjectTypePayloadSchema>;
+
+export type UpdateContentObjectTypePayload = z.infer<typeof UpdateContentObjectTypePayloadSchema>;
 
 export enum WorkflowRuleInputType {
     single = 'single',

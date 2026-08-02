@@ -113,6 +113,7 @@ import {
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import {
     ColumnLayoutSchema,
+    ContentObjectTypeCatalogEntryArraySchema,
     ContentObjectTypeCatalogEntrySchema,
     ContentObjectTypeCatalogQuerySchema,
     ContentObjectTypeItemArraySchema,
@@ -124,6 +125,7 @@ import {
     ContentTypeIntakePolicySchema,
     CreateContentObjectTypePayloadSchema,
     InCodeTypeDefinitionSchema,
+    UpdateContentObjectTypePayloadSchema,
 } from './store.js';
 import {
     CompleteTaskPayloadSchema,
@@ -166,7 +168,26 @@ const addFormats = ajvFormats.default;
  * component only when an endpoint or another canonical component reaches it — so the entry buys the
  * closure rule without touching the published document.
  */
-const API_SCHEMAS = {
+/**
+ * The registry, in groups, because the compiler cannot serialize it as one object.
+ *
+ * At 200 entries `tsc` began refusing the declaration emit with TS7056 — "the inferred type of this
+ * node exceeds the maximum length the compiler will serialize". `ApiComponentName` and
+ * `ApiComponentType` are both derived from the object, so its full inferred type has to be written
+ * into `lib/*.d.ts`, and a Zod schema's type is deeply structural: two hundred of them is the limit.
+ * With most of the migration still ahead, raising the ceiling once is not a fix.
+ *
+ * So the object is declared in groups small enough to serialize, and the two public types are
+ * assembled from them: the name union is a union of `keyof`, and the wire type is a conditional that
+ * dispatches to the group a name belongs to. Both are exactly what they were — a name is still one
+ * of these keys, and `ApiComponentType<'Account'>` is still `z.infer<typeof AccountSchema>`.
+ *
+ * Adding a component means putting it in whichever group fits and nothing else. Add a group when one
+ * approaches the size the others already prove is safe, and add its two lines to the types below.
+ * The grouping is a compiler accommodation and carries no meaning: nothing reads a component's group,
+ * and a component may move between groups freely.
+ */
+const IAM_AND_ACCOUNT_SCHEMAS = {
     Account: AccountSchema,
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
@@ -219,6 +240,9 @@ const API_SCHEMAS = {
     ProjectToolInfoArray: ProjectToolInfoArraySchema,
     RenderingTemplateDefinition: RenderingTemplateDefinitionSchema,
     RenderingTemplateDefinitionRef: RenderingTemplateDefinitionRefSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const PROJECT_AND_APP_SCHEMAS = {
     // Leaves of the ProjectConfiguration closure. Each is hoisted by `ProjectConfiguration` rather
     // than named by an endpoint, so only the roots that nothing else here references are listed;
     // `ModelDefault`, the two search enums, `ProjectSearchPropertyMapping(+Map)` and the two
@@ -272,7 +296,9 @@ const API_SCHEMAS = {
     AppAccessControl: AppAccessControlSchema,
     AppSourceConfig: AppSourceConfigSchema,
     AppManifestSource: AppManifestSourceSchema,
+} as const satisfies Record<string, z.ZodType>;
 
+const ZENO_SCHEMAS = {
     // Wave Z1 — zeno files, durable tasks, the content-type catalog and the migration commands.
     // Converted in bulk by `packages/api-specs/scripts/convert-to-zod.mjs` from the published
     // document, so every body here re-emits byte-identically to the component it replaces.
@@ -311,8 +337,10 @@ const API_SCHEMAS = {
     ContentObjectTypeItem: ContentObjectTypeItemSchema,
     ContentObjectTypeItemArray: ContentObjectTypeItemArraySchema,
     ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntrySchema,
+    ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntryArraySchema,
     InCodeTypeDefinition: InCodeTypeDefinitionSchema,
     CreateContentObjectTypePayload: CreateContentObjectTypePayloadSchema,
+    UpdateContentObjectTypePayload: UpdateContentObjectTypePayloadSchema,
     ContentObjectType: ContentObjectTypeSchema,
     ContentObjectTypeCatalogQuery: ContentObjectTypeCatalogQuerySchema,
     ContentObjectTypeListQuery: ContentObjectTypeListQuerySchema,
@@ -323,7 +351,23 @@ const API_SCHEMAS = {
     RunMigrationResponse: RunMigrationResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-export type ApiComponentName = keyof typeof API_SCHEMAS;
+/**
+ * Every registered component, keyed by the name it publishes under.
+ *
+ * Annotated rather than inferred: the precise per-key types live on the groups above, and this
+ * is only ever iterated, so widening the values here is what keeps the merged object from
+ * re-creating the type the split exists to avoid.
+ */
+const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = {
+    ...IAM_AND_ACCOUNT_SCHEMAS,
+    ...PROJECT_AND_APP_SCHEMAS,
+    ...ZENO_SCHEMAS,
+};
+
+export type ApiComponentName =
+    | keyof typeof IAM_AND_ACCOUNT_SCHEMAS
+    | keyof typeof PROJECT_AND_APP_SCHEMAS
+    | keyof typeof ZENO_SCHEMAS;
 
 /**
  * Components that reject undeclared properties.
@@ -484,7 +528,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'MCPToolCollectionObject',
     'VertesiaSDKToolCollectionObject',
     // Wave Z1. Every one is published closed today; `StringValueMap`, `MigrationListResponse`,
-    // `TaskArray`, `ContentObjectTypeItemArray` and the three enums are not objects and take none.
+    // `TaskArray`, the two content-type array wrappers and the three enums are not objects and take
+    // none.
     'CopyFilePayload',
     'CopyFileResponse',
     'DeleteFileResult',
@@ -519,6 +564,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ContentObjectTypeCatalogEntry',
     'InCodeTypeDefinition',
     'CreateContentObjectTypePayload',
+    'UpdateContentObjectTypePayload',
     'ContentObjectType',
     'ContentObjectTypeCatalogQuery',
     'ContentObjectTypeListQuery',
@@ -651,8 +697,20 @@ export function apiComponentRef(name: ApiComponentName): string {
     return `#/components/schemas/${name}`;
 }
 
-/** The wire type a component publishes. */
-export type ApiComponentType<N extends ApiComponentName> = z.infer<(typeof API_SCHEMAS)[N]>;
+/**
+ * The wire type a component publishes.
+ *
+ * The conditional dispatches to whichever group holds the name. It reads as more machinery than
+ * `z.infer<(typeof API_SCHEMAS)[N]>`, and it resolves to exactly that — see the note on the groups
+ * for why the single object cannot be the source.
+ */
+export type ApiComponentType<N extends ApiComponentName> = N extends keyof typeof IAM_AND_ACCOUNT_SCHEMAS
+    ? z.infer<(typeof IAM_AND_ACCOUNT_SCHEMAS)[N]>
+    : N extends keyof typeof PROJECT_AND_APP_SCHEMAS
+      ? z.infer<(typeof PROJECT_AND_APP_SCHEMAS)[N]>
+      : N extends keyof typeof ZENO_SCHEMAS
+        ? z.infer<(typeof ZENO_SCHEMAS)[N]>
+        : never;
 
 /**
  * Names a published component from inside an `@apiDoc` slot:

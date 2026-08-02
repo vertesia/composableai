@@ -120,6 +120,8 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // The roles and access-control closure, fourth — nine slots pulling in sixteen components,
             // because an ACE $refs AceConditions which $refs PropertyConditions.
             'AceConditions',
+            'AgentCheckpointConfiguration',
+            'AgentProjectConfiguration',
             // The API key and account-invite closure, fifth. ProjectRef, AccountRef and SystemRoles are
             // shared with slots that have NOT converted, which is safe only because the emitted JSON is
             // byte-identical to what the scanner derives.
@@ -182,6 +184,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // which replaces the generated `Pick_ContentObjectTypeItem_...` component name.
             'ContentObjectType',
             'ContentObjectTypeCatalogEntry',
+            'ContentObjectTypeCatalogEntryArray',
             'ContentObjectTypeCatalogQuery',
             'ContentObjectTypeItem',
             'ContentObjectTypeItemArray',
@@ -409,6 +412,7 @@ describe('gate 2 — canonical schemas carry stable OpenAPI component references
             // byte-identical to what the scanner derives.
             'UpdateAccountPayload',
             'UpdateApiKeyPayload',
+            'UpdateContentObjectTypePayload',
             // The user-group closure, third. UserRef is hoisted by UserRefArray rather than named by
             // an endpoint.
             'UpdateTaskPayload',

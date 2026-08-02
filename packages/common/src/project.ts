@@ -10,6 +10,8 @@ import type {
     ProjectTagQuerySchema,
 } from './api-schemas/project.js';
 import type {
+    AgentCheckpointConfigurationSchema,
+    AgentProjectConfigurationSchema,
     BrowserUseProjectConfigurationSchema,
     BrowserUseRiskPolicySchema,
     BrowserUseScreenshotCaptureSchema,
@@ -174,6 +176,10 @@ export type ProjectIntakeSniffConfiguration = z.infer<typeof ProjectIntakeSniffC
 export type ProjectIntakeConfiguration = z.infer<typeof ProjectIntakeConfigurationSchema>;
 
 export type ProjectConfiguration = z.infer<typeof ProjectConfigurationSchema>;
+
+export type AgentProjectConfiguration = z.infer<typeof AgentProjectConfigurationSchema>;
+
+export type AgentCheckpointConfiguration = z.infer<typeof AgentCheckpointConfigurationSchema>;
 
 export type ProjectSearchPropertyType = z.infer<typeof ProjectSearchPropertyTypeSchema>;
 

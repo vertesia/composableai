@@ -176,6 +176,12 @@ export interface AuthTokenPayload {
         onBehalfOf?: AuthTokenPayload;
         [key: string]: unknown;
     };
+
+    /**
+     * Set only by STS for tokens minted by an attested internal workflow-launching service.
+     * API servers use this claim before accepting a caller-supplied logical request identity.
+     */
+    trusted_request_identity?: boolean;
 }
 
 export enum PrincipalType {

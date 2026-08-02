@@ -507,6 +507,10 @@ export const ContentObjectTypeCatalogEntrySchema = z
     })
     .meta({ id: 'ContentObjectTypeCatalogEntry' });
 
+export const ContentObjectTypeCatalogEntryArraySchema = z
+    .array(ContentObjectTypeCatalogEntrySchema)
+    .meta({ id: 'ContentObjectTypeCatalogEntryArray' });
+
 /**
  * A stored content type, in the order it is published.
  *
@@ -558,6 +562,26 @@ export const CreateContentObjectTypePayloadSchema = z
         tags: contentTypeFields.tags,
     })
     .meta({ id: 'CreateContentObjectTypePayload' });
+
+/**
+ * The update payload, which is the create payload with nothing required.
+ *
+ * `PUT /types/:typeId` published `CreateContentObjectTypePayload` — including its `required: ['name']`
+ * — while every caller has always sent a single field: the Studio type editor sends `{ object_schema }`,
+ * `{ editing }` or `{ intake }`, and the `create_or_update_object_type` agent tool sends whatever the
+ * model changed. Nothing enforced the document, so the disagreement was invisible; enforcing it made
+ * the documented contract reject the only shape anyone sends.
+ *
+ * So this is a correction to the document rather than a new restriction on callers: an update names
+ * the fields it changes, which is what `.partial()` says and what the handler has always done. The
+ * property order is the create payload's, so the generated clients' argument order does not move.
+ */
+export const UpdateContentObjectTypePayloadSchema = CreateContentObjectTypePayloadSchema.partial().meta({
+    id: 'UpdateContentObjectTypePayload',
+    description:
+        'Fields to change on a content object type. Every field is optional — only the ones present ' +
+        'are written, and the rest are left as they are.',
+});
 
 export const ContentObjectTypeSchema = z.strictObject(storedContentTypeShape).meta({ id: 'ContentObjectType' });
 

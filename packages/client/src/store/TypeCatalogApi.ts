@@ -7,18 +7,22 @@ export class TypeCatalogApi extends ApiTopic {
     }
 
     /**
-     * List all content types (system + app + stored)
+     * List all content types (system + app + stored).
+     *
+     * Returns `ContentObjectTypeCatalogEntry`, not `ContentObjectTypeItem`, for the same reason
+     * {@link resolve} does: the listing includes system and app types, which are declared in code
+     * rather than authored, so they carry none of the four audit fields.
      */
     list(
         query: { tag?: string; limit?: number; offset?: number; layout?: boolean; schema?: boolean } = {},
-    ): Promise<ContentObjectTypeItem[]> {
+    ): Promise<ContentObjectTypeCatalogEntry[]> {
         return this.get('/', { query });
     }
 
     /**
      * List system types only
      */
-    listSysTypes(tag?: string): Promise<ContentObjectTypeItem[]> {
+    listSysTypes(tag?: string): Promise<ContentObjectTypeCatalogEntry[]> {
         return this.get('/sys', {
             query: { tag },
         });
@@ -27,14 +31,17 @@ export class TypeCatalogApi extends ApiTopic {
     /**
      * List all app types from all installed apps
      */
-    listAppTypes(tag?: string): Promise<ContentObjectTypeItem[]> {
+    listAppTypes(tag?: string): Promise<ContentObjectTypeCatalogEntry[]> {
         return this.get('/apps', {
             query: { tag },
         });
     }
 
     /**
-     * List stored types only
+     * List stored types only.
+     *
+     * Stored types are real records, so this one does return `ContentObjectTypeItem` with its audit
+     * fields required.
      */
     listStoredTypes(
         query: { tag?: string; limit?: number; offset?: number; layout?: boolean; schema?: boolean } = {},

@@ -105,6 +105,21 @@ export const ApiKeySchema = z
         created_at: z.string().meta({ format: 'date-time' }),
         updated_at: z.string().meta({ format: 'date-time' }),
         expires_at: z.string().meta({ format: 'date-time' }).optional(),
+        properties: z
+            .record(z.string(), z.unknown())
+            .meta({
+                description:
+                    'Custom properties for dynamic permission matching (PrincipalSet / $principal. conditions)',
+            })
+            .optional(),
+        clearance: z
+            .number()
+            .meta({ description: 'BLP clearance level — the maximum document sensitivity the key can access' })
+            .optional(),
+        compartments: z
+            .array(z.string())
+            .meta({ description: 'Compartments the key belongs to — restricts access to matching documents' })
+            .optional(),
     })
     .meta({ id: 'ApiKey' });
 
@@ -139,7 +154,7 @@ export const ApiKeyReadResponseSchema = ApiKeySchema.extend({
  *  - It declared every server-owned field — `id`, `account`, `maskedValue`, `can_retrieve_value`,
  *    the timestamps — all of which the handler has always ignored.
  *
- * `.pick()` rather than a fresh object, so the four fields keep one declaration; `.partial()` on the
+ * `.pick()` rather than a fresh object, so the seven fields keep one declaration; `.partial()` on the
  * two the server defaults (`type` falls back to `sk`, `expires_at` means "never"). Requiredness is
  * the only thing a write payload legitimately changes about a field it shares.
  */
@@ -148,12 +163,15 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     role: true,
     type: true,
     expires_at: true,
+    properties: true,
+    clearance: true,
+    compartments: true,
 })
     .partial({ type: true, expires_at: true })
     .meta({ id: 'CreateApiKeyPayload' });
 
 /**
- * What `PUT /apikeys/:keyId` accepts: the three fields the handler applies, each optional.
+ * What `PUT /apikeys/:keyId` accepts: the six fields the handler applies, each optional.
  *
  * Narrower than the create payload in both directions — `type` and `expires_at` are immutable after
  * creation, `enabled` is only settable here — which is precisely why one shared component could not
@@ -165,6 +183,9 @@ export const UpdateApiKeyPayloadSchema = ApiKeySchema.pick({
     name: true,
     role: true,
     enabled: true,
+    properties: true,
+    clearance: true,
+    compartments: true,
 })
     .partial()
     .meta({ id: 'UpdateApiKeyPayload' });
