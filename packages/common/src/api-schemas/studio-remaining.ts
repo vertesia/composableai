@@ -1,6 +1,7 @@
 import type { JSONSchema } from '@llumiverse/common';
 import { z } from 'zod';
 import type { CompositeAppMenuNavItem } from '../apps.js';
+import { SupportedIntegrations } from '../integrations.js';
 import type { InCodeProcessDefinition } from '../store/process.js';
 import {
     AgentToolDefinitionSchema,
@@ -141,26 +142,40 @@ export const ProjectPluginArraySchema = z.array(z.string()).meta({ id: 'ProjectP
 export const BinaryFileResponseSchema = z.string().meta({ id: 'BinaryFileResponse', format: 'binary' });
 
 export const SupportedIntegrations_ask_user_webhookSchema = z
-    .literal('ask_user_webhook')
+    .literal(SupportedIntegrations.ask_user_webhook)
     .meta({ id: 'SupportedIntegrations_ask_user_webhook' });
 
-export const SupportedIntegrations_resendSchema = z.literal('resend').meta({ id: 'SupportedIntegrations_resend' });
+export const SupportedIntegrations_resendSchema = z
+    .literal(SupportedIntegrations.resend)
+    .meta({ id: 'SupportedIntegrations_resend' });
 
-export const SupportedIntegrations_linkupSchema = z.literal('linkup').meta({ id: 'SupportedIntegrations_linkup' });
+export const SupportedIntegrations_linkupSchema = z
+    .literal(SupportedIntegrations.linkup)
+    .meta({ id: 'SupportedIntegrations_linkup' });
 
-export const SupportedIntegrations_exaSchema = z.literal('exa').meta({ id: 'SupportedIntegrations_exa' });
+export const SupportedIntegrations_exaSchema = z
+    .literal(SupportedIntegrations.exa)
+    .meta({ id: 'SupportedIntegrations_exa' });
 
-export const SupportedIntegrations_serperSchema = z.literal('serper').meta({ id: 'SupportedIntegrations_serper' });
+export const SupportedIntegrations_serperSchema = z
+    .literal(SupportedIntegrations.serper)
+    .meta({ id: 'SupportedIntegrations_serper' });
 
 export const SupportedIntegrations_magic_pdfSchema = z
-    .literal('magic_pdf')
+    .literal(SupportedIntegrations.magic_pdf)
     .meta({ id: 'SupportedIntegrations_magic_pdf' });
 
-export const SupportedIntegrations_awsSchema = z.literal('aws').meta({ id: 'SupportedIntegrations_aws' });
+export const SupportedIntegrations_awsSchema = z
+    .literal(SupportedIntegrations.aws)
+    .meta({ id: 'SupportedIntegrations_aws' });
 
-export const SupportedIntegrations_githubSchema = z.literal('github').meta({ id: 'SupportedIntegrations_github' });
+export const SupportedIntegrations_githubSchema = z
+    .literal(SupportedIntegrations.github)
+    .meta({ id: 'SupportedIntegrations_github' });
 
-export const SupportedIntegrations_gladiaSchema = z.literal('gladia').meta({ id: 'SupportedIntegrations_gladia' });
+export const SupportedIntegrations_gladiaSchema = z
+    .literal(SupportedIntegrations.gladia)
+    .meta({ id: 'SupportedIntegrations_gladia' });
 
 export const CompositeAppNavItemPermissionsSchema = z
     .strictObject({

@@ -1,7 +1,18 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import type { ProjectToolInfo, RenderingTemplateDefinitionRef } from '../apps.js';
-import { SupportedIntegrations } from '../integrations.js';
+import {
+    type AskUserWebhookConfigurationInput,
+    type AwsConfiguration,
+    type ExaConfigurationInput,
+    type GithubConfigurationInput,
+    type GladiaConfigurationInput,
+    type LinkupConfigurationInput,
+    type MagicPdfConfiguration,
+    type ResendConfigurationInput,
+    type SerperConfigurationInput,
+    SupportedIntegrations,
+} from '../integrations.js';
 import type {
     ICreateProjectPayload,
     ModelDefault,
@@ -42,6 +53,21 @@ describe('gate 1 — the schema is the single source of truth for the converted 
         // `Types.ObjectId[]`, and the Mongoose schema says `{ type: [String] }`. Validating the
         // payload is what forced the three to agree.
         assertType<Equals<ProjectPluginsUpdatePayload['plugins'], string[]>>(true);
+        expect(true).toBe(true);
+    });
+
+    it('preserves enum-member discriminator types in inferred integration configurations', () => {
+        assertType<Equals<AskUserWebhookConfigurationInput['integration'], SupportedIntegrations.ask_user_webhook>>(
+            true,
+        );
+        assertType<Equals<AwsConfiguration['integration'], SupportedIntegrations.aws>>(true);
+        assertType<Equals<ExaConfigurationInput['integration'], SupportedIntegrations.exa>>(true);
+        assertType<Equals<GithubConfigurationInput['integration'], SupportedIntegrations.github>>(true);
+        assertType<Equals<GladiaConfigurationInput['integration'], SupportedIntegrations.gladia>>(true);
+        assertType<Equals<LinkupConfigurationInput['integration'], SupportedIntegrations.linkup>>(true);
+        assertType<Equals<MagicPdfConfiguration['integration'], SupportedIntegrations.magic_pdf>>(true);
+        assertType<Equals<ResendConfigurationInput['integration'], SupportedIntegrations.resend>>(true);
+        assertType<Equals<SerperConfigurationInput['integration'], SupportedIntegrations.serper>>(true);
         expect(true).toBe(true);
     });
 });
