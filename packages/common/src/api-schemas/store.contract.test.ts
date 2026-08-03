@@ -323,6 +323,9 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
         ).toBe(true);
         expect(validate({ extraction: { config: { model_options: { temperature: 0.5 } } } })).toBe(false);
         expect(validate({ extraction: { config: { model_options: { _option_id: 'not-a-driver' } } } })).toBe(false);
+        // The empty object is rejected for the same reason, which is why nothing may PUT it on the
+        // wire — see `normalizeModelOptions`, which drops an options bag with no options in it.
+        expect(validate({ extraction: { config: { model_options: {} } } })).toBe(false);
     });
 
     it('constrains the two config enums that were unconstrained strings', () => {

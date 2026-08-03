@@ -107,4 +107,4 @@ export const IssueTokenResponseSchema = z
 
 export const IssueTokenUnavailableResponseSchema = z
     .strictObject({ error: z.string(), message: z.string() })
-    .meta({ id: 'error_string_message_string' });
+    .meta({ id: 'IssueTokenUnavailableResponse' });

@@ -95,6 +95,13 @@ const LlmCallEventSchema = z.strictObject({
     callType: z.enum(LlmCallType),
     attemptNumber: z.number().optional(),
     errorType: z.string().optional(),
+    // `NestedInteractionEvent` — an interaction executed from inside a tool — is an `LlmCallEvent`
+    // with three more fields and the same `eventType`, so it cannot be a branch of its own and has to
+    // widen this one. They are optional because a plain LLM call carries none of them; the three
+    // travel together, pinned by `callType: 'nested_interaction'`.
+    nestedInteractionId: z.string().optional(),
+    toolName: z.string().optional(),
+    toolType: z.enum(TelemetryToolType).optional(),
 });
 
 const ToolCallEventSchema = z.strictObject({

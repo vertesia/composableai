@@ -64,13 +64,13 @@ describe('STS canonical contracts', () => {
         expect(validateApiResponse('IssueTokenResponse', { token: 'signed', token_type: 'Bearer' }).valid).toBe(true);
         expect(validateApiResponse('IssueTokenResponse', { token: 'signed', token_type: 'bearer' }).valid).toBe(false);
         expect(
-            validateApiResponse('error_string_message_string', {
+            validateApiResponse('IssueTokenUnavailableResponse', {
                 error: 'Service Unavailable',
                 message: 'Token signing temporarily unavailable',
             }).valid,
         ).toBe(true);
         expect(
-            validateApiResponse('error_string_message_string', {
+            validateApiResponse('IssueTokenUnavailableResponse', {
                 error: 'Service Unavailable',
                 message: 'Token signing temporarily unavailable',
                 retry_after: 5,

@@ -1960,7 +1960,7 @@ const SECRET_SCHEMAS = {
     WebsiteCredentialRecord: SecretSchemas.WebsiteCredentialRecordSchema,
     WebsiteCredentialFillResponse: SecretSchemas.WebsiteCredentialFillResponseSchema,
     WebsiteCredentialFillRequest: SecretSchemas.WebsiteCredentialFillRequestSchema,
-    ok_boolean: SecretSchemas.ok_booleanSchema,
+    DeleteSecretResponse: SecretSchemas.DeleteSecretResponseSchema,
     WebsiteCredentialMetadata: SecretSchemas.WebsiteCredentialMetadataSchema,
     WebsiteCredentialMetadataUpdate: SecretSchemas.WebsiteCredentialMetadataUpdateSchema,
     SecretRecord: SecretSchemas.SecretRecordSchema,
@@ -2076,7 +2076,7 @@ const STS_SCHEMAS = {
     ServiceAccountTokenRequest: StsSchemas.ServiceAccountTokenRequestSchema,
     IssueTokenRequest: StsSchemas.IssueTokenRequestSchema,
     IssueTokenResponse: StsSchemas.IssueTokenResponseSchema,
-    error_string_message_string: StsSchemas.IssueTokenUnavailableResponseSchema,
+    IssueTokenUnavailableResponse: StsSchemas.IssueTokenUnavailableResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const API_SCHEMA_GROUPS = [
@@ -2223,7 +2223,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentTokenRequest',
     'ServiceAccountTokenRequest',
     'IssueTokenResponse',
-    'error_string_message_string',
+    'IssueTokenUnavailableResponse',
     'ApiKeyListQuery',
     // These payloads previously referenced closed generated utility components. They now own their
     // object shapes directly, so their published closedness belongs to the final component names.
@@ -2652,7 +2652,11 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'Collection',
     'EventIngestChannel',
     'ContentObjectExportArtifact',
-    'ProcessState',
+    // `ProcessState` is deliberately absent: the process engine round-trips five `_`-prefixed
+    // bookkeeping fields (`_current_node`, `_previous_node`, `_transition_count`, `_node_entries`,
+    // `_node_tool_calls`) that are not part of the published contract. They cannot be published
+    // either — `_current_node` and `current_node` normalize to the same Java/Go identifier — so the
+    // component stays open and lets them pass rather than rejecting every process status update.
     'AutonomousRunResponse',
     'ListWorkflowRunsResponse',
     'EventDeliveryQueueSubscriptionSummary',
@@ -3038,7 +3042,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppDashboardDefinition',
     'WebsiteCredentialFillResponse',
     'WebsiteCredentialFillRequest',
-    'ok_boolean',
+    'DeleteSecretResponse',
     'WebsiteCredentialMetadata',
     'AppManifestData',
     'WebsiteCredentialMetadataUpdate',

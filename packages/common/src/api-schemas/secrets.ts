@@ -237,11 +237,11 @@ export const WebsiteCredentialFillRequestSchema = z
     })
     .meta({ id: 'WebsiteCredentialFillRequest' });
 
-export const ok_booleanSchema = z
+export const DeleteSecretResponseSchema = z
     .strictObject({
         ok: z.boolean(),
     })
-    .meta({ id: 'ok_boolean' });
+    .meta({ id: 'DeleteSecretResponse' });
 
 export const WebsiteCredentialMetadataSchema = z
     .strictObject({
