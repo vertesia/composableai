@@ -37,7 +37,7 @@ import { createAgentMarkdownAnchor } from './AgentMarkdownAnchor';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
-import { getToolApprovalResponseMetadata } from './requestInputMessages';
+import { getToolApprovalResponseMetadata, sendRequestInputResponse } from './requestInputMessages';
 import { getWorkstreamId } from './utils';
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
@@ -625,13 +625,27 @@ function MessageItemComponent({
                             variant={askUserUx.variant}
                             multiSelect={askUserUx.multiSelect}
                             onSelect={(optionId) =>
-                                onSendMessage?.(optionId, getToolApprovalResponseMetadata(message, optionId))
+                                sendRequestInputResponse(
+                                    onSendMessage,
+                                    message,
+                                    optionId,
+                                    getToolApprovalResponseMetadata(message, optionId),
+                                )
                             }
-                            onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                            onMultiSelect={(optionIds) =>
+                                sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
+                            }
                             allowFreeResponse={!askUserUx.options?.length || !!askUserUx.free_response}
                             placeholder={askUserUx.free_response?.placeholder}
                             submitLabel={askUserUx.free_response?.submit_label}
-                            onSubmit={(value) => onSendMessage?.(value, askUserUx.free_response?.metadata)}
+                            onSubmit={(value) =>
+                                sendRequestInputResponse(
+                                    onSendMessage,
+                                    message,
+                                    value,
+                                    askUserUx.free_response?.metadata,
+                                )
+                            }
                             hideBorder
                             compact
                             answered={requestInputAnswered}
