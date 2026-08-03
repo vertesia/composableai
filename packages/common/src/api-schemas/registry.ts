@@ -3143,8 +3143,9 @@ export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = toOpenA
  * The published component `$ref`s its neighbours through `#/components/schemas/...`, which resolves
  * only inside the OpenAPI document. AJV and the Monaco editor need a document they can compile on
  * its own, so the transitive closure is inlined under `$defs` and the pointers rewritten. Nothing
- * about the shapes changes — this is a re-rooting of the same objects, which is what lets a
- * generated artifact be compared with the component it came from.
+ * about the shapes changes — this is a re-rooting of the same objects, plus the removal of the
+ * OpenAPI-only discriminator keywords described below, which is what lets a generated artifact be
+ * compared with the component it came from.
  */
 export function bundleCanonicalComponent(name: ApiComponentName): JsonObject {
     const seen = new Set<string>();
@@ -3160,13 +3161,56 @@ export function bundleCanonicalComponent(name: ApiComponentName): JsonObject {
     seen.delete(name);
     const defs: JsonObject = {};
     for (const dependency of [...seen].sort()) {
-        defs[dependency] = rerootComponentRefs(ApiSchemaComponents[dependency]) as JsonObject;
+        defs[dependency] = toPlainJsonSchema(ApiSchemaComponents[dependency]) as JsonObject;
     }
-    const root = rerootComponentRefs(ApiSchemaComponents[name]) as JsonObject;
+    const root = toPlainJsonSchema(ApiSchemaComponents[name]) as JsonObject;
     return seen.size > 0 ? { ...root, $defs: defs } : root;
 }
 
 const COMPONENT_REF_PREFIX = '#/components/schemas/';
+
+/**
+ * Re-roots the component pointers AND drops the discriminator keywords, which are OpenAPI's, not
+ * JSON Schema's.
+ *
+ * `synthesizeDiscriminator` in the adapter gives a discriminated union a `discriminator` plus a
+ * restated `type: 'object'` and `required: [propertyName]` ON THE UNION NODE, so a generated
+ * Java/Go client can pick a subtype from the union rather than the branches. That restatement is a
+ * codegen hint: the node carries no `properties`, so it says "an object that must have
+ * `_option_id`" while declaring nothing that could be one.
+ *
+ * A JSON Schema validator does not mind — `required` needs no matching `properties`, and each
+ * branch requires the same key anyway, so removing all three is validation-neutral. Gemini's
+ * function-declaration validator does mind, and rejects the whole tool:
+ *
+ *     schema at properties.intake.properties.extraction.properties.config.properties.model_options
+ *     requires unspecified property '_option_id'
+ *
+ * That was a 400 on every agent turn offering `create_or_update_type`, because the intake-policy
+ * artifact reaches Vertex inside that tool's input schema. Stripping here rather than at the tool
+ * keeps the next component someone bundles from reintroducing it. The OpenAPI document is untouched
+ * — `ApiSchemaComponents` still carries the hint, and the generated clients still read it.
+ */
+function toPlainJsonSchema(value: unknown): unknown {
+    const rerooted = rerootComponentRefs(value);
+    return stripDiscriminators(rerooted);
+}
+
+function stripDiscriminators(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(stripDiscriminators);
+    if (!value || typeof value !== 'object') return value;
+    const node = value as JsonObject;
+    // `properties` present means the node describes an object in its own right, so its `type` and
+    // `required` are the schema's own rather than the restatement — only the OpenAPI keyword goes.
+    const restated = node.discriminator !== undefined && node.properties === undefined;
+    const out: JsonObject = {};
+    for (const [key, item] of Object.entries(node)) {
+        if (key === 'discriminator') continue;
+        if (restated && (key === 'type' || key === 'required')) continue;
+        out[key] = stripDiscriminators(item) as never;
+    }
+    return out;
+}
 
 function collectComponentRefs(value: unknown, out = new Set<string>()): Set<string> {
     if (Array.isArray(value)) {

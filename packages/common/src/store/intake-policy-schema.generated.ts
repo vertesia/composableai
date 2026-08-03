@@ -728,6 +728,21 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             },
             additionalProperties: false,
         },
+        EmbeddingTypeEnabledMap: {
+            type: 'object',
+            properties: {
+                text: {
+                    type: 'boolean',
+                },
+                image: {
+                    type: 'boolean',
+                },
+                properties: {
+                    type: 'boolean',
+                },
+            },
+            additionalProperties: false,
+        },
         GroqOptions: {
             type: 'object',
             properties: {
@@ -1024,36 +1039,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/GroqOptions',
                 },
             ],
-            discriminator: {
-                propertyName: '_option_id',
-                mapping: {
-                    'text-fallback': '#/components/schemas/TextFallbackOptions',
-                    'vertexai-imagen': '#/components/schemas/ImagenOptions',
-                    'vertexai-claude': '#/components/schemas/VertexAIClaudeOptions',
-                    'vertexai-gemini': '#/components/schemas/VertexAIGeminiOptions',
-                    'vertexai-grok': '#/components/schemas/VertexAIGrokOptions',
-                    'bedrock-nova-canvas': '#/components/schemas/NovaCanvasOptions',
-                    'bedrock-converse': '#/components/schemas/BedrockConverseOptions',
-                    'bedrock-nova': '#/components/schemas/BedrockNovaOptions',
-                    'bedrock-mistral': '#/components/schemas/BedrockMistralOptions',
-                    'bedrock-ai21': '#/components/schemas/BedrockAI21Options',
-                    'bedrock-cohere-command': '#/components/schemas/BedrockCohereCommandOptions',
-                    'bedrock-claude': '#/components/schemas/BedrockClaudeOptions',
-                    'bedrock-palmyra': '#/components/schemas/BedrockPalmyraOptions',
-                    'bedrock-gpt-oss': '#/components/schemas/BedrockGptOssOptions',
-                    'bedrock-twelvelabs-pegasus': '#/components/schemas/TwelvelabsPegasusOptions',
-                    'bedrock-mantle-responses': '#/components/schemas/BedrockMantleResponsesOptions',
-                    'bedrock-mantle-chat-completions': '#/components/schemas/BedrockMantleChatCompletionsOptions',
-                    'bedrock-mantle-claude': '#/components/schemas/BedrockMantleClaudeOptions',
-                    'openai-thinking': '#/components/schemas/OpenAiThinkingOptions',
-                    'openai-text': '#/components/schemas/OpenAiTextOptions',
-                    'openai-dalle': '#/components/schemas/OpenAiDalleOptions',
-                    'openai-gpt-image': '#/components/schemas/OpenAiGptImageOptions',
-                    'groq-deepseek-thinking': '#/components/schemas/GroqOptions',
-                },
-            },
-            type: 'object',
-            required: ['_option_id'],
         },
         NovaCanvasOptions: {
             type: 'object',
@@ -1238,21 +1223,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
             },
             required: ['_option_id'],
-            additionalProperties: false,
-        },
-        EmbeddingTypeEnabledMap: {
-            type: 'object',
-            properties: {
-                text: {
-                    type: 'boolean',
-                },
-                image: {
-                    type: 'boolean',
-                },
-                properties: {
-                    type: 'boolean',
-                },
-            },
             additionalProperties: false,
         },
         ReasoningEffort: {
