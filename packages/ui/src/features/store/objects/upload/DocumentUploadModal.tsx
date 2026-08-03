@@ -1,4 +1,4 @@
-import type { Collection, ContentObjectTypeItem, DynamicCollection } from '@vertesia/common';
+import type { Collection, ContentObjectTypeCatalogEntry, DynamicCollection } from '@vertesia/common';
 import {
     Button,
     errorMessage,
@@ -90,7 +90,7 @@ export function DocumentUploadModal({
     const [files, setFiles] = useState<File[]>([]);
     const [processedFiles, setProcessedFiles] = useState<FileWithMetadata[]>([]);
     const [processingDone, setProcessingDone] = useState(false);
-    const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | null>(null);
+    const [selectedType, setSelectedType] = useState<ContentObjectTypeCatalogEntry | null>(null);
     const [fileStatuses, setFileStatuses] = useState<FileUploadStatus[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadComplete, setUploadComplete] = useState(false);

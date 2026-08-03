@@ -1,51 +1,35 @@
-import type { WorkflowExecutionPayload, WorkflowRunStatus } from './workflow.js';
+import type { z } from 'zod';
+import type {
+    DocAnalyzeRunStatusResponseSchema,
+    DocAnalyzerProgressSchema,
+    DocAnalyzerProgressStatusSchema,
+    DocProcessorOutputFormatSchema,
+    DocumentPrepOptionsSchema,
+    DocumentProcessingPhaseSchema,
+} from '../api-schemas/document-processing.js';
+import type { WorkflowExecutionPayload } from './workflow.js';
 
-export interface DocumentPrepOptions {
-    features?: string[];
-    debug?: boolean;
-    output_format?: DocProcessorOutputFormat;
-    [key: string]: unknown;
-}
+export type DocumentPrepOptions = z.infer<typeof DocumentPrepOptionsSchema>;
 
 export interface DocumentPrepWorkflowPayload extends Omit<WorkflowExecutionPayload, 'vars'> {
     vars: DocumentPrepOptions;
 }
 
-export type DocumentProcessingPhase = 'markdown' | 'grounded_extraction';
+export type DocumentProcessingPhase = z.infer<typeof DocumentProcessingPhaseSchema>;
 
 /**
  * Output format for document processing workflows
  */
-export type DocProcessorOutputFormat = 'markdown';
+export type DocProcessorOutputFormat = z.infer<typeof DocProcessorOutputFormatSchema>;
 
 /**
  * Represents a document analysis run status
  */
-export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
-    phase?: DocumentProcessingPhase;
-    progress?: DocAnalyzerProgress;
-    /** The output format being used for processing. */
-    output_format?: DocProcessorOutputFormat;
-}
+export type DocAnalyzeRunStatusResponse = z.infer<typeof DocAnalyzeRunStatusResponseSchema>;
 
-export interface DocAnalyzerProgress {
-    phase?: DocumentProcessingPhase;
-    pages: DocAnalyzerProgressStatus;
-    images: DocAnalyzerProgressStatus;
-    tables: DocAnalyzerProgressStatus;
-    visuals: DocAnalyzerProgressStatus;
-    started_at?: number;
-    percent: number;
-    /** The output format being used for processing. */
-    output_format?: DocProcessorOutputFormat;
-}
+export type DocAnalyzerProgress = z.infer<typeof DocAnalyzerProgressSchema>;
 
-interface DocAnalyzerProgressStatus {
-    total: number;
-    processed: number;
-    success: number;
-    failed: number;
-}
+export type DocAnalyzerProgressStatus = z.infer<typeof DocAnalyzerProgressStatusSchema>;
 
 /**
  * Adapt Tables Parameters, part of the request

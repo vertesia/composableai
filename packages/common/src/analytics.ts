@@ -1,50 +1,26 @@
-export interface AnalyticsAxis {
-    environment?: string;
-    project?: string;
-    interactions?: string[];
-    models?: string[];
-    status?: string[];
-    tags?: string[];
-    selectedOnly?: boolean;
-}
+import type { z } from 'zod';
+import type {
+    AnalyticsAxisSchema,
+    RunAnalyticsGroupBySchema,
+    RunAnalyticsQuerySchema,
+    RunAnalyticsResultSchema,
+    TimeResolutionSchema,
+} from './api-schemas/analytics.js';
 
-export interface RunAnalyticsQuery {
-    /** filters to apply to the query */
-    filterBy: AnalyticsAxis;
+/**
+ * The five run-analytics contract types, inferred from `./api-schemas/analytics.js`. Their
+ * documentation moved with them — a doc comment here would be published on TOP of the schema's
+ * `description` and the two would drift.
+ */
+export type AnalyticsAxis = z.infer<typeof AnalyticsAxisSchema>;
 
-    /** The field to group by */
-    groupBy?: RunAnalyticsGroupBy;
+export type RunAnalyticsQuery = z.infer<typeof RunAnalyticsQuerySchema>;
 
-    /** The start date of the query in EPOCH format */
-    from?: number;
-    /** The end date of the query in EPOCH format */
-    to?: number;
+export type RunAnalyticsGroupBy = z.infer<typeof RunAnalyticsGroupBySchema>;
 
-    /** The time resolution unit of the analytics query */
-    resolution?: TimeResolution;
+export type TimeResolution = z.infer<typeof TimeResolutionSchema>;
 
-    /** The step size for the resolution (e.g., 4 with resolution='hour' means 4-hour intervals). Defaults to 1. */
-    resolutionStep?: number;
-
-    /** The field to sort by */
-    virtual?: boolean;
-}
-
-export type RunAnalyticsGroupBy = 'interaction' | 'modelId' | 'project' | 'status' | 'tags' | 'environment';
-
-export type TimeResolution = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
-
-export interface RunAnalyticsResult {
-    date: string;
-    timestamp: string;
-    group: string;
-    count: number;
-    execution_time: {
-        avg: number;
-        min: number;
-        max: number;
-    };
-}
+export type RunAnalyticsResult = z.infer<typeof RunAnalyticsResultSchema>;
 
 /** Entity with status breakdown */
 export interface EntityStatusCounts {

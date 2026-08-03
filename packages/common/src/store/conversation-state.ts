@@ -1,4 +1,13 @@
 import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
+import type { z } from 'zod';
+import type {
+    ExternalizedToolInputRefSchema,
+    ExternalizedToolInputRefsSchema,
+    PendingMcpConnectionSchema,
+    TextArtifactReferenceSchema,
+    ToolReferenceSchema,
+    UsedSkillSchema,
+} from '../api-schemas/interaction.js';
 import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
 import type { ExecutionRunDocRef } from '../runs.js';
 import type { AgentToolApprovalMode, PendingToolApprovalResults, ToolApprovalGrant } from './agent-approval.js';
@@ -8,35 +17,18 @@ import type { Plan, WorkflowAncestor } from './workflow.js';
  * Lightweight tool reference for activity payloads.
  * References tools stored in GCP instead of embedding full tool definitions.
  */
-export interface ToolReference {
-    storage_key: string;
-    tool_count: number;
-    stored_at: string;
-}
+export type ToolReference = z.infer<typeof ToolReferenceSchema>;
 
 /** Reference to text content externalized to agent artifact storage. */
-export interface TextArtifactReference {
-    storage_id: string;
-    artifact_path: string;
-    display_ref: string;
-    sha256: string;
-    size_bytes: number;
-    content_type: string;
-}
+export type TextArtifactReference = z.infer<typeof TextArtifactReferenceSchema>;
 
 /**
  * Sidecar metadata for generated tool input fields that were stored outside
  * model-visible tool_input. Keyed by tool_use.id on ConversationState.
  */
-export interface ExternalizedToolInputRef {
-    tool_name: string;
-    input_path: ['content'];
-    ref: TextArtifactReference;
-}
+export type ExternalizedToolInputRef = z.infer<typeof ExternalizedToolInputRefSchema>;
 
-export interface ExternalizedToolInputRefs {
-    [toolUseId: string]: ExternalizedToolInputRef[];
-}
+export type ExternalizedToolInputRefs = z.infer<typeof ExternalizedToolInputRefsSchema>;
 
 export function toolInputRefsArtifactPath(storageId: string): string {
     return `agents/${storageId}/tool-input-refs.json`;
@@ -302,18 +294,7 @@ export const CONVERSATION_CATALOG_ARTIFACT_KEY = 'catalog.json';
  * Built at tool-discovery time and stored on the conversation state so the agent can
  * discover it (by description) and ask the user to connect.
  */
-export interface PendingMcpConnection {
-    /** The app installation id owning the collection (used for OAuth operations). */
-    app_install_id: string;
-    /** The MCP tool-collection id. */
-    collection_id: string;
-    /** Human-readable label for the server/collection. */
-    name: string;
-    /** Manifest description of what the server provides (used for discovery). */
-    description?: string;
-    /** Tool-name prefix for this collection. */
-    namespace?: string;
-}
+export type PendingMcpConnection = z.infer<typeof PendingMcpConnectionSchema>;
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
 export interface AvailableSkill {
@@ -343,18 +324,7 @@ export function getConversationStorageId(
 }
 
 /** Skill metadata tracked when a skill is used */
-export interface UsedSkill {
-    /** Skill name (e.g., "analyze_data") */
-    name: string;
-    /** Source URL of the skill collection (e.g., "https://tools.vertesia.io/api/skills/data-analysis") */
-    src: string;
-    /** Programming language (e.g., "python") */
-    language?: string;
-    /** Required packages (e.g., ["pandas", "numpy"]) */
-    packages?: string[];
-    /** System-level packages to install via sudo apt-get (e.g., ["poppler-utils"]) */
-    system_packages?: string[];
-}
+export type UsedSkill = z.infer<typeof UsedSkillSchema>;
 
 export interface ToolActivationMetadata {
     /** Turn when the tool became active in this conversation. */

@@ -4,8 +4,16 @@
  * Types for rendering content to various formats (PDF, DOCX, images)
  */
 
+import type { z } from 'zod';
+import type {
+    PdfRenderingMetadataSchema,
+    RenderMarkdownPayloadSchema,
+    RenderMarkdownStartResponseSchema,
+    RenderMarkdownStatusQuerySchema,
+    RenderMarkdownStatusResponseSchema,
+} from '../api-schemas/document-processing.js';
 import type { ImageRenditionFormat, MarkdownRenditionFormat } from './store.js';
-import { WorkflowExecutionStatus, type WorkflowRunStatus } from './workflow.js';
+import { WorkflowExecutionStatus } from './workflow.js';
 
 // ============================================================================
 // Workflow Vars Types (Discriminated Union)
@@ -35,21 +43,8 @@ export function getRenditionsPath(contentEtag: string, params: ImageRenditionPar
     return `renditions/${contentEtag}/${params.max_hw}`;
 }
 
-/** Metadata for PDF rendering (displayed in header/footer) */
-export interface PdfRenderingMetadata {
-    /** Document ID to display in footer */
-    document_id?: string;
-    /** Agent name that generated the document */
-    agent_name?: string;
-    /** Agent run ID to display in footer */
-    agent_run_id?: string;
-    /** Document subtitle */
-    subtitle?: string;
-    /** Document author(s) */
-    author?: string | string[];
-    /** Document date (displayed in header and title page; defaults to today if omitted) */
-    date?: string;
-}
+/** Metadata for PDF rendering, inferred from the published API schema. */
+export type PdfRenderingMetadata = z.infer<typeof PdfRenderingMetadataSchema>;
 
 /** Workflow vars for markdown renditions (pdf, docx) */
 export interface MarkdownRenditionVars extends BaseRenditionVars {
@@ -96,64 +91,20 @@ export function isMarkdownRenditionVars(vars: GenerateRenditionVars): vars is Ma
  * Payload for rendering markdown to PDF or DOCX.
  * Either object_id OR content must be provided.
  */
-export interface RenderMarkdownPayload {
-    /** Output format */
-    format: MarkdownRenditionFormat;
-    /** Object ID to render (mutually exclusive with content) */
-    object_id?: string;
-    /** Inline markdown content to render (mutually exclusive with object_id) */
-    content?: string;
-    /** Document title (used for filename when using inline content) */
-    title?: string;
-    /** URL to a template file for pandoc (DOCX reference doc or LaTeX template) */
-    template_url?: string;
-    /** Optional logo URL for template variable `logo-path` (studio-hosted URL) */
-    template_logo_url?: string;
-    /** Template file via artifact:/store: protocol (takes precedence over template_url) */
-    template_path?: string;
-    /** Logo file via artifact:/store: protocol (takes precedence over template_logo_url) */
-    logo_path?: string;
-    /** Use Vertesia default template if no template_url provided (default: true for pdf) */
-    use_default_template?: boolean;
-    /** Additional pandoc command-line options */
-    pandoc_options?: string[];
-    /** Run ID for resolving artifact: and image: URLs */
-    artifact_run_id?: string;
-    /** Document metadata for PDF footer/header */
-    metadata?: PdfRenderingMetadata;
-    /** Source reference for auto-wired template data: `store:<objectId>` or `artifact:<path-to-json>` */
-    template_data_source?: string;
-    /** Custom upload path for the rendered output */
-    output_path?: string;
-}
+export type RenderMarkdownPayload = z.infer<typeof RenderMarkdownPayloadSchema>;
 
 /**
  * Initial response when starting a markdown rendering workflow.
  * Clients should poll status using workflow_id/workflow_run_id.
  */
-export interface RenderMarkdownStartResponse extends WorkflowRunStatus {
-    /** Requested output format */
-    format: MarkdownRenditionFormat;
-}
+export type RenderMarkdownStartResponse = z.infer<typeof RenderMarkdownStartResponseSchema>;
 
 /**
  * Polled status response for markdown rendering workflow.
  */
-export interface RenderMarkdownStatusResponse extends WorkflowRunStatus {
-    /** Requested output format (if known) */
-    format?: MarkdownRenditionFormat;
-    /** Download URL for completed output */
-    download_url?: string;
-    /** File URI in storage for completed output */
-    file_uri?: string;
-    /** Error details for failed/terminated runs */
-    error?: string;
-}
+export type RenderMarkdownStatusResponse = z.infer<typeof RenderMarkdownStatusResponseSchema>;
 
-export interface RenderMarkdownStatusQuery {
-    workflow_id: string;
-    workflow_run_id: string;
-}
+export type RenderMarkdownStatusQuery = z.infer<typeof RenderMarkdownStatusQuerySchema>;
 
 /**
  * Client-side polling options for markdown rendering.

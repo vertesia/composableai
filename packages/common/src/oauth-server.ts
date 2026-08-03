@@ -1,13 +1,44 @@
+import type { z } from 'zod';
+import type {
+    BulkRevokeOAuthGrantsPayloadSchema,
+    CreateOAuthClientPayloadSchema,
+    ListOAuthGrantsQuerySchema,
+    OAuthClientCreateResponseSchema,
+    OAuthClientDataSchema,
+    OAuthClientSchema,
+    OAuthClientScopeMetadataSchema,
+    OAuthClientStatusSchema,
+    OAuthClientTypeSchema,
+    OAuthGrantListResponseSchema,
+    OAuthGrantRevokeResponseSchema,
+    OAuthGrantSchema,
+    OAuthGrantSortFieldSchema,
+    OAuthGrantSortOrderSchema,
+    OAuthGrantStatusSchema,
+    OAuthGrantTypeSchema,
+    OAuthProjectBindingModeSchema,
+    OAuthRegistrationSourceSchema,
+    OAuthResponseTypeSchema,
+    OAuthTokenEndpointAuthMethodSchema,
+    RevokeOAuthGrantQuerySchema,
+    UpdateOAuthClientPayloadSchema,
+} from './api-schemas/oauth-server.js';
 import type { AuthTokenPayload, PrincipalType } from './apikey.js';
 import type { ProjectRef } from './project.js';
 
-export type OAuthClientType = 'public' | 'confidential';
-export type OAuthClientStatus = 'active' | 'disabled';
-export type OAuthRegistrationSource = 'admin' | 'dynamic';
-export type OAuthProjectBindingMode = 'user_select' | 'fixed';
-export type OAuthTokenEndpointAuthMethod = 'none' | 'client_secret_post' | 'client_secret_basic';
-export type OAuthGrantType = 'authorization_code' | 'refresh_token' | 'urn:ietf:params:oauth:grant-type:device_code';
-export type OAuthResponseType = 'code';
+/**
+ * The types the three studio OAuth resources publish are inferred from
+ * `./api-schemas/oauth-server.js` — the same objects the OpenAPI document and the request validator
+ * are built from. The rest of this module is the token server's own OAuth surface, still declared
+ * here and still TypeScript-derived; it converts with that service's own slots.
+ */
+export type OAuthClientType = z.infer<typeof OAuthClientTypeSchema>;
+export type OAuthClientStatus = z.infer<typeof OAuthClientStatusSchema>;
+export type OAuthRegistrationSource = z.infer<typeof OAuthRegistrationSourceSchema>;
+export type OAuthProjectBindingMode = z.infer<typeof OAuthProjectBindingModeSchema>;
+export type OAuthTokenEndpointAuthMethod = z.infer<typeof OAuthTokenEndpointAuthMethodSchema>;
+export type OAuthGrantType = z.infer<typeof OAuthGrantTypeSchema>;
+export type OAuthResponseType = z.infer<typeof OAuthResponseTypeSchema>;
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
 /**
@@ -16,136 +47,36 @@ export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_doc
  * describes how inbound clients identified themselves to Vertesia's own AS.
  */
 export type RemoteOAuthRegistrationMode = 'dynamic_client_registration' | 'client_id_metadata_document';
-export type OAuthGrantStatus = 'active' | 'revoked' | 'expired';
-export type OAuthGrantSortField =
-    | 'granted_at'
-    | 'client_name'
-    | 'user_name'
-    | 'resource'
-    | 'last_used_at'
-    | 'expires_at'
-    | 'status';
-export type OAuthGrantSortOrder = 'asc' | 'desc';
+export type OAuthGrantStatus = z.infer<typeof OAuthGrantStatusSchema>;
+export type OAuthGrantSortField = z.infer<typeof OAuthGrantSortFieldSchema>;
+export type OAuthGrantSortOrder = z.infer<typeof OAuthGrantSortOrderSchema>;
 
-export interface OAuthClientData {
-    client_name: string;
-    client_type: OAuthClientType;
-    redirect_uris: string[];
-    grant_types: OAuthGrantType[];
-    response_types: OAuthResponseType[];
-    token_endpoint_auth_method: OAuthTokenEndpointAuthMethod;
-    allowed_scopes: string[];
-    default_scopes?: string[];
-    registration_source: OAuthRegistrationSource;
-    status: OAuthClientStatus;
-    project_binding_mode: OAuthProjectBindingMode;
-    fixed_project_id?: string;
-    /**
-     * When true (the default for new clients), the client may only be authorized for projects in its
-     * owning account/organization. Set to false to allow authorization for any project the approving
-     * user can access, regardless of account — required for OAuth/MCP clients used across
-     * organizations. The owning account itself is internal and not exposed here.
-     */
-    restrict_to_owner_account?: boolean;
-    metadata?: Record<string, unknown>;
-    created_by?: string;
-    client_secret_configured?: boolean;
-    created_at: string;
-    updated_at: string;
-}
+/** An OAuth client's registration, without the id the server issues for it. */
+export type OAuthClientData = z.infer<typeof OAuthClientDataSchema>;
 
-export interface OAuthClient extends OAuthClientData {
-    client_id: string;
-}
+export type OAuthClient = z.infer<typeof OAuthClientSchema>;
 
-export interface OAuthClientCreateResponse extends OAuthClient {
-    client_secret?: string;
-}
+/** The read shape plus the client secret, which is returned by the create call and never again. */
+export type OAuthClientCreateResponse = z.infer<typeof OAuthClientCreateResponseSchema>;
 
-export interface OAuthClientScopeMetadata {
-    supported_scopes: string[];
-}
+export type OAuthClientScopeMetadata = z.infer<typeof OAuthClientScopeMetadataSchema>;
 
-export interface OAuthGrant {
-    grant_id: string;
-    client_id: string;
-    client_name: string;
-    user_id: string;
-    user_name?: string;
-    user_email?: string;
-    account_id: string;
-    project_id: string;
-    resource: string;
-    scope: string[];
-    status: OAuthGrantStatus;
-    token_count: number;
-    granted_at: string;
-    created_at: string;
-    last_used_at?: string;
-    expires_at?: string;
-}
+export type OAuthGrant = z.infer<typeof OAuthGrantSchema>;
 
-export interface ListOAuthGrantsQuery {
-    account_id?: string;
-    project_id?: string;
-    user_id?: string;
-    client_id?: string;
-    resource?: string;
-    status?: OAuthGrantStatus | 'all';
-    limit?: number;
-    offset?: number;
-    sort_by?: OAuthGrantSortField;
-    sort_order?: OAuthGrantSortOrder;
-}
+export type ListOAuthGrantsQuery = z.infer<typeof ListOAuthGrantsQuerySchema>;
 
-export interface OAuthGrantListResponse {
-    grants: OAuthGrant[];
-    total_count: number;
-    limit: number;
-    offset: number;
-}
+/** Whether revoking a grant also withdraws the stored consent behind it. */
+export type RevokeOAuthGrantQuery = z.infer<typeof RevokeOAuthGrantQuerySchema>;
 
-export interface BulkRevokeOAuthGrantsPayload extends ListOAuthGrantsQuery {
-    grant_ids?: string[];
-    include_consent?: boolean;
-}
+export type OAuthGrantListResponse = z.infer<typeof OAuthGrantListResponseSchema>;
 
-export interface OAuthGrantRevokeResponse {
-    revoked_tokens: number;
-    revoked_consents: number;
-}
+export type BulkRevokeOAuthGrantsPayload = z.infer<typeof BulkRevokeOAuthGrantsPayloadSchema>;
 
-export interface CreateOAuthClientPayload {
-    client_name: string;
-    client_type?: OAuthClientType;
-    redirect_uris: string[];
-    grant_types?: OAuthGrantType[];
-    response_types?: OAuthResponseType[];
-    token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
-    allowed_scopes?: string[];
-    default_scopes?: string[];
-    project_binding_mode?: OAuthProjectBindingMode;
-    fixed_project_id?: string;
-    restrict_to_owner_account?: boolean;
-    client_secret?: string;
-    metadata?: Record<string, unknown>;
-}
+export type OAuthGrantRevokeResponse = z.infer<typeof OAuthGrantRevokeResponseSchema>;
 
-export interface UpdateOAuthClientPayload {
-    client_name?: string;
-    redirect_uris?: string[];
-    grant_types?: OAuthGrantType[];
-    response_types?: OAuthResponseType[];
-    token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
-    allowed_scopes?: string[];
-    default_scopes?: string[];
-    status?: OAuthClientStatus;
-    project_binding_mode?: OAuthProjectBindingMode;
-    fixed_project_id?: string;
-    restrict_to_owner_account?: boolean;
-    client_secret?: string;
-    metadata?: Record<string, unknown>;
-}
+export type CreateOAuthClientPayload = z.infer<typeof CreateOAuthClientPayloadSchema>;
+
+export type UpdateOAuthClientPayload = z.infer<typeof UpdateOAuthClientPayloadSchema>;
 
 export interface OAuthAuthorizationServerMetadata {
     issuer: string;

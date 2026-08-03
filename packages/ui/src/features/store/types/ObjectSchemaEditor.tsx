@@ -1,4 +1,4 @@
-import type { ContentObjectType } from '@vertesia/common';
+import type { ContentObjectTypeCatalogEntry } from '@vertesia/common';
 import { Button, errorMessage, Panel, useTheme, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -7,7 +7,7 @@ import { Ajv } from 'ajv';
 import { useMemo, useRef, useState } from 'react';
 
 interface ObjectSchemaEditorProps {
-    objectType: ContentObjectType;
+    objectType: ContentObjectTypeCatalogEntry;
     onSchemaUpdate: (jsonSchema: unknown) => void;
     readonly?: boolean;
 }

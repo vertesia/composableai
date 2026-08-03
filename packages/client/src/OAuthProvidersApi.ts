@@ -30,7 +30,12 @@ export default class OAuthProvidersApi extends ApiTopic {
         return this.put(`/${id}`, { payload });
     }
 
-    remove(id: string): Promise<void> {
+    /**
+     * `SuccessResponse`, not `void`: the endpoint has always returned `{ success: true }` and the
+     * document has always published it. Typing it as `void` meant a caller could not read the one
+     * field it sends without casting.
+     */
+    remove(id: string): Promise<SuccessResponse> {
         return this.del(`/${id}`);
     }
 
