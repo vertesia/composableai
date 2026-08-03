@@ -180,21 +180,26 @@ describe('arrays and repeated values', () => {
         // one — which is what several hand-written handlers do today.
         expect(normalize({ name: 'a', level: ['account', 'project'] }).value.level).toEqual(['account', 'project']);
     });
-
-    it('does not comma-split, because the published serialization is repetition', () => {
-        // `explode: true` means `?tags=x&tags=y`. Splitting `x,y` would accept a serialization the
-        // document does not describe — and would corrupt a tag that legitimately contains a comma.
-        expect(normalize({ name: 'a', tags: 'x,y' }).value.tags).toEqual(['x,y']);
-    });
 });
 
 /**
- * The single exception to the rule above, and the reasoning for why it is safe is in `commaSafeEnum`.
- * The short version: an enum publishes its members, so if none contains a comma then text that does
- * cannot be one — splitting can only turn a request that was already rejected into one the same enum
- * accepts or rejects. Nothing that validated before changes meaning.
+ * Comma-splitting applies to every array parameter, not only to enums.
+ *
+ * `explode: true` — what the document publishes — describes repeated keys and says nothing about
+ * commas, so this is something the server accepts BEYOND what it promises. It does so because
+ * `@vertesia/client` joins every array parameter with `,`, which means every SDK in the field sends
+ * the comma form, and because it is what all the hand-written readers this layer replaced already
+ * did: `readArray`, `parseTagsFilter`, `parseSourcesQuery`, and the agent-run search's `sort`,
+ * `tags` and `categories`.
  */
-describe('comma-joined values, for an array of a comma-free enum', () => {
+describe('comma-joined values, for an array parameter', () => {
+    it('splits a plain string array, which is what most filters are', () => {
+        // The regression this pins: with splitting limited to enums, `@vertesia/client`'s
+        // `sort: ['lol:sideways', 'started_at:desc']` arrived as ONE clause `lol:sideways,started_at:desc`,
+        // so the agent-run search sorted on an unmapped field and returned an arbitrary order.
+        expect(normalize({ name: 'a', tags: 'x,y' }).value.tags).toEqual(['x', 'y']);
+    });
+
     it('splits one occurrence into several values', () => {
         expect(normalize({ name: 'a', statuses: 'on,off' }).value.statuses).toEqual(['on', 'off']);
     });
@@ -215,10 +220,13 @@ describe('comma-joined values, for an array of a comma-free enum', () => {
         expect(normalize({ name: 'a', statuses: 'on,bogus' }).value.statuses).toEqual(['on', 'bogus']);
     });
 
-    it('does not split when a member could itself contain a comma', () => {
-        // `'a,b'` is a declared member, so splitting would make the one value the caller sent
-        // unreachable. The guard is on the enum, not on the text.
-        expect(normalize({ name: 'a', separators: 'a,b' }).value.separators).toEqual(['a,b']);
+    it('cannot express a value that contains a comma — the cost of the rule above', () => {
+        // `'a,b'` is a declared member of this enum, and it is now unreachable: the caller has no way
+        // to escape the separator. Pinned rather than fixed because it is not a new limit — every
+        // reader this layer replaced split unconditionally — and because no published parameter has
+        // a comma-bearing member today. It is the reason a parameter whose values may legitimately
+        // contain commas must not be declared as an array of plain strings.
+        expect(normalize({ name: 'a', separators: 'a,b' }).value.separators).toEqual(['a', 'b']);
     });
 });
 

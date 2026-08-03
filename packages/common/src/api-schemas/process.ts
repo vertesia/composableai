@@ -294,6 +294,12 @@ export const WorkflowSearchAttributeValueSchema = z
 export const AnswerProcessTaskPayloadSchema = z
     .strictObject({
         task_id: z.string(),
+        // Required, despite being absent from the component the scanner derived. The handler throws
+        // `Missing required field: result` without it and then checks it field-by-field against the
+        // task's declared `fields`, so a body carrying only `task_id` has never been answerable.
+        // The shape is open because the keys ARE those declared fields — they are defined by the
+        // process node, not by this contract.
+        result: z.looseObject({}).meta({ description: "Answers to the task's declared fields, keyed by field name." }),
     })
     .meta({ id: 'AnswerProcessTaskPayload' });
 
