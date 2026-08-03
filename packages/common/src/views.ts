@@ -9,6 +9,7 @@ import type {
     ViewExecutionSearchConfigurationSchema,
     ViewExecutionSearchResultSchema,
     ViewExecutionWarningSchema,
+    ViewExperienceConfigurationSchema,
     ViewHitAnnotationSchema,
     ViewHitSchema,
     ViewQueryPlanningFailureCodeSchema,
@@ -165,21 +166,7 @@ export type ViewDisplayConfiguration = z.infer<typeof ViewDisplayConfigurationSc
 
 export type ViewResultsConfiguration = z.infer<typeof ViewResultsConfigurationSchema>;
 
-// Kept as a named declaration while legacy OpenAPI components extend or map this
-// type through TypeScript. ts-json-schema-generator cannot expand a z.infer alias
-// through Omit/extends and would silently erase the inherited View fields.
-// ViewExperienceConfigurationSchema remains the runtime authority and the parity
-// test prevents the declaration from drifting while those referrers migrate.
-export interface ViewExperienceConfiguration {
-    name: string;
-    description?: string;
-    enabled?: boolean;
-    layout?: ViewExperienceLayout;
-    scope?: ViewExperienceScope;
-    navigation?: ViewNavigationItem[];
-    search?: ViewSearchConfiguration;
-    results?: ViewResultsConfiguration;
-}
+export type ViewExperienceConfiguration = z.infer<typeof ViewExperienceConfigurationSchema>;
 
 /**
  * A View configuration stored as a project resource.
