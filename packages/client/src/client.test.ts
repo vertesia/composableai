@@ -145,6 +145,37 @@ describe('Test Vertesia Client', () => {
         expect(client.baseUrl).toBe('https://studio-server-production.api.becomposable.com');
         expect(client.storeUrl).toBe('https://zeno-server-production.api.becomposable.com');
     });
+
+    test('pins app version resolution on both Studio and Store requests', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://store.example.com',
+            fetch: vi.fn(
+                async () =>
+                    new Response(JSON.stringify({ facets: { total: 0 }, results: [] }), {
+                        status: 200,
+                        headers: { 'content-type': 'application/json' },
+                    }),
+            ),
+            onRequest: (request) => requests.push(request),
+        });
+
+        expect(client.withAppVersion('20260802T222226463Z')).toBe(client);
+        await client.projects.listAppContentTypes('project-id');
+        await client.objects.search({ query: { type: 'app:rfp-studio:rfp_document' } });
+
+        expect(requests).toHaveLength(2);
+        expect(
+            requests.every((request) => request.headers.get('x-vertesia-app-version') === '20260802T222226463Z'),
+        ).toBe(true);
+
+        client.withAppVersion(null);
+        await client.projects.listAppContentTypes('project-id');
+        await client.objects.search({ query: { type: 'app:rfp-studio:rfp_document' } });
+
+        expect(requests.slice(2).every((request) => !request.headers.has('x-vertesia-app-version'))).toBe(true);
+    });
 });
 
 describe('isTokenExpired', () => {
