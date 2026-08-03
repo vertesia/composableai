@@ -113,12 +113,14 @@ const ToolCallEventSchema = z.strictObject({
     spawnedChildWorkflow: z.boolean().optional(),
 });
 
-export const AgentEventSchema: z.ZodType<AgentEvent> = z.discriminatedUnion('eventType', [
-    AgentRunStartedEventSchema,
-    AgentRunCompletedEventSchema,
-    LlmCallEventSchema,
-    ToolCallEventSchema,
-]);
+export const AgentEventSchema: z.ZodType<AgentEvent> = z
+    .discriminatedUnion('eventType', [
+        AgentRunStartedEventSchema,
+        AgentRunCompletedEventSchema,
+        LlmCallEventSchema,
+        ToolCallEventSchema,
+    ])
+    .meta({ id: 'AgentEvent' });
 
 export const IngestAgentEventsPayloadSchema = z
     .strictObject({

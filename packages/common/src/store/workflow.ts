@@ -15,6 +15,7 @@ import type {
     ChildWorkflowTaskSchema,
     EventErrorSchema,
     ExecuteWorkflowPayloadSchema,
+    ListWorkflowInteractionsResponseSchema,
     ListWorkflowRunsPayloadSchema,
     ListWorkflowRunsResponseSchema,
     PendingActivitySchema,
@@ -23,6 +24,7 @@ import type {
     TimerTaskSchema,
     WorkflowActionResponseSchema,
     WorkflowHistorySchema,
+    WorkflowInteractionVarsSchema,
     WorkflowQueryResultSchema,
     WorkflowRunDetailsQuerySchema,
     WorkflowRunEventSchema,
@@ -34,12 +36,9 @@ import type {
     WorkflowTaskSchema,
     WorkflowUpdatePublishResponseSchema,
 } from '../api-schemas/workflow-runs.js';
-import type { AgentResourceReference, InteractionExecutionConfiguration, UserChannel } from '../interaction.js';
+import type { AgentResourceReference, InteractionExecutionConfiguration } from '../interaction.js';
 import { normalizeAgentResources } from '../interaction.js';
-import type { JSONObject } from '../json.js';
-import type { JSONSchema } from '../json-schema.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
-import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { WorkflowInput } from './dsl-workflow.js';
 
 export enum ContentEventName {
@@ -272,11 +271,7 @@ export type ListWorkflowRunsResponse = z.infer<typeof ListWorkflowRunsResponseSc
 
 export type WorkflowExecutionStartResult = z.infer<typeof WorkflowExecutionStartResultSchema>;
 
-export interface ListWorkflowInteractionsResponse {
-    workflow_id: string;
-    run_id: string;
-    interaction: WorkflowInteractionVars;
-}
+export type ListWorkflowInteractionsResponse = z.infer<typeof ListWorkflowInteractionsResponseSchema>;
 
 export type WorkflowRunUpdatesResponse = z.infer<typeof WorkflowRunUpdatesResponseSchema>;
 
@@ -292,44 +287,7 @@ export type WorkflowActionResponse = z.infer<typeof WorkflowActionResponseSchema
 
 export type WorkflowQueryResult = z.infer<typeof WorkflowQueryResultSchema>;
 
-export interface WorkflowInteractionVars {
-    type: string;
-    interaction: string;
-    interactive: boolean;
-    tool_approval_mode?: AgentToolApprovalMode;
-    debug_mode?: boolean;
-    non_blocking_subagents?: boolean;
-    /**
-     * Array of channels to use for user communication.
-     * Multiple channels can be active simultaneously.
-     */
-    user_channels?: UserChannel[];
-    data?: JSONObject;
-    tool_names: string[];
-    config: {
-        environment: string;
-        model: string;
-        model_options?: ModelOptions;
-    };
-    interactionParamsSchema?: JSONSchema;
-    collection_id?: string;
-    /**
-     * Denylist of MCP tool-collection ids deactivated for this conversation.
-     * `undefined`/empty ⇒ all installed/connected MCP collections are active.
-     */
-    disabled_mcp_collections?: string[];
-    /**
-     * The token threshold in thousands (K) for creating checkpoints.
-     * If total tokens exceed this value, a checkpoint will be created.
-     * If not specified, default value of 150K tokens will be used.
-     */
-    checkpoint_tokens?: number;
-    /**
-     * Optional version of the interaction to use when restoring conversations.
-     * If not specified, the latest version will be used.
-     */
-    version?: number;
-}
+export type WorkflowInteractionVars = z.infer<typeof WorkflowInteractionVarsSchema>;
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, 'config'> {
     config: {

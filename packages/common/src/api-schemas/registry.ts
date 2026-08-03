@@ -1667,6 +1667,7 @@ const AGENT_RUN_SCHEMAS = {
     SearchAgentRunsQuery: AgentRunSchemas.SearchAgentRunsQuerySchema,
     StreamAgentRunQuery: AgentRunSchemas.StreamAgentRunQuerySchema,
     UpdateAgentRunStatusPayload: AgentRunSchemas.UpdateAgentRunStatusPayloadSchema,
+    AgentEvent: AgentRunSchemas.AgentEventSchema,
     IngestAgentEventsPayload: AgentRunSchemas.IngestAgentEventsPayloadSchema,
     IngestAgentEventsResponse: AgentRunSchemas.IngestAgentEventsResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
