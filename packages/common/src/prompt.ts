@@ -11,6 +11,7 @@ import type {
     PromptTemplateInteractionsResponseSchema,
     PromptTemplateInteractionUsageSchema,
     PromptTemplateInteractionVersionSchema,
+    RenderPromptPayloadSchema,
     RenderPromptResponseSchema,
 } from './api-schemas/prompt.js';
 
@@ -81,6 +82,8 @@ export type PromptTemplateInteractionVersion = z.infer<typeof PromptTemplateInte
 export type PromptTemplateInteractionUsage = z.infer<typeof PromptTemplateInteractionUsageSchema>;
 
 export type PromptTemplateInteractionsResponse = z.infer<typeof PromptTemplateInteractionsResponseSchema>;
+
+export type RenderPromptPayload = z.infer<typeof RenderPromptPayloadSchema>;
 
 /**
  * What `POST /prompts/:id/render` answers with: the segment identity plus the rendered body.
