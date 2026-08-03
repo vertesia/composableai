@@ -3351,7 +3351,16 @@ function getValidator(name: ApiComponentName): ValidateFunction {
 }
 
 function formatErrors(validate: ValidateFunction): string[] {
-    return (validate.errors ?? []).map((error) => `${error.instancePath || '/'} ${error.message}`);
+    return (validate.errors ?? []).map((error) => {
+        const where = error.instancePath || '/';
+        // AJV writes "must NOT have additional properties" and puts the offending key in `params`,
+        // so the message alone says a body is wrong without saying which property made it wrong.
+        // Every other keyword names its subject already — `required` quotes the missing property,
+        // `enum` and `type` describe the value in place — and this is the one a caller most often
+        // trips, so it is the one worth spelling out rather than reformatting all of them.
+        const additional = (error.params as { additionalProperty?: string } | undefined)?.additionalProperty;
+        return additional ? `${where} ${error.message}: ${additional}` : `${where} ${error.message}`;
+    });
 }
 
 export type ValidateApiPayloadResult<T> = { valid: true; data: T } | { valid: false; errors: string[] };
