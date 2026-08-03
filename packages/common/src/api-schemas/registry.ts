@@ -3126,52 +3126,6 @@ export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = toOpenA
 });
 
 /**
- * The component `name` would publish if `schema` were the only thing registered.
- *
- * The same two calls {@link ApiSchemaComponents} makes, on one schema, so the comparison is against
- * the real emission path rather than a reimplementation of it.
- *
- * Exported for provenance checking, not for use. A component whose public TypeScript type is
- * `z.infer<typeof XSchema>` is only single-sourced if the component published as `X` is emitted by
- * the schema object that alias's import resolves to. The OpenAPI scanner cannot check that: it reads
- * source text, so it can prove the alias and the variable agree on a spelling and nothing more, and
- * it deliberately stops deriving these types — which is what leaves the usual derived-versus-
- * canonical comparison with nothing to compare. `check:aliases` closes it by emitting each alias's
- * own schema through here. Emission rather than object identity because the members hoisted out of a
- * registered root are published components that never appear in `API_SCHEMAS` at all.
- */
-export function emitCanonicalComponent(name: string, schema: z.ZodType): JsonObject | undefined {
-    const raw = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' });
-    // A schema may deliberately reference an already-canonical neighbour without embedding its
-    // body (AppManifestData.settings_schema -> JSONSchema is the first live case). Supply the
-    // registry as the reference environment while replacing only the root under examination. The
-    // compared root still comes from `schema`; a disagreeing embedded definition still collides and
-    // fails, while a bare canonical pointer can resolve exactly as it does in the published document.
-    const referenceEnvironment = Object.fromEntries(
-        Object.entries(ApiSchemaComponents).filter(([component]) => component !== name),
-    );
-    const produced = new Set(
-        Object.keys(toOpenApiComponents({ [name]: raw }, { referenceComponents: referenceEnvironment })),
-    );
-    const strictComponents = new Set([...STRICT_COMPONENTS].filter((component) => produced.has(component)));
-    const emitted = toOpenApiComponents(
-        { [name]: raw },
-        { strictComponents, referenceComponents: referenceEnvironment },
-    );
-    for (const [component, body] of Object.entries(emitted)) {
-        if (component === name) continue;
-        const published = ApiSchemaComponents[component];
-        if (published && JSON.stringify(body) !== JSON.stringify(published)) {
-            throw new Error(
-                `Component '${component}' is defined twice with different shapes (seen while adapting '${name}'). ` +
-                    'Component names must be globally unique.',
-            );
-        }
-    }
-    return emitted[name];
-}
-
-/**
  * A canonical component as a SELF-CONTAINED JSON Schema, for consumers that compile it directly.
  *
  * The published component `$ref`s its neighbours through `#/components/schemas/...`, which resolves

@@ -119,10 +119,7 @@ export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
 // a recursive type from a getter, but the inference bottoms out at depth — `children` degrades to
 // `Record<string, unknown>[]`, and the composite-app menu code that walks nested items stops
 // compiling. So the named type stays hand-written and `z.ZodType<AppUINavItem>` on the schema is what
-// keeps the two checked against each other. Recorded, with this reason, in `canonical-aliases.json`.
-// Its TSDoc block below is deliberate: this type is still derived by the scanner wherever an
-// unconverted type reaches it, and the derived component has to keep carrying the same description as
-// the canonical one.
+// keeps the two checked against each other. The runtime schema remains the OpenAPI and AJV authority.
 /**
  * Additional navigation item for an app's UI configuration.
  * Used in AppUIConfig.navigation to define sidebar navigation entries in CompositeApp shell contexts.
