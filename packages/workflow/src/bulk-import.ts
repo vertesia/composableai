@@ -108,9 +108,14 @@ export interface PartitionError {
     errorCount: number;
     /** Workflow-level error message if the partition itself failed (vs. per-batch failures). */
     message?: string;
+    category?: BulkImportFailureCategory;
 }
 
+export type BulkImportOutcome = 'completed' | 'partial' | 'failed';
+export type BulkImportFailureCategory = 'item' | 'infrastructure';
+
 export interface BulkImportResult {
+    outcome: BulkImportOutcome;
     totalItems: number;
     processedItems: number;
     createdItems: number;
@@ -126,6 +131,7 @@ export interface BatchError {
     index: number;
     item: SourceItem;
     msg: string;
+    category: BulkImportFailureCategory;
 }
 
 export interface AssembledResults {

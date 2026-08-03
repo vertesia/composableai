@@ -258,6 +258,114 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('Found 5 results')).not.toBeNull();
     });
 
+    it('does not show post-tool thinking while the latest tool is still running', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Find Japan news.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Searching for Japan news',
+                    details: {
+                        tool: 'web_search_serper',
+                        tool_status: 'running',
+                        tool_run_id: 'tool-1',
+                    },
+                }),
+            ],
+            false,
+        );
+
+        expect(screen.getAllByRole('button', { name: /Working.*for/ })).toHaveLength(1);
+        expect(screen.queryByTestId('post-tool-thinking-indicator')).toBeNull();
+    });
+
+    it('shows thinking below the active work group after its latest tool completes', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Find Japan news.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Searching for Japan news',
+                    details: {
+                        tool: 'web_search_serper',
+                        tool_status: 'running',
+                        tool_run_id: 'tool-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    message: 'Found Japan news',
+                    details: {
+                        tool: 'web_search_serper',
+                        tool_status: 'completed',
+                        tool_run_id: 'tool-1',
+                    },
+                }),
+            ],
+            false,
+        );
+
+        expect(screen.queryByRole('button', { name: /Worked\s*for/ })).toBeNull();
+        expect(screen.getAllByRole('button', { name: /Working.*for/ })).toHaveLength(1);
+        expect(screen.getByTestId('post-tool-thinking-indicator').textContent).toBe('Thinking...');
+    });
+
+    it('keeps showing thinking when the current display-role marker follows a completed tool', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Find Japan news.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Searching for Japan news',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'web_search_serper',
+                        tool_status: 'running',
+                        tool_run_id: 'tool-1',
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    message: 'Found Japan news',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'web_search_serper',
+                        tool_status: 'completed',
+                        tool_run_id: 'tool-1',
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    message: 'Thinking...',
+                    details: {
+                        event_class: 'activity',
+                        display_role: 'thinking',
+                        activity_id: '17',
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+            ],
+            false,
+        );
+
+        expect(screen.getAllByRole('button', { name: /Working.*for/ })).toHaveLength(1);
+        expect(screen.getByTestId('post-tool-thinking-indicator').textContent).toBe('Thinking...');
+    });
+
     it('replaces a completed tool’s progress title with an immediately visible resource deep link', () => {
         renderSummary(
             [
@@ -464,6 +572,7 @@ describe('AllMessagesMixed summary view', () => {
                     type: AgentMessageType.REQUEST_INPUT,
                     message: 'Approve Create Document: name News Headlines Today?',
                     details: {
+                        request_id: 'create_document:name:News Headlines Today',
                         tool_approval: {
                             approval_key: 'create_document:name:News Headlines Today',
                             tool_name: 'create_document',
@@ -498,6 +607,9 @@ describe('AllMessagesMixed summary view', () => {
             tool_approval_response: {
                 decision: 'allow_once',
                 approval_key: 'create_document:name:News Headlines Today',
+            },
+            request_input_response: {
+                request_id: 'create_document:name:News Headlines Today',
             },
         });
     });

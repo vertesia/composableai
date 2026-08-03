@@ -17,6 +17,8 @@ export interface EnvProps {
         sts: string; // Security Token Service endpoint
         git?: string; // Smart HTTP app source git endpoint
         mcp?: string;
+        /** Appgen app-gateway endpoint (serves live development previews and app bundles). */
+        gateway?: string;
     };
     firebase?: {
         apiKey: string;

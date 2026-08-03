@@ -5,6 +5,7 @@ import { useRouterContext } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     Bot,
+    Bug,
     ClipboardList,
     CopyIcon,
     DownloadCloudIcon,
@@ -13,7 +14,6 @@ import {
     InfoIcon,
     MessageSquareText,
     MoreVertical,
-    Rewind,
     Rows3,
     XIcon,
 } from 'lucide-react';
@@ -185,7 +185,7 @@ export default function Header({
                         variant === 'compact' && 'size-8 rounded-lg',
                     )}
                 >
-                    <Rewind className={cn('size-4', variant === 'full' && 'me-1.5')} />
+                    <Bug className={cn('size-4', variant === 'full' && 'me-1.5')} />
                     {variant === 'full' ? (
                         <span className="font-medium text-xs">{t('agent.rewind.label')}</span>
                     ) : (

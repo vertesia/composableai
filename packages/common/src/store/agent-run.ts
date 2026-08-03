@@ -22,6 +22,7 @@ import type {
     RunSource,
 } from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
+import type { AgentCheckpointConfiguration } from '../project.js';
 import type { ResourceRef } from '../refs.js';
 import type { AgentEvent } from '../workflow-analytics.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
@@ -366,8 +367,16 @@ export interface CreateAgentRunPayload<TData = Record<string, unknown>, TPropert
     /** User communication channels (email, interactive) */
     user_channels?: UserChannel[];
 
-    /** Token budget for checkpointing */
+    /** Token budget for checkpointing, in thousands (K). Wins over every other checkpoint setting. */
     checkpoint_tokens?: number;
+
+    /**
+     * Structured checkpoint override for this run. Field-wise it takes
+     * precedence over the interaction's `agent_runner_options.checkpoint`
+     * and the project's `configuration.agent.checkpoint`; the legacy
+     * `checkpoint_tokens` above still wins over everything when set.
+     */
+    checkpoint?: AgentCheckpointConfiguration;
 
     /** Maximum conversation iterations (default: 20) */
     max_iterations?: number;

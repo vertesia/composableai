@@ -35,7 +35,7 @@ import {
     AgentResourceResolverProvider,
     isArtifactRefreshEvent,
 } from '@vertesia/ui/widgets';
-import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, Bot, CheckCircle, ChevronDown, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
@@ -65,7 +65,14 @@ import MessageInput, {
     type UploadedFile,
 } from './ModernAgentOutput/MessageInput';
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
-import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputMessages';
+import {
+    clearRequestInputIdAnsweredForSession,
+    getPendingRequestInputMessage,
+    getRequestInputResolutionKey,
+    getRequestInputResponseIdFromMetadata,
+    isRequestInputAnsweredForSession,
+    markRequestInputIdAnsweredForSession,
+} from './ModernAgentOutput/requestInputMessages';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
 import {
@@ -98,6 +105,9 @@ export interface StartWorkflowOptions {
     tool_approval_mode?: AgentToolApprovalMode;
 }
 
+/** Controls whether a persisted message is included in the rendered conversation transcript. */
+export type AgentMessageFilter = (message: AgentMessage) => boolean;
+
 export type StartWorkflowFn = (
     initialMessage?: string,
     options?: StartWorkflowOptions,
@@ -106,6 +116,7 @@ export type StartWorkflowFn = (
 export type SendAgentMessageFn = (message: string, inputMetadata?: Record<string, unknown>) => void;
 
 const EMPTY_STREAMING_MESSAGES = new Map<string, never>();
+const COLLAPSED_STAGED_FILE_COUNT = 3;
 
 function getTimestampMs(timestamp: number | string | undefined): number {
     if (typeof timestamp === 'number') return timestamp;
@@ -137,8 +148,13 @@ function toContextWindowUsage(messages: AgentMessage[]): ContextWindowUsage | un
         const details = messages[index].details;
         if (!details) continue;
 
-        const tokenUsage = details.token_usage as { total?: unknown } | undefined;
-        const usedTokens = getNumberDetail(tokenUsage?.total);
+        const tokenUsage = details.token_usage as { prompt?: unknown; total?: unknown } | undefined;
+        // Mirror the server's checkpoint trigger (getContextPressureTokens):
+        // the last call's prompt size is the actual context; `total` includes
+        // reasoning output that never re-enters context and would overstate
+        // pressure on reasoning models. Fall back to total when no breakdown.
+        const promptTokens = getNumberDetail(tokenUsage?.prompt);
+        const usedTokens = promptTokens && promptTokens > 0 ? promptTokens : getNumberDetail(tokenUsage?.total);
         const checkpointTokens =
             getNumberDetail(details.checkpoint_threshold) ?? getNumberDetail(details.checkpoint_at);
 
@@ -648,6 +664,11 @@ export interface ModernAgentConversationProps {
     hideDocumentPanel?: boolean;
     /** Message types to exclude from the conversation view */
     hiddenMessageTypes?: AgentMessageType[];
+    /**
+     * Optional presentation-only predicate for transcript messages. Returning false hides the message without
+     * changing the underlying conversation stream, workflow state, plans, or pending input.
+     */
+    messageFilter?: AgentMessageFilter;
 
     // Callback to get attached documents when sending messages
     // Returns array of { id, name } to include in message metadata and display
@@ -727,7 +748,7 @@ export interface ModernAgentConversationProps {
     initialToolApprovalMode?: AgentToolApprovalMode;
     /** Force display playback controls on or off. When omitted, local playback can be toggled from the header. */
     enablePlayback?: boolean;
-    /** Show a local toggle for display playback controls in the conversation action rail. */
+    /** Show the Debug button for local playback controls. Defaults to true; set to false to hide it. */
     showPlaybackToggle?: boolean;
 }
 
@@ -817,6 +838,9 @@ function StartWorkflowView({
 
     // Staged files - stored locally until workflow starts
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+    const [areStagedFilesExpanded, setAreStagedFilesExpanded] = useState(false);
+    const visibleStagedFiles = areStagedFilesExpanded ? stagedFiles : stagedFiles.slice(0, COLLAPSED_STAGED_FILE_COUNT);
+    const hiddenStagedFileCount = stagedFiles.length - COLLAPSED_STAGED_FILE_COUNT;
 
     useEffect(() => {
         onAgentWorkingChange?.(isSending);
@@ -913,6 +937,12 @@ function StartWorkflowView({
     const removeStagedFile = useCallback((index: number) => {
         setStagedFiles((prev) => prev.filter((_, i) => i !== index));
     }, []);
+
+    useEffect(() => {
+        if (stagedFiles.length <= COLLAPSED_STAGED_FILE_COUNT) {
+            setAreStagedFilesExpanded(false);
+        }
+    }, [stagedFiles.length]);
 
     useEffect(() => {
         // Focus the input field when component mounts
@@ -1208,7 +1238,7 @@ function StartWorkflowView({
                         {/* Staged files display */}
                         {canStageFiles && stagedFiles.length > 0 && (
                             <div className="flex flex-wrap gap-2">
-                                {stagedFiles.map((file, index) => (
+                                {visibleStagedFiles.map((file, index) => (
                                     <div
                                         key={`${file.name}-${file.size}-${file.lastModified}`}
                                         className="flex items-center gap-1.5 rounded-md bg-attention/10 px-2 py-1 text-sm text-attention"
@@ -1227,6 +1257,26 @@ function StartWorkflowView({
                                         </Button>
                                     </div>
                                 ))}
+                                {stagedFiles.length > COLLAPSED_STAGED_FILE_COUNT && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        aria-expanded={areStagedFilesExpanded}
+                                        onClick={() => setAreStagedFilesExpanded((expanded) => !expanded)}
+                                        className="h-8 shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted"
+                                    >
+                                        {!areStagedFilesExpanded && <span>+{hiddenStagedFileCount}</span>}
+                                        {areStagedFilesExpanded ? t('agent.showLess') : t('agent.showMore')}
+                                        <ChevronDown
+                                            className={cn(
+                                                'size-3.5 transition-transform',
+                                                areStagedFilesExpanded && 'rotate-180',
+                                            )}
+                                            aria-hidden="true"
+                                        />
+                                    </Button>
+                                )}
                             </div>
                         )}
 
@@ -1392,6 +1442,7 @@ function ModernAgentConversationInner({
     initialToolApprovalMode,
     enablePlayback,
     showPlaybackToggle = true,
+    messageFilter,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -1621,13 +1672,16 @@ function ModernAgentConversationInner({
 
     const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
     const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
-    const playbackSourceMessages = useMemo(() => {
+    const transcriptSourceMessages = useMemo(() => {
         // Passive artifact autosaves are surfaced by the editor's own save indicator, not the chat.
-        const visibleMessages = messages.filter(
+        return messages.filter(
             (message) => !isPassiveArtifactUpdate(message) && !(hiddenMessageTypes?.includes(message.type) ?? false),
         );
-        return filterMessagesForActiveWorkstream(visibleMessages, activeWorkstream);
-    }, [activeWorkstream, hiddenMessageTypes, messages]);
+    }, [hiddenMessageTypes, messages]);
+    const playbackSourceMessages = useMemo(
+        () => filterMessagesForActiveWorkstream(transcriptSourceMessages, activeWorkstream),
+        [activeWorkstream, transcriptSourceMessages],
+    );
     const playbackState = useMemo(
         () => createPlaybackState(playbackSourceMessages, playbackCursor, isPlaybackEnabled),
         [isPlaybackEnabled, playbackCursor, playbackSourceMessages],
@@ -1637,6 +1691,17 @@ function ModernAgentConversationInner({
     const isPlaybackAtLatest =
         isPlaybackEnabled && !isPlaybackLive && playbackState.cursorIndex === playbackSourceMessages.length - 1;
     const displayedMessages = playbackState.displayedMessages;
+    const renderedMessages = useMemo(
+        () => (messageFilter ? displayedMessages.filter((message) => messageFilter(message)) : displayedMessages),
+        [displayedMessages, messageFilter],
+    );
+    const renderedWorkstreamSourceMessages = useMemo(
+        () =>
+            messageFilter
+                ? transcriptSourceMessages.filter((message) => messageFilter(message))
+                : transcriptSourceMessages,
+        [messageFilter, transcriptSourceMessages],
+    );
     const displayedStreamingMessages = isPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
     const playbackDerivedWorkstreams = useMemo(
         () => deriveWorkstreamsFromMessages(displayedMessages),
@@ -1653,10 +1718,15 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
     }, [isAgentWorking, onAgentWorkingChange]);
-    const pendingRequestInputMessage = useMemo(
-        () => getPendingRequestInputMessage(displayedMessages),
-        [displayedMessages],
-    );
+    const pendingRequestInputMessage = useMemo(() => {
+        const answeredRequestInputKeys = new Set<string>();
+        for (const message of displayedMessages) {
+            if (isRequestInputAnsweredForSession(agentRunId, message)) {
+                answeredRequestInputKeys.add(getRequestInputResolutionKey(message));
+            }
+        }
+        return getPendingRequestInputMessage(displayedMessages, 'main', answeredRequestInputKeys);
+    }, [agentRunId, displayedMessages]);
     // A terminal run silently drops user input unless it can be continued (see the guard in
     // handleSendMessage), so never surface an actionable question overlay in that state —
     // the terminal status box renders instead.
@@ -1675,7 +1745,7 @@ function ModernAgentConversationInner({
             agentRunId,
             messageCount: messages.length,
             playbackMessageCount: playbackSourceMessages.length,
-            displayedMessageCount: displayedMessages.length,
+            displayedMessageCount: renderedMessages.length,
             streamingCount: streamingMessages.size,
             displayedStreamingCount: displayedStreamingMessages.size,
             initialHistoryStatus,
@@ -1699,7 +1769,7 @@ function ModernAgentConversationInner({
         agentRunStatus,
         clampedPlaybackCursor,
         displayedIsCompleted,
-        displayedMessages.length,
+        renderedMessages.length,
         displayedStreamingMessages.size,
         effectiveIsCompleted,
         effectiveWorkflowStatus,
@@ -2078,6 +2148,7 @@ function ModernAgentConversationInner({
                 return;
             }
 
+            const requestInputId = getRequestInputResponseIdFromMetadata(inputMetadata);
             setIsSending(true);
 
             const attachedDocs = getAttachedDocs?.() || [];
@@ -2120,6 +2191,9 @@ function ModernAgentConversationInner({
                     _messageId: messageId,
                     _deliveryStatus: 'sending',
                     ...(inputMetadata?.editing_action ? { editing_action: inputMetadata.editing_action } : {}),
+                    ...(inputMetadata?.request_input_response
+                        ? { request_input_response: inputMetadata.request_input_response }
+                        : {}),
                 },
             };
 
@@ -2151,6 +2225,9 @@ function ModernAgentConversationInner({
             // buffers the signal until the new run is ready to receive it. We reconnect
             // the stream in place (rather than remounting via onRestart) so the existing
             // timeline is preserved and the new exchange appends seamlessly at the bottom.
+            if (requestInputId) {
+                markRequestInputIdAnsweredForSession(agentRunId, requestInputId);
+            }
             const deliver = (async () => {
                 await waitForPendingToolApprovalModeChange();
                 if (isWorkflowTerminalRef.current) {
@@ -2163,6 +2240,9 @@ function ModernAgentConversationInner({
 
             deliver
                 .catch((err) => {
+                    if (requestInputId) {
+                        clearRequestInputIdAnsweredForSession(agentRunId, requestInputId);
+                    }
                     updateOptimisticMessageStatus(messageId, 'failed');
                     toast({
                         status: 'error',
@@ -2202,7 +2282,7 @@ function ModernAgentConversationInner({
     // conversation for tool re-discovery and resume it with a confirmation message so the agent
     // continues automatically with the newly-available tools.
     const handleMcpConnected = useCallback(
-        async (cfg: McpConnectUxConfig) => {
+        async (cfg: McpConnectUxConfig, metadata?: Record<string, unknown>) => {
             // Await the dirty-flag signal BEFORE sending the follow-up message so Temporal records
             // McpConfigChanged ahead of the UserInput. Otherwise the resume turn could run before
             // the flag is set and use the stale tool catalog. An omitted disabled list preserves
@@ -2212,7 +2292,7 @@ function ModernAgentConversationInner({
             } catch (err: unknown) {
                 console.error('Failed to signal MCP config change', err);
             }
-            handleSendMessage(t('agent.mcpConnectedMessage', { name: cfg.name }));
+            handleSendMessage(t('agent.mcpConnectedMessage', { name: cfg.name }), metadata);
         },
         [client, agentRunId, handleSendMessage, t],
     );
@@ -2594,7 +2674,7 @@ function ModernAgentConversationInner({
             data-agent-playback-enabled={isPlaybackEnabled || undefined}
             data-agent-playback-cursor={isPlaybackEnabled ? clampedPlaybackCursor : undefined}
             data-agent-live-message-count={messages.length}
-            data-agent-rendered-message-count={displayedMessages.length}
+            data-agent-rendered-message-count={renderedMessages.length}
             className={cn(
                 'flex flex-col min-h-0 min-w-0 border-0',
                 conversationTab
@@ -2629,8 +2709,8 @@ function ModernAgentConversationInner({
                 <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
             ) : (
                 <AllMessagesMixed
-                    messages={displayedMessages}
-                    workstreamSourceMessages={messages}
+                    messages={renderedMessages}
+                    workstreamSourceMessages={renderedWorkstreamSourceMessages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                     isCompleted={displayedIsCompleted}
                     plan={getActivePlan.plan}
@@ -2681,7 +2761,10 @@ function ModernAgentConversationInner({
                 />
             ) : isViewingPlaybackHistory && playbackActiveWorkstreams.length > 0 ? (
                 <div className="flex-shrink-0 pb-safe-area">
-                    <ActiveWorkstreamsSummary activeWorkstreams={playbackActiveWorkstreams} />
+                    <ActiveWorkstreamsSummary
+                        activeWorkstreams={playbackActiveWorkstreams}
+                        onSelectWorkstream={setActiveWorkstream}
+                    />
                 </div>
             ) : (
                 shouldRenderLiveMessageInputArea && (
@@ -2749,6 +2832,7 @@ function ModernAgentConversationInner({
                                         isCompactingContext={isCompactingContext}
                                         activeTaskCount={activeTaskCount}
                                         activeWorkstreams={composerActiveWorkstreams}
+                                        onSelectWorkstream={setActiveWorkstream}
                                         placeholder={composerPlaceholder}
                                         onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                         uploadedFiles={uploadedFiles}

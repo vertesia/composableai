@@ -368,6 +368,35 @@ export interface ProjectIntakeConfiguration {
     default_content_type?: string;
 }
 
+/**
+ * Agent runtime configuration, scoped under project configuration so agent
+ * settings have one home (`configuration.agent`).
+ */
+export interface AgentProjectConfiguration {
+    /** Conversation checkpoint (context compaction) tuning. */
+    checkpoint?: AgentCheckpointConfiguration;
+}
+
+export interface AgentCheckpointConfiguration {
+    /**
+     * Fraction of the model's context window to use before the conversation is
+     * summarized and compacted (0-1, e.g. 0.95). Model-independent: applies to
+     * whatever model each run uses. Setting it replaces the default hard cap —
+     * a project asking for 0.95 of a 1M-window model checkpoints at 950k.
+     * Clamped at runtime to 0.95 so the prompt still fits.
+     */
+    context_threshold?: number;
+
+    /**
+     * Absolute hard cap in tokens, regardless of the window fraction. Alone it
+     * acts as the threshold; combined with context_threshold the lower of the
+     * two wins. Clamped at runtime to 95% of the model's window. Unset means
+     * the default cap (500k), or no cap beyond the 95% clamp when
+     * context_threshold is set.
+     */
+    max_tokens?: number;
+}
+
 export interface ProjectConfiguration {
     human_context?: string;
 
@@ -392,6 +421,11 @@ export interface ProjectConfiguration {
      * Defaults to true if not specified.
      */
     agent_streaming_enabled?: boolean;
+
+    /**
+     * Agent runtime configuration for this project.
+     */
+    agent?: AgentProjectConfiguration;
 
     /**
      * Indexing configuration for this project.
