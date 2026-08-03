@@ -82,9 +82,8 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         // `InteractionExecutionConfiguration.model_options`, which is `ModelOptions` — the union of
         // every llumiverse driver's options — and a canonical component may not `$ref` a
         // TypeScript-derived one. So `ModelOptions` converted first, then the intake policy tree,
-        // then the configuration leaves, and only then the two components at the top. Asserting the
-        // whole chain is what keeps a later batch from converting a root out from under a derived
-        // leaf and silently publishing a `$ref` to something that is no longer there.
+        // The registry owns the whole reference closure. Asserting the chain prevents a schema
+        // group edit from leaving a published `$ref` without its component.
         for (const name of [
             'ModelOptions',
             'InteractionExecutionConfiguration',
@@ -97,11 +96,7 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         }
     });
 
-    it('names the two update payloads, which the scanner can no longer derive', () => {
-        // `apiSchema<Partial<Project>>()` worked while `Project` was a TypeScript interface. An
-        // intercepted canonical alias is OPAQUE to the generator, so `Partial<>` over one cannot be
-        // expanded — it collapses to `{}`, an empty schema that accepts anything, without an error.
-        // Registering them is what keeps the request bodies described AND makes them enforced.
+    it('publishes dedicated, optional update projections', () => {
         for (const name of ['UpdateProjectPayload', 'UpdateProjectConfigurationPayload']) {
             expect(Object.keys(ApiSchemaComponents), name).toContain(name);
         }

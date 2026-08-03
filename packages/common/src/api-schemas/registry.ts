@@ -3243,18 +3243,12 @@ export type ApiComponentType<N extends ApiComponentName> = N extends keyof ZenoR
     : z.infer<ApiSchemaMap[N]>;
 
 /**
- * Names a published component from inside an `@apiDoc` slot:
- * `apiOk<ApiSchemaOf<'Account'>>('The account.')`.
+ * Names a published component from inside a handler signature:
+ * `Promise<ApiSchemaOf<'Account'>>`.
  *
  * It is `ApiComponentType` under a different name, and the rename carries the whole point. To
- * TypeScript it is the wire type, so the handler's return type is checked against the same schema
- * the spec publishes. To the OpenAPI scanner it is a marker: seeing `ApiSchemaOf<'X'>` it emits
- * `#/components/schemas/X` verbatim from {@link ApiSchemaComponents} instead of deriving a schema
- * from the TypeScript type. Derivation is what the two could disagree about, so there is nothing
- * left to drift.
- *
- * The component name must be a literal — the scanner reads source text and cannot evaluate an
- * expression. An unknown name fails the type check here and fails spec generation there.
+ * TypeScript it is the wire type, so the handler's return type is checked against the same registry
+ * component that `apiOkComponent('Account')` publishes and AJV enforces.
  */
 export type ApiSchemaOf<N extends ApiComponentName> = ApiComponentType<N>;
 
