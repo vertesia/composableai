@@ -14,11 +14,14 @@ import {
 } from './interaction.js';
 import { nullableStringSchema } from './schema-primitives.js';
 
-export const nd_restart_count_numberSchema = z
+export const RestartAgentRunPayloadSchema = z
     .strictObject({
         nd_restart_count: z.number().optional(),
     })
-    .meta({ id: 'nd_restart_count_number' });
+    .meta({
+        id: 'RestartAgentRunPayload',
+        description: 'Optional restart options. `POST /agents/:id/restart` accepts no body at all.',
+    });
 
 export const TaskType_TIMERSchema = z.literal('timer').meta({ id: 'TaskType_TIMER' });
 

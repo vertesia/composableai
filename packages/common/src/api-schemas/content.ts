@@ -292,29 +292,49 @@ export const DeleteContentObjectExportResponseSchema = z
 
 export const EmbeddingMapSchema = z.object({}).catchall(EmbeddingSchema).meta({ id: 'EmbeddingMap' });
 
+/**
+ * Everything a collection write accepts beyond its identity. Shared so the update payload below is
+ * the create payload with `name` and `dynamic` relaxed, and cannot drift from it.
+ *
+ * Spread rather than `.partial()`: Zod clones a schema's registry metadata, so a derived component
+ * keeps emitting under the base's `id` and collides with it in the published document.
+ */
+const collectionPayloadFields = {
+    description: z.string().optional(),
+    skip_head_sync: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+    type: nullableStringSchema.optional(),
+    query: z.looseObject({}).optional(),
+    properties: z.looseObject({}).optional(),
+    parent: nullableStringSchema.optional(),
+    table_layout: z
+        .array(ColumnLayoutSchema)
+        .nullable()
+        .meta({ anyOf: undefined, type: ['array', 'null'], items: { $ref: 'ColumnLayout' } })
+        .optional(),
+    allowed_types: z.array(z.string()).optional(),
+    updated_by: z.string().optional(),
+    shared_properties: z.array(z.string()).optional(),
+    sensitivity: z.number().meta({ description: 'BLP sensitivity level for member documents' }).optional(),
+    compartments: z.array(z.string()).meta({ description: 'Compartments for member documents' }).optional(),
+};
+
 export const CreateCollectionPayloadSchema = z
-    .strictObject({
-        name: z.string(),
-        dynamic: z.boolean(),
-        description: z.string().optional(),
-        skip_head_sync: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-        type: nullableStringSchema.optional(),
-        query: z.looseObject({}).optional(),
-        properties: z.looseObject({}).optional(),
-        parent: nullableStringSchema.optional(),
-        table_layout: z
-            .array(ColumnLayoutSchema)
-            .nullable()
-            .meta({ anyOf: undefined, type: ['array', 'null'], items: { $ref: 'ColumnLayout' } })
-            .optional(),
-        allowed_types: z.array(z.string()).optional(),
-        updated_by: z.string().optional(),
-        shared_properties: z.array(z.string()).optional(),
-        sensitivity: z.number().meta({ description: 'BLP sensitivity level for member documents' }).optional(),
-        compartments: z.array(z.string()).meta({ description: 'Compartments for member documents' }).optional(),
-    })
+    .strictObject({ ...collectionPayloadFields, name: z.string(), dynamic: z.boolean() })
     .meta({ id: 'CreateCollectionPayload' });
+
+/**
+ * `PUT /collections/:id` applies whatever fields the body carries. It is not the create payload:
+ * naming that one demanded `name` and `dynamic` on every edit, so changing a single property — which
+ * is what the UI and the ABAC tests do — was rejected.
+ */
+export const UpdateCollectionPayloadSchema = z
+    .strictObject({
+        ...collectionPayloadFields,
+        name: z.string().optional(),
+        dynamic: z.boolean().optional(),
+    })
+    .meta({ id: 'UpdateCollectionPayload', description: 'Fields to change on a collection. All optional.' });
 
 export const FindPayloadSchema = z
     .strictObject({

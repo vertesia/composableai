@@ -1542,6 +1542,7 @@ const EVENT_SUBSCRIPTION_SCHEMAS = {
     WorkflowRuleItem: EventSchemas.WorkflowRuleItemSchema,
     WorkflowRule: EventSchemas.WorkflowRuleSchema,
     CreateWorkflowRulePayload: EventSchemas.CreateWorkflowRulePayloadSchema,
+    UpdateWorkflowRulePayload: EventSchemas.UpdateWorkflowRulePayloadSchema,
     ListEventDeliveriesPayload: EventSchemas.ListEventDeliveriesPayloadSchema,
     WorkflowRuleItemArray: EventSchemas.WorkflowRuleItemArraySchema,
     EventSubscriptionFilter: EventSchemas.EventSubscriptionFilterSchema,
@@ -1625,6 +1626,7 @@ const COLLECTION_SCHEMAS = {
     CollectionStatus: ContentSchemas.CollectionStatusSchema,
     CollectionPropagationResponse: ContentSchemas.CollectionPropagationResponseSchema,
     CreateCollectionPayload: ContentSchemas.CreateCollectionPayloadSchema,
+    UpdateCollectionPayload: ContentSchemas.UpdateCollectionPayloadSchema,
     ComplexCollectionSearchQuery: ContentSchemas.ComplexCollectionSearchQuerySchema,
     Collection: ContentSchemas.CollectionSchema,
     ComputeCollectionFacetPayload: ContentSchemas.ComputeCollectionFacetPayloadSchema,
@@ -1709,7 +1711,7 @@ const WORKFLOW_RUN_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const WORKFLOW_TASK_SCHEMAS = {
-    nd_restart_count_number: WorkflowRunSchemas.nd_restart_count_numberSchema,
+    RestartAgentRunPayload: WorkflowRunSchemas.RestartAgentRunPayloadSchema,
     TaskType_TIMER: WorkflowRunSchemas.TaskType_TIMERSchema,
     TaskType_SIGNAL: WorkflowRunSchemas.TaskType_SIGNALSchema,
     TaskType_CHILD_WORKFLOW: WorkflowRunSchemas.TaskType_CHILD_WORKFLOWSchema,
@@ -2561,7 +2563,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'EventRef',
     'RevertProcessDefinitionPayload',
     'RetryProcessNodePayload',
-    'nd_restart_count_number',
+    'RestartAgentRunPayload',
     'PublishProcessDefinitionPayload',
     'CollectionPropagationResponse',
     'ViewSortClause',

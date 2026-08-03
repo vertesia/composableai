@@ -259,39 +259,60 @@ export const WorkflowRuleSchema = z
     })
     .meta({ id: 'WorkflowRule' });
 
+/**
+ * Everything a workflow-rule write accepts beyond `endpoint` and `name`. Shared so the update
+ * payload below cannot drift from the create payload; spread rather than `.partial()`, because Zod
+ * clones a schema's registry metadata and a derived component would collide with its base.
+ */
+const workflowRulePayloadFields = {
+    match: z.looseObject({}).optional(),
+    config: z.looseObject({}).meta({ description: 'Activities configuration if any.' }).optional(),
+    debug: z.boolean().meta({ description: 'Debug mode for the rule', default: false }).optional(),
+    customer_override: z
+        .boolean()
+        .meta({
+            description: 'Customer override for the rule When set to true the rule will not be updated by the system',
+        })
+        .optional(),
+    task_queue: z
+        .string()
+        .meta({ description: 'Optional task queue name to use when starting workflows for this rule' })
+        .optional(),
+    event_subscription_migration_status: z
+        .enum(['migrated', 'unsupported_match', 'failed'])
+        .meta({ description: 'Event subscription migration status for legacy workflow-rule cutover.' })
+        .optional(),
+    event_subscription_migration_error: z
+        .string()
+        .meta({ description: 'Migration failure or unsupported-match reason, when applicable.' })
+        .optional(),
+    input_type: WorkflowRuleInputTypeSchema.optional(),
+    description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
+    tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+    updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }).optional(),
+    created_by: z.string().meta({ description: 'Identifier of the user who created the object' }).optional(),
+};
+
 export const CreateWorkflowRulePayloadSchema = z
     .strictObject({
-        match: z.looseObject({}).optional(),
-        config: z.looseObject({}).meta({ description: 'Activities configuration if any.' }).optional(),
-        debug: z.boolean().meta({ description: 'Debug mode for the rule', default: false }).optional(),
-        customer_override: z
-            .boolean()
-            .meta({
-                description:
-                    'Customer override for the rule When set to true the rule will not be updated by the system',
-            })
-            .optional(),
-        task_queue: z
-            .string()
-            .meta({ description: 'Optional task queue name to use when starting workflows for this rule' })
-            .optional(),
-        event_subscription_migration_status: z
-            .enum(['migrated', 'unsupported_match', 'failed'])
-            .meta({ description: 'Event subscription migration status for legacy workflow-rule cutover.' })
-            .optional(),
-        event_subscription_migration_error: z
-            .string()
-            .meta({ description: 'Migration failure or unsupported-match reason, when applicable.' })
-            .optional(),
+        ...workflowRulePayloadFields,
         endpoint: z.string(),
-        input_type: WorkflowRuleInputTypeSchema.optional(),
         name: z.string().meta({ description: 'Human-readable name or title' }),
-        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
-        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
-        updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }).optional(),
-        created_by: z.string().meta({ description: 'Identifier of the user who created the object' }).optional(),
     })
     .meta({ id: 'CreateWorkflowRulePayload' });
+
+/**
+ * `PUT /workflows/rules/:id` applies whatever fields the body carries. The create payload's required
+ * `endpoint` and `name` would force every edit to restate them — the same defect the collection
+ * update had, caught here by inspection rather than by a test.
+ */
+export const UpdateWorkflowRulePayloadSchema = z
+    .strictObject({
+        ...workflowRulePayloadFields,
+        endpoint: z.string().optional(),
+        name: z.string().meta({ description: 'Human-readable name or title' }).optional(),
+    })
+    .meta({ id: 'UpdateWorkflowRulePayload', description: 'Fields to change on a workflow rule. All optional.' });
 
 export const AgentEventDeliveryTargetSchema = z
     .strictObject({

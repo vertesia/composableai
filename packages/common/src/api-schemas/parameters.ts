@@ -222,12 +222,13 @@ function coerceScalar(text: string, target: ParameterTarget): unknown {
             return Number.isFinite(value) ? value : text;
         }
         case 'boolean':
-            // Only the two spellings a JSON Schema `boolean` can hold, and the two the client SDK
-            // emits (`String(true)`). `'1'`, `'yes'` and a bare `?flag=` are left as text and rejected
-            // — the existing `=== 'true'` handlers read all three as FALSE, so accepting them here
-            // would have to invent which one the parameter meant.
-            if (text === 'true') return true;
-            if (text === 'false') return false;
+            // The two spellings a JSON Schema `boolean` can hold, plus the numeric pair. `'1'` is not
+            // an invention: the client SDK emits it (`getArtifactUrl` sends `url=1`) and the endpoint
+            // descriptions document it, so rejecting it would reject our own published usage. `'yes'`
+            // and a bare `?flag=` stay text and are rejected by the component — those really would be
+            // guesses about what the caller meant.
+            if (text === 'true' || text === '1') return true;
+            if (text === 'false' || text === '0') return false;
             return text;
         default:
             return text;
