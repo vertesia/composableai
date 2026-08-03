@@ -9,10 +9,9 @@ import type {
     OnboardingProgress,
     ProjectRef,
     StripeBillingStatusResponse,
-    TransientToken,
     UpdateAccountPayload,
     User,
-    UserInviteTokenData,
+    UserInviteToken,
 } from '@vertesia/common';
 
 export default class AccountApi extends ApiTopic {
@@ -56,17 +55,20 @@ export default class AccountApi extends ApiTopic {
 
     /**
      * Fetch Invites for Principal
-     * @returns UserInviteTokenData[]
-     * */
-    listInvites(): Promise<TransientToken<UserInviteTokenData>[]> {
+     *
+     * Returns `UserInviteToken[]`, not `TransientToken<UserInviteTokenData>[]`. The latter declared
+     * `Date` for `expires`, `created_at` and `updated_at`, which no HTTP response can carry — the
+     * client hands back whatever `JSON.parse` produced, so those three were always strings. It now
+     * says so.
+     */
+    listInvites(): Promise<UserInviteToken[]> {
         return this.get('/invites');
     }
     /**
      * Fetch Invites for specific account or project
      * @param type Filter for the type of invitation, either "project" or "account"
-     * @returns UserInviteTokenData[]
-     * */
-    listInvitation(type: 'project' | 'account' = 'project'): Promise<TransientToken<UserInviteTokenData>[]> {
+     */
+    listInvitation(type: 'project' | 'account' = 'project'): Promise<UserInviteToken[]> {
         return this.get(`/invites/${type}`);
     }
 

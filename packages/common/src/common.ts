@@ -1,90 +1,69 @@
+import type { z } from 'zod';
+import type { DeleteOperationResultSchema } from './api-schemas/apikey.js';
+import type {
+    BulkObjectCreateResultSchema,
+    BulkObjectDeleteResultSchema,
+    BulkObjectUpdateResultSchema,
+    BulkOperationPayloadSchema,
+    BulkOperationResponseSchema,
+    BulkOperationResultSchema,
+} from './api-schemas/bulk-operation.js';
+import type { DeleteCountResultSchema, GenericCommandResponseSchema } from './api-schemas/commands.js';
+import type { FindPayloadSchema } from './api-schemas/content.js';
+import type { SuccessResponseSchema } from './api-schemas/oauth.js';
+import type { CountResultSchema } from './api-schemas/project.js';
+import type { DeleteByIdResultSchema } from './api-schemas/user.js';
 import type { ContentObjectProcessingPriority } from './store/store.js';
 
-export interface FindPayload {
-    query: Record<string, unknown>;
-    offset?: number;
-    limit?: number;
-    select?: string;
-    all_revisions?: boolean;
-    from_root?: string;
-}
+export type FindPayload = z.infer<typeof FindPayloadSchema>;
 
-export interface GenericCommandResponse {
-    status: string;
-    message: string;
-    err?: unknown;
-    details?: unknown;
-}
+export type GenericCommandResponse = z.infer<typeof GenericCommandResponseSchema>;
 
-export interface DeleteByIdResult {
-    id: string;
-}
+/**
+ * Derived from `DeleteByIdResultSchema`. Shared by eight studio delete endpoints; only `DeleteUser`
+ * publishes it canonically so far, and the generator fails the build if the canonical and derived
+ * definitions ever differ.
+ */
+export type DeleteByIdResult = z.infer<typeof DeleteByIdResultSchema>;
 
-export interface DeleteCountResult {
-    id: string;
-    count: number;
-}
+export type DeleteCountResult = z.infer<typeof DeleteCountResultSchema>;
 
-export interface SuccessResponse {
-    success: true;
-}
+/**
+ * The success acknowledgement the OAuth provider and client endpoints return, inferred from
+ * `./api-schemas/oauth.js`.
+ *
+ * `success: boolean`, not `success: true`, which is what the document has always published — the
+ * scanner widened the literal on its way out. The handlers still only ever return `true`; the type
+ * now says what a client can be sent rather than what our five handlers happen to send.
+ */
+export type SuccessResponse = z.infer<typeof SuccessResponseSchema>;
 
-export interface DeleteOperationResult {
-    acknowledged: boolean;
-    deletedCount: number;
-}
+/**
+ * The raw Mongo delete acknowledgement, inferred from `./api-schemas/apikey.js`.
+ *
+ * One slot returns it (`DeleteApiKey`), so unlike {@link CountResult} it did not have to move as a
+ * group — it is here rather than in an apikey module because `./common.js` is where the shared
+ * result shapes live.
+ */
+export type DeleteOperationResult = z.infer<typeof DeleteOperationResultSchema>;
 
-export interface CountResult {
-    count: number;
-}
+/**
+ * How many rows an operation touched, inferred from `./api-schemas/project.js`.
+ *
+ * The module that owns it is named for the batch that converted it, not for the only resource that
+ * uses it: four slots across three resources and two services return this.
+ */
+export type CountResult = z.infer<typeof CountResultSchema>;
 
-export interface BulkOperationPayload {
-    /**
-     * The operation name
-     */
-    name: 'change_type' | 'create' | 'delete' | 'start_workflow' | 'update';
+export type BulkOperationPayload = z.infer<typeof BulkOperationPayloadSchema>;
 
-    /**
-     * The IDs of the objects to operate on
-     */
-    ids: string[];
+export type BulkOperationResult = z.infer<typeof BulkOperationResultSchema>;
 
-    /**
-     * The operation parameters.
-     */
-    params: Record<string, unknown>;
-}
+export type BulkObjectDeleteResult = z.infer<typeof BulkObjectDeleteResultSchema>;
 
-export interface BulkOperationResult<TOperation extends string = 'generic'> {
-    operation: TOperation;
-    status: 'in_progress' | 'completed' | 'failed';
-}
+export type BulkObjectUpdateResult = z.infer<typeof BulkObjectUpdateResultSchema>;
 
-export interface BulkObjectDeleteResult extends BulkOperationResult<'delete'> {
-    operation: 'delete';
-    /** Number of documents deleted (including revisions) */
-    deleted: number;
-    /** IDs that were not found or user had no permission to delete */
-    failed: string[];
-}
-
-export interface BulkObjectUpdateResult extends BulkOperationResult<'update'> {
-    operation: 'update';
-    /** Number of documents successfully updated */
-    updated: number;
-    /** IDs that were not found, not authorized, or failed to update */
-    failed: string[];
-}
-
-export interface BulkObjectCreateResult extends BulkOperationResult<'create'> {
-    operation: 'create';
-    /** Number of documents successfully created */
-    created: number;
-    /** Successfully created objects with their IDs */
-    objects: { id: string; index?: number; external_id?: string }[];
-    /** Objects that failed to create */
-    failed: { external_id?: string; index: number; error: string }[];
-}
+export type BulkObjectCreateResult = z.infer<typeof BulkObjectCreateResultSchema>;
 
 export interface BulkObjectCreateOptions {
     collection_id?: string;
@@ -101,11 +80,4 @@ export interface BulkObjectUpdateOptions {
     idempotency_key?: string;
 }
 
-/**
- * @discriminator operation
- */
-export type BulkOperationResponse =
-    | BulkOperationResult
-    | BulkObjectCreateResult
-    | BulkObjectUpdateResult
-    | BulkObjectDeleteResult;
+export type BulkOperationResponse = z.infer<typeof BulkOperationResponseSchema>;

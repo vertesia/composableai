@@ -103,7 +103,7 @@ export function ConversationsListStateProvider({ children }: ProviderProps) {
             const backendSort: 'started_at' | 'updated_at' | undefined =
                 sortField === 'started' ? 'started_at' : undefined;
             const response = await client.agents.list({
-                ...(statusValues.length === 1 ? { status: statusValues[0] } : {}),
+                ...(statusValues.length ? { status: statusValues } : {}),
                 ...(agentValues.length === 1 ? { interaction: agentValues[0] } : {}),
                 ...(backendSort ? { sort: backendSort, order: sortDir } : {}),
                 limit: PAGE_SIZE,

@@ -13,6 +13,10 @@ import {
 } from './ArtifactEditingSurface.js';
 import type { MarkdownEditingAction } from './CollaborativeMarkdownRenderer.js';
 
+// Document mode is loaded through React.lazy(). CI transforms many test files concurrently, so the
+// first document-mode test can legitimately take longer than Testing Library's one-second default.
+const LAZY_EDITOR_WAIT = { timeout: 5_000 } as const;
+
 const mocks = vi.hoisted(() => {
     const getArtifactContent = vi.fn();
     const updateArtifactContent = vi.fn();
@@ -151,7 +155,7 @@ describe('ArtifactEditingSurface', () => {
         const user = userEvent.setup();
         renderSurface({ viewMode: 'document' });
 
-        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' }, LAZY_EDITOR_WAIT);
         await user.click(editor);
         await user.type(editor, ' revised');
 
@@ -174,7 +178,7 @@ describe('ArtifactEditingSurface', () => {
             onSendMessage: vi.fn(),
         });
 
-        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' }, LAZY_EDITOR_WAIT);
         expect(editor.getAttribute('contenteditable')).toBe('false');
         expect(screen.queryByRole('button', { name: 'Comment on selection' })).toBeNull();
     });
@@ -188,7 +192,7 @@ describe('ArtifactEditingSurface', () => {
             toolbarStatus: <span>AI is editing</span>,
         });
 
-        const button = await screen.findByRole('button', { name: 'Send changes to agent' });
+        const button = await screen.findByRole('button', { name: 'Send changes to agent' }, LAZY_EDITOR_WAIT);
         expect(screen.getByRole('toolbar').contains(button)).toBe(true);
         expect(button.previousElementSibling?.textContent).toBe('AI is editing');
         expect(button).toHaveProperty('disabled', false);
@@ -203,7 +207,7 @@ describe('ArtifactEditingSurface', () => {
         > = { current: null };
         renderSurface({ viewMode: 'document', flushChangesRef });
 
-        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' }, LAZY_EDITOR_WAIT);
         await user.click(editor);
         await user.type(editor, ' immediate');
 
@@ -228,7 +232,7 @@ describe('ArtifactEditingSurface', () => {
         });
         const view = renderSurface({ viewMode: 'document' });
 
-        fireEvent.click(await screen.findByRole('button', { name: 'Edit Markdown source' }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Edit Markdown source' }, LAZY_EDITOR_WAIT));
         const sourceEditor = screen.getByRole('textbox', { name: 'Markdown source editor' });
         fireEvent.focus(sourceEditor);
         fireEvent.change(sourceEditor, {
@@ -249,7 +253,7 @@ describe('ArtifactEditingSurface', () => {
     it('shows a navigable ruler for changes from the original document', async () => {
         renderSurface({ viewMode: 'document', baselineContent: 'Different paragraph.' });
 
-        await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        await screen.findByRole('textbox', { name: 'Markdown document editor' }, LAZY_EDITOR_WAIT);
         expect(screen.getByRole('navigation', { name: 'Change ruler' })).not.toBeNull();
         expect(screen.getByRole('button', { name: 'Change near line 1' })).not.toBeNull();
     });
@@ -257,7 +261,7 @@ describe('ArtifactEditingSurface', () => {
     it('keeps the focused editor base generation when the agent refreshes the artifact', async () => {
         const user = userEvent.setup();
         const view = renderSurface({ viewMode: 'document' });
-        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' }, LAZY_EDITOR_WAIT);
         await user.click(editor);
 
         mocks.getArtifactContent.mockResolvedValueOnce({
@@ -311,7 +315,7 @@ describe('ArtifactEditingSurface', () => {
             .mockResolvedValueOnce({ path: 'drafts/document.md', generation: 'generation-merged' });
 
         const view = renderSurface({ viewMode: 'document' });
-        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' }, LAZY_EDITOR_WAIT);
         await user.click(editor);
 
         view.rerender(
@@ -363,7 +367,7 @@ describe('ArtifactEditingSurface', () => {
         mocks.updateArtifactContent.mockRejectedValueOnce({ status: 412 });
         renderSurface({ viewMode: 'document' });
 
-        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' });
+        const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' }, LAZY_EDITOR_WAIT);
         await user.click(editor);
         await user.type(editor, ' local edit');
 

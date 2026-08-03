@@ -467,13 +467,25 @@ importers:
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.20.0)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
       '@vertesia/tsconfig':
         specifier: workspace:*
         version: link:../../libraries/tsconfig
       rolldown:
         specifier: 'catalog:'
         version: 1.2.0
+      tsx:
+        specifier: ^4.23.1
+        version: 4.23.1
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
