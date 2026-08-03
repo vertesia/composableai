@@ -114,8 +114,16 @@ export interface AgentRunCompletedEvent extends BaseAgentEvent {
     totalToolCalls: number;
     /** Total LLM calls made */
     totalLlmCalls: number;
-    /** Cumulative token usage */
-    totalTokens?: {
+    /**
+     * Cumulative token total for the run.
+     *
+     * Scalar on purpose: `$.totalTokens` must have ONE type across every event
+     * family sharing the telemetry `event_data` column (LlmCallEvent already uses
+     * a scalar). The historical object shape lives in `tokenUsage` instead.
+     */
+    totalTokens?: number;
+    /** Cumulative token usage breakdown */
+    tokenUsage?: {
         input: number;
         output: number;
         total: number;
