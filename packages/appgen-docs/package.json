@@ -1,0 +1,44 @@
+{
+    "name": "@vertesia/appgen-docs",
+    "version": "1.5.0-dev.20260725.083715Z",
+    "description": "Generated SDK references and development guidance for Vertesia app agents",
+    "type": "module",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "files": [
+        "lib",
+        "docs"
+    ],
+    "license": "Apache-2.0",
+    "scripts": {
+        "build": "pnpm run clean && tsc -p tsconfig.json && node ./scripts/generate-docs.mjs",
+        "clean": "rimraf ./lib ./docs ./tsconfig.tsbuildinfo",
+        "lint": "biome lint src scripts",
+        "test": "node --test ./scripts/*.test.mjs"
+    },
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        }
+    },
+    "devDependencies": {
+        "@types/node": "catalog:",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "@vertesia/tsconfig": "workspace:*",
+        "@vertesia/ui": "workspace:*",
+        "typescript": "^6.0.3"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/appgen-docs"
+    },
+    "keywords": [
+        "vertesia",
+        "agents",
+        "documentation",
+        "app-development"
+    ]
+}
