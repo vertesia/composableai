@@ -14,7 +14,7 @@ import type {
  * The embeddings request types, inferred from `./api-schemas/embeddings.js`. Their documentation
  * moved with them: a doc comment above one of these would be published on top of the schema's own
  * `description`, which is how the union's description came to be the truncated `"…Mirror of"` the
- * document carried until wave S2.
+ * document carried for as long as the types lived here.
  */
 export type EmbeddingsApiInput = z.infer<typeof EmbeddingsApiInputSchema>;
 

@@ -5,9 +5,9 @@ import { z } from 'zod';
  * their users have approved. Vertesia acting as a client of someone else's authorization server is
  * `./oauth.js`.
  *
- * Only the three studio resources' slots are here. The token server's own surface — authorize,
- * token, device code, consent — is still TypeScript-derived and converts in a later wave, so the
- * types it uses stay declared in `../oauth-server.ts` rather than moving here.
+ * Only the three resources backed by the studio API have slots here. The token server's own surface
+ * — authorize, token, device code, consent — is still TypeScript-derived and has not been converted,
+ * so the types it uses stay declared in `../oauth-server.ts` rather than moving here.
  */
 
 export const OAuthClientTypeSchema = z.enum(['public', 'confidential']).meta({ id: 'OAuthClientType' });
