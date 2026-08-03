@@ -458,14 +458,21 @@ export const ProjectConfigurationSchema = z
         browser_use: BrowserUseProjectConfigurationSchema.optional().meta({
             description: 'Project defaults and caps for browser_use agent workstreams.',
         }),
+        // Nullable because `null` is how this field is cleared, and because it is already stored that
+        // way. `UpdateProjectConfiguration` merges every key whose value is not `undefined`, so the
+        // settings UI turns the custom template off by sending an explicit `null` — the only spelling
+        // available to it, since an omitted key means "leave unchanged" on a partial update. Declaring
+        // it `string` alone made that request a 400, so the toggle could be switched on and never off,
+        // and made every read of a project already carrying a `null` fail its response check.
         pdf_template_object_id: z
             .string()
+            .nullable()
             .optional()
             .meta({
                 description:
                     'Object ID of a content object containing a custom LaTeX template (.latex file) to use as ' +
                     'the branded PDF template. When set, "Export as Branded PDF" uses this template instead of ' +
-                    'the built-in Vertesia default template.',
+                    'the built-in Vertesia default template. `null` clears it.',
             }),
     })
     .meta({ id: 'ProjectConfiguration' });
