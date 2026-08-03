@@ -63,14 +63,17 @@ overrides:
   # `>=5.0.8` as its only patched range, so `pnpm audit` may keep reporting the 2.x copy until
   # GHSA re-scopes it — 2.1.4 does carry the fix (EXPANSION_MAX_LENGTH, CVE-2026-14257).
   "brace-expansion@>=2.0.0 <2.1.4": 2.1.4
-  "brace-expansion@>=3.0.0 <5.0.8": 5.0.8
+  "brace-expansion@>=3.0.0 <5.0.9": 5.0.9
   diff@>=6.0.0 <8.0.3: ^8.0.3
   dompurify@<=3.4.10: ^3.4.11
-  "fast-uri@>=3.0.0 <3.1.4": 3.1.4
+  "fast-uri@>=3.0.0 <3.1.5": 3.1.5
   # Tilde (not caret) so @firebase/firestore stays on its ~1.9 line and @temporalio/* on 1.14.
   "@grpc/grpc-js@<1.9.16": ~1.9.16
   "@grpc/grpc-js@>=1.14.0 <1.14.4": ~1.14.4
   form-data@>=4.0.0 <4.0.6: ^4.0.6
+  # GHSA-fxqj-rqcc-2cmp: incomplete fix of GHSA-6g55-p6wh-862q (attacker-controlled
+  # sourceMappingURL reads arbitrary .map files when `from` is unset).
+  postcss@<8.5.23: 8.5.23
   js-yaml@>=4.0.0 <4.3.0: 4.3.0
   # GHSA-pm4m-ph32-ghv5 (5.x line, reached via packages/build-tools). This lockfile already
   # resolves 5.2.2; the floor pins that in place so a future resolution cannot drop back to a
