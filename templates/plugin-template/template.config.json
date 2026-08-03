@@ -25,7 +25,7 @@
     },
     "appgen": {
       "virtual": true,
-      "requires": ["service", "agent"]
+      "requires": ["service"]
     },
     "app": {
       "ui": {
@@ -60,7 +60,6 @@
         "service:build": "pnpm run service:build:ui && vite build --mode lib && pnpm run service:build:server"
       }
     },
-    "agent": {},
     "examples": {
       "ui": {
         "routes": "src/modules/examples/ui/routes"
