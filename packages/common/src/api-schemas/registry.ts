@@ -3126,21 +3126,6 @@ export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = toOpenA
 });
 
 /**
- * The same adaptation with every inlined copy of a shared definition compared rather than only the
- * first — see {@link AdapterOptions.verifyDuplicates}.
- *
- * Roughly four times the cost of the pass above, which is why it is not what the module runs at
- * load. It exists so that two schemas claiming one component name are still caught: the contract
- * test suite runs it once and asserts the result matches {@link ApiSchemaComponents}.
- */
-export function adaptComponentsVerifyingDuplicates(): Record<string, JsonObject> {
-    return toOpenApiComponents(emitRawSchemas(), {
-        strictComponents: STRICT_COMPONENTS,
-        verifyDuplicates: true,
-    });
-}
-
-/**
  * A canonical component as a SELF-CONTAINED JSON Schema, for consumers that compile it directly.
  *
  * The published component `$ref`s its neighbours through `#/components/schemas/...`, which resolves

@@ -35,15 +35,6 @@ export interface AdapterOptions {
      * subjected to this adaptation pass.
      */
     referenceComponents?: Readonly<Record<string, JsonObject>>;
-    /**
-     * Walk every inlined copy of a shared definition rather than only the first, so that two schemas
-     * claiming one component name are reported instead of resolved by first-wins.
-     *
-     * Off by default: the copies come from one emission of one registry, so they agree by
-     * construction, and comparing them costs more than producing the output. The contract test suite
-     * turns it on for a single pass, which is where a genuine collision has to be caught.
-     */
-    verifyDuplicates?: boolean;
 }
 
 export class SchemaAdapterError extends Error {}
@@ -83,7 +74,7 @@ function componentRef(name: string): JsonObject {
  * present, so promoting an optional property would publish a contract the schema does not
  * guarantee.
  */
-function synthesizeDiscriminator(node: JsonObject, components: Record<string, JsonObject>): void {
+function synthesizeDiscriminator(node: JsonObject, ctx: HoistContext): void {
     const members = node.oneOf ?? node.anyOf;
     if (!Array.isArray(members) || members.length < 2 || node.discriminator) return;
 
@@ -91,7 +82,10 @@ function synthesizeDiscriminator(node: JsonObject, components: Record<string, Js
     for (const member of members) {
         if (!isPlainObject(member) || typeof member[REF] !== 'string') return;
         const name = (member[REF] as string).slice(COMPONENT_PREFIX.length);
-        const schema = components[name];
+        // Hoisted components shadow the already-published ones, which is what a root redefining a
+        // reference component means. Looked up rather than merged into one map: this runs for every
+        // union node, and building a 1000-entry object per node was most of the adaptation's cost.
+        const schema = ctx.components[name] ?? ctx.referenceComponents[name];
         if (!schema) return;
         targets.push({ name, schema });
     }
@@ -175,8 +169,6 @@ interface HoistContext {
     seen: Map<string, string>;
     /** Names reserved while their definition is still being walked (recursion guard). */
     pending: Set<string>;
-    /** See {@link AdapterOptions.verifyDuplicates}. */
-    verifyDuplicates: boolean;
 }
 
 function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
@@ -226,7 +218,7 @@ function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
                     : walk(child, ctx, false);
         }
 
-        synthesizeDiscriminator(out, { ...ctx.referenceComponents, ...ctx.components });
+        synthesizeDiscriminator(out, ctx);
 
         // A nested schema carrying its own $id is a named component: hoist it and leave a reference.
         if (typeof $id === 'string' && !isRoot) {
@@ -265,18 +257,12 @@ function hoist(name: string, schema: unknown, ctx: HoistContext): void {
     // and rewriting it to `JSONSchemaProperties` turned a property map into a map of property maps.
     if (typeof schema.$id === 'string') ctx.rootName = schema.$id;
     try {
-        // Every root carries its own inlined copy of the whole `$defs` closure it reaches, so a
-        // shared definition arrives here once per referencing root — 7069 times for 671 names on the
-        // full registry. Walking a name once is what the output needs; the repeats exist only to feed
-        // `register`'s shape comparison, and they cost ~2.7s of the ~3.6s this module spends at load.
-        //
-        // The comparison is not free to keep: the copies are not textually equal (a `$ref` inside one
-        // is spelled relative to whichever root inlined it), so only the WALKED form can be compared,
-        // which is the expensive part. `verifyDuplicates` therefore keeps the exhaustive check where
-        // it is affordable — the contract test suite runs one pass with it on — while the module-load
-        // path walks each name once. The nested-`$id` case, which is what actually catches two schemas
-        // claiming one name, registers from `walk` rather than here and is unaffected either way.
-        if (!ctx.verifyDuplicates && ctx.seen.has(name)) return;
+        // Every root carries its own inlined copy of the whole `$defs` closure it reaches, so a shared
+        // definition arrives here once per referencing root — 7069 times for 671 names on the full
+        // registry. The repeats are what feed `register`'s shape comparison, and they cannot be short-
+        // circuited on the INPUT: two copies of the same definition are not textually equal, because a
+        // `$ref` inside one is spelled relative to whichever root inlined it. Only the walked form is
+        // comparable, so every copy is walked.
         register(name, walk(schema, ctx, true) as JsonObject, ctx);
     } finally {
         ctx.rootName = previousRoot;
@@ -324,7 +310,6 @@ export function toOpenApiComponents(
         rootName: '',
         seen: new Map(),
         pending: new Set(),
-        verifyDuplicates: options.verifyDuplicates ?? false,
     };
     for (const [name, schema] of Object.entries(roots)) {
         if (!isPlainObject(schema)) {

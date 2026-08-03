@@ -66,32 +66,21 @@ describe('additionalProperties policy', () => {
 });
 
 describe('conflicting definitions', () => {
-    /**
-     * Every root inlines its own copy of the `$defs` closure it reaches, so comparing all of them
-     * means walking a shared definition once per referencing root. That is affordable here and not at
-     * module load, where it was most of the registry's start-up cost — hence `verifyDuplicates`, and
-     * hence the second assertion recording what the default does instead.
-     */
-    const DISAGREEING_ROOTS = {
-        A: {
-            type: 'object',
-            properties: { x: { $ref: '#/$defs/Shared' } },
-            $defs: { Shared: { type: 'object', properties: { v: { type: 'string' } } } },
-        },
-        B: {
-            type: 'object',
-            properties: { y: { $ref: '#/$defs/Shared' } },
-            $defs: { Shared: { type: 'object', properties: { v: { type: 'number' } } } },
-        },
-    };
-
     it('reports two $defs entries that disagree instead of keeping the first', () => {
-        expect(() => toOpenApiComponents(DISAGREEING_ROOTS, { verifyDuplicates: true })).toThrow(SchemaAdapterError);
-    });
-
-    it('keeps the first copy when duplicates are not verified', () => {
-        const components = toOpenApiComponents(DISAGREEING_ROOTS);
-        expect((components.Shared.properties as JsonObject).v).toEqual({ type: 'string' });
+        expect(() =>
+            toOpenApiComponents({
+                A: {
+                    type: 'object',
+                    properties: { x: { $ref: '#/$defs/Shared' } },
+                    $defs: { Shared: { type: 'object', properties: { v: { type: 'string' } } } },
+                },
+                B: {
+                    type: 'object',
+                    properties: { y: { $ref: '#/$defs/Shared' } },
+                    $defs: { Shared: { type: 'object', properties: { v: { type: 'number' } } } },
+                },
+            }),
+        ).toThrow(SchemaAdapterError);
     });
 
     it('accepts two $defs entries that agree', () => {
@@ -205,6 +194,43 @@ describe('discriminator synthesis', () => {
             },
         });
         expect(components.Union.discriminator).toBeUndefined();
+    });
+
+    it('reads branches out of the reference components too', () => {
+        const components = toOpenApiComponents(
+            { Union: { anyOf: [{ $ref: 'A' }, { $ref: 'B' }] } },
+            {
+                referenceComponents: {
+                    A: { type: 'object', properties: { kind: { const: 'a' } }, required: ['kind'] },
+                    B: { type: 'object', properties: { kind: { const: 'b' } }, required: ['kind'] },
+                },
+            },
+        );
+        expect(components.Union.discriminator).toEqual({
+            propertyName: 'kind',
+            mapping: { a: '#/components/schemas/A', b: '#/components/schemas/B' },
+        });
+    });
+
+    it('prefers a hoisted branch over a reference component of the same name', () => {
+        // A root that redefines an already-published name means the hoisted shape wins, so the
+        // literal that lands in the mapping has to be read off the hoisted copy.
+        const components = toOpenApiComponents(
+            {
+                Union: {
+                    anyOf: [{ $ref: '#/$defs/A' }, { $ref: '#/$defs/B' }],
+                    $defs: {
+                        A: { type: 'object', properties: { kind: { const: 'hoisted-a' } }, required: ['kind'] },
+                        B: { type: 'object', properties: { kind: { const: 'b' } }, required: ['kind'] },
+                    },
+                },
+            },
+            { referenceComponents: { A: { type: 'object', properties: { kind: { const: 'a' } } } } },
+        );
+        expect(components.Union.discriminator).toEqual({
+            propertyName: 'kind',
+            mapping: { 'hoisted-a': '#/components/schemas/A', b: '#/components/schemas/B' },
+        });
     });
 });
 

@@ -3,13 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { StripeBillingStatusResponse } from '../meters.js';
 import { type Account, BillingMethod, type QuotaTier, type UpdateAccountPayload } from '../user.js';
 import { type JsonObject, SchemaAdapterError, toOpenApiComponents } from './adapter.js';
-import {
-    ApiSchemaComponents,
-    adaptComponentsVerifyingDuplicates,
-    apiComponentRef,
-    validateApiRequest,
-    validateApiResponse,
-} from './registry.js';
+import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -246,13 +240,6 @@ describe('gate 7 — the adapter is library-neutral', () => {
                 B: { type: 'object', properties: { y: { $id: 'Dup', type: 'number' } } },
             }),
         ).toThrow(SchemaAdapterError);
-    });
-
-    it('adapts the real registry identically with every duplicate copy compared', () => {
-        // Module load walks each shared definition once; this is the pass that compares every inlined
-        // copy. Equality here is what makes the cheap pass safe — a component whose copies disagreed
-        // would adapt differently under the two.
-        expect(adaptComponentsVerifyingDuplicates()).toEqual(ApiSchemaComponents);
     });
 });
 
