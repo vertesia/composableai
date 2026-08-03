@@ -3126,6 +3126,21 @@ export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = toOpenA
 });
 
 /**
+ * The same adaptation with every inlined copy of a shared definition compared rather than only the
+ * first — see {@link AdapterOptions.verifyDuplicates}.
+ *
+ * Roughly four times the cost of the pass above, which is why it is not what the module runs at
+ * load. It exists so that two schemas claiming one component name are still caught: the contract
+ * test suite runs it once and asserts the result matches {@link ApiSchemaComponents}.
+ */
+export function adaptComponentsVerifyingDuplicates(): Record<string, JsonObject> {
+    return toOpenApiComponents(emitRawSchemas(), {
+        strictComponents: STRICT_COMPONENTS,
+        verifyDuplicates: true,
+    });
+}
+
+/**
  * A canonical component as a SELF-CONTAINED JSON Schema, for consumers that compile it directly.
  *
  * The published component `$ref`s its neighbours through `#/components/schemas/...`, which resolves
@@ -3262,16 +3277,31 @@ export type ApiSchemaOf<N extends ApiComponentName> = ApiComponentType<N>;
  */
 const validators = new Map<string, ValidateFunction>();
 
-function getValidator(name: ApiComponentName): ValidateFunction {
-    const cached = validators.get(name);
-    if (cached) return cached;
+/**
+ * One instance for the process, built on first validation.
+ *
+ * Per-component instances meant re-registering the whole thousand-component envelope for every
+ * component ever validated, and AJV walks a schema when it is added. Sharing one instance also lets
+ * it reuse the compiled form of a component that two others reference.
+ */
+let ajvInstance: Ajv2020 | undefined;
+
+function getAjv(): Ajv2020 {
+    if (ajvInstance) return ajvInstance;
     const ajv = new Ajv2020({ strictSchema: false, allErrors: true });
     // Without this, AJV treats `format` as an annotation and ignores it, so a `date-time` property
     // would document a constraint nothing checks — the exact spec/enforcement gap this design is
     // meant to close.
     addFormats(ajv);
     ajv.addSchema({ $id: 'vertesia://openapi', components: { schemas: ApiSchemaComponents } });
-    const validate = ajv.compile({ $ref: `vertesia://openapi${apiComponentRef(name)}` });
+    ajvInstance = ajv;
+    return ajv;
+}
+
+function getValidator(name: ApiComponentName): ValidateFunction {
+    const cached = validators.get(name);
+    if (cached) return cached;
+    const validate = getAjv().compile({ $ref: `vertesia://openapi${apiComponentRef(name)}` });
     validators.set(name, validate);
     return validate;
 }

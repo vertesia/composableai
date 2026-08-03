@@ -35,6 +35,15 @@ export interface AdapterOptions {
      * subjected to this adaptation pass.
      */
     referenceComponents?: Readonly<Record<string, JsonObject>>;
+    /**
+     * Walk every inlined copy of a shared definition rather than only the first, so that two schemas
+     * claiming one component name are reported instead of resolved by first-wins.
+     *
+     * Off by default: the copies come from one emission of one registry, so they agree by
+     * construction, and comparing them costs more than producing the output. The contract test suite
+     * turns it on for a single pass, which is where a genuine collision has to be caught.
+     */
+    verifyDuplicates?: boolean;
 }
 
 export class SchemaAdapterError extends Error {}
@@ -166,6 +175,8 @@ interface HoistContext {
     seen: Map<string, string>;
     /** Names reserved while their definition is still being walked (recursion guard). */
     pending: Set<string>;
+    /** See {@link AdapterOptions.verifyDuplicates}. */
+    verifyDuplicates: boolean;
 }
 
 function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
@@ -254,8 +265,18 @@ function hoist(name: string, schema: unknown, ctx: HoistContext): void {
     // and rewriting it to `JSONSchemaProperties` turned a property map into a map of property maps.
     if (typeof schema.$id === 'string') ctx.rootName = schema.$id;
     try {
-        // Note: no early return for an already-registered name. `register` compares shapes, so a
-        // second definition that disagrees is reported rather than silently ignored.
+        // Every root carries its own inlined copy of the whole `$defs` closure it reaches, so a
+        // shared definition arrives here once per referencing root — 7069 times for 671 names on the
+        // full registry. Walking a name once is what the output needs; the repeats exist only to feed
+        // `register`'s shape comparison, and they cost ~2.7s of the ~3.6s this module spends at load.
+        //
+        // The comparison is not free to keep: the copies are not textually equal (a `$ref` inside one
+        // is spelled relative to whichever root inlined it), so only the WALKED form can be compared,
+        // which is the expensive part. `verifyDuplicates` therefore keeps the exhaustive check where
+        // it is affordable — the contract test suite runs one pass with it on — while the module-load
+        // path walks each name once. The nested-`$id` case, which is what actually catches two schemas
+        // claiming one name, registers from `walk` rather than here and is unaffected either way.
+        if (!ctx.verifyDuplicates && ctx.seen.has(name)) return;
         register(name, walk(schema, ctx, true) as JsonObject, ctx);
     } finally {
         ctx.rootName = previousRoot;
@@ -303,6 +324,7 @@ export function toOpenApiComponents(
         rootName: '',
         seen: new Map(),
         pending: new Set(),
+        verifyDuplicates: options.verifyDuplicates ?? false,
     };
     for (const [name, schema] of Object.entries(roots)) {
         if (!isPlainObject(schema)) {

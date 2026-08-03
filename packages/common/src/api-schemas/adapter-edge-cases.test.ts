@@ -66,21 +66,32 @@ describe('additionalProperties policy', () => {
 });
 
 describe('conflicting definitions', () => {
+    /**
+     * Every root inlines its own copy of the `$defs` closure it reaches, so comparing all of them
+     * means walking a shared definition once per referencing root. That is affordable here and not at
+     * module load, where it was most of the registry's start-up cost — hence `verifyDuplicates`, and
+     * hence the second assertion recording what the default does instead.
+     */
+    const DISAGREEING_ROOTS = {
+        A: {
+            type: 'object',
+            properties: { x: { $ref: '#/$defs/Shared' } },
+            $defs: { Shared: { type: 'object', properties: { v: { type: 'string' } } } },
+        },
+        B: {
+            type: 'object',
+            properties: { y: { $ref: '#/$defs/Shared' } },
+            $defs: { Shared: { type: 'object', properties: { v: { type: 'number' } } } },
+        },
+    };
+
     it('reports two $defs entries that disagree instead of keeping the first', () => {
-        expect(() =>
-            toOpenApiComponents({
-                A: {
-                    type: 'object',
-                    properties: { x: { $ref: '#/$defs/Shared' } },
-                    $defs: { Shared: { type: 'object', properties: { v: { type: 'string' } } } },
-                },
-                B: {
-                    type: 'object',
-                    properties: { y: { $ref: '#/$defs/Shared' } },
-                    $defs: { Shared: { type: 'object', properties: { v: { type: 'number' } } } },
-                },
-            }),
-        ).toThrow(SchemaAdapterError);
+        expect(() => toOpenApiComponents(DISAGREEING_ROOTS, { verifyDuplicates: true })).toThrow(SchemaAdapterError);
+    });
+
+    it('keeps the first copy when duplicates are not verified', () => {
+        const components = toOpenApiComponents(DISAGREEING_ROOTS);
+        expect((components.Shared.properties as JsonObject).v).toEqual({ type: 'string' });
     });
 
     it('accepts two $defs entries that agree', () => {
