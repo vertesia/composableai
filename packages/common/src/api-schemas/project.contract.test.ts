@@ -122,14 +122,12 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         // have dropped it silently.
         expect(properties.created_at).toEqual({ type: 'string', format: 'date-time' });
         expect(properties.updated_at).toEqual({ type: 'string', format: 'date-time' });
-        // The same open-map emission as Account.feature_flags and User.properties. `tenant_id` is
-        // absent, as it always was — the model computes it and the handler used to ship it anyway,
-        // which is what the response mapper now stops.
-        expect(properties.integrations).toEqual({
-            type: 'object',
-            propertyNames: { type: 'string' },
-            additionalProperties: {},
-        });
+        // The same open-map emission as Account.feature_flags and User.properties, normalized to the
+        // spelling the document has always used — `z.record`'s `{}` and `propertyNames` say the same
+        // thing but generate a different Go map type. `tenant_id` is absent, as it always was — the
+        // model computes it and the handler used to ship it anyway, which is what the response mapper
+        // now stops.
+        expect(properties.integrations).toEqual({ type: 'object', additionalProperties: true });
         expect(properties).not.toHaveProperty('tenant_id');
     });
 
@@ -259,15 +257,14 @@ describe('gate 3 — the published components match the closure the types come f
         const props = ApiSchemaComponents.ProjectToolInfo.properties as Record<string, JsonObject>;
         expect(props.settings).toEqual({
             type: 'object',
-            propertyNames: { type: 'string' },
-            additionalProperties: {},
+            additionalProperties: true,
             description: expect.stringContaining('may contain API keys'),
         });
         // Same emission as Account.feature_flags and User.properties, which have shipped since the
-        // first two batches — `additionalProperties: true` and this accept exactly the same values.
+        // first two batches. `z.record` writes this as `{}` plus a `propertyNames` that constrains
+        // nothing; both are normalized away so the document keeps one spelling for an open map.
         expect((ApiSchemaComponents.Account.properties as Record<string, JsonObject>).feature_flags).toMatchObject({
-            propertyNames: { type: 'string' },
-            additionalProperties: {},
+            additionalProperties: true,
         });
     });
 

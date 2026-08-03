@@ -1418,6 +1418,9 @@ const PROCESS_DSL_SCHEMAS = {
     DSLWorkflowSpecWithActivities: ProcessSchemas.DSLWorkflowSpecWithActivitiesSchema,
     DSLWorkflowSpecWithSteps: ProcessSchemas.DSLWorkflowSpecWithStepsSchema,
     DSLWorkflowStep: ProcessSchemas.DSLWorkflowStepSchema,
+    WorkflowDefinitionPayload: ProcessSchemas.WorkflowDefinitionPayloadSchema,
+    WorkflowDefinitionPayloadWithActivities: ProcessSchemas.WorkflowDefinitionPayloadWithActivitiesSchema,
+    WorkflowDefinitionPayloadWithSteps: ProcessSchemas.WorkflowDefinitionPayloadWithStepsSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const AGENT_MESSAGE_SCHEMAS = {
@@ -1651,6 +1654,9 @@ const AGENT_RUN_SCHEMAS = {
     AutonomousRunResponse: AgentRunSchemas.AutonomousRunResponseSchema,
     AgentRun: AgentRunSchemas.AgentRunSchema,
     CreateAgentRunPayload: AgentRunSchemas.CreateAgentRunPayloadSchema,
+    CreateProcessRunByIdPayload: AgentRunSchemas.CreateProcessRunByIdPayloadSchema,
+    CreateProcessRunWithDefinitionPayload: AgentRunSchemas.CreateProcessRunWithDefinitionPayloadSchema,
+    CreateRunPayload: AgentRunSchemas.CreateRunPayloadSchema,
     SearchAgentRunsResponse: AgentRunSchemas.SearchAgentRunsResponseSchema,
     AgentRunUpdatesResponse: AgentRunSchemas.AgentRunUpdatesResponseSchema,
     PostAgentRunUpdatePayload: AgentRunSchemas.PostAgentRunUpdatePayloadSchema,
@@ -3230,6 +3236,9 @@ interface ZenoRecursiveComponentTypes {
     UpdateAgentRunStatusPayload: UpdateAgentRunStatusPayload;
     UpdateEventSubscriptionPayload: UpdateEventSubscriptionPayload;
     UpdateProcessDefinitionPayload: UpdateProcessDefinitionPayload;
+    WorkflowDefinitionPayload: DSLWorkflowTypes.WorkflowDefinitionPayload;
+    WorkflowDefinitionPayloadWithActivities: DSLWorkflowTypes.WorkflowDefinitionPayloadWithActivities;
+    WorkflowDefinitionPayloadWithSteps: DSLWorkflowTypes.WorkflowDefinitionPayloadWithSteps;
 }
 
 /**

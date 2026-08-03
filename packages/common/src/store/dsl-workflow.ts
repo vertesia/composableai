@@ -201,6 +201,26 @@ export interface DSLWorkflowSpecWithActivities extends DSLWorkflowSpecBase {
  */
 export type DSLWorkflowSpec = DSLWorkflowSpecWithSteps | DSLWorkflowSpecWithActivities;
 
+/**
+ * Legacy upsert fields the workflow-definition write endpoints still accept alongside a spec.
+ *
+ * A body carrying `id` updates that definition instead of creating one, with `updated_at` checked
+ * against the stored value for optimistic concurrency. All server-assigned on the read side, hence
+ * optional here and absent from {@link DSLWorkflowSpec}.
+ */
+export interface LegacyWorkflowDefinitionUpsertFields {
+    id?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export type WorkflowDefinitionPayloadWithSteps = DSLWorkflowSpecWithSteps & LegacyWorkflowDefinitionUpsertFields;
+export type WorkflowDefinitionPayloadWithActivities = DSLWorkflowSpecWithActivities &
+    LegacyWorkflowDefinitionUpsertFields;
+
+/** The request body of `POST /workflows/definitions` and `PUT /workflows/definitions/:id`. */
+export type WorkflowDefinitionPayload = WorkflowDefinitionPayloadWithSteps | WorkflowDefinitionPayloadWithActivities;
+
 export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpecBase): DSLWorkflowSpec {
     if ('steps' in spec && spec.steps) {
         return { ...spec, spec_format: 'steps' } as DSLWorkflowSpecWithSteps;

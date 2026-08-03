@@ -24,6 +24,7 @@ import {
     RunSourceSchema,
     UserChannelSchema,
 } from './interaction.js';
+import * as ProcessSchemas from './process.js';
 import {
     ProcessDefinitionBodySchema,
     ProcessRunConfigSchema,
@@ -620,6 +621,73 @@ export const CreateAgentRunPayloadSchema = z
             .optional(),
     })
     .meta({ id: 'CreateAgentRunPayload', description: 'Payload to create and start a new agent run.' });
+
+/**
+ * The other shape `POST /agents` accepts — a process run rather than an agent run.
+ *
+ * `AgentsApi.start` is overloaded on exactly these two payloads and the handler branches on
+ * `isProcessStartPayload`, so an endpoint contract naming only the agent one rejects every process
+ * start: it has no `interaction`, and its own fields read as undeclared extras.
+ */
+const processRunFields = {
+    // Optional here on purpose: `isProcessStartPayload` only rejects a run_type it cannot parse, so a
+    // process start that omits it is valid today and requiring it would reject those callers.
+    run_type: ProcessSchemas.ProcessRunTypeSchema.optional(),
+    process_version: z
+        .number()
+        .meta({ description: 'Published process version to pin. Defaults to the head revision.' })
+        .optional(),
+    data: z.looseObject({}).meta({ description: 'Input parameters, typed per process.' }).optional(),
+    config: ProcessSchemas.ProcessRunConfigSchema.optional(),
+    visibility: ConversationVisibilitySchema.optional(),
+    tags: z.array(z.string()).optional(),
+    categories: z.array(z.string()).optional(),
+    source: RunSourceSchema.meta({ description: 'How the run was started' }).optional(),
+    started_by: z
+        .string()
+        .meta({ description: 'Principal ref of the user who initiated the run (for server-to-server forwarding)' })
+        .optional(),
+};
+
+/**
+ * Starting a stored process by id.
+ *
+ * Split from {@link CreateProcessRunWithDefinitionPayloadSchema} rather than making both references
+ * optional, because the process reference is what `isProcessStartPayload` actually keys on. With both
+ * optional this branch would match ANY object, and the union below would then accept an agent payload
+ * whose `interaction` was misspelled — making the agent branch's validation worthless.
+ */
+export const CreateProcessRunByIdPayloadSchema = z
+    .object({ ...processRunFields, process_id: z.string().meta({ description: 'Process to start.' }) })
+    .meta({ id: 'CreateProcessRunByIdPayload', description: 'Payload to start a stored process by id.' });
+
+/**
+ * Starting a process from an inline definition that is not stored. See the sibling above.
+ *
+ * The field carries no `.meta({description})`: `ProcessDefinitionBody` is recursive, and re-metaing a
+ * registered recursive component clones it under the same id with a different shape, which the
+ * adapter rejects as a duplicate.
+ */
+export const CreateProcessRunWithDefinitionPayloadSchema = z
+    .object({ ...processRunFields, process_definition: ProcessSchemas.ProcessDefinitionBodySchema })
+    .meta({
+        id: 'CreateProcessRunWithDefinitionPayload',
+        description: 'Payload to start a process from an inline definition.',
+    });
+
+/**
+ * What `POST /agents` actually accepts.
+ *
+ * A plain union rather than a discriminated one: the two kinds are told apart by which fields are
+ * PRESENT, not by a shared literal, and OpenAPI's discriminator has to be required in every branch.
+ */
+export const CreateRunPayloadSchema = z
+    .union([
+        CreateAgentRunPayloadSchema,
+        CreateProcessRunByIdPayloadSchema,
+        CreateProcessRunWithDefinitionPayloadSchema,
+    ])
+    .meta({ id: 'CreateRunPayload', description: 'Payload to create and start an agent run or a process run.' });
 
 export const SearchAgentRunsResponseSchema = z
     .strictObject({

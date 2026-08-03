@@ -389,6 +389,18 @@ export const WebhookEventDeliveryTargetInputSchema = z
             .optional(),
         type: z.literal('webhook'),
         url: z.string(),
+        // Accepted and ignored, not writable. Editing a webhook subscription means reading it and
+        // sending the target back with one field changed, and the read target carries these two;
+        // `normalizeEventSubscriptionTarget` strips them server-side, so rejecting them here would
+        // only break that round-trip. The stored values are derived from the secret store.
+        has_secret: z
+            .boolean()
+            .meta({ description: 'Server-managed: ignored on write, echoed back from a read.' })
+            .optional(),
+        secret_label: z
+            .string()
+            .meta({ description: 'Server-managed: ignored on write, echoed back from a read.' })
+            .optional(),
         signing_mode: WebhookSigningModeSchema.optional(),
         payload_mode: WebhookPayloadModeSchema.optional(),
         headers: StringValueMapSchema.optional(),
@@ -407,6 +419,12 @@ export const WorkflowEventDeliveryTargetInputSchema = z
         task_queue: z.string().optional(),
         vars: z.looseObject({}).optional(),
         input_type: WorkflowRuleInputTypeSchema.optional(),
+        // Same round-trip allowance as the webhook input above: the read target carries this, the
+        // update handler re-applies it from the stored target rather than from the body.
+        migrated_rule_name: z
+            .string()
+            .meta({ description: 'Server-managed: ignored on write, echoed back from a read.' })
+            .optional(),
     })
     .meta({ id: 'WorkflowEventDeliveryTargetInput' });
 

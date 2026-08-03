@@ -346,6 +346,10 @@ export function toOpenApiComponents(
     }
 
     for (const schema of Object.values(ctx.components)) {
+        normalizeOpenMaps(schema);
+    }
+
+    for (const schema of Object.values(ctx.components)) {
         moveDescriptionsLast(schema);
     }
 
@@ -381,6 +385,43 @@ function eachSubschema(node: JsonObject, visit: (child: JsonObject) => void): vo
             if (isPlainObject(child)) visit(child);
         }
     }
+}
+
+/**
+ * Spells an unconstrained map the way the document already spelled it, everywhere below a component
+ * root.
+ *
+ * Zod writes a `Record<string, T>` with an unconstrained value as `additionalProperties: {}` plus
+ * `propertyNames: {type: 'string'}`. Neither constrains anything — the empty schema accepts every
+ * value, and a JSON object's keys are strings by definition — so both are equivalent to what the
+ * TypeScript-derived generator emitted, which was `additionalProperties: true` and no
+ * `propertyNames` at all.
+ *
+ * Equivalent to a validator, but NOT to a code generator: openapi-generator renders the two
+ * `additionalProperties` spellings as different Go types (`map[string]interface{}` against
+ * `map[string]*interface{}`), so publishing the Zod spelling silently changed the generated Go
+ * client's map element type at 109 sites. That is a source break for SDK consumers bought for
+ * nothing, which is why the published form is normalized rather than left as emitted.
+ *
+ * Runs after the component-root pass above, which DELETES a root's empty `additionalProperties`
+ * outright. Roots therefore never reach here still carrying one, and the two rules do not fight.
+ */
+function normalizeOpenMaps(node: JsonObject): void {
+    if (isPlainObject(node.additionalProperties) && Object.keys(node.additionalProperties).length === 0) {
+        node.additionalProperties = true;
+    }
+    // `{type: 'string'}` is the only no-op form; a pattern or a length bound is a real constraint on
+    // the keys and has to survive.
+    const names = node.propertyNames;
+    if (isPlainObject(names) && (Object.keys(names).length === 0 || isOnlyStringType(names))) {
+        delete node.propertyNames;
+    }
+    eachSubschema(node, normalizeOpenMaps);
+}
+
+function isOnlyStringType(schema: JsonObject): boolean {
+    const keys = Object.keys(schema);
+    return keys.length === 1 && keys[0] === 'type' && schema.type === 'string';
 }
 
 /**

@@ -65,6 +65,70 @@ describe('additionalProperties policy', () => {
     });
 });
 
+/**
+ * `{}` and `true` mean the same thing to a validator, and `propertyNames: {type: 'string'}`
+ * constrains nothing at all — but openapi-generator renders the two `additionalProperties` spellings
+ * as different Go types, so which one is published is a real decision rather than cosmetics.
+ */
+describe('open-map normalization', () => {
+    it('publishes a nested empty additionalProperties as true', () => {
+        const components = toOpenApiComponents({
+            Holder: {
+                type: 'object',
+                properties: { map: { type: 'object', additionalProperties: {}, propertyNames: { type: 'string' } } },
+            },
+        });
+        const map = (components.Holder.properties as JsonObject).map as JsonObject;
+        expect(map.additionalProperties).toBe(true);
+        expect(map).not.toHaveProperty('propertyNames');
+    });
+
+    it('still deletes an empty additionalProperties at a component root', () => {
+        const components = toOpenApiComponents({
+            Root: { type: 'object', properties: { a: { type: 'string' } }, additionalProperties: {} },
+        });
+        expect(components.Root.additionalProperties).toBeUndefined();
+    });
+
+    it('keeps a propertyNames that actually constrains the keys', () => {
+        const components = toOpenApiComponents({
+            Holder: {
+                type: 'object',
+                properties: { map: { type: 'object', propertyNames: { type: 'string', pattern: '^x-' } } },
+            },
+        });
+        const map = (components.Holder.properties as JsonObject).map as JsonObject;
+        expect(map.propertyNames).toEqual({ type: 'string', pattern: '^x-' });
+    });
+
+    it('leaves a typed additionalProperties alone', () => {
+        const components = toOpenApiComponents({
+            Holder: {
+                type: 'object',
+                properties: { map: { type: 'object', additionalProperties: { type: 'string' } } },
+            },
+        });
+        expect(((components.Holder.properties as JsonObject).map as JsonObject).additionalProperties).toEqual({
+            type: 'string',
+        });
+    });
+
+    it('normalizes inside unions and arrays, not just properties', () => {
+        const components = toOpenApiComponents({
+            Holder: {
+                type: 'object',
+                properties: {
+                    choice: { anyOf: [{ type: 'object', additionalProperties: {} }, { type: 'string' }] },
+                    list: { type: 'array', items: { type: 'object', additionalProperties: {} } },
+                },
+            },
+        });
+        const properties = components.Holder.properties as Record<string, JsonObject>;
+        expect((properties.choice.anyOf as JsonObject[])[0].additionalProperties).toBe(true);
+        expect((properties.list.items as JsonObject).additionalProperties).toBe(true);
+    });
+});
+
 describe('conflicting definitions', () => {
     it('reports two $defs entries that disagree instead of keeping the first', () => {
         expect(() =>

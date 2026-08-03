@@ -657,46 +657,97 @@ export const DSLWorkflowSpecSchema: z.ZodType = z
     ])
     .meta({ id: 'DSLWorkflowSpec' });
 
+/**
+ * The fields every workflow-spec shape carries, spread rather than `.extend()`ed.
+ *
+ * `.extend()` clones the base's registry metadata, so the derived schema kept emitting under the
+ * base's `id` and collided with it in the component map.
+ */
+const dslWorkflowSpecBaseFields = {
+    name: z.string(),
+    description: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    vars: z.looseObject({}),
+    options: DSLActivityOptionsSchema.optional(),
+    result: z.string().optional(),
+    debug_mode: z.boolean().optional(),
+};
+
+const deprecatedActivitiesMeta = {
+    description: 'Deprecated: use steps instead',
+    deprecated: true,
+    'x-deprecated-message': 'use steps instead',
+};
+
 export const DSLWorkflowSpecWithActivitiesSchema: z.ZodType = z
     .strictObject({
-        name: z.string(),
-        description: z.string().optional(),
-        tags: z.array(z.string()).optional(),
+        ...dslWorkflowSpecBaseFields,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)).optional(),
-        activities: z.array(DSLActivitySpecSchema).meta({
-            description: 'Deprecated: use steps instead',
-            deprecated: true,
-            'x-deprecated-message': 'use steps instead',
-        }),
-        vars: z.looseObject({}),
-        options: DSLActivityOptionsSchema.optional(),
-        result: z.string().optional(),
-        debug_mode: z.boolean().optional(),
+        activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta),
         spec_format: z.literal('activities'),
     })
     .meta({ id: 'DSLWorkflowSpecWithActivities' });
 
 export const DSLWorkflowSpecWithStepsSchema: z.ZodType = z
     .strictObject({
-        name: z.string(),
-        description: z.string().optional(),
-        tags: z.array(z.string()).optional(),
+        ...dslWorkflowSpecBaseFields,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)),
-        activities: z
-            .array(DSLActivitySpecSchema)
-            .meta({
-                description: 'Deprecated: use steps instead',
-                deprecated: true,
-                'x-deprecated-message': 'use steps instead',
-            })
-            .optional(),
-        vars: z.looseObject({}),
-        options: DSLActivityOptionsSchema.optional(),
-        result: z.string().optional(),
-        debug_mode: z.boolean().optional(),
+        activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta).optional(),
         spec_format: z.literal('steps'),
     })
     .meta({ id: 'DSLWorkflowSpecWithSteps' });
+
+/**
+ * What `POST /workflows/definitions` and `PUT /workflows/definitions/:id` accept: a workflow spec,
+ * not a stored definition.
+ *
+ * Naming the stored `DSLWorkflowDefinition` as the request body would demand `id`, `created_at`,
+ * `updated_at`, `created_by` and `updated_by` — all server-assigned — while rejecting the
+ * `spec_format` discriminator every real caller sends.
+ *
+ * The three fields below are optional and only exist for the legacy upsert branch of the POST
+ * handler: a body carrying `id` updates that definition instead of creating one, and `updated_at`
+ * is the value it was read with, checked for optimistic concurrency. The published client only ever
+ * sends a bare spec.
+ */
+const legacyWorkflowDefinitionUpsertFields = {
+    id: z
+        .string()
+        .meta({ description: 'Legacy upsert: update this definition instead of creating a new one.' })
+        .optional(),
+    created_at: z.string().meta({ description: 'Legacy upsert: ignored, the stored value wins.' }).optional(),
+    updated_at: z
+        .string()
+        .meta({ description: 'Legacy upsert: the value the definition was read with, for conflict detection.' })
+        .optional(),
+};
+
+export const WorkflowDefinitionPayloadWithActivitiesSchema: z.ZodType = z
+    .strictObject({
+        ...dslWorkflowSpecBaseFields,
+        ...legacyWorkflowDefinitionUpsertFields,
+        steps: z.array(z.lazy(() => DSLWorkflowStepSchema)).optional(),
+        activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta),
+        spec_format: z.literal('activities'),
+    })
+    .meta({ id: 'WorkflowDefinitionPayloadWithActivities' });
+
+export const WorkflowDefinitionPayloadWithStepsSchema: z.ZodType = z
+    .strictObject({
+        ...dslWorkflowSpecBaseFields,
+        ...legacyWorkflowDefinitionUpsertFields,
+        steps: z.array(z.lazy(() => DSLWorkflowStepSchema)),
+        activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta).optional(),
+        spec_format: z.literal('steps'),
+    })
+    .meta({ id: 'WorkflowDefinitionPayloadWithSteps' });
+
+export const WorkflowDefinitionPayloadSchema: z.ZodType = z
+    .discriminatedUnion('spec_format', [
+        WorkflowDefinitionPayloadWithStepsSchema as unknown as z.ZodObject,
+        WorkflowDefinitionPayloadWithActivitiesSchema as unknown as z.ZodObject,
+    ])
+    .meta({ id: 'WorkflowDefinitionPayload' });
 
 export const DSLWorkflowStepSchema: z.ZodType = z
     .discriminatedUnion('type', [

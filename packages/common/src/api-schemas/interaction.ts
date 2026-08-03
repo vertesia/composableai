@@ -2286,7 +2286,11 @@ const resumeConversationFields = {
     run: ExecutionRunDocRefSchema,
     environment: z.string(),
     options: StatelessExecutionOptionsSchema,
-    conversation: z.unknown(),
+    // Optional because `unknown` includes `undefined` in TypeScript and `JSON.stringify` drops an
+    // undefined value entirely, so a caller resuming without prior conversation state sends no
+    // `conversation` key at all. `z.unknown()` alone still lists it in `required`, which rejected
+    // exactly those callers — the first message of a conversation.
+    conversation: z.unknown().optional(),
     tools: z.array(ToolDefinitionSchema),
     strip_options: ConversationStripOptionsSchema.optional(),
     asyncCompletion: AsyncCompletionOptionsSchema.optional(),
