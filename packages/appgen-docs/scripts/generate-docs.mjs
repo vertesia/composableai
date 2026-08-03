@@ -793,13 +793,14 @@ interface InCodeProcessDefinition {
 - \`context: { schema, initial }\`
 - \`nodes\`: record of node ids to process nodes
 
-Common node types are \`tool\`, \`interaction\`, \`agent\`, \`human_task\`, \`foreach\`, \`branch\`, \`condition\`, \`process\`, and \`final\`.
+Common node types are \`tool\`, \`interaction\`, \`agent\`, \`script\`, \`human_task\`, \`foreach\`, \`branch\`, \`condition\`, \`process\`, and \`final\`.
 
 Transition rules:
 
 - Use \`transitions: [{ to: "node_id" }]\`; do not use \`target\`.
 - \`branch\` and \`condition\` nodes use \`branches: [{ to: "node_id" }]\`.
 - A \`human_task\` node must include \`task.title\` and \`task.fields\`; fields support \`string\`, \`number\`, \`boolean\`, \`select\`, and \`text\`.
+- A \`script\` node references an embedded bundle in top-level \`resources.scripts\`. Scripts read \`VERTESIA_PROCESS_INPUT\`, write JSON to \`VERTESIA_PROCESS_RESULT\`, and may place artifacts under \`VERTESIA_PROCESS_OUT_DIR\`. JavaScript and TypeScript sandboxes include \`@vertesia/client\`; import it without adding it to the resource's packages.
 
 ## App Manifest
 
