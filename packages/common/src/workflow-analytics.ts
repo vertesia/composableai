@@ -115,18 +115,17 @@ export interface AgentRunCompletedEvent extends BaseAgentEvent {
     /** Total LLM calls made */
     totalLlmCalls: number;
     /**
-     * Cumulative token total for the run.
+     * Cumulative token usage breakdown for the run.
      *
-     * Scalar on purpose: `$.totalTokens` must have ONE type across every event
-     * family sharing the telemetry `event_data` column (LlmCallEvent already uses
-     * a scalar). The historical object shape lives in `tokenUsage` instead.
+     * No `totalTokens` (and no `total` here): an input+output sum mixes
+     * differently-priced quantities and nothing consumes it — token analytics
+     * aggregate the per-call LlmCallEvent fields. This also keeps
+     * `$.totalTokens` scalar-only in the telemetry `event_data` column
+     * (LlmCallEvent is the only current producer of that path).
      */
-    totalTokens?: number;
-    /** Cumulative token usage breakdown */
     tokenUsage?: {
         input: number;
         output: number;
-        total: number;
     };
     /** If conversation was ended via end_conversation tool */
     endConversation?: {

@@ -65,15 +65,14 @@ const AgentRunCompletedEventSchema = z.strictObject({
     totalIterations: z.number(),
     totalToolCalls: z.number(),
     totalLlmCalls: z.number(),
-    // Scalar on purpose: `$.totalTokens` must have ONE type across every event family sharing
-    // the telemetry `event_data` column (LlmCallEvent already uses a scalar). The historical
-    // object shape lives in `tokenUsage` instead.
-    totalTokens: z.number().optional(),
+    // No `totalTokens` (and no `total` here): an input+output sum mixes differently-priced
+    // quantities and nothing consumes it — token analytics aggregate the per-call LlmCallEvent
+    // fields. This also keeps `$.totalTokens` scalar-only in the telemetry `event_data` column
+    // (LlmCallEvent is the only current producer of that path).
     tokenUsage: z
         .strictObject({
             input: z.number(),
             output: z.number(),
-            total: z.number(),
         })
         .optional(),
     endConversation: z
