@@ -10,11 +10,39 @@ import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
 
+function clearRejectedPersistedScope(accountId?: string, projectId?: string) {
+    if (!accountId) return;
+
+    const projectKey = `${LastSelectedProjectId_KEY}-${accountId}`;
+    if (projectId) {
+        if (localStorage.getItem(projectKey) === projectId) {
+            localStorage.removeItem(projectKey);
+        }
+        return;
+    }
+
+    if (localStorage.getItem(LastSelectedAccountId_KEY) === accountId) {
+        localStorage.removeItem(LastSelectedAccountId_KEY);
+        localStorage.removeItem(projectKey);
+    }
+}
+
 interface ComposableTokenResponse {
     rawToken: string;
     token: AuthTokenPayload;
     error: boolean;
     message?: string;
+}
+
+export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
+    const urlAccount = currentUrl.searchParams.get('a') ?? undefined;
+    const urlProject = currentUrl.searchParams.get('p') ?? undefined;
+    const accountId =
+        urlAccount ??
+        (urlProject === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
+    const projectId = urlProject ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${accountId}`) ?? undefined;
+
+    return { accountId, projectId };
 }
 
 function normalizeIssuer(value: string | undefined): string | undefined {
@@ -232,44 +260,16 @@ export async function fetchComposableToken(
                 );
             }
 
-            // User doesn't have access to the requested account/project, or has no accounts
-            // This can happen with:
-            // 1. Stale localStorage from previous user
-            // 2. User invited to a new account (doesn't have access yet)
-            // 3. User exists but has no accounts at all
-
-            if (retryCount > 0) {
-                // Already retried without account scope - this is a real authorization failure
-                console.error('403: Access denied even without account scope - user may have no accounts');
-                Env.logger.error('403: Access denied after retry - authorization failure', {
-                    vertesia: {
-                        account_id: accountId,
-                        project_id: projectId,
-                        status: stsRes.status,
-                        retry_count: retryCount,
-                    },
-                });
-                throw new Error('Access denied - user may not have access to any accounts');
-            }
-
-            console.log('403: Access denied - clearing cached account and retrying without account scope');
-            Env.logger.warn('403: Access denied - clearing cached account and retrying', {
+            const responseMessage = await stsRes.text();
+            Env.logger.warn('STS rejected the requested account or project', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
                     status: stsRes.status,
-                    retry_count: retryCount,
+                    error: responseMessage,
                 },
             });
-
-            // Clear any stale account/project from localStorage
-            localStorage.removeItem(LastSelectedAccountId_KEY);
-            if (accountId) {
-                localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
-            }
-
-            // Retry without account/project scope - let user log in to their default account
-            return fetchComposableToken(getIdToken, undefined, undefined, ttl, retryCount + 1);
+            throw new TokenAuthorizationError(stsEndpoint, accountId, projectId, responseMessage);
         }
 
         if (!stsRes.ok) {
@@ -378,19 +378,28 @@ export async function getComposableToken(
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
-    //token is close to expire, refresh it
-    if (!devAuthToken && !useInternalAuth && getFirebaseAuth().currentUser) {
-        //we have a firebase user, get the token from there
-        AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
-    } else if (!devAuthToken && (initToken || AUTH_TOKEN_RAW)) {
-        // we have a token already and no firebase user, refresh it
-        AUTH_TOKEN_RAW = await fetchComposableToken(
-            () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
-            selectedAccount,
-            selectedProject,
-        );
-    } else if (devAuthToken) {
-        AUTH_TOKEN_RAW = devAuthToken;
+    try {
+        //token is close to expire, refresh it
+        if (!devAuthToken && !useInternalAuth && getFirebaseAuth().currentUser) {
+            //we have a firebase user, get the token from there
+            AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
+        } else if (!devAuthToken && (initToken || AUTH_TOKEN_RAW)) {
+            // we have a token already and no firebase user, refresh it
+            AUTH_TOKEN_RAW = await fetchComposableToken(
+                () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
+                selectedAccount,
+                selectedProject,
+            );
+        } else if (devAuthToken) {
+            AUTH_TOKEN_RAW = devAuthToken;
+        }
+    } catch (error: unknown) {
+        if (error instanceof TokenAuthorizationError) {
+            AUTH_TOKEN_RAW = undefined;
+            AUTH_TOKEN = undefined;
+            clearRejectedPersistedScope(selectedAccount, selectedProject);
+        }
+        throw error;
     }
 
     if (!AUTH_TOKEN_RAW) {
@@ -434,6 +443,18 @@ export class STSError extends Error {
         super(message);
         this.name = 'STSError';
         this.stsURL = stsURL;
+    }
+}
+
+export class TokenAuthorizationError extends STSError {
+    constructor(
+        stsURL: string,
+        public readonly accountId?: string,
+        public readonly projectId?: string,
+        public readonly responseMessage?: string,
+    ) {
+        super('Access denied for the selected account or project', stsURL);
+        this.name = 'TokenAuthorizationError';
     }
 }
 
