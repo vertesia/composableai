@@ -38,7 +38,7 @@
         "@types/papaparse": "^5.5.2",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vitest": "^4.1.10"
     },
     "dependencies": {

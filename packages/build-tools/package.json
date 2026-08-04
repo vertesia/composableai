@@ -36,7 +36,7 @@
         "@types/js-yaml": "^4.0.9",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vite": "catalog:",
         "vitest": "^4.1.10"
     },
@@ -45,7 +45,7 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
         "ajv": "^8.20.0",
-        "es-module-lexer": "^1.7.0",
+        "es-module-lexer": "^2.3.1",
         "esbuild": "^0.28.1",
         "js-yaml": "^5.2.1",
         "zod": "^4.4.3"

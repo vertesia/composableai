@@ -28,7 +28,7 @@
     },
     "devDependencies": {
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3"
+        "typescript": "^7.0.2"
     },
     "dependencies": {
         "@adobe/css-tools": "^4.5.0",

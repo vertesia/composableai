@@ -36,7 +36,7 @@
         "@tiptap/pm": "^3.28.0",
         "@tiptap/react": "^3.28.0",
         "@tiptap/starter-kit": "^3.28.0",
-        "marked": "^17.0.6",
+        "marked": "^18.0.7",
         "react": "catalog:",
         "react-dom": "catalog:"
     },
@@ -46,7 +46,7 @@
         "@types/react-dom": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vitest": "^4.1.9"
     },
     "exports": {
