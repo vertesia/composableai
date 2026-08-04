@@ -5,7 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 import { createContext, useContext } from 'react';
 
 import { getComposableToken } from './auth/composable';
-import { shouldRedirectToCentralAuth } from './auth/domainRouting';
+import { authReturnUrl, mountRootUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
@@ -84,6 +84,22 @@ class UserSession {
         });
     }
 
+    /**
+     * Force a fresh Vertesia JWT from STS, bypassing the in-memory cache.
+     * Use this when the current token's claims (e.g. `apps`) are suspected
+     * stale — STS recomputes the `apps` claim from ACEs on every issuance.
+     */
+    async refreshAuthToken(): Promise<AuthTokenPayload> {
+        const res = await getComposableToken(undefined, undefined, undefined, true);
+        const token = res?.rawToken;
+        if (!token) {
+            throw new Error('No token available');
+        }
+        this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
+        this.setSession?.(this.clone());
+        return this.authToken;
+    }
+
     signOut() {
         //compatibility
         this.logout();
@@ -136,8 +152,7 @@ class UserSession {
             this.client.withAuthCallback(undefined);
 
             const logoutUrl = new URL(CENTRAL_AUTH_REDIRECT);
-            const currentUrl = new URL(window.location.href);
-            currentUrl.hash = '';
+            const currentUrl = authReturnUrl();
             logoutUrl.pathname = '/logout';
             logoutUrl.searchParams.set('redirect_uri', currentUrl.toString());
             location.replace(logoutUrl.toString());
@@ -153,12 +168,13 @@ class UserSession {
             this.authToken = undefined;
             this.setSession = undefined;
             this.client.withAuthCallback(undefined);
-            // Navigate to root to avoid React rendering errors when
+            // Navigate to the app root to avoid React rendering errors when
             // unmounting deeply nested route components during logout.
-            // Only navigate if user was actually logged in to avoid
-            // infinite reload loop on fresh/incognito sessions.
+            // Use the mount root (not bare '/') so a gateway-mounted app stays
+            // on its mount. Only navigate if user was actually logged in to
+            // avoid an infinite reload loop on fresh/incognito sessions.
             if (wasLoggedIn) {
-                location.replace('/');
+                location.replace(mountRootUrl().toString());
             }
         }
     }
@@ -173,7 +189,9 @@ class UserSession {
             }
         }
 
-        window.location.replace(`/?a=${targetAccountId}`);
+        const url = mountRootUrl();
+        url.searchParams.set('a', targetAccountId);
+        window.location.replace(url.toString());
     }
 
     async switchProject(targetProjectId: string) {
@@ -181,7 +199,12 @@ class UserSession {
             localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.account.id}`, targetProjectId);
         }
 
-        window.location.replace(`/?a=${this.account?.id}&p=${targetProjectId}`);
+        const url = mountRootUrl();
+        if (this.account?.id) {
+            url.searchParams.set('a', this.account.id);
+        }
+        url.searchParams.set('p', targetProjectId);
+        window.location.replace(url.toString());
     }
 
     async fetchAccounts() {
@@ -237,13 +260,15 @@ class UserSession {
             const onboarding = await this.client.account.onboardingProgress();
             this.onboardingComplete = Object.values(onboarding).every((value) => value === true);
             if (previousStatus !== this.onboardingComplete) {
-                return true;
+                this.setSession?.(this.clone());
             }
-            this.setSession?.(this.clone());
+            return previousStatus === false && this.onboardingComplete;
         } catch (error) {
             console.error('Error fetching onboarding status:', error);
             this.onboardingComplete = false;
-            this.setSession?.(this.clone());
+            if (previousStatus !== this.onboardingComplete) {
+                this.setSession?.(this.clone());
+            }
         }
         return false;
     }

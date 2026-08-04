@@ -60,6 +60,7 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
         onSend: (message: string) => void;
         activeTaskCount?: number;
         activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+        onSelectWorkstream?: (workstreamId: string) => void;
         isCompleted?: boolean;
         isStreaming?: boolean;
         placeholder?: string;
@@ -85,53 +86,82 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
     },
 }));
 
-vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
-    default: ({
-        messages,
-        streamingMessages,
-        isCompleted,
-        bottomRef,
-        onSendMessage,
-        showInitialRequest,
-        renderRequestInputControls,
-        activeWorkstream,
-        onActiveWorkstreamChange,
-    }: {
-        messages: AgentMessage[];
-        streamingMessages: Map<string, unknown>;
-        isCompleted?: boolean;
-        bottomRef: React.RefObject<HTMLDivElement>;
-        onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
-        showInitialRequest?: boolean;
-        renderRequestInputControls?: boolean;
-        activeWorkstream?: string;
-        onActiveWorkstreamChange?: (workstreamId: string) => void;
-    }) => {
-        mocks.allMessagesMixedProps({
+vi.mock('./ModernAgentOutput/AllMessagesMixed', async () => {
+    const { useAgentResourceResolver } = await import('@vertesia/ui/widgets');
+    return {
+        default: ({
             messages,
+            workstreamSourceMessages,
             streamingMessages,
             isCompleted,
+            bottomRef,
             onSendMessage,
+            onOpenArtifact,
             showInitialRequest,
             renderRequestInputControls,
             activeWorkstream,
             onActiveWorkstreamChange,
-        });
-        return (
-            <div>
-                <div data-testid="rendered-message-count">{messages.length}</div>
-                <div data-testid="rendered-streaming-count">{streamingMessages.size}</div>
-                <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
-                    inline send
-                </button>
-                <div ref={bottomRef} data-testid="bottom-sentinel" />
-            </div>
-        );
-    },
-}));
+        }: {
+            messages: AgentMessage[];
+            workstreamSourceMessages?: AgentMessage[];
+            streamingMessages: Map<string, unknown>;
+            isCompleted?: boolean;
+            bottomRef: React.RefObject<HTMLDivElement>;
+            onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+            onOpenArtifact?: (path: string) => void;
+            showInitialRequest?: boolean;
+            renderRequestInputControls?: boolean;
+            activeWorkstream?: string;
+            onActiveWorkstreamChange?: (workstreamId: string) => void;
+        }) => {
+            const resolveResource = useAgentResourceResolver();
+            const resourceTarget = resolveResource(
+                { type: 'document', id: 'document-1' },
+                { source: 'structured', workflowRunId: 'agent-run-1' },
+            );
+            mocks.allMessagesMixedProps({
+                messages,
+                workstreamSourceMessages,
+                streamingMessages,
+                isCompleted,
+                onSendMessage,
+                onOpenArtifact,
+                showInitialRequest,
+                renderRequestInputControls,
+                activeWorkstream,
+                onActiveWorkstreamChange,
+            });
+            return (
+                <div>
+                    <div data-testid="rendered-message-count">{messages.length}</div>
+                    <div data-testid="rendered-streaming-count">{streamingMessages.size}</div>
+                    <div data-testid="resource-target">
+                        {resourceTarget.kind === 'navigate' ? resourceTarget.href : resourceTarget.kind}
+                    </div>
+                    <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
+                        inline send
+                    </button>
+                    <button
+                        type="button"
+                        disabled={!onOpenArtifact}
+                        onClick={() => onOpenArtifact?.('files/report.md')}
+                    >
+                        open artifact
+                    </button>
+                    <div ref={bottomRef} data-testid="bottom-sentinel" />
+                </div>
+            );
+        },
+    };
+});
 
 vi.mock('./AgentRightPanel.js', () => ({
-    AgentRightPanel: (props: { activeWorkstreams?: Array<{ workstream_id: string; status: string }> }) => {
+    AgentRightPanel: (props: {
+        activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+        onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+        selectedArtifactPath?: string | null;
+        activeTab?: string;
+    }) => {
         mocks.rightPanelProps(props);
         return <div data-testid="agent-right-panel" />;
     },
@@ -204,6 +234,7 @@ function latestAllMessagesMixedProps() {
     return calls[calls.length - 1]?.[0] as
         | {
               messages: AgentMessage[];
+              workstreamSourceMessages?: AgentMessage[];
               streamingMessages: Map<string, unknown>;
               isCompleted?: boolean;
               showInitialRequest?: boolean;
@@ -213,9 +244,21 @@ function latestAllMessagesMixedProps() {
         | undefined;
 }
 
+function latestRightPanelProps() {
+    const calls = mocks.rightPanelProps.mock.calls;
+    return calls[calls.length - 1]?.[0] as
+        | {
+              onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+              selectedArtifactPath?: string | null;
+              activeTab?: string;
+          }
+        | undefined;
+}
+
 describe('ModernAgentConversation send handling', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        window.sessionStorage.clear();
         mocks.restart.mockResolvedValue({ id: 'agent-run-1' });
         mocks.sendSignal.mockResolvedValue({});
         mocks.getActiveWorkstreams.mockResolvedValue({ running: [] });
@@ -253,6 +296,63 @@ describe('ModernAgentConversation send handling', () => {
         vi.restoreAllMocks();
     });
 
+    it('reports when the main agent turn starts and returns to idle', async () => {
+        const onAgentWorkingChange = vi.fn();
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.QUESTION, 'make an edit')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        const view = renderConversation({ onAgentWorkingChange });
+
+        await waitFor(() => expect(onAgentWorkingChange).toHaveBeenLastCalledWith(true));
+
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'make an edit'),
+                createMessage(AgentMessageType.IDLE, 'Waiting for your command...'),
+            ],
+            isCompleted: true,
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                title="Agent"
+                hideHeader
+                hideMessageInput
+                showRightPanel={false}
+                onAgentWorkingChange={onAgentWorkingChange}
+            />,
+        );
+
+        await waitFor(() => expect(onAgentWorkingChange).toHaveBeenLastCalledWith(false));
+    });
+
+    it('reports a failed workflow as idle even when its final stream message is an error', async () => {
+        const onAgentWorkingChange = vi.fn();
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ERROR, 'Agent failed')],
+            isCompleted: false,
+            agentRunStatus: 'FAILED',
+        });
+
+        renderConversation({ onAgentWorkingChange });
+
+        await waitFor(() => expect(onAgentWorkingChange).toHaveBeenLastCalledWith(false));
+    });
+
+    it('provides its resourceResolver prop to conversation content', () => {
+        mockStreamState({ messages: [createMessage(AgentMessageType.COMPLETE, 'done')] });
+
+        renderConversation({
+            resourceResolver: (resource) => ({ kind: 'navigate', href: `/host/documents/${resource.id}` }),
+        });
+
+        expect(screen.getByTestId('resource-target').textContent).toBe('/host/documents/document-1');
+    });
+
     it('restarts a terminal continuable run before sending the follow-up message', async () => {
         mockStreamState({
             messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
@@ -284,6 +384,62 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.reconnect.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
+    });
+
+    it('opens a Markdown artifact in the side panel and allows collaboration for an active run', async () => {
+        mocks.useAgentPlans.mockReturnValue({
+            plans: [],
+            activePlanIndex: 0,
+            setActivePlanIndex: vi.fn(),
+            workstreamStatusMap: new Map(),
+            showInput: true,
+            showSlidingPanel: true,
+            setShowSlidingPanel: vi.fn(),
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.IDLE, 'Waiting for your command...')],
+            isCompleted: true,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ showRightPanel: true, showArtifacts: true, interactive: true });
+
+        fireEvent.click(screen.getByRole('button', { name: 'open artifact' }));
+
+        await waitFor(() => {
+            expect(latestRightPanelProps()).toEqual(
+                expect.objectContaining({
+                    activeTab: 'artifacts',
+                    selectedArtifactPath: 'files/report.md',
+                    onSendMessage: expect.any(Function),
+                }),
+            );
+        });
+    });
+
+    it('keeps artifacts read-only when their originating run is completed', () => {
+        mocks.useAgentPlans.mockReturnValue({
+            plans: [],
+            activePlanIndex: 0,
+            setActivePlanIndex: vi.fn(),
+            workstreamStatusMap: new Map(),
+            showInput: true,
+            showSlidingPanel: true,
+            setShowSlidingPanel: vi.fn(),
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({
+            showRightPanel: true,
+            showArtifacts: true,
+            interactive: true,
+            onRestart: vi.fn(),
+        });
+
+        expect(latestRightPanelProps()?.onSendMessage).toBeUndefined();
     });
 
     it('binds ready uploaded files into the sent message and clears them after send', async () => {
@@ -325,9 +481,8 @@ describe('ModernAgentConversation send handling', () => {
         });
 
         const userInputCall = mocks.sendSignal.mock.calls.find((call) => call[1] === 'UserInput');
-        expect((userInputCall?.[2] as { message: string }).message).toContain(
-            '[report.pdf](artifact:files/report.pdf)',
-        );
+        const userInputPayload = userInputCall?.[2] as { message: string } | undefined;
+        expect(userInputPayload?.message).toContain('[report.pdf](artifact:files/report.pdf)');
         await waitFor(() => {
             expect(clearProcessingFiles).toHaveBeenCalledTimes(1);
         });
@@ -410,6 +565,37 @@ describe('ModernAgentConversation send handling', () => {
                 tool_approval_mode: 'auto_review',
             });
         });
+    });
+
+    it('collapses staged files in the start composer', () => {
+        const { container } = renderWithProviders(
+            <ModernAgentConversation startWorkflow={vi.fn()} hideHeader initialMessage="" />,
+        );
+        const input = container.querySelector('input[type="file"]');
+        const files = ['alpha.txt', 'beta.txt', 'gamma.txt', 'delta.txt', 'epsilon.txt'].map(
+            (name) => new File([name], name, { type: 'text/plain' }),
+        );
+
+        if (!input) {
+            throw new Error('Expected hidden file input to be rendered');
+        }
+
+        fireEvent.change(input, {
+            target: {
+                files,
+            },
+        });
+
+        expect(screen.getByText('alpha.txt')).not.toBeNull();
+        expect(screen.getByText('gamma.txt')).not.toBeNull();
+        expect(screen.queryByText('delta.txt')).toBeNull();
+        expect(screen.getByText('+2')).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /show more/i }));
+
+        expect(screen.getByText('delta.txt')).not.toBeNull();
+        expect(screen.getByText('epsilon.txt')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /show less/i })).not.toBeNull();
     });
 
     it('signals approval mode changes for an active interactive run', async () => {
@@ -767,11 +953,13 @@ describe('ModernAgentConversation send handling', () => {
             onCompactContext?: () => void | Promise<void>;
         };
 
+        // Prompt-based, matching the server's checkpoint trigger: `total`
+        // includes reasoning/result tokens that never re-enter context.
         expect(latestMessageInputProps.contextWindowUsage).toEqual({
-            usedTokens: 50_000,
+            usedTokens: 40_000,
             checkpointTokens: 100_000,
-            usedPercent: 50,
-            remainingPercent: 50,
+            usedPercent: 40,
+            remainingPercent: 60,
         });
 
         act(() => {
@@ -910,6 +1098,7 @@ describe('ModernAgentConversation send handling', () => {
         const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
             activeTaskCount?: number;
             activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+            onSelectWorkstream?: (workstreamId: string) => void;
         };
 
         expect(latestRightPanelProps.activeWorkstreams).toEqual([
@@ -923,6 +1112,12 @@ describe('ModernAgentConversation send handling', () => {
             expect.objectContaining({ workstream_id: 'alpha', status: 'running' }),
             expect.objectContaining({ workstream_id: 'beta', status: 'running' }),
         ]);
+
+        act(() => {
+            latestMessageInputProps.onSelectWorkstream?.('beta');
+        });
+
+        expect(latestAllMessagesMixedProps()?.activeWorkstream).toBe('beta');
     });
 
     it('shows completed workstream lifecycle messages in the panel without counting them as active', async () => {
@@ -1337,6 +1532,128 @@ describe('ModernAgentConversation send handling', () => {
                 }),
             }),
         );
+    });
+
+    it('does not resurrect an answered request overlay after remounting before the persisted echo arrives', async () => {
+        const requestMessage = {
+            ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+            details: {
+                request_id: 'ask-user-1',
+                ux: {
+                    options: [
+                        { id: 'red', label: 'Red' },
+                        { id: 'blue', label: 'Blue' },
+                    ],
+                },
+            },
+        };
+        mockStreamState({
+            messages: [requestMessage],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        const firstView = renderConversation();
+        fireEvent.click(screen.getByRole('button', { name: /Blue/ }));
+
+        await waitFor(() => expect(mocks.sendSignal).toHaveBeenCalledTimes(1));
+        expect(mocks.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({
+                metadata: expect.objectContaining({
+                    request_input_response: { request_id: 'ask-user-1' },
+                }),
+            }),
+        );
+
+        firstView.unmount();
+        renderConversation();
+
+        expect(screen.queryByText('What is your favorite color?')).toBeNull();
+        expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
+    });
+
+    it('restores a request overlay after its response fails to send', async () => {
+        mocks.sendSignal.mockRejectedValueOnce(new Error('offline'));
+        const requestMessage = {
+            ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+            details: {
+                request_id: 'ask-user-1',
+                ux: {
+                    options: [
+                        { id: 'red', label: 'Red' },
+                        { id: 'blue', label: 'Blue' },
+                    ],
+                },
+            },
+        };
+        mockStreamState({
+            messages: [requestMessage],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        const firstView = renderConversation();
+        fireEvent.click(screen.getByRole('button', { name: /Blue/ }));
+
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'failed');
+        });
+
+        firstView.unmount();
+        renderConversation();
+
+        expect(screen.getByText('What is your favorite color?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Blue/ })).not.toBeNull();
+    });
+
+    it('hides a stale request overlay when a terminal run cannot continue', () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+                    details: {
+                        ux: {
+                            options: [
+                                { id: 'red', label: 'Red' },
+                                { id: 'blue', label: 'Blue' },
+                            ],
+                        },
+                    },
+                },
+            ],
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation();
+
+        expect(screen.queryByText('What is your favorite color?')).toBeNull();
+        expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
+    });
+
+    it('keeps a pending request overlay when a terminal run can restart', () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+                    details: {
+                        ux: {
+                            options: [
+                                { id: 'red', label: 'Red' },
+                                { id: 'blue', label: 'Blue' },
+                            ],
+                        },
+                    },
+                },
+            ],
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({ onRestart: vi.fn() });
+
+        expect(screen.getByText('What is your favorite color?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Blue/ })).not.toBeNull();
     });
 
     it('passes commented approval denial metadata through the request overlay signal', async () => {
@@ -2014,6 +2331,78 @@ describe('ModernAgentConversation send handling', () => {
                 isPlaybackEnabled: true,
             }),
         );
+    });
+
+    it('hides the debug button when the playback toggle is disabled', () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'first question'),
+                createMessage(AgentMessageType.ANSWER, 'first answer'),
+            ],
+        });
+
+        renderConversation({ hideHeader: false, showPlaybackToggle: false });
+
+        expect(mocks.headerProps).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                showPlaybackButton: false,
+            }),
+        );
+    });
+
+    it('filters transcript messages as conversation history updates', () => {
+        const question = createMessage(AgentMessageType.QUESTION, 'Summarize the launch plan.');
+        const internalUpdate = createMessage(AgentMessageType.UPDATE, 'Inspecting internal records.');
+        const answer = createMessage(AgentMessageType.ANSWER, 'The launch plan is ready.');
+        const messageFilter = (message: AgentMessage) => message.type !== AgentMessageType.UPDATE;
+
+        mockStreamState({ messages: [question, internalUpdate] });
+        const view = renderConversation({ messageFilter });
+
+        expect(latestAllMessagesMixedProps()?.messages).toEqual([question]);
+        expect(latestAllMessagesMixedProps()?.workstreamSourceMessages).toEqual([question]);
+
+        mockStreamState({ messages: [question, internalUpdate, answer] });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                title="Agent"
+                hideHeader
+                hideMessageInput
+                showRightPanel={false}
+                messageFilter={messageFilter}
+            />,
+        );
+
+        expect(latestAllMessagesMixedProps()?.messages).toEqual([question, answer]);
+        expect(latestAllMessagesMixedProps()?.workstreamSourceMessages).toEqual([question, answer]);
+        expect(document.querySelector('[data-agent-live-message-count="3"]')).not.toBeNull();
+        expect(document.querySelector('[data-agent-rendered-message-count="2"]')).not.toBeNull();
+    });
+
+    it('keeps pending request input actionable when its transcript row is filtered out', () => {
+        const requestMessage = {
+            ...createMessage(AgentMessageType.REQUEST_INPUT, 'Choose a deployment region.'),
+            details: {
+                ux: {
+                    options: [
+                        { id: 'us', label: 'United States' },
+                        { id: 'eu', label: 'Europe' },
+                    ],
+                },
+            },
+        };
+        mockStreamState({
+            messages: [requestMessage],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ messageFilter: () => false });
+
+        expect(latestAllMessagesMixedProps()?.messages).toEqual([]);
+        expect(screen.getByText('Choose a deployment region.')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Europe/ })).not.toBeNull();
     });
 
     it('keeps the replay fixture export action available while messages are empty', () => {

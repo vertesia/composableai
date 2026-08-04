@@ -1,4 +1,4 @@
-import type { FacetBucket } from '@vertesia/common';
+import type { ComputedFacetResponse, FacetBucket } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     FilterBar,
@@ -11,11 +11,13 @@ import { useState } from 'react';
 import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 
 interface PromptsFacetsNavProps {
-    facets: {
-        role?: FacetBucket[];
-        status?: FacetBucket[];
-        tags?: FacetBucket[];
-    };
+    /**
+     * The facet response as the endpoint publishes it: `total` plus one entry per facet the caller
+     * asked for. The names are chosen per request, so the buckets are narrowed below rather than
+     * declared here — the previous `{ role, status, tags }` shape named facets this component never
+     * requests and could not describe a caller that asks for a different one.
+     */
+    facets: ComputedFacetResponse;
     search: SearchInterface;
     /**
      * Optional controlled filter state. When provided, the parent owns the filter list (and is
@@ -28,8 +30,14 @@ interface PromptsFacetsNavProps {
     filterGroups?: FilterGroup[];
 }
 
+function facetBuckets(facets: ComputedFacetResponse, name: string): FacetBucket[] {
+    const value = facets[name];
+    return Array.isArray(value) ? (value as FacetBucket[]) : [];
+}
+
 // Hook to create filter groups for prompts
 export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']): FilterGroup[] {
+    const roleBuckets = facetBuckets(facets, 'role');
     const customFilterGroups: FilterGroup[] = [];
 
     // Add name filter as text type
@@ -42,12 +50,12 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
     customFilterGroups.push(nameFilterGroup);
 
     // Add role filter as select type if role facets are available
-    if (facets.role && facets.role.length > 0) {
+    if (roleBuckets.length > 0) {
         const rolesFilterGroup = {
             name: 'role',
             placeholder: 'Role',
             type: 'select' as const,
-            options: facets.role.map((facet) => ({
+            options: roleBuckets.map((facet) => ({
                 label: facet._id,
                 value: facet._id,
                 count: facet.count,
@@ -62,7 +70,7 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
         placeholder: 'Tags',
         type: 'stringList' as const,
         multiple: true,
-        options: (facets.tags ?? []).map((facet) => ({
+        options: facetBuckets(facets, 'tags').map((facet) => ({
             label: facet._id,
             value: facet._id,
         })),

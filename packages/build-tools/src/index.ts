@@ -20,12 +20,13 @@
  *
  * @example
  * ```typescript
- * import { transformImports } from '@vertesia/build-tools';
+ * import { resolveTransformerNames, transformImports } from '@vertesia/build-tools';
  *
  * await transformImports({
  *   libDir: './lib',
  *   srcDir: './src',
- *   transformers: ['skill', 'raw'],
+ *   // Resolved rules, not names — use resolveTransformerNames to go from one to the other.
+ *   transformers: resolveTransformerNames(['skill', 'raw']),
  *   assetsDir: './dist',
  * });
  * ```
@@ -40,8 +41,39 @@ export {
 } from './core/compilers/widget.js';
 // Parsers
 export { type FrontmatterResult, parseFrontmatter } from './core/parsers/frontmatter.js';
+export {
+    loadSkillCatalog,
+    readPackageJson,
+} from './core/skill-markdown/load-catalog.js';
+// Skill markdown preprocessor: `{@tool …}` / `{@skill …}` resolution and tagged-example
+// validation. Pure — the consuming build supplies the catalog and the schema validator.
+export {
+    assertSkillMarkdown,
+    DEFAULT_SKILL_TOOL_PREFIX,
+    type PreprocessSkillMarkdownOptions,
+    type PreprocessSkillMarkdownResult,
+    preprocessSkillMarkdown,
+    type SkillExample,
+    type SkillReference,
+    type SkillReferenceKind,
+} from './core/skill-markdown/preprocess.js';
+export {
+    checkDispatchDescriptor,
+    createSchemaExampleValidator,
+    createSchemaFieldValidator,
+    type DispatchResolution,
+    nodesAtPath,
+    pairDispatchedInputs,
+    resolveDispatchedNames,
+    schemaNodeAtPath,
+    type ToolDispatchDescriptor,
+    type ToolSchemaEntry,
+    toolNamesAtPath,
+} from './core/skill-markdown/schema-validator.js';
 // Transformers (the pure transformation functions)
 export {
+    createSkillTransformer,
+    isSkillTransformer,
     type PromptContentType,
     type PromptDefinition,
     PromptDefinitionSchema,
@@ -54,6 +86,7 @@ export {
     type SkillDefinition,
     SkillDefinitionSchema,
     SkillPropertiesSchema,
+    type SkillTransformerConfig,
     skillCollectionTransformer,
     skillTransformer,
     TemplateType,

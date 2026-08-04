@@ -1,9 +1,30 @@
 {
-    "extends": "@vertesia/tsconfig/lib.json",
+    "//": "Self-contained on purpose: create-plugin is copied into a sandbox and built standalone by appgen (and ships as the published @vertesia/create-plugin), so it must NOT extend the private, unpublished @vertesia/tsconfig workspace package. Options below mirror @vertesia/tsconfig base.json + lib.json.",
     "compilerOptions": {
+        "target": "ES2024",
+        "lib": ["ES2024"],
+        "useDefineForClassFields": true,
+        "sourceMap": true,
+        "forceConsistentCasingInFileNames": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "experimentalDecorators": true,
         "rootDir": "./src",
         "outDir": "./lib",
         "types": ["node"]
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "lib", "src/**/*.test.ts"]
 }

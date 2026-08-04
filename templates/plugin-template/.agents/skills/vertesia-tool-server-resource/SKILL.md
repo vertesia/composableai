@@ -71,6 +71,9 @@ One file per type in `src/modules/app/resources/types/<collection>/<type-name>.t
 
 Key fields: `name` (snake_case), `object_schema` (JSON Schema with `additionalProperties: false`), `table_layout` (columns for the UI), `is_chunkable`, `strict_mode`.
 
+The type's public app id is its bare `name`: `app:<app-name>:<type-name>`. The collection is code organization
+only for content types and is not part of the public id. Type names must therefore be unique across collections.
+
 → Code in `REFERENCE.md` § Content Type.
 
 ### Rendering Template
@@ -98,6 +101,10 @@ export const tools = [MyTools];
 `src/tool-server/app-server-modules.ts` is generated from active modules and `config.ts` imports from it, so no further server wiring is needed.
 
 Each collection needs an SVG `icon.svg.ts` (default string export). Code in `REFERENCE.md` § Collection registration & icons.
+
+For interactions and activities, prefer naming the default collection `main`. Runtime ids include the collection
+name, so `main` gives stable ids like `app:<app-name>:main:<interaction-name>`. Avoid naming a collection after
+the app, which creates redundant ids such as `app:<app-name>:<app-name>:<interaction-name>`.
 
 ## Verification
 

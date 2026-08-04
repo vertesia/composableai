@@ -10,11 +10,77 @@ import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
 
+function clearRejectedPersistedScope(accountId?: string, projectId?: string) {
+    if (!accountId) return;
+
+    const projectKey = `${LastSelectedProjectId_KEY}-${accountId}`;
+    if (projectId) {
+        if (localStorage.getItem(projectKey) === projectId) {
+            localStorage.removeItem(projectKey);
+        }
+        return;
+    }
+
+    if (localStorage.getItem(LastSelectedAccountId_KEY) === accountId) {
+        localStorage.removeItem(LastSelectedAccountId_KEY);
+        localStorage.removeItem(projectKey);
+    }
+}
+
 interface ComposableTokenResponse {
     rawToken: string;
     token: AuthTokenPayload;
     error: boolean;
     message?: string;
+}
+
+export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
+    const urlAccount = currentUrl.searchParams.get('a') ?? undefined;
+    const urlProject = currentUrl.searchParams.get('p') ?? undefined;
+    const accountId =
+        urlAccount ??
+        (urlProject === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
+    const projectId = urlProject ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${accountId}`) ?? undefined;
+
+    return { accountId, projectId };
+}
+
+function normalizeIssuer(value: string | undefined): string | undefined {
+    return value?.replace(/\/+$/, '');
+}
+
+function decodeToken(token: string): AuthTokenPayload {
+    return jwtDecode(token) as AuthTokenPayload;
+}
+
+function isVertesiaIssuedToken(token: string | undefined): token is string {
+    if (!token) return false;
+    try {
+        const decoded = decodeToken(token) as AuthTokenPayload & { iss?: string };
+        return normalizeIssuer(decoded.iss) === normalizeIssuer(Env.endpoints.sts);
+    } catch {
+        return false;
+    }
+}
+
+function canUseVertesiaTokenDirectly(token: string, accountId?: string, projectId?: string): boolean {
+    const decoded = decodeToken(token);
+    const hasAuthorizationClaims = Boolean(
+        decoded.permissions?.length ||
+            decoded.account_roles?.length ||
+            decoded.project_roles?.length ||
+            decoded.apps?.length,
+    );
+    if (!hasAuthorizationClaims) {
+        return false;
+    }
+    if (accountId && decoded.account?.id !== accountId) {
+        return false;
+    }
+    if (projectId && decoded.project?.id !== projectId) {
+        return false;
+    }
+    return true;
 }
 
 export async function fetchComposableToken(
@@ -194,44 +260,16 @@ export async function fetchComposableToken(
                 );
             }
 
-            // User doesn't have access to the requested account/project, or has no accounts
-            // This can happen with:
-            // 1. Stale localStorage from previous user
-            // 2. User invited to a new account (doesn't have access yet)
-            // 3. User exists but has no accounts at all
-
-            if (retryCount > 0) {
-                // Already retried without account scope - this is a real authorization failure
-                console.error('403: Access denied even without account scope - user may have no accounts');
-                Env.logger.error('403: Access denied after retry - authorization failure', {
-                    vertesia: {
-                        account_id: accountId,
-                        project_id: projectId,
-                        status: stsRes.status,
-                        retry_count: retryCount,
-                    },
-                });
-                throw new Error('Access denied - user may not have access to any accounts');
-            }
-
-            console.log('403: Access denied - clearing cached account and retrying without account scope');
-            Env.logger.warn('403: Access denied - clearing cached account and retrying', {
+            const responseMessage = await stsRes.text();
+            Env.logger.warn('STS rejected the requested account or project', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
                     status: stsRes.status,
-                    retry_count: retryCount,
+                    error: responseMessage,
                 },
             });
-
-            // Clear any stale account/project from localStorage
-            localStorage.removeItem(LastSelectedAccountId_KEY);
-            if (accountId) {
-                localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
-            }
-
-            // Retry without account/project scope - let user log in to their default account
-            return fetchComposableToken(getIdToken, undefined, undefined, ttl, retryCount + 1);
+            throw new TokenAuthorizationError(stsEndpoint, accountId, projectId, responseMessage);
         }
 
         if (!stsRes.ok) {
@@ -319,23 +357,59 @@ export async function getComposableToken(
     const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
     const selectedProject =
         projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined;
+    const devAuthToken = Env.isLocalDev ? Env.devAuthToken : undefined;
+    const suppliedToken = devAuthToken ?? initToken ?? AUTH_TOKEN_RAW;
 
-    //token is still valid for more than 5 minutes
-    if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > Date.now() / 1000 + 300) {
+    const cachedTokenMatchesScope =
+        (!selectedAccount || AUTH_TOKEN?.account?.id === selectedAccount) &&
+        (!selectedProject || AUTH_TOKEN?.project?.id === selectedProject);
+
+    // Token is still valid for more than 5 minutes and belongs to the requested scope.
+    if (
+        !forceRefresh &&
+        AUTH_TOKEN_RAW &&
+        AUTH_TOKEN &&
+        cachedTokenMatchesScope &&
+        AUTH_TOKEN.exp > Date.now() / 1000 + 300
+    ) {
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
-    //token is close to expire, refresh it
-    if (!useInternalAuth && getFirebaseAuth().currentUser) {
-        //we have a firebase user, get the token from there
-        AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
-    } else if (initToken || AUTH_TOKEN_RAW) {
-        // we have a token already and no firebase user, refresh it
-        AUTH_TOKEN_RAW = await fetchComposableToken(
-            () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
-            selectedAccount,
-            selectedProject,
-        );
+    if (
+        !forceRefresh &&
+        isVertesiaIssuedToken(suppliedToken) &&
+        canUseVertesiaTokenDirectly(suppliedToken, selectedAccount, selectedProject)
+    ) {
+        AUTH_TOKEN_RAW = suppliedToken;
+        AUTH_TOKEN = decodeToken(AUTH_TOKEN_RAW);
+        if (!AUTH_TOKEN.exp) {
+            throw new Error('Invalid composable token');
+        }
+        return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
+    }
+
+    try {
+        //token is close to expire, refresh it
+        if (!devAuthToken && !useInternalAuth && getFirebaseAuth().currentUser) {
+            //we have a firebase user, get the token from there
+            AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
+        } else if (!devAuthToken && (initToken || AUTH_TOKEN_RAW)) {
+            // we have a token already and no firebase user, refresh it
+            AUTH_TOKEN_RAW = await fetchComposableToken(
+                () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
+                selectedAccount,
+                selectedProject,
+            );
+        } else if (devAuthToken) {
+            AUTH_TOKEN_RAW = devAuthToken;
+        }
+    } catch (error: unknown) {
+        if (error instanceof TokenAuthorizationError) {
+            AUTH_TOKEN_RAW = undefined;
+            AUTH_TOKEN = undefined;
+            clearRejectedPersistedScope(selectedAccount, selectedProject);
+        }
+        throw error;
     }
 
     if (!AUTH_TOKEN_RAW) {
@@ -348,7 +422,7 @@ export async function getComposableToken(
         throw new Error('Cannot acquire a composable token');
     }
 
-    AUTH_TOKEN = jwtDecode(AUTH_TOKEN_RAW) as AuthTokenPayload;
+    AUTH_TOKEN = decodeToken(AUTH_TOKEN_RAW);
 
     if (!AUTH_TOKEN?.exp || !AUTH_TOKEN_RAW) {
         console.error('Invalid composable token', AUTH_TOKEN);
@@ -379,6 +453,18 @@ export class STSError extends Error {
         super(message);
         this.name = 'STSError';
         this.stsURL = stsURL;
+    }
+}
+
+export class TokenAuthorizationError extends STSError {
+    constructor(
+        stsURL: string,
+        public readonly accountId?: string,
+        public readonly projectId?: string,
+        public readonly responseMessage?: string,
+    ) {
+        super('Access denied for the selected account or project', stsURL);
+        this.name = 'TokenAuthorizationError';
     }
 }
 

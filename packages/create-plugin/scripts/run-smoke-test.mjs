@@ -24,7 +24,17 @@ let exitCode = 0;
 try {
     const result = spawnSync(
         process.execPath,
-        [cliPath, projectName, '--yes', '--template', 'Vertesia Plugin', '--local-templates', localTemplates, '--dev'],
+        [
+            cliPath,
+            projectName,
+            '--yes',
+            '--template',
+            'Vertesia Plugin',
+            '--local-templates',
+            localTemplates,
+            '--skip-install',
+            '--dev',
+        ],
         { cwd: tmpRoot, stdio: 'inherit' },
     );
     if (result.status !== 0) {

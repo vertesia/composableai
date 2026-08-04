@@ -144,14 +144,14 @@ export async function createObject(program: Command, files: string[], options: C
         if (options.type === AUTOMATIC_TYPE_SELECTION) {
             delete options.type;
         }
-        return createObjectFromFiles(program, files, options);
+        return await createObjectFromFiles(program, files, options);
     } else {
         let file = files[0];
         if (file.indexOf('*') > -1) {
             const files = await glob(file);
-            return createObjectFromFiles(program, files, options);
+            return await createObjectFromFiles(program, files, options);
         } else if (file.includes('://')) {
-            return createObjectFromExternalSource(await getClient(program), file, options);
+            return await createObjectFromExternalSource(await getClient(program), file, options);
         } else {
             file = resolve(file);
             let stats: Stats;
@@ -195,7 +195,7 @@ export async function createObject(program: Command, files: string[], options: C
                     delete options.type;
                 }
 
-                return createObjectFromFile(program, file, options);
+                return await createObjectFromFile(program, file, options);
             } else if (stats.isDirectory()) {
                 questions.push({
                     type: 'select',
@@ -215,7 +215,7 @@ export async function createObject(program: Command, files: string[], options: C
                 }
 
                 const files = await listFilesInDirectory(file, options.recursive ?? false);
-                return createObjectFromFiles(program, files, options);
+                return await createObjectFromFiles(program, files, options);
             }
         }
     }

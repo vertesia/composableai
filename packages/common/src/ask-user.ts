@@ -55,7 +55,15 @@ export interface AskUserUxConfig {
 }
 
 /** Message details structure for REQUEST_INPUT messages with UX config */
-export interface AskUserMessageDetails {
+export interface AskUserMessageDetails extends Record<string, unknown> {
+    /** Stable identifier used to correlate this prompt with the user's persisted response. */
+    request_id?: string;
     /** UX configuration for rendering the ask_user widget */
     ux?: AskUserUxConfig;
+}
+
+/** Metadata carried by a user response to a structured REQUEST_INPUT message. */
+export interface RequestInputResponseMetadata {
+    /** Stable identifier copied from the REQUEST_INPUT message. */
+    request_id: string;
 }

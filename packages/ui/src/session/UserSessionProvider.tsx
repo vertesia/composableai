@@ -1,13 +1,26 @@
 import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { getComposableToken, RestrictedEnvironmentError, STSError, UserNotFoundError } from './auth/composable';
-import { shouldRedirectToCentralAuth } from './auth/domainRouting';
+import {
+    getComposableToken,
+    RestrictedEnvironmentError,
+    resolveAuthSelection,
+    STSError,
+    TokenAuthorizationError,
+    UserNotFoundError,
+} from './auth/composable';
+import { authReturnUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from './UserSession';
+import { UserSession, UserSessionContext } from './UserSession';
 
 const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
+
+function clearAuthHash() {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
+}
 
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
@@ -22,10 +35,21 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     const hasInitiatedAuthRef = useRef(false);
     const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
+    const clearRejectedUrlScope = (error: TokenAuthorizationError, clearHash = false) => {
+        const url = new URL(window.location.href);
+        if (error.projectId && url.searchParams.get('p') === error.projectId) {
+            url.searchParams.delete('p');
+        } else if (error.accountId && url.searchParams.get('a') === error.accountId) {
+            url.searchParams.delete('a');
+            url.searchParams.delete('p');
+        }
+        if (clearHash) url.hash = '';
+        window.history.replaceState(window.history.state, '', url);
+    };
+
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
-        const currentUrl = new URL(window.location.href);
-        currentUrl.hash = '';
+        const currentUrl = authReturnUrl();
         if (projectId) currentUrl.searchParams.set('p', projectId);
         if (accountId) currentUrl.searchParams.set('a', accountId);
         url.searchParams.set('redirect_uri', currentUrl.toString());
@@ -44,12 +68,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         console.log('Auth: starting auth flow');
         Env.logger.info('Starting auth flow');
         const currentUrl = new URL(window.location.href);
-        const selectedAccount =
-            currentUrl.searchParams.get('a') ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
-        const selectedProject =
-            currentUrl.searchParams.get('p') ??
-            localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ??
-            undefined;
+        const { accountId: selectedAccount, projectId: selectedProject } = resolveAuthSelection(currentUrl);
         console.log('Auth: selected account', selectedAccount);
         console.log('Auth: selected project', selectedProject);
         Env.logger.info('Selected account and project', {
@@ -58,6 +77,28 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 project_id: selectedProject,
             },
         });
+
+        if (Env.isLocalDev && Env.devAuthToken) {
+            session.setSession = setSession;
+            getComposableToken(selectedAccount, selectedProject, Env.devAuthToken)
+                .then((res) => {
+                    session.login(res.rawToken).then(() => setSession(session.clone()));
+                })
+                .catch((err) => {
+                    console.error('Failed to initialize dev auth token', err);
+                    Env.logger.error('Failed to initialize dev auth token', {
+                        vertesia: {
+                            account_id: selectedAccount,
+                            project_id: selectedProject,
+                            error: err,
+                        },
+                    });
+                    session.isLoading = false;
+                    session.authError = err instanceof Error ? err : new Error(String(err));
+                    setSession(session.clone());
+                });
+            return;
+        }
 
         if (token && state) {
             session.setSession = setSession;
@@ -77,8 +118,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 .then((res) => {
                     session.login(res.rawToken, { loadOnboardingStatus }).then(() => {
                         setSession(session.clone());
-                        //cleanup the hash
-                        window.location.hash = '';
+                        clearAuthHash();
                     });
                 })
                 .catch((err) => {
@@ -102,6 +142,14 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         return;
                     }
 
+                    if (err instanceof TokenAuthorizationError) {
+                        session.isLoading = false;
+                        session.authError = err;
+                        setSession(session.clone());
+                        clearRejectedUrlScope(err, true);
+                        return;
+                    }
+
                     if (err instanceof STSError) {
                         console.error('STS error during token exchange', err);
                         Env.logger.error('STS error during token exchange', {
@@ -117,7 +165,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         );
                         session.logout();
                         setSession(session.clone());
-                        window.location.hash = '';
+                        clearAuthHash();
                         return;
                     }
 
@@ -130,7 +178,14 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     redirectToCentralAuth();
                 });
             return;
-        } else {
+        }
+
+        let cancelled = false;
+        let unsubscribe: (() => void) | undefined;
+
+        const startFirebaseOrCentralAuth = () => {
+            if (cancelled) return;
+
             // If the current host is not in the Firebase allowlist, central auth owns sign-in.
             if (!session.isLoggedIn()) {
                 console.log('Auth: not logged in & no token/state');
@@ -154,71 +209,121 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     });
                     redirectToCentralAuth();
                     return; // Don't register onAuthStateChanged listener when redirecting
-                } else {
-                    console.log('Auth: host is in Firebase auth allowlist');
-                    Env.logger.info('Host is in Firebase auth allowlist', {
+                }
+
+                console.log('Auth: host is in Firebase auth allowlist');
+                Env.logger.info('Host is in Firebase auth allowlist', {
+                    vertesia: {
+                        account_id: selectedAccount,
+                        project_id: selectedProject,
+                    },
+                });
+            }
+
+            unsubscribe = onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
+                if (firebaseUser) {
+                    console.log('Auth: successful login with firebase');
+                    Env.logger.info('Successful login with firebase', {
                         vertesia: {
                             account_id: selectedAccount,
                             project_id: selectedProject,
                         },
                     });
+                    session.setSession = setSession;
+                    await getComposableToken(
+                        selectedAccount,
+                        selectedProject,
+                        undefined,
+                        false,
+                        shouldRedirectToCentralAuth(),
+                    )
+                        .then((res) => {
+                            session
+                                .login(res.rawToken, { loadOnboardingStatus })
+                                .then(() => setSession(session.clone()));
+                        })
+                        .catch((err) => {
+                            console.error('Failed to fetch user token from studio', err);
+                            Env.logger.error('Failed to fetch user token from studio', {
+                                vertesia: {
+                                    account_id: selectedAccount,
+                                    project_id: selectedProject,
+                                    error: err,
+                                },
+                            });
+                            // Keep the Firebase session for UserNotFoundError (signup flow) and
+                            // RestrictedEnvironmentError (identity is valid; the environment is gated).
+                            // Logging out would retrigger onAuthStateChanged and clear the authError.
+                            if (
+                                !(err instanceof UserNotFoundError) &&
+                                !(err instanceof RestrictedEnvironmentError) &&
+                                !(err instanceof TokenAuthorizationError)
+                            ) {
+                                session.logout();
+                            }
+                            if (err instanceof TokenAuthorizationError) {
+                                clearRejectedUrlScope(err);
+                            }
+                            session.isLoading = false;
+                            session.authError = err;
+                            setSession(session.clone());
+                        });
+                } else {
+                    // anonymous user
+                    console.log('Auth: using anonymous user');
+                    Env.logger.info('Using anonymous user', {
+                        vertesia: {
+                            account_id: selectedAccount,
+                            project_id: selectedProject,
+                        },
+                    });
+                    session.client.withAuthCallback(undefined);
+                    session.logout();
+                    setSession(session.clone());
                 }
-            }
+            });
+        };
+
+        if (Env.authTokenProvider) {
+            session.setSession = setSession;
+            void Env.authTokenProvider()
+                .then(async (injectedToken) => {
+                    if (!injectedToken) {
+                        startFirebaseOrCentralAuth();
+                        return;
+                    }
+                    const res = await getComposableToken(
+                        selectedAccount,
+                        selectedProject,
+                        injectedToken,
+                        false,
+                        shouldRedirectToCentralAuth(),
+                    );
+                    await session.login(res.rawToken, { loadOnboardingStatus });
+                    if (!cancelled) setSession(session.clone());
+                })
+                .catch((err: unknown) => {
+                    console.warn('Auth: failed to initialize injected auth token', err);
+                    Env.logger.warn('Failed to initialize injected auth token', {
+                        vertesia: {
+                            account_id: selectedAccount,
+                            project_id: selectedProject,
+                            error: err,
+                        },
+                    });
+                    startFirebaseOrCentralAuth();
+                });
+            return () => {
+                cancelled = true;
+                unsubscribe?.();
+            };
         }
 
-        return onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
-            if (firebaseUser) {
-                console.log('Auth: successful login with firebase');
-                Env.logger.info('Successful login with firebase', {
-                    vertesia: {
-                        account_id: selectedAccount,
-                        project_id: selectedProject,
-                    },
-                });
-                session.setSession = setSession;
-                await getComposableToken(
-                    selectedAccount,
-                    selectedProject,
-                    undefined,
-                    false,
-                    shouldRedirectToCentralAuth(),
-                )
-                    .then((res) => {
-                        session.login(res.rawToken, { loadOnboardingStatus }).then(() => setSession(session.clone()));
-                    })
-                    .catch((err) => {
-                        console.error('Failed to fetch user token from studio', err);
-                        Env.logger.error('Failed to fetch user token from studio', {
-                            vertesia: {
-                                account_id: selectedAccount,
-                                project_id: selectedProject,
-                                error: err,
-                            },
-                        });
-                        // Keep the Firebase session for UserNotFoundError (signup flow) and
-                        // RestrictedEnvironmentError (identity is valid; the environment is gated).
-                        // Logging out would retrigger onAuthStateChanged and clear the authError.
-                        if (!(err instanceof UserNotFoundError) && !(err instanceof RestrictedEnvironmentError)) {
-                            session.logout();
-                        }
-                        session.isLoading = false;
-                        session.authError = err;
-                        setSession(session.clone());
-                    });
-            } else {
-                // anonymous user
-                console.log('Auth: using anonymous user');
-                Env.logger.info('Using anonymous user', {
-                    vertesia: {
-                        account_id: selectedAccount,
-                        project_id: selectedProject,
-                    },
-                });
-                session.client.withAuthCallback(undefined);
-                session.logout();
-                setSession(session.clone());
-            }
-        });
+        startFirebaseOrCentralAuth();
+        return () => {
+            cancelled = true;
+            unsubscribe?.();
+        };
     };
 
     useEffect(() => {

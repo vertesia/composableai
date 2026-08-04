@@ -1,7 +1,7 @@
-import { type Permission, PrincipalType, type SystemRoleDefinition } from '@vertesia/common';
+import { type AuthTokenPayload, type Permission, PrincipalType, type SystemRoleDefinition } from '@vertesia/common';
 import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { type UserSession, useUserSession } from '@vertesia/ui/session';
+import { useUserSession } from '@vertesia/ui/session';
 import { createContext, useContext, useMemo } from 'react';
 import { isAnyOf } from './helpers';
 
@@ -12,39 +12,18 @@ export class UserPermissions {
     roles: Set<string>; // all roles of the current user
     permissions: Set<string>; // all permissions of the current user
 
-    constructor(session: UserSession, roles: ListRolesResponse) {
-        if (!session.authToken) {
-            throw new Error('No auth token found in user session');
-        }
+    constructor(authToken: AuthTokenPayload, roles: ListRolesResponse = []) {
         this.system_roles = roles;
-        const userRoles = new Set<string>(session.authToken.account_roles || []);
-        if (session.authToken.project_roles) {
-            for (const role of session.authToken.project_roles) {
-                userRoles.add(role);
-            }
-        }
+        const roleNames = [...(authToken.account_roles || []), ...(authToken.project_roles || [])];
+        const userRoles = new Set<string>(roleNames);
         this.roles = userRoles;
-        // build a temporary role to permissions map
-        const map: Record<string, Permission[]> = {};
-        for (const role of roles) {
-            map[role.name] = role.permissions;
-        }
+        const rolePermissions = authToken.permissions ?? getPermissionsForRolesFromMappings(roleNames, roles);
+        // OAuth access tokens are capped to the permissions granted to the token (its scopes).
         const permissionCap =
-            session.authToken.type === PrincipalType.OAuthAccess
-                ? new Set<string>(session.authToken.permissions ?? [])
-                : undefined;
-        const permissions = new Set<string>();
-        for (const role of userRoles) {
-            const rolePermissions = map[role];
-            if (rolePermissions) {
-                for (const permission of rolePermissions) {
-                    if (!permissionCap || permissionCap.has(permission)) {
-                        permissions.add(permission);
-                    }
-                }
-            }
-        }
-        this.permissions = permissions;
+            authToken.type === PrincipalType.OAuthAccess ? new Set<string>(authToken.permissions ?? []) : undefined;
+        this.permissions = new Set(
+            permissionCap ? rolePermissions.filter((permission) => permissionCap.has(permission)) : rolePermissions,
+        );
     }
 
     hasPermission(permission: string | string[]) {
@@ -62,6 +41,17 @@ export class UserPermissions {
             return true;
         }
     }
+}
+
+function getPermissionsForRolesFromMappings(roleNames: Iterable<string>, roles: ListRolesResponse): Permission[] {
+    const permissionsByRole = new Map(roles.map((role) => [role.name, role.permissions]));
+    const permissions = new Set<Permission>();
+    for (const role of roleNames) {
+        for (const permission of permissionsByRole.get(role) ?? []) {
+            permissions.add(permission);
+        }
+    }
+    return Array.from(permissions);
 }
 
 const UserPermissionsContext = createContext<UserPermissions | undefined>(undefined);
@@ -82,21 +72,28 @@ interface UserPermissionProviderProps {
 export function UserPermissionProvider({ children }: UserPermissionProviderProps) {
     const { t } = useUITranslation();
     const session = useUserSession();
+    const authToken = session.authToken;
+    const shouldFetchRoleMappings = Boolean(authToken && !authToken.permissions);
     const { data, error, isLoading } = useFetch<ListRolesResponse | undefined>(() => {
-        if (session.user) {
+        if (shouldFetchRoleMappings) {
             return session.client.iam.roles.listSystem();
-        } else {
-            return Promise.resolve(undefined);
         }
-    }, [session.user]);
+        return Promise.resolve(undefined);
+    }, [session.client, authToken, shouldFetchRoleMappings]);
 
     const perms = useMemo(() => {
-        if (session.authToken && data && !isLoading) {
-            return new UserPermissions(session, data);
+        if (authToken) {
+            if (authToken.permissions || !shouldFetchRoleMappings) {
+                return new UserPermissions(authToken);
+            }
+            if (data && !isLoading) {
+                return new UserPermissions(authToken, data);
+            }
         } else {
             return undefined;
         }
-    }, [session, data, isLoading]);
+        return undefined;
+    }, [authToken, data, isLoading, shouldFetchRoleMappings]);
 
     if (error) {
         return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{errorMessage(error)}</ErrorBox>;

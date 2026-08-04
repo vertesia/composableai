@@ -201,6 +201,38 @@ describe('MessageInput', () => {
         expect(screen.getByText('Ready')).not.toBeNull();
     });
 
+    it('collapses large attachment lists while preserving attachment actions', () => {
+        const onRemoveDocument = vi.fn();
+        const selectedDocuments = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon'].map((name, index) => ({
+            id: `doc-${index}`,
+            name,
+        }));
+
+        renderWithProviders(
+            <MessageInput onSend={vi.fn()} selectedDocuments={selectedDocuments} onRemoveDocument={onRemoveDocument} />,
+        );
+
+        expect(screen.getByText('Alpha')).not.toBeNull();
+        expect(screen.getByText('Gamma')).not.toBeNull();
+        expect(screen.queryByText('Delta')).toBeNull();
+        expect(screen.getByText('+2')).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /show more/i }));
+
+        expect(screen.getByText('Delta')).not.toBeNull();
+        expect(screen.getByText('Epsilon')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /show less/i })).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /Remove Epsilon/i }));
+
+        expect(onRemoveDocument).toHaveBeenCalledWith('doc-4');
+
+        fireEvent.click(screen.getByRole('button', { name: /show less/i }));
+
+        expect(screen.queryByText('Delta')).toBeNull();
+        expect(screen.getByText('+2')).not.toBeNull();
+    });
+
     it('renders context usage and triggers manual compaction', async () => {
         const onCompactContext = vi.fn();
 
@@ -268,5 +300,44 @@ describe('MessageInput', () => {
         expect(
             tray.compareDocumentPosition(screen.getByRole('textbox')) & Node.DOCUMENT_POSITION_FOLLOWING,
         ).toBeTruthy();
+    });
+
+    it('collapses large workstream lists and navigates from a selected workstream', () => {
+        const onSelectWorkstream = vi.fn();
+        const activeWorkstreams = ['alpha', 'beta', 'gamma', 'delta', 'epsilon'].map((workstream_id, index) => ({
+            workstream_id,
+            launch_id: `launch-${index}`,
+            elapsed_ms: 0,
+            deadline_ms: 0,
+            remaining_ms: 0,
+            status: 'running' as const,
+        }));
+
+        renderWithProviders(
+            <MessageInput
+                onSend={vi.fn()}
+                isStreaming
+                activeWorkstreams={activeWorkstreams}
+                onSelectWorkstream={onSelectWorkstream}
+            />,
+        );
+
+        expect(screen.getByRole('button', { name: 'Alpha' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: 'Gamma' })).not.toBeNull();
+        expect(screen.queryByRole('button', { name: 'Delta' })).toBeNull();
+        expect(screen.getByText('+2')).not.toBeNull();
+        expect(screen.getByText('Show more')).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /show more/i }));
+
+        expect(screen.getByRole('button', { name: 'Delta' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: 'Epsilon' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: /show less/i })).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Delta' }));
+
+        expect(onSelectWorkstream).toHaveBeenCalledWith('delta');
+        expect(screen.queryByRole('button', { name: 'Delta' })).toBeNull();
+        expect(screen.getByRole('button', { name: /show more/i })).not.toBeNull();
     });
 });

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 type ServerResource =
     | 'activities'
+    | 'dashboards'
     | 'interactions'
     | 'processes'
     | 'skills'
@@ -41,6 +42,7 @@ interface ResolvedModule {
 
 const SERVER_RESOURCES: ServerResource[] = [
     'activities',
+    'dashboards',
     'interactions',
     'processes',
     'skills',

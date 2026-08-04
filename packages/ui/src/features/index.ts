@@ -1,5 +1,6 @@
 export * from './activity-doc/index.js';
 export * from './agent';
+export * from './document-viewer/index.js';
 export * from './environment/index.js';
 export * from './errors/index.js';
 export * from './facets/index.js';

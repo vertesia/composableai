@@ -1,8 +1,25 @@
 export {
+    type AgentResourceLinkReference,
+    type AgentResourceResolver,
+    AgentResourceResolverProvider,
+    type AgentResourceTarget,
+    parseAgentResourceHref,
+    type ResourceResolveContext,
+    useAgentResourceResolver,
+} from './AgentResourceResolver';
+export {
     ArtifactContentRenderer,
     type ArtifactContentRendererProps,
     type ExpandRenderType,
 } from './ArtifactContentRenderer';
+export {
+    ArtifactEditingSurface,
+    type ArtifactEditingSurfaceDocumentEdit,
+    type ArtifactEditingSurfaceProps,
+    type ArtifactSaveStatus,
+    applyArtifactRefreshChanges,
+    isArtifactRefreshEvent,
+} from './ArtifactEditingSurface';
 export {
     type CodeBlockHandlerContext,
     CodeBlockHandlerProvider,
@@ -21,6 +38,17 @@ export {
     useCodeBlockRendererRegistry,
 } from './CodeBlockRendering';
 export {
+    applyMarkdownEditingChange,
+    CollaborativeMarkdownRenderer,
+    type CollaborativeMarkdownRendererProps,
+    createMarkdownBlockAnchor,
+    formatMarkdownEditingAction,
+    type MarkdownBlockAnchor,
+    type MarkdownBlockType,
+    type MarkdownEditingAction,
+    type MarkdownEditingResource,
+} from './CollaborativeMarkdownRenderer';
+export {
     ChartCodeBlockHandler,
     createDefaultCodeBlockHandlers,
     ExpandCodeBlockHandler,
@@ -34,12 +62,22 @@ export { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 export { MarkdownRenderer, type MarkdownRendererProps } from './MarkdownRenderer';
 export { MermaidDiagram } from './MermaidDiagram';
 export {
+    createUnifiedLineDiff,
+    diffTextSegments,
+    diffWordSegments,
+    getTextLineChangeRegions,
+    rebaseTextChanges,
+    type TextDiffSegment,
+    type TextLineChangeRegion,
+    type TextRebaseResult,
+    type UnifiedLineDiffOptions,
+} from './textDiff';
+export {
     type ArtifactContentState,
     type UseArtifactContentOptions,
     useArtifactContent,
 } from './useArtifactContent';
 export {
-    mapSchemeToRoute,
     parseUrlScheme,
     type ResolvedUrlState,
     type UrlScheme,

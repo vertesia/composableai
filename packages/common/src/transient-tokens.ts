@@ -1,10 +1,12 @@
-import type { ProjectRef, SystemRoles } from './project.js';
-import type { AccountRef, UserRef } from './user.js';
+import type { z } from 'zod';
+import type { UserInviteTokenDataSchema, UserInviteTokenFromSchema } from './api-schemas/invites.js';
+import type { TransientTokenType } from './transient-tokens-values.js';
 
-export enum TransientTokenType {
-    userInvite = 'user-invite',
-    migration = 'migration',
-}
+/**
+ * `TransientTokenType` lives in `./transient-tokens-values.js` so the API schemas can read it
+ * without importing this module back. Re-exported here so import paths keep working.
+ */
+export * from './transient-tokens-values.js';
 
 export interface TransientToken<T> {
     id: string;
@@ -18,10 +20,11 @@ export interface TransientToken<T> {
 
 export interface CreateOrUpdateTransientTokenPayload<T> extends Partial<TransientToken<T>> {}
 
-export interface UserInviteTokenData {
-    email: string;
-    role: SystemRoles;
-    account: AccountRef;
-    project?: ProjectRef;
-    invited_by: UserRef;
-}
+/**
+ * The invite payload as it crosses the wire, inferred from `./api-schemas/invites.js`. Every
+ * reference is populated by the handlers before the response is built.
+ */
+export type UserInviteTokenData = z.infer<typeof UserInviteTokenDataSchema>;
+
+/** One pending invite, as the three invite listings publish it. */
+export type UserInviteToken = UserInviteTokenFromSchema;

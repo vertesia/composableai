@@ -21,6 +21,7 @@ import {
     applyDevModeAnswers,
     applyDevModePackageManagerConfig,
     handleConditionalRemoves,
+    normalizePackageManagerScripts,
     removeMetaFiles,
     renameFiles,
     replaceVariables,
@@ -42,6 +43,7 @@ async function main() {
         .option('-y, --yes', 'Non-interactive mode: use defaults for all prompts', false)
         .option('--dev', 'Use workspace dependencies (development mode)', false)
         .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
+        .option('--skip-install', 'Skip dependency installation after copying and configuring the template', false)
         .option(
             '--module <name>',
             'Template module to enable. Can be repeated or comma-separated; defaults to the template module named "default".',
@@ -70,6 +72,7 @@ Documentation: ${config.docsUrl}
         yes: boolean;
         dev: boolean;
         localTemplates?: string;
+        skipInstall: boolean;
         module: string[];
         packageManager?: string;
     }>();
@@ -79,6 +82,7 @@ Documentation: ${config.docsUrl}
         yes: nonInteractive,
         dev,
         localTemplates,
+        skipInstall,
         module: moduleOptions,
         packageManager: packageManagerOverride,
     } = opts;
@@ -184,6 +188,11 @@ Documentation: ${config.docsUrl}
         };
         runTemplateCodegen(projectName, templateConfig, scaffoldContext);
 
+        const scriptReplacements = normalizePackageManagerScripts(projectName, packageManager);
+        if (scriptReplacements > 0) {
+            console.log(chalk.gray(`   Updated ${scriptReplacements} scripts for ${packageManager}\n`));
+        }
+
         // Step 10: Remove meta files
         removeMetaFiles(projectName, templateConfig);
 
@@ -206,6 +215,14 @@ Documentation: ${config.docsUrl}
         }
 
         // Step 12: Install dependencies
+        if (skipInstall) {
+            console.log(chalk.yellow('Skipping dependency installation (--skip-install).\n'));
+            console.log(chalk.gray('You can install dependencies manually when needed:\n'));
+            console.log(chalk.gray(`  cd ${projectName}`));
+            console.log(chalk.gray(`  ${packageManager} install\n`));
+            skipDependencyInstall = true;
+        }
+
         if (!skipDependencyInstall) {
             await installDependencies(projectName, packageManager);
         }

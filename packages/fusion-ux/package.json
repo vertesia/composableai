@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/fusion-ux",
-    "version": "1.5.0-dev.20260714.072725Z",
+    "version": "1.5.0-dev.20260804.124748Z",
     "description": "Dynamic model-generated UI components for Vertesia",
     "type": "module",
     "main": "./lib/index.js",
@@ -36,12 +36,8 @@
     "devDependencies": {
         "@types/node": "catalog:",
         "@types/react": "catalog:",
-        "react": "19.2.7",
-        "@rollup/plugin-commonjs": "^29.0.3",
-        "@rollup/plugin-node-resolve": "^16.0.3",
-        "@rollup/plugin-replace": "^6.0.3",
-        "@rollup/plugin-terser": "^1.0.0",
         "@vertesia/tsconfig": "workspace:*",
+        "react": "19.2.7",
         "rolldown": "catalog:",
         "typescript": "catalog:",
         "vitest": "^4.1.10"
@@ -56,5 +52,6 @@
         "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/fusion-ux"
-    }
+    },
+    "gitHead": "87ac9166db2b38bd1be6e37adf0414ea83e402ee"
 }

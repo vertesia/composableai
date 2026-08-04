@@ -1,0 +1,225 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+function makeJwt(payload: Record<string, unknown>) {
+    const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    return `${encode({ alg: 'ES256', typ: 'JWT' })}.${encode(payload)}.signature`;
+}
+
+async function importComposableAuth() {
+    vi.resetModules();
+    const [{ Env }, composableAuth] = await Promise.all([import('@vertesia/ui/env'), import('./composable')]);
+    Env.init({
+        name: 'test',
+        version: '0.0.0',
+        isLocalDev: false,
+        isDocker: false,
+        type: 'test',
+        endpoints: {
+            studio: 'https://studio-server-dev-feat-appgen.api.dev1.vertesia.io',
+            zeno: 'https://zeno-server-dev-feat-appgen.api.dev1.vertesia.io',
+            sts: 'https://sts.dev1.vertesia.io',
+        },
+    });
+    return composableAuth;
+}
+
+describe('getComposableToken', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.clearAllMocks();
+    });
+
+    it('uses an authorization-bearing STS-issued Vertesia token directly instead of exchanging it', async () => {
+        const token = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            account: { id: 'account-id', name: 'Account' },
+            account_roles: [],
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+            project_roles: ['developer'],
+        });
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth();
+        const result = await getComposableToken('account-id', 'project-id', token, false, true);
+
+        expect(result.rawToken).toBe(token);
+        expect(result.token.iss).toBe('https://sts.dev1.vertesia.io');
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('exchanges a bare STS-issued Vertesia token so roles can be hydrated', async () => {
+        const sourceToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            account: { id: 'account-id', name: 'Account' },
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+        });
+        const exchangedToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            account: { id: 'account-id', name: 'Account' },
+            account_roles: [],
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+            project_roles: ['admin'],
+        });
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ token: exchangedToken }),
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth();
+        const result = await getComposableToken('account-id', 'project-id', sourceToken, false, true);
+
+        expect(result.rawToken).toBe(exchangedToken);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(fetchMock.mock.calls[0]?.[0]?.toString()).toBe('https://sts.dev1.vertesia.io/token/issue');
+    });
+
+    it('still exchanges a non-STS source token', async () => {
+        const sourceToken = makeJwt({
+            iss: 'https://securetoken.google.com/example',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            email: 'user@example.com',
+        });
+        const exchangedToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            account: { id: 'account-id', name: 'Account' },
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+        });
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ token: exchangedToken }),
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth();
+        const result = await getComposableToken('account-id', 'project-id', sourceToken, false, true);
+
+        expect(result.rawToken).toBe(exchangedToken);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(fetchMock.mock.calls[0]?.[0]?.toString()).toBe('https://sts.dev1.vertesia.io/token/issue');
+    });
+
+    it('does not relax a rejected account and project scope', async () => {
+        localStorage.setItem('composableai.lastSelectedAccountId', 'account-a');
+        localStorage.setItem('composableai.lastSelectedProjectId-account-a', 'project-a');
+        const fetchMock = vi.fn().mockResolvedValue(
+            new Response('Project does not belong to account', {
+                status: 403,
+            }),
+        );
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { fetchComposableToken } = await importComposableAuth();
+        const getIdToken = vi.fn(async () => 'identity-token');
+        await expect(fetchComposableToken(getIdToken, 'account-a', 'project-a')).rejects.toMatchObject({
+            name: 'TokenAuthorizationError',
+            accountId: 'account-a',
+            projectId: 'project-a',
+            responseMessage: 'Project does not belong to account',
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBe('account-a');
+        expect(localStorage.getItem('composableai.lastSelectedProjectId-account-a')).toBe('project-a');
+    });
+
+    it('clears a rejected persisted project without retrying or losing its account', async () => {
+        localStorage.setItem('composableai.lastSelectedAccountId', 'account-a');
+        localStorage.setItem('composableai.lastSelectedProjectId-account-a', 'project-a');
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue(new Response('Project does not belong to account', { status: 403 }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth();
+        await expect(getComposableToken('account-a', 'project-a', 'identity-token', true, true)).rejects.toBeInstanceOf(
+            Error,
+        );
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBe('account-a');
+        expect(localStorage.getItem('composableai.lastSelectedProjectId-account-a')).toBeNull();
+    });
+
+    it('clears a rejected persisted account-only scope without retrying', async () => {
+        localStorage.setItem('composableai.lastSelectedAccountId', 'account-a');
+        const fetchMock = vi.fn().mockResolvedValue(new Response('Account access denied', { status: 403 }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth();
+        await expect(getComposableToken('account-a', undefined, 'identity-token', true, true)).rejects.toBeInstanceOf(
+            Error,
+        );
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBeNull();
+    });
+
+    it('does not clear an unrelated persisted selection', async () => {
+        localStorage.setItem('composableai.lastSelectedAccountId', 'account-b');
+        localStorage.setItem('composableai.lastSelectedProjectId-account-b', 'project-b');
+        const fetchMock = vi.fn().mockResolvedValue(new Response('Project access denied', { status: 403 }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth();
+        await expect(getComposableToken('account-a', 'project-a', 'identity-token', true, true)).rejects.toBeInstanceOf(
+            Error,
+        );
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBe('account-b');
+        expect(localStorage.getItem('composableai.lastSelectedProjectId-account-b')).toBe('project-b');
+    });
+});
+
+describe('resolveAuthSelection', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        localStorage.setItem('composableai.lastSelectedAccountId', 'stored-account');
+        localStorage.setItem('composableai.lastSelectedProjectId-stored-account', 'stored-project');
+        localStorage.setItem('composableai.lastSelectedProjectId-url-account', 'account-project');
+    });
+
+    it('does not combine a URL project with a stored account', async () => {
+        const { resolveAuthSelection } = await importComposableAuth();
+        expect(resolveAuthSelection(new URL('https://app.example.test/?p=url-project'))).toEqual({
+            accountId: undefined,
+            projectId: 'url-project',
+        });
+    });
+
+    it('uses an account and project supplied together by the URL', async () => {
+        const { resolveAuthSelection } = await importComposableAuth();
+        expect(resolveAuthSelection(new URL('https://app.example.test/?a=url-account&p=url-project'))).toEqual({
+            accountId: 'url-account',
+            projectId: 'url-project',
+        });
+    });
+
+    it('preserves cached project restoration for an account-only URL', async () => {
+        const { resolveAuthSelection } = await importComposableAuth();
+        expect(resolveAuthSelection(new URL('https://app.example.test/?a=url-account'))).toEqual({
+            accountId: 'url-account',
+            projectId: 'account-project',
+        });
+    });
+
+    it('restores the complete persisted selection when the URL has no scope', async () => {
+        const { resolveAuthSelection } = await importComposableAuth();
+        expect(resolveAuthSelection(new URL('https://app.example.test/'))).toEqual({
+            accountId: 'stored-account',
+            projectId: 'stored-project',
+        });
+    });
+});

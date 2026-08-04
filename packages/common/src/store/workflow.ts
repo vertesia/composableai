@@ -1,14 +1,44 @@
-import type { ExecutionTokenUsage, HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
+import type { HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
+import type { z } from 'zod';
 import type {
-    ConversationVisibility,
-    InteractionExecutionConfiguration,
-    InteractionRef,
-    UserChannel,
-} from '../interaction.js';
-import type { JSONObject, JSONValue } from '../json.js';
-import type { JSONSchema } from '../json-schema.js';
+    AgentMessageDetailsSchema,
+    CompactMessageSchema,
+    ConversationFileSchema,
+} from '../api-schemas/agent-runs.js';
+import type { ConversationActivityStateSchema } from '../api-schemas/app-lifecycle.js';
+import type { WorkflowExecutionStatusSchema } from '../api-schemas/document-processing.js';
+import type { PlanSchema, PlanTaskSchema, WorkflowAncestorSchema } from '../api-schemas/interaction.js';
+import type { WorkflowExecutionStartResultSchema } from '../api-schemas/process.js';
+import type {
+    ActivityTaskSchema,
+    AgentTaskSchema,
+    ChildWorkflowTaskSchema,
+    EventErrorSchema,
+    ExecuteWorkflowPayloadSchema,
+    ListWorkflowInteractionsResponseSchema,
+    ListWorkflowRunsPayloadSchema,
+    ListWorkflowRunsResponseSchema,
+    PendingActivitySchema,
+    SignalEventPropertiesSchema,
+    SignalTaskSchema,
+    TimerTaskSchema,
+    WorkflowActionResponseSchema,
+    WorkflowHistorySchema,
+    WorkflowInteractionVarsSchema,
+    WorkflowQueryResultSchema,
+    WorkflowRunDetailsQuerySchema,
+    WorkflowRunEventSchema,
+    WorkflowRunSchema,
+    WorkflowRunStreamQuerySchema,
+    WorkflowRunUpdatesQuerySchema,
+    WorkflowRunUpdatesResponseSchema,
+    WorkflowRunWithDetailsSchema,
+    WorkflowTaskSchema,
+    WorkflowUpdatePublishResponseSchema,
+} from '../api-schemas/workflow-runs.js';
+import type { AgentResourceReference, InteractionExecutionConfiguration } from '../interaction.js';
+import { normalizeAgentResources } from '../interaction.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
-import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { WorkflowInput } from './dsl-workflow.js';
 
 export enum ContentEventName {
@@ -29,14 +59,7 @@ export interface Queue {
     queue_full_name?: string; // full name
 }
 
-export interface WorkflowAncestor {
-    run_id: string;
-    workflow_id: string;
-    /**
-     * the depth of nested parent workflows
-     */
-    run_depth: number;
-}
+export type WorkflowAncestor = z.infer<typeof WorkflowAncestorSchema>;
 
 export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
     /**
@@ -183,201 +206,17 @@ export function getDocumentIds(payload: WorkflowExecutionPayload<Record<string, 
     return [];
 }
 
-export interface ExecuteWorkflowPayload {
-    /**
-     * The task queue to assign the workflow to. Deprecated, queues are choosend server side
-     */
-    //@deprecated
-    task_queue?: string;
+export type ExecuteWorkflowPayload = z.infer<typeof ExecuteWorkflowPayloadSchema>;
 
-    /**
-     * Docuument IDs pon which the workflow will be executed, deprecated, replaced params in vars
-     */
-    //@deprecated
-    objectIds?: string[];
+export type ConversationActivityState = z.infer<typeof ConversationActivityStateSchema>;
 
-    /**
-     * New format: Workflow input (either objectIds or files).
-     * Takes precedence over the deprecated `objectIds` field.
-     */
-    input?: WorkflowInput;
+export type ListWorkflowRunsPayload = z.infer<typeof ListWorkflowRunsPayloadSchema>;
 
-    /**
-     * Parameters to pass to the workflow
-     */
-    vars?: Record<string, unknown>;
+export type SignalEventProperties = z.infer<typeof SignalEventPropertiesSchema>;
 
-    /**
-     * Make the workflow ID unique by always adding a random token to the ID.
-     */
-    unique?: boolean;
+export type EventError = z.infer<typeof EventErrorSchema>;
 
-    /**
-     * A custom ID to use for the workflow execution id instead of the generated one.
-     */
-    custom_id?: string;
-
-    /**
-     * Timeout for the workflow execution to complete, in seconds.
-     */
-    timeout?: number; //timeout in seconds
-
-    /**
-     * Schedule the workflow to run at a specific time (ISO 8601 datetime).
-     * Example: "2024-02-15T16:00:00Z"
-     * If in the past or not provided, workflow runs immediately.
-     */
-    run_at?: string;
-}
-
-export type ConversationActivityState = 'working' | 'idle';
-
-export interface ListWorkflowRunsPayload {
-    /**
-     * The document ID passed to a workflow run.
-     */
-
-    document_id?: string;
-
-    /**
-     * The event name that triggered the workflow.
-     */
-    event_name?: string;
-
-    /**
-     * Legacy workflow rule ID filter, when applicable.
-     */
-    rule_id?: string;
-
-    /**
-     * The start time for filtering workflow runs.
-     */
-    start?: string;
-
-    /**
-     * The end time for filtering workflow runs.
-     */
-    end?: string;
-
-    /**
-     * The status of the workflow run.
-     */
-    status?: string;
-
-    /**
-     * search term to filter on workflow id and run id
-     */
-    search_term?: string;
-
-    /**
-     * The user or service account that initiated the workflow run.
-     */
-    initiated_by?: string;
-
-    /**
-     * The interaction name used to filter conversations.
-     */
-    interaction?: string;
-
-    /**
-     * Lucene query string to search for the workflow runs.
-     * This is a full text search on the workflow run history.
-     */
-    query?: string;
-
-    type?: string;
-
-    /**
-     * The maximum number of results to return per page.
-     */
-    page_size?: number;
-
-    /**
-     * The page token for Temporal pagination.
-     */
-    next_page_token?: string;
-
-    /**
-     * Filter by whether the workflow has reported errors (TemporalReportedProblems).
-     */
-    has_reported_errors?: boolean;
-
-    /**
-     * Filter by the activity state of the conversation (running or idle).
-     */
-    activity_state?: ConversationActivityState;
-
-    /**
-     * Filter by whether the conversation is interactive.
-     */
-    interactive?: boolean;
-}
-
-/**
- * Signal event properties for workflow events
- */
-export interface SignalEventProperties {
-    direction: 'receiving' | 'sending';
-    signalName?: string;
-    input?: unknown;
-    sender?: {
-        workflowId?: string;
-        runId?: string;
-    };
-    recipient?: {
-        workflowId?: string;
-        runId?: string;
-    };
-    initiatedEventId?: string;
-}
-
-/**
- * Error information from failed workflow events
- */
-export interface EventError {
-    message?: string;
-    source?: string;
-    stacktrace?: string;
-    type?: string;
-}
-
-export interface WorkflowRunEvent {
-    event_id: number;
-    event_time: string | null;
-    event_type: string;
-    task_id?: string;
-    attempt: number;
-
-    activity?: {
-        name?: string;
-        id?: string;
-        input?: unknown;
-        scheduledEventId?: string;
-        startedEventId?: string;
-    };
-
-    childWorkflow?: {
-        workflowId?: string;
-        workflowType?: string;
-        runId?: string;
-        scheduledEventId?: string;
-        startedEventId?: string;
-        input?: unknown;
-        result?: unknown;
-    };
-
-    signal?: SignalEventProperties;
-
-    timer?: {
-        timerId?: string;
-        duration?: string;
-        summary?: string;
-    };
-
-    error?: EventError;
-
-    result?: unknown;
-}
+export type WorkflowRunEvent = z.infer<typeof WorkflowRunEventSchema>;
 
 // Task status enum for processed history
 export enum TaskStatus {
@@ -400,282 +239,55 @@ export enum TaskType {
     TIMER = 'timer',
 }
 
-// Base task interface
-interface TaskBase {
-    type: TaskType;
-    activityId: string;
-    activityName?: string;
-    input?: unknown;
-    scheduled: string | null;
-    status: TaskStatus;
-    attempts: number;
-    started: string | null;
-    completed: string | null;
-    error: string | null;
-    result: unknown;
-    /** Temporal run ID that produced this task (set when aggregating across continueAsNew runs). */
-    runId?: string;
-}
-
 // Activity-specific task
-export interface ActivityTask extends TaskBase {
-    type: TaskType.ACTIVITY;
-}
+export type ActivityTask = z.infer<typeof ActivityTaskSchema>;
 
 // Child workflow-specific task
-export interface ChildWorkflowTask extends TaskBase {
-    type: TaskType.CHILD_WORKFLOW;
-    workflowType?: string;
-    runId?: string;
-}
+export type ChildWorkflowTask = z.infer<typeof ChildWorkflowTaskSchema>;
 
 // Signal-specific task
-export interface SignalTask extends TaskBase {
-    type: TaskType.SIGNAL;
-    signalName?: string;
-    direction?: 'sending' | 'receiving';
-    sender?: {
-        workflowId?: string;
-        runId?: string;
-    };
-    recipient?: {
-        workflowId?: string;
-        runId?: string;
-    };
-}
+export type SignalTask = z.infer<typeof SignalTaskSchema>;
 
 // Timer-specific task
-export interface TimerTask extends TaskBase {
-    type: TaskType.TIMER;
-    timerId?: string;
-    duration?: string;
-}
+export type TimerTask = z.infer<typeof TimerTaskSchema>;
 
 // Union type for all processed tasks
-/**
- * @discriminator type
- */
-export type WorkflowTask = ActivityTask | ChildWorkflowTask | SignalTask | TimerTask;
+export type WorkflowTask = z.infer<typeof WorkflowTaskSchema>;
 
 // History format discriminated union
-/**
- * @discriminator type
- */
-export type WorkflowHistory =
-    | { type: 'events'; events: WorkflowRunEvent[] }
-    | { type: 'tasks'; tasks: WorkflowTask[] }
-    | { type: 'agent'; agentTasks: AgentTask[] };
+export type WorkflowHistory = z.infer<typeof WorkflowHistorySchema>;
 
 // History format query parameter type
 export type HistoryFormat = 'events' | 'tasks' | 'agent';
 
-/**
- * Agent task information for workflow history UI representation.
- * This is separate from the analytics AgentEvent types.
- * Consistent with WorkflowTask naming convention.
- *
- * Currently represents tool calls, but designed to be extensible
- * for other task types (LLM calls, checkpoints, etc.)
- */
-export interface AgentTask {
-    /** Type discriminator for future task types */
-    taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing' | 'signal';
+export type AgentTask = z.infer<typeof AgentTaskSchema>;
 
-    /** Tool-specific fields */
-    toolName: string;
-    toolUseId?: string;
-    toolRunId?: string;
-    toolType?: 'builtin' | 'interaction' | 'remote' | 'skill';
-    iteration?: number;
+export type WorkflowRun = z.infer<typeof WorkflowRunSchema>;
 
-    /** Execution details */
-    scheduled_at: string | null;
-    started_at: string | null;
-    completed_at: string | null;
-    status: 'running' | 'completed' | 'error' | 'warning' | 'received' | 'sent';
+export type PendingActivity = z.infer<typeof PendingActivitySchema>;
 
-    /** Tool data */
-    parameters?: Record<string, unknown>;
-    result?: string;
-    error?: { type: string; message: string };
+export type WorkflowRunWithDetails = z.infer<typeof WorkflowRunWithDetailsSchema>;
+export type ListWorkflowRunsResponse = z.infer<typeof ListWorkflowRunsResponseSchema>;
 
-    /** Number of activity retries */
-    retries?: number;
+export type WorkflowExecutionStartResult = z.infer<typeof WorkflowExecutionStartResultSchema>;
 
-    /** Active tools for this LLM call */
-    activeTools?: string[];
+export type ListWorkflowInteractionsResponse = z.infer<typeof ListWorkflowInteractionsResponseSchema>;
 
-    /** Available skills for this LLM call */
-    availableSkills?: string[];
+export type WorkflowRunUpdatesResponse = z.infer<typeof WorkflowRunUpdatesResponseSchema>;
 
-    /** Temporal run ID that produced this task. */
-    runId?: string;
+export type WorkflowRunDetailsQuery = z.infer<typeof WorkflowRunDetailsQuerySchema>;
 
-    /** Workstream tracking */
-    workstreamId?: string;
+export type WorkflowRunUpdatesQuery = z.infer<typeof WorkflowRunUpdatesQuerySchema>;
 
-    /** Signal direction for signal tasks */
-    direction?: 'sending' | 'receiving';
+export type WorkflowRunStreamQuery = z.infer<typeof WorkflowRunStreamQuerySchema>;
 
-    /** LLM stop reason for llm_call tasks (e.g., "stop", "length", "tool_use") */
-    finish_reason?: string;
+export type WorkflowUpdatePublishResponse = z.infer<typeof WorkflowUpdatePublishResponseSchema>;
 
-    /** Warnings about the task outcome (e.g. unexpected model behavior). */
-    warnings?: string[];
-}
+export type WorkflowActionResponse = z.infer<typeof WorkflowActionResponseSchema>;
 
-export interface WorkflowRun {
-    status?: WorkflowExecutionStatus | string;
-    /**
-     * The Temporal Workflow Type of this Workflow Run.
-     *
-     * @see https://docs.temporal.io/workflows
-     */
-    type?: string;
-    started_at: string | null;
-    closed_at: string | null;
-    execution_duration?: number;
-    run_id?: string;
-    workflow_id?: string;
-    initiated_by?: string;
-    interaction_name?: string;
-    input?: unknown;
-    result?: unknown;
-    error?: unknown;
-    has_reported_errors?: boolean;
-    raw?: unknown;
-    /**
-     * The Vertesia Workflow Type of this Workflow Run.
-     *  - For DSL workflows (`type:dslWorkflow`), the vertesia_type refers to the "Workflow Rule Name" specified in the
-     *    DSL. For example, "Standard Document Intake" or "Standard Image Intake".
-     *  - For non-DSL workflows, the vertesia_type is the name of the Temporal Workflow Type.
-     */
-    vertesia_workflow_type?: string;
-    /**
-     * An interaction is used to start the agent, the data is stored on temporal "vars"
-     */
-    interactions?: InteractionRef[];
-    /**
-     * The visibility of the workflow run.
-     * - 'private': Only visible to the user who initiated the workflow
-     * - 'project': Visible to all users in the project
-     */
-    visibility?: ConversationVisibility;
-    /**
-     * A brief summary of the conversation workflow.
-     */
-    topic?: string;
-    /**
-     * The current activity state of the conversation.
-     * - 'working': The agent is actively processing
-     * - 'idle': The agent is waiting for user input
-     */
-    activity_state?: ConversationActivityState;
-    /**
-     * Whether this conversation is interactive (accepts user input).
-     */
-    interactive?: boolean;
-}
+export type WorkflowQueryResult = z.infer<typeof WorkflowQueryResultSchema>;
 
-export interface PendingActivity {
-    activityId?: string;
-    activityType?: string;
-    attempt: number;
-    maximumAttempts: number;
-    lastFailure?: string;
-    lastStartedTime: string | null;
-}
-
-export interface WorkflowRunWithDetails extends WorkflowRun {
-    history?: WorkflowHistory;
-    memo?: {
-        [key: string]: unknown;
-    } | null;
-    pendingActivities?: PendingActivity[];
-}
-export interface ListWorkflowRunsResponse {
-    runs: WorkflowRun[];
-    next_page_token?: string;
-    has_more?: boolean;
-}
-
-export interface WorkflowExecutionStartResult {
-    run_id: string;
-    workflow_id: string;
-}
-
-export interface ListWorkflowInteractionsResponse {
-    workflow_id: string;
-    run_id: string;
-    interaction: WorkflowInteractionVars;
-}
-
-export interface WorkflowRunUpdatesResponse {
-    messages: CompactMessage[];
-}
-
-export interface WorkflowRunDetailsQuery {
-    include_history?: boolean;
-    history_format?: 'events' | 'tasks' | 'agent';
-    hydrate_payloads?: boolean;
-}
-
-export interface WorkflowRunUpdatesQuery {
-    since?: number;
-}
-
-export interface WorkflowRunStreamQuery extends WorkflowRunUpdatesQuery {
-    skipHistory?: boolean;
-}
-
-export interface WorkflowUpdatePublishResponse {
-    success: true;
-}
-
-export interface WorkflowActionResponse {
-    message: string;
-}
-
-export type WorkflowQueryResult = JSONValue;
-
-export interface WorkflowInteractionVars {
-    type: string;
-    interaction: string;
-    interactive: boolean;
-    tool_approval_mode?: AgentToolApprovalMode;
-    debug_mode?: boolean;
-    non_blocking_subagents?: boolean;
-    /**
-     * Array of channels to use for user communication.
-     * Multiple channels can be active simultaneously.
-     */
-    user_channels?: UserChannel[];
-    data?: JSONObject;
-    tool_names: string[];
-    config: {
-        environment: string;
-        model: string;
-        model_options?: ModelOptions;
-    };
-    interactionParamsSchema?: JSONSchema;
-    collection_id?: string;
-    /**
-     * Denylist of MCP tool-collection ids deactivated for this conversation.
-     * `undefined`/empty ⇒ all installed/connected MCP collections are active.
-     */
-    disabled_mcp_collections?: string[];
-    /**
-     * The token threshold in thousands (K) for creating checkpoints.
-     * If total tokens exceed this value, a checkpoint will be created.
-     * If not specified, default value of 150K tokens will be used.
-     */
-    checkpoint_tokens?: number;
-    /**
-     * Optional version of the interaction to use when restoring conversations.
-     * If not specified, the latest version will be used.
-     */
-    version?: number;
-}
+export type WorkflowInteractionVars = z.infer<typeof WorkflowInteractionVarsSchema>;
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, 'config'> {
     config: {
@@ -695,16 +307,32 @@ export interface DocumentActionConfig {
     parentId?: string; //parentId for the created doc
 }
 
-export enum WorkflowExecutionStatus {
-    UNKNOWN = 0,
-    RUNNING = 1,
-    COMPLETED = 2,
-    FAILED = 3,
-    CANCELED = 4,
-    TERMINATED = 5,
-    CONTINUED_AS_NEW = 6,
-    TIMED_OUT = 7,
-}
+export const WorkflowExecutionStatusValues = {
+    UNKNOWN: 0,
+    RUNNING: 1,
+    COMPLETED: 2,
+    FAILED: 3,
+    CANCELED: 4,
+    TERMINATED: 5,
+    CONTINUED_AS_NEW: 6,
+    TIMED_OUT: 7,
+} as const;
+
+// Keep numeric reverse lookup for existing callers without treating newer Temporal-only status
+// codes as part of Vertesia's published enum. Unknown numeric codes therefore read as undefined.
+export const WorkflowExecutionStatus: typeof WorkflowExecutionStatusValues & Readonly<Record<number, string>> = {
+    ...WorkflowExecutionStatusValues,
+    0: 'UNKNOWN',
+    1: 'RUNNING',
+    2: 'COMPLETED',
+    3: 'FAILED',
+    4: 'CANCELED',
+    5: 'TERMINATED',
+    6: 'CONTINUED_AS_NEW',
+    7: 'TIMED_OUT',
+};
+
+export type WorkflowExecutionStatus = z.infer<typeof WorkflowExecutionStatusSchema>;
 
 /**
  * Basic response for anything run with an async workflow
@@ -745,39 +373,7 @@ export enum AgentMessageType {
     RESTARTING = 14,
 }
 
-export interface AgentMessageDetails extends Record<string, unknown> {
-    ack?: string;
-    event_class?: string;
-    tool?: string;
-    tools?: string[];
-    tool_event?: 'started' | 'progress' | 'completed' | 'failed';
-    streamed?: boolean;
-    display_role?: string;
-    activity_id?: string;
-    activity_group_id?: string;
-    batch_id?: string;
-    tool_run_id?: string;
-    tool_use_id?: string;
-    tool_status?: ToolCallDetails['tool_status'];
-    tool_iteration?: number;
-    message_to_human?: string;
-    duration_ms?: number;
-    observation?: unknown;
-    token_usage?: ExecutionTokenUsage;
-    checkpoint_at?: number;
-    checkpoint_threshold?: number;
-    workflow_run_id?: string;
-    outputFiles?: string[];
-    files?: ConversationFile[] | string[];
-    plan?: PlanTask[];
-    streaming_id?: string;
-    streaming_id_scope?: 'workflow_run' | 'workstream';
-    chunk_index?: number;
-    is_final?: boolean;
-    _optimistic?: boolean;
-    _messageId?: string;
-    _deliveryStatus?: 'sending' | 'received' | 'consumed' | 'failed';
-}
+export type AgentMessageDetails = z.infer<typeof AgentMessageDetailsSchema>;
 
 // ============================================
 // AGENT MESSAGE DETAIL TYPES & TYPE GUARDS
@@ -846,6 +442,11 @@ export function isToolCallMessage(msg: AgentMessage): msg is AgentMessage & { de
     );
 }
 
+/** Extract the normalized resource references carried on a message's details, if any. */
+export function getResourcesFromMessage(msg: AgentMessage): AgentResourceReference[] {
+    return normalizeAgentResources((msg.details as AgentMessageDetails | undefined)?.resources);
+}
+
 export function isDocumentEventMessage(msg: AgentMessage): msg is AgentMessage & { details: DocumentEventDetails } {
     const details = msg.details as Record<string, unknown> | undefined;
     return (
@@ -903,22 +504,7 @@ export interface StreamingChunkDetails {
  * Primary type used throughout the system.
  * ~85% smaller than legacy AgentMessage format.
  */
-export interface CompactMessage {
-    /** Message type (integer enum) */
-    t: AgentMessageType;
-    /** Message content */
-    m?: string;
-    /** Workstream ID (only when not "main") */
-    w?: string;
-    /** Type-specific details */
-    d?: AgentMessageDetails | null;
-    /** Is final chunk (only for STREAMING_CHUNK, 0 or 1) */
-    f?: 0 | 1;
-    /** Timestamp (only for stored/persisted messages) */
-    ts?: number;
-    /** Activity ID for deduplication between streaming chunks and final messages */
-    i?: string;
-}
+export type CompactMessage = z.infer<typeof CompactMessageSchema>;
 
 /**
  * Legacy message format for backward compatibility.
@@ -1149,35 +735,7 @@ export enum FileProcessingStatus {
     ERROR = 'error',
 }
 
-/**
- * Represents a file being processed in a conversation workflow.
- */
-export interface ConversationFile {
-    /** Unique ID for tracking this file (generated client-side) */
-    id: string;
-    /** Original filename */
-    name: string;
-    /** MIME type */
-    content_type: string;
-    /** Size in bytes */
-    size: number;
-    /** Current processing status */
-    status: FileProcessingStatus;
-    /** Artifact path (e.g., "files/document.pdf") - set after upload */
-    artifact_path?: string;
-    /** Full artifact reference URI (e.g., "artifact:files/document.pdf") */
-    reference?: string;
-    /** Path to extracted text markdown (e.g., "files/document.pdf.md") */
-    md_path?: string;
-    /** Whether text extraction completed successfully */
-    text_extracted?: boolean;
-    /** Error message if status is ERROR */
-    error?: string;
-    /** Timestamp when upload started */
-    started_at: number;
-    /** Timestamp when processing completed */
-    completed_at?: number;
-}
+export type ConversationFile = z.infer<typeof ConversationFileSchema>;
 
 /**
  * Details for file processing SYSTEM messages.
@@ -1240,18 +798,9 @@ export function getWorkflowUpdatesKey(workflowRunId: string): string {
     return `workflow:${workflowRunId}:updates`;
 }
 
-export interface PlanTask {
-    id: number;
-    goal: string;
-    instructions?: string[];
-    comment?: string;
-    status?: 'pending' | 'in_progress' | 'completed' | 'skipped';
-}
+export type PlanTask = z.infer<typeof PlanTaskSchema>;
 
-export interface Plan {
-    plan: PlanTask[];
-    comment?: string;
-}
+export type Plan = z.infer<typeof PlanSchema>;
 
 export const LOW_PRIORITY_TASK_QUEUE = 'low_priority';
 

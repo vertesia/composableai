@@ -9,6 +9,7 @@ import type {
     ToolExecutionMetadata,
     ToolResult,
     ToolResultContent,
+    ToolResultMeta,
 } from '@vertesia/common';
 
 export type { ToolExecutionMetadata };
@@ -57,7 +58,7 @@ export interface ToolExecutionResult extends ToolResultContent {
     /**
      * Medata can be used to return more info on the tool execution like stats or user messages.
      */
-    meta?: Record<string, unknown>;
+    meta?: ToolResultMeta;
 }
 
 export interface ToolExecutionResponse extends ToolExecutionResult, ToolResult {
@@ -148,6 +149,41 @@ export interface Tool<ParamsT extends object = object> extends ToolDefinition {
      * @returns
      */
     isEnabled?: (payload: ToolUseContext) => boolean;
+
+    /**
+     * Declares which parameter carries the *name of another tool*. See {@link ToolDispatchDescriptor}.
+     */
+    dispatch?: ToolDispatchDescriptor;
+}
+
+/**
+ * Which parameter of a tool carries the name of another tool.
+ *
+ * JSON Schema types such a field as `string`, so every phantom name validates against it. Naming
+ * the field here lets build-time validation resolve those names against the registry; without it
+ * the mistake surfaces only when an agent attempts the call and the server rejects it.
+ *
+ * Purely descriptive — nothing reads it at runtime. `@dglabs/workflows` and the skill-markdown
+ * checker each declare a structural twin, since neither can depend on this package.
+ */
+export interface ToolDispatchDescriptor {
+    /**
+     * Path to the parameter holding the tool name, using dots for nesting and `[]` for arrays.
+     * Examples: `tool_name`, `allowed_tools[]`, `agent_runner_options.tool_names[]`.
+     */
+    field: string;
+    /**
+     * Path to the parameter holding the input forwarded to the dispatched tool, if any.
+     * When set, examples can also be validated against the *dispatched* tool's schema.
+     */
+    inputField?: string;
+    /** Tool names this dispatcher refuses at runtime. Referencing one is an error. */
+    deny?: readonly string[];
+    /**
+     * True when the runtime strips a leading `+` or `-` before resolving the name — the selection
+     * prefixes that add to, or remove from, the default toolset.
+     */
+    stripsSelectionPrefix?: boolean;
 }
 
 /**

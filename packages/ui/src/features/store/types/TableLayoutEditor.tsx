@@ -1,4 +1,4 @@
-import type { ColumnLayout, ContentObjectType } from '@vertesia/common';
+import type { ColumnLayout, ContentObjectTypeCatalogEntry } from '@vertesia/common';
 import { Button, errorMessage, Panel, useTheme, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -6,7 +6,7 @@ import { type EditorApi, MonacoEditor } from '@vertesia/ui/widgets';
 import { useMemo, useRef, useState } from 'react';
 
 interface TableLayoutEditorProps {
-    objectType: ContentObjectType;
+    objectType: ContentObjectTypeCatalogEntry;
     onLayoutUpdate: (value: ColumnLayout[] | undefined) => void;
     readonly?: boolean;
 }

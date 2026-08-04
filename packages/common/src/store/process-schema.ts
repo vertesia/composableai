@@ -32,6 +32,9 @@ export const ProcessDefinitionBodyJsonSchema = {
             nullable: true,
             description: 'Optional default model for agent and interaction nodes.',
         },
+        resources: {
+            $ref: '#/$defs/processResourcesDefinition',
+        },
         context: {
             $ref: '#/$defs/processContextDefinition',
         },
@@ -91,6 +94,7 @@ export const ProcessDefinitionBodyJsonSchema = {
                         'tool',
                         'interaction',
                         'agent',
+                        'script',
                         'process',
                         'human_task',
                         'foreach',
@@ -104,6 +108,18 @@ export const ProcessDefinitionBodyJsonSchema = {
                     type: 'string',
                     nullable: true,
                     description: 'Builtin or remote tool name for tool nodes.',
+                },
+                script: {
+                    type: 'string',
+                    nullable: true,
+                    description: 'Named process script resource for script nodes.',
+                },
+                timeout: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 600,
+                    nullable: true,
+                    description: 'Script execution timeout in seconds.',
                 },
                 interaction: {
                     type: 'string',
@@ -292,6 +308,69 @@ export const ProcessDefinitionBodyJsonSchema = {
                 },
             },
             required: ['to'],
+            additionalProperties: false,
+        },
+        processResourcesDefinition: {
+            type: 'object',
+            nullable: true,
+            properties: {
+                scripts: {
+                    type: 'object',
+                    nullable: true,
+                    description: 'Named script resources available to script nodes.',
+                    required: [],
+                    additionalProperties: {
+                        $ref: '#/$defs/processScriptResource',
+                    },
+                },
+            },
+            required: [],
+            additionalProperties: false,
+        },
+        processScriptResource: {
+            type: 'object',
+            properties: {
+                language: {
+                    type: 'string',
+                    enum: ['python', 'javascript', 'typescript'],
+                },
+                entrypoint: {
+                    type: 'string',
+                    minLength: 1,
+                },
+                source: {
+                    $ref: '#/$defs/processScriptSource',
+                },
+                packages: {
+                    type: 'array',
+                    nullable: true,
+                    items: { type: 'string' },
+                },
+            },
+            required: ['language', 'entrypoint', 'source'],
+            additionalProperties: false,
+        },
+        processScriptSource: {
+            $ref: '#/$defs/processScriptInlineSource',
+        },
+        processScriptInlineSource: {
+            type: 'object',
+            properties: {
+                type: {
+                    type: 'string',
+                    const: 'inline',
+                    description: 'Source discriminator. Additional source types may be added in future versions.',
+                },
+                files: {
+                    type: 'object',
+                    minProperties: 1,
+                    required: [],
+                    additionalProperties: {
+                        type: 'string',
+                    },
+                },
+            },
+            required: ['type', 'files'],
             additionalProperties: false,
         },
         branchDefinition: {

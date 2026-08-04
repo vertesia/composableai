@@ -103,13 +103,21 @@ if [ "$WAIT_FOR_NPM" = true ]; then
   wait_for_npm
 fi
 
+# Minimal scaffold (default) built with pnpm.
+echo ""
+echo "--- Mode: minimal (default scaffold, pnpm) ---"
 bootstrap_template "smoke-test-plugin"
 build_project
 
+# Dev scaffold (module-selected examples and UI modules) built with npm.
+# Covers both the alternate package manager and the dev module surface so the
+# modules can't silently rot.
+echo ""
+echo "--- Mode: dev (--module dev scaffold, npm) ---"
 TEST_PROJECT_DIR_NPM=""
-bootstrap_template "smoke-test-plugin-npm" npm
+EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS:-} --module dev" bootstrap_template "smoke-test-plugin-npm" npm
 TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
 build_project_npm
 
 echo ""
-echo "✅ Template smoke test passed!"
+echo "Template smoke test passed (minimal + dev)!"

@@ -1,15 +1,22 @@
 # @vertesia/build-tools
 
-A flexible Rollup plugin for transforming imports with custom compilers and validation. Built for Vertesia but usable in any project.
+Custom import syntaxes for Vertesia packages — `?skill`, `?skills`, `?template`, `?templates`,
+`?prompt`, `?raw`, and bare `SKILL.md` / `TEMPLATE.md` — resolved at build time into real
+JavaScript modules, with schema validation.
 
-## Features
+Ships three entry points:
 
-- 🎯 **Pattern-based import transformation** - Match imports by path patterns
-- ✅ **Built-in Zod validation** - Validate transformed data at build time
-- 🔧 **Preset transformers** - Ready-to-use transformers for common cases
-- 🎨 **Custom transformers** - Easy to create custom transformation logic
-- 📦 **TypeScript-first** - Full type safety with TypeScript
-- ⚡ **Fast** - Efficient transformation with minimal overhead
+| Entry point | Used for |
+| ----------- | -------- |
+| `vertesia-build` CLI | Build-time. Runs as a post-`tsc` step over the emitted `lib/`. |
+| `@vertesia/build-tools/vite` | Dev-time. Same transformers applied to sources at request time. |
+| `@vertesia/build-tools` | Programmatic. `transformImports()`, the transformers, the skill preprocessor. |
+
+> **Not a bundler plugin.** Earlier versions of this package were a Rollup plugin
+> (`vertesiaImportPlugin`). It is now a standalone post-`tsc` transformer: it reads the JavaScript
+> `tsc` already emitted, writes generated modules beside it, and rewrites the importing files in
+> place. Nothing here depends on Rollup, Rolldown, webpack or Vite at build time — the output is
+> plain ESM that any bundler can consume afterwards.
 
 ## Installation
 
@@ -17,349 +24,374 @@ A flexible Rollup plugin for transforming imports with custom compilers and vali
 pnpm add -D @vertesia/build-tools
 ```
 
-## Quick Start
+## Quick start
 
-### Using Preset Transformers
+Add a `vertesia-build` block to your `package.json` and run the CLI after `tsc`:
 
-```typescript
-// rollup.config.js
-import { vertesiaImportPlugin, skillTransformer, rawTransformer } from '@vertesia/build-tools';
-
-export default {
-  input: 'src/index.ts',
-  output: {
-    dir: 'dist',
-    format: 'es'
-  },
-  plugins: [
-    vertesiaImportPlugin({
-      transformers: [
-        skillTransformer,  // Handles .md?skill imports
-        rawTransformer     // Handles ?raw imports
-      ]
-    })
-  ]
-};
+```json
+{
+    "scripts": {
+        "build": "tsc -p tsconfig.json && vertesia-build"
+    },
+    "vertesia-build": {
+        "libDir": "./lib",
+        "srcDir": "./src",
+        "transformers": ["skill", "skills", "raw"],
+        "assetsDir": "./dist"
+    }
+}
 ```
 
-### Using in Your Code
+Then use the import syntaxes in your source:
 
 ```typescript
-// Import a skill definition from markdown
+// A single skill, from a Markdown file with YAML frontmatter
 import codeReview from './skills/code-review.md?skill';
 
-console.log(codeReview.name);         // 'code-review'
-console.log(codeReview.title);        // 'Code Review Assistant'
-console.log(codeReview.description);  // 'Skill for reviewing...'
-console.log(codeReview.instructions); // Full markdown content
-console.log(codeReview.content_type); // 'md' or 'jst'
+codeReview.name;          // 'code_review'
+codeReview.title;         // 'Code Review Assistant'
+codeReview.description;   // 'Reviews a diff for …'
+codeReview.instructions;  // the Markdown body
+codeReview.content_type;  // 'md' | 'jst'
 
-// Import raw file content
+// Every SKILL.md in the sibling directories, as an array
+import allSkills from './skills/all?skills';
+
+// Any file as a string
 import template from './template.html?raw';
-console.log(template); // Raw HTML string
 ```
 
-## Preset Transformers
+`transformers` is required, so every preset is opted into explicitly and a typo fails the build
+rather than silently leaving imports untransformed.
 
-### Skill Transformer
+### Vite dev mode
 
-Transforms markdown files with frontmatter into skill definition objects.
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite';
+import { vertesiaDevServerPlugin } from '@vertesia/build-tools/vite';
 
-**Pattern:** `.md?skill`
+export default defineConfig({
+    plugins: [vertesiaDevServerPlugin()],
+});
+```
 
-**Input:** `my-skill.md`
+Defaults to all built-in transformers; pass `{ transformers: ['skill', 'raw'] }` to restrict the
+set. Asset copying and widget bundling are build-time concerns and are skipped in dev.
+
+`apiServerPlugin` from the same entry point mounts a Hono tool server as Vite middleware under
+`/api`, with the dev-server plugin already included.
+
+## Transformers
+
+| Name | Matches | Produces |
+| ---- | ------- | -------- |
+| `skill` | `*.md?skill`, `*/SKILL.md` | `SkillDefinition` object |
+| `skills` | `<dir>/<name>?skills` | Array of `SkillDefinition`, one per `SKILL.md` in the subdirectories |
+| `template` | `*.md?template`, `*/TEMPLATE.md` | `RenderingTemplateDefinition` |
+| `templates` | `<dir>/<name>?templates` | Array of rendering templates |
+| `prompt` | `*?prompt` | `PromptDefinition` |
+| `raw` | `*?raw` | The file contents as a string |
+
+The two collection transformers are *virtual*: there is no file at `./all?skills`, the name before
+the query is simply the generated module's name. That name is required, so two collections in the
+same directory cannot collide.
+
+## The skill transformer
+
+### Input
+
 ```markdown
 ---
-name: my-skill
+name: my_skill
 title: My Skill
 description: A helpful skill
 content_type: md
+tools: [tool_one, tool_two]
+supporting_tools: [tool_three]
 context_triggers:
-  keywords: [skill, helper]
-tools: [tool1, tool2]
+    keywords: [skill, helper]
 ---
 
 # My Skill
 
-This is the skill content in markdown.
+The instructions the model receives.
 ```
 
-**Output:**
+Frontmatter is validated with a **strict** Zod schema — an unknown key is a build error, not a
+silently ignored one. `name` and `description` are required; `content_type` defaults to `md`.
+
+`supporting_tools` unlock exactly as `tools` do — the two are merged into `tools` on output, so no
+runtime path sees the distinction. The split exists for validation: consumers that check whether a
+skill documents what it unlocks skip the supporting list, which is meant for grants that carry their
+own description and need no usage guidance.
+
+`context_triggers` and `execution` each accept a nested form (as above) or a flat legacy form
+(`keywords:`, `tools:`, `data_patterns:` / `language:`, `packages:`, `system_packages:` at the top
+level). When `execution` is present, the first fenced code block in the body is extracted as
+`execution.template`.
+
+### Output
+
 ```typescript
 {
-  name: 'my-skill',
-  title: 'My Skill',
-  description: 'A helpful skill',
-  instructions: '# My Skill\n\nThis is the skill content...',
-  content_type: 'md',
-  context_triggers: {
-    keywords: ['skill', 'helper']
-  },
-  tools: ['tool1', 'tool2'],
-  scripts: ['helper.js', 'script.py'],  // If .js/.py files exist in skill dir
-  widgets: ['chart', 'user-select']     // If .tsx files exist in skill dir
+    name: 'my_skill',
+    title: 'My Skill',
+    description: 'A helpful skill',
+    instructions: '# My Skill\n\nThe instructions the model receives.',
+    content_type: 'md',
+    context_triggers: { keywords: ['skill', 'helper'] },
+    tools: ['tool_one', 'tool_two', 'tool_three'],
+    scripts: ['helper.js'],   // present only if discovered
+    widgets: ['chart'],       // present only if discovered
 }
 ```
 
-**Type:** `SkillDefinition` (exported from package)
+Typed as `SkillDefinition`, exported from the package. The output schema is `passthrough`, so
+fields added by `properties.ts` survive validation.
 
-**Asset Discovery:** The skill transformer automatically discovers:
-- Script files (`.js`, `.py`) in the skill directory → added to `scripts` array
-- Widget files (`.tsx`) in the skill directory → added to `widgets` array (without extension)
+### Asset discovery
 
-**Asset Copying:** Script files are automatically copied to `{assetsDir}/scripts/` during build. Widget files are automatically compiled to `{assetsDir}/widgets/` during build.
+Files sitting beside the skill are picked up automatically:
 
-**SkillDefinition Schema:**
-```typescript
-{
-  name: string;                    // Required: Unique skill name (kebab-case)
-  title?: string;                  // Optional: Display title
-  description: string;             // Required: Short description
-  instructions: string;            // Required: Skill instructions (markdown)
-  content_type: 'md' | 'jst';     // Required: Content type
-  input_schema?: {                 // Optional: JSON Schema for parameters
-    type: 'object';
-    properties?: Record<string, any>;
-    required?: string[];
-  };
-  context_triggers?: {             // Optional: Auto-injection triggers
-    keywords?: string[];           // Keywords to trigger this skill
-    tool_names?: string[];         // Tools that suggest this skill
-    data_patterns?: string[];      // Regex patterns for data matching
-  };
-  execution?: {                    // Optional: Code execution config
-    language: string;              // Programming language
-    packages?: string[];           // Required packages
-    system_packages?: string[];    // System-level packages
-    template?: string;             // Code template
-  };
-  tools?: string[];        // Optional: Related tool names
-  scripts?: string[];              // Optional: Script files in skill dir
-  widgets?: string[];              // Optional: Widget names in skill dir
-  isEnabled?: (context: any) => Promise<boolean>;  // Optional: Runtime filter function
-}
+```text
+my-skill/
+├── SKILL.md         # frontmatter + instructions
+├── properties.ts    # runtime properties (optional)
+├── helper.js        # → skill.scripts, copied to {assetsDir}/scripts/
+└── chart.tsx        # → skill.widgets, bundled to {assetsDir}/{widgetsDir}/
 ```
 
-### Runtime Properties (`properties.ts`)
+`.js` and `.py` files become `scripts` and are copied verbatim. `.tsx` files become `widgets` and
+are bundled with esbuild. Both are skipped entirely when `assetsDir` is `false`.
 
-For properties that cannot be defined in YAML frontmatter (like functions), create a `properties.ts` file in your skill directory:
+### Runtime properties (`properties.ts`)
+
+For anything that cannot be expressed in YAML — functions, most of all — add a `properties.ts`
+next to the `SKILL.md`:
 
 ```typescript
 // my-skill/properties.ts
 import type { ToolUseContext } from '@vertesia/tools-sdk';
 
 export default {
-  // Function to check if skill is enabled
-  isEnabled: async (context: ToolUseContext): Promise<boolean> => {
-    return context.project?.settings?.myFeature === true;
-  },
-
-  // You can override any frontmatter property
-  description: 'Dynamically set description',
-
-  // Add any other SkillDefinition properties
+    isEnabled: async (context: ToolUseContext): Promise<boolean> => {
+        return context.project?.settings?.myFeature === true;
+    },
+    description: 'Overrides the frontmatter description',
 };
 ```
 
-**How it works:**
-1. The `properties.ts` file must export a default object of type `Partial<SkillDefinition>`
-2. Properties from `properties.ts` **override** those from frontmatter
-3. During build, the SKILL.md transformer generates code that imports `./properties.js`
-4. Rollup automatically transpiles `properties.ts` to `properties.js` (via TypeScript plugin)
-5. Runtime validation ensures `isEnabled` (if present) is a function
-6. Build fails with clear errors if validation fails
+The default export is a `Partial<SkillDefinition>` and its properties **override** frontmatter. When
+the file exists, the generated chunk imports `./properties.js` — the JavaScript `tsc` emitted from
+it — and spreads it over the skill object, so the merge happens at runtime rather than at build
+time. A generated guard throws if `isEnabled` is present but is not a function.
 
-**Directory structure:**
+## Skill Markdown preprocessing
+
+Skill bodies routinely name tools and other skills, and embed example payloads. Left as prose,
+those drift out of sync with the tool definitions they describe and nothing catches it. The
+preprocessor makes the references explicit so the build can verify them.
+
+Four constructs, all optional:
+
+| Written | Rendered | Verified |
+| ------- | -------- | -------- |
+| `{@tool fetch_document}` | `` `fetch_document` `` | tool exists, name unambiguous |
+| `{@skill web_search}` | `` `learn_web_search` `` | skill exists, name unambiguous |
+| `{@param fetch_document.format}` | `` `format` `` | that tool's schema declares the field |
+| ` ```json tool=fetch_document ` | plain ` ```json ` fence | payload validates against the tool's schema |
+
+````markdown
+Call {@tool fetch_document} to load the object — {@param fetch_document.format} selects the
+representation — then read it with {@skill artifacts}.
+
+```json tool=fetch_document
+{ "id": "abc123", "format": "text" }
 ```
-my-skill/
-  ├── SKILL.md         # Declarative properties (frontmatter + markdown)
-  ├── properties.ts    # Runtime properties (functions, overrides)
-  ├── helper.js        # Script files (auto-discovered)
-  └── chart.tsx        # Widget files (auto-discovered)
+````
+
+A `{@param …}` path is spelled like a `dispatch` descriptor: dots nest and `[]` walks an array, so
+`{@param batch_execute.inputs[].input}` resolves. Only the path is rendered.
+
+Everything fails closed: an unknown tool, an ambiguous name, an unterminated `{@`, a `tool=` tag on
+a non-JSON fence, a duplicate tag, or a payload the schema rejects all stop the build with the file
+and the offending name in the message. Inline code spans and untagged fences are left untouched.
+
+### Wiring the catalog
+
+The preprocessor is pure — it never reads a registry itself. The consuming package names a module
+that supplies one:
+
+```json
+{
+    "vertesia-build": {
+        "libDir": "./lib",
+        "srcDir": "./src",
+        "transformers": ["skill", "skills", "raw"],
+        "skillCatalog": "./lib/skill-catalog.js"
+    }
+}
 ```
 
-### Raw Transformer
+That module exports the catalog (arrays are accepted anywhere a set is):
 
-Imports any file as a raw string.
-
-**Pattern:** `?raw`
-
-**Usage:**
 ```typescript
-import html from './template.html?raw';
-import css from './styles.css?raw';
-import txt from './data.txt?raw';
+export const tools = new Set(['fetch_document', 'batch_execute']);
+export const skills = new Set(['web_search', 'artifacts']);
+
+// Optional
+export const ambiguousTools = new Set<string>();     // names with >1 provider — always an error
+export const ambiguousSkills = new Set<string>();
+export const unvalidatableTools = new Set<string>(); // known, but no schema available here
+export const validateExample = createSchemaExampleValidator(entries); // returns string[] of errors
+export const validateField = createSchemaFieldValidator(entries);     // resolves {@param …} paths
+export const skillToolPrefix = 'learn_';             // default
+export const exampleLanguages = new Set(['json']);   // default
 ```
 
-## Custom Transformers
+`createSchemaExampleValidator` (also exported from this package) validates a payload against the
+tool's AJV schema, and additionally resolves *dispatcher* fields — a `string` parameter that carries
+another tool's name, such as `batch_execute.tool_name` — which JSON Schema alone cannot check.
+`createSchemaFieldValidator` walks a `{@param …}` path through the same schemas, descending into
+`anyOf`/`oneOf`/`allOf` branches and following local `$ref`s (resolved against the innermost
+embedded resource, so a nested `$defs` block wins), and reports the declared fields alongside an
+unknown one. A tool with no schema, a tool absent from the entries, and a path crossing an
+unresolvable reference are all errors rather than passes; so is a catalog that omits
+`validateField` while a skill uses `{@param …}`.
 
-Create your own transformers for specific use cases:
+If `skillCatalog` is configured but `skill` is not among the `transformers`, the build fails. If a
+skill body uses any of the constructs while **no** catalog is configured, the build also
+fails, rather than shipping a raw `{@tool …}` to the model.
+
+## Configuration reference
+
+All paths are resolved relative to the package directory.
+
+| Key | Type | Default | Meaning |
+| --- | ---- | ------- | ------- |
+| `libDir` | string | *required* | Root of the compiled output to transform. |
+| `srcDir` | string | *required* | Root of the sources, mirroring `libDir`. |
+| `transformers` | string[] | *required* | Names from the table above. Non-empty. |
+| `assetsDir` | string \| false | `libDir` | Where scripts and widgets are emitted; `false` disables both. |
+| `widgetsDir` | string | `'widgets'` | Sub-directory of `assetsDir` for widget bundles. |
+| `widgetConfig` | object | — | Options forwarded to the esbuild widget bundler, e.g. `{ "minify": true }`. |
+| `skillCatalog` | string | — | Module supplying `{ tools, skills, … }` for the preprocessor. |
+
+## Programmatic API
+
+### `transformImports(options)`
+
+Runs the pipeline directly, with the same options as the config block:
 
 ```typescript
-import { vertesiaImportPlugin } from '@vertesia/build-tools';
+import { transformImports } from '@vertesia/build-tools';
+
+const result = await transformImports({
+    libDir: './lib',
+    srcDir: './src',
+    transformers: [skillTransformer, rawTransformer],
+    assetsDir: './dist',
+});
+// → { filesProcessed, chunksEmitted, assetsCopied, widgetsCompiled }
+```
+
+Note that `transformers` here takes resolved `TransformerRule` objects, not names; use
+`resolveTransformerNames()` to go from one to the other.
+
+### `preprocessSkillMarkdown(markdown, options)`
+
+The resolver on its own. Never throws and reads no files — it returns
+`{ markdown, references, examples, errors }` so callers decide what to do with problems.
+`assertSkillMarkdown(markdown, options, source)` is the fail-closed wrapper that throws once,
+listing every problem found.
+
+### Custom transformers
+
+A transformer is a pattern plus a function:
+
+```typescript
+import { transformImports } from '@vertesia/build-tools';
 import { z } from 'zod';
 
-// Define your schema
 const InteractionSchema = z.object({
-  name: z.string(),
-  type: z.enum(['form', 'modal', 'dialog']),
-  fields: z.array(z.object({
     name: z.string(),
-    type: z.string()
-  }))
+    type: z.enum(['form', 'modal', 'dialog']),
 });
 
-export default {
-  plugins: [
-    vertesiaImportPlugin({
-      transformers: [
+await transformImports({
+    libDir: './lib',
+    srcDir: './src',
+    transformers: [
         {
-          // Match pattern
-          pattern: /\.interaction\.json$/,
-
-          // Optional validation schema
-          schema: InteractionSchema,
-
-          // Transform function
-          transform: (content, filePath) => {
-            const json = JSON.parse(content);
-
-            // Add computed fields
-            json.timestamp = Date.now();
-            json.source = filePath;
-
-            return {
-              data: json
-            };
-          }
-        }
-      ]
-    })
-  ]
-};
+            pattern: /\.interaction\.json$/,
+            schema: InteractionSchema,       // optional, validated at build time
+            transform: (content, filePath) => ({
+                data: { ...JSON.parse(content), source: filePath },
+            }),
+        },
+    ],
+});
 ```
 
-## API
+`transform` returns a `TransformResult`:
 
-### `vertesiaImportPlugin(config)`
+| Field | Meaning |
+| ----- | ------- |
+| `data` | Value to export as the module default (serialized to JSON). |
+| `code` | Custom module source, used *instead* of the JSON export. |
+| `imports` | Extra import lines to inject at the top of the generated module. |
+| `assets` | Files to copy into `assetsDir`. |
+| `widgets` | Widget entries to bundle. |
 
-Main plugin factory.
+Set `virtual: true` on the rule when the specifier does not name a real file, as the collection
+transformers do.
 
-**Parameters:**
-- `config.transformers` - Array of transformer rules
-- `config.assetsDir` - Root directory for asset output (default: `'./dist'`, use `false` to disable)
-- `config.scriptsDir` - Directory for script files relative to assetsDir (default: `'scripts'`)
-- `config.widgetsDir` - Directory for widget files relative to assetsDir (default: `'widgets'`)
+## How it works
 
-**Returns:** Rollup Plugin
+1. **Scan** — walk `libDir` for `.js` files containing a query-import marker.
+2. **Detect** — lex each file with `es-module-lexer` and match the specifiers against the
+   transformers. A real lexer rather than a regex, because a regex matches anything that *looks*
+   like a specifier: a doc comment mentioning `` `?skill` ``, or a plain constant holding a path,
+   were both picked up as imports.
+3. **Resolve** — map the specifier back to its source asset under `srcDir`.
+4. **Emit** — run the transformer, validate against the rule's Zod schema if it has one, and write
+   the generated module as a sibling chunk in `libDir`.
+5. **Rewrite** — splice the new chunk's path over the original specifier, in place.
+6. **Recurse** — emitted chunks are re-scanned, so a `?skills` collection chunk that imports
+   `SKILL.md` siblings is itself transformed.
+7. **Finish** — copy discovered assets and bundle discovered widgets with esbuild.
 
-**Asset Management:**
-- When `assetsDir` is configured, script files (`.js`, `.py`) discovered in skill directories are automatically copied to `{assetsDir}/{scriptsDir}/`
-- Widget files (`.tsx`) are tracked in the skill definition but not copied (compile them separately)
-- Set `assetsDir: false` to disable asset copying
+A file that cannot be lexed stops the build with `Failed to parse imports in <file>: …`. It only
+reached the queue because it contains a marker, so a swallowed failure would mean a real import
+ships untransformed.
 
-### `TransformerRule`
+## Error handling
 
-Configuration for a single transformer.
+Failures name the file and the specific problem. Frontmatter and output-schema failures list every
+offending field:
 
-```typescript
-interface TransformerRule {
-  pattern: RegExp;                      // Pattern to match imports
-  transform: TransformFunction;         // Transform function
-  schema?: z.ZodType<any>;             // Optional Zod schema
-  options?: Record<string, unknown>;   // Optional custom options
-}
+```text
+Invalid frontmatter in /abs/src/skills/bad/SKILL.md:
+  - description: Invalid input: expected string, received undefined
+  - frontmatter: Unrecognized key: "descriptoin"
 ```
 
-### `TransformFunction`
+Preprocessor failures are collected and reported together, with line numbers, rather than one per
+run:
 
-Function that transforms file content.
-
-```typescript
-type TransformFunction = (
-  content: string,
-  filePath: string
-) => TransformResult | Promise<TransformResult>;
-
-interface TransformResult {
-  data: unknown;          // Data to export (serialized to JSON)
-  imports?: string[];     // Optional imports to inject
-  code?: string;          // Optional custom code generation
-}
+```text
+Skill markdown errors in /abs/src/skills/fetch/SKILL.md:
+  - line 12: '{@tool fetch_documnet}' refers to a tool no provider registers
+  - line 31: example / must NOT have additional properties ('document_id')
+  - line 44: example is tagged 'tool=fetch_document' on a 'bash' fence; only json fences can be validated
 ```
 
-## Advanced Usage
+Configuration failures are prefixed with the CLI name and exit non-zero:
 
-### Custom Code Generation
-
-Instead of JSON export, generate custom code:
-
-```typescript
-{
-  pattern: /\.template\.ts$/,
-  transform: (content, filePath) => {
-    return {
-      data: null,
-      code: `
-        export function render() {
-          return ${JSON.stringify(content)};
-        }
-        export const filePath = ${JSON.stringify(filePath)};
-      `
-    };
-  }
-}
-```
-
-### Adding Imports
-
-Inject imports into the generated module:
-
-```typescript
-{
-  pattern: /\.config\.yaml$/,
-  transform: (content) => {
-    const config = parseYaml(content);
-    return {
-      data: config,
-      imports: [
-        "import { validateConfig } from './validator.js';",
-        "validateConfig(config);"
-      ]
-    };
-  }
-}
-```
-
-## Type Safety
-
-The plugin exports TypeScript types for use in your code:
-
-```typescript
-import type { SkillDefinition } from '@vertesia/build-tools';
-
-function processSkill(skill: SkillDefinition) {
-  console.log(skill.name);
-}
-```
-
-## How It Works
-
-1. **Pattern Matching:** Plugin intercepts imports matching configured patterns
-2. **File Loading:** Reads the actual file from disk
-3. **Transformation:** Runs the transform function on file content
-4. **Validation:** If schema provided, validates the result with Zod
-5. **Code Generation:** Generates JavaScript module with the data
-6. **Build Fails:** If validation fails, build stops with clear error messages
-
-## Error Handling
-
-The plugin provides detailed error messages when validation fails:
-
-```
-Error: Validation failed for ./skills/bad-skill.md?skill:
-  - name: Required
-  - description: String must contain at least 1 character(s)
+```text
+vertesia-build: skillCatalog is configured but "skill" is not in vertesia-build.transformers.
+vertesia-build: "vertesia-build.libDir" must be a non-empty string.
 ```
 
 ## License
@@ -368,6 +400,5 @@ Apache-2.0
 
 ## Repository
 
-https://github.com/vertesia/composableai
-
-Part of the Vertesia LLM Studio monorepo.
+<https://github.com/vertesia/composableai> — `packages/build-tools`, part of the Vertesia LLM Studio
+monorepo.

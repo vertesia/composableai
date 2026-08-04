@@ -1,5 +1,15 @@
 import type { ToolServerConfig } from '@vertesia/tools-sdk';
-import { activities, interactions, processes, skills, templates, tools, types, views } from './app-server-modules.js';
+import {
+    activities,
+    dashboards,
+    interactions,
+    processes,
+    skills,
+    templates,
+    tools,
+    types,
+    views,
+} from './app-server-modules.js';
 import { mcpProviders } from './mcp/index.js';
 import settingsSchema from './settings.js';
 import uiNavItems from './ui-nav-items.js';
@@ -14,6 +24,7 @@ export const ServerConfig = {
     interactions,
     types,
     processes,
+    dashboards,
     skills,
     templates,
     // In-code View Experiences. Studio contributes each as `app:<app-name>:<view-id>`

@@ -1,3 +1,4 @@
+export { dashboards } from './dashboards/index.js';
 export { interactions } from './interactions/index.js';
 export { processes } from './processes/index.js';
 export { types } from './types/index.js';

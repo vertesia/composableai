@@ -1,22 +1,30 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { AgentMessageType } from '@vertesia/common';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import type { RequestInputMessageWithUx } from './ModernAgentOutput/requestInputMessages';
+
+const mocks = vi.hoisted(() => ({
+    getCollectionStatus: vi.fn(),
+}));
 
 vi.mock('@vertesia/ui/session', () => ({
     useUserSession: () => ({
         client: {
             remoteMcpConnections: {
-                getCollectionStatus: vi.fn(),
+                getCollectionStatus: mocks.getCollectionStatus,
             },
         },
     }),
 }));
 
 vi.mock('../../oauth/RemoteMcpConnectionButton.js', () => ({
-    RemoteMcpConnectionButton: () => <button type="button">Connect</button>,
+    RemoteMcpConnectionButton: ({ onAuthChange }: { onAuthChange: () => void }) => (
+        <button type="button" onClick={onAuthChange}>
+            Connect
+        </button>
+    ),
 }));
 
 function createMcpRequestMessage(): RequestInputMessageWithUx {
@@ -27,6 +35,7 @@ function createMcpRequestMessage(): RequestInputMessageWithUx {
         workstream_id: 'main',
         message: 'Connect to Jira to continue.',
         details: {
+            request_id: 'request-mcp-1',
             ux: {
                 mcp_connect: {
                     app_install_id: 'app1',
@@ -46,6 +55,7 @@ function createToolApprovalRequestMessage(): RequestInputMessageWithUx {
         workstream_id: 'main',
         message: 'Approve Write Artifact: quotes.md?',
         details: {
+            request_id: 'write_artifact:name:quotes.md',
             tool_approval: {
                 tool_name: 'write_artifact',
                 tool_title: 'Write Artifact',
@@ -74,6 +84,11 @@ function createToolApprovalRequestMessage(): RequestInputMessageWithUx {
 }
 
 describe('AgentRequestInputOverlay', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.getCollectionStatus.mockResolvedValue({ authenticated: true });
+    });
+
     it('lets the user decline an MCP connection request', () => {
         const onSendMessage = vi.fn();
 
@@ -86,7 +101,29 @@ describe('AgentRequestInputOverlay', () => {
         fireEvent.click(screen.getByRole('button', { name: /decline/i }));
 
         expect(onSendMessage).toHaveBeenCalledTimes(1);
-        expect(onSendMessage).toHaveBeenCalledWith("I don't want to connect to Jira. Continue without it.");
+        expect(onSendMessage).toHaveBeenCalledWith("I don't want to connect to Jira. Continue without it.", {
+            request_input_response: { request_id: 'request-mcp-1' },
+        });
+    });
+
+    it('correlates a successful MCP connection response', async () => {
+        const onMcpConnected = vi.fn();
+
+        renderWithProviders(
+            <AgentRequestInputOverlay
+                message={createMcpRequestMessage()}
+                onSendMessage={vi.fn()}
+                onMcpConnected={onMcpConnected}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+        await waitFor(() => {
+            expect(onMcpConnected).toHaveBeenCalledWith(expect.objectContaining({ collection_id: 'jira' }), {
+                request_input_response: { request_id: 'request-mcp-1' },
+            });
+        });
     });
 
     it('sends a commented tool approval denial with structured metadata', () => {
@@ -107,6 +144,9 @@ describe('AgentRequestInputOverlay', () => {
                 decision: 'deny_with_feedback',
                 approval_key: 'write_artifact:name:quotes.md',
             },
+            request_input_response: {
+                request_id: 'write_artifact:name:quotes.md',
+            },
         });
     });
 
@@ -125,6 +165,9 @@ describe('AgentRequestInputOverlay', () => {
                 decision: 'allow_for_run',
                 approval_key: 'write_artifact:name:quotes.md',
             },
+            request_input_response: {
+                request_id: 'write_artifact:name:quotes.md',
+            },
         });
     });
 
@@ -138,7 +181,9 @@ describe('AgentRequestInputOverlay', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Allow once' }));
 
         expect(onSendMessage).toHaveBeenCalledTimes(1);
-        expect(onSendMessage).toHaveBeenCalledWith('allow_once');
+        expect(onSendMessage).toHaveBeenCalledWith('allow_once', {
+            request_input_response: { request_id: 'write_artifact:name:quotes.md' },
+        });
     });
 
     it('renders legacy field-prefixed tool approval prompts with a friendly target', () => {

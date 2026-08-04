@@ -8,6 +8,11 @@ export const activities = [
     ...examplesResources.activities,
     ...contentAppResources.activities,
 ];
+export const dashboards = [
+    ...appResources.dashboards,
+    ...examplesResources.dashboards,
+    ...contentAppResources.dashboards,
+];
 export const interactions = [
     ...appResources.interactions,
     ...examplesResources.interactions,

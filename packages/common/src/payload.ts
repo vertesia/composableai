@@ -1,24 +1,30 @@
+import type { z } from 'zod';
+import type {
+    ComputeCollectionFacetPayloadSchema,
+    ComputeObjectFacetPayloadSchema,
+    ExportPropertiesPayloadSchema,
+    ExportPropertiesResponseSchema,
+} from './api-schemas/content.js';
+import type {
+    ComputeInteractionFacetPayloadSchema,
+    ComputeRunFacetPayloadSchema,
+    RunSearchPayloadSchema,
+    SortOptionSchema,
+    SortOrderSchema,
+} from './api-schemas/interaction.js';
+import type { ComputePromptFacetPayloadSchema } from './api-schemas/prompt.js';
 import type { FacetSpec } from './facets.js';
 import type {
-    ComplexCollectionSearchQuery,
-    ComplexSearchQuery,
     InteractionSearchQuery,
     ObjectSearchQuery,
     ObjectTypeSearchQuery,
     PromptSearchQuery,
-    RunSearchQuery,
     SimpleSearchQuery,
 } from './query.js';
-import type { ColumnLayout } from './store/store.js';
 
-export type SortOrder = 'asc' | 'desc';
+export type SortOrder = z.infer<typeof SortOrderSchema>;
 
-export interface SortOption {
-    /** Field path to sort by (e.g. 'updated_at', 'name', 'properties.title') */
-    field: string;
-    /** Sort direction. Defaults to 'desc'. */
-    order?: SortOrder;
-}
+export type SortOption = z.infer<typeof SortOptionSchema>;
 
 export interface SearchPayload {
     facets?: FacetSpec[];
@@ -60,39 +66,18 @@ export interface PromptSearchPayload extends SearchPayload {
     query?: PromptSearchQuery;
 }
 
-export interface RunSearchPayload extends SearchPayload {
-    query?: RunSearchQuery;
-}
+export type RunSearchPayload = z.infer<typeof RunSearchPayloadSchema>;
 
-export interface ComputeCollectionFacetPayload extends Omit<ComputeFacetPayload, 'query'> {
-    query?: ComplexCollectionSearchQuery;
-}
+export type ComputeCollectionFacetPayload = z.infer<typeof ComputeCollectionFacetPayloadSchema>;
 
-export interface ComputeInteractionFacetPayload extends ComputeFacetPayload {
-    query?: InteractionSearchQuery;
-}
+export type ComputeInteractionFacetPayload = z.infer<typeof ComputeInteractionFacetPayloadSchema>;
 
-export interface ComputeObjectFacetPayload extends ComputeFacetPayload {
-    query?: ComplexSearchQuery;
-}
+export type ComputeObjectFacetPayload = z.infer<typeof ComputeObjectFacetPayloadSchema>;
 
-export interface ComputePromptFacetPayload extends ComputeFacetPayload {
-    query?: PromptSearchQuery;
-}
+export type ComputePromptFacetPayload = z.infer<typeof ComputePromptFacetPayloadSchema>;
 
-export interface ComputeRunFacetPayload extends ComputeFacetPayload {
-    query?: RunSearchQuery;
-}
+export type ComputeRunFacetPayload = z.infer<typeof ComputeRunFacetPayloadSchema>;
 
-export interface ExportPropertiesPayload {
-    objectIds: string[];
-    type: string;
-    query?: ComplexSearchQuery;
-    table_layout?: ColumnLayout[];
-}
+export type ExportPropertiesPayload = z.infer<typeof ExportPropertiesPayloadSchema>;
 
-export interface ExportPropertiesResponse {
-    type: string;
-    name: string;
-    data: string;
-}
+export type ExportPropertiesResponse = z.infer<typeof ExportPropertiesResponseSchema>;

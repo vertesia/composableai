@@ -2,9 +2,11 @@
 
 interface ImportMetaEnv {
     readonly VITE_APP_NAME: string;
-    readonly VITE_STUDIO_URL?: string;
-    readonly VITE_ZENO_URL?: string;
-    readonly VITE_STS_URL?: string;
+    /** The immutable app version id this bundle was built for (set by the appgen version build). */
+    readonly VITE_APP_VERSION?: string;
+    readonly VITE_VERTESIA_STUDIO_URL?: string;
+    readonly VITE_VERTESIA_ZENO_URL?: string;
+    readonly VITE_VERTESIA_STS_URL?: string;
 }
 
 interface ImportMeta {
