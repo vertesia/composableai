@@ -34,7 +34,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
         "tsx": "^4.23.1",
-        "typescript": "^7.0.2",
+        "typescript": "catalog:",
         "vitest": "^4.1.10"
     },
     "dependencies": {

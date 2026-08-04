@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    typescript:
+      specifier: 7.0.2
+      version: 7.0.2
+
 overrides:
   '@types/node': ^24.13.3
   minimatch@>=3.0.0 <4.0.0: legacy-v3
@@ -50,7 +56,7 @@ importers:
         specifier: ^17.7.0
         version: 17.7.0
       typescript:
-        specifier: ^7.0.2
+        specifier: 'catalog:'
         version: 7.0.2
 
 packages:

@@ -39,7 +39,7 @@
         "@types/qs": "^6.15.1",
         "@vertesia/tsconfig": "workspace:*",
         "fast-xml-parser": "^5.10.1",
-        "typescript": "^7.0.2"
+        "typescript": "catalog:"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
