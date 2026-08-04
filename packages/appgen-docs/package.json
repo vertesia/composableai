@@ -27,7 +27,7 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/tsconfig": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "typescript": "^6.0.3"
+        "typescript": "catalog:"
     },
     "repository": {
         "type": "git",
