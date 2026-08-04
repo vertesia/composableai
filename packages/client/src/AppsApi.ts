@@ -1,5 +1,6 @@
 import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch-client';
 import type {
+    AppApiKeyCollectionParams,
     AppBuildProgress,
     AppDeleteSummary,
     AppDevelopmentTaskDetails,
@@ -26,9 +27,11 @@ import type {
     CountResult,
     CreateAppRepoBranchRequest,
     DeleteAppVersionResponse,
+    McpApiKeyStatus,
     ProjectRef,
     PromoteAppVersionResponse,
     RequireAtLeastOne,
+    SetMcpApiKeyRequest,
     StartAppBuildRequest,
     StartAppBuildResponse,
     StartAppScaffoldRequest,
@@ -62,6 +65,27 @@ export default class AppsApi extends ApiTopic {
      */
     previewDelete(id: string): Promise<AppDeleteSummary> {
         return this.del(`/${id}`);
+    }
+
+    /**
+     * Store the API key of an MCP tool collection declared with `auth: 'api_key'`.
+     * The key is write-only: it is encrypted server-side and never returned by any endpoint,
+     * so the response carries only the configured flag and a masked hint.
+     */
+    setMcpCollectionApiKey(appId: string, collectionId: string, apiKey: string): Promise<McpApiKeyStatus> {
+        return this.put(`/${encodeURIComponent(appId)}/collections/${encodeURIComponent(collectionId)}/api-key`, {
+            payload: { api_key: apiKey } satisfies SetMcpApiKeyRequest,
+        });
+    }
+
+    /** Whether an MCP tool collection has an API key stored, with a masked hint for display. */
+    getMcpCollectionApiKeyStatus(appId: string, collectionId: string): Promise<McpApiKeyStatus> {
+        return this.get(`/${encodeURIComponent(appId)}/collections/${encodeURIComponent(collectionId)}/api-key`);
+    }
+
+    /** Remove the stored API key of an MCP tool collection. */
+    deleteMcpCollectionApiKey(appId: string, collectionId: string): Promise<McpApiKeyStatus> {
+        return this.del(`/${encodeURIComponent(appId)}/collections/${encodeURIComponent(collectionId)}/api-key`);
     }
 
     /**
@@ -288,6 +312,7 @@ export default class AppsApi extends ApiTopic {
         settings?: Record<string, unknown>,
         oauthParams?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>,
         oauthProviderParams?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>,
+        apiKeyParams?: AppApiKeyCollectionParams,
     ): Promise<AppInstallation> {
         return this.post(`/install`, {
             payload: {
@@ -295,6 +320,7 @@ export default class AppsApi extends ApiTopic {
                 settings,
                 oauth_params: oauthParams,
                 oauth_provider_params: oauthProviderParams,
+                api_key_params: apiKeyParams,
             } satisfies AppInstallationPayload,
         });
     }

@@ -28,8 +28,7 @@ pnpm create @vertesia/plugin my-plugin -- --module appgen,assistant
 - `content-app` adds a content-oriented UI, content types, interactions, processes, and helper scripts.
 - `examples` adds tool-server resource examples without app business logic.
 - `service` configures the app entry and service build scripts for app-gateway-hosted apps.
-- `agent` adds reusable UI helpers and notes for generated apps.
-- `appgen` is a virtual module for appgen-created apps and currently includes `service` and `agent`.
+- `appgen` is a virtual module for appgen-created apps and includes `service`.
 
 Generated wiring files connect active modules: `src/tool-server/app-server-modules.ts`,
 `src/ui/app-ui-modules.tsx`, and `src/ui/app-ui-entry.tsx`. Do not hand-edit these files in generated apps;

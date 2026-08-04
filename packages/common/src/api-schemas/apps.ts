@@ -112,9 +112,13 @@ export const AppUIConfigSchema = z
     })
     .meta({ id: 'AppUIConfig' });
 
-export const ToolCollectionAuthTypeSchema = z
-    .enum(['oauth', 'other'])
-    .meta({ id: 'ToolCollectionAuthType', description: 'Authentication type for tool collections' });
+export const ToolCollectionAuthTypeSchema = z.enum(['oauth', 'api_key', 'other']).meta({
+    id: 'ToolCollectionAuthType',
+    description:
+        "Authentication type for tool collections.\n- 'oauth': the runtime resolves a per-user or per-project " +
+        "OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 " +
+        'bearer token (`Authorization: Bearer <key>`)',
+});
 
 export const MCPOAuthConfigSchema = z
     .strictObject({
@@ -160,6 +164,33 @@ export const MCPOAuthConfigSchema = z
             'Install-time OAuth provisioning blueprint for an MCP collection. Defines how to auto-create an ' +
             'OAuth provider when the app is installed. Does NOT affect runtime behaviour — the runtime uses ' +
             'oauth_bindings on AppInstallation.',
+    });
+
+export const MCPApiKeyConfigSchema = z
+    .strictObject({
+        required_at_install: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'When true, the installer must supply the key in the install dialog. Use this for a manifest ' +
+                    'published to projects that each hold their own key. Leave unset when the key was already ' +
+                    'stored by whoever registered the server.',
+            }),
+        instructions: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    'Shown in the install dialog above the key field — typically where to generate the key on the ' +
+                    'remote service.',
+            }),
+    })
+    .meta({
+        id: 'MCPApiKeyConfig',
+        description:
+            "Install-time provisioning blueprint for an `auth: 'api_key'` MCP collection. Declares whether the " +
+            'installer is prompted for the key. Never holds the key itself — manifests are shareable documents.',
     });
 
 /**
@@ -210,6 +241,11 @@ export const MCPToolCollectionObjectSchema = z
                 'OAuth provider at install time using these values merged with any user-supplied ' +
                 'required_at_install params. The created app is recorded in AppInstallation.oauth_bindings. ' +
                 'Mutually exclusive with oauth_provider.',
+        }),
+        api_key_config: MCPApiKeyConfigSchema.optional().meta({
+            description:
+                "Install-time provisioning blueprint for auth: 'api_key' collections. Only meaningful alongside " +
+                "auth: 'api_key'; ignored otherwise.",
         }),
         oauth_provider: z
             .string()
@@ -370,6 +406,39 @@ export const McpOAuthTokenRequestSchema = z
         mcp_server_url: z.string().optional(),
     })
     .meta({ id: 'McpOAuthTokenRequest' });
+
+export const SetMcpApiKeyRequestSchema = z
+    .strictObject({
+        // `.regex(/\S/)` rather than `.trim().min(1)` alone: request bodies are validated by AJV
+        // against the EMITTED JSON Schema, where a Zod transform like `.trim()` leaves no trace —
+        // `minLength: 1` on its own happily accepts "   ". The pattern emits and is enforced, so a
+        // whitespace-only key is rejected at the boundary instead of becoming an encrypted empty
+        // key that still reports `configured: true`. The trim still normalizes for Zod consumers.
+        api_key: z
+            .string()
+            .trim()
+            .min(1)
+            .regex(/\S/, 'API key must not be blank')
+            .meta({
+                description:
+                    'The static key issued by the remote MCP server. Surrounding whitespace is stripped. Stored ' +
+                    'encrypted in the project secret store and sent as the RFC 6750 bearer token on every request ' +
+                    'to the collection URL. Never returned by the API.',
+            }),
+    })
+    .meta({ id: 'SetMcpApiKeyRequest' });
+
+export const McpApiKeyStatusSchema = z
+    .strictObject({
+        configured: z.boolean().meta({ description: 'Whether a key is stored for this collection.' }),
+        // Always present — null when unset, never absent. `.nullable()` rather than `.nullish()`
+        // so the published contract says so and generated clients do not treat it as optional.
+        hint: z
+            .string()
+            .nullable()
+            .meta({ description: 'Last few characters of the stored key, for display only. Null when unset.' }),
+    })
+    .meta({ id: 'McpApiKeyStatus', description: 'Whether an API key is configured for an MCP tool collection' });
 
 export const OAuthAuthStatusSchema = z
     .strictObject({
