@@ -37,8 +37,6 @@ const JSONSchemaRefSchema: z.ZodType<JSONSchema> = z.any().meta({
     $ref: '#/components/schemas/JSONSchema',
 });
 
-export const RenderPromptPayloadSchema = z.looseObject({}).meta({ id: 'RenderPromptPayload' });
-
 export const ProjectPluginArraySchema = z.array(z.string()).meta({ id: 'ProjectPluginArray' });
 
 export const BinaryFileResponseSchema = z.string().meta({ id: 'BinaryFileResponse', format: 'binary' });

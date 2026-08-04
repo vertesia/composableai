@@ -109,9 +109,11 @@ import {
     AgentRunTypeSchema,
     AgentToolApprovalClassSchema,
     AgentToolDefinitionSchema,
+    AppApiKeyCollectionParamsSchema,
     AppBuildProgressSchema,
     AppBuildProgressStatusSchema,
     AppBuildTriggerSchema,
+    AppDeleteSummarySchema,
     AppDevelopmentTaskDetailsSchema,
     AppDevelopmentTaskListSchema,
     AppDevelopmentTaskSchema,
@@ -155,6 +157,7 @@ import {
     EventRefSchema,
     Extract_AppVersionGitRefType_branch_tag_commitSchema,
     InCodeTypeRefSchema,
+    McpApiKeyCredentialSchema,
     OAuthClientCredentialsMapSchema,
     OAuthClientCredentialsSchema,
     RunKindSchema,
@@ -178,6 +181,7 @@ import {
     AppSourceConfigSchema,
     AppUIConfigSchema,
     MCPToolAnnotationsSchema,
+    McpApiKeyStatusSchema,
     McpOAuthConnectResponseSchema,
     McpOAuthDisconnectResponseSchema,
     McpOAuthTokenRequestSchema,
@@ -186,6 +190,7 @@ import {
     OAuthAuthStatusArraySchema,
     OAuthAuthStatusSchema,
     OAuthMetadataResponseSchema,
+    SetMcpApiKeyRequestSchema,
     ToolCollectionObjectSchema,
 } from './apps.js';
 import {
@@ -643,6 +648,7 @@ import {
     PromptTemplateInteractionUsageSchema,
     PromptTemplateInteractionVersionSchema,
     PromptTemplateRefArraySchema,
+    RenderPromptPayloadSchema,
     RenderPromptResponseSchema,
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
@@ -1595,6 +1601,8 @@ const EVENT_DELIVERY_SCHEMAS = {
     SemanticEvaluationRecord: EventSchemas.SemanticEvaluationRecordSchema,
     EventDeliveryQueueSubscriptionSummary: EventSchemas.EventDeliveryQueueSubscriptionSummarySchema,
     EventDeliveryQueueSummaryPayload: EventSchemas.EventDeliveryQueueSummaryPayloadSchema,
+    CancelEventDeliveryIntentsPayload: EventSchemas.CancelEventDeliveryIntentsPayloadSchema,
+    CancelEventDeliveryIntentsResponse: EventSchemas.CancelEventDeliveryIntentsResponseSchema,
     EventSemanticCondition: EventSchemas.EventSemanticConditionSchema,
     EventDeliveryIntentSummary: EventSchemas.EventDeliveryIntentSummarySchema,
     EventDeliveryQueueSummaryResponse: EventSchemas.EventDeliveryQueueSummaryResponseSchema,
@@ -1769,6 +1777,7 @@ const PROMPT_AUTHORING_SCHEMAS = {
     // The prompt-authoring endpoints: fork, render, search and the interaction usages a prompt
     // reports. `PromptTemplate` itself and its write payloads live with the interactions, which is
     // where the prompt tree they reference is defined.
+    RenderPromptPayload: RenderPromptPayloadSchema,
     RenderPromptResponse: RenderPromptResponseSchema,
     PromptTemplateInteractionVersion: PromptTemplateInteractionVersionSchema,
     PromptTemplateForkPayload: PromptTemplateForkPayloadSchema,
@@ -1804,6 +1813,10 @@ const REMOTE_MCP_SCHEMAS = {
     McpOAuthConnectResponse: McpOAuthConnectResponseSchema,
     OAuthAuthorizeResponse: OAuthAuthorizeResponseSchema,
     OAuthAuthStatusArray: OAuthAuthStatusArraySchema,
+    // The static-key alternative to that handshake: the key itself is write-only, so only the
+    // setter payload and the configured/hint projection are published.
+    SetMcpApiKeyRequest: SetMcpApiKeyRequestSchema,
+    McpApiKeyStatus: McpApiKeyStatusSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const AUDIT_TRAIL_SCHEMAS = {
@@ -1917,6 +1930,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     RunType: RunTypeSchema,
     AppBuildProgressStatus: AppBuildProgressStatusSchema,
     DeleteAppVersionResponse: DeleteAppVersionResponseSchema,
+    AppDeleteSummary: AppDeleteSummarySchema,
     AppRepoBranch: AppRepoBranchSchema,
     AppRepoDocumentCommit: AppRepoDocumentCommitSchema,
     AppVersionGitSource: AppVersionGitSourceSchema,
@@ -1926,6 +1940,8 @@ const APP_LIFECYCLE_SCHEMAS = {
     AppDevelopmentTaskList: AppDevelopmentTaskListSchema,
     OAuthClientCredentialsMap: OAuthClientCredentialsMapSchema,
     AppOAuthCollectionParams: AppOAuthCollectionParamsSchema,
+    McpApiKeyCredential: McpApiKeyCredentialSchema,
+    AppApiKeyCollectionParams: AppApiKeyCollectionParamsSchema,
     AppInspectionIssue: AppInspectionIssueSchema,
     AppScaffoldProgress: AppScaffoldProgressSchema,
     AppRepoTree: AppRepoTreeSchema,
@@ -2046,7 +2062,6 @@ const APP_MANIFEST_SCHEMAS = {
     AppWidgetInfoMap: AppRuntimeSchemas.AppWidgetInfoMapSchema,
     PromoteAppVersionResponse: AppRuntimeSchemas.PromoteAppVersionResponseSchema,
     AppPackage: AppRuntimeSchemas.AppPackageSchema,
-    RenderPromptPayload: AppRuntimeSchemas.RenderPromptPayloadSchema,
     ProjectPluginArray: AppRuntimeSchemas.ProjectPluginArraySchema,
 } as const satisfies Record<string, z.ZodType>;
 
@@ -2370,6 +2385,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppUIConfig',
     'AppUINavItem',
     'MCPOAuthConfig',
+    'MCPApiKeyConfig',
     'MCPToolCollectionObject',
     'VertesiaSDKToolCollectionObject',
     // File, task, content-type and command components. Every one is published closed
@@ -2661,6 +2677,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ListWorkflowRunsResponse',
     'EventDeliveryQueueSubscriptionSummary',
     'EventDeliveryQueueSummaryPayload',
+    'CancelEventDeliveryIntentsPayload',
+    'CancelEventDeliveryIntentsResponse',
     'ContentObjectExportStatusResponse',
     'TimerTask',
     'SignalTask',
@@ -2928,6 +2946,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'McpOAuthDisconnectResponse',
     'McpOAuthConnectResponse',
     'OAuthAuthorizeResponse',
+    'SetMcpApiKeyRequest',
+    'McpApiKeyStatus',
     'AuditMeter',
     'AuditAggregationDimensionMap',
     'AuditAggregationRow',
@@ -2981,6 +3001,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppInstallationProviderBinding',
     'AppInstallationOAuthBinding',
     'OAuthClientCredentials',
+    'McpApiKeyCredential',
     'AppInspectionCapabilityReport',
     'AppRepoTreeEntry',
     'AppRepoRef',
@@ -2989,6 +3010,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'InCodeTypeRef',
     'StoredTypeRef',
     'DeleteAppVersionResponse',
+    'AppDeleteSummary',
     'AppRepoBranch',
     'AppRepoDocumentCommit',
     'AppVersionGitSource',

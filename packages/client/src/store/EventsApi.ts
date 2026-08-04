@@ -1,5 +1,7 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    CancelEventDeliveryIntentsPayload,
+    CancelEventDeliveryIntentsResponse,
     EventDeliveryQueueSummaryPayload,
     EventDeliveryQueueSummaryResponse,
     EventDeliveryStreamEnvelope,
@@ -44,6 +46,12 @@ export class EventsApi extends ApiTopic {
 
     queueSummary(payload: EventDeliveryQueueSummaryPayload = {}): Promise<EventDeliveryQueueSummaryResponse> {
         return this.post('/deliveries/queue-summary', { payload });
+    }
+
+    cancelQueuedDeliveries(
+        payload: CancelEventDeliveryIntentsPayload = {},
+    ): Promise<CancelEventDeliveryIntentsResponse> {
+        return this.post('/deliveries/cancel', { payload });
     }
 
     subscribeDeliveries(options: SubscribeEventDeliveriesOptions): ManagedEventSourceConnection {
