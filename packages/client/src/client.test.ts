@@ -145,6 +145,17 @@ describe('Test Vertesia Client', () => {
         expect(client.baseUrl).toBe('https://studio-server-production.api.becomposable.com');
         expect(client.storeUrl).toBe('https://zeno-server-production.api.becomposable.com');
     });
+
+    test('withAppVersion keeps Studio and Store requests pinned together', () => {
+        const client = new VertesiaClient();
+        const storeWithAppVersion = vi.spyOn(client.store, 'withAppVersion');
+
+        expect(client.withAppVersion('20260804T022611971Z')).toBe(client);
+        expect(storeWithAppVersion).toHaveBeenLastCalledWith('20260804T022611971Z');
+
+        expect(client.withAppVersion(null)).toBe(client);
+        expect(storeWithAppVersion).toHaveBeenLastCalledWith(null);
+    });
 });
 
 describe('isTokenExpired', () => {
