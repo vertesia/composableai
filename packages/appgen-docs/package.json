@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/appgen-docs",
-    "version": "1.5.0-dev.20260725.083715Z",
+    "version": "1.5.0-dev.20260804.124748Z",
     "description": "Generated SDK references and development guidance for Vertesia app agents",
     "type": "module",
     "main": "./lib/index.js",
@@ -39,5 +39,6 @@
         "agents",
         "documentation",
         "app-development"
-    ]
+    ],
+    "gitHead": "87ac9166db2b38bd1be6e37adf0414ea83e402ee"
 }
