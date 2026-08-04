@@ -1996,6 +1996,13 @@ export const AsyncConversationExecutionPayloadSchema = z
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
+        app_version: z
+            .string()
+            .meta({
+                description:
+                    'Immutable app-version target inherited by this conversation execution. The workflow applies it to app-owned resource resolution; callers normally set the x-vertesia-app-version header instead of populating this field directly.',
+            })
+            .optional(),
         data: z
             .unknown()
             .meta({
