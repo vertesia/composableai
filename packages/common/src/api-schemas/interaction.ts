@@ -421,21 +421,29 @@ export const PromptTemplateSchema = z
     })
     .meta({ id: 'PromptTemplate' });
 
-// The two payloads are `PromptTemplate` minus what the server owns, so they are derived from it here
-// the same way the TypeScript interfaces derived from it with `Omit`. They have to be derived HERE
-// rather than left as interfaces: `PromptTemplate` is now a canonical alias, and an `Omit` over an
-// alias has no properties left to keep — the generator sees the placeholder and publishes an empty
-// object.
+// The two payloads are projections of `PromptTemplate`, so they are derived from its canonical Zod
+// schema here. Leaving them as TypeScript utility types would give the generator only aliases with
+// no runtime properties to publish.
 const SERVER_OWNED_PROMPT_FIELDS = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'project'] as const;
 const SERVER_OWNED_PROMPT_FIELD_KEYS = Object.fromEntries(
     SERVER_OWNED_PROMPT_FIELDS.map((field) => [field, true as const]),
 ) as Record<(typeof SERVER_OWNED_PROMPT_FIELDS)[number], true>;
 
-export const PromptTemplateCreatePayloadSchema = PromptTemplateSchema.omit({
-    ...SERVER_OWNED_PROMPT_FIELD_KEYS,
-    // A create call does not choose these two either: a new prompt is always a draft at version 0.
-    status: true,
-    version: true,
+// Keep the published property order stable. OpenAPI Generator uses it for required Go constructor
+// arguments. Zod's `.pick()` builds the projected shape in mask order, whereas `.omit()` preserves
+// the full response model's order and would change this constructor when that model is reorganized.
+export const PromptTemplateCreatePayloadSchema = PromptTemplateSchema.pick({
+    name: true,
+    parent: true,
+    description: true,
+    test_data: true,
+    script: true,
+    tags: true,
+    last_published_at: true,
+    role: true,
+    content: true,
+    content_type: true,
+    inputSchema: true,
 }).meta({ id: 'PromptTemplateCreatePayload' });
 
 export const PromptTemplateUpdatePayloadSchema = PromptTemplateSchema.omit(SERVER_OWNED_PROMPT_FIELD_KEYS)

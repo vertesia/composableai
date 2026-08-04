@@ -10,6 +10,7 @@ import type {
     PromptTemplateInteractionsResponse,
     PromptTemplateRef,
     PromptTemplateUpdatePayload,
+    RenderPromptPayload,
     RenderPromptResponse,
 } from '@vertesia/common';
 
@@ -123,7 +124,7 @@ export default class PromptsApi extends ApiTopic {
      * @throws 404 if not found
      * @throws 403 if the prompt is not in the current project
      */
-    render(id: string, payload: object): Promise<RenderPromptResponse> {
+    render(id: string, payload: RenderPromptPayload): Promise<RenderPromptResponse> {
         return this.post(`/${id}/render`, {
             payload,
         });
