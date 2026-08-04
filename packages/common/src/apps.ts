@@ -2,9 +2,11 @@ import type { z } from 'zod';
 import type {
     AgentToolApprovalClassSchema,
     AgentToolDefinitionSchema,
+    AppApiKeyCollectionParamsSchema,
     AppBuildProgressSchema,
     AppBuildProgressStatusSchema,
     AppBuildTriggerSchema,
+    AppDeleteSummarySchema,
     AppDevelopmentTaskDetailsSchema,
     AppDevelopmentTaskListSchema,
     AppDevelopmentTaskSchema,
@@ -40,6 +42,7 @@ import type {
     AppVersionTargetSchema,
     AppVersionUrlsSchema,
     DeleteAppVersionResponseSchema,
+    McpApiKeyCredentialSchema,
     OAuthClientCredentialsSchema,
     StartAppBuildRequestSchema,
     StartAppBuildResponseSchema,
@@ -86,9 +89,11 @@ import type {
     AppManifestSourceSchema,
     AppSourceConfigSchema,
     AppUIConfigSchema,
+    MCPApiKeyConfigSchema,
     MCPOAuthConfigSchema,
     MCPToolAnnotationsSchema,
     MCPToolCollectionObjectSchema,
+    McpApiKeyStatusSchema,
     McpOAuthConnectResponseSchema,
     McpOAuthDisconnectResponseSchema,
     McpOAuthTokenRequestSchema,
@@ -96,6 +101,7 @@ import type {
     OAuthAuthorizeResponseSchema,
     OAuthAuthStatusSchema,
     OAuthMetadataResponseSchema,
+    SetMcpApiKeyRequestSchema,
     ToolCollectionAuthTypeSchema,
     ToolCollectionObjectSchema,
     VertesiaSDKToolCollectionObjectSchema,
@@ -161,6 +167,9 @@ export type ToolCollectionAuthType = z.infer<typeof ToolCollectionAuthTypeSchema
 export type ToolCollectionType = 'mcp' | 'vertesia_sdk';
 
 export type MCPOAuthConfig = z.infer<typeof MCPOAuthConfigSchema>;
+
+/** Install-time provisioning blueprint for an `auth: 'api_key'` MCP collection. Never holds the key. */
+export type MCPApiKeyConfig = z.infer<typeof MCPApiKeyConfigSchema>;
 
 export type MCPToolCollectionObject = z.infer<typeof MCPToolCollectionObjectSchema>;
 
@@ -663,6 +672,12 @@ export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest
 export type OAuthClientCredentials = z.infer<typeof OAuthClientCredentialsSchema>;
 
 export type AppOAuthCollectionParams = z.infer<typeof AppOAuthCollectionParamsSchema>;
+
+/** One installer-supplied MCP API key. */
+export type McpApiKeyCredential = z.infer<typeof McpApiKeyCredentialSchema>;
+
+/** Installer-supplied MCP API keys, keyed by collection id. */
+export type AppApiKeyCollectionParams = z.infer<typeof AppApiKeyCollectionParamsSchema>;
 export type AppOAuthProviderParams = z.infer<typeof AppOAuthProviderParamsSchema>;
 
 export type AppInstallationPayload = z.infer<typeof AppInstallationPayloadSchema>;
@@ -696,6 +711,15 @@ export interface McpOAuthCollectionRef {
     app_install_id: string;
     collection_id: string;
 }
+
+/**
+ * Payload for storing the static bearer token of an `auth: 'api_key'` MCP collection.
+ * The key is write-only — it is never echoed back by any endpoint.
+ */
+export type SetMcpApiKeyRequest = z.infer<typeof SetMcpApiKeyRequestSchema>;
+
+/** Whether an `auth: 'api_key'` MCP collection has a key stored, plus a display-only hint. */
+export type McpApiKeyStatus = z.infer<typeof McpApiKeyStatusSchema>;
 
 export type McpOAuthTokenRequest = z.infer<typeof McpOAuthTokenRequestSchema>;
 
@@ -873,15 +897,11 @@ export type ValidateUrlResponse = z.infer<typeof ValidateUrlResponseSchema>;
  * Result of DELETE /api/v1/apps/:id. With `?confirm=true` the cascade runs and
  * `deleted: true` is set; without it the endpoint returns a dry-run summary so
  * the UI can show what would be removed.
+ *
+ * Inferred from the published component rather than hand-written: the endpoint
+ * had been declaring `CountResult`, so response validation reported a missing
+ * `count` and every field here as unexpected — and in local development, where
+ * the check fails closed, that surfaced as a 500 raised AFTER the app was
+ * already deleted. Deriving the type is what keeps the two from drifting again.
  */
-export interface AppDeleteSummary {
-    confirmed: boolean;
-    app_id: string;
-    app_name: string;
-    versions: number;
-    installations: number;
-    storage_prefix: string;
-    git_repo_url?: string;
-    deleted: boolean;
-    warnings: string[];
-}
+export type AppDeleteSummary = z.infer<typeof AppDeleteSummarySchema>;
