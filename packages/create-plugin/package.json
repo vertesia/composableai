@@ -30,7 +30,7 @@
     "license": "Apache-2.0",
     "templateVersions": {
         "@vertesia": "1.5.0-dev.20260725.083715Z",
-        "@llumiverse": "1.5.0-dev.20260725.065646Z"
+        "@llumiverse": "1.5.0-dev.20260804.122431Z"
     },
     "repository": {
         "type": "git",
