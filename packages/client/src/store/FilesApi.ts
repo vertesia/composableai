@@ -28,6 +28,44 @@ const FILE_SIGNING_RETRY_POLICY: IRequestRetryPolicy = {
     statuses: [502, 503, 504],
 };
 
+function fileLocationForError(location: string): string {
+    try {
+        const url = new URL(location);
+        return `${url.protocol}//${url.host}${url.pathname}`;
+    } catch {
+        return location.split(/[?#]/, 1)[0] || 'unknown file';
+    }
+}
+
+function sanitizedErrorCause(error: unknown): Error | undefined {
+    if (!(error instanceof Error)) {
+        return undefined;
+    }
+    const message = error.message.replace(/https?:\/\/[^\s)\]}>"']+/g, (url) => fileLocationForError(url));
+    const cause = new Error(message);
+    cause.name = error.name;
+    return cause;
+}
+
+function fileDownloadFailureReason(status?: number, statusText?: string): string {
+    if (status === 404) return 'not found';
+    if (status === 403) return 'forbidden';
+    if (status) return `failed with status ${status}${statusText ? ` ${statusText}` : ''}`;
+    return 'failed';
+}
+
+export class FileDownloadError extends Error {
+    readonly status?: number;
+
+    constructor(location: string, status?: number, statusText?: string, cause?: unknown) {
+        const safeLocation = fileLocationForError(location);
+        const reason = fileDownloadFailureReason(status, statusText);
+        super(`File download ${reason}: ${safeLocation}`, { cause: sanitizedErrorCause(cause) });
+        this.name = 'FileDownloadError';
+        this.status = status;
+    }
+}
+
 export function getMemoryFilePath(name: string) {
     const nameWithExt = name.endsWith('.tar.gz') ? name : `${name}.tar.gz`;
     return `${MEMORIES_PREFIX}/${nameWithExt}`;
@@ -229,28 +267,19 @@ export class FilesApi extends ApiTopic {
         const needSign = !location.startsWith('https:');
         const { url } = needSign ? await this.getDownloadUrl(location) : { url: location };
 
-        const res = await fetchSignedUrl(url, {
-            method: 'GET',
-        })
-            .then((res: Response) => {
-                if (res.ok) {
-                    return res;
-                } else if (res.status === 404) {
-                    throw new Error(`File at ${url} not found`); //TODO: type fetch error better with a fetch error class
-                } else if (res.status === 403) {
-                    throw new Error(`File at ${url} is forbidden`);
-                } else {
-                    console.log(res);
-                    throw new Error(`Failed to download file ${location}: ${res.statusText}`);
-                }
-            })
-            .catch((err) => {
-                console.error(`Failed to download file ${location}.`, err);
-                throw err;
-            });
+        let res: Response;
+        try {
+            res = await fetchSignedUrl(url, { method: 'GET' });
+        } catch (error: unknown) {
+            throw new FileDownloadError(location, undefined, undefined, error);
+        }
+
+        if (!res.ok) {
+            throw new FileDownloadError(location, res.status, res.statusText);
+        }
 
         if (!res.body) {
-            throw new Error(`No body in response while downloading file ${location}`);
+            throw new FileDownloadError(location);
         }
 
         return res.body;
