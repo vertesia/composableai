@@ -5,6 +5,8 @@ Generated SDK declarations and focused development guidance used by Vertesia app
 The package build reads the current composableai workspace outputs for `@vertesia/ui`,
 `@vertesia/client`, and `@vertesia/common`, then writes the published documentation under
 `lib/docs/` so the package entrypoint and documentation are restored together from build caches.
+The tool-server resource guide is copied from the plugin template's canonical
+`.agents/skills/vertesia-tool-server-resource/REFERENCE.md` during that build.
 
 Consumers can locate the installed documentation with:
 
