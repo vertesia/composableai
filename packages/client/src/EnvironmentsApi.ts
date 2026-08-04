@@ -5,11 +5,9 @@ import type {
     EmbeddingsApiResult,
     EnableEnvironmentModelPayload,
     ExecutionEnvironment,
+    ExecutionEnvironmentConfigUpdatePayload,
     ExecutionEnvironmentCreatePayload,
-    ExecutionEnvironmentRef,
     ExecutionEnvironmentUpdatePayload,
-    LoadBalancingEnvConfig,
-    MediatorEnvConfig,
     MigrateInteractionsPayload,
     MigrateInteractionsResult,
 } from '@vertesia/common';
@@ -23,7 +21,7 @@ export default class EnvironmentsApi extends ApiTopic {
      * List all environments for the current project
      * @param all if true, list all environments, otherwise only the ones for the current project
      */
-    list(all: boolean = false): Promise<ExecutionEnvironmentRef[]> {
+    list(all: boolean = false): Promise<ExecutionEnvironment[]> {
         const query = all ? { all: true } : undefined;
 
         return this.get('/', { query });
@@ -54,13 +52,7 @@ export default class EnvironmentsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    updateConfig(
-        id: string,
-        payload: {
-            enabled_models?: AIModel[];
-            config?: MediatorEnvConfig | LoadBalancingEnvConfig;
-        },
-    ): Promise<ExecutionEnvironment> {
+    updateConfig(id: string, payload: ExecutionEnvironmentConfigUpdatePayload): Promise<ExecutionEnvironment> {
         return this.put(`/${id}/config`, {
             payload,
         });

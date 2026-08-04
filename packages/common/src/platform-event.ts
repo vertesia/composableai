@@ -1,56 +1,70 @@
-import type { AuditMeter } from './audit-trail.js';
-import type { ConversationVisibility, InteractionExecutionConfiguration } from './interaction.js';
-import type { SystemRoles } from './project.js';
+import type { z } from 'zod';
+import type { EventRefSchema } from './api-schemas/app-lifecycle.js';
+import type { EventCategorySchema } from './api-schemas/audit-trail.js';
 import type {
-    AgentRunStatus,
-    GroundedVerificationBreakdown,
-    JsonLogicRule,
-    ProcessDefinitionBody,
-    ProcessRunType,
-    WorkflowRuleInputType,
-} from './store/index.js';
+    AgentDeliveryMatchModeSchema,
+    AgentEventDeliveryTargetSchema,
+    AgentSemanticEvaluatorSchema,
+    CreateEventIngestChannelPayloadSchema,
+    EventDeliveryIntentStatusSchema,
+    EventDeliveryIntentSummarySchema,
+    EventDeliveryQueueFailureSummarySchema,
+    EventDeliveryQueueSortFieldSchema,
+    EventDeliveryQueueSubscriptionSummarySchema,
+    EventDeliveryQueueSummaryPayloadSchema,
+    EventDeliveryQueueSummaryResponseSchema,
+    EventDeliverySortFieldSchema,
+    EventDeliverySummarySchema,
+    EventIngestChannelMutationResponseSchema,
+    EventIngestChannelSchema,
+    EventIngestResourceRuleSchema,
+    EventIngestSignatureAlgorithmSchema,
+    EventIngestSignatureConfigSchema,
+    EventIngestSignatureEncodingSchema,
+    EventIngestTransformSchema,
+    EventOutboxQueueSummarySchema,
+    EventOutboxStatusSchema,
+    EventPrioritySchema,
+    EventSemanticConditionSchema,
+    EventSubscriptionFilterSchema,
+    InteractionSemanticEvaluatorSchema,
+    ListEventDeliveriesPayloadSchema,
+    ListEventDeliveriesResponseSchema,
+    SemanticConditionModeSchema,
+    SemanticConditionOnErrorSchema,
+    SemanticEvaluationRecordSchema,
+    SemanticEvaluationStatusSchema,
+    SemanticEvaluatorSchema,
+    StreamEventDeliveriesQuerySchema,
+    UpdateEventIngestChannelPayloadSchema,
+    WebhookEventDeliveryTargetInputSchema,
+    WebhookEventDeliveryTargetSchema,
+    WebhookPayloadModeSchema,
+    WebhookSigningModeSchema,
+    WorkflowEventDeliveryTargetInputSchema,
+    WorkflowEventDeliveryTargetSchema,
+} from './api-schemas/events.js';
+import type { AuditMeter } from './audit-trail.js';
+import type { ConversationVisibility } from './interaction.js';
+import type { SystemRoles } from './project.js';
+import type { GroundedVerificationBreakdown, ProcessDefinitionBody, ProcessRunType } from './store/index.js';
 
-export type EventCategory = 'content' | 'workflow' | 'security' | 'billing' | 'system' | 'external';
+// Inferred from `./api-schemas/audit-trail.js`, which is where the schema sits: the audit trail is
+// the only place the category is published, and the converter grouped it with the endpoints that
+// publish it rather than with the event types that carry it.
+export type EventCategory = z.infer<typeof EventCategorySchema>;
 
-export type EventPriority = 'high' | 'normal' | 'low';
+export type EventPriority = z.infer<typeof EventPrioritySchema>;
 
-export type WebhookSigningMode = 'signed' | 'legacy_unsigned';
+export type WebhookSigningMode = z.infer<typeof WebhookSigningModeSchema>;
 
-/**
- * Webhook delivery body format:
- * - event_envelope: the full platform event + delivery metadata (default for new subscriptions)
- * - legacy_notify_endpoint: pre-2025-10 notify_endpoints body {workflowId, runId, status, result}
- * - workflow_notification: post-COMPLETION_RESULT_V1 notify_endpoints body
- *   {workflow_id, workflow_name, workflow_run_id, event_name, detail}
- */
-export type WebhookPayloadMode = 'event_envelope' | 'legacy_notify_endpoint' | 'workflow_notification';
+export type WebhookPayloadMode = z.infer<typeof WebhookPayloadModeSchema>;
 
-export type EventOutboxStatus = 'pending' | 'routing' | 'routed' | 'partially_routed' | 'failed' | 'dropped';
+export type EventOutboxStatus = z.infer<typeof EventOutboxStatusSchema>;
 
-export type EventDeliveryIntentStatus =
-    | 'pending'
-    | 'evaluating'
-    | 'starting'
-    | 'running'
-    | 'succeeded'
-    | 'retrying'
-    | 'failed'
-    | 'cancelled'
-    | 'skipped';
+export type EventDeliveryIntentStatus = z.infer<typeof EventDeliveryIntentStatusSchema>;
 
-export interface EventRef {
-    event_id: string;
-    root_event_id: string;
-    caused_by_event_id?: string;
-    hop_count: number;
-    event_category: EventCategory;
-    action: string;
-    resource_type: string;
-    resource_id: string;
-    account_id: string | null;
-    project_id: string | null;
-    tenant_id: string | null;
-}
+export type EventRef = z.infer<typeof EventRefSchema>;
 
 export interface PlatformEvent extends EventRef {
     timestamp: string;
@@ -177,180 +191,37 @@ export interface AppendAgentRunThreadsResponse {
     thread_tags: string[];
 }
 
-export interface EventSubscriptionFilter {
-    event_category?: (EventCategory | '*')[];
-    exclude_event_category?: EventCategory[];
-    action?: string[];
-    resource_type?: string[];
-    condition?: JsonLogicRule;
-    /** LLM-evaluated predicate applied after all structural filters have matched. */
-    semantic_condition?: EventSemanticCondition;
-}
+export type EventSubscriptionFilter = z.infer<typeof EventSubscriptionFilterSchema>;
 
 // --- Semantic conditions ---
 // A semantic_condition is an LLM-evaluated natural-language predicate applied AFTER all structural
 // filters (categories, actions, resource types, JSONLogic condition) have matched.
 
-export type SemanticConditionMode = 'enforce' | 'shadow';
+export type SemanticConditionMode = z.infer<typeof SemanticConditionModeSchema>;
 
-export type SemanticConditionOnError = 'fail_open' | 'fail_closed';
+export type SemanticConditionOnError = z.infer<typeof SemanticConditionOnErrorSchema>;
 
-export type SemanticEvaluationStatus = 'pending' | 'running' | 'matched' | 'not_matched' | 'error';
+export type SemanticEvaluationStatus = z.infer<typeof SemanticEvaluationStatusSchema>;
 
-/**
- * Evaluates the semantic condition with a single LLM call (no tools). The event envelope —
- * optionally enriched with an excerpt of the content object text — is classified against the
- * instruction.
- */
-export interface InteractionSemanticEvaluator {
-    type: 'interaction';
-    /**
-     * Optional stored interaction ref used as the classifier. When omitted a built-in ad-hoc
-     * classifier prompt is used.
-     */
-    interaction_ref?: string;
-    config?: InteractionExecutionConfiguration;
-    /** Include an excerpt of the content object text when the event resource is a content object. */
-    enrich_with_content?: boolean;
-    /** Maximum characters of content text included in the classifier prompt. */
-    max_content_chars?: number;
-}
+export type InteractionSemanticEvaluator = z.infer<typeof InteractionSemanticEvaluatorSchema>;
 
-/**
- * Evaluates the semantic condition with a non-interactive agent run that may use tools to enrich its
- * decision (fetch documents, inspect processes, ...). Slower and more expensive than the interaction
- * evaluator; the delivery intent stays in `evaluating` until the agent completes.
- */
-export interface AgentSemanticEvaluator {
-    type: 'agent';
-    /** Agent interaction ref. Defaults to the general-purpose system agent. */
-    interaction_ref?: string;
-    tool_names?: string[];
-    max_iterations?: number;
-    config?: InteractionExecutionConfiguration;
-}
+export type AgentSemanticEvaluator = z.infer<typeof AgentSemanticEvaluatorSchema>;
 
-export type SemanticEvaluator = InteractionSemanticEvaluator | AgentSemanticEvaluator;
+export type SemanticEvaluator = z.infer<typeof SemanticEvaluatorSchema>;
 
-/**
- * A natural-language predicate evaluated by an LLM after all structural filters
- * (categories, actions, resource types, JSONLogic condition) have matched.
- */
-export interface EventSemanticCondition {
-    /** Natural-language predicate, e.g. "the document appears to be a signed contract amendment". */
-    instruction: string;
-    /** Defaults to the interaction evaluator. */
-    evaluator?: SemanticEvaluator;
-    /**
-     * enforce: a negative verdict skips delivery. shadow: the verdict is recorded on the delivery
-     * intent but never blocks delivery. Defaults to enforce.
-     */
-    mode?: SemanticConditionMode;
-    /**
-     * What to do when evaluation errors out after retries: fail_open delivers anyway, fail_closed
-     * does not deliver. Defaults to fail_closed.
-     */
-    on_error?: SemanticConditionOnError;
-}
+export type EventSemanticCondition = z.infer<typeof EventSemanticConditionSchema>;
 
-export interface SemanticEvaluationRecord {
-    status: SemanticEvaluationStatus;
-    evaluator_type: 'interaction' | 'agent';
-    mode: SemanticConditionMode;
-    matched?: boolean;
-    rationale?: string;
-    error?: string;
-    /** Temporal workflow id of the evaluation agent run (agent evaluator only). */
-    workflow_id?: string;
-    agent_run_id?: string;
-    evaluated_at?: string;
-}
+export type SemanticEvaluationRecord = z.infer<typeof SemanticEvaluationRecordSchema>;
 
-export interface WorkflowEventDeliveryTarget {
-    type: 'workflow';
-    endpoint: string;
-    workflow_class?: string;
-    task_queue?: string;
-    vars?: Record<string, unknown>;
-    input_type?: WorkflowRuleInputType;
-    migrated_rule_name?: string;
-}
+export type WorkflowEventDeliveryTarget = z.infer<typeof WorkflowEventDeliveryTargetSchema>;
 
-export interface WebhookEventDeliveryTarget {
-    type: 'webhook';
-    url: string;
-    /** Server-managed: whether a signing secret is stored. Set by the server, never by callers. */
-    has_secret: boolean;
-    /** Server-managed: label of the active signing secret. */
-    secret_label?: string;
-    signing_mode?: WebhookSigningMode;
-    payload_mode?: WebhookPayloadMode;
-    headers?: Record<string, string>;
-    encrypted_headers?: boolean;
-    timeout_ms?: number;
-    result_path?: string;
-    custom_data?: Record<string, unknown>;
-}
+export type WebhookEventDeliveryTarget = z.infer<typeof WebhookEventDeliveryTargetSchema>;
 
 export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
 
-/**
- * How a matching event is applied to the external work-item thread's agent run:
- * - `start` (default): always start a new run. Gating is done by the subscription filter; no
- *   `message_path` is needed.
- * - `signal`: deliver only to an *existing* run on the thread (never start) — the follow-up path.
- *   `missing_thread` governs the no-run case.
- * - `ensure`: deliver to the run on the thread, **starting one if none exists**.
- *
- * For `signal`/`ensure` the message is delivered **exactly once**: as the run's initial instruction
- * when starting, or as a signal to an existing/restarted run. Correlation is the provider-neutral
- * `eventThreadTag(event_ref)` — the started run is auto-tagged with it and follow-ups recompute the
- * same tag to find the run.
- */
-export type AgentDeliveryMatchMode = 'start' | 'signal' | 'ensure';
+export type AgentDeliveryMatchMode = z.infer<typeof AgentDeliveryMatchModeSchema>;
 
-export interface AgentEventDeliveryTarget {
-    type: 'agent';
-    /** Behavior when an event matches. Defaults to `start`. */
-    on_match?: AgentDeliveryMatchMode;
-    // --- Start payload (used when starting a run: `start`, or `ensure` with no existing run) ---
-    /** Interaction ID, app ref, or system ref. Defaults to the general-purpose system agent. */
-    interaction_ref?: string;
-    data?: Record<string, unknown>;
-    config?: InteractionExecutionConfiguration;
-    interactive?: boolean;
-    visibility?: ConversationVisibility;
-    tags?: string[];
-    categories?: string[];
-    tool_names?: string[];
-    max_iterations?: number;
-    debug_mode?: boolean;
-    // --- Gate + signal config (used by `signal` and `ensure`) ---
-    /** Signal sent to an existing/restarted run. Only `UserInput` is implemented. */
-    signal_name?: 'UserInput';
-    /** Dot-path to the message (initial instruction when starting, else the signal). Required for signal/ensure. */
-    message_path?: string;
-    /** Dot-path to a stable per-message id, carried on the signal for (future) exactly-once dedupe. */
-    client_message_id_path?: string;
-    /** Run statuses eligible to receive the signal when a run exists. Defaults to ['running']. */
-    statuses?: AgentRunStatus[];
-    /** If this dot-path resolves to a value, the delivery is skipped. */
-    skip_if_path_exists?: string;
-    /** Dot-path to the message author, for the loop guard. */
-    author_path?: string;
-    /** Regex patterns matched against the resolved author; a match skips the delivery (loop guard). */
-    ignore_author_patterns?: string[];
-    /** The message must start with one of these prefixes to be delivered. */
-    require_command_prefixes?: string[];
-    /** ...or contain one of these mentions. Combined with prefixes as OR. */
-    require_mentions?: string[];
-    /** `signal` mode only — no run yet (open/follow-up race): 'retry' (default) or 'skip'. Ignored for `ensure`. */
-    missing_thread?: 'retry' | 'skip';
-    /** Behaviour when only terminal runs match: `skip` (default) or `restart` then signal. */
-    on_terminal?: 'skip' | 'restart';
-    /** Extra fields merged into the signal's metadata; same `{{event.*}}` / `$event.x` templating as `data`. */
-    metadata?: Record<string, unknown>;
-}
+export type AgentEventDeliveryTarget = z.infer<typeof AgentEventDeliveryTargetSchema>;
 
 export interface ProcessEventDeliveryTarget {
     type: 'process';
@@ -379,12 +250,9 @@ export type EventDeliveryTarget =
 // callers supply the input shapes below: server-managed fields (has_secret, secret_label,
 // migrated_rule_name) are omitted, and write-only directives (rotate_signing_secret) are added.
 
-export type WorkflowEventDeliveryTargetInput = Omit<WorkflowEventDeliveryTarget, 'migrated_rule_name'>;
+export type WorkflowEventDeliveryTargetInput = z.infer<typeof WorkflowEventDeliveryTargetInputSchema>;
 
-export type WebhookEventDeliveryTargetInput = Omit<WebhookEventDeliveryTarget, 'has_secret' | 'secret_label'> & {
-    /** Request rotation of the stored signing secret on update. */
-    rotate_signing_secret?: boolean;
-};
+export type WebhookEventDeliveryTargetInput = z.infer<typeof WebhookEventDeliveryTargetInputSchema>;
 
 export type EventDeliveryTargetInput =
     | WorkflowEventDeliveryTargetInput
@@ -460,85 +328,17 @@ export interface EventSubscriptionMutationResponse {
     webhook_signing_secret?: string;
 }
 
-export interface EventDeliveryIntentSummary {
-    id: string;
-    event_id: string;
-    subscription_id: string;
-    subscription_name: string;
-    target_type: EventDeliveryTarget['type'];
-    workflow_class?: string | null;
-    priority: EventPriority;
-    status: EventDeliveryIntentStatus;
-    attempt_count: number;
-    workflow_id?: string | null;
-    workflow_run_id?: string | null;
-    response_status?: number | null;
-    last_error?: string | null;
-    next_attempt_at?: string | null;
-    started_at?: string | null;
-    completed_at?: string | null;
-    semantic_evaluation?: SemanticEvaluationRecord | null;
-    created_at: string;
-    updated_at: string;
-}
+export type EventDeliveryIntentSummary = z.infer<typeof EventDeliveryIntentSummarySchema>;
 
-export interface EventDeliverySummary {
-    event_id: string;
-    event_category: EventCategory;
-    action: string;
-    resource_type: string;
-    resource_id: string;
-    source: string;
-    priority: EventPriority;
-    status: EventOutboxStatus;
-    matched_subscription_count: number;
-    materialized_intent_count: number;
-    routing_attempt_count: number;
-    routing_error?: string | null;
-    routed_at?: string | null;
-    created_at: string;
-    updated_at: string;
-    intents: EventDeliveryIntentSummary[];
-}
+export type EventDeliverySummary = z.infer<typeof EventDeliverySummarySchema>;
 
-export type EventDeliverySortField = 'created_at' | 'status' | 'resource_type' | 'event_category' | 'action';
+export type EventDeliverySortField = z.infer<typeof EventDeliverySortFieldSchema>;
 
-export interface ListEventDeliveriesPayload {
-    limit?: number;
-    event_id?: string;
-    resource_id?: string;
-    subscription_id?: string;
-    status?: EventDeliveryIntentStatus[];
-    outbox_status?: EventOutboxStatus[];
-    /** Filter by outbox event category (e.g. external, content). */
-    event_category?: EventCategory[];
-    /** Filter by outbox action (e.g. opened, created). */
-    action?: string[];
-    /** Filter by outbox resource type (e.g. github_issue, content_object). */
-    resource_type?: string[];
-    /** Sort field (default created_at). */
-    sort_by?: EventDeliverySortField;
-    /** Sort order (default desc). */
-    sort_order?: 'asc' | 'desc';
-}
+export type ListEventDeliveriesPayload = z.infer<typeof ListEventDeliveriesPayloadSchema>;
 
-export interface ListEventDeliveriesResponse {
-    deliveries: EventDeliverySummary[];
-}
+export type ListEventDeliveriesResponse = z.infer<typeof ListEventDeliveriesResponseSchema>;
 
-export interface StreamEventDeliveriesQuery {
-    limit?: number;
-    event_id?: string;
-    resource_id?: string;
-    resource_type?: string[];
-    event_category?: EventCategory[];
-    action?: string[];
-    outbox_status?: EventOutboxStatus[];
-    since_event_id?: string;
-    since_created_at?: string;
-    include_event?: boolean;
-    poll_interval_ms?: number;
-}
+export type StreamEventDeliveriesQuery = z.infer<typeof StreamEventDeliveriesQuerySchema>;
 
 export interface EventDeliveryStreamItem {
     cursor: string;
@@ -598,54 +398,17 @@ export interface ListEventIngestChannelsQuery {
     sort_order?: 'asc' | 'desc';
 }
 
-export type EventDeliveryQueueSortField = 'subscription_name' | 'queued' | 'active' | 'failed' | 'oldest';
+export type EventDeliveryQueueSortField = z.infer<typeof EventDeliveryQueueSortFieldSchema>;
 
-export interface EventDeliveryQueueSummaryPayload {
-    subscription_id?: string;
-    target_type?: EventDeliveryTarget['type'][];
-    sort_by?: EventDeliveryQueueSortField;
-    sort_order?: 'asc' | 'desc';
-}
+export type EventDeliveryQueueSummaryPayload = z.infer<typeof EventDeliveryQueueSummaryPayloadSchema>;
 
-export interface EventOutboxQueueSummary {
-    total: number;
-    active: number;
-    failed: number;
-    dropped: number;
-    by_status: Record<string, number>;
-    oldest_active_at?: string;
-}
+export type EventOutboxQueueSummary = z.infer<typeof EventOutboxQueueSummarySchema>;
 
-export interface EventDeliveryQueueFailureSummary {
-    intent_id: string;
-    event_id: string;
-    status: EventDeliveryIntentStatus;
-    attempt_count: number;
-    last_error?: string | null;
-    updated_at: string;
-}
+export type EventDeliveryQueueFailureSummary = z.infer<typeof EventDeliveryQueueFailureSummarySchema>;
 
-export interface EventDeliveryQueueSubscriptionSummary {
-    subscription_id: string;
-    subscription_name: string;
-    target_type: EventDeliveryTarget['type'];
-    total: number;
-    queued: number;
-    deferred: number;
-    active: number;
-    failed: number;
-    skipped: number;
-    max_attempt_count: number;
-    oldest_queued_at?: string;
-    oldest_deferred_at?: string;
-    latest_failure?: EventDeliveryQueueFailureSummary;
-}
+export type EventDeliveryQueueSubscriptionSummary = z.infer<typeof EventDeliveryQueueSubscriptionSummarySchema>;
 
-export interface EventDeliveryQueueSummaryResponse {
-    generated_at: string;
-    outbox: EventOutboxQueueSummary;
-    deliveries: EventDeliveryQueueSubscriptionSummary[];
-}
+export type EventDeliveryQueueSummaryResponse = z.infer<typeof EventDeliveryQueueSummaryResponseSchema>;
 
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;
@@ -670,172 +433,23 @@ export interface WorkflowEventInput<T = Record<string, unknown>> {
 // events into the platform event bus. Ingested events get event_category 'external' and
 // source 'external:<source>', and match event subscriptions like any other platform event.
 
-/**
- * A conditional rule for deriving `resource_type` + `resource_id` from the body, evaluated in order
- * (first match wins) when a single dot-path can't serve every payload shape a channel receives. A
- * sender whose one webhook delivers heterogeneous events (e.g. a GitHub App: issues, issue comments,
- * PR reviews) needs different thread identities per event family; these rules express that without
- * baking provider knowledge into the server.
- */
-export interface EventIngestResourceRule {
-    /** Match when the captured `event_type` (see `event_type_header`) is one of these. */
-    event_type?: string[];
-    /** Match only when this dot-path resolves to a defined, non-null value (e.g. `issue.pull_request`). */
-    when_path_exists?: string;
-    /** Match only when this dot-path is undefined/null. */
-    when_path_absent?: string;
-    /** `resource_type` to set when this rule matches. */
-    resource_type?: string;
-    /** `resource_id` from a single dot-path. */
-    resource_id_path?: string;
-    /**
-     * ...or a composed `resource_id` from a `{{dot.path}}` template against the body, e.g.
-     * `{{repository.full_name}}#{{pull_request.number}}`. Takes precedence over `resource_id_path`.
-     */
-    resource_id_template?: string;
-}
+export type EventIngestResourceRule = z.infer<typeof EventIngestResourceRuleSchema>;
 
-/**
- * Declarative mapping from a raw third-party webhook body to platform event fields, for senders that
- * cannot shape their payload (GitHub, Slack, DocuSign, Salesforce, ...). Each `*_path` is a dot-path
- * into the JSON body (array indices supported, e.g. `commits.0.id`). Extracted values override the
- * channel defaults; the full raw body is always preserved under `event.details.payload`.
- */
-export interface EventIngestTransform {
-    /** Dot-path to the value used as `event.action`, e.g. `event.type`. */
-    action_path?: string;
-    /** Dot-path to the value used as `event.resource_type`. */
-    resource_type_path?: string;
-    /** Dot-path to the value used as `event.resource_id`. */
-    resource_id_path?: string;
-    /**
-     * Request **header** carrying the event family (e.g. GitHub's `x-github-event`), captured into
-     * `event.details.event_type`. Lets subscriptions and `resource_rules` discriminate event shapes when
-     * one channel receives heterogeneous payloads whose `action` alone is ambiguous (e.g. `created` for
-     * both an issue comment and a PR review comment).
-     */
-    event_type_header?: string;
-    /**
-     * Ordered conditional rules for `resource_type` + `resource_id` (first match wins). Used when a single
-     * `resource_id_path` can't serve every payload shape. Falls back to `resource_type_path` /
-     * `resource_id_path` / channel defaults when no rule matches.
-     */
-    resource_rules?: EventIngestResourceRule[];
-    /** Dot-path to a deduplication key (same semantics as `idempotency_key`). */
-    idempotency_key_path?: string;
-    /**
-     * Request **header** to use as the deduplication key when the body has no stable per-delivery id —
-     * e.g. GitHub App's `x-github-delivery`, unique per delivery for all event types, which is the only
-     * reliable dedup key when one App webhook delivers heterogeneous payloads (issues + comments) to a
-     * single channel. Lower precedence than `idempotency_key_path`.
-     */
-    idempotency_key_header?: string;
-    /** Dot-path to an ISO 8601 event timestamp. */
-    timestamp_path?: string;
-    /** Static fields merged into `event.details`. */
-    static_details?: Record<string, unknown>;
-}
+export type EventIngestTransform = z.infer<typeof EventIngestTransformSchema>;
 
-/**
- * How an ingest channel authenticates inbound requests in addition to the channel ingest token:
- * - none (default): token only.
- * - hmac: the sender signs the raw request body with a shared secret (GitHub/Stripe style) and the
- *   server verifies the signature. The token may then be optional (`token_optional`).
- */
-export type EventIngestSignatureAlgorithm = 'sha256' | 'sha1';
+export type EventIngestSignatureAlgorithm = z.infer<typeof EventIngestSignatureAlgorithmSchema>;
 
-export type EventIngestSignatureEncoding = 'hex' | 'base64';
+export type EventIngestSignatureEncoding = z.infer<typeof EventIngestSignatureEncodingSchema>;
 
-/**
- * Optional HMAC signature verification for an ingest channel. When configured, the server recomputes
- * `HMAC(algorithm, signing_secret, rawBody)` and compares it (timing-safe) to the value in
- * `header`, after stripping `prefix`. Covers GitHub-style `X-Hub-Signature-256: sha256=<hex>` and a
- * plain Salesforce Apex-callout HMAC.
- */
-export interface EventIngestSignatureConfig {
-    /** Request header carrying the signature, e.g. `x-hub-signature-256`. */
-    header: string;
-    algorithm?: EventIngestSignatureAlgorithm;
-    encoding?: EventIngestSignatureEncoding;
-    /** Literal prefix stripped from the header value before comparison, e.g. `sha256=`. */
-    prefix?: string;
-    /** Server-managed: whether a signing secret is stored for this channel. */
-    has_secret?: boolean;
-    /** Server-managed: label/hint of the stored signing secret. */
-    secret_hint?: string;
-}
+export type EventIngestSignatureConfig = z.infer<typeof EventIngestSignatureConfigSchema>;
 
-/**
- * An inbound channel that lets external systems publish events into the platform event bus. Events
- * ingested through a channel get `event_category: 'external'` and `source: 'external:<source>'`, and
- * are matched against event subscriptions like any other platform event.
- */
-export interface EventIngestChannel {
-    id: string;
-    name: string;
-    description?: string;
-    account_id: string;
-    project_id: string;
-    /** Source label stamped on ingested events as `external:<source>`. */
-    source: string;
-    enabled: boolean;
-    /** Action used when the ingest payload does not specify one. */
-    default_action?: string;
-    /** Resource type used when the ingest payload does not specify one. */
-    default_resource_type?: string;
-    /** Optional mapping from raw third-party payloads to event fields. */
-    transform?: EventIngestTransform;
-    /** Optional HMAC signature verification config. */
-    signature?: EventIngestSignatureConfig;
-    priority: EventPriority;
-    /** Server-managed: whether an ingest token is active for this channel. */
-    has_token: boolean;
-    /** Server-managed: last characters of the active token, for identification. */
-    token_hint?: string;
-    created_by?: string;
-    updated_by?: string;
-    created_at?: string;
-    updated_at?: string;
-}
+export type EventIngestChannel = z.infer<typeof EventIngestChannelSchema>;
 
-export interface CreateEventIngestChannelPayload {
-    name: string;
-    description?: string;
-    /** Defaults to a slug derived from the name. */
-    source?: string;
-    default_action?: string;
-    default_resource_type?: string;
-    transform?: EventIngestTransform;
-    signature?: EventIngestSignatureConfig;
-    priority?: EventPriority;
-    enabled?: boolean;
-}
+export type CreateEventIngestChannelPayload = z.infer<typeof CreateEventIngestChannelPayloadSchema>;
 
-export interface UpdateEventIngestChannelPayload {
-    name?: string;
-    description?: string;
-    source?: string;
-    default_action?: string;
-    default_resource_type?: string;
-    /** Pass null to remove the transform. */
-    transform?: EventIngestTransform | null;
-    /** Pass null to remove signature verification. */
-    signature?: EventIngestSignatureConfig | null;
-    priority?: EventPriority;
-    enabled?: boolean;
-    /** Request rotation of the channel ingest token on update. */
-    rotate_token?: boolean;
-    /** Request rotation of the HMAC signing secret on update. */
-    rotate_signing_secret?: boolean;
-}
+export type UpdateEventIngestChannelPayload = z.infer<typeof UpdateEventIngestChannelPayloadSchema>;
 
-export interface EventIngestChannelMutationResponse {
-    channel: EventIngestChannel;
-    /** Returned once on creation or rotation; it cannot be retrieved later. */
-    ingest_token?: string;
-    /** Returned once on creation or rotation of the signing secret; it cannot be retrieved later. */
-    signing_secret?: string;
-}
+export type EventIngestChannelMutationResponse = z.infer<typeof EventIngestChannelMutationResponseSchema>;
 
 /**
  * Body accepted by the public ingest webhook

@@ -1,4 +1,4 @@
-import type { ContentObjectTypeItem } from '@vertesia/common';
+import type { ContentObjectTypeCatalogEntry } from '@vertesia/common';
 import { useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { type ReactNode, useMemo } from 'react';
@@ -25,7 +25,7 @@ const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
 
 interface ObjectsActionContextProps {
     children: ReactNode;
-    type?: ContentObjectTypeItem;
+    type?: ContentObjectTypeCatalogEntry;
 }
 export function ObjectsActionContextProvider({ children, type }: ObjectsActionContextProps) {
     const selection = useDocumentSelection();

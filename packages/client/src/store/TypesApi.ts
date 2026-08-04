@@ -6,6 +6,7 @@ import type {
     FindPayload,
     ObjectTypeSearchPayload,
     ObjectTypeSearchQuery,
+    UpdateContentObjectTypePayload,
 } from '@vertesia/common';
 import { TypeCatalogApi } from './TypeCatalogApi.js';
 
@@ -58,7 +59,7 @@ export class TypesApi extends ApiTopic {
         return this.get(`/name/${typeName}`);
     }
 
-    update(typeId: string, payload: Partial<CreateContentObjectTypePayload>): Promise<ContentObjectType> {
+    update(typeId: string, payload: UpdateContentObjectTypePayload): Promise<ContentObjectType> {
         return this.put(`/${typeId}`, {
             payload,
         });

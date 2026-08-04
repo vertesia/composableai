@@ -6,17 +6,17 @@ export class TaskApi extends ApiTopic {
         super(parent, '/api/v1/tasks');
     }
 
-    list(query?: ListTasksQuery): Promise<Task[]> {
-        const params: Record<string, string> = {};
-        if (query?.status) {
-            params.status = Array.isArray(query.status) ? query.status.join(',') : query.status;
-        }
-        if (query?.assignee) params.assignee = query.assignee;
-        if (query?.run_id) params.run_id = query.run_id;
-        if (query?.source_type) params.source_type = query.source_type;
-        if (query?.limit != null) params.limit = String(query.limit);
-        if (query?.offset != null) params.offset = String(query.offset);
-        return this.get('/', { query: params });
+    /**
+     * Lists tasks.
+     *
+     * `status` accepts one value or several, and several go out as a repeated key
+     * (`status=a&status=b`) — which is what the parameter publishes: `style: form`, `explode: true`.
+     * This used to comma-join the array before sending it. Servers still split each occurrence on
+     * commas so SDKs pinned to an older version keep working, but that form was never in the spec,
+     * so newly published clients send the declared one.
+     */
+    list(query: ListTasksQuery = {}): Promise<Task[]> {
+        return this.get('/', { query });
     }
 
     retrieve(id: string): Promise<Task> {

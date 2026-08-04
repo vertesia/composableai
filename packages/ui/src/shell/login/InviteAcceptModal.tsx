@@ -1,4 +1,4 @@
-import type { TransientToken, UserInviteTokenData } from '@vertesia/common';
+import type { UserInviteToken } from '@vertesia/common';
 import { Button, Modal, ModalBody, ModalTitle } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -9,7 +9,7 @@ export function InviteAcceptModal() {
     const { client } = session;
     const { t } = useUITranslation();
     const [showModal, setShowModal] = useState(false);
-    const [invites, setInvites] = useState<TransientToken<UserInviteTokenData>[]>([]);
+    const [invites, setInvites] = useState<UserInviteToken[]>([]);
 
     useEffect(() => {
         client.account
@@ -38,7 +38,7 @@ export function InviteAcceptModal() {
 
     const closeModal = () => setShowModal(false);
 
-    const accept = async (invite: TransientToken<UserInviteTokenData>) => {
+    const accept = async (invite: UserInviteToken) => {
         await client.account.acceptInvite(invite.id);
         await session.authCallback;
         await session.fetchAccounts();
@@ -53,7 +53,7 @@ export function InviteAcceptModal() {
         }
     };
 
-    const reject = async (invite: TransientToken<UserInviteTokenData>) => {
+    const reject = async (invite: UserInviteToken) => {
         await client.account.rejectInvite(invite.id);
         const remainingInvites = invites.filter((i) => i.id !== invite.id);
         setInvites(remainingInvites);

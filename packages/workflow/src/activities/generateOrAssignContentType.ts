@@ -1,7 +1,7 @@
 import type { JSONSchema } from '@llumiverse/common';
 import { ApplicationFailure, log } from '@temporalio/activity';
 import {
-    type ContentObjectTypeItem,
+    type ContentObjectTypeCatalogEntry,
     type ContentSource,
     type CreateContentObjectTypePayload,
     type DSLActivityExecutionPayload,
@@ -329,7 +329,7 @@ async function resolveFallbackType(
 
 async function generateNewType(
     context: ActivityContext<GenerateOrAssignContentTypeParams>,
-    existing_types: ContentObjectTypeItem[],
+    existing_types: ContentObjectTypeCatalogEntry[],
     content?: string,
     fileRef?: string | ContentSource,
 ) {

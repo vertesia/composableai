@@ -1,7 +1,25 @@
+import type { z } from 'zod';
 import type { PropertyConditions } from './access-control.js';
+import type {
+    ApiKeyArraySchema,
+    ApiKeyListQuerySchema,
+    ApiKeyReadQuerySchema,
+    ApiKeyReadResponseSchema,
+    ApiKeySchema,
+    ApiKeyWithValueSchema,
+    AuthTokenResponseSchema,
+    CreateApiKeyPayloadSchema,
+    UpdateApiKeyPayloadSchema,
+} from './api-schemas/apikey.js';
 import type { UserGroupRef } from './group.js';
 import type { ProjectRef, SystemRoles } from './project.js';
 import type { AccountRef } from './user.js';
+
+/**
+ * `ApiKeyTypes` lives in `./apikey-values.js` so the API schemas can read it without importing this
+ * module back. Re-exported here so every existing import path keeps working.
+ */
+export * from './apikey-values.js';
 
 /**
  * Per-scope, per-verb property-condition arrays that narrow content visibility
@@ -28,41 +46,28 @@ export interface ContentSecurity {
     [scopedKey: string]: PropertyConditions[] | undefined;
 }
 
-export enum ApiKeyTypes {
-    secret = 'sk',
-}
-export interface ApiKey {
-    id: string;
-    name: string;
-    type: ApiKeyTypes;
-    role: SystemRoles;
-    maskedValue?: string; //masked value
-    can_retrieve_value?: boolean;
-    account: string; // the account id
-    project: ProjectRef; // the project id if any
-    enabled: boolean;
-    created_by: string;
-    updated_by: string;
-    created_at: Date;
-    updated_at: Date;
-    expires_at?: Date; // in case of public key only
-    /** Custom properties for dynamic permission matching (PrincipalSet / $principal. conditions) */
-    properties?: Record<string, unknown>;
-    /** BLP clearance level — determines max document sensitivity the key can access */
-    clearance?: number;
-    /** Compartments the key belongs to — restricts access to documents in matching compartments */
-    compartments?: string[];
-}
-
-export interface CreateOrUpdateApiKeyPayload extends Partial<ApiKey> {}
-
-export interface ApiKeyWithValue extends ApiKey {
-    value: string;
-}
-
-export interface ApiKeyReadResponse extends ApiKey {
-    value?: string;
-}
+/**
+ * The API key wire types, inferred from the schemas in `./api-schemas/apikey.js` — what OpenAPI
+ * publishes and AJV compiles.
+ *
+ * NOTE the timestamps are `string`, not `Date`. The document has always published them as
+ * `format: date-time` strings and JSON has no date type, so the previous `Date` declaration
+ * described the Mongoose document rather than the response a client parses.
+ */
+export type ApiKey = z.infer<typeof ApiKeySchema>;
+export type ApiKeyArray = z.infer<typeof ApiKeyArraySchema>;
+/**
+ * Create and update take DIFFERENT payloads, and did not before.
+ *
+ * `CreateOrUpdateApiKeyPayload` was `Partial<ApiKey>` shared by both, which meant the type permitted
+ * a create with no `role` (rejected by Mongoose inside the handler) and an update that omitted
+ * `role` (which unset a required path). Splitting it is source-breaking for the SDK and is announced
+ * as a release operation; the two names say which operation they belong to.
+ */
+export type CreateApiKeyPayload = z.infer<typeof CreateApiKeyPayloadSchema>;
+export type UpdateApiKeyPayload = z.infer<typeof UpdateApiKeyPayloadSchema>;
+export type ApiKeyWithValue = z.infer<typeof ApiKeyWithValueSchema>;
+export type ApiKeyReadResponse = z.infer<typeof ApiKeyReadResponseSchema>;
 
 export interface CreatePublicKeyPayload {
     name?: string;
@@ -70,17 +75,9 @@ export interface CreatePublicKeyPayload {
     ttl?: number;
 }
 
-export interface AuthTokenResponse {
-    token: string;
-}
-
-export interface ApiKeyListQuery {
-    level?: 'account' | 'project';
-}
-
-export interface ApiKeyReadQuery {
-    withValue?: boolean;
-}
+export type AuthTokenResponse = z.infer<typeof AuthTokenResponseSchema>;
+export type ApiKeyListQuery = z.infer<typeof ApiKeyListQuerySchema>;
+export type ApiKeyReadQuery = z.infer<typeof ApiKeyReadQuerySchema>;
 
 export interface AuthTokenPayload {
     sub: string;

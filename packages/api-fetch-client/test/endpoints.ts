@@ -8,6 +8,7 @@ export default class Endpoints extends Resource {
         router.get('/html', this.getHTML, this);
         router.get('/html-error', this.getHTMLError, this);
         router.get('/no-content', this.getNoContent, this);
+        router.get('/echo-query', this.getEchoQuery, this);
     }
 
     async getRoot(_ctx: Context) {
@@ -33,5 +34,10 @@ export default class Endpoints extends Resource {
     async getNoContent(ctx: Context) {
         ctx.response.type = 'html';
         ctx.status = 204;
+    }
+
+    /** Echoes `ctx.query` so a test can assert what a real server parses out of the wire format. */
+    async getEchoQuery(ctx: Context) {
+        return { query: ctx.query, search: ctx.querystring };
     }
 }

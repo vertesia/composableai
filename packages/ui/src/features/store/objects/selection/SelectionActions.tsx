@@ -1,4 +1,4 @@
-import type { ContentObjectTypeItem } from '@vertesia/common';
+import type { ContentObjectTypeCatalogEntry } from '@vertesia/common';
 import { Button, Popover, PopoverContent, PopoverTrigger, SelectList } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import clsx from 'clsx';
@@ -13,7 +13,7 @@ import { useObjectsActionContext } from './ObjectsActionHooks';
 import type { ObjectsActionSpec } from './ObjectsActionSpec';
 
 interface SelectionActionsProps {
-    type?: ContentObjectTypeItem;
+    type?: ContentObjectTypeCatalogEntry;
     allowMutations?: boolean;
     allowDelete?: boolean;
     /**

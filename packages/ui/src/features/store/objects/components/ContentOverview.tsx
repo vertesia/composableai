@@ -843,7 +843,10 @@ function TextActions({
         () => (project ? client.projects.retrieve(project.id) : Promise.resolve(undefined)),
         [project?.id],
     );
-    const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
+    // `null` is how the setting is cleared, and it means the same thing here as an absent value: no
+    // custom template, so the export falls back to the built-in one. Collapsing the two spellings at
+    // the read keeps `templateObjectId` below a plain optional string.
+    const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id ?? undefined;
 
     const isMarkdown = isMarkdownContentType(content?.type);
     const isDocumentEditingContent = isDocumentEditingContentType(content?.type);
