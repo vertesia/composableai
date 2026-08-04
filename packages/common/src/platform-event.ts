@@ -5,6 +5,8 @@ import type {
     AgentDeliveryMatchModeSchema,
     AgentEventDeliveryTargetSchema,
     AgentSemanticEvaluatorSchema,
+    CancelEventDeliveryIntentsPayloadSchema,
+    CancelEventDeliveryIntentsResponseSchema,
     CreateEventIngestChannelPayloadSchema,
     EventDeliveryIntentStatusSchema,
     EventDeliveryIntentSummarySchema,
@@ -410,42 +412,9 @@ export type EventDeliveryQueueSubscriptionSummary = z.infer<typeof EventDelivery
 
 export type EventDeliveryQueueSummaryResponse = z.infer<typeof EventDeliveryQueueSummaryResponseSchema>;
 
-/** Filters for cancelling event deliveries that have not started yet. */
-export interface CancelEventDeliveryIntentsPayload {
-    /**
-     * Restrict cancellation to one subscription.
-     * @minLength 1
-     */
-    subscription_id?: string;
-    /**
-     * Restrict cancellation to one or more delivery target types.
-     * @minItems 1
-     */
-    target_type?: EventDeliveryTarget['type'][];
-}
+export type CancelEventDeliveryIntentsPayload = z.infer<typeof CancelEventDeliveryIntentsPayloadSchema>;
 
-/** Result of cancelling queued event delivery intents. */
-export interface CancelEventDeliveryIntentsResponse {
-    /** Deployment environment whose queue was changed. */
-    environment: string;
-    /**
-     * Server-side watermark; intents created after this time were not changed.
-     * @format date-time
-     */
-    cleared_through: string;
-    /**
-     * Pending or retrying intents moved to the cancelled terminal state.
-     * @asType integer
-     * @minimum 0
-     */
-    cancelled: number;
-    /**
-     * Matching evaluating, starting, or running intents left for normal reconciliation.
-     * @asType integer
-     * @minimum 0
-     */
-    active_untouched: number;
-}
+export type CancelEventDeliveryIntentsResponse = z.infer<typeof CancelEventDeliveryIntentsResponseSchema>;
 
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;
