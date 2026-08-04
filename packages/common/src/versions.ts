@@ -27,3 +27,15 @@ export enum ApiVersions {
      */
     REQUEST_CONTRACT_ENFORCEMENT_V1 = 20260803,
 }
+
+/**
+ * The API version used by current clients and published as the current OpenAPI shape.
+ *
+ * Keep this explicit rather than deriving it at runtime: promoting a milestone to the client
+ * default is a deliberate compatibility decision. The versions test ensures this alias is
+ * reconsidered whenever a newer milestone is added.
+ */
+export const CURRENT_API_VERSION = ApiVersions.REQUEST_CONTRACT_ENFORCEMENT_V1;
+
+/** The current API version formatted for the {@link VERSION_HEADER} wire value. */
+export const CURRENT_API_VERSION_HEADER_VALUE = String(CURRENT_API_VERSION);

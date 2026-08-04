@@ -324,6 +324,35 @@ export const DeleteAppVersionResponseSchema = z
     })
     .meta({ id: 'DeleteAppVersionResponse' });
 
+export const AppDeleteSummarySchema = z
+    .strictObject({
+        confirmed: z.boolean().meta({
+            description:
+                'Whether `?confirm=true` was sent. Without it the endpoint reports what WOULD be removed and ' +
+                'deletes nothing — `deleted` stays false.',
+        }),
+        app_id: z.string(),
+        app_name: z.string(),
+        versions: z.number().meta({ description: 'AppVersion records the cascade covers.' }),
+        installations: z.number().meta({ description: 'AppInstallation records the cascade covers.' }),
+        storage_prefix: z.string(),
+        git_repo_url: z.string().optional(),
+        deleted: z.boolean().meta({
+            description: 'Whether the app record itself was removed. False for a dry run.',
+        }),
+        warnings: z.array(z.string()).meta({
+            description:
+                'Cascade steps that failed without aborting the deletion. Credential cleanup is NOT among them — ' +
+                'a failed API key purge fails the request outright and keeps the app row.',
+        }),
+    })
+    .meta({
+        id: 'AppDeleteSummary',
+        description:
+            'Result of `DELETE /apps/:id`. Doubles as the dry-run preview: without `?confirm=true` the same ' +
+            'shape comes back with `deleted: false` describing what the cascade would remove.',
+    });
+
 export const AppRepoBranchSchema = z
     .strictObject({
         name: z.string(),
@@ -468,6 +497,28 @@ export const OAuthClientCredentialsMapSchema = z
     .meta({ id: 'OAuthClientCredentialsMap' });
 
 export const AppOAuthCollectionParamsSchema = OAuthClientCredentialsMapSchema.meta({ id: 'AppOAuthCollectionParams' });
+
+export const McpApiKeyCredentialSchema = z
+    .strictObject({
+        // Matches SetMcpApiKeyRequest, including the `\S` pattern — see the note there on why the
+        // trim alone does not survive into the AJV-enforced JSON Schema.
+        api_key: z
+            .string()
+            .trim()
+            .min(1)
+            .regex(/\S/, 'API key must not be blank')
+            .meta({
+                description:
+                    'The key the installer holds for this collection. Surrounding whitespace is stripped. Stored ' +
+                    'encrypted in the installing project and never returned.',
+            }),
+    })
+    .meta({ id: 'McpApiKeyCredential' });
+
+export const AppApiKeyCollectionParamsSchema = z
+    .object({})
+    .catchall(McpApiKeyCredentialSchema)
+    .meta({ id: 'AppApiKeyCollectionParams' });
 
 export const AppInspectionIssueSchema = z
     .strictObject({
@@ -774,6 +825,12 @@ export const AppInstallationPayloadSchema = z
         oauth_provider_params: AppOAuthProviderParamsSchema.meta({
             description:
                 'OAuth credentials for named providers, keyed by the provider key from oauth_providers. Collected from the user at install time for providers with required_at_install. Separate from oauth_params to avoid key collisions between provider keys and collection ids.',
+        }).optional(),
+        api_key_params: AppApiKeyCollectionParamsSchema.meta({
+            description:
+                "API keys for auth: 'api_key' collections, keyed by collection.id. Collected from the user at " +
+                'install time for collections with api_key_config.required_at_install. Each key is stored in the ' +
+                "installing project's encrypted secret store, replacing any key already held for that collection.",
         }).optional(),
     })
     .meta({ id: 'AppInstallationPayload' });

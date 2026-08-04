@@ -49,10 +49,8 @@ The template includes a `service` module for app-gateway runtimes. It is not par
 select it explicitly when the scaffolded app is hosted by the app gateway and needs gateway routes
 and token-backed shell initialization.
 
-The `agent` module preserves agent-facing scaffold helpers under `src/modules/agent/ui`.
-It does not add routes, providers, or resources. The virtual `appgen` module selects both
-`service` and `agent`; combine it with app-specific modules such as `assistant` or `content-app`
-when creating appgen scaffolds.
+The virtual `appgen` module selects `service`; combine it with app-specific modules such as
+`assistant` or `content-app` when creating appgen scaffolds.
 
 The `content-app` module is an opinionated content-oriented app. It contributes content types,
 interactions, a process, prefixed UI routes under `/content`, and package scripts. The always-active

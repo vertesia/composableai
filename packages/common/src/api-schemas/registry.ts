@@ -109,9 +109,11 @@ import {
     AgentRunTypeSchema,
     AgentToolApprovalClassSchema,
     AgentToolDefinitionSchema,
+    AppApiKeyCollectionParamsSchema,
     AppBuildProgressSchema,
     AppBuildProgressStatusSchema,
     AppBuildTriggerSchema,
+    AppDeleteSummarySchema,
     AppDevelopmentTaskDetailsSchema,
     AppDevelopmentTaskListSchema,
     AppDevelopmentTaskSchema,
@@ -155,6 +157,7 @@ import {
     EventRefSchema,
     Extract_AppVersionGitRefType_branch_tag_commitSchema,
     InCodeTypeRefSchema,
+    McpApiKeyCredentialSchema,
     OAuthClientCredentialsMapSchema,
     OAuthClientCredentialsSchema,
     RunKindSchema,
@@ -178,6 +181,7 @@ import {
     AppSourceConfigSchema,
     AppUIConfigSchema,
     MCPToolAnnotationsSchema,
+    McpApiKeyStatusSchema,
     McpOAuthConnectResponseSchema,
     McpOAuthDisconnectResponseSchema,
     McpOAuthTokenRequestSchema,
@@ -186,6 +190,7 @@ import {
     OAuthAuthStatusArraySchema,
     OAuthAuthStatusSchema,
     OAuthMetadataResponseSchema,
+    SetMcpApiKeyRequestSchema,
     ToolCollectionObjectSchema,
 } from './apps.js';
 import {
@@ -1806,6 +1811,10 @@ const REMOTE_MCP_SCHEMAS = {
     McpOAuthConnectResponse: McpOAuthConnectResponseSchema,
     OAuthAuthorizeResponse: OAuthAuthorizeResponseSchema,
     OAuthAuthStatusArray: OAuthAuthStatusArraySchema,
+    // The static-key alternative to that handshake: the key itself is write-only, so only the
+    // setter payload and the configured/hint projection are published.
+    SetMcpApiKeyRequest: SetMcpApiKeyRequestSchema,
+    McpApiKeyStatus: McpApiKeyStatusSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const AUDIT_TRAIL_SCHEMAS = {
@@ -1919,6 +1928,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     RunType: RunTypeSchema,
     AppBuildProgressStatus: AppBuildProgressStatusSchema,
     DeleteAppVersionResponse: DeleteAppVersionResponseSchema,
+    AppDeleteSummary: AppDeleteSummarySchema,
     AppRepoBranch: AppRepoBranchSchema,
     AppRepoDocumentCommit: AppRepoDocumentCommitSchema,
     AppVersionGitSource: AppVersionGitSourceSchema,
@@ -1928,6 +1938,8 @@ const APP_LIFECYCLE_SCHEMAS = {
     AppDevelopmentTaskList: AppDevelopmentTaskListSchema,
     OAuthClientCredentialsMap: OAuthClientCredentialsMapSchema,
     AppOAuthCollectionParams: AppOAuthCollectionParamsSchema,
+    McpApiKeyCredential: McpApiKeyCredentialSchema,
+    AppApiKeyCollectionParams: AppApiKeyCollectionParamsSchema,
     AppInspectionIssue: AppInspectionIssueSchema,
     AppScaffoldProgress: AppScaffoldProgressSchema,
     AppRepoTree: AppRepoTreeSchema,
@@ -2371,6 +2383,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppUIConfig',
     'AppUINavItem',
     'MCPOAuthConfig',
+    'MCPApiKeyConfig',
     'MCPToolCollectionObject',
     'VertesiaSDKToolCollectionObject',
     // File, task, content-type and command components. Every one is published closed
@@ -2929,6 +2942,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'McpOAuthDisconnectResponse',
     'McpOAuthConnectResponse',
     'OAuthAuthorizeResponse',
+    'SetMcpApiKeyRequest',
+    'McpApiKeyStatus',
     'AuditMeter',
     'AuditAggregationDimensionMap',
     'AuditAggregationRow',
@@ -2982,6 +2997,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppInstallationProviderBinding',
     'AppInstallationOAuthBinding',
     'OAuthClientCredentials',
+    'McpApiKeyCredential',
     'AppInspectionCapabilityReport',
     'AppRepoTreeEntry',
     'AppRepoRef',
@@ -2990,6 +3006,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'InCodeTypeRef',
     'StoredTypeRef',
     'DeleteAppVersionResponse',
+    'AppDeleteSummary',
     'AppRepoBranch',
     'AppRepoDocumentCommit',
     'AppVersionGitSource',
