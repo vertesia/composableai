@@ -4,7 +4,7 @@ Generated SDK declarations and focused development guidance used by Vertesia app
 
 The package build reads the current composableai workspace outputs for `@vertesia/ui`,
 `@vertesia/client`, and `@vertesia/common`, then writes the published documentation under
-`docs/`.
+`lib/docs/` so the package entrypoint and documentation are restored together from build caches.
 
 Consumers can locate the installed documentation with:
 

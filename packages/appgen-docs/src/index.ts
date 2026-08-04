@@ -7,4 +7,4 @@ import { fileURLToPath } from 'node:url';
  * Keep this package external when bundling consumers so import.meta.url still
  * resolves relative to the installed package.
  */
-export const appgenDocsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../docs');
+export const appgenDocsRoot = resolve(dirname(fileURLToPath(import.meta.url)), 'docs');
