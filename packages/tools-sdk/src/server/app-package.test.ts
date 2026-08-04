@@ -75,6 +75,9 @@ describe('buildAppPackage', () => {
                 src: '/lib/plugin.js',
                 available_in: ['app_portal'],
             },
+            hooks: {
+                install: async () => undefined,
+            },
         } satisfies ToolServerConfig;
 
         const pkg = await buildAppPackage(config, {
@@ -87,6 +90,7 @@ describe('buildAppPackage', () => {
         expect(pkg.processes?.map((process) => process.id)).toEqual(['claims:intake']);
         expect(pkg.dashboards?.map((dashboard) => dashboard.id)).toEqual(['claims:ops']);
         expect(pkg.ui?.src).toBe('https://apps.example.test/lib/plugin.js');
+        expect(pkg.hooks).toEqual({ install: '/api/hooks/install' });
     });
 
     it('honors package scopes', async () => {
@@ -108,6 +112,29 @@ describe('buildAppPackage', () => {
         const pkg = await buildAppPackage(config, { scope: 'types' });
 
         expect(pkg.types?.map((type) => type.id)).toEqual(['claim']);
+        expect(pkg.interactions).toBeUndefined();
+    });
+
+    it('returns only lifecycle hook metadata for the hooks scope', async () => {
+        const config = {
+            interactions: [
+                new InteractionCollection({
+                    name: 'claims',
+                    interactions: [{ name: 'review', prompts: [] }],
+                }),
+            ],
+            hooks: {
+                install: async () => undefined,
+                uninstall: async () => undefined,
+            },
+        } satisfies ToolServerConfig;
+
+        const pkg = await buildAppPackage(config, { scope: 'hooks' });
+
+        expect(pkg.hooks).toEqual({
+            install: '/api/hooks/install',
+            uninstall: '/api/hooks/uninstall',
+        });
         expect(pkg.interactions).toBeUndefined();
     });
 });

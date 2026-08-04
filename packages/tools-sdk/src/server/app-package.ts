@@ -158,6 +158,15 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
         }
         pkg.activities = allActivities;
     },
+    async hooks(pkg: AppPackage, config: ToolServerConfig) {
+        const prefix = config.prefix || '/api';
+        if (config.hooks?.install || config.hooks?.uninstall) {
+            pkg.hooks = {
+                ...(config.hooks.install && { install: `${prefix}/hooks/install` }),
+                ...(config.hooks.uninstall && { uninstall: `${prefix}/hooks/uninstall` }),
+            };
+        }
+    },
 };
 
 function normalizeScopes(scope: BuildAppPackageOptions['scope']): Set<AppPackageScope> {
@@ -184,6 +193,7 @@ export async function buildAppPackage(
         await builders.ui(pkg, config, options);
         await builders.settings(pkg, config, options);
         await builders.activities(pkg, config, options);
+        await builders.hooks(pkg, config, options);
     } else {
         if (scopes.has('tools')) {
             await builders.tools(pkg, config, options);
@@ -217,6 +227,9 @@ export async function buildAppPackage(
         }
         if (scopes.has('activities')) {
             await builders.activities(pkg, config, options);
+        }
+        if (scopes.has('hooks')) {
+            await builders.hooks(pkg, config, options);
         }
     }
 

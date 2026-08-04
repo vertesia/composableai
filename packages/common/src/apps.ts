@@ -59,6 +59,7 @@ import type {
     AppInstallationWithManifestSchema,
     AppManifestDataSchema,
     AppManifestSchema,
+    AppPackageHooksSchema,
     AppPackageSchema,
     AppWidgetInfoSchema,
     CompositeAppCardOverridesSchema,
@@ -609,10 +610,12 @@ export const APP_PACKAGE_SCOPES = [
     'settings',
     'widgets',
     'activities',
+    'hooks',
     'all',
 ] as const;
 
 export type AppPackageScope = (typeof APP_PACKAGE_SCOPES)[number];
+export type AppPackageHooks = z.infer<typeof AppPackageHooksSchema>;
 export type AppPackage = z.infer<typeof AppPackageSchema>;
 
 /**

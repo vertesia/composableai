@@ -10,6 +10,7 @@ Full code examples for each resource type. SKILL.md has the workflow and decisio
 - [Interaction (code-based)](#interaction-code-based)
 - [Content Type](#content-type)
 - [Rendering Template](#rendering-template)
+- [Application lifecycle hooks](#application-lifecycle-hooks)
 - [Collection registration & icons](#collection-registration--icons)
 
 ---
@@ -366,6 +367,51 @@ export const MyTemplates = new RenderingTemplateCollection({
     templates   // Auto-discovers all subdirs with TEMPLATE.md
 });
 ```
+
+---
+
+## Application lifecycle hooks
+
+Lifecycle hooks are authenticated server handlers, not resource collections. Use them when installation must initialize
+project data or uninstallation must clean it up. Keep install hooks idempotent because they may be invoked again for
+recovery or reinstallation.
+
+### `src/tool-server/hooks/install.ts`
+
+```typescript
+import type { AppLifecycleHook } from "@vertesia/tools-sdk";
+
+export const install = (async (context) => {
+    const client = await context.getClient();
+    const project = context.payload.project;
+    if (!project) throw new Error("Install hooks require a project-scoped token");
+    const installationId = context.metadata.app_install_id;
+    const settings = context.metadata.app_settings;
+
+    // Query existing project state first and create only what is missing.
+    console.log("Installing app", { projectId: project.id, installationId, settings });
+    void client;
+}) satisfies AppLifecycleHook;
+```
+
+An uninstall hook has the same signature and belongs in `src/tool-server/hooks/uninstall.ts`.
+
+### Registration
+
+```typescript
+// src/tool-server/hooks/index.ts
+import type { AppLifecycleHooks } from "@vertesia/tools-sdk";
+import { install } from "./install.js";
+
+export const hooks = { install } satisfies AppLifecycleHooks;
+```
+
+Registered hooks are exposed as authenticated POST endpoints at `/api/hooks/install` and `/api/hooks/uninstall`. The
+app package advertises their endpoint paths under `hooks` for inspection. Studio invokes the conventional endpoints
+directly and treats a 404 as an absent optional hook.
+
+Do not create project-local copies of app-owned package type definitions. When hooks create content objects, use the
+portable `app:<app-name>:<type-name>` type reference.
 
 ---
 

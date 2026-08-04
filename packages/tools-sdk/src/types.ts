@@ -54,6 +54,27 @@ export interface ToolExecutionContext {
     getClient: () => Promise<VertesiaClient>;
 }
 
+export type AppLifecycleHookName = 'install' | 'uninstall';
+
+export interface AppLifecycleHookContext extends ToolExecutionContext {
+    /** Metadata supplied by Studio for this installation lifecycle call. */
+    metadata: ToolExecutionMetadata;
+}
+
+export interface AppLifecycleHookResult {
+    message?: string;
+    data?: Record<string, unknown>;
+}
+
+// biome-ignore lint/suspicious/noConfusingVoidType: lifecycle hooks may complete without a response body.
+export type AppLifecycleHook = (context: AppLifecycleHookContext) => Promise<void | AppLifecycleHookResult>;
+
+export type AppLifecycleHooks = Partial<Record<AppLifecycleHookName, AppLifecycleHook>>;
+
+export interface AppLifecycleHookPayload {
+    metadata?: ToolExecutionMetadata;
+}
+
 export interface ToolExecutionResult extends ToolResultContent {
     /**
      * Medata can be used to return more info on the tool execution like stats or user messages.

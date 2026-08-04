@@ -13,6 +13,9 @@ Step-by-step guide for creating tool server resources. Each resource follows the
 
 For full code templates of every resource type, see `REFERENCE.md`.
 
+Application install/uninstall hooks are server lifecycle handlers rather than resource collections. Put their
+implementations under `src/tool-server/hooks/` and register them in `src/tool-server/hooks/index.ts`.
+
 ## Conventions
 
 - All imports use `.js` extensions: `import { x } from "./foo.js"`
@@ -86,6 +89,18 @@ Folder per template in `src/modules/app/resources/templates/<collection>/<templa
 Templates are auto-discovered: the collection imports `./all?templates`.
 
 → Code in `REFERENCE.md` § Rendering Template.
+
+### Application Lifecycle Hook
+
+Use an install or uninstall hook when the app must initialize or clean up project data as part of its installation
+lifecycle. Hooks receive an authenticated context with the current project token and `getClient()`.
+
+- Implement hooks in `src/tool-server/hooks/install.ts` or `src/tool-server/hooks/uninstall.ts`.
+- Register them in `src/tool-server/hooks/index.ts`.
+- Make install behavior idempotent. Studio may invoke it again during a reinstall or an explicit recovery.
+- Do not use hooks to materialize app-owned package types as project-local types. Use portable `app:<app>:<type>` refs.
+
+→ Code in `REFERENCE.md` § Application lifecycle hooks.
 
 ## Collection registration
 

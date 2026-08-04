@@ -804,6 +804,17 @@ export const CompositeAppConfigSchema = z
             'CompositeApp shell configuration. This is the main configuration interface for storing CompositeApp settings. Used as the MongoDB model for persisting CompositeApp configurations.',
     });
 
+export const AppPackageHooksSchema = z
+    .strictObject({
+        install: z.string().meta({ description: 'Authenticated endpoint for the app install hook.' }).optional(),
+        uninstall: z.string().meta({ description: 'Authenticated endpoint for the app uninstall hook.' }).optional(),
+    })
+    .meta({
+        id: 'AppPackageHooks',
+        description:
+            'Lifecycle hooks exposed by the app runtime. These entries are informational; Studio invokes the conventional sibling endpoints directly.',
+    });
+
 export const AppPackageSchema = z
     .strictObject({
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
@@ -850,6 +861,7 @@ export const AppPackageSchema = z
         settings_schema: JSONSchemaRefSchema.meta({
             description: 'A JSON chema for the app installation settings.',
         }).optional(),
+        hooks: AppPackageHooksSchema.optional(),
     })
     .meta({ id: 'AppPackage' });
 

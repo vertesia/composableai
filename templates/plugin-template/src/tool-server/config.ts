@@ -10,6 +10,7 @@ import {
     types,
     views,
 } from './app-server-modules.js';
+import { hooks } from './hooks/index.js';
 import { mcpProviders } from './mcp/index.js';
 import settingsSchema from './settings.js';
 import uiNavItems from './ui-nav-items.js';
@@ -30,6 +31,7 @@ export const ServerConfig = {
     // In-code View Experiences. Studio contributes each as `app:<app-name>:<view-id>`
     // and renders it via the `/view/<id>` route or the `<ViewExperience>` component.
     views,
+    hooks,
     mcpProviders,
     uiConfig: {
         isolation: 'shadow',

@@ -5,10 +5,43 @@ Additional details for the plugin architecture. Referenced from SKILL.md.
 ## Table of Contents
 
 - [Admin UI](#admin-ui)
+- [Application lifecycle hooks](#application-lifecycle-hooks)
 - [CSS Customization](#css-customization)
 - [Deployment](#deployment)
 
 For resource creation code examples (tools, skills, interactions, types, templates), use the **vertesia-tool-server-resource** skill.
+
+## Application lifecycle hooks
+
+Service apps can run authenticated setup or cleanup logic when Studio installs or uninstalls them. Hook code lives in
+`src/tool-server/hooks/` and is registered through `src/tool-server/hooks/index.ts`.
+
+```typescript
+// src/tool-server/hooks/install.ts
+import type { AppLifecycleHook } from '@vertesia/tools-sdk';
+
+export const install = (async (context) => {
+    const client = await context.getClient();
+    const project = context.payload.project;
+    if (!project) throw new Error('Install hooks require a project-scoped token');
+
+    // Check existing project state before creating anything. Install hooks must be safe to run again.
+    console.log(`Installing app resources in project ${project.id}`);
+    void client;
+}) satisfies AppLifecycleHook;
+```
+
+```typescript
+// src/tool-server/hooks/index.ts
+import type { AppLifecycleHooks } from '@vertesia/tools-sdk';
+import { install } from './install.js';
+
+export const hooks = { install } satisfies AppLifecycleHooks;
+```
+
+The hook context exposes the authenticated token payload, `getClient()`, and metadata including `app_install_id` and
+the installation's `app_settings`. Registered hooks are available at `POST /api/hooks/install` and
+`POST /api/hooks/uninstall` and are listed in `/api/package` for inspection.
 
 ---
 

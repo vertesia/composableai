@@ -7,6 +7,10 @@ describe('app capability contracts', () => {
         expect(APP_PACKAGE_SCOPES).toContain('views');
         expect(APP_ARTIFACT_TYPES).toContain('view');
     });
+
+    it('exposes lifecycle hooks as a package query scope', () => {
+        expect(APP_PACKAGE_SCOPES).toContain('hooks');
+    });
 });
 
 describe('effectiveAppAccessControl', () => {
