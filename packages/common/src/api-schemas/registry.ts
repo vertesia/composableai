@@ -643,6 +643,7 @@ import {
     PromptTemplateInteractionUsageSchema,
     PromptTemplateInteractionVersionSchema,
     PromptTemplateRefArraySchema,
+    RenderPromptPayloadSchema,
     RenderPromptResponseSchema,
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
@@ -1769,6 +1770,7 @@ const PROMPT_AUTHORING_SCHEMAS = {
     // The prompt-authoring endpoints: fork, render, search and the interaction usages a prompt
     // reports. `PromptTemplate` itself and its write payloads live with the interactions, which is
     // where the prompt tree they reference is defined.
+    RenderPromptPayload: RenderPromptPayloadSchema,
     RenderPromptResponse: RenderPromptResponseSchema,
     PromptTemplateInteractionVersion: PromptTemplateInteractionVersionSchema,
     PromptTemplateForkPayload: PromptTemplateForkPayloadSchema,
@@ -2046,7 +2048,6 @@ const APP_MANIFEST_SCHEMAS = {
     AppWidgetInfoMap: AppRuntimeSchemas.AppWidgetInfoMapSchema,
     PromoteAppVersionResponse: AppRuntimeSchemas.PromoteAppVersionResponseSchema,
     AppPackage: AppRuntimeSchemas.AppPackageSchema,
-    RenderPromptPayload: AppRuntimeSchemas.RenderPromptPayloadSchema,
     ProjectPluginArray: AppRuntimeSchemas.ProjectPluginArraySchema,
 } as const satisfies Record<string, z.ZodType>;
 

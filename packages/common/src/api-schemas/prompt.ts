@@ -9,6 +9,13 @@ import { FacetSpecSchema, PromptTemplateRefSchema } from './interaction.js';
 // is picked up by the OpenAPI scanner and published as that component's `description`, which would
 // double up with the `description` stated in `.meta()`.
 
+export const RenderPromptPayloadSchema = z
+    .record(z.string(), z.unknown())
+    // Preserve the explicit free-form spelling OpenAPI Generator needs to emit a request-body
+    // setter. An empty additionalProperties schema is validator-equivalent but generates a
+    // different Go API, and the adapter intentionally normalizes component roots conservatively.
+    .meta({ id: 'RenderPromptPayload', additionalProperties: true });
+
 export const RenderPromptResponseSchema = z
     .strictObject({
         id: z.string(),
