@@ -91,7 +91,7 @@ test('default module codegen keeps only the app module', () => {
     }
 });
 
-test('service module selects service entry and cleans inactive modules', () => {
+test('appgen module selects the service entry and cleans inactive modules', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
         copyTemplateInputs(tmpRoot);
@@ -123,7 +123,7 @@ test('service module selects service entry and cleans inactive modules', () => {
         );
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
-        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/agent')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/agent')), false);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/service')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
