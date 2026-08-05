@@ -1,7 +1,19 @@
 name: (test) Build and test
 
 on:
-  - push
+  push:
+    branches:
+      - main
+      - preview
+      - "release/**"
+      - "production/**"
+      - "hotfix**"
+      - "repo-dispatch**"
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+env:
+  COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 # Cancel superseded runs on the same branch (latest push wins). Each branch
 # still gets its own concurrent run, so main/preview/PR pushes don't block
@@ -22,6 +34,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ env.COMMIT_SHA }}
           submodules: true
           persist-credentials: false
       - name: Install pnpm
@@ -56,6 +69,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ env.COMMIT_SHA }}
           submodules: true
           persist-credentials: false
       - name: Install pnpm
