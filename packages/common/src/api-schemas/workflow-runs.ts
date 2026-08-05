@@ -3,7 +3,7 @@
 import { JSONObjectSchema, JSONSchemaSchema, JSONValueSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import type { ActivityTypeDefinition } from '../store/activity-catalog.js';
-import { HistoricalCompactMessageSchema, HistoricalInteractionExecutionConfigurationSchema } from './agent-runs.js';
+import { CompactMessageSchema } from './agent-runs.js';
 import { AgentRunStatusSchema, ConversationActivityStateSchema } from './app-lifecycle.js';
 import { WorkflowExecutionStatusSchema } from './document-processing.js';
 import {
@@ -116,23 +116,15 @@ export const WorkflowInteractionVarsSchema = z
         disabled_mcp_collections: z.array(z.string()).optional(),
         checkpoint_tokens: z.number().optional(),
         version: z.number().optional(),
-    })
-    .meta({ id: 'WorkflowInteractionVars' });
-
-/** A Temporal snapshot can outlive the request schema that originally created it. */
-export const HistoricalWorkflowInteractionVarsSchema = z
-    .strictObject({
-        ...WorkflowInteractionVarsSchema.shape,
-        config: HistoricalInteractionExecutionConfigurationSchema,
         agent_run_id: z.string().optional(),
     })
-    .meta({ id: 'HistoricalWorkflowInteractionVars' });
+    .meta({ id: 'WorkflowInteractionVars' });
 
 export const ListWorkflowInteractionsResponseSchema = z
     .strictObject({
         workflow_id: z.string(),
         run_id: z.string(),
-        interaction: HistoricalWorkflowInteractionVarsSchema,
+        interaction: WorkflowInteractionVarsSchema,
     })
     .meta({ id: 'ListWorkflowInteractionsResponse' });
 
@@ -511,7 +503,7 @@ export const WorkflowInputSchema = z
 
 export const WorkflowRunUpdatesResponseSchema = z
     .strictObject({
-        messages: z.array(HistoricalCompactMessageSchema),
+        messages: z.array(CompactMessageSchema),
     })
     .meta({ id: 'WorkflowRunUpdatesResponse' });
 

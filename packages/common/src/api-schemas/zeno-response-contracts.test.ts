@@ -47,7 +47,6 @@ const autonomousRun = {
     config: {
         environment: '64b000000000000000000005',
         model: 'legacy-provider/model',
-        model_options: { temperature: 0.2, provider_extension: true },
     },
     interactive: true,
 };
@@ -64,9 +63,11 @@ const processRun = {
     created_at: timestamp,
     updated_at: timestamp,
     process_definition_snapshot: {
-        process: 'Legacy process',
+        format_version: 1,
+        process: 'Process',
         initial: 'start',
-        nodes: { start: { type: 'branch', branches: [{ to: 'done', condition: true }] } },
+        context: { schema: {}, initial: {} },
+        nodes: { start: { type: 'final' } },
     },
     process_state: {
         context: {},
@@ -97,7 +98,7 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(false);
     });
 
-    it('accepts autonomous runs, legacy model options, and projected refs', () => {
+    it('accepts normalized autonomous runs and projected refs', () => {
         expect(validateApiResponse('AgentRun', autonomousRun).valid).toBe(true);
         expect(validateApiResponse('AgentRunResponse', autonomousRun).valid).toBe(true);
         expect(validateApiResponse('AgentRunResponse', processRun).valid).toBe(true);
@@ -110,8 +111,8 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(true);
     });
 
-    it('accepts historical compact messages without weakening update requests', () => {
-        const response = { messages: [{ t: 2, d: { files: { legacy: true } }, historical: true }] };
+    it('uses the current compact message contract for update responses', () => {
+        const response = { messages: [{ t: 2, d: { files: ['legacy-file-id'] } }] };
         expect(validateApiResponse('AgentRunUpdatesResponse', response).valid).toBe(true);
         expect(validateApiResponse('WorkflowRunUpdatesResponse', response).valid).toBe(true);
     });
@@ -175,7 +176,7 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(true);
     });
 
-    it('accepts workflow memo, children, and historical interaction snapshots', () => {
+    it('accepts workflow memo, children, and interaction snapshots', () => {
         const workflow = {
             started_at: timestamp,
             closed_at: null,
@@ -198,7 +199,10 @@ describe('Zeno read-side response contracts', () => {
                     interaction: 'legacy',
                     interactive: true,
                     tool_names: [],
-                    config: { model_options: { legacy_provider_field: true }, http_timeout: 30 },
+                    config: {
+                        environment: '64b000000000000000000005',
+                        model: 'model',
+                    },
                     agent_run_id: 'run-1',
                 },
             }).valid,
@@ -231,7 +235,7 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(true);
     });
 
-    it('accepts process context, history, and definitions stored in historical formats', () => {
+    it('accepts process context, history, and current process definitions', () => {
         expect(
             validateApiResponse('ProcessContextResponse', {
                 run_id: 'run-1',
@@ -257,10 +261,11 @@ describe('Zeno read-side response contracts', () => {
                     status: 'draft',
                     version: 1,
                     definition: {
-                        process: 'Legacy process',
+                        format_version: 1,
+                        process: 'Process',
                         initial: 'start',
-                        context: {},
-                        nodes: { start: { type: 'branch', branches: [{ to: 'done', condition: true }] } },
+                        context: { schema: {}, initial: {} },
+                        nodes: { start: { type: 'final' } },
                     },
                     created_at: timestamp,
                     updated_at: timestamp,
