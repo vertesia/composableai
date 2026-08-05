@@ -3,9 +3,10 @@ import type { VertesiaClient } from '@vertesia/client';
 import type {
     AgentToolDefinition,
     AuthTokenPayload,
+    AppEventHookDelivery as CommonAppEventHookDelivery,
+    AppEventHookPayload as CommonAppEventHookPayload,
     AppEventSubscriptionDefinition as CommonAppEventSubscriptionDefinition,
     MCPToolAnnotations,
-    PlatformEvent,
     ProjectConfiguration,
     RenderingTemplateDefinition,
     ToolExecutionMetadata,
@@ -16,6 +17,8 @@ import type {
 
 export type { ToolExecutionMetadata };
 export type AppEventSubscriptionDefinition = CommonAppEventSubscriptionDefinition;
+export type AppEventHookDelivery = CommonAppEventHookDelivery;
+export type AppEventHookPayload = CommonAppEventHookPayload;
 
 export type ICollection<T = object> = CollectionProperties & Iterable<T>;
 
@@ -76,19 +79,6 @@ export interface AppLifecycleHookDefinition {
     kind: 'lifecycle';
     name: AppLifecycleHookName;
     handler: AppLifecycleHook;
-}
-
-export interface AppEventHookDelivery {
-    /** Event-delivery intent id. */
-    id: string;
-    subscription_id: string;
-    attempt: number;
-}
-
-/** Canonical event-envelope body delivered by Vertesia webhook subscriptions. */
-export interface AppEventHookPayload {
-    event: PlatformEvent;
-    delivery: AppEventHookDelivery;
 }
 
 export type AppEventHookContext = ToolExecutionContext;

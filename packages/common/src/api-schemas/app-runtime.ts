@@ -3,6 +3,7 @@
 import type { JSONSchema } from '@llumiverse/common';
 import { z } from 'zod';
 import type { CompositeAppMenuNavItem } from '../apps.js';
+import type { PlatformEvent } from '../platform-event.js';
 import type { InCodeProcessDefinition } from '../store/process.js';
 import { SystemRolesSchema } from './apikey.js';
 import {
@@ -10,6 +11,7 @@ import {
     AppInstallationOAuthBindingSchema,
     AppInstallationProviderBindingSchema,
     AppVersionRecordSchema,
+    EventRefSchema,
 } from './app-lifecycle.js';
 import {
     AppAccessControlSchema,
@@ -20,6 +22,7 @@ import {
     MCPOAuthConfigSchema,
     ToolCollectionObjectSchema,
 } from './apps.js';
+import { AuditMeterSchema } from './audit-trail.js';
 import {
     DashboardDataSourceSchema,
     DashboardLayoutSchema,
@@ -830,6 +833,50 @@ export const AppPackageHooksSchema = z
         id: 'AppPackageHooks',
         description:
             'Lifecycle and event hooks exposed by the app runtime. Lifecycle entries are informational; Studio invokes their conventional sibling endpoints directly.',
+    });
+
+const AppEventHookPlatformEventSchema = EventRefSchema.extend({
+    timestamp: z.string(),
+    source: z.string(),
+    audit_trail: z.boolean().optional(),
+    replay_of: z.string().optional(),
+    replay_root_event_id: z.string().optional(),
+    replayed_by: z.string().optional(),
+    request_id: z.string().nullable().optional(),
+    status: z.number().optional(),
+    success: z.boolean().optional(),
+    principal_id: z.string().nullable().optional(),
+    principal_type: z.string().nullable().optional(),
+    effective_principal_id: z.string().nullable().optional(),
+    roles: z.array(z.string()).optional(),
+    account_name: z.string().nullable().optional(),
+    project_name: z.string().nullable().optional(),
+    provider: z.string().nullable().optional(),
+    meters: z.array(AuditMeterSchema).optional(),
+    resource_data: z.record(z.string(), z.unknown()).optional(),
+    resource_version: z.string().optional(),
+    details: z.record(z.string(), z.unknown()).optional(),
+}) satisfies z.ZodType<PlatformEvent>;
+
+export const AppEventHookDeliverySchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Event-delivery intent id.' }),
+        subscription_id: z.string().meta({ description: 'Event subscription id.' }),
+        attempt: z.number().finite().meta({ description: 'Current delivery attempt number.' }),
+    })
+    .meta({
+        id: 'AppEventHookDelivery',
+        description: 'Delivery metadata accompanying an app event-hook invocation.',
+    });
+
+export const AppEventHookPayloadSchema = z
+    .strictObject({
+        event: AppEventHookPlatformEventSchema,
+        delivery: AppEventHookDeliverySchema,
+    })
+    .meta({
+        id: 'AppEventHookPayload',
+        description: 'Canonical platform event envelope delivered to an authenticated app event hook.',
     });
 
 export const AppEventSubscriptionDefinitionSchema = z

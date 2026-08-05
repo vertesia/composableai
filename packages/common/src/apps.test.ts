@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AppEventSubscriptionDefinitionSchema, AppPackageHooksSchema } from './api-schemas/app-runtime.js';
+import {
+    AppEventHookPayloadSchema,
+    AppEventSubscriptionDefinitionSchema,
+    AppPackageHooksSchema,
+} from './api-schemas/app-runtime.js';
 import { APP_ARTIFACT_TYPES, APP_CAPABILITIES, APP_PACKAGE_SCOPES, effectiveAppAccessControl } from './apps.js';
 
 describe('app capability contracts', () => {
@@ -30,6 +34,34 @@ describe('app capability contracts', () => {
             filter: { action: ['updated'], resource_type: ['content_object'] },
             run_as_role: 'automation',
         });
+    });
+
+    it('validates the canonical app event-hook envelope', () => {
+        const payload = {
+            event: {
+                event_id: 'event-1',
+                root_event_id: 'event-1',
+                hop_count: 0,
+                event_category: 'content',
+                action: 'updated',
+                resource_type: 'content_object',
+                resource_id: 'object-1',
+                account_id: 'account-1',
+                project_id: 'project-1',
+                tenant_id: 'account-1_project-1',
+                timestamp: '2026-08-05T10:00:00.000Z',
+                source: 'zeno-server',
+                details: { changed: ['title'] },
+            },
+            delivery: {
+                id: 'delivery-1',
+                subscription_id: 'subscription-1',
+                attempt: 1,
+            },
+        };
+
+        expect(AppEventHookPayloadSchema.parse(payload)).toEqual(payload);
+        expect(() => AppEventHookPayloadSchema.parse({ event: payload.event })).toThrow();
     });
 
     it('accepts lifecycle and event hook package metadata', () => {

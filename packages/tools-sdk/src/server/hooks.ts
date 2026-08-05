@@ -1,3 +1,4 @@
+import { AppEventHookPayloadSchema } from '@vertesia/common/api-schemas';
 import type { Context, Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { authorize } from '../auth.js';
@@ -86,22 +87,9 @@ function parseHookPayload(body: unknown): AppLifecycleHookPayload {
 }
 
 function parseEventHookPayload(body: unknown): AppEventHookPayload {
-    if (!isRecord(body) || !isRecord(body.event) || !isRecord(body.delivery)) {
+    const result = AppEventHookPayloadSchema.safeParse(body);
+    if (!result.success) {
         throw new HTTPException(400, { message: 'Invalid event hook payload' });
     }
-    if (
-        typeof body.event.event_id !== 'string' ||
-        typeof body.event.action !== 'string' ||
-        typeof body.delivery.id !== 'string' ||
-        typeof body.delivery.subscription_id !== 'string' ||
-        typeof body.delivery.attempt !== 'number' ||
-        !Number.isFinite(body.delivery.attempt)
-    ) {
-        throw new HTTPException(400, { message: 'Invalid event hook payload' });
-    }
-    return body as unknown as AppEventHookPayload;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+    return result.data;
 }
