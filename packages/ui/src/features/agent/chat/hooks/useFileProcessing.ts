@@ -57,7 +57,7 @@ export function useFileProcessing(
      * as pending composer attachments after a reload — the durable, server-agnostic counterpart to
      * the in-session `removedFileIds` suppression.
      */
-    deliveredArtifactRefs?: ReadonlySet<string>,
+    deliveredArtifactRefs?: Set<string>,
 ): UseFileProcessingResult {
     const t = i18nInstance.getFixedT(null, NAMESPACE);
     // Local optimistic file state (uploads initiated from the UI)
@@ -110,6 +110,17 @@ export function useFileProcessing(
             }
         });
         serverFileUpdates.forEach((file, id) => {
+            // consumed_at is the workflow's authoritative delivered marker. Filter it here in
+            // addition to message-history refs: older runs may lack the marker, while some
+            // server-originated messages may not preserve the rendered attachment block.
+            if (file.consumed_at) {
+                // Drop any optimistic local entry as well. clearProcessingFiles() normally
+                // retires it when this client sends the message, but a turn consumed
+                // elsewhere (another tab, or an agent-initiated turn) leaves this session's
+                // chip staged. Skipping the server update alone would keep it visible.
+                merged.delete(id);
+                return;
+            }
             if (!removedFileIds.has(id)) {
                 // Server updates are authoritative for status, but may omit fields the local
                 // optimistic entry already knows: preview_url is never sent by the server, and
@@ -125,8 +136,8 @@ export function useFileProcessing(
             }
         });
         // Drop files already delivered via a sent message. Unlike removedFileIds (session-only),
-        // this is reconstructed from message history on every mount, so a reload no longer
-        // resurrects an already-sent file as a pending composer chip.
+        // this is reconstructed from message history on every mount. It also covers runs created
+        // before the workflow began stamping consumed_at.
         if (deliveredArtifactRefs && deliveredArtifactRefs.size > 0) {
             for (const [id, file] of merged) {
                 if (

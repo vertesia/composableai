@@ -485,7 +485,15 @@ export function parseUserMessageAttachments(content: string): ParsedUserAttachme
 export function collectDeliveredArtifactRefs(messages: AgentMessage[]): Set<string> {
     const refs = new Set<string>();
     for (const message of messages) {
-        if (message.type !== AgentMessageType.QUESTION || typeof message.message !== 'string') continue;
+        // Only persisted server echoes prove delivery. Optimistic messages can still be sending
+        // or can fail, in which case suppressing their files would prevent a retry.
+        if (
+            message.type !== AgentMessageType.QUESTION ||
+            message.details?._optimistic ||
+            typeof message.message !== 'string'
+        ) {
+            continue;
+        }
         for (const attachment of parseUserMessageAttachments(message.message).attachments) {
             if (attachment.href) refs.add(attachment.href);
             if (attachment.artifactPath) refs.add(attachment.artifactPath);
