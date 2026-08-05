@@ -57,7 +57,7 @@ export function useFileProcessing(
      * as pending composer attachments after a reload — the durable, server-agnostic counterpart to
      * the in-session `removedFileIds` suppression.
      */
-    deliveredArtifactRefs?: Set<string>,
+    deliveredArtifactRefs?: ReadonlySet<string>,
 ): UseFileProcessingResult {
     const t = i18nInstance.getFixedT(null, NAMESPACE);
     // Local optimistic file state (uploads initiated from the UI)
