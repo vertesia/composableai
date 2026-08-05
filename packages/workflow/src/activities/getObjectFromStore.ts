@@ -16,6 +16,12 @@ export interface GetObject extends DSLActivitySpec<GetObjectParams> {
     name: 'getObject';
 }
 
+type RetrievedContentObject = ContentObject | ProjectedContentObjectApiResponse;
+
+function mergeProjection<T extends object>(object: T, projection: Partial<T>): T {
+    return { ...object, ...projection };
+}
+
 /**
  * We are using a union type for the status parameter since typescript enums breaks the workflow code generation
  * @param objectId
@@ -23,10 +29,10 @@ export interface GetObject extends DSLActivitySpec<GetObjectParams> {
  */
 export async function getObjectFromStore(
     payload: DSLActivityExecutionPayload<GetObjectParams>,
-): Promise<ContentObject> {
+): Promise<RetrievedContentObject> {
     const { client, params, objectId } = await setupActivity<GetObjectParams>(payload);
 
-    let obj: ContentObject | ProjectedContentObjectApiResponse;
+    let obj: RetrievedContentObject;
     try {
         obj = params.select
             ? await client.objects.retrieve(objectId, params.select)
@@ -39,16 +45,7 @@ export async function getObjectFromStore(
         throw err;
     }
 
-    if (!obj.id) {
-        throw new DocumentNotFoundError(`Projected object response is missing its ID: ${objectId}`, [objectId]);
-    }
+    const projection = projectResult(payload, params, obj, obj) as Partial<RetrievedContentObject>;
 
-    const projection = projectResult(payload, params, obj, obj) as Partial<ContentObject>;
-
-    return {
-        ...obj,
-        ...projection,
-        id: obj.id,
-        embeddings: obj.embeddings ?? {},
-    } as ContentObject;
+    return mergeProjection(obj, projection);
 }

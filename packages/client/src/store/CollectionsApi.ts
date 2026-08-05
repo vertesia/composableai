@@ -10,6 +10,7 @@ import type {
     ContentObjectStatus,
     CreateCollectionPayload,
     DynamicCollection,
+    FullObjectSearchResponse,
     ObjectSearchResponse,
 } from '@vertesia/common';
 
@@ -90,6 +91,11 @@ export class CollectionsApi extends ApiTopic {
         });
     }
 
+    searchMembers(
+        collectionId: string,
+        payload: ComplexSearchPayload & { select?: undefined },
+    ): Promise<FullObjectSearchResponse>;
+    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<ObjectSearchResponse>;
     searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
         return this.post(`/${collectionId}/search`, { payload });
     }

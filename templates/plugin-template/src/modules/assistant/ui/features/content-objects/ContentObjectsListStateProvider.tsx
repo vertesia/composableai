@@ -27,30 +27,6 @@ function dedupeFilters(filters: Filter[]) {
     return deduped;
 }
 
-function isFullContentObjectItem(item: unknown): item is ContentObjectItem {
-    if (!item || typeof item !== 'object') return false;
-    const object = item as Record<string, unknown>;
-    return (
-        typeof object.id === 'string' &&
-        typeof object.name === 'string' &&
-        typeof object.updated_by === 'string' &&
-        typeof object.created_by === 'string' &&
-        typeof object.created_at === 'string' &&
-        typeof object.updated_at === 'string' &&
-        typeof object.location === 'string' &&
-        typeof object.status === 'string' &&
-        object.properties !== undefined &&
-        object.revision !== undefined
-    );
-}
-
-function requireFullContentObjectItems(items: unknown[]): ContentObjectItem[] {
-    if (!items.every(isFullContentObjectItem)) {
-        throw new Error('Object search returned a projected result without the fields required by the content list');
-    }
-    return items;
-}
-
 interface ProviderProps {
     children: ReactNode;
 }
@@ -103,7 +79,7 @@ export function ContentObjectsListStateProvider({ children }: ProviderProps) {
                 offset: 0,
                 sort: sortPayload,
             });
-            return requireFullContentObjectItems(result.results ?? []);
+            return result.results ?? [];
         },
         {
             deps: [debouncedQuery, filtersState, sortField, sortDir],
@@ -132,7 +108,7 @@ export function ContentObjectsListStateProvider({ children }: ProviderProps) {
                 sort: sortPayload,
             })
             .then((result) => {
-                const results = requireFullContentObjectItems(result.results ?? []);
+                const results = result.results ?? [];
                 setMoreItems((prev) => [...prev, ...results]);
                 setHasMore(results.length >= PAGE_SIZE);
             })

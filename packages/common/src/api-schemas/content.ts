@@ -797,9 +797,9 @@ export const ContentObjectApiResponseSchema = z
  * Read shape for field-projected objects. Projection intentionally changes requiredness without
  * weakening the full object or any create/update payload.
  */
-export const ProjectedContentObjectApiResponseSchema = ContentObjectApiResponseSchema.partial()
-    .catchall(z.unknown())
-    .meta({ id: 'ProjectedContentObjectApiResponse' });
+export const ProjectedContentObjectApiResponseSchema = ContentObjectApiResponseSchema.partial().meta({
+    id: 'ProjectedContentObjectApiResponse',
+});
 
 export const ProjectedContentObjectApiResponseArraySchema = z
     .array(ProjectedContentObjectApiResponseSchema)
@@ -812,48 +812,9 @@ export const ComputeObjectFacetPayloadSchema = z
     })
     .meta({ id: 'ComputeObjectFacetPayload' });
 
-export const ContentObjectItemApiResponseSchema = z
-    .strictObject({
-        id: z.string().meta({ description: 'Unique identifier for the object' }),
-        name: z.string().meta({ description: 'Human-readable name or title' }),
-        description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
-        tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
-        updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }),
-        created_by: z.string().meta({ description: 'Identifier of the user who created the object' }),
-        created_at: z.string().meta({ description: 'ISO timestamp of when the object was created' }),
-        updated_at: z.string().meta({ description: 'ISO timestamp of when the object was last updated' }),
-        parent: z.string().optional(),
-        location: z.string(),
-        status: ContentObjectStatusSchema,
-        type: ContentObjectApiTypeRefSchema.optional(),
-        content: ContentSourceSchema.optional(),
-        external_id: z.string().optional(),
-        properties: JSONObjectSchema,
-        metadata: z.looseObject({}).optional(),
-        tokens: z
-            .strictObject({
-                count: z.number().optional(),
-                encoding: z.string().optional(),
-                etag: z.string().optional(),
-            })
-            .optional(),
-        revision: ContentObjectApiRevisionSchema,
-        is_deleted: z.boolean().optional(),
-        is_locked: z.boolean().optional(),
-        score: z.number().optional(),
-        user_permissions: ContentObjectUserPermissionsSchema.optional(),
-        text: z.string().optional(),
-        text_etag: z.string().optional(),
-        embeddings: EmbeddingMapSchema.optional(),
-        parts: z.array(z.string()).optional(),
-        parts_etag: z.string().optional(),
-        transcript: z.looseObject({}).optional(),
-        security: StringArrayMapSchema.optional(),
-        sensitivity: z.number().optional(),
-        compartments: z.array(z.string()).optional(),
-        inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
-    })
-    .meta({ id: 'ContentObjectItemApiResponse' });
+export const ContentObjectItemApiResponseSchema = z.strictObject({ ...ContentObjectApiResponseSchema.shape }).meta({
+    id: 'ContentObjectItemApiResponse',
+});
 
 export const ComplexSearchPayloadSchema = z
     .strictObject({

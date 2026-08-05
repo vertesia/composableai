@@ -1,6 +1,6 @@
 // Runtime schemas for the process API domain.
 
-import { JSONSchemaSchema } from '@llumiverse/common/schemas';
+import { JSONObjectSchema, JSONSchemaSchema } from '@llumiverse/common/schemas';
 import type { StringValue } from 'ms';
 import { z } from 'zod';
 import { StringValueMapSchema } from './files.js';
@@ -242,7 +242,7 @@ export const ProcessContextResponseSchema = z
     .strictObject({
         run_id: z.string(),
         current_node: z.string(),
-        context: z.looseObject({}),
+        context: JSONObjectSchema,
     })
     .meta({ id: 'ProcessContextResponse' });
 
@@ -859,22 +859,22 @@ export const ProcessDefinitionSchema: z.ZodType = z
     .meta({ id: 'ProcessDefinition' });
 
 export const HistoricalProcessDefinitionBodySchema = z
-    .looseObject({
+    .strictObject({
         format_version: ProcessDefinitionFormatVersionSchema.optional(),
         process: z.string().optional(),
         description: z.string().optional(),
         initial: z.string().optional(),
         model: z.string().optional(),
-        resources: z.looseObject({}).optional(),
-        context: z.looseObject({}).optional(),
-        nodes: z.looseObject({}),
-        metadata: z.looseObject({}).optional(),
+        resources: JSONObjectSchema.optional(),
+        context: JSONObjectSchema.optional(),
+        nodes: JSONObjectSchema,
+        metadata: JSONObjectSchema.optional(),
     })
     .meta({ id: 'HistoricalProcessDefinitionBody' });
 
 /** Read-side compatibility for definitions stored before the current format was introduced. */
 export const HistoricalProcessDefinitionSchema = z
-    .looseObject({
+    .strictObject({
         id: z.string(),
         account: z.string(),
         project: z.string(),
@@ -882,6 +882,8 @@ export const HistoricalProcessDefinitionSchema = z
         description: z.string().optional(),
         status: ProcessDefinitionStatusSchema,
         version: z.number(),
+        revision: ProcessDefinitionRevisionInfoSchema.optional(),
+        tags: z.array(z.string()).optional(),
         definition: HistoricalProcessDefinitionBodySchema,
         created_at: z.string().meta({ format: 'date-time' }),
         updated_at: z.string().meta({ format: 'date-time' }),

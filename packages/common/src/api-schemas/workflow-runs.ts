@@ -3,7 +3,7 @@
 import { JSONObjectSchema, JSONSchemaSchema, JSONValueSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import type { ActivityTypeDefinition } from '../store/activity-catalog.js';
-import { HistoricalCompactMessageSchema } from './agent-runs.js';
+import { HistoricalCompactMessageSchema, HistoricalInteractionExecutionConfigurationSchema } from './agent-runs.js';
 import { AgentRunStatusSchema, ConversationActivityStateSchema } from './app-lifecycle.js';
 import { WorkflowExecutionStatusSchema } from './document-processing.js';
 import {
@@ -121,16 +121,10 @@ export const WorkflowInteractionVarsSchema = z
 
 /** A Temporal snapshot can outlive the request schema that originally created it. */
 export const HistoricalWorkflowInteractionVarsSchema = z
-    .looseObject({
-        type: z.string(),
-        interaction: z.string(),
-        interactive: z.boolean(),
-        tool_names: z.array(z.string()),
-        config: z.looseObject({
-            environment: z.string().optional(),
-            model: z.string().optional(),
-            model_options: z.looseObject({}).optional(),
-        }),
+    .strictObject({
+        ...WorkflowInteractionVarsSchema.shape,
+        config: HistoricalInteractionExecutionConfigurationSchema,
+        agent_run_id: z.string().optional(),
     })
     .meta({ id: 'HistoricalWorkflowInteractionVars' });
 
@@ -228,7 +222,7 @@ export const WorkflowRunSchema = z
             .boolean()
             .meta({ description: 'Whether this conversation is interactive (accepts user input).' })
             .optional(),
-        memo: z.union([z.looseObject({}), z.null()]).optional(),
+        memo: z.looseObject({}).nullable().optional(),
     })
     .meta({ id: 'WorkflowRun' });
 
@@ -638,7 +632,7 @@ export const WorkflowRunWithDetailsSchema = z
             .meta({ description: 'Whether this conversation is interactive (accepts user input).' })
             .optional(),
         history: WorkflowHistorySchema.optional(),
-        memo: z.union([z.object({}).catchall(z.unknown()), z.null()]).optional(),
+        memo: z.looseObject({}).nullable().optional(),
         pendingActivities: z.array(PendingActivitySchema).optional(),
         children: z.array(WorkflowRunSchema).optional(),
     })

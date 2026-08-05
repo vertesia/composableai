@@ -264,6 +264,10 @@ export type ContentObjectApiResponse = z.infer<typeof ContentObjectApiResponseSc
 
 export type ProjectedContentObjectApiResponse = z.infer<typeof ProjectedContentObjectApiResponseSchema>;
 
+export type FullObjectSearchResponse = Omit<ObjectSearchResponse, 'results'> & {
+    results: ContentObjectItemApiResponse[];
+};
+
 export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
     text_etag?: string;

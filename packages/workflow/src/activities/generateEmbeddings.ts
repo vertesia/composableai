@@ -1,12 +1,12 @@
 import { log } from '@temporalio/activity';
 import { type VertesiaClient, ZenoClientNotFoundError } from '@vertesia/client';
 import {
+    type ContentObject,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
     type EmbeddingsApiResult,
     ImageRenditionFormat,
     type ProjectConfigurationEmbedding,
-    type ProjectedContentObjectApiResponse,
     SupportedEmbeddingTypes,
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
@@ -99,7 +99,7 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         return skipped(`no embedding environment configured for type ${type}`);
     }
 
-    let document: ProjectedContentObjectApiResponse;
+    let document: ContentObject;
     try {
         document = await client.objects.retrieve(objectId, '+text +parts +embeddings +tokens +properties');
     } catch (error) {
@@ -109,11 +109,6 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         throw error;
     }
 
-    if (!document.id) {
-        throw new DocumentNotFoundError('Document not found', [objectId]);
-    }
-    const projectedDocument = { ...document, id: document.id };
-
     let res:
         | Awaited<ReturnType<typeof generateTextEmbeddings>>
         | Awaited<ReturnType<typeof generateImageEmbeddings>>
@@ -122,13 +117,13 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
     try {
         switch (type) {
             case SupportedEmbeddingTypes.text:
-                res = await generateTextEmbeddings({ client, config, document: projectedDocument, type, force });
+                res = await generateTextEmbeddings({ client, config, document, type, force });
                 break;
             case SupportedEmbeddingTypes.properties:
-                res = await generateTextEmbeddings({ client, config, document: projectedDocument, type, force });
+                res = await generateTextEmbeddings({ client, config, document, type, force });
                 break;
             case SupportedEmbeddingTypes.image:
-                res = await generateImageEmbeddings({ client, config, document: projectedDocument, type, force });
+                res = await generateImageEmbeddings({ client, config, document, type, force });
                 break;
             default:
                 res = {
@@ -150,7 +145,7 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
 }
 
 interface ExecuteGenerateEmbeddingsParams {
-    document: ProjectedContentObjectApiResponse & { id: string };
+    document: ContentObject;
     client: VertesiaClient;
     type: SupportedEmbeddingTypes;
     config: ProjectConfigurationEmbedding;

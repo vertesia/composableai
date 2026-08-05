@@ -26,6 +26,7 @@ import {
     type ExportPropertiesPayload,
     type ExportPropertiesResponse,
     type FindPayload,
+    type FullObjectSearchResponse,
     type GetFileUrlPayload,
     type GetFileUrlResponse,
     type GetRenditionParams,
@@ -239,14 +240,18 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Search object — different from find because allow full text search */
+    search(payload: ComplexSearchPayload & { select?: undefined }): Promise<FullObjectSearchResponse>;
+    search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse>;
     search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
         return this.post('/search', {
             payload,
         });
     }
 
-    retrieve(id: string, select: string): Promise<ProjectedContentObjectApiResponse>;
     retrieve(id: string): Promise<ContentObject>;
+    retrieve(id: string, select: `+${string}`): Promise<ContentObject>;
+    retrieve(id: string, select: `+${string}` | undefined): Promise<ContentObject>;
+    retrieve(id: string, select: string): Promise<ProjectedContentObjectApiResponse>;
     retrieve(id: string, select?: string): Promise<ContentObject | ProjectedContentObjectApiResponse> {
         return this.get(`/${id}`, {
             query: {

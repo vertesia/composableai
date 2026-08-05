@@ -140,7 +140,7 @@ export async function chunkDocument(
                     .join('\n');
 
                 const location = () => {
-                    let location = document.location ?? '';
+                    let location = document.location;
                     if (location.endsWith('/')) {
                         location += `${document.name}/${part.type}`;
                     }

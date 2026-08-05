@@ -236,10 +236,10 @@ export const ResourceRefSchema = z
 
 /** Read-side execution configuration for runs created by older model providers and SDKs. */
 export const HistoricalInteractionExecutionConfigurationSchema = z
-    .looseObject({
-        environment: z.string().optional(),
-        model: z.string().optional(),
+    .strictObject({
+        ...InteractionExecutionConfigurationSchema.shape,
         model_options: z.looseObject({}).optional(),
+        http_timeout: z.union([InteractionExecutionConfigurationSchema.shape.http_timeout, z.number()]).optional(),
     })
     .meta({ id: 'HistoricalInteractionExecutionConfiguration' });
 
@@ -801,7 +801,7 @@ export const CompactMessageSchema = z
 
 /** Read-side shape for messages persisted by older workflow versions. */
 export const HistoricalCompactMessageSchema = z
-    .looseObject({
+    .strictObject({
         t: z.number(),
         m: z.string().optional(),
         w: z.string().optional(),

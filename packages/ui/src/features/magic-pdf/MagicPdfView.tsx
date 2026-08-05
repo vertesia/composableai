@@ -1,4 +1,4 @@
-import type { ProjectedContentObjectApiResponse } from '@vertesia/common';
+import type { ContentObject } from '@vertesia/common';
 import {
     Button,
     ErrorBox,
@@ -105,13 +105,11 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
         );
     }
 
-    const projectedObject = { ...object, id: object.id ?? objectId };
-
     return (
         <PdfViewErrorBoundary onClose={onClose}>
             <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-                <MagicPdfProvider object={projectedObject}>
-                    <MagicPdfViewImpl object={projectedObject} onClose={onClose} />
+                <MagicPdfProvider object={object}>
+                    <MagicPdfViewImpl object={object} onClose={onClose} />
                 </MagicPdfProvider>
             </div>
         </PdfViewErrorBoundary>
@@ -119,7 +117,7 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
 }
 
 interface _MagicPdfViewProps {
-    object: ProjectedContentObjectApiResponse & { id: string };
+    object: ContentObject;
     onClose?: () => void;
 }
 function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
