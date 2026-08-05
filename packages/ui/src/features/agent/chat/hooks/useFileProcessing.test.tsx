@@ -215,4 +215,21 @@ describe('useFileProcessing', () => {
         rerender({ refs: new Set(['files/wrong.png']) });
         expect(result.current.processingFiles.has('file-1')).toBe(false);
     });
+
+    it('excludes files marked consumed by the workflow without relying on message history', () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const consumed: ConversationFile = {
+            ...createReadyFile('file-1'),
+            artifact_path: 'files/wrong.png',
+            reference: 'artifact:files/wrong.png',
+            consumed_at: 1_100,
+        };
+
+        const { result } = renderHook(() =>
+            useFileProcessing(client, 'agent-run-1', new Map([['file-1', consumed]]), toast),
+        );
+
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+    });
 });

@@ -599,7 +599,7 @@ describe('useAgentStream', () => {
         expect(result.current.serverFileUpdates.has('file-1')).toBe(false);
     });
 
-    it('does not apply replayed file_processing snapshots to server file updates', async () => {
+    it('hydrates the latest historical file snapshot once and ignores its live replay', async () => {
         let deliver: ((message: AgentMessage) => void) | undefined;
         const fileSnapshot = (timestamp: number, id: string): AgentMessage => ({
             timestamp,
@@ -627,7 +627,8 @@ describe('useAgentStream', () => {
                 error_count: 0,
             },
         });
-        const historical = fileSnapshot(1_000, 'old-upload');
+        const olderHistorical = fileSnapshot(1_000, 'older-upload');
+        const latestHistorical = fileSnapshot(1_100, 'staged-upload');
         const streamMessages = vi.fn<
             (
                 id: string,
@@ -638,20 +639,21 @@ describe('useAgentStream', () => {
             ) => Promise<unknown>
         >(async (_id, onMessage, _since, _signal, options) => {
             deliver = onMessage;
-            options?.onHistoryLoaded?.([historical]);
+            options?.onHistoryLoaded?.([olderHistorical, latestHistorical]);
             // Completed runs replay archived file_processing snapshots through the
-            // live callback; applying them would rehydrate every historical upload
-            // as a staged composer chip on reopen.
-            onMessage?.(historical);
+            // live callback. Replaying the older snapshot must not replace the latest
+            // inventory selected from history.
+            onMessage?.(olderHistorical);
             return null;
         });
         const client = createClient(streamMessages);
         const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
 
         await waitFor(() => expect(deliver).toBeDefined());
-        expect(result.current.serverFileUpdates.size).toBe(0);
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('staged-upload')).toBe(true);
 
-        act(() => deliver?.(fileSnapshot(1_100, 'new-upload')));
+        act(() => deliver?.(fileSnapshot(1_200, 'new-upload')));
         expect(result.current.serverFileUpdates.size).toBe(1);
         expect(result.current.serverFileUpdates.has('new-upload')).toBe(true);
     });

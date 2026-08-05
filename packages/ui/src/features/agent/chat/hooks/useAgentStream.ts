@@ -460,6 +460,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                     onHistoryLoaded: (historical) => {
                         if (abortController.signal.aborted) return;
                         const timelineMessages = historical.filter(shouldStoreTimelineMessage);
+                        let latestFileSnapshot: FileProcessingDetails | undefined;
                         // Advance the watermark synchronously before React processes the
                         // history state update. Some completed streams replay history via
                         // the live callback immediately after onHistoryLoaded returns.
@@ -471,6 +472,18 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                             if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
                                 lastDeliveredTsRef.current = message.timestamp;
                             }
+                            if (message.type === AgentMessageType.SYSTEM) {
+                                const details = message.details as FileProcessingDetails | undefined;
+                                if (details?.system_type === 'file_processing' && details.files) {
+                                    latestFileSnapshot = details;
+                                }
+                            }
+                        }
+                        // Hydrate the latest archived inventory once so an unconsumed staged file
+                        // remains visible after reload. Subsequent live-callback replay is ignored
+                        // by isReplay above, while useFileProcessing filters consumed/delivered files.
+                        if (latestFileSnapshot) {
+                            setServerFileUpdates(new Map(latestFileSnapshot.files.map((file) => [file.id, file])));
                         }
                         debugAgentChat('history loaded', {
                             agentRunId,
