@@ -1,7 +1,32 @@
 import type { VertesiaClient } from '@vertesia/client';
 import { SupportedProviders } from '@vertesia/common';
-import { type AnyAuthClient, GoogleAuth } from 'google-auth-library';
+import { type AnyAuthClient, GoogleAuth, gaxios } from 'google-auth-library';
 import { delay, getProviderUrl } from './common.js';
+
+/** Subset of a GCP Workload Identity Pool we rely on. */
+interface WorkloadIdentityPool {
+    name: string;
+    state?: string;
+}
+
+/** Subset of a GCP Workload Identity Pool Provider we rely on. */
+interface WorkloadIdentityPoolProvider {
+    name: string;
+}
+
+/** Subset of a `google.longrunning.Operation` we rely on. */
+interface LongRunningOperation {
+    name: string;
+    done?: boolean;
+}
+
+/** Subset of a Cloud Resource Manager v1 IAM policy we rely on. */
+interface IamPolicy {
+    bindings: { role: string; members: string[] }[];
+}
+
+/** True when the request failed because the resource does not exist yet. */
+const isNotFound = (error: unknown): boolean => error instanceof gaxios.GaxiosError && error.response?.status === 404;
 
 export const configureVertexAiEnvironment = async (
     vertesia: VertesiaClient,
@@ -49,7 +74,7 @@ export const configureVertexAiEnvironment = async (
     const provider = await getOrCreateProvider(gcp, projectId, poolName, providerName, stsUrl);
 
     // 5. Create policy binding
-    let binding = await gcp.request({
+    const binding = await gcp.request<IamPolicy>({
         url: `https://cloudresourcemanager.googleapis.com/v1/projects/${projectId}:getIamPolicy`,
         method: 'POST',
     });
@@ -61,7 +86,7 @@ export const configureVertexAiEnvironment = async (
         members: [`principal://iam.googleapis.com/${pool.name}/subject/env:${account.id}:${environment.id}`],
     });
 
-    binding = await gcp.request({
+    await gcp.request<IamPolicy>({
         url: `https://cloudresourcemanager.googleapis.com/v1/projects/${projectId}:setIamPolicy`,
         method: 'POST',
         data: {
@@ -85,15 +110,15 @@ export const configureVertexAiEnvironment = async (
 };
 
 const getOrCreatePool = async (gcp: AnyAuthClient, projectId: string, poolName: string) => {
-    let pool: unknown;
+    let pool: WorkloadIdentityPool | undefined;
 
     try {
-        const { data } = await gcp.request({
+        const { data } = await gcp.request<WorkloadIdentityPool>({
             url: `https://iam.googleapis.com/v1/projects/${projectId}/locations/global/workloadIdentityPools/${poolName}`,
         });
         pool = data;
     } catch (error) {
-        if (error.response.status !== 404) {
+        if (!isNotFound(error)) {
             throw error;
         }
     }
@@ -106,7 +131,7 @@ const getOrCreatePool = async (gcp: AnyAuthClient, projectId: string, poolName: 
             throw new Error(`Workload Identity Pool ${poolName} is ${pool.state}. Please check the pool state.`);
         }
     } else {
-        const { data } = await gcp.request({
+        const { data } = await gcp.request<LongRunningOperation>({
             url: `https://iam.googleapis.com/v1/projects/${projectId}/locations/global/workloadIdentityPools`,
             method: 'POST',
             params: {
@@ -125,7 +150,7 @@ const getOrCreatePool = async (gcp: AnyAuthClient, projectId: string, poolName: 
         }
 
         // get pool details
-        const response = await gcp.request({
+        const response = await gcp.request<WorkloadIdentityPool>({
             url: `https://iam.googleapis.com/v1/projects/${projectId}/locations/global/workloadIdentityPools/${poolName}`,
         });
 
@@ -141,15 +166,15 @@ const getOrCreateProvider = async (
     stsUrl?: string,
 ) => {
     // check if provider already exists. if not create it
-    let provider: unknown;
+    let provider: WorkloadIdentityPoolProvider | undefined;
 
     try {
-        const { data } = await gcp.request({
+        const { data } = await gcp.request<WorkloadIdentityPoolProvider>({
             url: `https://iam.googleapis.com/v1/projects/${projectId}/locations/global/workloadIdentityPools/${poolName}/providers/${providerName}`,
         });
         provider = data;
     } catch (error) {
-        if (error.response.status !== 404) {
+        if (!isNotFound(error)) {
             throw error;
         }
     }
@@ -158,7 +183,7 @@ const getOrCreateProvider = async (
         console.log('Identity Provider already exists. Skipping creation.');
         return provider;
     } else {
-        const { data } = await gcp.request({
+        const { data } = await gcp.request<LongRunningOperation>({
             url: `https://iam.googleapis.com/v1/projects/${projectId}/locations/global/workloadIdentityPools/${poolName}/providers`,
             method: 'POST',
             params: {
@@ -186,7 +211,7 @@ const getOrCreateProvider = async (
         }
 
         // get provider details
-        const response = await gcp.request({
+        const response = await gcp.request<WorkloadIdentityPoolProvider>({
             url: `https://iam.googleapis.com/v1/projects/${projectId}/locations/global/workloadIdentityPools/${poolName}/providers/${providerName}`,
         });
 
@@ -201,10 +226,10 @@ const waitForOperation = async (gcp: AnyAuthClient, operationName: string) => {
     do {
         await delay(pause);
         pause = pause * 2;
-        const response = await gcp.request({
+        const response = await gcp.request<LongRunningOperation>({
             url: `https://iam.googleapis.com/v1/${operationName}`,
         });
-        status = response.data.done;
+        status = response.data.done ?? false;
     } while (tries < 5 && !status);
     return status;
 };

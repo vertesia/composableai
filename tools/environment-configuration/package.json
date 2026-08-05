@@ -24,6 +24,7 @@
     "dependencies": {
         "@aws-sdk/client-iam": "^3.1093.0",
         "@vertesia/client": "1.4.1",
+        "@vertesia/common": "1.4.1",
         "commander": "^15.0.0",
         "dotenv": "^17.4.2",
         "google-auth-library": "^10.9.1"

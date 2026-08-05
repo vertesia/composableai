@@ -33,6 +33,9 @@ importers:
       '@vertesia/client':
         specifier: 1.4.1
         version: 1.4.1
+      '@vertesia/common':
+        specifier: 1.4.1
+        version: 1.4.1
       commander:
         specifier: ^15.0.0
         version: 15.0.0
