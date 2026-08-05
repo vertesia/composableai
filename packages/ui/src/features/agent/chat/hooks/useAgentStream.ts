@@ -477,6 +477,7 @@ export function useAgentStream(
                         if (abortController.signal.aborted) return;
                         const timelineMessages = historical.filter(shouldStoreTimelineMessage);
                         let latestFileSnapshot: FileProcessingDetails | undefined;
+                        let latestFileSnapshotTs = Number.NEGATIVE_INFINITY;
                         // Advance the watermark synchronously before React processes the
                         // history state update. Some completed streams replay history via
                         // the live callback immediately after onHistoryLoaded returns.
@@ -491,7 +492,15 @@ export function useAgentStream(
                             if (message.type === AgentMessageType.SYSTEM) {
                                 const details = message.details as FileProcessingDetails | undefined;
                                 if (details?.system_type === 'file_processing' && details.files) {
-                                    latestFileSnapshot = details;
+                                    // GET /updates is returned unsorted (the client only ever
+                                    // takes a Math.max over timestamps), so select the newest
+                                    // snapshot by timestamp instead of trusting arrival order.
+                                    // >= keeps last-wins for ties and for untimestamped messages.
+                                    const timestamp = message.timestamp ?? Number.NEGATIVE_INFINITY;
+                                    if (!latestFileSnapshot || timestamp >= latestFileSnapshotTs) {
+                                        latestFileSnapshot = details;
+                                        latestFileSnapshotTs = timestamp;
+                                    }
                                 }
                             }
                         }
