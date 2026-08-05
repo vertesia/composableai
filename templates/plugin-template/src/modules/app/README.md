@@ -13,7 +13,10 @@ src/modules/app/
 │   └── hooks/            # Optional app-specific hooks
 └── resources/
     ├── activities/
+    ├── dashboards/
+    ├── hooks/
     ├── interactions/
+    ├── mcp/
     ├── processes/
     ├── skills/
     ├── templates/
@@ -64,3 +67,7 @@ Redirecting keeps the target module's internal navigation consistent with its pr
 
 Add definitions to the matching folder under `src/modules/app/resources/` and export them from that
 folder's `index.ts`. The module codegen collects these exports into the tool server package.
+
+The tool-server bootstrap only exposes generated module contributions. When introducing a new contribution type,
+add its typed empty default to this app module and update the template codegen `SERVER_RESOURCES` list; do not add an
+app-owned registry directly under `src/tool-server/`.

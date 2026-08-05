@@ -69,7 +69,14 @@ export interface AppLifecycleHookResult {
 // biome-ignore lint/suspicious/noConfusingVoidType: lifecycle hooks may complete without a response body.
 export type AppLifecycleHook = (context: AppLifecycleHookContext) => Promise<void | AppLifecycleHookResult>;
 
-export type AppLifecycleHooks = Partial<Record<AppLifecycleHookName, AppLifecycleHook>>;
+export interface AppLifecycleHookDefinition {
+    kind: 'lifecycle';
+    name: AppLifecycleHookName;
+    handler: AppLifecycleHook;
+}
+
+/** App-owned hook definitions aggregated from active application modules. */
+export type AppHookDefinition = AppLifecycleHookDefinition;
 
 export interface AppLifecycleHookPayload {
     metadata?: ToolExecutionMetadata;

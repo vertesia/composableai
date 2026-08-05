@@ -2,7 +2,9 @@ import type { ToolServerConfig } from '@vertesia/tools-sdk';
 import {
     activities,
     dashboards,
+    hooks,
     interactions,
+    mcpProviders,
     processes,
     skills,
     templates,
@@ -10,8 +12,6 @@ import {
     types,
     views,
 } from './app-server-modules.js';
-import { hooks } from './hooks/index.js';
-import { mcpProviders } from './mcp/index.js';
 import settingsSchema from './settings.js';
 import uiNavItems from './ui-nav-items.js';
 

@@ -75,9 +75,7 @@ describe('buildAppPackage', () => {
                 src: '/lib/plugin.js',
                 available_in: ['app_portal'],
             },
-            hooks: {
-                install: async () => undefined,
-            },
+            hooks: [{ kind: 'lifecycle', name: 'install', handler: async () => undefined }],
         } satisfies ToolServerConfig;
 
         const pkg = await buildAppPackage(config, {
@@ -123,10 +121,10 @@ describe('buildAppPackage', () => {
                     interactions: [{ name: 'review', prompts: [] }],
                 }),
             ],
-            hooks: {
-                install: async () => undefined,
-                uninstall: async () => undefined,
-            },
+            hooks: [
+                { kind: 'lifecycle', name: 'install', handler: async () => undefined },
+                { kind: 'lifecycle', name: 'uninstall', handler: async () => undefined },
+            ],
         } satisfies ToolServerConfig;
 
         const pkg = await buildAppPackage(config, { scope: 'hooks' });

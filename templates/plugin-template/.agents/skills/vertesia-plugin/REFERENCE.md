@@ -14,10 +14,10 @@ For resource creation code examples (tools, skills, interactions, types, templat
 ## Application lifecycle hooks
 
 Service apps can run authenticated setup or cleanup logic when Studio installs or uninstalls them. Hook code lives in
-`src/tool-server/hooks/` and is registered through `src/tool-server/hooks/index.ts`.
+`src/modules/app/resources/hooks/` and is aggregated with the other active module resources.
 
 ```typescript
-// src/tool-server/hooks/install.ts
+// src/modules/app/resources/hooks/install.ts
 import type { AppLifecycleHook } from '@vertesia/tools-sdk';
 
 export const install = (async (context) => {
@@ -32,11 +32,13 @@ export const install = (async (context) => {
 ```
 
 ```typescript
-// src/tool-server/hooks/index.ts
-import type { AppLifecycleHooks } from '@vertesia/tools-sdk';
+// src/modules/app/resources/hooks/index.ts
+import type { AppHookDefinition } from '@vertesia/tools-sdk';
 import { install } from './install.js';
 
-export const hooks = { install } satisfies AppLifecycleHooks;
+export const hooks = [
+    { kind: 'lifecycle', name: 'install', handler: install },
+] satisfies AppHookDefinition[];
 ```
 
 The hook context exposes the authenticated token payload, `getClient()`, and metadata including `app_install_id` and

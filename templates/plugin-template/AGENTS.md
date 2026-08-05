@@ -86,7 +86,10 @@ src/modules/app/                              ← user-owned app module
 │   └── features/<name>/
 └── resources/
     ├── activities/
+    ├── dashboards/
+    ├── hooks/
     ├── interactions/
+    ├── mcp/
     ├── skills/
     ├── templates/
     ├── tools/
@@ -104,7 +107,7 @@ Rules of thumb:
 
 - ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
 - Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
-- User collections must be exported from `src/modules/app/resources/<type>/index.ts`
+- User contributions must be exported from `src/modules/app/resources/<type>/index.ts`
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files
@@ -135,7 +138,7 @@ read real objects; seeding is a build/test concern.
 Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
 
 - **Import hooks are server-build only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
-- **Must export from module resource indexes**: a collection that isn't added to `src/modules/app/resources/<type>/index.ts` won't be served.
+- **Must export from module resource indexes**: a contribution that isn't added to `src/modules/app/resources/<type>/index.ts` won't be served. New contribution types also need an empty app-module default and must be added to the codegen `SERVER_RESOURCES` list so generated `src/tool-server/app-server-modules.ts` includes them.
 - **Generated wiring is not user code**: do not hand-edit `src/tool-server/app-server-modules.ts`, `src/ui/app-ui-modules.tsx`, or `src/ui/app-ui-entry.tsx`; change module resource/route/provider exports instead.
 - **`Input.onChange` takes the value directly** (`onChange={setValue}`), not a React event — `Textarea` uses standard events.
 

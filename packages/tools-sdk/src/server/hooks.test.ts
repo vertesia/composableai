@@ -20,7 +20,10 @@ describe('app lifecycle hooks', () => {
 
     it('executes a registered hook with authenticated context and metadata', async () => {
         const install = vi.fn(async (_context: AppLifecycleHookContext) => ({ message: 'installed' }));
-        const app = createToolServer({ disableHtml: true, hooks: { install } });
+        const app = createToolServer({
+            disableHtml: true,
+            hooks: [{ kind: 'lifecycle', name: 'install', handler: install }],
+        });
 
         const response = await app.request('/api/hooks/install', {
             method: 'POST',
@@ -49,5 +52,19 @@ describe('app lifecycle hooks', () => {
 
         expect(response.status).toBe(404);
         expect(authorizeMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects duplicate lifecycle hook registrations', () => {
+        const handler = vi.fn(async () => undefined);
+
+        expect(() =>
+            createToolServer({
+                disableHtml: true,
+                hooks: [
+                    { kind: 'lifecycle', name: 'install', handler },
+                    { kind: 'lifecycle', name: 'install', handler },
+                ],
+            }),
+        ).toThrow('Duplicate app lifecycle hook: install');
     });
 });

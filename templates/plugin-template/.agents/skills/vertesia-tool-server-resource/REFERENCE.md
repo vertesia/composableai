@@ -372,11 +372,11 @@ export const MyTemplates = new RenderingTemplateCollection({
 
 ## Application lifecycle hooks
 
-Lifecycle hooks are authenticated server handlers, not resource collections. Use them when installation must initialize
-project data or uninstallation must clean it up. Keep install hooks idempotent because they may be invoked again for
-recovery or reinstallation.
+Lifecycle hooks are authenticated server handlers, not resource collections. They remain app-owned module
+contributions. Use them when installation must initialize project data or uninstallation must clean it up. Keep install
+hooks idempotent because they may be invoked again for recovery or reinstallation.
 
-### `src/tool-server/hooks/install.ts`
+### `src/modules/app/resources/hooks/install.ts`
 
 ```typescript
 import type { AppLifecycleHook } from "@vertesia/tools-sdk";
@@ -394,16 +394,18 @@ export const install = (async (context) => {
 }) satisfies AppLifecycleHook;
 ```
 
-An uninstall hook has the same signature and belongs in `src/tool-server/hooks/uninstall.ts`.
+An uninstall hook has the same signature and belongs in `src/modules/app/resources/hooks/uninstall.ts`.
 
 ### Registration
 
 ```typescript
-// src/tool-server/hooks/index.ts
-import type { AppLifecycleHooks } from "@vertesia/tools-sdk";
+// src/modules/app/resources/hooks/index.ts
+import type { AppHookDefinition } from "@vertesia/tools-sdk";
 import { install } from "./install.js";
 
-export const hooks = { install } satisfies AppLifecycleHooks;
+export const hooks = [
+    { kind: "lifecycle", name: "install", handler: install },
+] satisfies AppHookDefinition[];
 ```
 
 Registered hooks are exposed as authenticated POST endpoints at `/api/hooks/install` and `/api/hooks/uninstall`. The

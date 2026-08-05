@@ -13,10 +13,16 @@ export const dashboards = [
     ...examplesResources.dashboards,
     ...contentAppResources.dashboards,
 ];
+export const hooks = [...appResources.hooks, ...examplesResources.hooks, ...contentAppResources.hooks];
 export const interactions = [
     ...appResources.interactions,
     ...examplesResources.interactions,
     ...contentAppResources.interactions,
+];
+export const mcpProviders = [
+    ...appResources.mcpProviders,
+    ...examplesResources.mcpProviders,
+    ...contentAppResources.mcpProviders,
 ];
 export const processes = [...appResources.processes, ...examplesResources.processes, ...contentAppResources.processes];
 export const skills = [...appResources.skills, ...examplesResources.skills, ...contentAppResources.skills];

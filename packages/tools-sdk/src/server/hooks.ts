@@ -3,6 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { authorize } from '../auth.js';
 import type {
     AppLifecycleHookContext,
+    AppLifecycleHookDefinition,
     AppLifecycleHookName,
     AppLifecycleHookPayload,
     AppLifecycleHookResult,
@@ -12,13 +13,24 @@ import type { ToolContext, ToolServerConfig } from './types.js';
 const HOOK_NAMES = new Set<AppLifecycleHookName>(['install', 'uninstall']);
 
 export function createHooksRoute(app: Hono, basePath: string, config: ToolServerConfig) {
+    const hooks = new Map<AppLifecycleHookName, AppLifecycleHookDefinition>();
+    for (const hook of config.hooks ?? []) {
+        if (!HOOK_NAMES.has(hook.name)) {
+            throw new Error(`Unknown app lifecycle hook: ${hook.name}`);
+        }
+        if (hooks.has(hook.name)) {
+            throw new Error(`Duplicate app lifecycle hook: ${hook.name}`);
+        }
+        hooks.set(hook.name, hook);
+    }
+
     app.post(`${basePath}/:name`, async (c: Context) => {
         const name = c.req.param('name') as AppLifecycleHookName;
         if (!HOOK_NAMES.has(name)) {
             throw new HTTPException(404, { message: `Unknown app lifecycle hook: ${name}` });
         }
 
-        const hook = config.hooks?.[name];
+        const hook = hooks.get(name);
         if (!hook) {
             throw new HTTPException(404, { message: `App lifecycle hook is not registered: ${name}` });
         }
@@ -33,7 +45,7 @@ export function createHooksRoute(app: Hono, basePath: string, config: ToolServer
             getClient: () => session.getClient(),
             metadata,
         };
-        const result = await hook(context);
+        const result = await hook.handler(context);
 
         return c.json({ ok: true, ...(result ?? {}) } satisfies { ok: true } & AppLifecycleHookResult);
     });

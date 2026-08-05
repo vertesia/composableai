@@ -4,6 +4,8 @@ export { processes } from './processes/index.js';
 export { types } from './types/index.js';
 
 export const activities = [];
+export const hooks = [];
+export const mcpProviders = [];
 export const skills = [];
 export const templates = [];
 export const tools = [];

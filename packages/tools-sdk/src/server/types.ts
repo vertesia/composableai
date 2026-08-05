@@ -14,7 +14,7 @@ import type { InteractionCollection } from '../InteractionCollection.js';
 import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
 import type { SkillCollection } from '../SkillCollection.js';
 import type { ToolCollection } from '../ToolCollection.js';
-import type { AppLifecycleHooks, MCPConnectionDetails, ToolExecutionPayload } from '../types.js';
+import type { AppHookDefinition, MCPConnectionDetails, ToolExecutionPayload } from '../types.js';
 
 /**
  * Extended context with parsed payload for tool/skill execution
@@ -92,8 +92,8 @@ export interface ToolServerConfig {
      */
     mcpProviders?: MCPProviderConfig[];
 
-    /** Authenticated application lifecycle hooks. */
-    hooks?: AppLifecycleHooks;
+    /** Authenticated application hooks aggregated from active application modules. */
+    hooks?: AppHookDefinition[];
 
     /**
      * A JSON schema defining settings for the application using this server

@@ -160,10 +160,13 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
     },
     async hooks(pkg: AppPackage, config: ToolServerConfig) {
         const prefix = config.prefix || '/api';
-        if (config.hooks?.install || config.hooks?.uninstall) {
+        const lifecycleHooks = new Set(
+            (config.hooks ?? []).filter((hook) => hook.kind === 'lifecycle').map((hook) => hook.name),
+        );
+        if (lifecycleHooks.size > 0) {
             pkg.hooks = {
-                ...(config.hooks.install && { install: `${prefix}/hooks/install` }),
-                ...(config.hooks.uninstall && { uninstall: `${prefix}/hooks/uninstall` }),
+                ...(lifecycleHooks.has('install') && { install: `${prefix}/hooks/install` }),
+                ...(lifecycleHooks.has('uninstall') && { uninstall: `${prefix}/hooks/uninstall` }),
             };
         }
     },
