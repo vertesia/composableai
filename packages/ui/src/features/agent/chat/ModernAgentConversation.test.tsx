@@ -343,6 +343,19 @@ describe('ModernAgentConversation send handling', () => {
         await waitFor(() => expect(onAgentWorkingChange).toHaveBeenLastCalledWith(false));
     });
 
+    it('shows the latest main-workstream error in the failed workflow box', () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ERROR, 'Workflow failed: provider request timed out')],
+            agentRunStatus: 'FAILED',
+        });
+
+        renderConversation({ hideMessageInput: false });
+
+        expect(screen.getByText('Failed')).not.toBeNull();
+        expect(screen.getByText('Workflow failed: provider request timed out')).not.toBeNull();
+        expect(screen.queryByText('This Workflow is FAILED')).toBeNull();
+    });
+
     it('provides its resourceResolver prop to conversation content', () => {
         mockStreamState({ messages: [createMessage(AgentMessageType.COMPLETE, 'done')] });
 
