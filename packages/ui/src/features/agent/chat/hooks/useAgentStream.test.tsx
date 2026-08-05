@@ -598,4 +598,61 @@ describe('useAgentStream', () => {
 
         expect(result.current.serverFileUpdates.has('file-1')).toBe(false);
     });
+
+    it('does not apply replayed file_processing snapshots to server file updates', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const fileSnapshot = (timestamp: number, id: string): AgentMessage => ({
+            timestamp,
+            workflow_run_id: 'run-1',
+            type: AgentMessageType.SYSTEM,
+            message: '',
+            workstream_id: 'main',
+            details: {
+                system_type: 'file_processing',
+                batch_id: 'batch-1',
+                files: [
+                    {
+                        id,
+                        name: `${id}.pdf`,
+                        content_type: 'application/pdf',
+                        size: 1,
+                        status: FileProcessingStatus.READY,
+                        artifact_path: `files/${id}.pdf`,
+                        reference: `artifact:files/${id}.pdf`,
+                        started_at: timestamp,
+                    },
+                ],
+                pending_count: 0,
+                ready_count: 1,
+                error_count: 0,
+            },
+        });
+        const historical = fileSnapshot(1_000, 'old-upload');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([historical]);
+            // Completed runs replay archived file_processing snapshots through the
+            // live callback; applying them would rehydrate every historical upload
+            // as a staged composer chip on reopen.
+            onMessage?.(historical);
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        expect(result.current.serverFileUpdates.size).toBe(0);
+
+        act(() => deliver?.(fileSnapshot(1_100, 'new-upload')));
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('new-upload')).toBe(true);
+    });
 });
