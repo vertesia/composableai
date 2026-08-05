@@ -1,9 +1,4 @@
-import type {
-    ContentObject,
-    DSLActivityExecutionPayload,
-    DSLActivitySpec,
-    ProjectedContentObjectApiResponse,
-} from '@vertesia/common';
+import type { DSLActivityExecutionPayload, DSLActivitySpec, ProjectedContentObjectApiResponse } from '@vertesia/common';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../errors.js';
@@ -16,7 +11,9 @@ export interface GetObject extends DSLActivitySpec<GetObjectParams> {
     name: 'getObject';
 }
 
-type RetrievedContentObject = ContentObject | ProjectedContentObjectApiResponse;
+type RetrievedContentObject = Omit<ProjectedContentObjectApiResponse, 'metadata'> & {
+    metadata?: unknown;
+};
 
 function mergeProjection<T extends object>(object: T, projection: Partial<T>): T {
     return { ...object, ...projection };

@@ -160,7 +160,9 @@ export function useSmartFileUploadProcessing() {
                             query,
                             select: 'id content.etag',
                         };
-                        res = await client.store.objects.find(payload);
+                        res = (await client.store.objects.find(payload)).filter(
+                            (doc): doc is ExistingHashMatch => typeof doc.id === 'string',
+                        );
                     }
 
                     for (const doc of res) {
