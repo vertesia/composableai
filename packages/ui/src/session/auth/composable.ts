@@ -1,7 +1,12 @@
 /**
  * Handle client caching and refresh of auth token
  */
-import { type AuthTokenPayload, RESTRICTED_ENVIRONMENT_ERROR_CODE } from '@vertesia/common';
+import {
+    type AuthTokenPayload,
+    NO_ACCESSIBLE_ACCOUNT_ERROR_CODE,
+    REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE,
+    RESTRICTED_ENVIRONMENT_ERROR_CODE,
+} from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
@@ -15,8 +20,12 @@ function clearRejectedPersistedScope(accountId?: string, projectId?: string) {
 
     const projectKey = `${LastSelectedProjectId_KEY}-${accountId}`;
     if (projectId) {
-        if (localStorage.getItem(projectKey) === projectId) {
+        const persistedProjectMatches = localStorage.getItem(projectKey) === projectId;
+        if (persistedProjectMatches) {
             localStorage.removeItem(projectKey);
+        }
+        if (persistedProjectMatches && localStorage.getItem(LastSelectedAccountId_KEY) === accountId) {
+            localStorage.removeItem(LastSelectedAccountId_KEY);
         }
         return;
     }
@@ -32,6 +41,24 @@ interface ComposableTokenResponse {
     token: AuthTokenPayload;
     error: boolean;
     message?: string;
+}
+
+export interface AuthenticatedIdentity {
+    email: string;
+    name?: string;
+}
+
+function identityFromAcceptedToken(token: string): AuthenticatedIdentity | undefined {
+    try {
+        const payload = jwtDecode<{ email?: unknown; name?: unknown }>(token);
+        if (typeof payload.email !== 'string' || !payload.email) return undefined;
+        return {
+            email: payload.email,
+            name: typeof payload.name === 'string' && payload.name ? payload.name : undefined,
+        };
+    } catch {
+        return undefined;
+    }
 }
 
 export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
@@ -142,7 +169,9 @@ export async function fetchComposableToken(
                     error: error,
                 },
             });
-            throw new STSError('Failed to call STS endpoint', stsEndpoint);
+            throw new AuthenticationServiceError('The authentication service could not be reached', stsEndpoint, {
+                cause: error,
+            });
         });
 
         if (idToken && stsRes?.status === 404) {
@@ -239,15 +268,20 @@ export async function fetchComposableToken(
             throw new UserNotFoundError('User not found', idTokenDecoded.email);
         }
 
+        if (stsRes.status === 401) {
+            Env.logger.warn('STS rejected the identity credential', {
+                vertesia: { account_id: accountId, project_id: projectId, status: stsRes.status },
+            });
+            throw new CredentialError('Your sign-in credentials could not be verified', stsEndpoint, {
+                status: stsRes.status,
+            });
+        }
+
         if (stsRes.status === 403) {
-            // Distinguish the "restricted environment" rejection (preview/preprod gated to
-            // early-access users) from the account-access 403 handled below. The STS tags it
-            // with a machine-readable business error code. Peek a clone so the body stays
-            // readable for the fall-through path.
-            const body = await stsRes
-                .clone()
-                .json()
-                .catch(() => undefined);
+            const body = (await stsRes.json().catch(() => undefined)) as
+                | { errorCode?: string; message?: string }
+                | undefined;
+            const identity = identityFromAcceptedToken(idToken);
             if (body?.errorCode === RESTRICTED_ENVIRONMENT_ERROR_CODE) {
                 Env.logger.warn('403: User lacks early-access for this restricted environment', {
                     vertesia: {
@@ -260,16 +294,46 @@ export async function fetchComposableToken(
                 );
             }
 
-            const responseMessage = await stsRes.text();
-            Env.logger.warn('STS rejected the requested account or project', {
+            if (body?.errorCode === NO_ACCESSIBLE_ACCOUNT_ERROR_CODE) {
+                Env.logger.warn('STS identity has no accessible account', {
+                    vertesia: { error_code: body.errorCode, status: stsRes.status },
+                });
+                throw new NoAccessibleAccountError(stsEndpoint, body.message, identity);
+            }
+
+            // During rolling deployment an older STS may return an uncoded user-token 403.
+            // Treat it as a requested-scope rejection; all calls in this function issue user tokens.
+            if (!body?.errorCode || body.errorCode === REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE) {
+                Env.logger.warn('STS rejected the requested account or project', {
+                    vertesia: {
+                        account_id: accountId,
+                        project_id: projectId,
+                        status: stsRes.status,
+                        error_code: body?.errorCode ?? REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE,
+                    },
+                });
+                throw new RequestedScopeUnavailableError(
+                    stsEndpoint,
+                    accountId,
+                    projectId,
+                    body?.errorCode ? body.message : undefined,
+                    identity,
+                );
+            }
+
+            Env.logger.error('STS returned an unrecognized forbidden response', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
                     status: stsRes.status,
-                    error: responseMessage,
+                    error_code: body.errorCode,
                 },
             });
-            throw new TokenAuthorizationError(stsEndpoint, accountId, projectId, responseMessage);
+            throw new AuthenticationServiceError('The authentication service rejected the request', stsEndpoint, {
+                status: stsRes.status,
+                errorCode: body.errorCode,
+                cause: body,
+            });
         }
 
         if (!stsRes.ok) {
@@ -283,7 +347,10 @@ export async function fetchComposableToken(
                     project_id: projectId,
                 },
             });
-            throw new Error(`Failed to get token from STS: ${stsRes.status}`);
+            throw new AuthenticationServiceError('The authentication service could not complete sign-in', stsEndpoint, {
+                status: stsRes.status,
+                cause: errorText,
+            });
         }
 
         const { token } = await stsRes.json();
@@ -300,11 +367,7 @@ export async function fetchComposableToken(
             throw error;
         }
 
-        // Clear any stale account/project from localStorage on error
-        localStorage.removeItem(LastSelectedAccountId_KEY);
-        if (accountId) {
-            localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
-        }
+        if (error instanceof Error && error.message === 'Customer-domain user requires an invite to join') throw error;
         console.error('Failed to get composable token from STS', error);
         Env.logger.error('Failed to get composable token from STS', {
             vertesia: {
@@ -313,7 +376,9 @@ export async function fetchComposableToken(
                 error: error,
             },
         });
-        throw new Error('Failed to get composable token', { cause: error });
+        throw new AuthenticationServiceError('The authentication service could not complete sign-in', stsEndpoint, {
+            cause: error,
+        });
     }
 }
 
@@ -354,7 +419,9 @@ export async function getComposableToken(
     forceRefresh = false,
     useInternalAuth = false,
 ): Promise<ComposableTokenResponse> {
-    const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
+    const selectedAccount =
+        accountId ??
+        (projectId === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
     const selectedProject =
         projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined;
     const devAuthToken = Env.isLocalDev ? Env.devAuthToken : undefined;
@@ -404,10 +471,16 @@ export async function getComposableToken(
             AUTH_TOKEN_RAW = devAuthToken;
         }
     } catch (error: unknown) {
-        if (error instanceof TokenAuthorizationError) {
+        if (
+            error instanceof RequestedScopeUnavailableError ||
+            error instanceof NoAccessibleAccountError ||
+            error instanceof CredentialError
+        ) {
             AUTH_TOKEN_RAW = undefined;
             AUTH_TOKEN = undefined;
-            clearRejectedPersistedScope(selectedAccount, selectedProject);
+            if (error instanceof RequestedScopeUnavailableError) {
+                clearRejectedPersistedScope(selectedAccount, selectedProject);
+            }
         }
         throw error;
     }
@@ -449,23 +522,88 @@ export class UserNotFoundError extends Error {
 
 export class STSError extends Error {
     stsURL: string;
-    constructor(message: string, stsURL: string) {
-        super(message);
+    readonly status?: number;
+    readonly errorCode?: string;
+    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number; errorCode?: string }) {
+        super(message, options);
         this.name = 'STSError';
         this.stsURL = stsURL;
+        this.status = options?.status;
+        this.errorCode = options?.errorCode;
     }
 }
 
-export class TokenAuthorizationError extends STSError {
+export type RequestedScopeKind = 'account' | 'project';
+export type AuthSelectorSource = 'url' | 'persisted';
+
+export class RequestedScopeUnavailableError extends STSError {
+    requestedScope: RequestedScopeKind;
+    selectorSource?: AuthSelectorSource;
+    recoveryUrl?: string;
+
     constructor(
         stsURL: string,
         public readonly accountId?: string,
         public readonly projectId?: string,
-        public readonly responseMessage?: string,
+        responseMessage?: string,
+        public readonly identity?: AuthenticatedIdentity,
     ) {
-        super('Access denied for the selected account or project', stsURL);
-        this.name = 'TokenAuthorizationError';
+        super(responseMessage ?? 'The requested account or project is not available.', stsURL, {
+            status: 403,
+            errorCode: REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE,
+        });
+        this.name = 'RequestedScopeUnavailableError';
+        this.requestedScope = projectId ? 'project' : 'account';
     }
+}
+
+/** @deprecated Use RequestedScopeUnavailableError. */
+export const TokenAuthorizationError = RequestedScopeUnavailableError;
+/** @deprecated Use RequestedScopeUnavailableError. */
+export type TokenAuthorizationError = RequestedScopeUnavailableError;
+
+export class NoAccessibleAccountError extends STSError {
+    constructor(
+        stsURL: string,
+        responseMessage?: string,
+        public readonly identity?: AuthenticatedIdentity,
+    ) {
+        super(responseMessage ?? 'No accessible account is available for this user.', stsURL, {
+            status: 403,
+            errorCode: NO_ACCESSIBLE_ACCOUNT_ERROR_CODE,
+        });
+        this.name = 'NoAccessibleAccountError';
+    }
+}
+
+export class CredentialError extends STSError {
+    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number; errorCode?: string }) {
+        super(message, stsURL, options);
+        this.name = 'CredentialError';
+    }
+}
+
+export class AuthenticationServiceError extends STSError {
+    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number; errorCode?: string }) {
+        super(message, stsURL, options);
+        this.name = 'AuthenticationServiceError';
+    }
+}
+
+export function isRequestedScopeUnavailableError(error: unknown): error is RequestedScopeUnavailableError {
+    return error instanceof RequestedScopeUnavailableError;
+}
+
+export function isNoAccessibleAccountError(error: unknown): error is NoAccessibleAccountError {
+    return error instanceof NoAccessibleAccountError;
+}
+
+export function isCredentialError(error: unknown): error is CredentialError {
+    return error instanceof CredentialError;
+}
+
+export function isAuthenticationServiceError(error: unknown): error is AuthenticationServiceError {
+    return error instanceof AuthenticationServiceError;
 }
 
 /**

@@ -65,6 +65,7 @@ const SIGNIN_STEP_BUTTON_VARIANTS = {
 
 interface SignInStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: keyof typeof SIGNIN_STEP_BUTTON_VARIANTS;
+    ref?: Ref<HTMLButtonElement>;
 }
 
 /** Button used across the sign-in steps. */

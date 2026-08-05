@@ -2091,6 +2091,7 @@ const STS_SCHEMAS = {
     ServiceAccountTokenRequest: StsSchemas.ServiceAccountTokenRequestSchema,
     IssueTokenRequest: StsSchemas.IssueTokenRequestSchema,
     IssueTokenResponse: StsSchemas.IssueTokenResponseSchema,
+    IssueTokenForbiddenResponse: StsSchemas.IssueTokenForbiddenResponseSchema,
     IssueTokenUnavailableResponse: StsSchemas.IssueTokenUnavailableResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
@@ -2238,6 +2239,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentTokenRequest',
     'ServiceAccountTokenRequest',
     'IssueTokenResponse',
+    'IssueTokenForbiddenResponse',
     'IssueTokenUnavailableResponse',
     'ApiKeyListQuery',
     // These payloads previously referenced closed generated utility components. They now own their
