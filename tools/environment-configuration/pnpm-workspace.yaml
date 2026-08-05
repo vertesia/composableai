@@ -1,5 +1,7 @@
 packages:
   - "."
+catalog:
+  typescript: "7.0.2"
 overrides:
   "@types/node": "^24.13.3"
   "minimatch@>=3.0.0 <4.0.0": "legacy-v3"
