@@ -22,19 +22,17 @@ describe('collectDeliveredArtifactRefs', () => {
         expect(refs).toEqual(new Set(['artifact:files/report.pdf', 'files/report.pdf']));
     });
 
-    it.each([
-        'sending',
-        'received',
-        'consumed',
-        'failed',
-    ] as const)('ignores optimistic messages with %s delivery status', (_deliveryStatus) => {
-        const refs = collectDeliveredArtifactRefs([
-            question('Review this.\n\nUploaded artifacts:\n[report.pdf](artifact:files/report.pdf)', {
-                _optimistic: true,
-                _deliveryStatus,
-            }),
-        ]);
+    it.each(['sending', 'received', 'consumed', 'failed'] as const)(
+        'ignores optimistic messages with %s delivery status',
+        (_deliveryStatus) => {
+            const refs = collectDeliveredArtifactRefs([
+                question('Review this.\n\nUploaded artifacts:\n[report.pdf](artifact:files/report.pdf)', {
+                    _optimistic: true,
+                    _deliveryStatus,
+                }),
+            ]);
 
-        expect(refs).toEqual(new Set());
-    });
+            expect(refs).toEqual(new Set());
+        },
+    );
 });
