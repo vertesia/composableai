@@ -188,4 +188,31 @@ describe('useFileProcessing', () => {
             vi.unstubAllGlobals();
         }
     });
+
+    it('excludes files already delivered via a sent message (survives reload)', () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const delivered: ConversationFile = {
+            ...createReadyFile('file-1'),
+            artifact_path: 'files/wrong.png',
+            reference: 'artifact:files/wrong.png',
+        };
+        const serverFileUpdates = new Map([['file-1', delivered]]);
+
+        // No delivered refs → the file shows as a pending composer attachment.
+        const { result, rerender } = renderHook(
+            ({ refs }: { refs: Set<string> | undefined }) =>
+                useFileProcessing(client, 'agent-run-1', serverFileUpdates, toast, refs),
+            { initialProps: { refs: undefined as Set<string> | undefined } },
+        );
+        expect(result.current.processingFiles.has('file-1')).toBe(true);
+
+        // Once its artifact reference appears in message history, it is excluded — matching by
+        // either the full `artifact:` reference or the bare path.
+        rerender({ refs: new Set(['artifact:files/wrong.png']) });
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+
+        rerender({ refs: new Set(['files/wrong.png']) });
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+    });
 });
