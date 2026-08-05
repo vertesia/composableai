@@ -787,9 +787,23 @@ export const ContentObjectApiResponseSchema = z
         parts_etag: z.string().optional(),
         transcript: z.looseObject({}).optional(),
         security: StringArrayMapSchema.optional(),
+        sensitivity: z.number().optional(),
+        compartments: z.array(z.string()).optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectApiResponse' });
+
+/**
+ * Read shape for field-projected objects. Projection intentionally changes requiredness without
+ * weakening the full object or any create/update payload.
+ */
+export const ProjectedContentObjectApiResponseSchema = ContentObjectApiResponseSchema.partial()
+    .catchall(z.unknown())
+    .meta({ id: 'ProjectedContentObjectApiResponse' });
+
+export const ProjectedContentObjectApiResponseArraySchema = z
+    .array(ProjectedContentObjectApiResponseSchema)
+    .meta({ id: 'ProjectedContentObjectApiResponseArray' });
 
 export const ComputeObjectFacetPayloadSchema = z
     .strictObject({
@@ -828,6 +842,16 @@ export const ContentObjectItemApiResponseSchema = z
         is_locked: z.boolean().optional(),
         score: z.number().optional(),
         user_permissions: ContentObjectUserPermissionsSchema.optional(),
+        text: z.string().optional(),
+        text_etag: z.string().optional(),
+        embeddings: EmbeddingMapSchema.optional(),
+        parts: z.array(z.string()).optional(),
+        parts_etag: z.string().optional(),
+        transcript: z.looseObject({}).optional(),
+        security: StringArrayMapSchema.optional(),
+        sensitivity: z.number().optional(),
+        compartments: z.array(z.string()).optional(),
+        inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectItemApiResponse' });
 
@@ -869,7 +893,7 @@ export const ContentObjectItemApiResponseArraySchema = z
 
 export const ObjectSearchResponseSchema = z
     .strictObject({
-        results: z.array(ContentObjectItemApiResponseSchema),
+        results: z.array(ProjectedContentObjectApiResponseSchema),
         facets: ComputedFacetResponseSchema,
         aggregations: z.looseObject({}).optional(),
     })

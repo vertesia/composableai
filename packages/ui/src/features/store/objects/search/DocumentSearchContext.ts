@@ -20,6 +20,23 @@ interface DocumentSearchResult {
     hasMore?: boolean;
 }
 
+function isFullSearchResult(item: unknown): item is ContentObjectItemApiResponse {
+    if (!item || typeof item !== 'object') return false;
+    const result = item as Record<string, unknown>;
+    return (
+        typeof result.id === 'string' &&
+        typeof result.name === 'string' &&
+        typeof result.updated_by === 'string' &&
+        typeof result.created_by === 'string' &&
+        typeof result.created_at === 'string' &&
+        typeof result.updated_at === 'string' &&
+        typeof result.location === 'string' &&
+        typeof result.status === 'string' &&
+        result.properties !== undefined &&
+        result.revision !== undefined
+    );
+}
+
 export class DocumentSearch implements SearchInterface {
     collectionId?: string;
     facets = new SharedState<ComputedFacetResponse>({});
@@ -163,7 +180,13 @@ export class DocumentSearch implements SearchInterface {
         try {
             const res = await this._searchRequest(this.query, limit, offset, !noFacets);
             // Handle the new format with results and facets
-            const results = res.results || [];
+            const projectedResults = res.results || [];
+            if (!projectedResults.every(isFullSearchResult)) {
+                throw new Error(
+                    'Object search returned a projected result without the fields required by the document list',
+                );
+            }
+            const results: ContentObjectItemApiResponse[] = projectedResults;
             const facets = res.facets || {};
 
             this.result.value = {

@@ -1434,6 +1434,7 @@ const AGENT_MESSAGE_SCHEMAS = {
     ConversationFile: AgentRunSchemas.ConversationFileSchema,
     AgentMessageDetails: AgentRunSchemas.AgentMessageDetailsSchema,
     CompactMessage: AgentRunSchemas.CompactMessageSchema,
+    HistoricalCompactMessage: AgentRunSchemas.HistoricalCompactMessageSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const PROCESS_DEFINITION_SCHEMAS = {
@@ -1463,6 +1464,8 @@ const PROCESS_DEFINITION_SCHEMAS = {
     NodeDefinition: ProcessSchemas.NodeDefinitionSchema,
     NodeDefinitionMap: ProcessSchemas.NodeDefinitionMapSchema,
     ProcessDefinition: ProcessSchemas.ProcessDefinitionSchema,
+    HistoricalProcessDefinitionBody: ProcessSchemas.HistoricalProcessDefinitionBodySchema,
+    HistoricalProcessDefinition: ProcessSchemas.HistoricalProcessDefinitionSchema,
     ProcessDefinitionArray: ProcessSchemas.ProcessDefinitionArraySchema,
     ProcessDefinitionBody: ProcessSchemas.ProcessDefinitionBodySchema,
     UpdateProcessDefinitionPayload: ProcessSchemas.UpdateProcessDefinitionPayloadSchema,
@@ -1493,6 +1496,8 @@ const CONTENT_OBJECT_SCHEMAS = {
     UpdateContentObjectPayload: ContentSchemas.UpdateContentObjectPayloadSchema,
     ContentObjectApiTypeRef: ContentSchemas.ContentObjectApiTypeRefSchema,
     ContentObjectApiResponse: ContentSchemas.ContentObjectApiResponseSchema,
+    ProjectedContentObjectApiResponse: ContentSchemas.ProjectedContentObjectApiResponseSchema,
+    ProjectedContentObjectApiResponseArray: ContentSchemas.ProjectedContentObjectApiResponseArraySchema,
     ContentObjectItemApiResponse: ContentSchemas.ContentObjectItemApiResponseSchema,
     ContentObjectItemApiResponseArray: ContentSchemas.ContentObjectItemApiResponseArraySchema,
     ContentObjectProcessingPriority: ContentSchemas.ContentObjectProcessingPrioritySchema,
@@ -1660,6 +1665,7 @@ const AGENT_RUN_SCHEMAS = {
     FileProcessingStatus: AgentRunSchemas.FileProcessingStatusSchema,
     AgentRunArchiveState: AgentRunSchemas.AgentRunArchiveStateSchema,
     ResourceRef: AgentRunSchemas.ResourceRefSchema,
+    HistoricalInteractionExecutionConfiguration: AgentRunSchemas.HistoricalInteractionExecutionConfigurationSchema,
     SignalAgentResponse: AgentRunSchemas.SignalAgentResponseSchema,
     AutonomousRunResponse: AgentRunSchemas.AutonomousRunResponseSchema,
     AgentRun: AgentRunSchemas.AgentRunSchema,
@@ -1715,6 +1721,7 @@ const WORKFLOW_RUN_SCHEMAS = {
     ActivityDefinition: WorkflowRunSchemas.ActivityDefinitionSchema,
     ActivityCatalog: WorkflowRunSchemas.ActivityCatalogSchema,
     WorkflowInteractionVars: WorkflowRunSchemas.WorkflowInteractionVarsSchema,
+    HistoricalWorkflowInteractionVars: WorkflowRunSchemas.HistoricalWorkflowInteractionVarsSchema,
     ListWorkflowInteractionsResponse: WorkflowRunSchemas.ListWorkflowInteractionsResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 

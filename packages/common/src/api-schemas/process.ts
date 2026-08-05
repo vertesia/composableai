@@ -227,6 +227,7 @@ export const ProcessHistoryResponseSchema = z
     .strictObject({
         run_id: z.string(),
         current_node: z.string(),
+        node_history: z.array(NodeHistoryEntrySchema),
         node_history_ref: z
             .strictObject({
                 path: z.string(),
@@ -241,6 +242,7 @@ export const ProcessContextResponseSchema = z
     .strictObject({
         run_id: z.string(),
         current_node: z.string(),
+        context: z.looseObject({}),
     })
     .meta({ id: 'ProcessContextResponse' });
 
@@ -856,8 +858,40 @@ export const ProcessDefinitionSchema: z.ZodType = z
     })
     .meta({ id: 'ProcessDefinition' });
 
-export const ProcessDefinitionArraySchema: z.ZodType = z
-    .array(z.lazy(() => ProcessDefinitionSchema))
+export const HistoricalProcessDefinitionBodySchema = z
+    .looseObject({
+        format_version: ProcessDefinitionFormatVersionSchema.optional(),
+        process: z.string().optional(),
+        description: z.string().optional(),
+        initial: z.string().optional(),
+        model: z.string().optional(),
+        resources: z.looseObject({}).optional(),
+        context: z.looseObject({}).optional(),
+        nodes: z.looseObject({}),
+        metadata: z.looseObject({}).optional(),
+    })
+    .meta({ id: 'HistoricalProcessDefinitionBody' });
+
+/** Read-side compatibility for definitions stored before the current format was introduced. */
+export const HistoricalProcessDefinitionSchema = z
+    .looseObject({
+        id: z.string(),
+        account: z.string(),
+        project: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        status: ProcessDefinitionStatusSchema,
+        version: z.number(),
+        definition: HistoricalProcessDefinitionBodySchema,
+        created_at: z.string().meta({ format: 'date-time' }),
+        updated_at: z.string().meta({ format: 'date-time' }),
+        created_by: z.string(),
+        updated_by: z.string(),
+    })
+    .meta({ id: 'HistoricalProcessDefinition' });
+
+export const ProcessDefinitionArraySchema = z
+    .array(HistoricalProcessDefinitionSchema)
     .meta({ id: 'ProcessDefinitionArray' });
 
 export const ProcessDefinitionBodySchema: z.ZodType = z

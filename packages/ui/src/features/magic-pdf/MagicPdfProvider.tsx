@@ -1,5 +1,5 @@
 import type { VertesiaClient } from '@vertesia/client';
-import { type ContentObject, type DocumentMetadata, PDF_RENDITION_NAME } from '@vertesia/common';
+import { type DocumentMetadata, PDF_RENDITION_NAME, type ProjectedContentObjectApiResponse } from '@vertesia/common';
 import { useUserSession } from '@vertesia/ui/session';
 import React, { createContext, useEffect, useState } from 'react';
 
@@ -193,12 +193,12 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
 const MagicPdfContext = createContext<MagicPdfContextValue | undefined>(undefined);
 
 interface MagicPdfProviderProps {
-    object: ContentObject;
+    object: ProjectedContentObjectApiResponse & { id: string };
     children: React.ReactNode;
 }
 export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
     const { client } = useUserSession();
-    const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
+    const page_count = (object.metadata as unknown as DocumentMetadata | undefined)?.page_count || DEFAULT_PAGE_COUNT;
 
     const [info, setInfo] = useState<MagicPdfContextValue>(() => {
         const markdownProvider = new PageMarkdownProvider(page_count);
@@ -216,7 +216,7 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
     });
 
     useEffect(() => {
-        const metadata = object.metadata as DocumentMetadata;
+        const metadata = object.metadata as unknown as DocumentMetadata | undefined;
         const pdfRendition = metadata?.renditions?.find((r) => r.name === PDF_RENDITION_NAME);
         const isPdfSource = object.content?.type === 'application/pdf';
         const sourceToResolve = pdfRendition?.content?.source || (isPdfSource ? object.content?.source : undefined);

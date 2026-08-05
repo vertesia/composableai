@@ -147,7 +147,11 @@ export function useSmartFileUploadProcessing() {
                             query: { match: query },
                             select: 'id content.etag',
                         };
-                        res = (await client.store.collections.searchMembers(limitToCollectionId, payload)).results;
+                        res = (
+                            await client.store.collections.searchMembers(limitToCollectionId, payload)
+                        ).results.filter(
+                            (doc): doc is Pick<ContentObjectItem, 'id' | 'content'> => typeof doc.id === 'string',
+                        );
                     } else {
                         const payload: FindPayload = {
                             query,

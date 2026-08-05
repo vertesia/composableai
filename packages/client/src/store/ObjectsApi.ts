@@ -36,6 +36,7 @@ import {
     type ObjectSearchPayload,
     type ObjectSearchQuery,
     type ObjectSearchResponse,
+    type ProjectedContentObjectApiResponse,
     type SetObjectEmbeddingsResponse,
     type StartContentObjectExportRequest,
     type StartContentObjectExportResponse,
@@ -244,7 +245,9 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    retrieve(id: string, select?: string): Promise<ContentObject> {
+    retrieve(id: string, select: string): Promise<ProjectedContentObjectApiResponse>;
+    retrieve(id: string): Promise<ContentObject>;
+    retrieve(id: string, select?: string): Promise<ContentObject | ProjectedContentObjectApiResponse> {
         return this.get(`/${id}`, {
             query: {
                 select,

@@ -1,4 +1,4 @@
-import { type ContentObject, ImageRenditionFormat } from '@vertesia/common';
+import { ImageRenditionFormat, type ProjectedContentObjectApiResponse } from '@vertesia/common';
 import { Button, Spinner, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
@@ -16,7 +16,7 @@ interface DocumentPreviewPanelProps {
 export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPreviewPanelProps) {
     const navigate = useNavigate();
     const { client, store } = useUserSession();
-    const [object, setObject] = useState<ContentObject | null>(null);
+    const [object, setObject] = useState<(ProjectedContentObjectApiResponse & { id: string }) | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingText, setLoadingText] = useState(false);
     const [text, setText] = useState<string | undefined>();
@@ -41,7 +41,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
     );
 
     const loadImageUrl = useCallback(
-        async (obj: ContentObject) => {
+        async (obj: ProjectedContentObjectApiResponse & { id: string }) => {
             if (!obj.content?.source) {
                 return;
             }
@@ -74,20 +74,21 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
             store.objects
                 .retrieve(objectId, '+embeddings')
                 .then((result) => {
-                    setObject(result);
+                    const projectedObject = { ...result, id: result.id ?? objectId };
+                    setObject(projectedObject);
                     // If the object has text, use it
                     if (result.text) {
                         setText(result.text);
                     } else {
                         // Otherwise, fetch text
-                        void loadObjectText(result.id);
+                        void loadObjectText(projectedObject.id);
                     }
 
                     // If it's an image, load the image URL
                     const content = result.content;
                     const isImage = content?.source && content.type?.startsWith('image/');
                     if (isImage) {
-                        void loadImageUrl(result);
+                        void loadImageUrl(projectedObject);
                     }
                 })
                 .catch((error) => {

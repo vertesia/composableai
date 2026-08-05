@@ -3,7 +3,7 @@
 import { JSONObjectSchema, JSONSchemaSchema, JSONValueSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import type { ActivityTypeDefinition } from '../store/activity-catalog.js';
-import { CompactMessageSchema } from './agent-runs.js';
+import { HistoricalCompactMessageSchema } from './agent-runs.js';
 import { AgentRunStatusSchema, ConversationActivityStateSchema } from './app-lifecycle.js';
 import { WorkflowExecutionStatusSchema } from './document-processing.js';
 import {
@@ -117,11 +117,26 @@ export const WorkflowInteractionVarsSchema = z
     })
     .meta({ id: 'WorkflowInteractionVars' });
 
+/** A Temporal snapshot can outlive the request schema that originally created it. */
+export const HistoricalWorkflowInteractionVarsSchema = z
+    .looseObject({
+        type: z.string(),
+        interaction: z.string(),
+        interactive: z.boolean(),
+        tool_names: z.array(z.string()),
+        config: z.looseObject({
+            environment: z.string().optional(),
+            model: z.string().optional(),
+            model_options: z.looseObject({}).optional(),
+        }),
+    })
+    .meta({ id: 'HistoricalWorkflowInteractionVars' });
+
 export const ListWorkflowInteractionsResponseSchema = z
     .strictObject({
         workflow_id: z.string(),
         run_id: z.string(),
-        interaction: WorkflowInteractionVarsSchema,
+        interaction: HistoricalWorkflowInteractionVarsSchema,
     })
     .meta({ id: 'ListWorkflowInteractionsResponse' });
 
@@ -211,6 +226,7 @@ export const WorkflowRunSchema = z
             .boolean()
             .meta({ description: 'Whether this conversation is interactive (accepts user input).' })
             .optional(),
+        memo: z.union([z.looseObject({}), z.null()]).optional(),
     })
     .meta({ id: 'WorkflowRun' });
 
@@ -499,7 +515,7 @@ export const WorkflowInputSchema = z
 
 export const WorkflowRunUpdatesResponseSchema = z
     .strictObject({
-        messages: z.array(CompactMessageSchema),
+        messages: z.array(HistoricalCompactMessageSchema),
     })
     .meta({ id: 'WorkflowRunUpdatesResponse' });
 
@@ -622,6 +638,7 @@ export const WorkflowRunWithDetailsSchema = z
         history: WorkflowHistorySchema.optional(),
         memo: z.union([z.object({}).catchall(z.unknown()), z.null()]).optional(),
         pendingActivities: z.array(PendingActivitySchema).optional(),
+        children: z.array(WorkflowRunSchema).optional(),
     })
     .meta({ id: 'WorkflowRunWithDetails' });
 

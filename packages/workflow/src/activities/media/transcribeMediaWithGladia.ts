@@ -88,7 +88,7 @@ export async function transcribeMedia(
         // Check for audio rendition in video metadata (preferred for videos)
         mediaSource = object.content.source;
         if (object.metadata?.type === ContentNature.Video) {
-            const videoMetadata = object.metadata as VideoMetadata;
+            const videoMetadata = object.metadata as unknown as VideoMetadata;
             const audioRendition = videoMetadata.renditions?.find((r) => r.name === AUDIO_RENDITION_NAME);
             if (audioRendition?.content?.source) {
                 mediaSource = audioRendition.content.source;

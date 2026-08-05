@@ -1,4 +1,9 @@
-import type { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import type {
+    ContentObject,
+    DSLActivityExecutionPayload,
+    DSLActivitySpec,
+    ProjectedContentObjectApiResponse,
+} from '@vertesia/common';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../errors.js';
@@ -21,9 +26,11 @@ export async function getObjectFromStore(
 ): Promise<ContentObject> {
     const { client, params, objectId } = await setupActivity<GetObjectParams>(payload);
 
-    let obj: ContentObject;
+    let obj: ContentObject | ProjectedContentObjectApiResponse;
     try {
-        obj = await client.objects.retrieve(objectId, params.select);
+        obj = params.select
+            ? await client.objects.retrieve(objectId, params.select)
+            : await client.objects.retrieve(objectId);
     } catch (err: unknown) {
         const status = err && typeof err === 'object' && 'status' in err ? (err as { status: number }).status : 0;
         if (status >= 400 && status < 500 && status !== 429) {
@@ -32,11 +39,16 @@ export async function getObjectFromStore(
         throw err;
     }
 
+    if (!obj.id) {
+        throw new DocumentNotFoundError(`Projected object response is missing its ID: ${objectId}`, [objectId]);
+    }
+
     const projection = projectResult(payload, params, obj, obj) as Partial<ContentObject>;
 
     return {
         ...obj,
         ...projection,
         id: obj.id,
-    };
+        embeddings: obj.embeddings ?? {},
+    } as ContentObject;
 }

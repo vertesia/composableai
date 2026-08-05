@@ -14,6 +14,7 @@ import type {
     ContentObjectTypeItem,
     CreateContentObjectPayload,
     ObjectSearchPayload,
+    ProjectedContentObjectApiResponse,
 } from '@vertesia/common';
 import type { Command } from 'commander';
 import enquirer from 'enquirer';
@@ -446,7 +447,12 @@ function printJson(value: unknown) {
     console.log(JSON.stringify(value, null, 2));
 }
 
-function printObjectItems(objects: Array<ContentObjectItem<unknown> | ContentObjectItemApiResponse>) {
+type PrintableContentObject =
+    | ContentObjectItem<unknown>
+    | ContentObjectItemApiResponse
+    | ProjectedContentObjectApiResponse;
+
+function printObjectItems(objects: PrintableContentObject[]) {
     if (objects.length === 0) {
         console.log('No objects found');
         return;
@@ -463,7 +469,7 @@ function printObjectItems(objects: Array<ContentObjectItem<unknown> | ContentObj
     );
 }
 
-function readObjectTypeName(object: ContentObjectItem<unknown> | ContentObjectItemApiResponse): string {
+function readObjectTypeName(object: PrintableContentObject): string {
     if (!object.type) {
         return '';
     }

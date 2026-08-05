@@ -195,11 +195,11 @@ export async function generateDocumentProperties(
 
     const getImageRef = (): string | ContentSource | undefined => {
         if (doc.content?.type?.startsWith('image/')) {
-            return `store:${doc.id}`;
+            return `store:${objectId}`;
         }
 
         if (doc.content?.type?.startsWith('application/pdf')) {
-            return `store:${doc.id}`;
+            return `store:${objectId}`;
         }
 
         const pdfRendition = getPdfRenditionContent(doc);
@@ -293,7 +293,7 @@ export async function generateDocumentProperties(
             : {};
     const properties = mergePreservingNonExtractable(existing, extracted, type.object_schema) as JSONObject;
     await client.objects.update(
-        doc.id,
+        objectId,
         {
             properties,
             generation_run_info: {

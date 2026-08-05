@@ -483,11 +483,19 @@ export function DocumentEditingWorkspace({
                 if (cancelled || !run) return;
                 setAgentRunId(run.id);
                 if (run.config?.environment && run.config.model) {
+                    const historicalModelOptions = run.config.model_options;
+                    const modelOptions =
+                        historicalModelOptions &&
+                        typeof historicalModelOptions === 'object' &&
+                        '_option_id' in historicalModelOptions &&
+                        typeof historicalModelOptions._option_id === 'string'
+                            ? (historicalModelOptions as InteractionExecutionConfiguration['model_options'])
+                            : undefined;
                     configurationSourceRef.current = 'run';
                     setExecutionConfiguration({
                         environment: run.config.environment,
                         model: run.config.model,
-                        model_options: run.config.model_options,
+                        model_options: modelOptions,
                     });
                 }
             })

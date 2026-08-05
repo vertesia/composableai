@@ -234,6 +234,15 @@ export const ResourceRefSchema = z
     })
     .meta({ id: 'ResourceRef' });
 
+/** Read-side execution configuration for runs created by older model providers and SDKs. */
+export const HistoricalInteractionExecutionConfigurationSchema = z
+    .looseObject({
+        environment: z.string().optional(),
+        model: z.string().optional(),
+        model_options: z.looseObject({}).optional(),
+    })
+    .meta({ id: 'HistoricalInteractionExecutionConfiguration' });
+
 export const AgentArtifactContentResponseSchema = z
     .strictObject({
         path: z.string(),
@@ -298,7 +307,7 @@ export const AutonomousRunResponseSchema = z
     .strictObject({
         interaction: z.string().meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
         data: z.looseObject({}).meta({ description: 'Input parameters, typed per interaction' }).optional(),
-        config: InteractionExecutionConfigurationSchema.meta({
+        config: HistoricalInteractionExecutionConfigurationSchema.meta({
             description: 'Execution configuration (environment, model, model_options, etc.)',
         }).optional(),
         interactive: z.boolean().meta({ description: 'Whether the agent accepts user input' }).optional(),
@@ -427,7 +436,7 @@ export const AgentRunSchema = z
     .strictObject({
         interaction: z.string().meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
         data: z.looseObject({}).meta({ description: 'Input parameters, typed per interaction' }).optional(),
-        config: InteractionExecutionConfigurationSchema.meta({
+        config: HistoricalInteractionExecutionConfigurationSchema.meta({
             description: 'Execution configuration (environment, model, model_options, etc.)',
         }).optional(),
         interactive: z.boolean().meta({ description: 'Whether the agent accepts user input' }).optional(),
@@ -790,6 +799,19 @@ export const CompactMessageSchema = z
             'Compact message format for efficient wire transfer. Primary type used throughout the system. ~85% smaller than legacy AgentMessage format.',
     });
 
+/** Read-side shape for messages persisted by older workflow versions. */
+export const HistoricalCompactMessageSchema = z
+    .looseObject({
+        t: z.number(),
+        m: z.string().optional(),
+        w: z.string().optional(),
+        d: z.unknown().optional(),
+        f: z.union([z.literal(0), z.literal(1)]).optional(),
+        ts: z.number().optional(),
+        i: z.string().optional(),
+    })
+    .meta({ id: 'HistoricalCompactMessage' });
+
 export const PostAgentRunUpdatePayloadSchema = z
     .strictObject({
         timestamp: z.number().optional(),
@@ -806,7 +828,7 @@ export const PostAgentRunUpdatePayloadSchema = z
 
 export const AgentRunUpdatesResponseSchema = z
     .strictObject({
-        messages: z.array(CompactMessageSchema),
+        messages: z.array(HistoricalCompactMessageSchema),
     })
     .meta({ id: 'AgentRunUpdatesResponse', description: 'Response payload for retrieving compact agent updates.' });
 
@@ -872,7 +894,7 @@ export const ProgrammaticRunResponseSchema: z.ZodType = z
             .string()
             .meta({ description: 'Timestamp when the document was last updated', format: 'date-time' }),
         process_id: z.string().optional(),
-        process_definition_snapshot: z.lazy(() => ProcessDefinitionBodySchema),
+        process_definition_snapshot: ProcessSchemas.HistoricalProcessDefinitionBodySchema,
         process_version: z.number().optional(),
         process_state: ProcessStateSchema,
         config: ProcessRunConfigSchema.optional(),
@@ -925,7 +947,7 @@ export const SupervisedRunResponseSchema: z.ZodType = z
             .string()
             .meta({ description: 'Timestamp when the document was last updated', format: 'date-time' }),
         process_id: z.string().optional(),
-        process_definition_snapshot: z.lazy(() => ProcessDefinitionBodySchema),
+        process_definition_snapshot: ProcessSchemas.HistoricalProcessDefinitionBodySchema,
         process_version: z.number().optional(),
         process_state: ProcessStateSchema,
         config: ProcessRunConfigSchema.optional(),
