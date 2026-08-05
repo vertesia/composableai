@@ -136,7 +136,8 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(true);
         expect(validateApiResponse('ContentObjectApiResponse', contentObject).valid).toBe(true);
         expect(validateApiResponse('ContentObjectApiResponseArray', [contentObject]).valid).toBe(true);
-        expect(validateApiResponse('ContentObjectItemApiResponseArray', [contentObject]).valid).toBe(true);
+        const { sensitivity: _sensitivity, compartments: _compartments, ...contentObjectItem } = contentObject;
+        expect(validateApiResponse('ContentObjectItemApiResponseArray', [contentObjectItem]).valid).toBe(true);
         expect(validateApiResponse('ProjectedContentObjectApiResponse', { id: contentObject.id, score: 1 }).valid).toBe(
             true,
         );
