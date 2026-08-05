@@ -4,6 +4,7 @@ import type {
     AgentTokenRequest,
     ApiKeyTokenRequest,
     EnvironmentTokenRequest,
+    IssueTokenForbiddenResponse,
     IssueTokenRequest,
     IssueTokenResponse,
     ProjectTokenRequest,
@@ -16,6 +17,7 @@ import type {
     AgentTokenRequestSchema,
     ApiKeyTokenRequestSchema,
     EnvironmentTokenRequestSchema,
+    IssueTokenForbiddenResponseSchema,
     IssueTokenRequestSchema,
     IssueTokenResponseSchema,
     ProjectTokenRequestSchema,
@@ -38,6 +40,7 @@ describe('STS canonical contracts', () => {
         assertType<Equals<ServiceAccountTokenRequest, z.infer<typeof ServiceAccountTokenRequestSchema>>>(true);
         assertType<Equals<IssueTokenRequest, z.infer<typeof IssueTokenRequestSchema>>>(true);
         assertType<Equals<IssueTokenResponse, z.infer<typeof IssueTokenResponseSchema>>>(true);
+        assertType<Equals<IssueTokenForbiddenResponse, z.infer<typeof IssueTokenForbiddenResponseSchema>>>(true);
         expect(true).toBe(true);
     });
 
@@ -60,9 +63,33 @@ describe('STS canonical contracts', () => {
         expect(validateApiRequest('IssueTokenRequest', { type: 'project', account_id: 'acc_1' }).valid).toBe(false);
     });
 
-    it('checks both documented response shapes', () => {
+    it('checks every documented response shape and forbidden error-code literal', () => {
         expect(validateApiResponse('IssueTokenResponse', { token: 'signed', token_type: 'Bearer' }).valid).toBe(true);
         expect(validateApiResponse('IssueTokenResponse', { token: 'signed', token_type: 'bearer' }).valid).toBe(false);
+        for (const errorCode of ['requested_scope_unavailable', 'no_accessible_account', 'restricted_environment']) {
+            expect(
+                validateApiResponse('IssueTokenForbiddenResponse', {
+                    error: 'Forbidden',
+                    message: 'The requested scope is unavailable',
+                    errorCode,
+                }).valid,
+            ).toBe(true);
+        }
+        expect(
+            validateApiResponse('IssueTokenForbiddenResponse', {
+                error: 'Forbidden',
+                message: 'No',
+                errorCode: 'resource_not_found',
+            }).valid,
+        ).toBe(false);
+        expect(
+            validateApiResponse('IssueTokenForbiddenResponse', {
+                error: 'Forbidden',
+                message: 'No',
+                errorCode: 'requested_scope_unavailable',
+                project_id: 'secret',
+            }).valid,
+        ).toBe(false);
         expect(
             validateApiResponse('IssueTokenUnavailableResponse', {
                 error: 'Service Unavailable',

@@ -1,12 +1,22 @@
-import type { SignupData, SignupPayload } from '@vertesia/common';
+import { REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE, type SignupData, type SignupPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { RegionTag } from '@vertesia/ui/layout';
-import { RestrictedEnvironmentError, UserNotFoundError, useUserSession, useUXTracking } from '@vertesia/ui/session';
+import {
+    AuthenticationServiceError,
+    CredentialError,
+    NoAccessibleAccountError,
+    RequestedScopeUnavailableError,
+    RestrictedEnvironmentError,
+    UserNotFoundError,
+    useUserSession,
+    useUXTracking,
+} from '@vertesia/ui/session';
 import { useCallback, useEffect, useState } from 'react';
 import SignInAuthPending from './SignInAuthPending';
 import SignInEmailStep, { type TenantInfo } from './SignInEmailStep';
 import SignInProvidersStep from './SignInProvidersStep';
+import SignInRecoveryStep, { type SignInRecoveryKind } from './SignInRecoveryStep';
 import SignInRestrictedEnvStep from './SignInRestrictedEnvStep';
 import SignInReturningStep from './SignInReturningStep';
 import SignInTenantBlockedStep from './SignInTenantBlockedStep';
@@ -65,7 +75,30 @@ function matchesPathPrefix(pathname: string, prefix?: string | string[]) {
     });
 }
 
-type Mode = 'email' | 'providers' | 'tenant' | 'blocked' | 'returning' | 'pending' | 'signup' | 'restricted';
+type Mode =
+    | 'email'
+    | 'providers'
+    | 'tenant'
+    | 'blocked'
+    | 'returning'
+    | 'pending'
+    | 'signup'
+    | 'restricted'
+    | 'scopeUnavailable'
+    | 'noAccessibleAccount'
+    | 'credentialFailure'
+    | 'serviceFailure';
+
+function isDedicatedAuthError(error: Error): boolean {
+    return (
+        error instanceof UserNotFoundError ||
+        error instanceof RestrictedEnvironmentError ||
+        error instanceof RequestedScopeUnavailableError ||
+        error instanceof NoAccessibleAccountError ||
+        error instanceof CredentialError ||
+        error instanceof AuthenticationServiceError
+    );
+}
 
 function SigninScreenImpl({
     isNested = false,
@@ -88,7 +121,7 @@ function SigninScreenImpl({
     const [pendingProvider, setPendingProvider] = useState<ProviderId | null>(null);
 
     useEffect(() => {
-        if (!preservePath) {
+        if (!preservePath && !isLoading && !authError) {
             // Reset to the app's mount root, not the bare origin. A gateway-mounted app carries a
             // served `<base href>` deep mount; collapsing to '/' drops the app off that mount (the
             // bare origin serves no app) and the address bar can no longer be reloaded. This effect
@@ -99,7 +132,7 @@ function SigninScreenImpl({
             const mountRoot = new URL(document.baseURI).pathname || '/';
             history.replaceState({}, '', mountRoot);
         }
-    }, [preservePath]);
+    }, [authError, isLoading, preservePath]);
 
     // Route based on authError surfaced by the session.
     useEffect(() => {
@@ -108,6 +141,14 @@ function SigninScreenImpl({
             setMode('signup');
         } else if (authError instanceof RestrictedEnvironmentError) {
             setMode('restricted');
+        } else if (authError instanceof RequestedScopeUnavailableError) {
+            setMode('scopeUnavailable');
+        } else if (authError instanceof NoAccessibleAccountError) {
+            setMode('noAccessibleAccount');
+        } else if (authError instanceof CredentialError) {
+            setMode('credentialFailure');
+        } else if (authError instanceof AuthenticationServiceError) {
+            setMode('serviceFailure');
         } else if (isInviteRequiredError(authError)) {
             const pending = readPendingSignin();
             if (pending) setEmail(pending.email);
@@ -176,6 +217,37 @@ function SigninScreenImpl({
         void resetSignInState();
     }, []);
 
+    const useDifferentAccount = useCallback(() => {
+        Env.logger.info('Authentication recovery action selected', {
+            vertesia: { recovery_action: 'use_different_account' },
+        });
+        setStoredSession(null);
+        setEmail('');
+        setTenant(undefined);
+        setMode('email');
+        void resetSignInState().finally(() => signOut());
+    }, [signOut]);
+
+    const continueWithSanitizedScope = useCallback(() => {
+        if (!(authError instanceof RequestedScopeUnavailableError)) return;
+        Env.logger.info('Authentication recovery action selected', {
+            vertesia: {
+                error_code: REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE,
+                selector_source: authError.selectorSource,
+                requested_scope: authError.requestedScope,
+                recovery_action: 'continue_sanitized',
+            },
+        });
+        window.location.replace(authError.recoveryUrl ?? window.location.href);
+    }, [authError]);
+
+    const retryAuthentication = useCallback(() => {
+        Env.logger.info('Authentication recovery action selected', {
+            vertesia: { recovery_action: 'retry' },
+        });
+        window.location.reload();
+    }, []);
+
     // Submits the signup form to /auth/signup, then redirects into the app.
     const onSignup = (data: SignupData, fbToken: string) => {
         const payload: SignupPayload = { signupData: data, firebaseToken: fbToken };
@@ -190,10 +262,7 @@ function SigninScreenImpl({
     };
 
     const shouldHideTransientAuthError =
-        suppressAuthError &&
-        authError !== undefined &&
-        !(authError instanceof UserNotFoundError) &&
-        !(authError instanceof RestrictedEnvironmentError);
+        suppressAuthError && authError !== undefined && !isDedicatedAuthError(authError);
 
     if (isLoading || user || shouldHideTransientAuthError) return null;
 
@@ -210,6 +279,27 @@ function SigninScreenImpl({
         );
     } else if (mode === 'restricted') {
         content = <SignInRestrictedEnvStep onUseDifferentEmail={startOver} />;
+    } else if (mode === 'scopeUnavailable' && authError instanceof RequestedScopeUnavailableError) {
+        const kind: SignInRecoveryKind = authError.requestedScope === 'project' ? 'scopeProject' : 'scopeAccount';
+        content = (
+            <SignInRecoveryStep
+                kind={kind}
+                onContinue={continueWithSanitizedScope}
+                onUseDifferentAccount={useDifferentAccount}
+            />
+        );
+    } else if (mode === 'noAccessibleAccount') {
+        content = <SignInRecoveryStep kind="noAccessibleAccount" onUseDifferentAccount={useDifferentAccount} />;
+    } else if (mode === 'credentialFailure') {
+        content = <SignInRecoveryStep kind="credential" onUseDifferentAccount={useDifferentAccount} />;
+    } else if (mode === 'serviceFailure') {
+        content = (
+            <SignInRecoveryStep
+                kind="service"
+                onContinue={retryAuthentication}
+                onUseDifferentAccount={useDifferentAccount}
+            />
+        );
     } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
         content = <SignupForm onSignup={onSignup} goBack={startOver} />;
     } else if (mode === 'tenant' && tenant) {
@@ -247,25 +337,19 @@ function SigninScreenImpl({
 
                     {content}
 
-                    {authError &&
-                        !(authError instanceof UserNotFoundError) &&
-                        !(authError instanceof RestrictedEnvironmentError) &&
-                        !isInviteRequiredError(authError) && (
-                            <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
-                                <div>
-                                    {t('auth.signInError')}
-                                    <br />
-                                    {t('auth.signInErrorContact')}
-                                    <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
-                                        support@vertesiahq.com
-                                    </a>
-                                    {t('auth.signInErrorPersists')}
-                                    <pre className="mt-2 text-xs">
-                                        {t('auth.error', { message: authError.message })}
-                                    </pre>
-                                </div>
+                    {authError && !isDedicatedAuthError(authError) && !isInviteRequiredError(authError) && (
+                        <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
+                            <div>
+                                {t('auth.signInError')}
+                                <br />
+                                {t('auth.signInErrorContact')}
+                                <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
+                                    support@vertesiahq.com
+                                </a>
+                                {t('auth.signInErrorPersists')}
                             </div>
-                        )}
+                        </div>
+                    )}
 
                     <div className="flex items-center gap-5 mt-10 text-xs text-muted-foreground">
                         <a href="https://vertesiahq.com/privacy" className="hover:text-foreground transition">
