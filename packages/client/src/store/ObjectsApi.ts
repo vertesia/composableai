@@ -249,7 +249,6 @@ export class ObjectsApi extends ApiTopic {
     }
 
     retrieve(id: string): Promise<ContentObject>;
-    retrieve(id: string, select: `+${string}`): Promise<ContentObject>;
     retrieve(id: string, select: `+${string}` | undefined): Promise<ContentObject>;
     retrieve(id: string, select: string): Promise<ProjectedContentObjectApiResponse>;
     retrieve(id: string, select?: string): Promise<ContentObject | ProjectedContentObjectApiResponse> {
