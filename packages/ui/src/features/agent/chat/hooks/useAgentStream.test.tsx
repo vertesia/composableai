@@ -362,7 +362,12 @@ describe('useAgentStream', () => {
         const { result } = renderHook(() => useAgentStream(client, 'agent-run-1', vi.fn()));
 
         await waitFor(() => expect(deliver).toBeDefined());
-        expect(result.current.serverFileUpdates.size).toBe(0);
+        // History hydrates the latest archived inventory once so an unconsumed staged file
+        // survives a reload; the live replay of that same snapshot is ignored, leaving the
+        // hydrated entry untouched. Already-delivered files are dropped downstream by
+        // useFileProcessing (consumed_at + delivered artifact refs), not by refusing to hydrate.
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('old-upload')).toBe(true);
 
         act(() => deliver?.(fileSnapshot(1_100, 'new-upload')));
         expect(result.current.serverFileUpdates.size).toBe(1);
