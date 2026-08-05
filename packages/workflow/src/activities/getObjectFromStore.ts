@@ -35,6 +35,10 @@ function mergeProjection<T extends object>(object: T, projection: Partial<T>): T
     return { ...object, ...projection };
 }
 
+function hasObjectId(value: { id?: string }): value is { id: string } {
+    return typeof value.id === 'string';
+}
+
 /**
  * We are using a union type for the status parameter since typescript enums breaks the workflow code generation
  * @param objectId
@@ -47,9 +51,13 @@ export async function getObjectFromStore(
 
     let obj: RetrievedContentObject;
     try {
-        obj = params.select
+        const response = params.select
             ? await client.objects.retrieve(objectId, params.select)
             : await client.objects.retrieve(objectId);
+        if (!hasObjectId(response)) {
+            throw new TypeError(`Object response is missing id: ${objectId}`);
+        }
+        obj = response;
     } catch (err: unknown) {
         const status = err && typeof err === 'object' && 'status' in err ? (err as { status: number }).status : 0;
         if (status >= 400 && status < 500 && status !== 429) {
