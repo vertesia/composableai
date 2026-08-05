@@ -9,8 +9,6 @@ import { NodeStreamSource } from '@vertesia/client/node';
 import type {
     ComplexSearchPayload,
     ContentObject,
-    ContentObjectItem,
-    ContentObjectItemApiResponse,
     ContentObjectTypeItem,
     CreateContentObjectPayload,
     ObjectSearchPayload,
@@ -447,12 +445,9 @@ function printJson(value: unknown) {
     console.log(JSON.stringify(value, null, 2));
 }
 
-type PrintableContentObject =
-    | ContentObjectItem<unknown>
-    | ContentObjectItemApiResponse
-    | ProjectedContentObjectApiResponse;
+type ObjectListRow = Pick<ProjectedContentObjectApiResponse, 'id' | 'name' | 'type' | 'status' | 'location'>;
 
-function printObjectItems(objects: PrintableContentObject[]) {
+function printObjectItems(objects: ObjectListRow[]) {
     if (objects.length === 0) {
         console.log('No objects found');
         return;
@@ -469,7 +464,7 @@ function printObjectItems(objects: PrintableContentObject[]) {
     );
 }
 
-function readObjectTypeName(object: PrintableContentObject): string {
+function readObjectTypeName(object: ObjectListRow): string {
     if (!object.type) {
         return '';
     }
