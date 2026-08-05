@@ -6,6 +6,7 @@ Additional details for the plugin architecture. Referenced from SKILL.md.
 
 - [Admin UI](#admin-ui)
 - [Application lifecycle hooks](#application-lifecycle-hooks)
+- [Application event hooks](#application-event-hooks)
 - [CSS Customization](#css-customization)
 - [Deployment](#deployment)
 
@@ -44,6 +45,46 @@ export const hooks = [
 The hook context exposes the authenticated token payload, `getClient()`, and metadata including `app_install_id` and
 the installation's `app_settings`. Registered hooks are available at `POST /api/hooks/install` and
 `POST /api/hooks/uninstall` and are listed in `/api/package` for inspection.
+
+## Application event hooks
+
+Event hooks receive the canonical Vertesia webhook envelope and an authenticated context with `getClient()`. Names
+must be kebab-case URL-safe path segments; `install` and `uninstall` are reserved for lifecycle hooks.
+
+```typescript
+// src/modules/app/resources/hooks/content-updated.ts
+import type { AppEventHook } from '@vertesia/tools-sdk';
+
+export const contentUpdated = (async ({ event, delivery }, context) => {
+    const client = await context.getClient();
+    console.log('Processing event', {
+        eventId: event.event_id,
+        action: event.action,
+        resourceId: event.resource_id,
+        deliveryId: delivery.id,
+    });
+    void client;
+}) satisfies AppEventHook;
+```
+
+Register it beside lifecycle hooks:
+
+```typescript
+import type { AppHookDefinition } from '@vertesia/tools-sdk';
+import { contentUpdated } from './content-updated.js';
+
+export const hooks = [
+    {
+        kind: 'event',
+        name: 'content-updated',
+        description: 'Processes updated content objects.',
+        handler: contentUpdated,
+    },
+] satisfies AppHookDefinition[];
+```
+
+The endpoint is `POST /api/hooks/content-updated`. `/api/package?scope=hooks` advertises the event hook name, path,
+and description so subscription tooling can discover it.
 
 ---
 

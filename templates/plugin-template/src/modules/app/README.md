@@ -71,3 +71,6 @@ folder's `index.ts`. The module codegen collects these exports into the tool ser
 The tool-server bootstrap only exposes generated module contributions. When introducing a new contribution type,
 add its typed empty default to this app module and update the template codegen `SERVER_RESOURCES` list; do not add an
 app-owned registry directly under `src/tool-server/`.
+
+Register lifecycle and event hooks in `resources/hooks/index.ts`. Event hooks use kebab-case names, receive the
+standard `{ event, delivery }` webhook envelope, and are advertised through `/api/package?scope=hooks`.

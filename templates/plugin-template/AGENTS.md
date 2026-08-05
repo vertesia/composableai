@@ -108,6 +108,7 @@ Rules of thumb:
 - ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
 - Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
 - User contributions must be exported from `src/modules/app/resources/<type>/index.ts`
+- Hooks use explicit definitions in `src/modules/app/resources/hooks/index.ts`: lifecycle hooks are `install`/`uninstall`; event hooks use kebab-case names and receive the canonical `{ event, delivery }` envelope
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files

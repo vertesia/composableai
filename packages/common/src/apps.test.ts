@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AppPackageHooksSchema } from './api-schemas/app-runtime.js';
 import { APP_ARTIFACT_TYPES, APP_CAPABILITIES, APP_PACKAGE_SCOPES, effectiveAppAccessControl } from './apps.js';
 
 describe('app capability contracts', () => {
@@ -8,8 +9,32 @@ describe('app capability contracts', () => {
         expect(APP_ARTIFACT_TYPES).toContain('view');
     });
 
-    it('exposes lifecycle hooks as a package query scope', () => {
+    it('exposes app hooks as a package query scope', () => {
         expect(APP_PACKAGE_SCOPES).toContain('hooks');
+    });
+
+    it('accepts lifecycle and event hook package metadata', () => {
+        expect(
+            AppPackageHooksSchema.parse({
+                install: '/api/hooks/install',
+                events: [
+                    {
+                        name: 'content-updated',
+                        path: '/api/hooks/content-updated',
+                        description: 'Processes updated content.',
+                    },
+                ],
+            }),
+        ).toEqual({
+            install: '/api/hooks/install',
+            events: [
+                {
+                    name: 'content-updated',
+                    path: '/api/hooks/content-updated',
+                    description: 'Processes updated content.',
+                },
+            ],
+        });
     });
 });
 

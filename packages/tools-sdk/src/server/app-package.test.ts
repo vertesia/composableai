@@ -113,7 +113,7 @@ describe('buildAppPackage', () => {
         expect(pkg.interactions).toBeUndefined();
     });
 
-    it('returns only lifecycle hook metadata for the hooks scope', async () => {
+    it('returns lifecycle and event hook metadata for the hooks scope', async () => {
         const config = {
             interactions: [
                 new InteractionCollection({
@@ -124,6 +124,12 @@ describe('buildAppPackage', () => {
             hooks: [
                 { kind: 'lifecycle', name: 'install', handler: async () => undefined },
                 { kind: 'lifecycle', name: 'uninstall', handler: async () => undefined },
+                {
+                    kind: 'event',
+                    name: 'content-updated',
+                    description: 'Processes updated content.',
+                    handler: async () => undefined,
+                },
             ],
         } satisfies ToolServerConfig;
 
@@ -132,6 +138,13 @@ describe('buildAppPackage', () => {
         expect(pkg.hooks).toEqual({
             install: '/api/hooks/install',
             uninstall: '/api/hooks/uninstall',
+            events: [
+                {
+                    name: 'content-updated',
+                    path: '/api/hooks/content-updated',
+                    description: 'Processes updated content.',
+                },
+            ],
         });
         expect(pkg.interactions).toBeUndefined();
     });

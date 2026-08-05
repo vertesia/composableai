@@ -59,6 +59,7 @@ import type {
     AppInstallationWithManifestSchema,
     AppManifestDataSchema,
     AppManifestSchema,
+    AppPackageEventHookSchema,
     AppPackageHooksSchema,
     AppPackageSchema,
     AppWidgetInfoSchema,
@@ -615,6 +616,7 @@ export const APP_PACKAGE_SCOPES = [
 ] as const;
 
 export type AppPackageScope = (typeof APP_PACKAGE_SCOPES)[number];
+export type AppPackageEventHook = z.infer<typeof AppPackageEventHookSchema>;
 export type AppPackageHooks = z.infer<typeof AppPackageHooksSchema>;
 export type AppPackage = z.infer<typeof AppPackageSchema>;
 

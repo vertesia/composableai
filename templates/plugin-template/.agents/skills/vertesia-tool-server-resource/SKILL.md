@@ -91,7 +91,7 @@ Templates are auto-discovered: the collection imports `./all?templates`.
 
 → Code in `REFERENCE.md` § Rendering Template.
 
-### Application Lifecycle Hook
+### Application Hooks
 
 Use an install or uninstall hook when the app must initialize or clean up project data as part of its installation
 lifecycle. Hooks receive an authenticated context with the current project token and `getClient()`.
@@ -102,6 +102,16 @@ lifecycle. Hooks receive an authenticated context with the current project token
 - Do not use hooks to materialize app-owned package types as project-local types. Use portable `app:<app>:<type>` refs.
 
 → Code in `REFERENCE.md` § Application lifecycle hooks.
+
+Use an event hook for authenticated event-bus webhook deliveries. Event hooks receive the platform event envelope and
+the same authenticated client context as tools.
+
+- Implement event hooks in `src/modules/app/resources/hooks/<hook-name>.ts`.
+- Use a kebab-case name; `install` and `uninstall` are reserved.
+- Register `{ kind: 'event', name, description, handler }` in the hooks index.
+- Inspect registered event hooks through `/api/package?scope=hooks`.
+
+→ Code in `REFERENCE.md` § Application event hooks.
 
 ## Collection registration
 

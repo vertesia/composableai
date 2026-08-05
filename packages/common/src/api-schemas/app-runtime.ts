@@ -804,15 +804,30 @@ export const CompositeAppConfigSchema = z
             'CompositeApp shell configuration. This is the main configuration interface for storing CompositeApp settings. Used as the MongoDB model for persisting CompositeApp configurations.',
     });
 
+export const AppPackageEventHookSchema = z
+    .strictObject({
+        name: z.string().meta({ description: 'Registered event hook name.' }),
+        path: z.string().meta({ description: 'Authenticated endpoint that receives the event delivery envelope.' }),
+        description: z.string().meta({ description: 'Optional description of the event hook behavior.' }).optional(),
+    })
+    .meta({
+        id: 'AppPackageEventHook',
+        description: 'An authenticated event hook exposed by the app runtime.',
+    });
+
 export const AppPackageHooksSchema = z
     .strictObject({
         install: z.string().meta({ description: 'Authenticated endpoint for the app install hook.' }).optional(),
         uninstall: z.string().meta({ description: 'Authenticated endpoint for the app uninstall hook.' }).optional(),
+        events: z
+            .array(AppPackageEventHookSchema)
+            .meta({ description: 'Named event hooks exposed by the app runtime.' })
+            .optional(),
     })
     .meta({
         id: 'AppPackageHooks',
         description:
-            'Lifecycle hooks exposed by the app runtime. These entries are informational; Studio invokes the conventional sibling endpoints directly.',
+            'Lifecycle and event hooks exposed by the app runtime. Lifecycle entries are informational; Studio invokes their conventional sibling endpoints directly.',
     });
 
 export const AppPackageSchema = z

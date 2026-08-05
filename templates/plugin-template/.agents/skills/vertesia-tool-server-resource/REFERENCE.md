@@ -11,6 +11,7 @@ Full code examples for each resource type. SKILL.md has the workflow and decisio
 - [Content Type](#content-type)
 - [Rendering Template](#rendering-template)
 - [Application lifecycle hooks](#application-lifecycle-hooks)
+- [Application event hooks](#application-event-hooks)
 - [Collection registration & icons](#collection-registration--icons)
 
 ---
@@ -414,6 +415,51 @@ directly and treats a 404 as an absent optional hook.
 
 Do not create project-local copies of app-owned package type definitions. When hooks create content objects, use the
 portable `app:<app-name>:<type-name>` type reference.
+
+---
+
+## Application event hooks
+
+Event hooks are authenticated webhook handlers for platform event deliveries. Their payload is the standard event
+envelope `{ event, delivery: { id, subscription_id, attempt } }`, and their context exposes the caller token,
+decoded token payload, and `getClient()`.
+
+### `src/modules/app/resources/hooks/content-updated.ts`
+
+```typescript
+import type { AppEventHook } from "@vertesia/tools-sdk";
+
+export const contentUpdated = (async ({ event, delivery }, context) => {
+    const client = await context.getClient();
+    console.log("Processing event", {
+        eventId: event.event_id,
+        category: event.event_category,
+        action: event.action,
+        resourceId: event.resource_id,
+        deliveryId: delivery.id,
+    });
+    void client;
+}) satisfies AppEventHook;
+```
+
+### Registration
+
+```typescript
+import type { AppHookDefinition } from "@vertesia/tools-sdk";
+import { contentUpdated } from "./content-updated.js";
+
+export const hooks = [
+    {
+        kind: "event",
+        name: "content-updated",
+        description: "Processes updated content objects.",
+        handler: contentUpdated,
+    },
+] satisfies AppHookDefinition[];
+```
+
+Event hook names must be kebab-case URL-safe segments. `install` and `uninstall` are reserved. The example is exposed
+at `POST /api/hooks/content-updated` and advertised by `/api/package?scope=hooks`.
 
 ---
 

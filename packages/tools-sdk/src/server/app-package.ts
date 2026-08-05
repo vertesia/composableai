@@ -161,12 +161,20 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
     async hooks(pkg: AppPackage, config: ToolServerConfig) {
         const prefix = config.prefix || '/api';
         const lifecycleHooks = new Set(
-            (config.hooks ?? []).filter((hook) => hook.kind === 'lifecycle').map((hook) => hook.name),
+            config.hooks?.filter((hook) => hook.kind === 'lifecycle').map((hook) => hook.name),
         );
-        if (lifecycleHooks.size > 0) {
+        const eventHooks = (config.hooks ?? [])
+            .filter((hook) => hook.kind === 'event')
+            .map((hook) => ({
+                name: hook.name,
+                path: `${prefix}/hooks/${hook.name}`,
+                ...(hook.description ? { description: hook.description } : {}),
+            }));
+        if (lifecycleHooks.size > 0 || eventHooks.length > 0) {
             pkg.hooks = {
                 ...(lifecycleHooks.has('install') && { install: `${prefix}/hooks/install` }),
                 ...(lifecycleHooks.has('uninstall') && { uninstall: `${prefix}/hooks/uninstall` }),
+                ...(eventHooks.length > 0 && { events: eventHooks }),
             };
         }
     },

@@ -4,6 +4,7 @@ import type {
     AgentToolDefinition,
     AuthTokenPayload,
     MCPToolAnnotations,
+    PlatformEvent,
     ProjectConfiguration,
     RenderingTemplateDefinition,
     ToolExecutionMetadata,
@@ -75,8 +76,37 @@ export interface AppLifecycleHookDefinition {
     handler: AppLifecycleHook;
 }
 
+export interface AppEventHookDelivery {
+    /** Event-delivery intent id. */
+    id: string;
+    subscription_id: string;
+    attempt: number;
+}
+
+/** Canonical event-envelope body delivered by Vertesia webhook subscriptions. */
+export interface AppEventHookPayload {
+    event: PlatformEvent;
+    delivery: AppEventHookDelivery;
+}
+
+export type AppEventHookContext = ToolExecutionContext;
+export type AppEventHookResult = AppLifecycleHookResult;
+
+export type AppEventHook = (
+    payload: AppEventHookPayload,
+    context: AppEventHookContext,
+) => Promise<AppEventHookResult> | Promise<void>;
+
+export interface AppEventHookDefinition {
+    kind: 'event';
+    /** Kebab-case URL-safe name. The lifecycle names install and uninstall are reserved. */
+    name: string;
+    description?: string;
+    handler: AppEventHook;
+}
+
 /** App-owned hook definitions aggregated from active application modules. */
-export type AppHookDefinition = AppLifecycleHookDefinition;
+export type AppHookDefinition = AppLifecycleHookDefinition | AppEventHookDefinition;
 
 export interface AppLifecycleHookPayload {
     metadata?: ToolExecutionMetadata;
