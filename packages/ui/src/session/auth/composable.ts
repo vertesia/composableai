@@ -279,7 +279,7 @@ export async function fetchComposableToken(
                 Env.logger.warn('STS identity has no accessible account', {
                     vertesia: { error_code: body.errorCode, status: stsRes.status },
                 });
-                throw new NoAccessibleAccountError(stsEndpoint);
+                throw new NoAccessibleAccountError(stsEndpoint, body.message);
             }
 
             // During rolling deployment an older STS may return an uncoded user-token 403.
@@ -293,7 +293,12 @@ export async function fetchComposableToken(
                         error_code: body?.errorCode ?? REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE,
                     },
                 });
-                throw new RequestedScopeUnavailableError(stsEndpoint, accountId, projectId);
+                throw new RequestedScopeUnavailableError(
+                    stsEndpoint,
+                    accountId,
+                    projectId,
+                    body?.errorCode ? body.message : undefined,
+                );
             }
 
             Env.logger.error('STS returned an unrecognized forbidden response', {
@@ -306,6 +311,7 @@ export async function fetchComposableToken(
             });
             throw new AuthenticationServiceError('The authentication service rejected the request', stsEndpoint, {
                 status: stsRes.status,
+                errorCode: body.errorCode,
                 cause: body,
             });
         }
@@ -497,11 +503,13 @@ export class UserNotFoundError extends Error {
 export class STSError extends Error {
     stsURL: string;
     readonly status?: number;
-    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number }) {
+    readonly errorCode?: string;
+    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number; errorCode?: string }) {
         super(message, options);
         this.name = 'STSError';
         this.stsURL = stsURL;
         this.status = options?.status;
+        this.errorCode = options?.errorCode;
     }
 }
 
@@ -517,10 +525,12 @@ export class RequestedScopeUnavailableError extends STSError {
         stsURL: string,
         public readonly accountId?: string,
         public readonly projectId?: string,
-        /** @deprecated Raw STS response text is intentionally ignored. */
-        _responseMessage?: string,
+        responseMessage?: string,
     ) {
-        super('The requested account or project is unavailable', stsURL, { status: 403 });
+        super(responseMessage ?? 'The requested account or project is not available.', stsURL, {
+            status: 403,
+            errorCode: REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE,
+        });
         this.name = 'RequestedScopeUnavailableError';
         this.requestedScope = projectId ? 'project' : 'account';
     }
@@ -532,21 +542,24 @@ export const TokenAuthorizationError = RequestedScopeUnavailableError;
 export type TokenAuthorizationError = RequestedScopeUnavailableError;
 
 export class NoAccessibleAccountError extends STSError {
-    constructor(stsURL: string) {
-        super('No accessible account is available', stsURL, { status: 403 });
+    constructor(stsURL: string, responseMessage?: string) {
+        super(responseMessage ?? 'No accessible account is available for this user.', stsURL, {
+            status: 403,
+            errorCode: NO_ACCESSIBLE_ACCOUNT_ERROR_CODE,
+        });
         this.name = 'NoAccessibleAccountError';
     }
 }
 
 export class CredentialError extends STSError {
-    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number }) {
+    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number; errorCode?: string }) {
         super(message, stsURL, options);
         this.name = 'CredentialError';
     }
 }
 
 export class AuthenticationServiceError extends STSError {
-    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number }) {
+    constructor(message: string, stsURL: string, options?: ErrorOptions & { status?: number; errorCode?: string }) {
         super(message, stsURL, options);
         this.name = 'AuthenticationServiceError';
     }

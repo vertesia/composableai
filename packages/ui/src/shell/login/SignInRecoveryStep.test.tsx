@@ -23,6 +23,12 @@ const translations: Record<string, string> = {
     'auth.recovery.tryAgain': 'Try again',
     'auth.recovery.useDifferentAccount': 'Use a different account',
     'auth.recovery.supportPrefix': 'If you need help, contact',
+    'auth.recovery.technicalDetails': 'Technical details',
+    'auth.recovery.errorCode': 'Error code',
+    'auth.recovery.httpStatus': 'HTTP status',
+    'auth.recovery.requestedAccount': 'Requested account',
+    'auth.recovery.requestedProject': 'Requested project',
+    'auth.recovery.errorMessage': 'Error message',
 };
 
 vi.mock('@vertesia/ui/i18n', () => ({
@@ -60,5 +66,29 @@ describe('SignInRecoveryStep', () => {
             'mailto:support@vertesiahq.com',
         );
         expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Use a different account' }));
+    });
+
+    it('shows submitted selectors and the normalized server error in collapsed technical details', () => {
+        render(
+            <SignInRecoveryStep
+                details={{
+                    accountId: 'apple',
+                    errorCode: 'requested_scope_unavailable',
+                    message: 'The requested account or project is not available.',
+                    projectId: 'banana',
+                    status: 403,
+                }}
+                kind="scopeProject"
+                onContinue={vi.fn()}
+                onUseDifferentAccount={vi.fn()}
+            />,
+        );
+
+        const disclosure = screen.getByText('Technical details').closest('details');
+        expect(disclosure?.hasAttribute('open')).toBe(false);
+        expect(screen.getByText('requested_scope_unavailable')).toBeTruthy();
+        expect(screen.getByText('apple')).toBeTruthy();
+        expect(screen.getByText('banana')).toBeTruthy();
+        expect(screen.getByText('The requested account or project is not available.')).toBeTruthy();
     });
 });

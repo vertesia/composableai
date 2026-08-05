@@ -212,10 +212,19 @@ describe('getComposableToken', () => {
 
         const { fetchComposableToken, RequestedScopeUnavailableError, TokenAuthorizationError } =
             await importComposableAuth();
-        const promise = fetchComposableToken(async () => 'identity-token', 'account-a', 'project-a');
+        const error = await fetchComposableToken(async () => 'identity-token', 'account-a', 'project-a').catch(
+            (caught) => caught,
+        );
 
-        await expect(promise).rejects.toBeInstanceOf(RequestedScopeUnavailableError);
-        await expect(promise).rejects.toBeInstanceOf(TokenAuthorizationError);
+        expect(error).toBeInstanceOf(RequestedScopeUnavailableError);
+        expect(error).toBeInstanceOf(TokenAuthorizationError);
+        expect(error).toMatchObject({
+            accountId: 'account-a',
+            errorCode: 'requested_scope_unavailable',
+            message: 'safe message',
+            projectId: 'project-a',
+            status: 403,
+        });
     });
 
     it('classifies users with no accessible account separately', async () => {
@@ -237,6 +246,7 @@ describe('getComposableToken', () => {
 
         expect(error).toBeInstanceOf(NoAccessibleAccountError);
         expect(isNoAccessibleAccountError(error)).toBe(true);
+        expect(error).toMatchObject({ errorCode: 'no_accessible_account', message: 'safe message', status: 403 });
     });
 
     it.each([

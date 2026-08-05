@@ -283,18 +283,38 @@ function SigninScreenImpl({
         const kind: SignInRecoveryKind = authError.requestedScope === 'project' ? 'scopeProject' : 'scopeAccount';
         content = (
             <SignInRecoveryStep
+                details={{
+                    accountId: authError.accountId,
+                    errorCode: authError.errorCode,
+                    message: authError.message,
+                    projectId: authError.projectId,
+                    status: authError.status,
+                }}
                 kind={kind}
                 onContinue={continueWithSanitizedScope}
                 onUseDifferentAccount={useDifferentAccount}
             />
         );
-    } else if (mode === 'noAccessibleAccount') {
-        content = <SignInRecoveryStep kind="noAccessibleAccount" onUseDifferentAccount={useDifferentAccount} />;
-    } else if (mode === 'credentialFailure') {
-        content = <SignInRecoveryStep kind="credential" onUseDifferentAccount={useDifferentAccount} />;
-    } else if (mode === 'serviceFailure') {
+    } else if (mode === 'noAccessibleAccount' && authError instanceof NoAccessibleAccountError) {
         content = (
             <SignInRecoveryStep
+                details={{ errorCode: authError.errorCode, message: authError.message, status: authError.status }}
+                kind="noAccessibleAccount"
+                onUseDifferentAccount={useDifferentAccount}
+            />
+        );
+    } else if (mode === 'credentialFailure' && authError instanceof CredentialError) {
+        content = (
+            <SignInRecoveryStep
+                details={{ errorCode: authError.errorCode, message: authError.message, status: authError.status }}
+                kind="credential"
+                onUseDifferentAccount={useDifferentAccount}
+            />
+        );
+    } else if (mode === 'serviceFailure' && authError instanceof AuthenticationServiceError) {
+        content = (
+            <SignInRecoveryStep
+                details={{ errorCode: authError.errorCode, message: authError.message, status: authError.status }}
                 kind="service"
                 onContinue={retryAuthentication}
                 onUseDifferentAccount={useDifferentAccount}

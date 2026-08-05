@@ -66,7 +66,12 @@ describe('STS canonical contracts', () => {
     it('checks every documented response shape and forbidden error-code literal', () => {
         expect(validateApiResponse('IssueTokenResponse', { token: 'signed', token_type: 'Bearer' }).valid).toBe(true);
         expect(validateApiResponse('IssueTokenResponse', { token: 'signed', token_type: 'bearer' }).valid).toBe(false);
-        for (const errorCode of ['requested_scope_unavailable', 'no_accessible_account', 'restricted_environment']) {
+        for (const errorCode of [
+            'requested_scope_unavailable',
+            'no_accessible_account',
+            'restricted_environment',
+            'token_issuance_forbidden',
+        ]) {
             expect(
                 validateApiResponse('IssueTokenForbiddenResponse', {
                     error: 'Forbidden',

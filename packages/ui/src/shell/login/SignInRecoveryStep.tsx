@@ -5,13 +5,27 @@ import { SignInIconBadge, SignInStepButton, SignInStepHeader, SignInStepLayout }
 
 export type SignInRecoveryKind = 'scopeProject' | 'scopeAccount' | 'noAccessibleAccount' | 'credential' | 'service';
 
+export interface SignInRecoveryDetails {
+    accountId?: string;
+    errorCode?: string;
+    message: string;
+    projectId?: string;
+    status?: number;
+}
+
 interface SignInRecoveryStepProps {
+    details?: SignInRecoveryDetails;
     kind: SignInRecoveryKind;
     onContinue?: () => void;
     onUseDifferentAccount: () => void;
 }
 
-export default function SignInRecoveryStep({ kind, onContinue, onUseDifferentAccount }: SignInRecoveryStepProps) {
+export default function SignInRecoveryStep({
+    details,
+    kind,
+    onContinue,
+    onUseDifferentAccount,
+}: SignInRecoveryStepProps) {
     const { t } = useUITranslation();
     const [submitting, setSubmitting] = useState(false);
     const initialButtonRef = useRef<HTMLButtonElement>(null);
@@ -97,6 +111,42 @@ export default function SignInRecoveryStep({ kind, onContinue, onUseDifferentAcc
                     </p>
                 )}
             </div>
+
+            {details && (
+                <details className="rounded-lg border border-mixer-muted/30 bg-mixer-muted/10 px-4 py-3 text-sm">
+                    <summary className="cursor-pointer font-medium text-muted marker:text-muted focus-visible:outline-2 focus-visible:outline-offset-2">
+                        {t('auth.recovery.technicalDetails')}
+                    </summary>
+                    <dl className="mt-3 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs">
+                        {details.errorCode && (
+                            <>
+                                <dt className="text-muted">{t('auth.recovery.errorCode')}</dt>
+                                <dd className="wrap-break-word font-mono">{details.errorCode}</dd>
+                            </>
+                        )}
+                        {details.status && (
+                            <>
+                                <dt className="text-muted">{t('auth.recovery.httpStatus')}</dt>
+                                <dd className="font-mono">{details.status}</dd>
+                            </>
+                        )}
+                        {details.accountId && (
+                            <>
+                                <dt className="text-muted">{t('auth.recovery.requestedAccount')}</dt>
+                                <dd className="wrap-break-word font-mono">{details.accountId}</dd>
+                            </>
+                        )}
+                        {details.projectId && (
+                            <>
+                                <dt className="text-muted">{t('auth.recovery.requestedProject')}</dt>
+                                <dd className="wrap-break-word font-mono">{details.projectId}</dd>
+                            </>
+                        )}
+                        <dt className="text-muted">{t('auth.recovery.errorMessage')}</dt>
+                        <dd className="wrap-break-word font-mono">{details.message}</dd>
+                    </dl>
+                </details>
+            )}
         </SignInStepLayout>
     );
 }
