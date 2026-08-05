@@ -205,6 +205,32 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(true);
     });
 
+    it('accepts record key and value types in the generated activity catalog', () => {
+        expect(
+            validateApiResponse('ActivityCatalog', {
+                activities: [
+                    {
+                        name: 'countByStatus',
+                        title: 'Count By Status',
+                        paramsType: 'CountByStatusParams',
+                        params: [
+                            {
+                                name: 'counts',
+                                optional: false,
+                                type: {
+                                    name: 'record',
+                                    value: 'Record<string, number>',
+                                    keyType: { name: 'string', value: 'string' },
+                                    valueType: { name: 'number', value: 'number' },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            }).valid,
+        ).toBe(true);
+    });
+
     it('accepts process context, history, and definitions stored in historical formats', () => {
         expect(
             validateApiResponse('ProcessContextResponse', {

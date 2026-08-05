@@ -63,6 +63,8 @@ export const ActivityTypeDefinitionSchema: z.ZodType<ActivityTypeDefinition> = z
             innerType: ActivityTypeDefinitionSchema.optional(),
             enum: z.union([z.array(z.string()), z.array(z.number())]).optional(),
             union: z.array(ActivityTypeDefinitionSchema).optional(),
+            keyType: ActivityTypeDefinitionSchema.optional(),
+            valueType: ActivityTypeDefinitionSchema.optional(),
         }),
     )
     .meta({ id: 'ActivityTypeDefinition' });
