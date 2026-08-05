@@ -1174,6 +1174,21 @@ export interface ConversationFile {
     started_at: number;
     /** Timestamp when processing completed */
     completed_at?: number;
+    /**
+     * Timestamp when this file was delivered to the agent as part of a user message.
+     * Once set, the file is no longer re-attached to later messages — it remains
+     * accessible to tools via its artifact_path/md_path.
+     */
+    consumed_at?: number;
+}
+
+/**
+ * A file is deliverable when it is ready and has not yet been delivered to the agent as part
+ * of a user message. Deliverable files get attached to the next message; consumed ones stay
+ * reachable to tools via artifact_path/md_path but are not re-attached.
+ */
+export function isDeliverableFile(file: ConversationFile): boolean {
+    return file.status === FileProcessingStatus.READY && !file.consumed_at;
 }
 
 /**
