@@ -15,7 +15,7 @@ overrides:
   minimatch@>=3.0.0 <4.0.0: legacy-v3
   minimatch@>=9.0.0 <10.0.0: legacy-v9
   ajv@>=7.0.0 <8.18.0: ^8.20.0
-  flatted@<3.4.2: ^3.4.2
+  flatted@<3.4.2: ^3.4.3
   yaml@>=2.0.0 <2.8.3: ^2.9.0
   picomatch@<2.3.2: ^4.0.5
   picomatch@>=4.0.0 <4.0.4: ^4.0.5
@@ -31,8 +31,8 @@ importers:
         specifier: ^3.1093.0
         version: 3.1095.0
       '@vertesia/client':
-        specifier: 1.4.0
-        version: 1.4.0
+        specifier: 1.4.1
+        version: 1.4.1
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -53,8 +53,8 @@ importers:
         specifier: ^1.3.14
         version: 1.3.14
       globals:
-        specifier: ^17.7.0
-        version: 17.7.0
+        specifier: ^17.8.0
+        version: 17.8.0
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -68,6 +68,9 @@ packages:
   '@aws-sdk/core@3.977.1':
     resolution: {integrity: sha512-KVtQRtc00ES/y+Sc3vYXeP6pCIcNlBJCZOwvqSy8ZpVGmbM5+IG+AfhuTKQ2oXmIVqZJewaGMMpzPkywC6xg0w==}
     engines: {node: '>=20.0.0'}
+    deprecated: |-
+      Deprecated due to Document number parsing bug in JSON, see
+        https://github.com/aws/aws-sdk-js-v3/issues/8246. Newer version available.
 
   '@aws-sdk/credential-provider-env@3.972.61':
     resolution: {integrity: sha512-qihs2ekMb89Nxd2JenCgVFhjbkb3EIo7HEBCBzyZACKVJdrLUZBLOmAE3xr0Sayml8n/jZSzwO/IufIiIzO7PQ==}
@@ -182,8 +185,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@llumiverse/common@1.4.0':
-    resolution: {integrity: sha512-gMV8Dhq6cDcD9xUTOsjwU1AyTuf/hy1HbBCrLDLoDisDMftgOjTh7kAoDNiWKyJkZJlohloHz6t9wG5yghf3Lw==}
+  '@llumiverse/common@1.4.1':
+    resolution: {integrity: sha512-B6jr+x4LBamcV6zZeL98qQDkBmKU9QuwWoGWa/8u8/a0iCF1Fgkf3/L/Pq8aGO8b40X3LW/uOqocugaQ99G4WA==}
 
   '@smithy/core@3.30.0':
     resolution: {integrity: sha512-dl2yRglDxfzH9uJ4fSo4zTaAHa0zH7+V7BZMRWy8hEYIKT1BiqMUK/CN6T3ADQ3kbA5N1tmUulroJ2UtONS7Kw==}
@@ -338,14 +341,14 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@vertesia/api-fetch-client@1.4.0':
-    resolution: {integrity: sha512-KZsqY11/pfWAUufn5jJ0TKWS3P0unlIxKMSZ2SZQpCZ+DwjJe0WwPzdc/XNYuId4qYYSvTkmY+UCZwkfxeEBdg==}
+  '@vertesia/api-fetch-client@1.4.1':
+    resolution: {integrity: sha512-VpMFZCm+L95E1lhYn7wOujbxUYVc9GSh6ne/bHN/kAZmeSRm2/zQa7tmfm20Ev8Q3EjfOLkYrKqEe/Sw0fL4Mg==}
 
-  '@vertesia/client@1.4.0':
-    resolution: {integrity: sha512-NB+LMjyUhcU5Cf+Y8FzsW9rA6gmfX1AxEkVCLT341+D9IyNl2VaxM1baov30rAl1ZQ/H4k42iF4z11uBMhHJYg==}
+  '@vertesia/client@1.4.1':
+    resolution: {integrity: sha512-dyUfFbfLkSDpi+QXg6Oh4iBdG9BQtxmM/mD3QWZ9T3hA7RV1821aSvfVt0P7ZVYuHmd7urzPvu2ebxvsH3uyQQ==}
 
-  '@vertesia/common@1.4.0':
-    resolution: {integrity: sha512-nGC21U1hzHm3zIzSerVy0MFaB8+BwYKOeCmK/5hdDXcQOeiAFkrWvFZScFRRi6rkUAHA8s0+97+cYZfB/VNiHA==}
+  '@vertesia/common@1.4.1':
+    resolution: {integrity: sha512-SONmOy4vTU422368irfe2LOXDJiU7VINiayQy9dQQN/xyrY/JdSGV6G/PHrCYGdBgpXJ4ihPDy8gciYIzRILhw==}
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
@@ -393,10 +396,6 @@ packages:
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
-  eventsource-parser@3.0.6:
-    resolution: {integrity: sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==}
-    engines: {node: '>=18.0.0'}
-
   eventsource-parser@3.1.0:
     resolution: {integrity: sha512-kJezFj9YFAMLeORyi7aCLxLbD5/qWMQnoMVlVPyHIll7lgRJCc3JVln9Vgl9nwQi0YkMnhdGTMNn7CkRRAptMg==}
     engines: {node: '>=18.0.0'}
@@ -430,8 +429,8 @@ packages:
     resolution: {integrity: sha512-zV/5HKTfCeKWnxG0Dmrw51hEWFGfcF2xiXqcA3+J90WDuP0SvoiSO5ORvcBsifmx/FoIjgQN3oNOGaQ5PhLFkg==}
     engines: {node: '>=18'}
 
-  globals@17.7.0:
-    resolution: {integrity: sha512-Czmyns5dUsq4seFBR/Kdydhmo8y9kC79hiSkPn0YcGtNnYWnrgt0vjrSjx9tspoDGWm2CMarffRuLjM4xUz8xg==}
+  globals@17.8.0:
+    resolution: {integrity: sha512-Zz/LMDZScFmkakeL2cTHzf+PbWKdpU3uclqkZT7TjDG58j5WPt0PpA+n9uPI24fZtlw07q0OtEi84K+umsRzqQ==}
     engines: {node: '>=18'}
 
   google-auth-library@10.9.1:
@@ -674,7 +673,7 @@ snapshots:
   '@biomejs/cli-win32-x64@2.5.5':
     optional: true
 
-  '@llumiverse/common@1.4.0': {}
+  '@llumiverse/common@1.4.1': {}
 
   '@smithy/core@3.30.0':
     dependencies:
@@ -779,20 +778,20 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@vertesia/api-fetch-client@1.4.0':
+  '@vertesia/api-fetch-client@1.4.1':
     dependencies:
       eventsource-parser: 3.1.0
 
-  '@vertesia/client@1.4.0':
+  '@vertesia/client@1.4.1':
     dependencies:
-      '@llumiverse/common': 1.4.0
-      '@vertesia/api-fetch-client': 1.4.0
-      '@vertesia/common': 1.4.0
+      '@llumiverse/common': 1.4.1
+      '@vertesia/api-fetch-client': 1.4.1
+      '@vertesia/common': 1.4.1
       eventsource: 4.1.0
 
-  '@vertesia/common@1.4.0':
+  '@vertesia/common@1.4.1':
     dependencies:
-      '@llumiverse/common': 1.4.0
+      '@llumiverse/common': 1.4.1
       ajv: 8.20.0
 
   agent-base@7.1.4: {}
@@ -830,13 +829,11 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  eventsource-parser@3.0.6: {}
-
   eventsource-parser@3.1.0: {}
 
   eventsource@4.1.0:
     dependencies:
-      eventsource-parser: 3.0.6
+      eventsource-parser: 3.1.0
 
   extend@3.0.2: {}
 
@@ -869,7 +866,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  globals@17.7.0: {}
+  globals@17.8.0: {}
 
   google-auth-library@10.9.1:
     dependencies:
