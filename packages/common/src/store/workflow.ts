@@ -738,6 +738,15 @@ export enum FileProcessingStatus {
 export type ConversationFile = z.infer<typeof ConversationFileSchema>;
 
 /**
+ * A file is deliverable when it is ready and has not yet been delivered to the agent as part
+ * of a user message. Deliverable files get attached to the next message; consumed ones stay
+ * reachable to tools via artifact_path/md_path but are not re-attached.
+ */
+export function isDeliverableFile(file: ConversationFile): boolean {
+    return file.status === FileProcessingStatus.READY && !file.consumed_at;
+}
+
+/**
  * Details for file processing SYSTEM messages.
  * Used when type is AgentMessageType.SYSTEM with system_type: 'file_processing'.
  */

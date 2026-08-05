@@ -476,13 +476,39 @@ export function useAgentStream(
                     onHistoryLoaded: (historical) => {
                         if (abortController.signal.aborted) return;
                         const timelineMessages = historical.filter(shouldStoreTimelineMessage);
+                        let latestFileSnapshot: FileProcessingDetails | undefined;
+                        let latestFileSnapshotTs = Number.NEGATIVE_INFINITY;
                         // Advance the watermark synchronously before React processes the
                         // history state update. Some completed streams replay history via
                         // the live callback immediately after onHistoryLoaded returns.
+                        // Must cover every historical message, not just the timeline subset:
+                        // file_processing snapshots are excluded from timelineMessages, so
+                        // scanning only that subset would leave the cursor behind them and
+                        // the replay guard would never fire for a file-only history.
                         for (const message of historical) {
                             if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
                                 lastDeliveredTsRef.current = message.timestamp;
                             }
+                            if (message.type === AgentMessageType.SYSTEM) {
+                                const details = message.details as FileProcessingDetails | undefined;
+                                if (details?.system_type === 'file_processing' && details.files) {
+                                    // GET /updates is returned unsorted (the client only ever
+                                    // takes a Math.max over timestamps), so select the newest
+                                    // snapshot by timestamp instead of trusting arrival order.
+                                    // >= keeps last-wins for ties and for untimestamped messages.
+                                    const timestamp = message.timestamp ?? Number.NEGATIVE_INFINITY;
+                                    if (!latestFileSnapshot || timestamp >= latestFileSnapshotTs) {
+                                        latestFileSnapshot = details;
+                                        latestFileSnapshotTs = timestamp;
+                                    }
+                                }
+                            }
+                        }
+                        // Hydrate the latest archived inventory once so an unconsumed staged file
+                        // remains visible after reload. Subsequent live-callback replay is ignored
+                        // by isReplay above, while useFileProcessing filters consumed/delivered files.
+                        if (latestFileSnapshot) {
+                            setServerFileUpdates(new Map(latestFileSnapshot.files.map((file) => [file.id, file])));
                         }
                         debugAgentChat('history loaded', {
                             agentRunId,

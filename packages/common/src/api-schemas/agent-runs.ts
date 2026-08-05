@@ -284,6 +284,13 @@ export const ConversationFileSchema = z
         error: z.string().meta({ description: 'Error message if status is ERROR' }).optional(),
         started_at: z.number().meta({ description: 'Timestamp when upload started' }),
         completed_at: z.number().meta({ description: 'Timestamp when processing completed' }).optional(),
+        consumed_at: z
+            .number()
+            .meta({
+                description:
+                    'Timestamp when this file was delivered to the agent as part of a user message. Once set, the file is no longer re-attached to later messages — it remains accessible to tools via its artifact_path/md_path.',
+            })
+            .optional(),
     })
     .meta({ id: 'ConversationFile', description: 'Represents a file being processed in a conversation workflow.' });
 
