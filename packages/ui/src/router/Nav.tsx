@@ -1,5 +1,14 @@
-import type { SyntheticEvent } from 'react';
+import type { MouseEvent, SyntheticEvent } from 'react';
 import { useNavigate, useRouterContext } from './Router';
+
+/**
+ * True when the click carries a modifier the browser uses for alternate link behavior
+ * (open in new tab/window, download) or is not a primary-button click. Such clicks must fall
+ * through to the native anchor so the browser can handle them instead of the SPA router.
+ */
+function isModifiedClick(ev: MouseEvent): boolean {
+    return ev.metaKey || ev.altKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0;
+}
 
 /**
  * Wraps a <a href="..."> and perform the navigation to href through the router.
@@ -76,8 +85,8 @@ export function NavLink({
     const isExternal = /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//') || (!!target && target !== '_self');
     const isInternal = !isAnchorOrEmpty && !isExternal;
     const resolvedHref = !skipStickyParams && isInternal ? router.getTopRouter().navigator.addStickyParams(href) : href;
-    const _onClick = (ev: SyntheticEvent) => {
-        if (ev.defaultPrevented || !isInternal) {
+    const _onClick = (ev: MouseEvent) => {
+        if (ev.defaultPrevented || !isInternal || isModifiedClick(ev)) {
             return;
         }
         ev.stopPropagation();

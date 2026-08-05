@@ -110,6 +110,37 @@ describe('AgentRequestInputOverlay', () => {
         });
     });
 
+    it('sends a tool approval option with structured metadata', () => {
+        const onSendMessage = vi.fn();
+
+        renderWithProviders(
+            <AgentRequestInputOverlay message={createToolApprovalRequestMessage()} onSendMessage={onSendMessage} />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Allow this action for this run' }));
+
+        expect(onSendMessage).toHaveBeenCalledTimes(1);
+        expect(onSendMessage).toHaveBeenCalledWith('allow_for_run', {
+            tool_approval_response: {
+                decision: 'allow_for_run',
+                approval_key: 'write_artifact:name:quotes.md',
+            },
+        });
+    });
+
+    it('sends a bare option id for prompts that are not tool approvals', () => {
+        const onSendMessage = vi.fn();
+        const message = createToolApprovalRequestMessage();
+        delete (message.details as Record<string, unknown>).tool_approval;
+
+        renderWithProviders(<AgentRequestInputOverlay message={message} onSendMessage={onSendMessage} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Allow once' }));
+
+        expect(onSendMessage).toHaveBeenCalledTimes(1);
+        expect(onSendMessage).toHaveBeenCalledWith('allow_once');
+    });
+
     it('renders legacy field-prefixed tool approval prompts with a friendly target', () => {
         const message = createToolApprovalRequestMessage();
         message.message = 'Approve Write Artifact: name quotes.md?';

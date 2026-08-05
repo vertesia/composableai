@@ -110,10 +110,10 @@ export function SelectContentTypeModal({
                 )}
             </ModalBody>
             <ModalFooter>
-                <Button variant="ghost" onClick={handleClose} alt={t('modal.cancel')}>
+                <Button variant="ghost" onClick={handleClose} title={t('modal.cancel')}>
                     {t('modal.cancel')}
                 </Button>
-                <Button onClick={handleConfirm} alt={t('store.confirmSelection')}>
+                <Button onClick={handleConfirm} title={t('store.confirmSelection')}>
                     {t('modal.confirm')}
                 </Button>
             </ModalFooter>

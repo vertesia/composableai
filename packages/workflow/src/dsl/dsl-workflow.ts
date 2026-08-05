@@ -603,6 +603,9 @@ function convertDSLActivityOptions(options?: DSLActivityOptions): ActivityOption
     if (options.startToCloseTimeout) {
         result.startToCloseTimeout = ms(options.startToCloseTimeout as StringValue);
     }
+    if (options.heartbeatTimeout) {
+        result.heartbeatTimeout = ms(options.heartbeatTimeout as StringValue);
+    }
     if (options.scheduleToCloseTimeout) {
         result.scheduleToCloseTimeout = ms(options.scheduleToCloseTimeout as StringValue);
     }

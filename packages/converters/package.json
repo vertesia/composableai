@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/converters",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "description": "Image and content converters",
     "type": "module",
     "main": "./lib/index.js",
@@ -31,7 +31,7 @@
         "vitest": "^4.1.9"
     },
     "dependencies": {
-        "sharp": "^0.34.5",
+        "sharp": "^0.35.0",
         "tmp": "^0.2.7"
     },
     "repository": {

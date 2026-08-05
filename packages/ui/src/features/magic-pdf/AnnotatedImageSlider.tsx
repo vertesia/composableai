@@ -1,4 +1,4 @@
-import { Button, Center, VTooltip } from '@vertesia/ui/core';
+import { Button, Center } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import clsx from 'clsx';
 import { ChevronsDown, ChevronsUp, Image, Loader2, Maximize, Minus, Plus, ScanSearch } from 'lucide-react';
@@ -255,7 +255,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch gap-y-2', className)}>
             <div className="relative flex items-center justify-center px-2 h-9">
-                <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
+                <Button variant="ghost" size="xs" onClick={goPrev} title={t('pdf.previousPage')}>
                     <ChevronsUp className="size-4" />
                 </Button>
                 <div className="absolute start-2 flex items-center gap-x-1">
@@ -302,7 +302,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                 ))}
             </div>
             <div className="flex items-center justify-center h-9">
-                <Button variant="ghost" size="xs" onClick={goNext} alt={t('pdf.nextPage')}>
+                <Button variant="ghost" size="xs" onClick={goNext} title={t('pdf.nextPage')}>
                     <ChevronsDown className="size-4" />
                 </Button>
             </div>
@@ -320,22 +320,21 @@ interface ImageTypeButtonProps {
 function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTypeButtonProps) {
     const isSelected = type === currentType;
     return (
-        <VTooltip description={tooltip} placement="bottom" size="xs">
-            <Button
-                variant="unstyled"
-                aria-label={tooltip}
-                aria-pressed={isSelected}
-                className={clsx(
-                    'p-1 rounded cursor-pointer transition-colors',
-                    isSelected
-                        ? 'text-primary bg-primary/10'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                )}
-                onClick={onClick}
-            >
-                {icon}
-            </Button>
-        </VTooltip>
+        <Button
+            title={tooltip}
+            tooltipPlacement="bottom"
+            variant="unstyled"
+            aria-pressed={isSelected}
+            className={clsx(
+                'p-1 rounded cursor-pointer transition-colors',
+                isSelected
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+            )}
+            onClick={onClick}
+        >
+            {icon}
+        </Button>
     );
 }
 
@@ -351,54 +350,51 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
     const { t } = useUITranslation();
     return (
         <div className="flex items-center gap-x-0.5">
-            <VTooltip description={t('pdf.zoomOut')} placement="bottom" size="xs">
-                <Button
-                    variant="unstyled"
-                    aria-label={t('pdf.zoomOut')}
-                    className={clsx(
-                        'p-1 rounded cursor-pointer transition-colors',
-                        canZoomOut
-                            ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                            : 'text-muted-foreground/40 cursor-not-allowed',
-                    )}
-                    onClick={onZoomOut}
-                    disabled={!canZoomOut}
-                >
-                    <Minus className="size-4" />
-                </Button>
-            </VTooltip>
+            <Button
+                title={t('pdf.zoomOut')}
+                tooltipPlacement="bottom"
+                variant="unstyled"
+                className={clsx(
+                    'p-1 rounded cursor-pointer transition-colors',
+                    canZoomOut
+                        ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        : 'text-muted-foreground/40 cursor-not-allowed',
+                )}
+                onClick={onZoomOut}
+                disabled={!canZoomOut}
+            >
+                <Minus className="size-4" />
+            </Button>
             <span className="text-xs text-muted-foreground min-w-[32px] text-center">{zoom}%</span>
-            <VTooltip description={t('pdf.zoomIn')} placement="bottom" size="xs">
-                <Button
-                    variant="unstyled"
-                    aria-label={t('pdf.zoomIn')}
-                    className={clsx(
-                        'p-1 rounded cursor-pointer transition-colors',
-                        canZoomIn
-                            ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                            : 'text-muted-foreground/40 cursor-not-allowed',
-                    )}
-                    onClick={onZoomIn}
-                    disabled={!canZoomIn}
-                >
-                    <Plus className="size-4" />
-                </Button>
-            </VTooltip>
-            <VTooltip description={t('pdf.fitToWidth')} placement="bottom" size="xs">
-                <Button
-                    variant="unstyled"
-                    aria-label={t('pdf.fitToWidth')}
-                    className={clsx(
-                        'p-1 rounded cursor-pointer transition-colors',
-                        zoom !== DEFAULT_ZOOM
-                            ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                            : 'text-muted-foreground/40',
-                    )}
-                    onClick={onFitToView}
-                >
-                    <Maximize className="size-4" />
-                </Button>
-            </VTooltip>
+            <Button
+                title={t('pdf.zoomIn')}
+                tooltipPlacement="bottom"
+                variant="unstyled"
+                className={clsx(
+                    'p-1 rounded cursor-pointer transition-colors',
+                    canZoomIn
+                        ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        : 'text-muted-foreground/40 cursor-not-allowed',
+                )}
+                onClick={onZoomIn}
+                disabled={!canZoomIn}
+            >
+                <Plus className="size-4" />
+            </Button>
+            <Button
+                title={t('pdf.fitToWidth')}
+                tooltipPlacement="bottom"
+                variant="unstyled"
+                className={clsx(
+                    'p-1 rounded cursor-pointer transition-colors',
+                    zoom !== DEFAULT_ZOOM
+                        ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        : 'text-muted-foreground/40',
+                )}
+                onClick={onFitToView}
+            >
+                <Maximize className="size-4" />
+            </Button>
         </div>
     );
 }

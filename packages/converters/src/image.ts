@@ -1,8 +1,8 @@
-import sharp from 'sharp';
+import sharp, { type FormatEnum, type Sharp } from 'sharp';
 
 export interface TransformOptions {
     max_hw?: number;
-    format?: keyof sharp.FormatEnum;
+    format?: keyof FormatEnum;
 }
 
 type SharpInputType =
@@ -28,7 +28,7 @@ function isReadableStream(input: SharpInputType): input is DestroyableReadableSt
 }
 
 export function createImageTransformer(input: SharpInputType, opts: TransformOptions) {
-    let sh: sharp.Sharp;
+    let sh: Sharp;
     if (isReadableStream(input)) {
         sh = input.pipe(sharp());
     } else {
@@ -57,7 +57,7 @@ export async function transformImage(
     input: SharpInputType,
     output: NodeJS.WritableStream,
     opts: TransformOptions,
-): Promise<sharp.Sharp> {
+): Promise<Sharp> {
     const sh = createImageTransformer(input, opts);
     sh.pipe(output);
 

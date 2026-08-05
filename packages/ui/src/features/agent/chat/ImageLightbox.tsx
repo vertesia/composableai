@@ -64,7 +64,6 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
                             className="absolute top-2 end-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
                             onClick={closeImage}
                             title={t('agent.close')}
-                            aria-label={t('agent.close')}
                         >
                             <X className="size-6" />
                         </Button>

@@ -308,7 +308,7 @@ export function PdfPageSlider({
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch', compact ? 'gap-y-1' : 'gap-y-2', className)}>
             <div className={clsx('relative flex items-center justify-center px-2', compact ? 'h-6' : 'h-9')}>
-                <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
+                <Button variant="ghost" size="xs" onClick={goPrev} title={t('pdf.previousPage')}>
                     <ChevronsUp className="size-4" />
                 </Button>
                 <div className="absolute start-2 flex items-center gap-x-1">
@@ -378,7 +378,7 @@ export function PdfPageSlider({
                 />
             </div>
             <div className={clsx('flex items-center justify-center', compact ? 'h-6' : 'h-9')}>
-                <Button variant="ghost" size="xs" onClick={goNext} alt={t('pdf.nextPage')}>
+                <Button variant="ghost" size="xs" onClick={goNext} title={t('pdf.nextPage')}>
                     <ChevronsDown className="size-4" />
                 </Button>
             </div>
@@ -454,18 +454,18 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
     const { t } = useUITranslation();
     return (
         <div className="flex items-center gap-x-0.5">
-            <Button variant="ghost" size="xs" onClick={onZoomOut} isDisabled={!canZoomOut} alt={t('pdf.zoomOut')}>
+            <Button variant="ghost" size="xs" onClick={onZoomOut} isDisabled={!canZoomOut} title={t('pdf.zoomOut')}>
                 <Minus />
             </Button>
             <span className="text-xs text-muted-foreground min-w-[32px] text-center">{zoom}%</span>
-            <Button variant="ghost" size="xs" onClick={onZoomIn} isDisabled={!canZoomIn} alt={t('pdf.zoomIn')}>
+            <Button variant="ghost" size="xs" onClick={onZoomIn} isDisabled={!canZoomIn} title={t('pdf.zoomIn')}>
                 <Plus />
             </Button>
             <Button
                 variant="ghost"
                 size="xs"
                 onClick={onFitToView}
-                alt={t('pdf.fitToWidth')}
+                title={t('pdf.fitToWidth')}
                 className={zoom === DEFAULT_ZOOM ? 'text-muted-foreground/40' : undefined}
             >
                 <Maximize />

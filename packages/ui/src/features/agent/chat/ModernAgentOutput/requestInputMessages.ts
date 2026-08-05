@@ -169,6 +169,22 @@ export function isToolApprovalRequestInput(message: AgentMessage): boolean {
     return message.type === AgentMessageType.REQUEST_INPUT && getToolApprovalKey(message) !== undefined;
 }
 
+const TOOL_APPROVAL_OPTION_DECISIONS = new Set(['allow_once', 'allow_for_run', 'deny']);
+
+/**
+ * Metadata to attach when the user picks an option on a tool-approval prompt, so the workflow
+ * reads the decision structurally instead of from the message text (which clients may decorate,
+ * e.g. with an attachments footer). Returns undefined for non-approval prompts or unknown options.
+ */
+export function getToolApprovalResponseMetadata(
+    message: AgentMessage,
+    optionId: string,
+): Record<string, unknown> | undefined {
+    const approvalKey = getToolApprovalKey(message);
+    if (!approvalKey || !TOOL_APPROVAL_OPTION_DECISIONS.has(optionId)) return undefined;
+    return { tool_approval_response: { decision: optionId, approval_key: approvalKey } };
+}
+
 function isToolApprovalOptionResponse(message: AgentMessage): boolean {
     if (message.type !== AgentMessageType.QUESTION) return false;
     const normalized = getAgentMessageText(message).trim().toLowerCase();
@@ -181,7 +197,11 @@ function isToolApprovalMetadataResponse(message: AgentMessage): boolean {
     const metadata = getRecord(details?.metadata);
     const toolApprovalResponse =
         getRecord(details?.tool_approval_response) ?? getRecord(metadata?.tool_approval_response);
-    return toolApprovalResponse?.decision === 'deny_with_feedback';
+    const decision = toolApprovalResponse?.decision;
+    return (
+        decision === 'deny_with_feedback' ||
+        (typeof decision === 'string' && TOOL_APPROVAL_OPTION_DECISIONS.has(decision))
+    );
 }
 
 function isToolApprovalResponse(message: AgentMessage): boolean {

@@ -7,6 +7,7 @@ import {
     AVAILABLE_REGIONS,
     config,
     DEFAULT_REGION,
+    DEV_REGIONS,
     getConfigUrl,
     getServerUrls,
     type Region,
@@ -342,9 +343,11 @@ export async function createProfile(name?: string, options: CreateProfileOptions
     }
 
     // Prompt for region when target requires it (preview/prod only)
-    const selectedRegion = readRegion(options.region);
+    // only offer the dev1 region in dev mode, like the target choices above
+    const regions = config.isDevMode ? DEV_REGIONS : AVAILABLE_REGIONS;
+    const selectedRegion = readRegion(options.region, regions);
     if (options.region && !selectedRegion) {
-        console.error(`Invalid region "${options.region}". Expected one of: ${AVAILABLE_REGIONS.join(', ')}`);
+        console.error(`Invalid region "${options.region}". Expected one of: ${regions.join(', ')}`);
         process.exit(1);
     }
     let region = selectedRegion ?? DEFAULT_REGION;
@@ -354,11 +357,11 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             type: 'select',
             name: 'region',
             message: 'Deployment region',
-            choices: AVAILABLE_REGIONS,
-            initial: AVAILABLE_REGIONS[0],
+            choices: regions,
+            initial: regions[0],
         };
         const regionResponse = await prompt<{ region?: string }>(regionQuestion);
-        region = readRegion(regionResponse.region) ?? DEFAULT_REGION;
+        region = readRegion(regionResponse.region, regions) ?? DEFAULT_REGION;
     }
 
     if (options.apikey) {
@@ -465,8 +468,8 @@ async function selectProfile(message = 'Select the profile') {
     return response.name;
 }
 
-function readRegion(value: string | undefined): Region | undefined {
-    return AVAILABLE_REGIONS.find((region) => region === value);
+function readRegion(value: string | undefined, regions: Region[] = AVAILABLE_REGIONS): Region | undefined {
+    return regions.find((region) => region === value);
 }
 
 interface CredentialRefs {
