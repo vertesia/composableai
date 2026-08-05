@@ -1,6 +1,6 @@
 ---
 name: vertesia-tool-server-resource
-description: Creates tools, skills, interactions, content types, and rendering templates for the Vertesia plugin tool server. Handles file scaffolding and module resource index wiring. Use when adding new tool server resources to this plugin.
+description: Creates tools, skills, interactions, content types, rendering templates, hooks, and event subscriptions for the Vertesia plugin tool server. Handles file scaffolding and module resource index wiring. Use when adding new tool server resources to this plugin.
 ---
 
 # Vertesia Tool Server Resource
@@ -13,9 +13,9 @@ Step-by-step guide for creating tool server resources. Each resource follows the
 
 For full code templates of every resource type, see `REFERENCE.md`.
 
-Application install/uninstall hooks are server lifecycle handlers rather than resource collections. They are still
-app-owned contributions: put their implementations under `src/modules/app/resources/hooks/` and register them in
-that directory's `index.ts`.
+Application hooks and event subscriptions are definitions rather than resource collections. They are still app-owned
+contributions: register hooks under `src/modules/app/resources/hooks/` and subscriptions under
+`src/modules/app/resources/subscriptions/`.
 
 ## Conventions
 
@@ -112,6 +112,19 @@ the same authenticated client context as tools.
 - Inspect registered event hooks through `/api/package?scope=hooks`.
 
 → Code in `REFERENCE.md` § Application event hooks.
+
+### Event Subscription
+
+Use an app-owned subscription to route matching platform events to an event hook registered by the same app.
+
+- Register definitions in `src/modules/app/resources/subscriptions/index.ts`.
+- Give each definition a stable kebab-case `id`.
+- Set `hook` to an `AppEventHookDefinition.name`; lifecycle hooks are not valid targets.
+- Define the event `filter` and required `run_as_role`, normally `automation`.
+- Do not set a URL or scope. Studio derives the project scope and deployed hook URL during installation.
+- Inspect contributions through `/api/package?scope=subscriptions`.
+
+→ Code in `REFERENCE.md` § Application event subscriptions.
 
 ## Collection registration
 

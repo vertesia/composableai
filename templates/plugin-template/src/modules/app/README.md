@@ -19,6 +19,7 @@ src/modules/app/
     ├── mcp/
     ├── processes/
     ├── skills/
+    ├── subscriptions/
     ├── templates/
     ├── tools/
     └── types/
@@ -74,3 +75,7 @@ app-owned registry directly under `src/tool-server/`.
 
 Register lifecycle and event hooks in `resources/hooks/index.ts`. Event hooks use kebab-case names, receive the
 standard `{ event, delivery }` webhook envelope, and are advertised through `/api/package?scope=hooks`.
+
+Register app-owned event subscriptions in `resources/subscriptions/index.ts`. A subscription references the local
+name of an event hook from `resources/hooks/index.ts`; Studio derives the project scope and deployed target URL when
+the app is installed.

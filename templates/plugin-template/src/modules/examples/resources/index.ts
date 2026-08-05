@@ -10,3 +10,4 @@ export { views } from './views/index.js';
 
 export const hooks = [];
 export const mcpProviders = [];
+export const subscriptions = [];

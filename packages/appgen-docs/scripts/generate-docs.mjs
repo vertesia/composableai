@@ -333,7 +333,7 @@ For package-only checks during authoring, run:
 pnpm run service:build:server
 \`\`\`
 
-The output must list the package artifacts. If an expected type, interaction, prompt, process, view, dashboard, template, widget, activity, tool, or seed script is missing from the summary, fix the exports before publishing.
+The output must list the package artifacts. If an expected type, interaction, prompt, process, view, dashboard, template, widget, activity, hook, subscription, tool, or seed script is missing from the summary, fix the exports before publishing.
 
 ## ServerConfig Checklist
 
@@ -349,6 +349,7 @@ import {
   mcpProviders,
   processes,
   skills,
+  subscriptions,
   templates,
   tools,
   types,
@@ -367,6 +368,7 @@ export const ServerConfig = {
   processes,
   views,
   hooks,
+  subscriptions,
   mcpProviders,
 } satisfies ToolServerConfig;
 \`\`\`

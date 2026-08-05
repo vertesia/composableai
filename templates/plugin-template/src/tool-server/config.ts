@@ -7,6 +7,7 @@ import {
     mcpProviders,
     processes,
     skills,
+    subscriptions,
     templates,
     tools,
     types,
@@ -32,6 +33,7 @@ export const ServerConfig = {
     // and renders it via the `/view/<id>` route or the `<ViewExperience>` component.
     views,
     hooks,
+    subscriptions,
     mcpProviders,
     uiConfig: {
         isolation: 'shadow',

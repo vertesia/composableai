@@ -52,8 +52,9 @@ src/
         templates/       # Rendering template collections
         activities/      # Remote activity collections
         dashboards/      # App dashboard definitions
-        hooks/           # App lifecycle hook definitions
+        hooks/           # App lifecycle and event hook definitions
         mcp/             # App-owned MCP provider registrations
+        subscriptions/   # Event subscriptions targeting app event hooks
     assistant/           # Optional assistant UI module
     examples/            # Optional example resource module
     app-gateway/         # Optional app-gateway runtime entry
@@ -105,9 +106,9 @@ These Rollup import transformations only work in `src/tool-server/` code:
 
 ## Creating Resources
 
-To create tools, skills, interactions, content types, or templates, use the **vertesia-tool-server-resource** skill. It provides step-by-step scaffolding with full code examples.
+To create tools, skills, interactions, content types, templates, hooks, or subscriptions, use the **vertesia-tool-server-resource** skill. It provides step-by-step scaffolding with full code examples.
 
-Each user resource follows the same pattern: create files under `src/modules/app/resources/<type>/<collection>/`, export from the collection, then add the collection to `src/modules/app/resources/<type>/index.ts`. Non-collection contributions such as hooks and MCP providers also expose arrays from their app-module resource indexes. `src/tool-server/config.ts` imports the generated `app-server-modules.ts` arrays.
+Each user resource follows the same pattern: create files under `src/modules/app/resources/<type>/<collection>/`, export from the collection, then add the collection to `src/modules/app/resources/<type>/index.ts`. Non-collection contributions such as hooks, subscriptions, and MCP providers also expose arrays from their app-module resource indexes. `src/tool-server/config.ts` imports the generated `app-server-modules.ts` arrays.
 
 App-owned contribution registries never belong in the tool-server bootstrap. A new contribution type must have a
 typed empty default under `src/modules/app/resources`, be exported by that module's resource index, and be added to

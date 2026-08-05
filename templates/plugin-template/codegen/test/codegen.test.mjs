@@ -72,6 +72,7 @@ test('default module codegen keeps only the app module', () => {
         assert.doesNotMatch(serverModules, /modules\/examples/);
         assert.match(serverModules, /export const hooks = \[\.\.\.appResources\.hooks\];/);
         assert.match(serverModules, /export const mcpProviders = \[\.\.\.appResources\.mcpProviders\];/);
+        assert.match(serverModules, /export const subscriptions = \[\.\.\.appResources\.subscriptions\];/);
         const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
         assert.equal(packageJson.scripts['codegen:dev'], undefined);
         assert.equal(packageJson.scripts.pretest, undefined);
@@ -85,6 +86,7 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/hooks/index.ts')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/mcp/index.ts')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/subscriptions/index.ts')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
         const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');

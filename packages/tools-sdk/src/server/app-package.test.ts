@@ -148,6 +148,96 @@ describe('buildAppPackage', () => {
         });
         expect(pkg.interactions).toBeUndefined();
     });
+
+    it('returns subscriptions that reference registered event hooks', async () => {
+        const config = {
+            hooks: [
+                {
+                    kind: 'event',
+                    name: 'content-updated',
+                    handler: async () => undefined,
+                },
+            ],
+            subscriptions: [
+                {
+                    id: 'content-updated',
+                    name: 'Content updated',
+                    description: 'Refresh app-owned projections after content changes.',
+                    hook: 'content-updated',
+                    filter: { action: ['updated'], resource_type: ['content_object'] },
+                    run_as_role: 'automation',
+                    priority: 'normal',
+                },
+            ],
+        } satisfies ToolServerConfig;
+
+        const pkg = await buildAppPackage(config, { scope: 'subscriptions' });
+
+        expect(pkg.subscriptions).toEqual(config.subscriptions);
+        expect(pkg.hooks).toBeUndefined();
+    });
+
+    it('rejects subscriptions that reference missing or lifecycle hooks', async () => {
+        const missingHook = {
+            subscriptions: [
+                {
+                    id: 'content-updated',
+                    name: 'Content updated',
+                    hook: 'content-updated',
+                    filter: { action: ['updated'] },
+                    run_as_role: 'automation',
+                },
+            ],
+        } satisfies ToolServerConfig;
+        await expect(buildAppPackage(missingHook, { scope: 'subscriptions' })).rejects.toThrow(
+            /references missing hook 'content-updated'/,
+        );
+
+        const lifecycleHook = {
+            hooks: [{ kind: 'lifecycle', name: 'install', handler: async () => undefined }],
+            subscriptions: [
+                {
+                    id: 'on-install',
+                    name: 'On install',
+                    hook: 'install',
+                    filter: { action: ['installed'] },
+                    run_as_role: 'automation',
+                },
+            ],
+        } satisfies ToolServerConfig;
+        await expect(buildAppPackage(lifecycleHook, { scope: 'subscriptions' })).rejects.toThrow(
+            /must reference an event hook/,
+        );
+    });
+
+    it('rejects duplicate or non-kebab-case subscription ids', async () => {
+        const eventHook = {
+            kind: 'event' as const,
+            name: 'content-updated',
+            handler: async () => undefined,
+        };
+        const subscription = {
+            id: 'content-updated',
+            name: 'Content updated',
+            hook: 'content-updated',
+            filter: { action: ['updated'] },
+            run_as_role: 'automation' as const,
+        };
+
+        await expect(
+            buildAppPackage(
+                { hooks: [eventHook], subscriptions: [subscription, { ...subscription }] },
+                { scope: 'subscriptions' },
+            ),
+        ).rejects.toThrow(/Duplicate app event subscription id 'content-updated'/);
+
+        await expect(
+            buildAppPackage(
+                { hooks: [eventHook], subscriptions: [{ ...subscription, id: 'Content Updated' }] },
+                { scope: 'subscriptions' },
+            ),
+        ).rejects.toThrow(/must be kebab case/);
+    });
 });
 
 describe('buildAppPackage type identity', () => {

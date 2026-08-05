@@ -10,6 +10,7 @@ A unified template for building Vertesia plugins with a **Hono tool server** (ba
 - **Content Types** -- schema definitions for structured data in Vertesia's store
 - **Templates** -- rendering templates for document generation
 - **MCP Providers** -- Model Context Protocol integrations
+- **Hooks and subscriptions** -- lifecycle setup and event-driven app behavior
 - **UI Plugin** -- custom React pages integrated into the Vertesia platform
 
 ## Modules
@@ -166,6 +167,10 @@ User-owned resources live under `src/modules/app/resources/`. Every resource typ
 create source files, export from a collection, and add the collection to the matching
 `src/modules/app/resources/<type>/index.ts` array. The generated `src/tool-server/app-server-modules.ts`
 collects active modules, and `src/tool-server/config.ts` imports those generated arrays.
+
+Event hooks are registered under `src/modules/app/resources/hooks/`. App-owned event subscriptions are registered
+under `src/modules/app/resources/subscriptions/` and reference an event hook by local name. They do not hardcode a
+deployment URL; Studio derives the project-scoped delivery target when the app is installed.
 
 ### Tools
 

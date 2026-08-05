@@ -12,6 +12,7 @@ Full code examples for each resource type. SKILL.md has the workflow and decisio
 - [Rendering Template](#rendering-template)
 - [Application lifecycle hooks](#application-lifecycle-hooks)
 - [Application event hooks](#application-event-hooks)
+- [Application event subscriptions](#application-event-subscriptions)
 - [Collection registration & icons](#collection-registration--icons)
 
 ---
@@ -460,6 +461,38 @@ export const hooks = [
 
 Event hook names must be kebab-case URL-safe segments. `install` and `uninstall` are reserved. The example is exposed
 at `POST /api/hooks/content-updated` and advertised by `/api/package?scope=hooks`.
+
+---
+
+## Application event subscriptions
+
+Subscriptions are declarative package contributions that route matching platform events to an event hook in the same
+app. They do not contain a deployment URL or project scope. Studio derives both when it installs the app.
+
+```typescript
+// src/modules/app/resources/subscriptions/index.ts
+import type { AppEventSubscriptionDefinition } from "@vertesia/tools-sdk";
+
+export const subscriptions = [
+    {
+        id: "content-updated",
+        name: "Content updated",
+        description: "Refresh app-owned projections after content changes.",
+        hook: "content-updated",
+        filter: {
+            action: ["updated"],
+            resource_type: ["content_object"],
+        },
+        run_as_role: "automation",
+        enabled: true,
+        priority: "normal",
+    },
+] satisfies AppEventSubscriptionDefinition[];
+```
+
+The `hook` value must match the `name` of a registered event hook. Package generation rejects missing hooks,
+lifecycle hooks, duplicate subscription ids, and ids that are not kebab-case. Multiple subscriptions may reference
+the same event hook with different filters. Inspect the result with `GET /api/package?scope=subscriptions`.
 
 ---
 

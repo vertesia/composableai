@@ -9,6 +9,7 @@ const SERVER_RESOURCES = [
     'mcpProviders',
     'processes',
     'skills',
+    'subscriptions',
     'templates',
     'tools',
     'types',

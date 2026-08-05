@@ -4,6 +4,7 @@ import type { JSONSchema } from '@llumiverse/common';
 import { z } from 'zod';
 import type { CompositeAppMenuNavItem } from '../apps.js';
 import type { InCodeProcessDefinition } from '../store/process.js';
+import { SystemRolesSchema } from './apikey.js';
 import {
     AgentToolDefinitionSchema,
     AppInstallationOAuthBindingSchema,
@@ -25,6 +26,7 @@ import {
     DashboardPanelSchema,
     DashboardQuerySchema,
 } from './dashboard.js';
+import { EventPrioritySchema, EventSubscriptionFilterSchema } from './events.js';
 import { StringValueMapSchema } from './files.js';
 import { RemoteActivityDefinitionSchema } from './integrations.js';
 import { CatalogInteractionRefSchema } from './interaction.js';
@@ -830,6 +832,29 @@ export const AppPackageHooksSchema = z
             'Lifecycle and event hooks exposed by the app runtime. Lifecycle entries are informational; Studio invokes their conventional sibling endpoints directly.',
     });
 
+export const AppEventSubscriptionDefinitionSchema = z
+    .strictObject({
+        id: z
+            .string()
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+            .meta({ description: 'Stable app-local subscription id in kebab case.' }),
+        name: z.string().meta({ description: 'Human-readable subscription name.' }),
+        description: z.string().meta({ description: 'Optional description of the subscription behavior.' }).optional(),
+        hook: z.string().meta({ description: 'Name of an event hook registered by the same app package.' }),
+        filter: EventSubscriptionFilterSchema,
+        run_as_role: SystemRolesSchema.meta({
+            description:
+                'Identity used for event delivery. Use automation for the standard event-triggered execution identity.',
+        }),
+        enabled: z.boolean().meta({ description: 'Whether the installed subscription is enabled.' }).optional(),
+        priority: EventPrioritySchema.meta({ description: 'Delivery priority for matching events.' }).optional(),
+    })
+    .meta({
+        id: 'AppEventSubscriptionDefinition',
+        description:
+            'An app-owned event subscription. Studio derives its project scope and delivery target from the app installation and referenced event hook.',
+    });
+
 export const AppPackageSchema = z
     .strictObject({
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
@@ -877,6 +902,10 @@ export const AppPackageSchema = z
             description: 'A JSON chema for the app installation settings.',
         }).optional(),
         hooks: AppPackageHooksSchema.optional(),
+        subscriptions: z
+            .array(AppEventSubscriptionDefinitionSchema)
+            .meta({ description: 'Event subscriptions contributed by the app.' })
+            .optional(),
     })
     .meta({ id: 'AppPackage' });
 

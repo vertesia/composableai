@@ -7,6 +7,7 @@ export const activities = [];
 export const hooks = [];
 export const mcpProviders = [];
 export const skills = [];
+export const subscriptions = [];
 export const templates = [];
 export const tools = [];
 export const views = [];

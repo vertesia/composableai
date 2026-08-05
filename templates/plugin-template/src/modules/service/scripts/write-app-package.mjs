@@ -295,6 +295,7 @@ function summarizeAppPackage(pkg) {
             activity.collection ? `${activity.collection}:${activity.name}` : activity.name,
         ),
         hooks: Object.keys(pkg.hooks || {}).sort(),
+        subscriptions: names(pkg.subscriptions, (subscription) => subscription.id),
     };
 }
 

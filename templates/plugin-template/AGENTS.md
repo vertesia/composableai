@@ -10,7 +10,7 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 | ------------------------------------------------------------------------------- | ------------------------------- |
 | Reviewing requirement docs, discovery notes, or feature/demo asks               | `vertesia-gap-assessment`       |
 | Understanding plugin architecture, dual build system, or `config.ts`            | `vertesia-plugin`               |
-| Adding tools, skills, interactions, content types, or rendering templates       | `vertesia-tool-server-resource` |
+| Adding tools, skills, interactions, types, templates, hooks, or subscriptions   | `vertesia-tool-server-resource` |
 | Building or modifying React UI pages or components                              | `vertesia-ui`                   |
 | Calling the Vertesia client API (objects, workflows, interactions, files)       | `vertesia-api`                  |
 | Writing or debugging DSL workflows that call remote activities                  | `vertesia-dsl-workflow`         |
@@ -21,7 +21,7 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 1. If the requirement is fuzzy or comes from a discovery doc → `vertesia-gap-assessment` first.
 2. Need plugin context (build, layout, deployment) → `vertesia-plugin`.
 3. Pick the implementation skill:
-   - Backend resources (tools/skills/interactions/types/templates) → `vertesia-tool-server-resource`
+   - Backend resources (tools/skills/interactions/types/templates/hooks/subscriptions) → `vertesia-tool-server-resource`
    - UI page or component → `vertesia-ui`
    - Multi-step orchestration → `vertesia-dsl-workflow`
 4. Add `vertesia-api` whenever the implementation reads or writes the platform.
@@ -91,6 +91,7 @@ src/modules/app/                              ← user-owned app module
     ├── interactions/
     ├── mcp/
     ├── skills/
+    ├── subscriptions/
     ├── templates/
     ├── tools/
     └── types/
@@ -109,6 +110,7 @@ Rules of thumb:
 - Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
 - User contributions must be exported from `src/modules/app/resources/<type>/index.ts`
 - Hooks use explicit definitions in `src/modules/app/resources/hooks/index.ts`: lifecycle hooks are `install`/`uninstall`; event hooks use kebab-case names and receive the canonical `{ event, delivery }` envelope
+- Event subscriptions live in `src/modules/app/resources/subscriptions/index.ts` and reference a registered event hook by its local `name`; do not hardcode a deployed hook URL
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files

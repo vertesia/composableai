@@ -3,6 +3,7 @@ import type { VertesiaClient } from '@vertesia/client';
 import type {
     AgentToolDefinition,
     AuthTokenPayload,
+    AppEventSubscriptionDefinition as CommonAppEventSubscriptionDefinition,
     MCPToolAnnotations,
     PlatformEvent,
     ProjectConfiguration,
@@ -14,6 +15,7 @@ import type {
 } from '@vertesia/common';
 
 export type { ToolExecutionMetadata };
+export type AppEventSubscriptionDefinition = CommonAppEventSubscriptionDefinition;
 
 export type ICollection<T = object> = CollectionProperties & Iterable<T>;
 

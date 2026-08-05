@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppPackageHooksSchema } from './api-schemas/app-runtime.js';
+import { AppEventSubscriptionDefinitionSchema, AppPackageHooksSchema } from './api-schemas/app-runtime.js';
 import { APP_ARTIFACT_TYPES, APP_CAPABILITIES, APP_PACKAGE_SCOPES, effectiveAppAccessControl } from './apps.js';
 
 describe('app capability contracts', () => {
@@ -11,6 +11,25 @@ describe('app capability contracts', () => {
 
     it('exposes app hooks as a package query scope', () => {
         expect(APP_PACKAGE_SCOPES).toContain('hooks');
+        expect(APP_PACKAGE_SCOPES).toContain('subscriptions');
+    });
+
+    it('accepts app-owned subscriptions without a deployment-specific target', () => {
+        expect(
+            AppEventSubscriptionDefinitionSchema.parse({
+                id: 'content-updated',
+                name: 'Content updated',
+                hook: 'content-updated',
+                filter: { action: ['updated'], resource_type: ['content_object'] },
+                run_as_role: 'automation',
+            }),
+        ).toEqual({
+            id: 'content-updated',
+            name: 'Content updated',
+            hook: 'content-updated',
+            filter: { action: ['updated'], resource_type: ['content_object'] },
+            run_as_role: 'automation',
+        });
     });
 
     it('accepts lifecycle and event hook package metadata', () => {

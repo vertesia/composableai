@@ -10,6 +10,7 @@ type ServerResource =
     | 'mcpProviders'
     | 'processes'
     | 'skills'
+    | 'subscriptions'
     | 'templates'
     | 'tools'
     | 'types'
@@ -50,6 +51,7 @@ const SERVER_RESOURCES: ServerResource[] = [
     'mcpProviders',
     'processes',
     'skills',
+    'subscriptions',
     'templates',
     'tools',
     'types',

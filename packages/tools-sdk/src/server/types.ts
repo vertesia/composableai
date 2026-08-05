@@ -14,7 +14,12 @@ import type { InteractionCollection } from '../InteractionCollection.js';
 import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
 import type { SkillCollection } from '../SkillCollection.js';
 import type { ToolCollection } from '../ToolCollection.js';
-import type { AppHookDefinition, MCPConnectionDetails, ToolExecutionPayload } from '../types.js';
+import type {
+    AppEventSubscriptionDefinition,
+    AppHookDefinition,
+    MCPConnectionDetails,
+    ToolExecutionPayload,
+} from '../types.js';
 
 /**
  * Extended context with parsed payload for tool/skill execution
@@ -94,6 +99,9 @@ export interface ToolServerConfig {
 
     /** Authenticated application hooks aggregated from active application modules. */
     hooks?: AppHookDefinition[];
+
+    /** App-owned subscriptions whose delivery target is a registered event hook. */
+    subscriptions?: AppEventSubscriptionDefinition[];
 
     /**
      * A JSON schema defining settings for the application using this server

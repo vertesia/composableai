@@ -26,6 +26,11 @@ export const mcpProviders = [
 ];
 export const processes = [...appResources.processes, ...examplesResources.processes, ...contentAppResources.processes];
 export const skills = [...appResources.skills, ...examplesResources.skills, ...contentAppResources.skills];
+export const subscriptions = [
+    ...appResources.subscriptions,
+    ...examplesResources.subscriptions,
+    ...contentAppResources.subscriptions,
+];
 export const templates = [...appResources.templates, ...examplesResources.templates, ...contentAppResources.templates];
 export const tools = [...appResources.tools, ...examplesResources.tools, ...contentAppResources.tools];
 export const types = [...appResources.types, ...examplesResources.types, ...contentAppResources.types];

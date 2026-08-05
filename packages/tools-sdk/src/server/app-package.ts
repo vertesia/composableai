@@ -178,6 +178,37 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
             };
         }
     },
+    async subscriptions(pkg: AppPackage, config: ToolServerConfig) {
+        const subscriptions = config.subscriptions ?? [];
+        const seenIds = new Set<string>();
+        const hooksByName = new Map((config.hooks ?? []).map((hook) => [hook.name, hook]));
+
+        for (const subscription of subscriptions) {
+            if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(subscription.id)) {
+                throw new Error(
+                    `Invalid app event subscription id '${subscription.id}'. Subscription ids must be kebab case.`,
+                );
+            }
+            if (seenIds.has(subscription.id)) {
+                throw new Error(`Duplicate app event subscription id '${subscription.id}'.`);
+            }
+            seenIds.add(subscription.id);
+
+            const hook = hooksByName.get(subscription.hook);
+            if (!hook) {
+                throw new Error(
+                    `App event subscription '${subscription.id}' references missing hook '${subscription.hook}'.`,
+                );
+            }
+            if (hook.kind !== 'event') {
+                throw new Error(
+                    `App event subscription '${subscription.id}' must reference an event hook; '${subscription.hook}' is a lifecycle hook.`,
+                );
+            }
+        }
+
+        pkg.subscriptions = subscriptions.map((subscription) => ({ ...subscription }));
+    },
 };
 
 function normalizeScopes(scope: BuildAppPackageOptions['scope']): Set<AppPackageScope> {
@@ -205,6 +236,7 @@ export async function buildAppPackage(
         await builders.settings(pkg, config, options);
         await builders.activities(pkg, config, options);
         await builders.hooks(pkg, config, options);
+        await builders.subscriptions(pkg, config, options);
     } else {
         if (scopes.has('tools')) {
             await builders.tools(pkg, config, options);
@@ -241,6 +273,9 @@ export async function buildAppPackage(
         }
         if (scopes.has('hooks')) {
             await builders.hooks(pkg, config, options);
+        }
+        if (scopes.has('subscriptions')) {
+            await builders.subscriptions(pkg, config, options);
         }
     }
 
