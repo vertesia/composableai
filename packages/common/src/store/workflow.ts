@@ -735,7 +735,54 @@ export enum FileProcessingStatus {
     ERROR = 'error',
 }
 
+<<<<<<< HEAD
 export type ConversationFile = z.infer<typeof ConversationFileSchema>;
+=======
+/**
+ * Represents a file being processed in a conversation workflow.
+ */
+export interface ConversationFile {
+    /** Unique ID for tracking this file (generated client-side) */
+    id: string;
+    /** Original filename */
+    name: string;
+    /** MIME type */
+    content_type: string;
+    /** Size in bytes */
+    size: number;
+    /** Current processing status */
+    status: FileProcessingStatus;
+    /** Artifact path (e.g., "files/document.pdf") - set after upload */
+    artifact_path?: string;
+    /** Full artifact reference URI (e.g., "artifact:files/document.pdf") */
+    reference?: string;
+    /** Path to extracted text markdown (e.g., "files/document.pdf.md") */
+    md_path?: string;
+    /** Whether text extraction completed successfully */
+    text_extracted?: boolean;
+    /** Error message if status is ERROR */
+    error?: string;
+    /** Timestamp when upload started */
+    started_at: number;
+    /** Timestamp when processing completed */
+    completed_at?: number;
+    /**
+     * Timestamp when this file was delivered to the agent as part of a user message.
+     * Once set, the file is no longer re-attached to later messages — it remains
+     * accessible to tools via its artifact_path/md_path.
+     */
+    consumed_at?: number;
+}
+
+/**
+ * A file is deliverable when it is ready and has not yet been delivered to the agent as part
+ * of a user message. Deliverable files get attached to the next message; consumed ones stay
+ * reachable to tools via artifact_path/md_path but are not re-attached.
+ */
+export function isDeliverableFile(file: ConversationFile): boolean {
+    return file.status === FileProcessingStatus.READY && !file.consumed_at;
+}
+>>>>>>> 9f510131 (fix: stop re-attaching already-delivered conversation files (#1742))
 
 /**
  * Details for file processing SYSTEM messages.

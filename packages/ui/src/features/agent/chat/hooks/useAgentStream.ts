@@ -360,11 +360,14 @@ export function useAgentStream(
                     // stream. Track replay status once, before the cursor advances below —
                     // every replay-sensitive consumer in this callback must use it.
                     const isReplay = Boolean(message.timestamp && message.timestamp <= lastDeliveredTsRef.current);
+<<<<<<< HEAD
                     // Only forward genuinely new deliveries so onMessage consumers
                     // never treat replayed events as fresh ones.
                     if (!isReplay) {
                         onMessageRef.current?.(message);
                     }
+=======
+>>>>>>> 9f510131 (fix: stop re-attaching already-delivered conversation files (#1742))
 
                     debugAgentChat('stream message', {
                         agentRunId,
@@ -476,13 +479,39 @@ export function useAgentStream(
                     onHistoryLoaded: (historical) => {
                         if (abortController.signal.aborted) return;
                         const timelineMessages = historical.filter(shouldStoreTimelineMessage);
+<<<<<<< HEAD
                         // Advance the watermark synchronously before React processes the
                         // history state update. Some completed streams replay history via
                         // the live callback immediately after onHistoryLoaded returns.
+=======
+                        let latestFileSnapshot: FileProcessingDetails | undefined;
+                        // Advance the watermark synchronously before React processes the
+                        // history state update. Some completed streams replay history via
+                        // the live callback immediately after onHistoryLoaded returns.
+                        // Must cover every historical message, not just the timeline subset:
+                        // file_processing snapshots are excluded from timelineMessages, so
+                        // scanning only that subset would leave the cursor behind them and
+                        // the replay guard would never fire for a file-only history.
+>>>>>>> 9f510131 (fix: stop re-attaching already-delivered conversation files (#1742))
                         for (const message of historical) {
                             if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
                                 lastDeliveredTsRef.current = message.timestamp;
                             }
+<<<<<<< HEAD
+=======
+                            if (message.type === AgentMessageType.SYSTEM) {
+                                const details = message.details as FileProcessingDetails | undefined;
+                                if (details?.system_type === 'file_processing' && details.files) {
+                                    latestFileSnapshot = details;
+                                }
+                            }
+                        }
+                        // Hydrate the latest archived inventory once so an unconsumed staged file
+                        // remains visible after reload. Subsequent live-callback replay is ignored
+                        // by isReplay above, while useFileProcessing filters consumed/delivered files.
+                        if (latestFileSnapshot) {
+                            setServerFileUpdates(new Map(latestFileSnapshot.files.map((file) => [file.id, file])));
+>>>>>>> 9f510131 (fix: stop re-attaching already-delivered conversation files (#1742))
                         }
                         debugAgentChat('history loaded', {
                             agentRunId,
