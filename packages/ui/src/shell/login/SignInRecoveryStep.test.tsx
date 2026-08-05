@@ -29,6 +29,7 @@ const translations: Record<string, string> = {
     'auth.recovery.requestedAccount': 'Requested account',
     'auth.recovery.requestedProject': 'Requested project',
     'auth.recovery.errorMessage': 'Error message',
+    'auth.returning.notYou': 'Not you?',
 };
 
 vi.mock('@vertesia/ui/i18n', () => ({
@@ -90,5 +91,22 @@ describe('SignInRecoveryStep', () => {
         expect(screen.getByText('apple')).toBeTruthy();
         expect(screen.getByText('banana')).toBeTruthy();
         expect(screen.getByText('The requested account or project is not available.')).toBeTruthy();
+    });
+
+    it('reuses the returning-user identity row for the authenticated credential', () => {
+        const onUseDifferentAccount = vi.fn();
+        render(
+            <SignInRecoveryStep
+                identity={{ email: 'leon@example.com', name: 'Leon Ruggiero' }}
+                kind="scopeProject"
+                onContinue={vi.fn()}
+                onUseDifferentAccount={onUseDifferentAccount}
+            />,
+        );
+
+        expect(screen.getByText('Leon Ruggiero')).toBeTruthy();
+        expect(screen.getByText('leon@example.com')).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'Not you?' }));
+        expect(onUseDifferentAccount).toHaveBeenCalledOnce();
     });
 });

@@ -120,6 +120,18 @@ function SigninScreenImpl({
     const [tenant, setTenant] = useState<TenantInfo | undefined>(undefined);
     const [pendingProvider, setPendingProvider] = useState<ProviderId | null>(null);
 
+    const recoveryIdentity =
+        authError instanceof RequestedScopeUnavailableError || authError instanceof NoAccessibleAccountError
+            ? authError.identity
+            : undefined;
+    const matchingStoredIdentity =
+        recoveryIdentity && storedSession?.email.toLowerCase() === recoveryIdentity.email.toLowerCase()
+            ? storedSession
+            : undefined;
+    const displayedRecoveryIdentity = recoveryIdentity
+        ? { email: recoveryIdentity.email, name: recoveryIdentity.name ?? matchingStoredIdentity?.name }
+        : undefined;
+
     useEffect(() => {
         if (!preservePath && !isLoading && !authError) {
             // Reset to the app's mount root, not the bare origin. A gateway-mounted app carries a
@@ -290,6 +302,7 @@ function SigninScreenImpl({
                     projectId: authError.projectId,
                     status: authError.status,
                 }}
+                identity={displayedRecoveryIdentity}
                 kind={kind}
                 onContinue={continueWithSanitizedScope}
                 onUseDifferentAccount={useDifferentAccount}
@@ -299,6 +312,7 @@ function SigninScreenImpl({
         content = (
             <SignInRecoveryStep
                 details={{ errorCode: authError.errorCode, message: authError.message, status: authError.status }}
+                identity={displayedRecoveryIdentity}
                 kind="noAccessibleAccount"
                 onUseDifferentAccount={useDifferentAccount}
             />

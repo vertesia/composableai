@@ -43,6 +43,24 @@ interface ComposableTokenResponse {
     message?: string;
 }
 
+export interface AuthenticatedIdentity {
+    email: string;
+    name?: string;
+}
+
+function identityFromAcceptedToken(token: string): AuthenticatedIdentity | undefined {
+    try {
+        const payload = jwtDecode<{ email?: unknown; name?: unknown }>(token);
+        if (typeof payload.email !== 'string' || !payload.email) return undefined;
+        return {
+            email: payload.email,
+            name: typeof payload.name === 'string' && payload.name ? payload.name : undefined,
+        };
+    } catch {
+        return undefined;
+    }
+}
+
 export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
     const urlAccount = currentUrl.searchParams.get('a') ?? undefined;
     const urlProject = currentUrl.searchParams.get('p') ?? undefined;
@@ -263,6 +281,7 @@ export async function fetchComposableToken(
             const body = (await stsRes.json().catch(() => undefined)) as
                 | { errorCode?: string; message?: string }
                 | undefined;
+            const identity = identityFromAcceptedToken(idToken);
             if (body?.errorCode === RESTRICTED_ENVIRONMENT_ERROR_CODE) {
                 Env.logger.warn('403: User lacks early-access for this restricted environment', {
                     vertesia: {
@@ -279,7 +298,7 @@ export async function fetchComposableToken(
                 Env.logger.warn('STS identity has no accessible account', {
                     vertesia: { error_code: body.errorCode, status: stsRes.status },
                 });
-                throw new NoAccessibleAccountError(stsEndpoint, body.message);
+                throw new NoAccessibleAccountError(stsEndpoint, body.message, identity);
             }
 
             // During rolling deployment an older STS may return an uncoded user-token 403.
@@ -298,6 +317,7 @@ export async function fetchComposableToken(
                     accountId,
                     projectId,
                     body?.errorCode ? body.message : undefined,
+                    identity,
                 );
             }
 
@@ -526,6 +546,7 @@ export class RequestedScopeUnavailableError extends STSError {
         public readonly accountId?: string,
         public readonly projectId?: string,
         responseMessage?: string,
+        public readonly identity?: AuthenticatedIdentity,
     ) {
         super(responseMessage ?? 'The requested account or project is not available.', stsURL, {
             status: 403,
@@ -542,7 +563,11 @@ export const TokenAuthorizationError = RequestedScopeUnavailableError;
 export type TokenAuthorizationError = RequestedScopeUnavailableError;
 
 export class NoAccessibleAccountError extends STSError {
-    constructor(stsURL: string, responseMessage?: string) {
+    constructor(
+        stsURL: string,
+        responseMessage?: string,
+        public readonly identity?: AuthenticatedIdentity,
+    ) {
         super(responseMessage ?? 'No accessible account is available for this user.', stsURL, {
             status: 403,
             errorCode: NO_ACCESSIBLE_ACCOUNT_ERROR_CODE,

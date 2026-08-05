@@ -1,7 +1,15 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { AlertTriangle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { SignInIconBadge, SignInStepButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
+import {
+    SignInAccountRow,
+    SignInIconBadge,
+    SignInInitialsBadge,
+    SignInStepButton,
+    SignInStepHeader,
+    SignInStepLayout,
+} from './SignInPrimitives';
+import { emailInitial, firstNameFromEmail } from './signInUtils';
 
 export type SignInRecoveryKind = 'scopeProject' | 'scopeAccount' | 'noAccessibleAccount' | 'credential' | 'service';
 
@@ -13,8 +21,14 @@ export interface SignInRecoveryDetails {
     status?: number;
 }
 
+export interface SignInRecoveryIdentity {
+    email: string;
+    name?: string;
+}
+
 interface SignInRecoveryStepProps {
     details?: SignInRecoveryDetails;
+    identity?: SignInRecoveryIdentity;
     kind: SignInRecoveryKind;
     onContinue?: () => void;
     onUseDifferentAccount: () => void;
@@ -22,6 +36,7 @@ interface SignInRecoveryStepProps {
 
 export default function SignInRecoveryStep({
     details,
+    identity,
     kind,
     onContinue,
     onUseDifferentAccount,
@@ -82,6 +97,16 @@ export default function SignInRecoveryStep({
                 </SignInIconBadge>
                 <SignInStepHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
             </div>
+
+            {identity && (
+                <SignInAccountRow
+                    badge={<SignInInitialsBadge initials={emailInitial(identity.email)} />}
+                    title={identity.name || firstNameFromEmail(identity.email)}
+                    subtitle={identity.email}
+                    actionLabel={t('auth.returning.notYou')}
+                    onAction={onUseDifferentAccount}
+                />
+            )}
 
             <div className="flex flex-col gap-2">
                 {onContinue && (

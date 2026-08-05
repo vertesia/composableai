@@ -212,7 +212,8 @@ describe('getComposableToken', () => {
 
         const { fetchComposableToken, RequestedScopeUnavailableError, TokenAuthorizationError } =
             await importComposableAuth();
-        const error = await fetchComposableToken(async () => 'identity-token', 'account-a', 'project-a').catch(
+        const identityToken = makeJwt({ email: 'leon@example.com', name: 'Leon Ruggiero' });
+        const error = await fetchComposableToken(async () => identityToken, 'account-a', 'project-a').catch(
             (caught) => caught,
         );
 
@@ -221,6 +222,7 @@ describe('getComposableToken', () => {
         expect(error).toMatchObject({
             accountId: 'account-a',
             errorCode: 'requested_scope_unavailable',
+            identity: { email: 'leon@example.com', name: 'Leon Ruggiero' },
             message: 'safe message',
             projectId: 'project-a',
             status: 403,
@@ -242,11 +244,17 @@ describe('getComposableToken', () => {
 
         const { fetchComposableToken, NoAccessibleAccountError, isNoAccessibleAccountError } =
             await importComposableAuth();
-        const error = await fetchComposableToken(async () => 'identity-token').catch((caught) => caught);
+        const identityToken = makeJwt({ email: 'leon@example.com' });
+        const error = await fetchComposableToken(async () => identityToken).catch((caught) => caught);
 
         expect(error).toBeInstanceOf(NoAccessibleAccountError);
         expect(isNoAccessibleAccountError(error)).toBe(true);
-        expect(error).toMatchObject({ errorCode: 'no_accessible_account', message: 'safe message', status: 403 });
+        expect(error).toMatchObject({
+            errorCode: 'no_accessible_account',
+            identity: { email: 'leon@example.com' },
+            message: 'safe message',
+            status: 403,
+        });
     });
 
     it.each([
