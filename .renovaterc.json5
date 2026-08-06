@@ -274,7 +274,26 @@
       "allowedVersions": "<25",
       "rangeStrategy": "bump"
     },
-        {
+    {
+      // `typescript-legacy` is the pnpm catalog alias for the last TypeScript major that still
+      // ships the JavaScript compiler API (`typescript@6`). TypeScript 7 is the native port and
+      // does not expose it, so `packages/cli`'s ts-loader, which imports `typescript-legacy` for
+      // AST work, breaks on v7 — that is the whole reason the alias exists next to the
+      // `typescript` catalog entry, which does track the current major. Matched by depName
+      // because the catalog key, not the aliased package name (`typescript`), is what Renovate
+      // reports for `npm:` aliases; matching the package name here would also freeze the real
+      // `typescript` entry.
+      "description": "Keep the typescript-legacy catalog alias on the TypeScript 6 line (JS compiler API)",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepNames": [
+        "typescript-legacy"
+      ],
+      "allowedVersions": "<7",
+      "rangeStrategy": "bump"
+    },
+    {
       // The undici Agent is passed as a dispatcher to Node's built-in global
       // fetch (see core/src/http-agent.ts). undici v8 renamed the dispatch
       // handler interface (onRequestStart), so a v8 Agent is rejected by the
