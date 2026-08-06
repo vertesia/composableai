@@ -28,6 +28,8 @@ minimumReleaseAgeExclude:
   # exception so we take the fix now rather than waiting out the 3-day cooldown.
   - hono@4.12.34
 catalog:
+  typescript: "7.0.2"
+  typescript-legacy: "npm:typescript@6.0.3"
   react: "19.2.7"
   react-dom: "19.2.7"
   "@types/node": "^24.13.3"

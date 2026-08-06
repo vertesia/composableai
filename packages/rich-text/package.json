@@ -27,15 +27,15 @@
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
     },
     "dependencies": {
-        "@tiptap/core": "^3.28.0",
-        "@tiptap/extension-code-block": "^3.28.0",
-        "@tiptap/extension-image": "^3.28.0",
-        "@tiptap/extension-link": "^3.28.0",
-        "@tiptap/extension-table": "^3.28.0",
-        "@tiptap/markdown": "^3.28.0",
-        "@tiptap/pm": "^3.28.0",
-        "@tiptap/react": "^3.28.0",
-        "@tiptap/starter-kit": "^3.28.0",
+        "@tiptap/core": "^3.29.2",
+        "@tiptap/extension-code-block": "^3.29.2",
+        "@tiptap/extension-image": "^3.29.2",
+        "@tiptap/extension-link": "^3.29.2",
+        "@tiptap/extension-table": "^3.29.2",
+        "@tiptap/markdown": "^3.29.2",
+        "@tiptap/pm": "^3.29.2",
+        "@tiptap/react": "^3.29.2",
+        "@tiptap/starter-kit": "^3.29.2",
         "marked": "^17.0.6",
         "react": "catalog:",
         "react-dom": "catalog:"
@@ -46,7 +46,7 @@
         "@types/react-dom": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
-        "typescript": "^6.0.3",
+        "typescript": "catalog:",
         "vitest": "^4.1.9"
     },
     "exports": {

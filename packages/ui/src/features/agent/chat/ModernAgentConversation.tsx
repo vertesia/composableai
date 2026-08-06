@@ -57,6 +57,7 @@ import type {
     AgentInitialRequestTemplateContext,
 } from './ModernAgentOutput/AllMessagesMixed';
 import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
+import { collectDeliveredArtifactRefs } from './ModernAgentOutput/AttachmentPreview';
 import type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProgressPanel';
 import Header from './ModernAgentOutput/Header';
 import MessageInput, {
@@ -236,12 +237,21 @@ function isWorkstreamActivityFailureMessage(message: AgentMessage): boolean {
               tool_event?: unknown;
               tool_run_id?: unknown;
               tool_status?: unknown;
+              workstream_id?: unknown;
               workstream_event?: unknown;
           }
         | undefined;
 
     if (details?.event_class !== 'activity') return false;
     if (details.workstream_event) return false;
+    const workstreamId =
+        typeof message.workstream_id === 'string' && message.workstream_id.trim()
+            ? message.workstream_id.trim()
+            : typeof details.workstream_id === 'string'
+              ? details.workstream_id.trim()
+              : '';
+    const normalizedWorkstreamId = workstreamId.toLowerCase();
+    if (!workstreamId || normalizedWorkstreamId === 'main' || normalizedWorkstreamId === 'all') return false;
 
     return !(
         details.tool ||
@@ -1487,8 +1497,9 @@ function ModernAgentConversationInner({
         updateDocumentTitle,
     } = useDocumentPanel(messages);
 
+    const deliveredArtifactRefs = useMemo(() => collectDeliveredArtifactRefs(messages), [messages]);
     const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles } =
-        useFileProcessing(client, agentRunId, serverFileUpdates, toast);
+        useFileProcessing(client, agentRunId, serverFileUpdates, toast, deliveredArtifactRefs);
     const canUploadFiles = interactive && !hideFileUpload;
 
     const handleRemoveProcessingFile = useCallback(
@@ -1600,6 +1611,16 @@ function ModernAgentConversationInner({
         () => effectiveWorkflowStatus?.toUpperCase() === 'FAILED' || agentRunStatus?.toUpperCase() === 'FAILED',
         [effectiveWorkflowStatus, agentRunStatus],
     );
+    const workflowFailureReason = useMemo(() => {
+        for (let index = messages.length - 1; index >= 0; index--) {
+            const message = messages[index];
+            if (message.type !== AgentMessageType.ERROR) continue;
+            if (getWorkstreamId(message) !== 'main') continue;
+            const text = typeof message.message === 'string' ? message.message.trim() : '';
+            if (text) return text;
+        }
+        return undefined;
+    }, [messages]);
 
     // Read inside handleSendMessage (a stable callback) without widening its deps.
     const isWorkflowTerminalRef = useRef(isWorkflowTerminal);
@@ -2774,8 +2795,8 @@ function ModernAgentConversationInner({
                             // never render for a failed run. Use the caller's action when provided,
                             // otherwise fall back to the default failed message box.
                             (failedAction ?? (
-                                <MessageBox status="error" icon={null} className="m-2">
-                                    This Workflow is FAILED
+                                <MessageBox status="error" title={t('agent.failed')} className="m-2">
+                                    {workflowFailureReason ?? t('agent.error')}
                                 </MessageBox>
                             ))
                         ) : effectiveWorkflowStatus &&

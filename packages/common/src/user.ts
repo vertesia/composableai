@@ -59,7 +59,7 @@ export const EARLY_ACCESS_ANNOTATION = 'early-access';
  * restricted (`preview`/`preprod`) environment because they lack the {@link EARLY_ACCESS_ANNOTATION}
  * annotation. The UI keys its dedicated rejection screen off this code.
  */
-export const RESTRICTED_ENVIRONMENT_ERROR_CODE = 'restricted_environment';
+export { RESTRICTED_ENVIRONMENT_ERROR_CODE } from './sts-errors.js';
 
 /**
  * The account as it crosses the wire.
