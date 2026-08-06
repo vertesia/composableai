@@ -18,6 +18,12 @@
  * Two kinds of module live here: request/response validation logic together with the JSON Schema
  * blobs it validates against, and service-to-service or workflow-internal payloads. The list below
  * is sorted, not grouped — Biome orders these exports.
+ *
+ * The test for whether something belongs here is NOT "does the TypeScript SDK import it". A type can
+ * be a published wire contract that only the generated Java/Go/Python clients name — `sts-token-types.ts`
+ * and `store/conversation-state.ts` are exactly that, and stay on the package root. The authority is
+ * the component list in `packages/api-specs/vertesia-openapi.json`; `internal/no-published-components.test.ts`
+ * enforces that nothing reachable from here is in it.
  */
 
 export * from '../agent-request-template.js';
@@ -25,14 +31,13 @@ export * from '../channels.js';
 export * from '../host-utils.js';
 export * from '../Progress.js';
 export * from '../platform-event-validation.js';
-export * from '../store/conversation-state.js';
 export * from '../store/editing-policy-schema.generated.js';
 export * from '../store/process-schema.js';
 export * from '../store/process-validation.js';
 export * from '../store/temporalio.js';
-export * from '../sts-token-types.js';
 export * from '../view-configuration-validation.js';
 export * from '../view-query-validation.js';
 export * from '../view-validation-helpers.js';
 export * from '../views-schema.js';
 export * from '../views-validation.js';
+export * from './project-validation.js';

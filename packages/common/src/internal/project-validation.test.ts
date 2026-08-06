@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateProjectSearchPropertyMappings } from './project.js';
+import { validateProjectSearchPropertyMappings } from './project-validation.js';
 
 describe('validateProjectSearchPropertyMappings', () => {
     it('accepts supported leaf mappings on relative property paths', () => {

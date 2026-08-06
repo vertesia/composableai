@@ -1,8 +1,11 @@
 /**
- * Copied from temporalio
- * The temporalio ParentClosePolicy
+ * Copied from temporalio: the runtime `ParentClosePolicy` constant.
+ *
+ * The `ParentClosePolicyType` union it produces is part of the public workflow DSL — clients author
+ * `parentClosePolicy` on a child-workflow step — so it is declared in `./dsl-workflow.ts` and
+ * imported back here. Only this constant is internal: it exists for workflow-authoring code in the
+ * platform's own workers, not for API consumers.
  */
-export type ParentClosePolicyType = 'TERMINATE' | 'ABANDON' | 'REQUEST_CANCEL' | undefined;
 interface ParentClosePolicyI {
     TERMINATE: 'TERMINATE';
     ABANDON: 'ABANDON';

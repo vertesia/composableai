@@ -15,7 +15,13 @@ import type {
 import type { ToolExecutionMetadata } from '../tool-execution.js';
 import type { BaseObject } from './common.js';
 import type { WorkflowExecutionPayload } from './index.js';
-import type { ParentClosePolicyType } from './temporalio.js';
+
+/**
+ * Copied from temporalio: the child-workflow parent-close policy, as authored in a DSL workflow
+ * step. Declared here rather than in `./temporalio.js` because that module is Vertesia-internal
+ * while this union is part of the public DSL that clients write.
+ */
+export type ParentClosePolicyType = 'TERMINATE' | 'ABANDON' | 'REQUEST_CANCEL' | undefined;
 
 export type DurationValue = z.infer<typeof DurationValueSchema>;
 
