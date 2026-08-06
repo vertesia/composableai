@@ -362,7 +362,12 @@ describe('useAgentStream', () => {
         const { result } = renderHook(() => useAgentStream(client, 'agent-run-1', vi.fn()));
 
         await waitFor(() => expect(deliver).toBeDefined());
-        expect(result.current.serverFileUpdates.size).toBe(0);
+        // History hydrates the latest archived inventory once so an unconsumed staged file
+        // survives a reload; the live replay of that same snapshot is ignored, leaving the
+        // hydrated entry untouched. Already-delivered files are dropped downstream by
+        // useFileProcessing (consumed_at + delivered artifact refs), not by refusing to hydrate.
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('old-upload')).toBe(true);
 
         act(() => deliver?.(fileSnapshot(1_100, 'new-upload')));
         expect(result.current.serverFileUpdates.size).toBe(1);
@@ -842,5 +847,115 @@ describe('useAgentStream', () => {
         });
 
         expect(result.current.serverFileUpdates.has('file-1')).toBe(false);
+    });
+
+    it('hydrates the latest historical file snapshot once and ignores its live replay', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const fileSnapshot = (timestamp: number, id: string): AgentMessage => ({
+            timestamp,
+            workflow_run_id: 'run-1',
+            type: AgentMessageType.SYSTEM,
+            message: '',
+            workstream_id: 'main',
+            details: {
+                system_type: 'file_processing',
+                batch_id: 'batch-1',
+                files: [
+                    {
+                        id,
+                        name: `${id}.pdf`,
+                        content_type: 'application/pdf',
+                        size: 1,
+                        status: FileProcessingStatus.READY,
+                        artifact_path: `files/${id}.pdf`,
+                        reference: `artifact:files/${id}.pdf`,
+                        started_at: timestamp,
+                    },
+                ],
+                pending_count: 0,
+                ready_count: 1,
+                error_count: 0,
+            },
+        });
+        const olderHistorical = fileSnapshot(1_000, 'older-upload');
+        const latestHistorical = fileSnapshot(1_100, 'staged-upload');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([olderHistorical, latestHistorical]);
+            // Completed runs replay archived file_processing snapshots through the
+            // live callback. Replaying the older snapshot must not replace the latest
+            // inventory selected from history.
+            onMessage?.(olderHistorical);
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('staged-upload')).toBe(true);
+
+        act(() => deliver?.(fileSnapshot(1_200, 'new-upload')));
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('new-upload')).toBe(true);
+    });
+
+    it('selects the newest historical file snapshot even when history arrives out of order', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const fileSnapshot = (timestamp: number, id: string): AgentMessage => ({
+            timestamp,
+            workflow_run_id: 'run-1',
+            type: AgentMessageType.SYSTEM,
+            message: '',
+            workstream_id: 'main',
+            details: {
+                system_type: 'file_processing',
+                batch_id: 'batch-1',
+                files: [
+                    {
+                        id,
+                        name: `${id}.pdf`,
+                        content_type: 'application/pdf',
+                        size: 1,
+                        status: FileProcessingStatus.READY,
+                        artifact_path: `files/${id}.pdf`,
+                        reference: `artifact:files/${id}.pdf`,
+                        started_at: timestamp,
+                    },
+                ],
+                pending_count: 0,
+                ready_count: 1,
+                error_count: 0,
+            },
+        });
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            // retrieveMessages returns GET /updates unsorted, so the newest snapshot is not
+            // necessarily last. Selection must be by timestamp, not arrival order.
+            options?.onHistoryLoaded?.([fileSnapshot(1_100, 'staged-upload'), fileSnapshot(1_000, 'older-upload')]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('staged-upload')).toBe(true);
     });
 });

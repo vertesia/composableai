@@ -26,11 +26,11 @@
         "typecheck:test": "pnpm -r --if-present typecheck:test"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.5",
+        "@biomejs/biome": "2.5.6",
         "rimraf": "^6.1.3",
-        "turbo": "^2.10.5",
-        "typescript": "^6.0.3",
-        "vite": "8.1.0"
+        "turbo": "^2.10.7",
+        "typescript": "catalog:",
+        "vite": "catalog:"
     },
     "packageManager": "pnpm@11.15.1",
     "gitHead": "87ac9166db2b38bd1be6e37adf0414ea83e402ee"

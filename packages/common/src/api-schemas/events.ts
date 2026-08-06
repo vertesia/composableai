@@ -660,6 +660,39 @@ export const EventDeliveryQueueSummaryPayloadSchema = z
     })
     .meta({ id: 'EventDeliveryQueueSummaryPayload' });
 
+export const CancelEventDeliveryIntentsPayloadSchema = z
+    .strictObject({
+        subscription_id: z
+            .string()
+            .min(1)
+            .meta({ description: 'Restrict cancellation to one subscription.' })
+            .optional(),
+        target_type: z
+            .array(z.enum(['workflow', 'webhook', 'agent', 'process']))
+            .min(1)
+            .meta({ description: 'Restrict cancellation to one or more delivery target types.' })
+            .optional(),
+    })
+    .meta({ id: 'CancelEventDeliveryIntentsPayload' });
+
+export const CancelEventDeliveryIntentsResponseSchema = z
+    .strictObject({
+        environment: z.string().meta({ description: 'Deployment environment whose queue was changed.' }),
+        cleared_through: z.string().meta({
+            description: 'Server-side watermark; intents created after this time were not changed.',
+            format: 'date-time',
+        }),
+        cancelled: z
+            .number()
+            .int()
+            .nonnegative()
+            .meta({ description: 'Pending or retrying intents moved to the cancelled terminal state.' }),
+        active_untouched: z.number().int().nonnegative().meta({
+            description: 'Matching evaluating, starting, or running intents left for normal reconciliation.',
+        }),
+    })
+    .meta({ id: 'CancelEventDeliveryIntentsResponse' });
+
 export const EventIngestChannelMutationResponseSchema = z
     .strictObject({
         channel: EventIngestChannelSchema,

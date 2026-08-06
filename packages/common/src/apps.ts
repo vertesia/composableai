@@ -351,10 +351,10 @@ export interface AppPlannedArtifact {
 
 /**
  * Structured result the App Solution Architect emits alongside its prose artifacts — the
- * machine-readable contract for the build. The implementation MUST create and successfully
- * exercise every required artifact before building a deployable version. Persisted into the app repo as
- * {@link APP_CAPABILITY_MANIFEST_PATH} so it survives across runs and the version-build
- * capability gate can verify against it deterministically. If the builder finds the plan
+ * machine-readable contract for the build. The implementation MUST register every required artifact
+ * before building a candidate, then successfully exercise it after that candidate is installed and
+ * version-pinned. Persisted into the app repo as {@link APP_CAPABILITY_MANIFEST_PATH} so it survives
+ * across runs and the package-registration gate can verify it deterministically. If the builder finds the plan
  * wrong or insufficient, the orchestrator relaunches the architect to revise the manifest;
  * the gate always checks against the latest committed copy.
  */

@@ -1,7 +1,7 @@
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import type { DSLWorkflowSpec } from '@vertesia/common';
-import * as ts from 'typescript';
+import * as ts from 'typescript-legacy';
 import { ValidationError, validateWorkflow } from './validation.js';
 
 function compile(

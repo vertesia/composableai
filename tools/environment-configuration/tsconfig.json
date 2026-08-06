@@ -2,9 +2,10 @@
   "extends": "@tsconfig/node-lts/tsconfig.json",
   "compilerOptions": {
     "target": "ES2024",
+    "rootDir": "./src",
     "outDir": "./lib"
-  }
-,
+  },
   "references": [
     { "path": "../../packages/client/tsconfig.json" }
-  ]}
+  ]
+}

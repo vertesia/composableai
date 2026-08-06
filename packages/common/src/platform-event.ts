@@ -7,6 +7,8 @@ import type {
     AgentSemanticEvaluatorSchema,
     AppEventDeliveryTargetInputSchema,
     AppEventDeliveryTargetSchema,
+    CancelEventDeliveryIntentsPayloadSchema,
+    CancelEventDeliveryIntentsResponseSchema,
     CreateEventIngestChannelPayloadSchema,
     EventDeliveryIntentStatusSchema,
     EventDeliveryIntentSummarySchema,
@@ -446,6 +448,10 @@ export type EventDeliveryQueueFailureSummary = z.infer<typeof EventDeliveryQueue
 export type EventDeliveryQueueSubscriptionSummary = z.infer<typeof EventDeliveryQueueSubscriptionSummarySchema>;
 
 export type EventDeliveryQueueSummaryResponse = z.infer<typeof EventDeliveryQueueSummaryResponseSchema>;
+
+export type CancelEventDeliveryIntentsPayload = z.infer<typeof CancelEventDeliveryIntentsPayloadSchema>;
+
+export type CancelEventDeliveryIntentsResponse = z.infer<typeof CancelEventDeliveryIntentsResponseSchema>;
 
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;

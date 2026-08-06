@@ -149,6 +149,11 @@ describe('useFileProcessing', () => {
 
         await act(async () => {
             resolveUpload?.({ url: 'https://example.test/upload', path: 'files/wrong.png' });
+            // biome 2.5.6 regression: the nursery rule mis-types `await` on a `Promise | undefined`
+            // variable assigned inside a callback, and its own fix suggests `await await`. It only
+            // fires on Linux CI, not on macOS, so the suppression may read as unused locally.
+            // Drop it once the rule is fixed upstream.
+            // biome-ignore lint/nursery/noFloatingPromises: false positive — already awaited
             await uploadPromise;
         });
 
@@ -187,5 +192,87 @@ describe('useFileProcessing', () => {
         } finally {
             vi.unstubAllGlobals();
         }
+    });
+
+    it('excludes files already delivered via a sent message (survives reload)', () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const delivered: ConversationFile = {
+            ...createReadyFile('file-1'),
+            artifact_path: 'files/wrong.png',
+            reference: 'artifact:files/wrong.png',
+        };
+        const serverFileUpdates = new Map([['file-1', delivered]]);
+
+        // No delivered refs → the file shows as a pending composer attachment.
+        const { result, rerender } = renderHook(
+            ({ refs }: { refs: Set<string> | undefined }) =>
+                useFileProcessing(client, 'agent-run-1', serverFileUpdates, toast, refs),
+            { initialProps: { refs: undefined as Set<string> | undefined } },
+        );
+        expect(result.current.processingFiles.has('file-1')).toBe(true);
+
+        // Once its artifact reference appears in message history, it is excluded — matching by
+        // either the full `artifact:` reference or the bare path.
+        rerender({ refs: new Set(['artifact:files/wrong.png']) });
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+
+        rerender({ refs: new Set(['files/wrong.png']) });
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+    });
+
+    it('excludes files marked consumed by the workflow without relying on message history', () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const consumed: ConversationFile = {
+            ...createReadyFile('file-1'),
+            artifact_path: 'files/wrong.png',
+            reference: 'artifact:files/wrong.png',
+            consumed_at: 1_100,
+        };
+
+        const { result } = renderHook(() =>
+            useFileProcessing(client, 'agent-run-1', new Map([['file-1', consumed]]), toast),
+        );
+
+        expect(result.current.processingFiles.has('file-1')).toBe(false);
+    });
+
+    it('drops a staged local entry when the server marks that file consumed', async () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const { result, rerender } = renderHook(
+            ({ updates }) => useFileProcessing(client, 'agent-run-1', updates, toast),
+            { initialProps: { updates: new Map<string, ConversationFile>() } },
+        );
+
+        const file = new File(['pdf'], 'report.pdf', { type: 'application/pdf' });
+        await act(async () => {
+            await result.current.handleFileUpload([file]);
+        });
+        const [fileId] = Array.from(result.current.processingFiles.entries())[0];
+        expect(result.current.processingFiles.has(fileId)).toBe(true);
+
+        // The turn was consumed elsewhere (another tab, or an agent-initiated turn), so
+        // clearProcessingFiles() never ran here and the optimistic entry is still staged.
+        // Merging local first means skipping the server update is not enough to hide it.
+        rerender({
+            updates: new Map<string, ConversationFile>([
+                [
+                    fileId,
+                    {
+                        id: fileId,
+                        name: 'report.pdf',
+                        content_type: 'application/pdf',
+                        size: 0,
+                        status: FileProcessingStatus.READY,
+                        started_at: 1_000,
+                        consumed_at: 1_100,
+                    },
+                ],
+            ]),
+        });
+
+        expect(result.current.processingFiles.has(fileId)).toBe(false);
     });
 });

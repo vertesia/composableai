@@ -576,6 +576,27 @@ describe('ModernAgentOutput summary conversation items', () => {
         ]);
     });
 
+    it('keeps a main-workstream activity error visible as a primary message', () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: 'do the thing',
+        });
+        const terminationError = makeMessage({
+            timestamp: 1100,
+            type: AgentMessageType.ERROR,
+            message: 'Stopped: the agent called create_document with the same input 4 times in a row.',
+            details: { event_class: 'activity' },
+        });
+
+        const items = buildSummaryConversationItems([question, terminationError], true);
+
+        expect(items).toEqual([
+            { type: 'message', message: question },
+            { type: 'message', message: terminationError },
+        ]);
+    });
+
     it('hides transient thinking once the work segment completes', () => {
         const tool = makeMessage({
             timestamp: 1000,

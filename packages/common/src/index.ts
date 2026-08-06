@@ -75,6 +75,7 @@ export type {
     ZenoBulkContentObjectExportSplitShardRequest,
     ZenoBulkContentObjectExportSplitShardResponse,
 } from './store/store.js';
+export * from './sts-errors.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';
 export * from './tool-execution.js';

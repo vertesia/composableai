@@ -38,16 +38,16 @@
         "directory": "packages/create-plugin"
     },
     "dependencies": {
-        "chalk": "^5.6.2",
+        "chalk": "^6.0.0",
         "commander": "^15.0.0",
-        "degit": "^3.6.1",
+        "degit": "^3.6.3",
         "prompts": "^2.4.2"
     },
     "devDependencies": {
         "@types/degit": "^2.8.6",
         "@types/node": "catalog:",
         "@types/prompts": "^2.4.9",
-        "typescript": "^6.0.3"
+        "typescript": "^7.0.2"
     },
     "gitHead": "87ac9166db2b38bd1be6e37adf0414ea83e402ee"
 }

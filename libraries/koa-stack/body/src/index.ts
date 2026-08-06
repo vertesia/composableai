@@ -4,7 +4,7 @@ import inflate from 'inflation';
 import type Koa from 'koa';
 import type { Context, Request } from 'koa';
 import qs from 'qs';
-import readRawBody from 'raw-body';
+import readRawBody, { type Options as RawBodyOptions } from 'raw-body';
 
 declare module 'koa' {
     interface BaseContext {
@@ -23,7 +23,7 @@ export interface OwnOpts {
     // biome-ignore lint/suspicious/noExplicitAny: custom parser returns user-defined shape
     xml?: (data: string) => any;
 }
-export type LazyBodyOpts = readRawBody.Options & OwnOpts;
+export type LazyBodyOpts = RawBodyOptions & OwnOpts;
 
 function parseMultipartBody(
     koaRequest: Request,
