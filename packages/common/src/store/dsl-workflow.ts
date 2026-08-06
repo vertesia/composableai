@@ -65,7 +65,7 @@ export interface DSLActivityExecutionPayload<ParamsT extends object> extends Wor
 export type ImportSpec = (string | Record<string, string>)[];
 export type ActivityFetchSpec = z.infer<typeof ActivityFetchSpecSchema>;
 
-export interface DSLWorkflowStepBase {
+interface DSLWorkflowStepBase {
     /**
      * The type fo the step.
      * If not set defaults to "activity"
@@ -148,7 +148,7 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
  */
 export type DSLWorkflowStep = DSLActivityStep | DSLChildWorkflowStep;
 
-export interface DSLWorkflowSpecBase {
+interface DSLWorkflowSpecBase {
     name: string;
     description?: string;
     tags?: string[];
@@ -208,7 +208,7 @@ export type DSLWorkflowSpec = DSLWorkflowSpecWithSteps | DSLWorkflowSpecWithActi
  * against the stored value for optimistic concurrency. All server-assigned on the read side, hence
  * optional here and absent from {@link DSLWorkflowSpec}.
  */
-export interface LegacyWorkflowDefinitionUpsertFields {
+interface LegacyWorkflowDefinitionUpsertFields {
     id?: string;
     created_at?: string;
     updated_at?: string;

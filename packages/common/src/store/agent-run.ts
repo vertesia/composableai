@@ -47,17 +47,11 @@ import type {
 } from '../api-schemas/app-lifecycle.js';
 import type { ProcessRunConfigSchema, ProcessRunTypeSchema } from '../api-schemas/process.js';
 import type { BindRunWorkflowPayloadSchema } from '../api-schemas/workflow-runs.js';
-import type {
-    ConversationVisibility,
-    InitialToolCall,
-    InteractionExecutionConfiguration,
-    RunSource,
-} from '../interaction.js';
+import type { ConversationVisibility, InteractionExecutionConfiguration, RunSource } from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type { StopSignal, UserInputSignal } from './signals.js';
-import type { ContentObjectTypeRef } from './store.js';
 import type {
     ConversationActivityState,
     ConversationFileRef,
@@ -79,7 +73,7 @@ export type ProcessRunType = z.infer<typeof ProcessRunTypeSchema>;
 /**
  * Shared fields for all records stored in the agent_runs collection.
  */
-export interface RunBase {
+interface RunBase {
     /** The stable identifier used by all client code */
     id: string;
 
@@ -156,80 +150,6 @@ export interface RunBase {
     updated_at: string;
 }
 
-/**
- * Shared fields between CreateAgentRunPayload and AgentRun.
- *
- * @typeParam TData - The interaction's expected input data type.
- * @typeParam TProperties - The content type's property schema.
- */
-export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Record<string, unknown>> {
-    /** Interaction ID or code (e.g. "sys:generic_question"). */
-    interaction: string;
-
-    /** Input parameters, typed per interaction */
-    data?: TData;
-
-    /** Execution configuration (environment, model, model_options, etc.) */
-    config?: InteractionExecutionConfiguration;
-
-    /** Whether the agent accepts user input */
-    interactive?: boolean;
-
-    /** How side-effecting tool actions are approved for interactive runs. */
-    tool_approval_mode?: AgentToolApprovalMode;
-
-    /** Tools configured for this run (+/- syntax supported) */
-    tool_names?: string[];
-
-    /** Builtin system skills activated before the first model turn. */
-    initial_skills?: string[];
-
-    /** Ordered, bounded hydration/read calls executed before the first model turn. */
-    initial_tool_calls?: InitialToolCall[];
-
-    /** Hard denylist of tool names: never exposed to the model, refused at execution time. */
-    excluded_tools?: string[];
-
-    /** Scoped collection (if any) */
-    collection_id?: string;
-
-    /**
-     * Denylist of MCP tool-collection ids deactivated for this run.
-     * `undefined`/empty means all installed/connected MCP collections are active (back-compat,
-     * and new servers stay active by default). Listed collections are excluded even if connected.
-     */
-    disabled_mcp_collections?: string[];
-
-    /** Content type linked to this run — defines the schema for `properties` */
-    content_type?: ContentObjectTypeRef;
-
-    /** Conversation visibility */
-    visibility?: ConversationVisibility;
-
-    /** User-defined or system tags for categorization */
-    tags?: string[];
-
-    /** Categories for organizing runs (e.g. "support", "analysis", "generation") */
-    categories?: string[];
-
-    /** Business metadata — typed by the linked content_type schema */
-    properties?: TProperties;
-
-    /** How the run was started */
-    source?: RunSource;
-
-    /** Schedule ID — set when this run was triggered by a Temporal schedule */
-    schedule_id?: string;
-
-    /** How the run was created */
-    source_type?: AgentRunType;
-
-    /**
-     * @deprecated Use source_type for creation source and run_type for runtime mode.
-     */
-    type?: AgentRunType;
-}
-
 type AgentRunWire = z.infer<typeof AgentRunSchema>;
 
 /**
@@ -255,8 +175,6 @@ export interface ProcessRun extends RunBase {
     process_state: ProcessState;
     config?: ProcessRunConfig;
 }
-
-export type AnyAgentRun = AgentRun | ProcessRun;
 export type AutonomousRunResponse<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = AgentRun<
     TData,
     TProperties
@@ -280,7 +198,7 @@ export type CreateAgentRunPayload<TData = Record<string, unknown>, TProperties =
     properties?: TProperties;
 };
 
-export interface ProcessRunInputPayload<TData = Record<string, unknown>, TSource = RunSource> {
+interface ProcessRunInputPayload<TData = Record<string, unknown>, TSource = RunSource> {
     process_id?: string;
     /** Optional published process version to pin. Defaults to the latest/head revision. */
     process_version?: number;
@@ -299,7 +217,7 @@ export interface CreateProcessRunPayload<TData = Record<string, unknown>, TSourc
     run_type: ProcessRunType;
 }
 
-export interface RecordRunWorkflowPayload {
+interface RecordRunWorkflowPayload {
     /** Temporal workflow id. */
     workflow_id: string;
     /** First Temporal run id for this workflow. Required when the workflow has already started. */
@@ -391,8 +309,6 @@ export type StreamAgentRunQuery = z.infer<typeof StreamAgentRunQuerySchema>;
 
 export type AgentRunDetailsQuery = z.infer<typeof AgentRunDetailsQuerySchema>;
 
-export type AgentArtifactVisibility = 'user' | 'internal' | 'all';
-
 export type AgentRunArtifactsQuery = z.infer<typeof AgentRunArtifactsQuerySchema>;
 
 export type AgentRunArtifactUploadHeaders = z.infer<typeof AgentRunArtifactUploadHeadersSchema>;
@@ -424,7 +340,7 @@ export type IngestAgentEventsResponse = z.infer<typeof IngestAgentEventsResponse
 /**
  * History event payload emitted by the agent details SSE stream.
  */
-export interface AgentRunDetailsHistoryStreamEvent {
+interface AgentRunDetailsHistoryStreamEvent {
     runId?: string;
     event: WorkflowRunEvent;
 }
@@ -432,12 +348,12 @@ export interface AgentRunDetailsHistoryStreamEvent {
 /**
  * Control payload emitted by the agent details SSE stream.
  */
-export type AgentRunDetailsControlStreamEvent = { type: 'continueAsNew'; newRunId: string } | { type: 'done' };
+type AgentRunDetailsControlStreamEvent = { type: 'continueAsNew'; newRunId: string } | { type: 'done' };
 
 /**
  * Error payload emitted by the agent details SSE stream.
  */
-export interface AgentRunDetailsErrorStreamEvent {
+interface AgentRunDetailsErrorStreamEvent {
     type: 'error';
     message: string;
 }

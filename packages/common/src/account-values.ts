@@ -59,9 +59,9 @@ export function quotaTierForAccountType(accountType: AccountType | undefined | n
     }
 }
 
-export const ACCOUNT_NAMESPACE_MAX_LENGTH = 63;
+const ACCOUNT_NAMESPACE_MAX_LENGTH = 63;
 export const ACCOUNT_APP_ACCESS_MESSAGE_MAX_LENGTH = 1000;
-export const RESERVED_ACCOUNT_NAMESPACES = [
+const RESERVED_ACCOUNT_NAMESPACES = [
     'admin',
     'api',
     'apps',

@@ -7,7 +7,7 @@
  * only the filtered copy is used as result_schema for constrained decoding.
  */
 
-export const X_EXTRACT = 'x-extract';
+const X_EXTRACT = 'x-extract';
 
 function unescapeJsonPointerSegment(segment: string): string {
     return segment.replace(/~1/g, '/').replace(/~0/g, '~');

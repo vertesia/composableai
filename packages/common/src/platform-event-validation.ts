@@ -105,7 +105,7 @@ export const EVENT_CONDITION_JSON_LOGIC_OPERATORS: readonly string[] = [
     'var',
 ];
 
-export interface EventSubscriptionValidationResult {
+interface EventSubscriptionValidationResult {
     valid: boolean;
     errors: string[];
 }

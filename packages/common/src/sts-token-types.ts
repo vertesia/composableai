@@ -13,11 +13,8 @@ import type {
     ProjectTokenRequestSchema,
     ServiceAccountTokenRequestSchema,
     SigningAlgorithmSchema,
-    TokenTypeSchema,
     UserTokenRequestSchema,
 } from './api-schemas/sts.js';
-
-export type TokenType = z.infer<typeof TokenTypeSchema>;
 export type SigningAlgorithm = z.infer<typeof SigningAlgorithmSchema>;
 
 // API key doesn't need account/project as it's determined from the key

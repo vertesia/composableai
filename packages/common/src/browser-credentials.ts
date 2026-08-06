@@ -36,13 +36,6 @@ export interface UpdateWebsiteCredentialRequest extends Partial<WebsiteCredentia
     clear_oauth?: boolean;
 }
 
-export interface WebsiteCredentialFillTarget {
-    username_target_id?: string;
-    password_target_id?: string;
-    totp_target_id?: string;
-    submit_target_id?: string;
-}
-
 export type WebsiteCredentialFillRequest = z.infer<typeof WebsiteCredentialFillRequestSchema>;
 
 export type WebsiteCredentialFillResponse = z.infer<typeof WebsiteCredentialFillResponseSchema>;

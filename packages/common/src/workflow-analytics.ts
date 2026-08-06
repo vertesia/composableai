@@ -55,7 +55,7 @@ export enum TelemetryToolType {
 /**
  * Base interface for all telemetry events
  */
-export interface BaseAgentEvent {
+interface BaseAgentEvent {
     /** Type of the event */
     eventType: AgentEventType;
     /** ISO 8601 timestamp */
@@ -309,7 +309,7 @@ export interface WorkflowAnalyticsFilter {
 /**
  * Base query parameters for all workflow analytics endpoints
  */
-export interface WorkflowAnalyticsQueryBase {
+interface WorkflowAnalyticsQueryBase {
     /** Start time (ISO 8601 or Unix timestamp) */
     from?: string | number;
     /** End time (ISO 8601 or Unix timestamp) */
@@ -545,7 +545,7 @@ export interface ToolUsageMetrics {
 /**
  * Parameter value distribution for a tool
  */
-export interface ToolParameterValue {
+interface ToolParameterValue {
     /** Parameter name */
     parameterName: string;
     /** Parameter value (stringified) */
@@ -689,7 +689,7 @@ export interface WorkflowAnalyticsSummaryResponse {
 /**
  * Agent/interaction reference with id and display name
  */
-export interface AgentFilterOption {
+interface AgentFilterOption {
     /** The agent/interaction ID (used for filtering) */
     id: string;
     /** The display name (resolved from interaction) */
@@ -701,19 +701,9 @@ export interface AgentFilterOption {
 }
 
 /**
- * Environment reference with id and display name
- */
-export interface EnvironmentFilterOption {
-    /** The environment ID (used for filtering) */
-    id: string;
-    /** The display name (resolved from environment) */
-    name: string;
-}
-
-/**
  * Environment-model pair from telemetry data
  */
-export interface EnvironmentModelPair {
+interface EnvironmentModelPair {
     /** Environment ID */
     environmentId: string;
     /** Environment display name */
@@ -727,7 +717,7 @@ export interface EnvironmentModelPair {
 /**
  * Principal (user/API key) filter option
  */
-export interface PrincipalFilterOption {
+interface PrincipalFilterOption {
     /** The principal ID (user ID or API key ID) */
     id: string;
     /** The principal type (user, apikey, service_account, agent) */
@@ -755,7 +745,7 @@ export interface WorkflowAnalyticsFilterOptionsResponse {
 /**
  * Summary of prompt size metrics across all agents
  */
-export interface PromptSizeSummary {
+interface PromptSizeSummary {
     /** Average prompt/input tokens for start calls across all agents */
     avgPromptTokens: number;
     /** 95th percentile of prompt/input tokens */
@@ -767,7 +757,7 @@ export interface PromptSizeSummary {
 /**
  * Prompt size metrics for a single agent
  */
-export interface PromptSizeByAgent {
+interface PromptSizeByAgent {
     /** Agent ID (to be resolved to name by the API) */
     agentId: string;
     /** Agent display name (resolved from interaction) */
@@ -795,7 +785,7 @@ export interface PromptSizeAnalyticsResponse {
 /**
  * Top principal (user/API key/service account) metrics
  */
-export interface TopPrincipal {
+interface TopPrincipal {
     /** Principal ID (user ID, API key ID, etc.) */
     principalId: string;
     /** Principal type (user, apikey, service_account, agent) */
@@ -823,7 +813,7 @@ export interface TopPrincipalsAnalyticsResponse {
 /**
  * Agent run distribution metrics
  */
-export interface AgentRunDistribution {
+interface AgentRunDistribution {
     /** Agent/interaction ID */
     agentId: string;
     /** Agent display name (resolved from interaction) */
@@ -872,7 +862,7 @@ export interface TimeToFirstResponseMetrics {
 /**
  * Time to first response time series data point
  */
-export interface TimeToFirstResponseTimeSeriesPoint {
+interface TimeToFirstResponseTimeSeriesPoint {
     /** Timestamp bucket start (ISO 8601) */
     timestamp: string;
     /** Timestamp bucket end (ISO 8601) */
@@ -921,7 +911,7 @@ export interface FirstResponseBehaviorMetrics {
 /**
  * First response behavior time series data point
  */
-export interface FirstResponseBehaviorTimeSeriesPoint {
+interface FirstResponseBehaviorTimeSeriesPoint {
     /** Timestamp bucket start (ISO 8601) */
     timestamp: string;
     /** Timestamp bucket end (ISO 8601) */

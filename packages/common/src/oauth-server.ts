@@ -39,7 +39,7 @@ export type OAuthProjectBindingMode = z.infer<typeof OAuthProjectBindingModeSche
 export type OAuthTokenEndpointAuthMethod = z.infer<typeof OAuthTokenEndpointAuthMethodSchema>;
 export type OAuthGrantType = z.infer<typeof OAuthGrantTypeSchema>;
 export type OAuthResponseType = z.infer<typeof OAuthResponseTypeSchema>;
-export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
+type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
 /**
  * How Vertesia identified itself to a *remote* authorization server when connecting
@@ -188,7 +188,7 @@ export interface OAuthDeviceAuthorizationResponse {
     interval: number;
 }
 
-export interface OAuthTokenRequestAuthorizationCode {
+interface OAuthTokenRequestAuthorizationCode {
     grant_type: 'authorization_code';
     code: string;
     redirect_uri: string;
@@ -198,7 +198,7 @@ export interface OAuthTokenRequestAuthorizationCode {
     client_secret?: string;
 }
 
-export interface OAuthTokenRequestRefreshToken {
+interface OAuthTokenRequestRefreshToken {
     grant_type: 'refresh_token';
     refresh_token: string;
     client_id: string;
@@ -207,7 +207,7 @@ export interface OAuthTokenRequestRefreshToken {
     client_secret?: string;
 }
 
-export interface OAuthTokenRequestDeviceCode {
+interface OAuthTokenRequestDeviceCode {
     grant_type: 'urn:ietf:params:oauth:grant-type:device_code';
     device_code: string;
     client_id: string;
@@ -226,30 +226,6 @@ export interface OAuthTokenResponse {
     scope: string;
     refresh_token?: string;
     id_token?: string;
-}
-
-export interface OAuthAuthorizationCodeRecord {
-    code: string;
-    client_id: string;
-    user_id: string;
-    account_id: string;
-    project_id: string;
-    resource: string;
-    scope: string[];
-    redirect_uri: string;
-    code_challenge: string;
-    code_challenge_method: 'S256';
-    expires_at: string;
-}
-
-export interface OAuthConsentRecord {
-    user_id: string;
-    client_id: string;
-    account_id: string;
-    project_id: string;
-    scope: string[];
-    granted_at: string;
-    revoked_at?: string;
 }
 
 export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' | 'project'> {

@@ -5,7 +5,7 @@ import {
 } from './view-validation-helpers.js';
 import type { ViewElasticsearchQuery } from './views.js';
 
-export interface ViewQueryValidationIssue {
+interface ViewQueryValidationIssue {
     path: string;
     message: string;
 }
@@ -290,7 +290,7 @@ function normalizeViewQueryNode(value: unknown, state: { clauses: number }): unk
     return { term: { [field]: fieldValue.value } };
 }
 
-export function normalizeViewQuery(value: unknown): unknown {
+function normalizeViewQuery(value: unknown): unknown {
     return normalizeViewQueryNode(value, { clauses: 0 });
 }
 

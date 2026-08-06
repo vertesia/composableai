@@ -114,19 +114,6 @@ export type ProjectIntegrationConfigRequest = z.infer<typeof ProjectIntegrationC
  */
 export type ProjectIntegrationConfigResponse = z.infer<typeof ProjectIntegrationConfigResponseSchema>;
 
-export type ProjectIntegrationConfigWithSecrets =
-    | GladiaConfigurationWithSecrets
-    | GithubConfiguration
-    | AwsConfiguration
-    | MagicPdfConfiguration
-    | SerperConfigurationWithSecrets
-    | ExaConfigurationWithSecrets
-    | LinkupConfigurationWithSecrets
-    | ResendConfigurationWithSecrets
-    | AskUserWebhookConfigurationWithSecrets;
-
-export type ProjectIntegrationConfig = ProjectIntegrationConfigResponse;
-
 export function withProjectIntegrationDiscriminator(
     integration: SupportedIntegrations,
     config: Record<string, unknown>,

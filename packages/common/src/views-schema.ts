@@ -5,9 +5,8 @@ import {
 } from './view-validation-helpers.js';
 import { VIEW_RESULT_FIELD_FORMATS, VIEW_SEARCH_FIELD_TYPES } from './views.js';
 
-export const VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
-    'https://schemas.vertesia.com/view-experience.v1.schema.json';
-export const PERSISTED_VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
+const VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID = 'https://schemas.vertesia.com/view-experience.v1.schema.json';
+const PERSISTED_VIEW_EXPERIENCE_CONFIGURATION_JSON_SCHEMA_ID =
     'https://schemas.vertesia.com/persisted-view-experience.v1.schema.json';
 
 /**

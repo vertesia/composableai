@@ -12,20 +12,20 @@ import type {
     QuotaTierResponseSchema,
 } from './api-schemas/quota.js';
 
-export interface RateLimiterCapacity {
+interface RateLimiterCapacity {
     current: number;
     base: number;
     max: number;
 }
 
-export interface RateLimiterBreakerState {
+interface RateLimiterBreakerState {
     state: 'open' | 'closed';
     is_open: boolean;
     last_opened_at?: string;
     consecutive_failures?: number;
 }
 
-export interface RateLimiterModelStatus {
+interface RateLimiterModelStatus {
     model_id: string;
     admitted: number;
     delayed: number;

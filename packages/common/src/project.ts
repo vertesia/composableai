@@ -51,24 +51,7 @@ import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
  */
 export * from './project-values.js';
 
-import { SystemRoles } from './project-values.js';
-
 export type ICreateProjectPayload = CreateProjectPayloadFromSchema;
-
-export function isRoleIncludedIn(role: string, includingRole: string) {
-    switch (includingRole) {
-        case SystemRoles.owner:
-            return true; // includes billing to?
-        case SystemRoles.admin:
-            return role !== SystemRoles.billing && role !== SystemRoles.owner;
-        case SystemRoles.developer:
-            return role === SystemRoles.developer;
-        case SystemRoles.billing:
-            return role === SystemRoles.billing;
-        default:
-            return false;
-    }
-}
 
 export interface PopulatedProjectRef {
     id: string;
@@ -197,7 +180,7 @@ export type ProjectSearchPropertyType = z.infer<typeof ProjectSearchPropertyType
 
 export type ProjectSearchPropertyMapping = z.infer<typeof ProjectSearchPropertyMappingSchema>;
 
-export const PROJECT_SEARCH_PROPERTY_TYPES: readonly ProjectSearchPropertyType[] = [
+const PROJECT_SEARCH_PROPERTY_TYPES: readonly ProjectSearchPropertyType[] = [
     'keyword',
     'text',
     'boolean',
@@ -287,7 +270,7 @@ export enum SupportedEmbeddingTypes {
     properties = 'properties',
 }
 
-export enum FullTextType {
+enum FullTextType {
     full_text = 'full_text',
 }
 
@@ -305,13 +288,6 @@ export type ProjectConfigurationEmbeddingEnablePayload = z.infer<
 >;
 
 export type Project = z.infer<typeof ProjectSchema>;
-
-export interface ProjectCreatePayload {
-    name: string;
-    description?: string;
-}
-
-export interface ProjectUpdatePayload extends Partial<Project> {}
 
 export type ProjectPluginsUpdatePayload = z.infer<typeof ProjectPluginsUpdatePayloadSchema>;
 
@@ -649,7 +625,7 @@ export interface ElasticsearchIndexStats {
 /**
  * Embedding configuration for a single type
  */
-export interface EmbeddingTypeConfig {
+interface EmbeddingTypeConfig {
     environment?: string;
     dimensions?: number;
     model?: string;

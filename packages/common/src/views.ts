@@ -68,15 +68,6 @@ export type ViewExperienceLayout = z.infer<typeof ViewExperienceLayoutSchema>;
 
 export type ViewExperienceScope = z.infer<typeof ViewExperienceScopeSchema>;
 
-export interface ViewNavigationBase {
-    id: string;
-    label: string;
-    presentation?: 'tree' | 'list' | 'select' | 'chips';
-    multi_select?: boolean;
-    order?: number;
-    renderer?: string;
-}
-
 export type ViewLocationNavigation = z.infer<typeof ViewLocationNavigationSchema>;
 
 export type ViewCollectionNavigation = z.infer<typeof ViewCollectionNavigationSchema>;
@@ -139,13 +130,6 @@ export type ViewResultField = z.infer<typeof ViewResultFieldSchema>;
 
 export type ViewResultMedia = z.infer<typeof ViewResultMediaSchema>;
 
-export interface ViewDisplayBase {
-    id: string;
-    label: string;
-    renderer?: string;
-    page_size?: number;
-}
-
 export type ViewListDisplay = z.infer<typeof ViewListDisplaySchema>;
 
 export type ViewTableColumn = z.infer<typeof ViewTableColumnSchema>;
@@ -184,7 +168,7 @@ export interface PersistedViewExperienceConfiguration extends Omit<ViewExperienc
  * result at their API or persistence boundary because legacy records may not
  * satisfy newer persisted-only requirements.
  */
-export function getViewExperienceConfiguration(value: ViewExperienceConfiguration): ViewExperienceConfiguration {
+function getViewExperienceConfiguration(value: ViewExperienceConfiguration): ViewExperienceConfiguration {
     return {
         name: value.name,
         ...(value.description === undefined ? {} : { description: value.description }),

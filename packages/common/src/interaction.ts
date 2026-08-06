@@ -86,7 +86,7 @@ import type { AccountRef } from './user.js';
  */
 export * from './interaction-values.js';
 
-import { ConfigModes, RunDataStorageLevel } from './interaction-values.js';
+import { RunDataStorageLevel } from './interaction-values.js';
 
 export type InteractionExecutionError = z.infer<typeof InteractionExecutionErrorSchema>;
 
@@ -293,7 +293,7 @@ export enum ExecutionRunStatus {
     failed = 'failed',
 }
 
-export enum RunDataStorageDescription {
+enum RunDataStorageDescription {
     STANDARD = 'Run data is stored for both the model inputs and output.',
     RESTRICTED = 'No run data is stored for the model inputs — only the model output.',
     DEBUG = 'Run data is stored for the model inputs and output, schema, and final prompt.',
@@ -313,7 +313,7 @@ export type SchemaRef = z.infer<typeof SchemaRefSchema>;
 export type CachePolicy = z.infer<typeof CachePolicySchema>;
 export type InteractionVisibility = z.infer<typeof InteractionVisibilitySchema>;
 
-export interface InteractionData {
+interface InteractionData {
     readonly id: string;
     name: string;
     endpoint: string;
@@ -367,9 +367,6 @@ export type InteractionForkPayload = z.infer<typeof InteractionForkPayloadSchema
 export type InteractionExecutionPayload = z.infer<typeof InteractionExecutionPayloadSchema>;
 
 export type NamedInteractionExecutionPayload = z.infer<typeof NamedInteractionExecutionPayloadSchema>;
-
-// ================= async execution payloads ====================
-export type ToolRef = string | { name: string; description: string };
 
 export type ConversationVisibility = z.infer<typeof ConversationVisibilitySchema>;
 
@@ -670,18 +667,6 @@ export type ExecutionRunRef = z.infer<typeof ExecutionRunRefSchema>;
 
 export const ExecutionRunRefSelect = '-result -parameters -result_schema -prompt';
 
-export enum ConfigModesDescription {
-    RUN_AND_INTERACTION_CONFIG = 'This run configuration is used. Undefined options are filled with interaction configuration.',
-    RUN_CONFIG_ONLY = 'Only this run configuration is used. Undefined options remain undefined.',
-    INTERACTION_CONFIG_ONLY = 'Only interaction configuration is used.',
-}
-
-export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
-    [ConfigModes.RUN_AND_INTERACTION_CONFIG]: ConfigModesDescription.RUN_AND_INTERACTION_CONFIG,
-    [ConfigModes.RUN_CONFIG_ONLY]: ConfigModesDescription.RUN_CONFIG_ONLY,
-    [ConfigModes.INTERACTION_CONFIG_ONLY]: ConfigModesDescription.INTERACTION_CONFIG_ONLY,
-};
-
 export type InteractionExecutionConfiguration = z.infer<typeof InteractionExecutionConfigurationSchema>;
 
 export type GenerateInteractionPayload = z.infer<typeof GenerateInteractionPayloadSchema>;
@@ -746,7 +731,7 @@ export type ResolvedInteractionExecutionInfo = z.infer<typeof ResolvedInteractio
 /**
  * A builtin tool definition from the tools catalog
  */
-export interface BuiltinToolDefinition {
+interface BuiltinToolDefinition {
     /**
      * The unique tool name
      */
@@ -779,7 +764,7 @@ export interface BuiltinToolDefinition {
  * A system skill entry in the tools catalog.
  * System skills are built into the platform and unlock hidden tools.
  */
-export interface SystemSkillCatalogEntry {
+interface SystemSkillCatalogEntry {
     /** Skill name without the learn_ prefix, e.g. "document_search" */
     name: string;
     /** Tool name used in agent selection, i.e. "learn_document_search" */

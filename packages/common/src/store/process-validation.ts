@@ -7,7 +7,7 @@ import {
     type ProcessDefinitionBody,
 } from './process.js';
 
-export interface ProcessDefinitionValidationResult {
+interface ProcessDefinitionValidationResult {
     valid: boolean;
     errors: string[];
 }
@@ -40,7 +40,7 @@ export function getProcessInteractionValidationSelectors(interactions: Iterable<
     return [...selectors];
 }
 
-export const MAX_PROCESS_DEFINITION_BYTES = 1024 * 1024;
+const MAX_PROCESS_DEFINITION_BYTES = 1024 * 1024;
 export const MAX_PROCESS_GUARD_DEPTH = 64;
 export const MAX_PROCESS_GUARD_NODES = 4096;
 const PROCESS_SCRIPT_RESOURCE_NAME = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;

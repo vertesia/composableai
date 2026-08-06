@@ -170,7 +170,7 @@ export interface PublishWorkflowLifecycleEventRequest {
  * derives a stable `eventThreadTag` (see `@dglabs/event-bus`), so all events of the same thread
  * correlate to one agent run.
  */
-export interface EventThreadRef {
+interface EventThreadRef {
     resource_type: string;
     resource_id: string;
 }
@@ -362,13 +362,13 @@ export interface EventDeliveryStreamUpdate {
     item: EventDeliveryStreamItem;
 }
 
-export interface EventDeliveryStreamHeartbeat {
+interface EventDeliveryStreamHeartbeat {
     type: 'heartbeat';
     emitted_at: string;
     cursor?: string;
 }
 
-export interface EventDeliveryStreamError {
+interface EventDeliveryStreamError {
     type: 'error';
     emitted_at: string;
     cursor?: string;
@@ -419,19 +419,6 @@ export type CancelEventDeliveryIntentsResponse = z.infer<typeof CancelEventDeliv
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;
     priority?: EventPriority;
-}
-
-export interface PublishPlatformEventResponse {
-    event_id: string;
-    outbox_id?: string;
-    status: EventOutboxStatus;
-    matched_subscription_count: number;
-    materialized_intent_count: number;
-}
-
-export interface WorkflowEventInput<T = Record<string, unknown>> {
-    event_ref: EventRef;
-    payload: T;
 }
 
 // --- External event ingest channels ---

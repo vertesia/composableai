@@ -21,8 +21,6 @@ export interface DateFacet<T extends Date | string = string> {
     default?: string;
 }
 
-export type Facet<DateT extends Date | string = string> = StringFacet | NumericFacet | DateFacet<DateT>;
-
 export type FacetSpec = z.infer<typeof FacetSpecSchema>;
 
 export interface FacetBucket {
@@ -34,10 +32,6 @@ export interface FacetNameBucket {
     name: string;
     _id: string;
     count: number;
-}
-
-export interface FacetResult {
-    buckets: FacetBucket[];
 }
 
 export interface ComputedFacetBucket {

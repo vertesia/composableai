@@ -257,9 +257,6 @@ export type WorkflowTask = z.infer<typeof WorkflowTaskSchema>;
 // History format discriminated union
 export type WorkflowHistory = z.infer<typeof WorkflowHistorySchema>;
 
-// History format query parameter type
-export type HistoryFormat = 'events' | 'tasks' | 'agent';
-
 export type AgentTask = z.infer<typeof AgentTaskSchema>;
 
 export type WorkflowRun = z.infer<typeof WorkflowRunSchema>;
@@ -288,24 +285,6 @@ export type WorkflowActionResponse = z.infer<typeof WorkflowActionResponseSchema
 export type WorkflowQueryResult = z.infer<typeof WorkflowQueryResultSchema>;
 
 export type WorkflowInteractionVars = z.infer<typeof WorkflowInteractionVarsSchema>;
-
-export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, 'config'> {
-    config: {
-        interactionName: string;
-        action: DocumentActionConfig;
-        data: Record<string, unknown>;
-    };
-}
-
-export interface DocumentActionConfig {
-    contentTypeName?: string; //content type to use
-    setAsProperties: boolean; //set result as properties
-    setAsText: string; //set result as text, if result set the whole result as text
-    setNameFrom: string; //result property to use as name
-    upsert: boolean; //wether to upsert or update only
-    documentId?: string; //doc Id to update
-    parentId?: string; //parentId for the created doc
-}
 
 export const WorkflowExecutionStatusValues = {
     UNKNOWN: 0,
@@ -382,7 +361,7 @@ export type AgentMessageDetails = z.infer<typeof AgentMessageDetailsSchema>;
 /**
  * Details for THOUGHT messages representing tool calls (event_class: 'activity').
  */
-export interface ToolCallDetails {
+interface ToolCallDetails {
     event_class: 'activity';
     tool: string;
     tool_event?: 'started' | 'progress' | 'completed' | 'failed';
@@ -396,37 +375,6 @@ export interface ToolCallDetails {
     activity_id?: string;
     files?: string[];
     outputFiles?: string[];
-    [key: string]: unknown;
-}
-
-/**
- * Details for UPDATE messages signaling document creation or update.
- */
-export interface DocumentEventDetails {
-    event_class: 'document_created' | 'document_updated';
-    document_id: string;
-    title?: string;
-    [key: string]: unknown;
-}
-
-/**
- * Details for REQUEST_INPUT messages with UX configuration.
- */
-export interface RequestInputDetails {
-    ux?: {
-        options?: Array<{ id: string; label: string }>;
-        variant?: string;
-        multiSelect?: boolean;
-    };
-    [key: string]: unknown;
-}
-
-/**
- * Details for PLAN messages containing the plan structure.
- */
-export interface PlanMessageDetails {
-    plan: PlanTask[];
-    comment?: string;
     [key: string]: unknown;
 }
 
@@ -445,39 +393,6 @@ export function isToolCallMessage(msg: AgentMessage): msg is AgentMessage & { de
 /** Extract the normalized resource references carried on a message's details, if any. */
 export function getResourcesFromMessage(msg: AgentMessage): AgentResourceReference[] {
     return normalizeAgentResources((msg.details as AgentMessageDetails | undefined)?.resources);
-}
-
-export function isDocumentEventMessage(msg: AgentMessage): msg is AgentMessage & { details: DocumentEventDetails } {
-    const details = msg.details as Record<string, unknown> | undefined;
-    return (
-        msg.type === AgentMessageType.UPDATE &&
-        !!details &&
-        typeof details === 'object' &&
-        (details.event_class === 'document_created' || details.event_class === 'document_updated') &&
-        typeof details.document_id === 'string'
-    );
-}
-
-export function isFileProcessingMessage(msg: AgentMessage): msg is AgentMessage & { details: FileProcessingDetails } {
-    const details = msg.details as Record<string, unknown> | undefined;
-    return (
-        msg.type === AgentMessageType.SYSTEM &&
-        !!details &&
-        typeof details === 'object' &&
-        details.system_type === 'file_processing' &&
-        Array.isArray(details.files)
-    );
-}
-
-export function isPlanMessage(msg: AgentMessage): msg is AgentMessage & { details: PlanMessageDetails } {
-    const details = msg.details as Record<string, unknown> | undefined;
-    return (
-        msg.type === AgentMessageType.PLAN && !!details && typeof details === 'object' && Array.isArray(details.plan)
-    );
-}
-
-export function isRequestInputMessage(msg: AgentMessage): msg is AgentMessage & { details: RequestInputDetails } {
-    return msg.type === AgentMessageType.REQUEST_INPUT && !!msg.details && typeof msg.details === 'object';
 }
 
 /**
@@ -510,7 +425,7 @@ export type CompactMessage = z.infer<typeof CompactMessageSchema>;
  * Legacy message format for backward compatibility.
  * @deprecated Use CompactMessage instead
  */
-export type LegacyAgentMessage = AgentMessage;
+type LegacyAgentMessage = AgentMessage;
 
 // ============================================
 // TYPE GUARDS
@@ -816,27 +731,27 @@ export const LOW_PRIORITY_TASK_QUEUE = 'low_priority';
 /**
  * WebSocket message types for bidirectional communication
  */
-export interface WebSocketSignalMessage {
+interface WebSocketSignalMessage {
     type: 'signal';
     signalName: string;
     data: unknown;
     requestId?: string | number;
 }
 
-export interface WebSocketPingMessage {
+interface WebSocketPingMessage {
     type: 'ping';
 }
 
-export interface WebSocketPongMessage {
+interface WebSocketPongMessage {
     type: 'pong';
 }
 
-export interface WebSocketAckMessage {
+interface WebSocketAckMessage {
     type: 'ack';
     requestId: string | number;
 }
 
-export interface WebSocketErrorMessage {
+interface WebSocketErrorMessage {
     type: 'error';
     requestId?: string | number;
     error: string;
@@ -959,7 +874,7 @@ export interface AgentIntakeWorkflowResult {
 // ---------------------------------------------------------------------------
 
 /** Progress reported by a child workstream */
-export interface WorkstreamProgressInfo {
+interface WorkstreamProgressInfo {
     launch_id: string;
     workstream_id: string;
     phase: 'planning' | 'executing_tool' | 'synthesizing' | 'blocked' | 'done';

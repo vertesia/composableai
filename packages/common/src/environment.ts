@@ -40,7 +40,7 @@ export interface SupportedProviderParams extends Omit<ProviderParams, 'id'> {
     id: SupportedProviders;
 }
 
-export const CustomProvidersList: Record<CustomProviders, SupportedProviderParams> = {
+const CustomProvidersList: Record<CustomProviders, SupportedProviderParams> = {
     virtual_lb: {
         id: CustomProviders.virtual_lb,
         name: 'Virtual - Load Balancer',

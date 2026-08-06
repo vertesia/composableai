@@ -1,6 +1,6 @@
 import type { JSONSchemaType } from '../json-schema.js';
 
-export const PROCESS_DEFINITION_JSON_SCHEMA_ID = 'https://schemas.vertesia.com/process-definition.v1.schema.json';
+const PROCESS_DEFINITION_JSON_SCHEMA_ID = 'https://schemas.vertesia.com/process-definition.v1.schema.json';
 
 export const ProcessDefinitionBodyJsonSchema = {
     $id: PROCESS_DEFINITION_JSON_SCHEMA_ID,

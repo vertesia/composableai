@@ -161,11 +161,6 @@ export type AppInstallationsQuery = z.infer<typeof AppInstallationsQuerySchema>;
 
 export type ToolCollectionAuthType = z.infer<typeof ToolCollectionAuthTypeSchema>;
 
-/**
- * Tool collection type
- */
-export type ToolCollectionType = 'mcp' | 'vertesia_sdk';
-
 export type MCPOAuthConfig = z.infer<typeof MCPOAuthConfigSchema>;
 
 /** Install-time provisioning blueprint for an `auth: 'api_key'` MCP collection. Never holds the key. */
@@ -184,8 +179,8 @@ export type ToolCollectionObject = z.infer<typeof ToolCollectionObjectSchema>;
  */
 export type ToolCollection = ToolCollectionObject;
 
-export const MCP_COLLECTION_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
-export const MCP_COLLECTION_NAMESPACE_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
+const MCP_COLLECTION_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
+const MCP_COLLECTION_NAMESPACE_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
 
 export function isValidMCPCollectionId(id: string): boolean {
     return MCP_COLLECTION_ID_PATTERN.test(id);
@@ -195,7 +190,7 @@ export function isValidMCPCollectionNamespace(namespace: string): boolean {
     return MCP_COLLECTION_NAMESPACE_PATTERN.test(namespace);
 }
 
-export function deriveMCPCollectionId(input: string): string {
+function deriveMCPCollectionId(input: string): string {
     return input
         .trim()
         .toLowerCase()
@@ -323,7 +318,7 @@ export type AppArtifactType = (typeof APP_ARTIFACT_TYPES)[number];
  * This is the agent's self-reported claim for tracking/handoff; the capability gate verifies
  * the truth independently via package registration + run/data telemetry and does not trust it.
  */
-export type AppArtifactStatus = 'pending' | 'built' | 'done';
+type AppArtifactStatus = 'pending' | 'built' | 'done';
 
 export const APP_ARTIFACT_STATUSES: readonly AppArtifactStatus[] = ['pending', 'built', 'done'];
 
@@ -707,11 +702,6 @@ export type OAuthAuthStatus = z.infer<typeof OAuthAuthStatusSchema>;
  */
 export type OAuthAuthorizeResponse = z.infer<typeof OAuthAuthorizeResponseSchema>;
 
-export interface McpOAuthCollectionRef {
-    app_install_id: string;
-    collection_id: string;
-}
-
 /**
  * Payload for storing the static bearer token of an `auth: 'api_key'` MCP collection.
  * The key is write-only — it is never echoed back by any endpoint.
@@ -866,9 +856,6 @@ export type CompositeAppHeaderItemKind = z.infer<typeof CompositeAppHeaderItemKi
 
 /** Where a header link opens. */
 export type CompositeAppHeaderItemTarget = z.infer<typeof CompositeAppHeaderItemTargetSchema>;
-
-/** Stable identifiers for the built-in header items. */
-export const COMPOSITE_APP_HEADER_BUILTIN_IDS = ['app_portal', 'docs', 'help', 'user_menu'] as const;
 
 /**
  * A single button in the CompositeApp header bar.

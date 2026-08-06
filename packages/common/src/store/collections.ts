@@ -54,12 +54,6 @@ export interface CollectionItem extends BaseObject {
 
 export type Collection = z.infer<typeof CollectionSchema>;
 
-export interface StaticCollection extends Collection {
-    dynamic: false;
-    members: string[];
-    query: never;
-}
-
 export interface DynamicCollection extends Collection {
     dynamic: true;
 }

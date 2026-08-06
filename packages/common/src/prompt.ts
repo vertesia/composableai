@@ -38,10 +38,6 @@ export interface PromptSegmentDef<T = string | PromptTemplate | PromptTemplateRe
     configuration?: unknown; // the configuration if any in case of builtin prompts
 }
 
-export interface PromptSegmentRef<T = string | PromptTemplate | PromptTemplateRef> extends PromptSegmentDef<T> {
-    id: string;
-}
-
 export interface PopulatedPromptSegmentDef extends Omit<PromptSegmentDef, 'template'> {
     template?: PromptTemplate;
 }
@@ -53,10 +49,6 @@ export interface ExecutablePromptSegmentDef extends Omit<PromptSegmentDef, 'temp
 }
 
 export type PromptTemplateRef = z.infer<typeof PromptTemplateRefSchema>;
-
-export interface PromptTemplateRefWithSchema extends PromptTemplateRef {
-    inputSchema?: JSONSchema;
-}
 
 export enum TemplateType {
     jst = 'jst',

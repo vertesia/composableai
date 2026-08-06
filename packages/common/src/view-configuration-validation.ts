@@ -6,7 +6,7 @@ import {
 } from './views-schema.js';
 import { type ViewValidationIssue, validateViewExperienceSemantics } from './views-validation.js';
 
-export type ViewConfigurationValidationMode = 'draft' | 'persisted';
+type ViewConfigurationValidationMode = 'draft' | 'persisted';
 
 const ajv = new Ajv.default({ allErrors: true, strict: false });
 const validateDraftStructure = ajv.compile(ViewExperienceConfigurationJsonSchema);
@@ -61,14 +61,4 @@ export function validateViewConfiguration(
     const issues = structuralIssues(value, mode);
     if (issues.length > 0) return issues;
     return validateViewExperienceSemantics(value as ViewExperienceConfiguration, mode);
-}
-
-/** @deprecated Use validateViewConfiguration(value, 'draft'). */
-export function validateViewExperienceConfiguration(value: unknown): ViewValidationIssue[] {
-    return validateViewConfiguration(value, 'draft');
-}
-
-/** @deprecated Use validateViewConfiguration(value, 'persisted'). */
-export function validatePersistedViewExperienceConfiguration(value: unknown): ViewValidationIssue[] {
-    return validateViewConfiguration(value, 'persisted');
 }

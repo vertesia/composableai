@@ -412,7 +412,7 @@ export interface TypeDetectionMetadata {
 }
 
 // Type-specific metadata interfaces
-export interface TemporalMediaMetadata extends ContentMetadata {
+interface TemporalMediaMetadata extends ContentMetadata {
     duration?: number; // in seconds
     transcript?: Transcript;
 }
@@ -465,7 +465,7 @@ export interface DocumentMetadata extends ContentMetadata {
 }
 
 /** Grounded-extraction summary stored on document metadata. Additional keys allowed. */
-export interface GroundedMetadata {
+interface GroundedMetadata {
     verdict?: string;
     confidence?: number;
     citation_count?: number;
@@ -731,7 +731,7 @@ export type ObjectSearchResponse = z.infer<typeof ObjectSearchResponseSchema>;
 // Rendition Format Compatibility Utilities
 // ============================================================================
 
-export type RenditionFormat = ImageRenditionFormat | MarkdownRenditionFormat;
+type RenditionFormat = ImageRenditionFormat | MarkdownRenditionFormat;
 
 /**
  * Matrix of supported content type → format conversions.

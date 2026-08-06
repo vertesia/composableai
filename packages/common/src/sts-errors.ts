@@ -9,5 +9,3 @@ export const ISSUE_TOKEN_FORBIDDEN_ERROR_CODES = [
     RESTRICTED_ENVIRONMENT_ERROR_CODE,
     TOKEN_ISSUANCE_FORBIDDEN_ERROR_CODE,
 ] as const;
-
-export type IssueTokenForbiddenErrorCode = (typeof ISSUE_TOKEN_FORBIDDEN_ERROR_CODES)[number];
