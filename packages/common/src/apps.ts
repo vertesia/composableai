@@ -310,6 +310,8 @@ export const APP_ARTIFACT_TYPES = [
     'dashboard',
     'activity',
     'tool',
+    'hook',
+    'subscription',
 ] as const;
 
 export type AppArtifactType = (typeof APP_ARTIFACT_TYPES)[number];
@@ -318,7 +320,7 @@ export type AppArtifactType = (typeof APP_ARTIFACT_TYPES)[number];
  * A single platform artifact the App Solution Architect requires the build to create.
  * `id` is the app-owned in-code id the implementation must register and reference
  * (e.g. `app:<name>:main:extract-item` for interactions/agents, `app:<name>:<type>` for
- * types, `app:<name>:<process>` for processes).
+ * types, `app:<name>:<process>` for processes, and `app:<name>:<local-id>` for hooks/subscriptions).
  */
 /**
  * Build progress for one artifact, maintained by the developer agent as a living checklist:

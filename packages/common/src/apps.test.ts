@@ -11,6 +11,8 @@ describe('app capability contracts', () => {
         expect(APP_CAPABILITIES).toContain('views');
         expect(APP_PACKAGE_SCOPES).toContain('views');
         expect(APP_ARTIFACT_TYPES).toContain('view');
+        expect(APP_ARTIFACT_TYPES).toContain('hook');
+        expect(APP_ARTIFACT_TYPES).toContain('subscription');
     });
 
     it('exposes app hooks as a package query scope', () => {
@@ -24,14 +26,14 @@ describe('app capability contracts', () => {
                 id: 'content-updated',
                 name: 'Content updated',
                 hook: 'content-updated',
-                filter: { action: ['updated'], resource_type: ['content_object'] },
+                filter: { action: ['update'], resource_type: ['content_object'] },
                 run_as_role: 'automation',
             }),
         ).toEqual({
             id: 'content-updated',
             name: 'Content updated',
             hook: 'content-updated',
-            filter: { action: ['updated'], resource_type: ['content_object'] },
+            filter: { action: ['update'], resource_type: ['content_object'] },
             run_as_role: 'automation',
         });
     });
@@ -43,7 +45,7 @@ describe('app capability contracts', () => {
                 root_event_id: 'event-1',
                 hop_count: 0,
                 event_category: 'content',
-                action: 'updated',
+                action: 'update',
                 resource_type: 'content_object',
                 resource_id: 'object-1',
                 account_id: 'account-1',

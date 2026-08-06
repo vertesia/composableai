@@ -414,6 +414,9 @@ Registered hooks are exposed as authenticated POST endpoints at `/api/hooks/inst
 app package advertises their endpoint paths under `hooks` for inspection. Studio invokes the conventional endpoints
 directly and treats a 404 as an absent optional hook.
 
+In an appgen capability manifest, declare lifecycle hooks with type `hook` and ids such as
+`app:<app-name>:install` and `app:<app-name>:uninstall`.
+
 Do not create project-local copies of app-owned package type definitions. When hooks create content objects, use the
 portable `app:<app-name>:<type-name>` type reference.
 
@@ -461,6 +464,8 @@ export const hooks = [
 
 Event hook names must be kebab-case URL-safe segments. `install` and `uninstall` are reserved. The example is exposed
 at `POST /api/hooks/content-updated` and advertised by `/api/package?scope=hooks`.
+Represent it in an appgen capability manifest as a `hook` artifact such as
+`app:<app-name>:content-updated`.
 
 ---
 
@@ -480,7 +485,7 @@ export const subscriptions = [
         description: "Refresh app-owned projections after content changes.",
         hook: "content-updated",
         filter: {
-            action: ["updated"],
+            action: ["update"],
             resource_type: ["content_object"],
         },
         run_as_role: "automation",
@@ -493,6 +498,8 @@ export const subscriptions = [
 The `hook` value must match the `name` of a registered event hook. Package generation rejects missing hooks,
 lifecycle hooks, duplicate subscription ids, and ids that are not kebab-case. Multiple subscriptions may reference
 the same event hook with different filters. Inspect the result with `GET /api/package?scope=subscriptions`.
+Represent each definition in an appgen capability manifest as a `subscription` artifact such as
+`app:<app-name>:content-updated`.
 
 ---
 

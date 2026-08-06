@@ -100,6 +100,8 @@ lifecycle. Hooks receive an authenticated context with the current project token
 - Register named hook definitions in `src/modules/app/resources/hooks/index.ts`.
 - Make install behavior idempotent. Studio may invoke it again during a reinstall or an explicit recovery.
 - Do not use hooks to materialize app-owned package types as project-local types. Use portable `app:<app>:<type>` refs.
+- When an appgen capability manifest is present, declare each lifecycle or event hook as a `hook` artifact using
+  `app:<app-name>:<hook-name>`.
 
 → Code in `REFERENCE.md` § Application lifecycle hooks.
 
@@ -123,6 +125,8 @@ Use an app-owned subscription to route matching platform events to an event hook
 - Define the event `filter` and required `run_as_role`, normally `automation`.
 - Do not set a URL or scope. Studio derives the project scope and deployed hook URL during installation.
 - Inspect contributions through `/api/package?scope=subscriptions`.
+- When an appgen capability manifest is present, declare the subscription as a `subscription` artifact using
+  `app:<app-name>:<subscription-id>`.
 
 → Code in `REFERENCE.md` § Application event subscriptions.
 
