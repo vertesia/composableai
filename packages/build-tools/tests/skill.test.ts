@@ -43,6 +43,24 @@ Content here`;
         });
     });
 
+    it('should map flat keywords frontmatter into context_triggers', async () => {
+        const content = `---
+name: test
+title: Test
+description: Test description
+keywords: [sql, data analysis]
+---
+Content here`;
+
+        const result = await skillTransformer.transform(content, 'test.md');
+
+        expect((result.data as { context_triggers: { keywords: string[] } }).context_triggers).toEqual({
+            keywords: ['sql', 'data analysis'],
+            tool_names: undefined,
+            data_patterns: undefined,
+        });
+    });
+
     it('should include tools from frontmatter', async () => {
         const content = `---
 name: test
