@@ -1,5 +1,5 @@
 import { PromptRole } from '@llumiverse/common';
-import { PROCESS_DEFINITION_FORMAT_VERSION, TemplateType } from '@vertesia/common';
+import { PROCESS_DEFINITION_FORMAT_VERSION, SystemRoles, TemplateType } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import { ContentTypesCollection } from '../ContentTypesCollection.js';
 import { InteractionCollection } from '../InteractionCollection.js';
@@ -164,8 +164,8 @@ describe('buildAppPackage', () => {
                     name: 'Content updated',
                     description: 'Refresh app-owned projections after content changes.',
                     hook: 'content-updated',
-                    filter: { action: ['updated'], resource_type: ['content_object'] },
-                    run_as_role: 'automation',
+                    filter: { action: ['update'], resource_type: ['content_object'] },
+                    run_as_role: SystemRoles.automation,
                     priority: 'normal',
                 },
             ],
@@ -184,8 +184,8 @@ describe('buildAppPackage', () => {
                     id: 'content-updated',
                     name: 'Content updated',
                     hook: 'content-updated',
-                    filter: { action: ['updated'] },
-                    run_as_role: 'automation',
+                    filter: { action: ['update'] },
+                    run_as_role: SystemRoles.automation,
                 },
             ],
         } satisfies ToolServerConfig;
@@ -201,7 +201,7 @@ describe('buildAppPackage', () => {
                     name: 'On install',
                     hook: 'install',
                     filter: { action: ['installed'] },
-                    run_as_role: 'automation',
+                    run_as_role: SystemRoles.automation,
                 },
             ],
         } satisfies ToolServerConfig;
@@ -220,8 +220,8 @@ describe('buildAppPackage', () => {
             id: 'content-updated',
             name: 'Content updated',
             hook: 'content-updated',
-            filter: { action: ['updated'] },
-            run_as_role: 'automation' as const,
+            filter: { action: ['update'] },
+            run_as_role: SystemRoles.automation,
         };
 
         await expect(
