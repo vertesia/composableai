@@ -23,6 +23,12 @@ export interface ToolCollectionProperties extends CollectionProperties {
      * The tools
      */
     tools: Tool[];
+    /**
+     * Transitional names accepted only at execution time. They are deliberately
+     * absent from catalog/discovery responses so new agents cannot select them,
+     * while in-flight agents survive a rolling tool rename or removal.
+     */
+    executionAliases?: Tool[];
 }
 
 /**
@@ -53,13 +59,13 @@ export class ToolCollection implements ICollection<Tool> {
      */
     tools: ToolRegistry;
 
-    constructor({ name, title, icon, description, tools }: ToolCollectionProperties) {
+    constructor({ name, title, icon, description, tools, executionAliases }: ToolCollectionProperties) {
         this.name = name;
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
         this.description = description;
         // we add the collection name info
-        this.tools = new ToolRegistry(name, tools);
+        this.tools = new ToolRegistry(name, tools, executionAliases);
     }
 
     [Symbol.iterator](): Iterator<Tool> {

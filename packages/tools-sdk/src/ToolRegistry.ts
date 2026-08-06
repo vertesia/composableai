@@ -6,11 +6,18 @@ export class ToolRegistry {
     // The category name usinfg this registry
     category: string;
     registry: Record<string, Tool> = {};
+    private executionAliases: Record<string, Tool> = {};
 
-    constructor(category: string, tools: Tool[] = []) {
+    constructor(category: string, tools: Tool[] = [], executionAliases: Tool[] = []) {
         this.category = category;
         for (const tool of tools) {
             this.registry[tool.name] = tool;
+        }
+        for (const alias of executionAliases) {
+            if (this.registry[alias.name] || this.executionAliases[alias.name]) {
+                throw new Error(`Duplicate tool or execution alias: ${alias.name}`);
+            }
+            this.executionAliases[alias.name] = alias;
         }
     }
 
@@ -40,7 +47,7 @@ export class ToolRegistry {
     }
 
     getTool<ParamsT extends object>(name: string): Tool<ParamsT> {
-        const tool = this.registry[name];
+        const tool = this.registry[name] ?? this.executionAliases[name];
         if (tool === undefined) {
             throw new ToolNotFoundError(name);
         }
