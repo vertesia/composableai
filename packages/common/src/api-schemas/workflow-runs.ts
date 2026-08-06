@@ -1,6 +1,6 @@
 // Runtime schemas for the workflow runs API domain.
 
-import { JSONObjectSchema, JSONSchemaSchema, JSONValueSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
+import { JSONObjectSchema, JSONSchemaSchema, JSONValueSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import type { ActivityTypeDefinition } from '../store/activity-catalog.js';
 import { CompactMessageSchema } from './agent-runs.js';
@@ -13,6 +13,7 @@ import {
     UserChannelSchema,
 } from './interaction.js';
 import { nullableStringSchema } from './schema-primitives.js';
+import { InteractionExecutionConfigurationSchema } from './store.js';
 
 export const RestartAgentRunPayloadSchema = z
     .strictObject({
@@ -106,11 +107,7 @@ export const WorkflowInteractionVarsSchema = z
         user_channels: z.array(UserChannelSchema).optional(),
         data: JSONObjectSchema.optional(),
         tool_names: z.array(z.string()),
-        config: z.strictObject({
-            environment: z.string(),
-            model: z.string(),
-            model_options: ModelOptionsSchema.optional(),
-        }),
+        config: InteractionExecutionConfigurationSchema,
         interactionParamsSchema: JSONSchemaSchema.optional(),
         collection_id: z.string().optional(),
         disabled_mcp_collections: z.array(z.string()).optional(),
