@@ -123,10 +123,9 @@ describe('getComposableToken', () => {
         const { fetchComposableToken } = await importComposableAuth();
         const getIdToken = vi.fn(async () => 'identity-token');
         await expect(fetchComposableToken(getIdToken, 'account-a', 'project-a')).rejects.toMatchObject({
-            name: 'TokenAuthorizationError',
+            name: 'RequestedScopeUnavailableError',
             accountId: 'account-a',
             projectId: 'project-a',
-            responseMessage: 'Project does not belong to account',
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -134,7 +133,7 @@ describe('getComposableToken', () => {
         expect(localStorage.getItem('composableai.lastSelectedProjectId-account-a')).toBe('project-a');
     });
 
-    it('clears a rejected persisted project without retrying or losing its account', async () => {
+    it('clears a rejected persisted account/project pair without retrying', async () => {
         localStorage.setItem('composableai.lastSelectedAccountId', 'account-a');
         localStorage.setItem('composableai.lastSelectedProjectId-account-a', 'project-a');
         const fetchMock = vi
@@ -148,7 +147,7 @@ describe('getComposableToken', () => {
         );
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBe('account-a');
+        expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBeNull();
         expect(localStorage.getItem('composableai.lastSelectedProjectId-account-a')).toBeNull();
     });
 
@@ -181,6 +180,98 @@ describe('getComposableToken', () => {
         expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBe('account-b');
         expect(localStorage.getItem('composableai.lastSelectedProjectId-account-b')).toBe('project-b');
     });
+
+    it('preserves an unrelated persisted project within the rejected URL account', async () => {
+        localStorage.setItem('composableai.lastSelectedAccountId', 'account-a');
+        localStorage.setItem('composableai.lastSelectedProjectId-account-a', 'project-b');
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Project access denied', { status: 403 })));
+
+        const { getComposableToken } = await importComposableAuth();
+        await expect(getComposableToken('account-a', 'project-a', 'identity-token', true, true)).rejects.toBeInstanceOf(
+            Error,
+        );
+
+        expect(localStorage.getItem('composableai.lastSelectedAccountId')).toBe('account-a');
+        expect(localStorage.getItem('composableai.lastSelectedProjectId-account-a')).toBe('project-b');
+    });
+
+    it('classifies coded scope failures and keeps the deprecated type alias compatible', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(
+                Response.json(
+                    {
+                        error: 'Forbidden',
+                        message: 'safe message',
+                        errorCode: 'requested_scope_unavailable',
+                    },
+                    { status: 403 },
+                ),
+            ),
+        );
+
+        const { fetchComposableToken, RequestedScopeUnavailableError, TokenAuthorizationError } =
+            await importComposableAuth();
+        const identityToken = makeJwt({ email: 'leon@example.com', name: 'Leon Ruggiero' });
+        const error = await fetchComposableToken(async () => identityToken, 'account-a', 'project-a').catch(
+            (caught) => caught,
+        );
+
+        expect(error).toBeInstanceOf(RequestedScopeUnavailableError);
+        expect(error).toBeInstanceOf(TokenAuthorizationError);
+        expect(error).toMatchObject({
+            accountId: 'account-a',
+            errorCode: 'requested_scope_unavailable',
+            identity: { email: 'leon@example.com', name: 'Leon Ruggiero' },
+            message: 'safe message',
+            projectId: 'project-a',
+            status: 403,
+        });
+    });
+
+    it('classifies users with no accessible account separately', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValue(
+                    Response.json(
+                        { error: 'Forbidden', message: 'safe message', errorCode: 'no_accessible_account' },
+                        { status: 403 },
+                    ),
+                ),
+        );
+
+        const { fetchComposableToken, NoAccessibleAccountError, isNoAccessibleAccountError } =
+            await importComposableAuth();
+        const identityToken = makeJwt({ email: 'leon@example.com' });
+        const error = await fetchComposableToken(async () => identityToken).catch((caught) => caught);
+
+        expect(error).toBeInstanceOf(NoAccessibleAccountError);
+        expect(isNoAccessibleAccountError(error)).toBe(true);
+        expect(error).toMatchObject({
+            errorCode: 'no_accessible_account',
+            identity: { email: 'leon@example.com' },
+            message: 'safe message',
+            status: 403,
+        });
+    });
+
+    it.each([
+        { status: 401, errorName: 'CredentialError' },
+        { status: 500, errorName: 'AuthenticationServiceError' },
+    ])(
+        'classifies STS status $status as $errorName without exposing its response body',
+        async ({ status, errorName }) => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('sensitive internal detail', { status })));
+
+            const { fetchComposableToken } = await importComposableAuth();
+            const error = await fetchComposableToken(async () => 'identity-token').catch((caught) => caught);
+
+            expect(error).toMatchObject({ name: errorName });
+            expect(error.message).not.toContain('sensitive internal detail');
+        },
+    );
 });
 
 describe('resolveAuthSelection', () => {

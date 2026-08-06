@@ -7,6 +7,7 @@ import type {
     AgentTokenRequestSchema,
     ApiKeyTokenRequestSchema,
     EnvironmentTokenRequestSchema,
+    IssueTokenForbiddenResponseSchema,
     IssueTokenRequestSchema,
     IssueTokenResponseSchema,
     ProjectTokenRequestSchema,
@@ -91,6 +92,7 @@ export interface TokenResponse {
 }
 
 export type IssueTokenResponse = z.infer<typeof IssueTokenResponseSchema>;
+export type IssueTokenForbiddenResponse = z.infer<typeof IssueTokenForbiddenResponseSchema>;
 
 export interface ValidateTokenResponse {
     valid: boolean;

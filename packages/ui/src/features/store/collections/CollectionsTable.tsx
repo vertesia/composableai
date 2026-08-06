@@ -53,7 +53,7 @@ export function CollectionsTable() {
                 status: 'success',
                 duration: 3000,
             });
-            refetch();
+            void refetch();
         } catch (err: unknown) {
             console.error('Failed to delete collection:', err);
             toast({

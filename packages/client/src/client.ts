@@ -248,6 +248,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      * exact built version instead of the promoted version. Pass null/empty to clear (→ promoted).
      */
     withAppVersion(version: string | null | undefined) {
+        this.store.withAppVersion(version);
         if (!version) {
             delete this.headers[APP_VERSION_HEADER];
         } else {

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ISSUE_TOKEN_FORBIDDEN_ERROR_CODES } from '../sts-errors.js';
 import { SystemRolesSchema } from './apikey.js';
 
 const ALGORITHM_DESCRIPTION = 'Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility.';
@@ -104,6 +105,18 @@ export const IssueTokenResponseSchema = z
         expires_in: z.number().optional(),
     })
     .meta({ id: 'IssueTokenResponse' });
+
+export const IssueTokenForbiddenResponseSchema = z
+    .strictObject({
+        error: z.string(),
+        message: z.string(),
+        errorCode: z.enum(ISSUE_TOKEN_FORBIDDEN_ERROR_CODES),
+    })
+    .meta({
+        id: 'IssueTokenForbiddenResponse',
+        description:
+            'A safe, machine-readable denial response. Requested resources are intentionally not identified or confirmed.',
+    });
 
 export const IssueTokenUnavailableResponseSchema = z
     .strictObject({ error: z.string(), message: z.string() })

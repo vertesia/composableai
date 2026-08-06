@@ -1,12 +1,15 @@
+import { REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
+    AuthenticationServiceError,
+    CredentialError,
     getComposableToken,
+    NoAccessibleAccountError,
+    RequestedScopeUnavailableError,
     RestrictedEnvironmentError,
     resolveAuthSelection,
-    STSError,
-    TokenAuthorizationError,
     UserNotFoundError,
 } from './auth/composable';
 import { authReturnUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
@@ -22,6 +25,38 @@ function clearAuthHash() {
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
 }
 
+export function sanitizeRejectedScopeUrl(
+    currentUrl: URL,
+    error: RequestedScopeUnavailableError,
+    clearHash = false,
+): URL {
+    const sanitizedUrl = new URL(currentUrl);
+    const urlAccountId = sanitizedUrl.searchParams.get('a') ?? undefined;
+    const urlProjectId = sanitizedUrl.searchParams.get('p') ?? undefined;
+
+    if (urlAccountId && urlProjectId && urlAccountId === error.accountId && urlProjectId === error.projectId) {
+        sanitizedUrl.searchParams.delete('a');
+        sanitizedUrl.searchParams.delete('p');
+        error.requestedScope = 'project';
+        error.selectorSource = 'url';
+    } else if (urlProjectId && urlProjectId === error.projectId) {
+        sanitizedUrl.searchParams.delete('p');
+        error.requestedScope = 'project';
+        error.selectorSource = 'url';
+    } else if (urlAccountId && urlAccountId === error.accountId) {
+        sanitizedUrl.searchParams.delete('a');
+        error.requestedScope = 'account';
+        error.selectorSource = 'url';
+    } else {
+        error.requestedScope = error.projectId ? 'project' : 'account';
+        error.selectorSource = 'persisted';
+    }
+
+    if (clearHash) sanitizedUrl.hash = '';
+    error.recoveryUrl = sanitizedUrl.toString();
+    return sanitizedUrl;
+}
+
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
     loadOnboardingStatus?: boolean;
@@ -35,16 +70,44 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     const hasInitiatedAuthRef = useRef(false);
     const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
-    const clearRejectedUrlScope = (error: TokenAuthorizationError, clearHash = false) => {
-        const url = new URL(window.location.href);
-        if (error.projectId && url.searchParams.get('p') === error.projectId) {
-            url.searchParams.delete('p');
-        } else if (error.accountId && url.searchParams.get('a') === error.accountId) {
-            url.searchParams.delete('a');
-            url.searchParams.delete('p');
+    const clearRejectedUrlScope = (error: RequestedScopeUnavailableError, clearHash = false) => {
+        const sanitizedUrl = sanitizeRejectedScopeUrl(new URL(window.location.href), error, clearHash);
+        window.history.replaceState(window.history.state, '', sanitizedUrl);
+        Env.logger.warn('Sanitized an unavailable authentication scope', {
+            vertesia: {
+                account_id: error.accountId,
+                project_id: error.projectId,
+                error_code: REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE,
+                selector_source: error.selectorSource,
+                requested_scope: error.requestedScope,
+                recovery_action: 'url_sanitized',
+            },
+        });
+    };
+
+    const surfaceAuthError = (error: unknown, clearHash = false): boolean => {
+        if (
+            !(
+                error instanceof RequestedScopeUnavailableError ||
+                error instanceof NoAccessibleAccountError ||
+                error instanceof CredentialError ||
+                error instanceof AuthenticationServiceError ||
+                error instanceof UserNotFoundError ||
+                error instanceof RestrictedEnvironmentError
+            )
+        ) {
+            return false;
         }
-        if (clearHash) url.hash = '';
-        window.history.replaceState(window.history.state, '', url);
+
+        if (error instanceof RequestedScopeUnavailableError) {
+            clearRejectedUrlScope(error, clearHash);
+        } else if (clearHash) {
+            clearAuthHash();
+        }
+        session.isLoading = false;
+        session.authError = error;
+        setSession(session.clone());
+        return true;
     };
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
@@ -85,6 +148,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     session.login(res.rawToken).then(() => setSession(session.clone()));
                 })
                 .catch((err) => {
+                    if (surfaceAuthError(err)) return;
                     console.error('Failed to initialize dev auth token', err);
                     Env.logger.error('Failed to initialize dev auth token', {
                         vertesia: {
@@ -122,52 +186,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     });
                 })
                 .catch((err) => {
-                    // Don't redirect to central auth for UserNotFoundError - let signup flow handle it
-                    if (err instanceof UserNotFoundError) {
-                        console.log('User not found - will trigger signup flow', err);
-                        session.isLoading = false;
-                        session.authError = err;
-                        setSession(session.clone());
-                        return;
-                    }
-
-                    // Restricted environment (preview/preprod without early-access): surface the
-                    // error so the sign-in screen shows the dedicated step. Redirecting to central
-                    // auth here would loop, since the identity is valid but the environment is gated.
-                    if (err instanceof RestrictedEnvironmentError) {
-                        console.warn('Restricted environment - user lacks early-access', err);
-                        session.isLoading = false;
-                        session.authError = err;
-                        setSession(session.clone());
-                        return;
-                    }
-
-                    if (err instanceof TokenAuthorizationError) {
-                        session.isLoading = false;
-                        session.authError = err;
-                        setSession(session.clone());
-                        clearRejectedUrlScope(err, true);
-                        return;
-                    }
-
-                    if (err instanceof STSError) {
-                        console.error('STS error during token exchange', err);
-                        Env.logger.error('STS error during token exchange', {
-                            vertesia: {
-                                account_id: selectedAccount,
-                                project_id: selectedProject,
-                                sts_url: err.stsURL,
-                                error: err,
-                            },
-                        });
-                        window.alert(
-                            'Authentication failed due to an issue with the authentication service. Please try again later.',
-                        );
-                        session.logout();
-                        setSession(session.clone());
-                        clearAuthHash();
-                        return;
-                    }
+                    if (surfaceAuthError(err, true)) return;
 
                     console.error('Failed to fetch user token from studio, redirecting to central auth', err);
                     Env.logger.error('Failed to fetch user token from studio, redirecting to central auth', {
@@ -243,27 +262,12 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                                 .then(() => setSession(session.clone()));
                         })
                         .catch((err) => {
-                            console.error('Failed to fetch user token from studio', err);
-                            Env.logger.error('Failed to fetch user token from studio', {
-                                vertesia: {
-                                    account_id: selectedAccount,
-                                    project_id: selectedProject,
-                                    error: err,
-                                },
+                            if (surfaceAuthError(err)) return;
+                            console.error('Unexpected failure while fetching a user token', err);
+                            Env.logger.error('Unexpected failure while fetching a user token', {
+                                vertesia: { account_id: selectedAccount, project_id: selectedProject, error: err },
                             });
-                            // Keep the Firebase session for UserNotFoundError (signup flow) and
-                            // RestrictedEnvironmentError (identity is valid; the environment is gated).
-                            // Logging out would retrigger onAuthStateChanged and clear the authError.
-                            if (
-                                !(err instanceof UserNotFoundError) &&
-                                !(err instanceof RestrictedEnvironmentError) &&
-                                !(err instanceof TokenAuthorizationError)
-                            ) {
-                                session.logout();
-                            }
-                            if (err instanceof TokenAuthorizationError) {
-                                clearRejectedUrlScope(err);
-                            }
+                            session.logout();
                             session.isLoading = false;
                             session.authError = err;
                             setSession(session.clone());
@@ -303,6 +307,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     if (!cancelled) setSession(session.clone());
                 })
                 .catch((err: unknown) => {
+                    if (surfaceAuthError(err)) return;
                     console.warn('Auth: failed to initialize injected auth token', err);
                     Env.logger.warn('Failed to initialize injected auth token', {
                         vertesia: {
@@ -311,7 +316,9 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             error: err,
                         },
                     });
-                    startFirebaseOrCentralAuth();
+                    session.isLoading = false;
+                    session.authError = err instanceof Error ? err : new Error(String(err));
+                    setSession(session.clone());
                 });
             return () => {
                 cancelled = true;
