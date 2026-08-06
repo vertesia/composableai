@@ -27,6 +27,10 @@
         "./api-schemas": {
             "types": "./lib/api-schemas/index.d.ts",
             "default": "./lib/api-schemas/index.js"
+        },
+        "./internal": {
+            "types": "./lib/internal/index.d.ts",
+            "default": "./lib/internal/index.js"
         }
     },
     "devDependencies": {
