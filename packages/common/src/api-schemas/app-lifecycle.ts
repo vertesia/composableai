@@ -181,6 +181,7 @@ export const AppPackageScopeSchema = z
         'widgets',
         'activities',
         'hooks',
+        'subscriptions',
         'all',
     ])
     .meta({ id: 'AppPackageScope' });

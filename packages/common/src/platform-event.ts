@@ -5,6 +5,8 @@ import type {
     AgentDeliveryMatchModeSchema,
     AgentEventDeliveryTargetSchema,
     AgentSemanticEvaluatorSchema,
+    AppEventDeliveryTargetInputSchema,
+    AppEventDeliveryTargetSchema,
     CreateEventIngestChannelPayloadSchema,
     EventDeliveryIntentStatusSchema,
     EventDeliveryIntentSummarySchema,
@@ -217,6 +219,8 @@ export type WorkflowEventDeliveryTarget = z.infer<typeof WorkflowEventDeliveryTa
 
 export type WebhookEventDeliveryTarget = z.infer<typeof WebhookEventDeliveryTargetSchema>;
 
+export type AppEventDeliveryTarget = z.infer<typeof AppEventDeliveryTargetSchema>;
+
 export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
 
 export type AgentDeliveryMatchMode = z.infer<typeof AgentDeliveryMatchModeSchema>;
@@ -242,6 +246,7 @@ export interface ProcessEventDeliveryTarget {
 export type EventDeliveryTarget =
     | WorkflowEventDeliveryTarget
     | WebhookEventDeliveryTarget
+    | AppEventDeliveryTarget
     | AgentEventDeliveryTarget
     | ProcessEventDeliveryTarget;
 
@@ -254,9 +259,12 @@ export type WorkflowEventDeliveryTargetInput = z.infer<typeof WorkflowEventDeliv
 
 export type WebhookEventDeliveryTargetInput = z.infer<typeof WebhookEventDeliveryTargetInputSchema>;
 
+export type AppEventDeliveryTargetInput = z.infer<typeof AppEventDeliveryTargetInputSchema>;
+
 export type EventDeliveryTargetInput =
     | WorkflowEventDeliveryTargetInput
     | WebhookEventDeliveryTargetInput
+    | AppEventDeliveryTargetInput
     | AgentEventDeliveryTarget
     | ProcessEventDeliveryTarget;
 
@@ -284,6 +292,9 @@ export interface EventSubscription {
     protected: boolean;
     enabled: boolean;
     priority?: EventPriority;
+    app_installation_id?: string;
+    app_id?: string;
+    app_subscription_id?: string;
     created_by?: string;
     updated_by?: string;
     created_at?: string;
@@ -387,6 +398,32 @@ export interface ListEventSubscriptionsQuery {
     scope?: ('account' | 'project')[];
     sort_by?: EventSubscriptionSortField;
     sort_order?: 'asc' | 'desc';
+    app_installation_id?: string;
+}
+
+/** Trusted Studio -> Zeno request used to provision subscriptions declared by an installed app. */
+export interface ProvisionAppEventSubscriptionsRequest {
+    account_id: string;
+    project_id: string;
+    subscriptions: Array<
+        CreateEventSubscriptionPayload & {
+            target: AppEventDeliveryTargetInput;
+            app_installation_id: string;
+            app_id: string;
+            app_subscription_id: string;
+        }
+    >;
+}
+
+/** Trusted Studio -> Zeno request used to remove every subscription owned by an app installation. */
+export interface RemoveAppEventSubscriptionsRequest {
+    account_id: string;
+    project_id: string;
+    app_installation_id: string;
+}
+
+export interface AppEventSubscriptionsMutationResponse {
+    subscription_ids: string[];
 }
 
 export type EventIngestChannelSortField = 'name' | 'source' | 'enabled' | 'updated_at';

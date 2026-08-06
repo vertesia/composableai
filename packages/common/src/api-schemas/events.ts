@@ -184,6 +184,17 @@ export const WebhookEventDeliveryTargetSchema = z
     })
     .meta({ id: 'WebhookEventDeliveryTarget' });
 
+export const AppEventDeliveryTargetSchema = z
+    .strictObject({
+        type: z.literal('app'),
+        app_id: z.string(),
+        installation_id: z.string(),
+        hook: z.string(),
+        url: z.string(),
+        timeout_ms: z.number().optional(),
+    })
+    .meta({ id: 'AppEventDeliveryTarget' });
+
 export const WorkflowEventDeliveryTargetSchema = z
     .strictObject({
         type: z.literal('workflow'),
@@ -432,6 +443,17 @@ export const WebhookEventDeliveryTargetInputSchema = z
     })
     .meta({ id: 'WebhookEventDeliveryTargetInput' });
 
+export const AppEventDeliveryTargetInputSchema = z
+    .strictObject({
+        type: z.literal('app'),
+        app_id: z.string(),
+        installation_id: z.string(),
+        hook: z.string(),
+        url: z.string(),
+        timeout_ms: z.number().optional(),
+    })
+    .meta({ id: 'AppEventDeliveryTargetInput' });
+
 export const WorkflowEventDeliveryTargetInputSchema = z
     .strictObject({
         type: z.literal('workflow'),
@@ -615,7 +637,7 @@ export const EventDeliveryQueueSubscriptionSummarySchema = z
     .strictObject({
         subscription_id: z.string(),
         subscription_name: z.string(),
-        target_type: z.enum(['workflow', 'webhook', 'agent', 'process']),
+        target_type: z.enum(['workflow', 'webhook', 'app', 'agent', 'process']),
         total: z.number(),
         queued: z.number(),
         deferred: z.number(),
@@ -632,7 +654,7 @@ export const EventDeliveryQueueSubscriptionSummarySchema = z
 export const EventDeliveryQueueSummaryPayloadSchema = z
     .strictObject({
         subscription_id: z.string().optional(),
-        target_type: z.array(z.enum(['workflow', 'webhook', 'agent', 'process'])).optional(),
+        target_type: z.array(z.enum(['workflow', 'webhook', 'app', 'agent', 'process'])).optional(),
         sort_by: EventDeliveryQueueSortFieldSchema.optional(),
         sort_order: z.enum(['asc', 'desc']).optional(),
     })
@@ -724,7 +746,7 @@ export const EventDeliveryIntentSummarySchema = z
         event_id: z.string(),
         subscription_id: z.string(),
         subscription_name: z.string(),
-        target_type: z.enum(['workflow', 'webhook', 'agent', 'process']),
+        target_type: z.enum(['workflow', 'webhook', 'app', 'agent', 'process']),
         workflow_class: nullableStringSchema.optional(),
         priority: EventPrioritySchema,
         status: EventDeliveryIntentStatusSchema,
@@ -812,6 +834,7 @@ export const EventDeliveryTargetSchema: z.ZodType = z
     .discriminatedUnion('type', [
         WorkflowEventDeliveryTargetSchema,
         WebhookEventDeliveryTargetSchema,
+        AppEventDeliveryTargetSchema,
         AgentEventDeliveryTargetSchema,
         z.lazy(() => ProcessEventDeliveryTargetSchema) as unknown as z.ZodObject,
     ])
@@ -821,6 +844,7 @@ export const EventDeliveryTargetInputSchema: z.ZodType = z
     .discriminatedUnion('type', [
         WorkflowEventDeliveryTargetInputSchema,
         WebhookEventDeliveryTargetInputSchema,
+        AppEventDeliveryTargetInputSchema,
         AgentEventDeliveryTargetSchema,
         z.lazy(() => ProcessEventDeliveryTargetSchema) as unknown as z.ZodObject,
     ])
@@ -841,6 +865,9 @@ export const EventSubscriptionSchema: z.ZodType = z
         protected: z.boolean(),
         enabled: z.boolean(),
         priority: EventPrioritySchema.optional(),
+        app_installation_id: z.string().optional(),
+        app_id: z.string().optional(),
+        app_subscription_id: z.string().optional(),
         created_by: z.string().optional(),
         updated_by: z.string().optional(),
         created_at: z.string().optional(),
