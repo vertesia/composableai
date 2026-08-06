@@ -2,8 +2,8 @@ import {
     ContentNature,
     type ContentObject,
     ContentObjectStatus,
+    type ContentObjectTypeItem,
     type DocAnalyzerProgress,
-    type DocProcessorOutputFormat,
     type DocumentMetadata,
     MarkdownRenditionFormat,
     PDF_RENDITION_NAME,
@@ -11,6 +11,7 @@ import {
     WorkflowExecutionStatus,
 } from '@vertesia/common';
 import {
+    Badge,
     Button,
     Dropdown,
     MenuItem,
@@ -23,16 +24,36 @@ import {
     useToast,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { NavLink } from '@vertesia/ui/router';
+import { NavLink, useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui/widgets';
-import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
-import { memo, type RefObject, useEffect, useRef, useState } from 'react';
+import { JSONDisplay, Progress } from '@vertesia/ui/widgets';
+import { AlertTriangle, Copy, Download, FileSearch, ScanSearch, Sparkles, SquarePen } from 'lucide-react';
+import { memo, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { SendAgentMessageFn } from '../../../agent/chat/ModernAgentConversation.js';
+import {
+    type UniversalDocumentConverter,
+    type UniversalDocumentSource,
+    UniversalDocumentViewer,
+} from '../../../document-viewer/UniversalDocumentViewer.js';
 import { MagicPdfView } from '../../../magic-pdf';
+import {
+    GroundedExtractionView,
+    useGroundedExtractionAvailable,
+    useGroundedSummary,
+} from '../../../magic-pdf/GroundedExtractionView.js';
 import { AudioPanel, ImagePanel, VideoPanel } from '../../../media-viewer';
-import { SimplePdfViewer } from '../../../pdf-viewer';
 import { SecureButton } from '../../../permissions/SecureButton.js';
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from '../../../utils/index.js';
+import { resolveTypeCached } from '../../types/typeCatalogCache.js';
+import { DocumentEditingPanel } from './DocumentEditingPanel.js';
+import {
+    createDocumentEditingScopeKey,
+    getDocumentTextActionAccess,
+    isDocumentEditingContentType,
+    isDocumentEditingScopeOpen,
+    isMarkdownContentType,
+    setDocumentEditingScopeOpen,
+} from './documentEditingRun.js';
 import { PropertiesEditorModal } from './PropertiesEditorModal';
 import { TextEditorPanel } from './TextEditorPanel.js';
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from './useContentPanelHooks.js';
@@ -49,6 +70,9 @@ interface TextActionsProps {
     isEditing?: boolean;
     onToggleEdit?: () => void;
     canEdit?: boolean;
+    isCollaborating?: boolean;
+    onToggleCollaborate?: () => void;
+    canCollaborate?: boolean;
 }
 
 interface TextPanelProps {
@@ -59,11 +83,12 @@ interface TextPanelProps {
 }
 
 interface OfficePdfPreviewPanelProps {
+    object: ContentObject;
     pdfRendition?: { content?: { source?: string } };
     officePdfUrl?: string;
+    converters: UniversalDocumentConverter[];
     officePdfConverting: boolean;
     officePdfError?: string;
-    onConvert: () => void;
 }
 
 interface OfficePdfActionsProps {
@@ -166,10 +191,87 @@ interface ContentOverviewProps {
     loadText?: boolean;
     refetch?: () => Promise<unknown>;
     canEditProperties?: boolean;
+    canCollaborate?: boolean;
 }
-export function ContentOverview({ object, loadText, refetch, canEditProperties = true }: ContentOverviewProps) {
+export function ContentOverview({
+    object,
+    loadText,
+    refetch,
+    canEditProperties = true,
+    canCollaborate = false,
+}: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
+    const { project, store } = useUserSession();
+    const navigate = useNavigate();
+    const documentRootId = object.revision?.root || object.id;
+    const editingScopeKey = project?.id ? createDocumentEditingScopeKey(project.id, documentRootId) : undefined;
+    const [activeObject, setActiveObject] = useState(object);
+    const [isCollaborating, setIsCollaborating] = useState(() =>
+        editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false,
+    );
+    const sendMessageRef = useRef<SendAgentMessageFn | null>(null);
+    const latestDocumentIdRef = useRef(object.id);
+    const sourceObjectIdRef = useRef(object.id);
+    const editingScopeKeyRef = useRef(editingScopeKey);
+
+    useEffect(() => {
+        if (editingScopeKeyRef.current === editingScopeKey) return;
+        editingScopeKeyRef.current = editingScopeKey;
+        setIsCollaborating(editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false);
+    }, [editingScopeKey]);
+
+    const toggleCollaboration = useCallback(() => {
+        setIsCollaborating((current) => {
+            const next = !current;
+            if (editingScopeKey) setDocumentEditingScopeOpen(editingScopeKey, next);
+            return next;
+        });
+    }, [editingScopeKey]);
+
+    const closeCollaboration = useCallback(() => {
+        if (editingScopeKey) setDocumentEditingScopeOpen(editingScopeKey, false);
+        setIsCollaborating(false);
+    }, [editingScopeKey]);
+
+    useEffect(() => {
+        const sourceObjectChanged = sourceObjectIdRef.current !== object.id;
+        sourceObjectIdRef.current = object.id;
+        setActiveObject((current) => {
+            if (!sourceObjectChanged && current.id !== object.id) return current;
+            latestDocumentIdRef.current = object.id;
+            return current.id === object.id && current.text && !object.text
+                ? { ...object, text: current.text }
+                : object;
+        });
+    }, [object]);
+
+    const handleDocumentUpdated = useCallback(
+        async (updatedDocumentId: string, createdVersion: boolean) => {
+            latestDocumentIdRef.current = updatedDocumentId;
+
+            try {
+                const [updatedObject, updatedText] = await Promise.all([
+                    store.objects.retrieve(updatedDocumentId),
+                    store.objects.getObjectText(updatedDocumentId),
+                ]);
+                if (latestDocumentIdRef.current === updatedDocumentId) {
+                    setActiveObject({ ...updatedObject, text: updatedText.text });
+                }
+            } catch (err: unknown) {
+                console.error('Failed to load the updated document revision', err);
+                toast({
+                    status: 'error',
+                    title: t('agent.failedToLoadDocument'),
+                    description: err instanceof Error ? err.message : undefined,
+                    duration: 5000,
+                });
+            } finally {
+                if (createdVersion) navigate(`/objects/${updatedDocumentId}`);
+            }
+        },
+        [navigate, store.objects, t, toast],
+    );
 
     const handleCopyContent = async (content: string, type: 'text' | 'properties') => {
         try {
@@ -194,25 +296,41 @@ export function ContentOverview({ object, loadText, refetch, canEditProperties =
     };
 
     return (
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel defaultSize={67} className="min-w-[100px]">
-                <DataPanel
-                    object={object}
-                    loadText={loadText ?? false}
-                    handleCopyContent={handleCopyContent}
-                    refetch={refetch}
+        <>
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+                <ResizablePanel defaultSize={67} className="min-w-[100px]">
+                    <DataPanel
+                        object={activeObject}
+                        loadText={loadText ?? false}
+                        handleCopyContent={handleCopyContent}
+                        refetch={refetch}
+                        canCollaborate={canCollaborate}
+                        isCollaborating={isCollaborating}
+                        onToggleCollaborate={toggleCollaboration}
+                    />
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={33} className="min-w-[100px]">
+                    <PropertiesPanel
+                        object={activeObject}
+                        refetch={refetch ?? (() => Promise.resolve())}
+                        handleCopyContent={handleCopyContent}
+                        canEditProperties={canEditProperties}
+                    />
+                </ResizablePanel>
+            </ResizablePanelGroup>
+            {isCollaborating ? (
+                <DocumentEditingPanel
+                    object={activeObject}
+                    initialContent={activeObject.text ?? ''}
+                    onClose={closeCollaboration}
+                    onDocumentUpdated={(updatedDocumentId, createdVersion) =>
+                        void handleDocumentUpdated(updatedDocumentId, createdVersion)
+                    }
+                    sendMessageRef={sendMessageRef}
                 />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={33} className="min-w-[100px]">
-                <PropertiesPanel
-                    object={object}
-                    refetch={refetch ?? (() => Promise.resolve())}
-                    handleCopyContent={handleCopyContent}
-                    canEditProperties={canEditProperties}
-                />
-            </ResizablePanel>
-        </ResizablePanelGroup>
+            ) : null}
+        </>
     );
 }
 
@@ -230,6 +348,7 @@ function PropertiesPanel({
     const { t } = useUITranslation();
     const [viewCode, setViewCode] = useState(false);
     const [isPropertiesModalOpen, setPropertiesModalOpen] = useState(false);
+    const groundedSummary = useGroundedSummary(object.id);
 
     const handleOpenPropertiesModal = () => {
         setPropertiesModalOpen(true);
@@ -247,7 +366,7 @@ function PropertiesPanel({
                         <Button
                             variant={`${viewCode ? 'ghost' : 'primary'}`}
                             size="sm"
-                            alt={t('store.previewProperties')}
+                            title={t('store.previewProperties')}
                             onClick={() => setViewCode(!viewCode)}
                         >
                             Properties
@@ -255,7 +374,7 @@ function PropertiesPanel({
                         <Button
                             variant={`${viewCode ? 'primary' : 'ghost'}`}
                             size="sm"
-                            alt={t('store.viewInJsonFormat')}
+                            title={t('store.viewInJsonFormat')}
                             onClick={() => setViewCode(!viewCode)}
                         >
                             JSON
@@ -289,6 +408,26 @@ function PropertiesPanel({
                     </div>
                 </div>
 
+                {groundedSummary && object.properties && (
+                    <div className="flex items-center gap-2 px-2 pb-2">
+                        {typeof groundedSummary.confidence === 'number' && (
+                            <Badge
+                                variant={groundedSummary.confidence >= 0.95 ? 'success' : 'attention'}
+                                title={t('grounded.confidenceHint')}
+                            >
+                                {t('grounded.confidence', {
+                                    percent: Math.floor(groundedSummary.confidence * 100),
+                                })}
+                            </Badge>
+                        )}
+                        <Badge variant={groundedSummary.verified === groundedSummary.total ? 'success' : 'attention'}>
+                            {t('grounded.verifiedOf', {
+                                verified: groundedSummary.verified,
+                                total: groundedSummary.total,
+                            })}
+                        </Badge>
+                    </div>
+                )}
                 {object.properties ? (
                     <div className="flex-1 min-h-0 px-2">
                         <JSONDisplay value={object.properties} viewCode={viewCode} />
@@ -309,17 +448,58 @@ function PropertiesPanel({
     );
 }
 
-function DataPanel({
-    object,
-    loadText,
-    handleCopyContent,
-    refetch,
-}: {
+type IntakeDefaultView = NonNullable<NonNullable<ContentObjectTypeItem['intake']>['default_view']>;
+
+interface DataPanelProps {
     object: ContentObject;
     loadText: boolean;
     handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
     refetch?: () => Promise<unknown>;
-}) {
+    canCollaborate: boolean;
+    isCollaborating: boolean;
+    onToggleCollaborate: () => void;
+}
+
+/**
+ * Resolves the object's content-type intake policy BEFORE the initial panel is chosen so
+ * `default_view` can drive it. Renders a spinner until the type is resolved — never the
+ * MIME-guessed panel first (no guess-then-flip). Objects without a type render immediately.
+ */
+function DataPanel(props: DataPanelProps) {
+    const { client } = useUserSession();
+    const typeRef = props.object.type;
+    const typeId = typeRef?.id;
+    // Fast path: single-object reads carry the display hint on the API-enriched type ref.
+    const refView = typeRef?.default_view;
+    // Fallback (list-fed contexts, older servers): session-cached catalog lookup.
+    // null = resolved with no default view; undefined = not resolved yet.
+    const { data: fetchedView } = useFetch<IntakeDefaultView | null>(async () => {
+        if (!typeId || refView) return null;
+        const type = await resolveTypeCached(client, typeId);
+        return type?.intake?.default_view ?? null;
+    }, [typeId, refView]);
+    const defaultView = refView ?? fetchedView;
+    if (typeId && !refView && fetchedView === undefined) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <Spinner size="lg" />
+            </div>
+        );
+    }
+    return <DataPanelContent {...props} defaultView={defaultView ?? undefined} />;
+}
+
+function DataPanelContent({
+    object,
+    loadText,
+    handleCopyContent,
+    refetch,
+    defaultView,
+    canCollaborate,
+    isCollaborating,
+    onToggleCollaborate,
+}: DataPanelProps & { defaultView?: IntakeDefaultView }) {
+    const { client } = useUserSession();
     const { t } = useUITranslation();
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
@@ -333,14 +513,32 @@ function DataPanel({
     const metadata = object.metadata as DocumentMetadata;
     const pdfRendition = metadata?.renditions?.find((r) => r.name === PDF_RENDITION_NAME);
 
-    // Determine initial panel view
+    // Determine initial panel view: the type's default_view wins when it applies to this
+    // object; otherwise fall back to the nature/MIME heuristics.
     const getInitialView = (): PanelView => {
+        switch (defaultView) {
+            case 'text':
+                return PanelView.Text;
+            case 'pdf':
+                if (isPdf || isPreviewableAsPdfDoc || pdfRendition) return PanelView.Pdf;
+                break;
+            case 'image':
+                if (isImage) return PanelView.Image;
+                break;
+            case 'properties':
+                // Properties live in the right-hand panel which is always visible; the text
+                // panel shows the rendered property card for extraction-only types.
+                return PanelView.Text;
+            default:
+                break;
+        }
         if (isVideo) return PanelView.Video;
         if (isAudio) return PanelView.Audio;
         if (isImage) return PanelView.Image;
         return PanelView.Text;
     };
 
+    const groundedAvailable = useGroundedExtractionAvailable(object.id);
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
     const [hasVisitedPdfPanel, setHasVisitedPdfPanel] = useState(currentPanel === PanelView.Pdf);
 
@@ -353,15 +551,14 @@ function DataPanel({
     // Text editing state
     const [isEditing, setIsEditing] = useState(false);
     const canEdit = !!(
-        object.content?.source &&
         object.content?.type &&
-        !isCreatedOrProcessing &&
         !object.is_locked &&
         object.user_permissions?.can_write !== false &&
         (object.content.type.startsWith('text/') ||
             object.content.type === 'application/json' ||
             object.content.type === 'application/xml')
     );
+    const textActionAccess = getDocumentTextActionAccess(canEdit, canCollaborate);
 
     // Use custom hooks for text loading, PDF processing, and Office conversion
     const {
@@ -370,7 +567,7 @@ function DataPanel({
         isLoading: isLoadingText,
         isCropped: isTextCropped,
         loadText: reloadText,
-    } = useObjectText(object.id, object.text, loadText);
+    } = useObjectText(object.id, object.text, loadText, object.revision?.root || object.id);
 
     // Only poll while the active panel can actually surface processing progress.
     const shouldPollProgress =
@@ -380,7 +577,6 @@ function DataPanel({
     const {
         progress: pdfProgress,
         status: pdfStatus,
-        outputFormat: pdfOutputFormat,
         isComplete: processingComplete,
     } = usePdfProcessingStatus(object.id, shouldPollProgress);
 
@@ -391,6 +587,38 @@ function DataPanel({
         error: officePdfError,
         triggerConversion: triggerOfficePdfConversion,
     } = useOfficePdfConversion(object.id, isPreviewableAsPdfDoc);
+
+    const officePdfConverters = useMemo<UniversalDocumentConverter[]>(
+        () => [
+            {
+                id: 'office-pdf-rendition',
+                target: 'pdf',
+                canConvert: ({ contentType, extension }) =>
+                    isPreviewableAsPdfDoc ||
+                    (contentType ? isPreviewableAsPdf(contentType) : false) ||
+                    ['doc', 'docx', 'ppt', 'pptx'].includes(extension),
+                convert: async () => {
+                    const response = await client.objects.getRendition(object.id, {
+                        format: MarkdownRenditionFormat.pdf,
+                        generate_if_missing: true,
+                        sign_url: true,
+                        block_on_generation: true,
+                    });
+
+                    if (response.status === 'found' && response.renditions?.length) {
+                        return {
+                            url: response.renditions[0],
+                            contentType: 'application/pdf',
+                            fileName: `${object.name || 'document'}.pdf`,
+                        };
+                    }
+
+                    return null;
+                },
+            },
+        ],
+        [client, isPreviewableAsPdfDoc, object.id, object.name],
+    );
 
     // Load text once processing completes without triggering a full object refetch
     // (which would flash the page-level loading spinner).
@@ -422,7 +650,7 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Image ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewImage')}
+                                title={t('store.viewImage')}
                                 onClick={() => setCurrentPanel(PanelView.Image)}
                             >
                                 Image
@@ -432,7 +660,7 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Video ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewVideo')}
+                                title={t('store.viewVideo')}
                                 onClick={() => setCurrentPanel(PanelView.Video)}
                             >
                                 Video
@@ -442,7 +670,7 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Audio ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewAudio')}
+                                title={t('store.viewAudio')}
                                 onClick={() => setCurrentPanel(PanelView.Audio)}
                             >
                                 Audio
@@ -452,7 +680,7 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Transcript ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewTranscript')}
+                                title={t('store.viewTranscript')}
                                 onClick={() => setCurrentPanel(PanelView.Transcript)}
                             >
                                 Transcript
@@ -461,7 +689,7 @@ function DataPanel({
                         <Button
                             variant={currentPanel === PanelView.Text ? 'primary' : 'ghost'}
                             size="sm"
-                            alt={t('store.viewText')}
+                            title={t('store.viewText')}
                             onClick={() => setCurrentPanel(PanelView.Text)}
                         >
                             Text
@@ -470,7 +698,7 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewPdf')}
+                                title={t('store.viewPdf')}
                                 onClick={() => setCurrentPanel(PanelView.Pdf)}
                             >
                                 PDF
@@ -480,7 +708,7 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewAsPdf')}
+                                title={t('store.viewAsPdf')}
                                 onClick={() => {
                                     setCurrentPanel(PanelView.Pdf);
                                     if (!pdfRendition && !officePdfUrl && !officePdfConverting) {
@@ -493,7 +721,10 @@ function DataPanel({
                             </Button>
                         )}
                     </div>
-                    <PdfActions object={object} />
+                    <div className="flex items-center gap-1">
+                        <PdfActions object={object} />
+                        <GroundedActions objectId={object.id} available={groundedAvailable} />
+                    </div>
                 </div>
                 {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && (
                     <TextActions
@@ -504,7 +735,10 @@ function DataPanel({
                         textContainerRef={textContainerRef}
                         isEditing={isEditing}
                         onToggleEdit={() => setIsEditing(true)}
-                        canEdit={canEdit}
+                        canEdit={textActionAccess.canEdit}
+                        isCollaborating={isCollaborating}
+                        onToggleCollaborate={onToggleCollaborate}
+                        canCollaborate={textActionAccess.canCollaborate}
                     />
                 )}
                 {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (pdfRendition || officePdfUrl) && (
@@ -539,36 +773,40 @@ function DataPanel({
             {isPreviewableAsPdfDoc && keepPdfPreviewMounted && (
                 <div className={getPanelVisibility(showPdfPreviewPanel)}>
                     <OfficePdfPreviewPanel
+                        object={object}
                         pdfRendition={pdfRendition}
                         officePdfUrl={officePdfUrl}
+                        converters={officePdfConverters}
                         officePdfConverting={officePdfConverting}
                         officePdfError={officePdfError}
-                        onConvert={triggerOfficePdfConversion}
                     />
                 </div>
             )}
             {showPdfProcessingPanel && (
                 <div className={getPanelVisibility(true)}>
-                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
+                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} />
                 </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && isLoadingText && (
+            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && isLoadingText && !displayText && (
                 <div className={getPanelVisibility(true)}>
                     <div className="flex justify-center items-center flex-1">
                         <Spinner size="lg" />
                     </div>
                 </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && !isLoadingText && (
-                <div className={getPanelVisibility(true)}>
-                    <TextPanel
-                        object={object}
-                        text={displayText}
-                        isTextCropped={isTextCropped}
-                        textContainerRef={textContainerRef}
-                    />
-                </div>
-            )}
+            {currentPanel === PanelView.Text &&
+                !showProcessingPanel &&
+                !isEditing &&
+                (!isLoadingText || displayText) && (
+                    <div className={getPanelVisibility(true)}>
+                        <TextPanel
+                            object={object}
+                            text={displayText}
+                            isTextCropped={isTextCropped}
+                            textContainerRef={textContainerRef}
+                        />
+                    </div>
+                )}
             {isEditing && currentPanel === PanelView.Text && fullText != null && (
                 <TextEditorPanel
                     object={object}
@@ -585,7 +823,17 @@ function DataPanel({
     );
 }
 
-function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, canEdit }: TextActionsProps) {
+function TextActions({
+    object,
+    text,
+    fullText,
+    handleCopyContent,
+    onToggleEdit,
+    canEdit,
+    isCollaborating,
+    onToggleCollaborate,
+    canCollaborate,
+}: TextActionsProps) {
     const { client, project } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
@@ -595,12 +843,13 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
         () => (project ? client.projects.retrieve(project.id) : Promise.resolve(undefined)),
         [project?.id],
     );
-    const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
+    // `null` is how the setting is cleared, and it means the same thing here as an absent value: no
+    // custom template, so the export falls back to the built-in one. Collapsing the two spellings at
+    // the read keeps `templateObjectId` below a plain optional string.
+    const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id ?? undefined;
 
-    const isMarkdown = content?.type && content.type === 'text/markdown';
-
-    // Get content processor type for file extension detection
-    const contentProcessorType = getContentProcessorType(object);
+    const isMarkdown = isMarkdownContentType(content?.type);
+    const isDocumentEditingContent = isDocumentEditingContentType(content?.type);
 
     const handleExportDocument = async (format: MarkdownRenditionFormat, useDefaultTemplate?: boolean) => {
         // Prevent multiple concurrent exports
@@ -636,10 +885,10 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
         // Determine file extension based on content processor type
         let ext = 'txt';
         let mimeType = 'text/plain';
-        if (contentProcessorType === 'xml') {
+        if (content?.type === 'application/xml' || content?.type === 'text/xml') {
             ext = 'xml';
             mimeType = 'text/xml';
-        } else if (contentProcessorType === 'markdown' || isMarkdown) {
+        } else if (isMarkdown) {
             ext = 'md';
             mimeType = 'text/markdown';
         }
@@ -663,31 +912,24 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
         <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
             <div className="flex items-center gap-2">
                 {fullText && (
-                    <>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Copy text"
-                            onClick={() => handleCopyContent(fullText, 'text')}
-                        >
-                            <Copy className="size-4" />
-                        </Button>
-                        {canEdit && onToggleEdit && (
-                            <SecureButton
-                                permission={Permission.content_write}
-                                variant="ghost"
-                                size="sm"
-                                onClick={onToggleEdit}
-                                title={t('store.editText')}
-                                className="flex items-center gap-2"
-                            >
-                                <SquarePen className="size-4" />
-                            </SecureButton>
-                        )}
-                    </>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Copy text"
+                        onClick={() => handleCopyContent(fullText, 'text')}
+                    >
+                        <Copy className="size-4" />
+                    </Button>
                 )}
                 {isDownloading ? (
-                    <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" alt="download">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled
+                        className="h-8 w-8 p-0"
+                        title={t('agent.download')}
+                        aria-label={t('agent.download')}
+                    >
                         <Spinner size="sm" />
                     </Button>
                 ) : (
@@ -697,8 +939,9 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                                 variant="ghost"
                                 size="sm"
                                 disabled={!text}
-                                className="flex items-center gap-2"
-                                alt="download"
+                                className="h-8 w-8 p-0"
+                                title={t('agent.download')}
+                                aria-label={t('agent.download')}
                             >
                                 <Download className="size-4" />
                             </Button>
@@ -736,6 +979,35 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                         )}
                     </Dropdown>
                 )}
+                {fullText && (
+                    <>
+                        {canEdit && onToggleEdit && (
+                            <SecureButton
+                                permission={Permission.content_write}
+                                variant="ghost"
+                                size="sm"
+                                onClick={onToggleEdit}
+                                title={t('store.editText')}
+                                aria-label={t('store.editText')}
+                                className="h-8 w-8 p-0"
+                            >
+                                <SquarePen className="size-4" />
+                            </SecureButton>
+                        )}
+                        {canCollaborate && onToggleCollaborate && isDocumentEditingContent && (
+                            <Button
+                                variant={isCollaborating ? 'primary' : 'ghost'}
+                                size="sm"
+                                onClick={onToggleCollaborate}
+                                title={t('agent.editWithAI')}
+                                aria-label={t('agent.editWithAI')}
+                                className="h-8 w-8 p-0"
+                            >
+                                <Sparkles className="size-4" />
+                            </Button>
+                        )}
+                    </>
+                )}
             </div>
         </div>
     );
@@ -743,18 +1015,24 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
 
 const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextPanelProps) => {
     const { t } = useUITranslation();
-    const content = object.content;
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
-
-    // Check content processor type for XML
+    const content = object.content;
     const contentProcessorType = getContentProcessorType(object);
-    const isXml = contentProcessorType === 'xml';
+    const isXml = contentProcessorType === 'xml' || content?.type === 'application/xml' || content?.type === 'text/xml';
 
     // Check if content type is markdown or plain text
-    const isMarkdownOrText = content?.type && (content.type === 'text/markdown' || content.type === 'text/plain');
+    const isMarkdownOrText = isDocumentEditingContentType(content?.type);
 
     // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
     const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || looksLikeMarkdown(text));
+    const source: UniversalDocumentSource = {
+        id: object.id,
+        title: object.name,
+        fileName: object.content?.name || object.name,
+        contentType: isXml ? 'text/xml' : shouldRenderAsMarkdown ? 'text/markdown' : object.content?.type,
+        content: text,
+        sourcePath: object.content?.source,
+    };
 
     return text ? (
         <>
@@ -767,17 +1045,12 @@ const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextP
                 </div>
             )}
             <div className={`max-w-7xl px-2 h-full overflow-auto`} ref={textContainerRef}>
-                {isXml ? (
-                    <div className="px-4 py-2">
-                        <XMLViewer xml={text} collapsible />
-                    </div>
-                ) : shouldRenderAsMarkdown ? (
-                    <div className="vprose prose-sm p-1">
-                        <MarkdownRenderer components={createMarkdownComponents()}>{text}</MarkdownRenderer>
-                    </div>
-                ) : (
-                    <pre className="text-wrap bg-muted text-muted p-2">{text}</pre>
-                )}
+                <UniversalDocumentViewer
+                    source={source}
+                    className="h-full"
+                    bodyClassName="overflow-auto"
+                    markdownComponents={createMarkdownComponents()}
+                />
             </div>
         </>
     ) : (
@@ -853,9 +1126,8 @@ function TranscriptPanel({
 function PdfActions({ object }: { object: ContentObject }) {
     const [isPdfPreviewOpen, setPdfPreviewOpen] = useState(false);
 
-    // Check if PDF has been processed (content_processor.type is xml or markdown)
     const contentProcessorType = getContentProcessorType(object);
-    const hasPdfAnalysis = contentProcessorType === 'xml' || contentProcessorType === 'markdown';
+    const hasPdfAnalysis = contentProcessorType === 'markdown';
 
     if (!hasPdfAnalysis) return null;
 
@@ -867,6 +1139,32 @@ function PdfActions({ object }: { object: ContentObject }) {
             {isPdfPreviewOpen && (
                 <Portal>
                     <MagicPdfView objectId={object.id} onClose={() => setPdfPreviewOpen(false)} />
+                </Portal>
+            )}
+        </>
+    );
+}
+
+function GroundedActions({ objectId, available }: { objectId: string; available: boolean }) {
+    const { t } = useUITranslation();
+    const [isGroundedOpen, setGroundedOpen] = useState(false);
+
+    if (!available) return null;
+
+    return (
+        <>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setGroundedOpen(true)}
+                title={t('grounded.title')}
+                aria-label={t('grounded.title')}
+            >
+                <ScanSearch className="size-4" />
+            </Button>
+            {isGroundedOpen && (
+                <Portal>
+                    <GroundedExtractionView objectId={objectId} onClose={() => setGroundedOpen(false)} />
                 </Portal>
             )}
         </>
@@ -921,9 +1219,17 @@ function OfficePdfActions({ object, pdfRendition, officePdfUrl }: OfficePdfActio
 }
 
 function PdfPreviewPanel({ object }: { object: ContentObject }) {
+    const source: UniversalDocumentSource = {
+        id: object.id,
+        title: object.name,
+        fileName: object.content?.name || object.name,
+        contentType: object.content?.type,
+        sourcePath: object.content?.source,
+    };
+
     return (
         <div className="h-full">
-            <SimplePdfViewer object={object} className="h-full" />
+            <UniversalDocumentViewer source={source} className="h-full" />
         </div>
     );
 }
@@ -933,11 +1239,12 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
  * Handles the various states: converting, error, showing PDF.
  */
 function OfficePdfPreviewPanel({
+    object,
     pdfRendition,
     officePdfUrl,
+    converters,
     officePdfConverting,
     officePdfError,
-    onConvert,
 }: OfficePdfPreviewPanelProps) {
     const { t } = useUITranslation();
     if (officePdfConverting) {
@@ -959,24 +1266,48 @@ function OfficePdfPreviewPanel({
     }
 
     if (pdfRendition?.content?.source) {
+        const source: UniversalDocumentSource = {
+            id: object.id,
+            title: object.name,
+            fileName: `${object.name || 'document'}.pdf`,
+            contentType: 'application/pdf',
+            sourcePath: pdfRendition.content.source,
+        };
+
         return (
             <div className="h-full">
-                <SimplePdfViewer source={pdfRendition.content.source} className="h-full" />
+                <UniversalDocumentViewer source={source} className="h-full" />
             </div>
         );
     }
 
     if (officePdfUrl) {
+        const source: UniversalDocumentSource = {
+            id: object.id,
+            title: object.name,
+            fileName: `${object.name || 'document'}.pdf`,
+            contentType: 'application/pdf',
+            url: officePdfUrl,
+        };
+
         return (
             <div className="h-full">
-                <SimplePdfViewer url={officePdfUrl} className="h-full" />
+                <UniversalDocumentViewer source={source} className="h-full" />
             </div>
         );
     }
 
+    const source: UniversalDocumentSource = {
+        id: object.id,
+        title: object.name,
+        fileName: object.content?.name || object.name,
+        contentType: object.content?.type,
+        sourcePath: object.content?.source,
+    };
+
     return (
-        <div className="flex flex-col justify-center items-center flex-1 gap-2">
-            <Button onClick={onConvert}>Convert to PDF</Button>
+        <div className="h-full">
+            <UniversalDocumentViewer source={source} converters={converters} className="h-full" />
         </div>
     );
 }
@@ -984,18 +1315,14 @@ function OfficePdfPreviewPanel({
 function PdfProcessingPanel({
     progress,
     status,
-    outputFormat,
 }: {
     progress?: DocAnalyzerProgress;
     status?: WorkflowExecutionStatus;
-    outputFormat?: DocProcessorOutputFormat;
 }) {
     const { t } = useUITranslation();
     const statusColor = getWorkflowStatusColor(status);
     const statusName = getWorkflowStatusName(status);
-
-    // Show detailed progress (tables, images, visuals) for XML processing
-    const isXmlProcessing = outputFormat === 'xml';
+    const isGroundedExtraction = progress?.phase === 'grounded_extraction';
 
     // Ensure percent is a valid number (handle undefined and NaN from division by zero)
     const percent = progress?.percent != null && !Number.isNaN(progress.percent) ? progress.percent : 0;
@@ -1006,14 +1333,14 @@ function PdfProcessingPanel({
                 <div className="space-y-2">
                     <div className="flex flex-col gap-1">
                         <ProgressLine
-                            name={isXmlProcessing ? 'Analyze Layouts' : 'Analyze Page'}
+                            name={isGroundedExtraction ? 'Prepare Evidence' : 'Analyze Page'}
                             progress={progress.pages}
                         />
-                        {isXmlProcessing && (
+                        {isGroundedExtraction && (
                             <>
-                                <ProgressLine name="Extract Tables" progress={progress.tables} />
-                                <ProgressLine name="Describe Images" progress={progress.images} />
-                                <ProgressLine name="Process Visually" progress={progress.visuals} />
+                                <ProgressLine name="Run OCR" progress={progress.images} />
+                                <ProgressLine name="Extract Grounded Data" progress={progress.tables} />
+                                <ProgressLine name="Review and Annotate" progress={progress.visuals} />
                             </>
                         )}
                     </div>

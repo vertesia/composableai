@@ -66,6 +66,7 @@ interface MessageInputProps {
     isCompactingContext?: boolean;
     activeTaskCount?: number;
     activeWorkstreams?: WorkstreamInfo[];
+    onSelectWorkstream?: (workstreamId: string) => void;
     placeholder?: string;
 
     // File upload props
@@ -133,6 +134,7 @@ export default function MessageInput({
     isCompactingContext = false,
     activeTaskCount = 0,
     activeWorkstreams = [],
+    onSelectWorkstream,
     placeholder,
     // File upload props
     onFilesSelected,
@@ -474,7 +476,7 @@ export default function MessageInput({
                 />
             )}
 
-            <ActiveWorkstreamsSummary activeWorkstreams={activeWorkstreams} />
+            <ActiveWorkstreamsSummary activeWorkstreams={activeWorkstreams} onSelectWorkstream={onSelectWorkstream} />
 
             {/* Input row */}
             <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border/70 bg-mixer-muted/15 p-2.5 shadow-lg shadow-black/5">
@@ -523,7 +525,6 @@ export default function MessageInput({
                                         variant="ghost"
                                         size="icon"
                                         className="size-8 rounded-full text-muted hover:bg-muted"
-                                        aria-label={t('agent.addAttachment')}
                                         title={t('agent.addAttachment')}
                                     >
                                         <PlusIcon className="size-4" />
@@ -654,7 +655,6 @@ export default function MessageInput({
                                 '[&_svg]:text-destructive disabled:[&_svg]:text-muted',
                             )}
                             title={t('agent.stopTooltip')}
-                            aria-label={t('agent.stopTooltip')}
                         >
                             {isStopping ? (
                                 <Spinner size="sm" />

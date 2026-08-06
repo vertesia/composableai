@@ -1,5 +1,5 @@
 import { PathWithParams } from './PathWithParams';
-import { joinPath } from './path';
+import { joinPath, withMountBasename } from './path';
 
 const BASE_PATH = Symbol('BASE_PATH');
 
@@ -72,14 +72,16 @@ export interface NavigateOptions {
     title?: string;
 }
 
-function getElementHrefAsUrl(elem: HTMLElement) {
-    if (elem && elem.tagName.toLowerCase() === 'a') {
-        const href = (elem as HTMLAnchorElement)?.href.trim();
-        if (typeof href === 'string' && href.length > 0) {
-            return new URL(href);
-        }
+function getClosestAnchor(target: EventTarget | null): HTMLAnchorElement | null {
+    if (!(target instanceof Element)) {
+        return null;
     }
-    return null;
+    return target.closest<HTMLAnchorElement>('a[href]');
+}
+
+function getElementHrefAsUrl(elem: HTMLAnchorElement) {
+    const href = elem.href.trim();
+    return href.length > 0 ? new URL(href) : null;
 }
 
 export class HistoryNavigator {
@@ -149,6 +151,9 @@ export class HistoryNavigator {
             to = joinPath(basePath, to);
         }
         to = this.addStickyParams(to);
+        // Keep absolute app routes under the served `<base href>` mount instead of resolving them
+        // against the bare origin (which collapses the URL off the mount). No-op when origin-served.
+        to = withMountBasename(to);
         this._navigate(new URL(to, window.location.href), 'navigate', options);
     }
 
@@ -233,16 +238,25 @@ export class HistoryNavigator {
             this.fireLocationChange(new AfterLocationChangeEvent(type, to, state));
         };
         const _linkNavListener = (ev: MouseEvent) => {
-            const target = ev.target as HTMLElement;
-            // Skip anchors with download attribute or blob: URLs - they are file downloads, not navigation
+            // Let the browser handle modifier / non-primary clicks natively (open in new tab/window,
+            // download). Intercepting them here would preventDefault those affordances.
+            if (ev.defaultPrevented || ev.metaKey || ev.altKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) {
+                return;
+            }
+            const anchor = getClosestAnchor(ev.target);
+            if (!anchor) {
+                return;
+            }
+            const anchorTarget = anchor.getAttribute('target');
+            // Downloads, blob URLs, and explicitly targeted links require native browser navigation.
             if (
-                target.tagName.toLowerCase() === 'a' &&
-                ((target as HTMLAnchorElement).hasAttribute('download') ||
-                    (target as HTMLAnchorElement).href?.startsWith('blob:'))
+                anchor.hasAttribute('download') ||
+                anchor.href.startsWith('blob:') ||
+                (!!anchorTarget && anchorTarget.toLowerCase() !== '_self')
             ) {
                 return;
             }
-            const url = getElementHrefAsUrl(target);
+            const url = getElementHrefAsUrl(anchor);
             if (url && url.origin === window.location.origin) {
                 ev.preventDefault();
                 const to = new URL(this.addStickyParams(url.href));

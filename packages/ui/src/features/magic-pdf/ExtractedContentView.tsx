@@ -1,4 +1,4 @@
-import { JSONCode, MarkdownRenderer, XMLViewer } from '@vertesia/ui/widgets';
+import { JSONCode, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useMagicPdfContext } from './MagicPdfProvider';
@@ -23,20 +23,8 @@ export function ExtractedContentView({ viewType, pageNumber }: ExtractedContentV
         case 'markdown':
             return <MarkdownPageView pageNumber={pageNumber} />;
         default:
-            return <XmlPageView pageNumber={pageNumber} />;
+            return <MarkdownPageView pageNumber={pageNumber} />;
     }
-}
-
-interface XmlPageViewProps {
-    pageNumber: number;
-}
-function XmlPageView({ pageNumber }: XmlPageViewProps) {
-    const { xmlPages: pages } = useMagicPdfContext();
-    return (
-        <div className="px-4 py-2">
-            <XMLViewer xml={pages[pageNumber - 1]} collapsible />
-        </div>
-    );
 }
 
 interface JsonPageLayoutViewProps {

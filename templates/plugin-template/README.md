@@ -12,9 +12,34 @@ A unified template for building Vertesia plugins with a **Hono tool server** (ba
 - **MCP Providers** -- Model Context Protocol integrations
 - **UI Plugin** -- custom React pages integrated into the Vertesia platform
 
+## Modules
+
+The default scaffold is intentionally small. User-owned app code always lives in `src/modules/app`.
+Other modules can be selected when scaffolding to start from a richer feature set:
+
+```bash
+pnpm create @vertesia/plugin my-plugin -- --module assistant
+pnpm create @vertesia/plugin my-plugin -- --module content-app
+pnpm create @vertesia/plugin my-plugin -- --module appgen,assistant
+```
+
+- `app` is always active and owns the root route `/` plus user-owned resources.
+- `assistant` adds assistant/chat UI routes and providers.
+- `content-app` adds a content-oriented UI, content types, interactions, processes, and helper scripts.
+- `examples` adds tool-server resource examples without app business logic.
+- `service` configures the app entry and service build scripts for app-gateway-hosted apps.
+- `appgen` is a virtual module for appgen-created apps and includes `service`.
+
+Generated wiring files connect active modules: `src/tool-server/app-server-modules.ts`,
+`src/ui/app-ui-modules.tsx`, and `src/ui/app-ui-entry.tsx`. Do not hand-edit these files in generated apps;
+change module route/provider/resource exports instead.
+
 ## Prerequisites
 
 Your plugin must be registered as an app in Vertesia and installed in a project before users can access it. Use the CLI to create and install in one step:
+
+Apps created through App Builder are already registered, installed in the current project, and connected to
+Vertesia Git. The CLI steps below apply when scaffolding and managing an app manually.
 
 ```bash
 vertesia apps create --install -f manifest.json
@@ -49,6 +74,16 @@ VITE_APP_NAME=my-plugin
 
 The template generates this file from the project name, which must match the `name` field in the Vertesia app manifest. It is safe to commit because `VITE_*` values are public build-time UI configuration. Vercel reads it during `vite build --mode app`; use `.env.app.local` for uncommitted local overrides.
 
+Keep the app name aligned across `package.json` `name`, `VITE_APP_NAME`, the app manifest name, and all
+`app:<name>:` ids. App-owned content type refs are portable strings such as `app:<app-name>:guide`; pass
+that string directly to `client.objects.create({ type, ... })` instead of resolving a project-local ObjectId.
+Interactions and activities include the collection name, for example `app:<app-name>:main:summarize_guide`.
+Prefer `main` as the default collection unless multiple collections are genuinely useful.
+
+If the app registers backend resources under `src/modules/app/resources` or another active module, build its
+versions with target `service`; a `static` version contains only UI assets. Seed demo content from standalone
+scripts during development, not from app UI buttons, automatic page-load effects, or `/api/seed` routes.
+
 ## Quick Start
 
 ```bash
@@ -63,12 +98,15 @@ Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API 
 | Script              | Runs                           | Description                                                 |
 | ------------------- | ------------------------------ | ----------------------------------------------------------- |
 | `{{PM_RUN}} dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
-| `{{PM_RUN}} build`        | `rollup -c && vite build (app + lib)` | Full production build (lint runs as prebuild)        |
-| `{{PM_RUN}} build:server` | `rollup -c`                    | Compile tool server to `lib/`                               |
+| `{{PM_RUN}} build`        | `tsc + Vertesia build tools + Vite` | Full production build (lint runs as prebuild)         |
+| `{{PM_RUN}} build:server` | `tsc + Vertesia build tools`   | Compile tool server and resources to `lib/`                  |
 | `{{PM_RUN}} build:ui`     | `vite build (app + lib)`       | Build both UI targets                                       |
 | `{{PM_RUN}} build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
 | `{{PM_RUN}} build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
-| `{{PM_RUN}} start`        | `rollup -c && vite preview`    | Preview production build locally                            |
+| `{{PM_RUN}} service:build` | `service:build:ui + lib + service:build:server` | Build Vertesia service deployment artifacts |
+| `{{PM_RUN}} service:build:ui` | `vite build --mode app` | Build service UI assets to `dist/app/` |
+| `{{PM_RUN}} service:build:server` | `build-server-esbuild + write-app-package` | Build bundled service runtime and app package metadata |
+| `{{PM_RUN}} start`        | `build:server + vite preview`  | Preview production build locally                            |
 | `{{PM_RUN}} start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
 
 ## Project Structure
@@ -79,21 +117,23 @@ plugin-template/
 │   ├── tool-server/
 │   │   ├── server.ts              # Hono server (default export)
 │   │   ├── server-node.ts         # Standalone Node.js HTTP entry
-│   │   ├── config.ts              # Registers all collections
+│   │   ├── config.ts              # Registers generated module collections
 │   │   ├── settings.ts            # Plugin settings JSON Schema
 │   │   ├── ui-nav-items.ts        # Sidebar navigation config
-│   │   ├── tools/                 # Tool collections
-│   │   ├── skills/                # Skill collections
-│   │   ├── interactions/          # Interaction collections
-│   │   ├── types/                 # Content type collections
-│   │   ├── templates/             # Rendering template collections
 │   │   └── mcp/                   # MCP provider definitions
-│   └── ui/
-│       ├── plugin.tsx             # Plugin entry (library build)
-│       ├── main.tsx               # Standalone dev entry
-│       ├── routes.tsx             # Route definitions
-│       ├── pages.tsx              # Page components
-│       └── index.css              # Tailwind CSS 4 entry
+│   ├── ui/
+│   │   ├── plugin.tsx             # Plugin entry (library build)
+│   │   ├── main.tsx               # Standalone dev entry
+│   │   ├── shell/                 # Shared app shell/layout/runtime
+│   │   ├── app-ui-entry.tsx       # Generated AppEntry selector
+│   │   ├── app-ui-modules.tsx     # Generated route/provider aggregator
+│   │   └── index.css              # Tailwind CSS 4 entry
+│   └── modules/
+│       ├── app/                   # User-owned UI and Vertesia resources
+│       │   ├── ui/routes.tsx
+│       │   └── resources/
+│       ├── assistant/             # Optional assistant UI module
+│       └── examples/              # Optional example resource module
 ├── api/
 │   └── index.js                   # Vercel serverless adapter
 ├── vite.config.ts                 # UI + dev server config (uses apiServerPlugin from @vertesia/build-tools/vite)
@@ -113,16 +153,19 @@ Builds the tool server first, then runs `vite preview` which loads the compiled 
 
 ### Production Build
 
-| Component   | Bundler | Entry                       | Output               |
-| ----------- | ------- | --------------------------- | -------------------- |
-| Tool Server | Rollup  | `src/tool-server/server.ts` | `lib/`               |
-| UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `dist/lib/plugin.js` |
-| UI App      | Vite    | `src/ui/main.tsx`           | `dist/app/`          |
-| Widgets     | Rollup  | `skills/**/*.tsx`           | `dist/widgets/`      |
+| Component   | Build path           | Entry                       | Output               |
+| ----------- | -------------------- | --------------------------- | -------------------- |
+| Tool Server | Vertesia build tools | `src/tool-server/server.ts` | `lib/`               |
+| UI Plugin   | Vite                 | `src/ui/plugin.tsx`         | `dist/lib/plugin.js` |
+| UI App      | Vite                 | `src/ui/main.tsx`           | `dist/app/`          |
+| Widgets     | Vertesia build tools | `skills/**/*.tsx`           | `dist/widgets/`      |
 
 ## Creating Resources
 
-Every resource type follows the same pattern: create source files, export from a collection, register the collection in `config.ts`.
+User-owned resources live under `src/modules/app/resources/`. Every resource type follows the same pattern:
+create source files, export from a collection, and add the collection to the matching
+`src/modules/app/resources/<type>/index.ts` array. The generated `src/tool-server/app-server-modules.ts`
+collects active modules, and `src/tool-server/config.ts` imports those generated arrays.
 
 ### Tools
 
@@ -180,7 +223,7 @@ export const MyTool = {
 } satisfies Tool<MyToolParams>;
 ```
 
-**Collection** (`tools/my-collection/index.ts`):
+**Collection** (`src/modules/app/resources/tools/my-collection/index.ts`):
 
 ```typescript
 import { ToolCollection } from "@vertesia/tools-sdk";
@@ -216,7 +259,7 @@ You are an AI assistant specialized in ...
 2. Second instruction
 ```
 
-**Collection** (`skills/my-collection/index.ts`):
+**Collection** (`src/modules/app/resources/skills/my-collection/index.ts`):
 
 ```typescript
 import { SkillCollection } from "@vertesia/tools-sdk";
@@ -274,7 +317,7 @@ export default {
 } satisfies InteractionSpec;
 ```
 
-**Collection** (`interactions/my-collection/index.ts`):
+**Collection** (`src/modules/app/resources/interactions/my-collection/index.ts`):
 
 ```typescript
 import { InteractionCollection } from "@vertesia/tools-sdk";
@@ -330,7 +373,7 @@ type: document
 Generate a report based on the provided data...
 ```
 
-**Collection** (`templates/my-collection/index.ts`):
+**Collection** (`src/modules/app/resources/templates/my-collection/index.ts`):
 
 ```typescript
 import { RenderingTemplateCollection } from "@vertesia/tools-sdk";
@@ -346,29 +389,18 @@ export const MyTemplates = new RenderingTemplateCollection({
 
 ### Registering Collections
 
-All collections must be added to `src/tool-server/config.ts`:
+All user collections must be added to the matching module resource index, for example
+`src/modules/app/resources/tools/index.ts`:
 
 ```typescript
-import { ToolServerConfig } from "@vertesia/tools-sdk";
-// import your collections...
+import { MyTools } from "./my-collection/index.js";
 
-export const ServerConfig = {
-  title: "My Plugin",
-  prefix: "/api",
-  tools,
-  interactions,
-  types,
-  skills,
-  templates,
-  mcpProviders,
-  uiConfig: {
-    /* ... */
-  },
-  settings: settingsSchema,
-} satisfies ToolServerConfig;
+export const tools = [MyTools];
 ```
 
-Each resource type has an index file (`tools/index.ts`, `skills/index.ts`, etc.) that exports an array of collections. Add your collection to the appropriate array.
+Each resource type has an index file under `src/modules/app/resources/` (`tools/index.ts`,
+`skills/index.ts`, etc.) that exports an array of collections. Do not edit
+`src/tool-server/app-server-modules.ts`; it is generated from active template modules.
 
 ## UI Plugin
 
@@ -383,10 +415,13 @@ Key files:
 
 - `src/ui/plugin.tsx` -- library entry point (exports the plugin component)
 - `src/ui/main.tsx` -- standalone entry (wraps in `VertesiaShell` + `AdminApp`)
-- `src/ui/routes.tsx` -- route definitions using `NestedRouterProvider`
+- `src/ui/shell/App.tsx` -- shared shell runtime using `NestedRouterProvider`
+- `src/modules/app/ui/routes.tsx` -- user app route definitions
+- `src/modules/content-app/` -- optional content-app module selected with `--module content-app`
+- `src/ui/app-ui-entry.tsx` and `src/ui/app-ui-modules.tsx` -- generated module wiring
 - `src/ui/index.css` -- Tailwind CSS 4 with shared styles from `@vertesia/ui`
 
-The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it maps existing UI routes (from `routes.tsx`) as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
+The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it should map routes exposed by active UI modules, commonly `src/modules/app/ui/routes.tsx`, as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
 
 ## Accessibility
 
@@ -519,9 +554,9 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 
 **ESM `.js` extensions required**: All tool server imports must use `.js` extensions (`import { x } from "./foo.js"`). Missing extensions cause "Cannot find module" errors.
 
-**Must register in `config.ts`**: Creating a collection file without adding it to the appropriate index and `config.ts` means it won't be served.
+**Must export from the module resource index**: Creating a collection file without adding it to the appropriate `src/modules/app/resources/<type>/index.ts` array means it won't be served.
 
-**Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` only work in tool server code (compiled by Rollup). They are not available in UI code (compiled by Vite).
+**Import hooks are server-build only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` only work in tool server code processed by Vertesia build tools. They are not available in UI code compiled by Vite.
 
 **HTTPS required for dev**: `{{PM_RUN}} dev` uses HTTPS via `@vitejs/plugin-basic-ssl`. Use `-k` flag with curl to skip certificate verification.
 

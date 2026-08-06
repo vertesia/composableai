@@ -1,6 +1,17 @@
 export * from './access-control.js';
 export * from './agent-request-template.js';
 export * from './analytics.js';
+/**
+ * Schema-derived API types. MUST stay `export type` — tsc erases it, so `lib/index.js` never
+ * references `./api-schemas/*` and zod stays out of the browser bundle. A runtime `export *` here
+ * would ship zod to every UI user; see `./api-schemas/index.ts` for why.
+ */
+export type { UserGroupArrayFromSchema } from './api-schemas/group.js';
+export type {
+    PrincipalContextFromSchema,
+    UserArrayFromSchema,
+    UserRefArrayFromSchema,
+} from './api-schemas/user.js';
 export * from './apikey.js';
 export * from './apps.js';
 export * from './ask-user.js';
@@ -37,6 +48,7 @@ export * from './rate-limiter.js';
 export * from './refs.js';
 export * from './roles/types.js';
 export * from './runs.js';
+export * from './schema-for-extraction.js';
 export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
@@ -63,6 +75,7 @@ export type {
     ZenoBulkContentObjectExportSplitShardRequest,
     ZenoBulkContentObjectExportSplitShardResponse,
 } from './store/store.js';
+export * from './sts-errors.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';
 export * from './tool-execution.js';
@@ -74,4 +87,15 @@ export * from './utils/auth.js';
 export * from './utils/schemas.js';
 export type * from './utils/type-helpers.js';
 export * from './versions.js';
+export * from './view-configuration-validation.js';
+export * from './view-query-validation.js';
+export * from './view-validation-helpers.js';
+export * from './views.js';
+export * from './views-schema.js';
+export {
+    type AppViewExperienceId,
+    parseAppViewExperienceId,
+    type ViewValidationIssue,
+    validateViewExperienceId,
+} from './views-validation.js';
 export * from './workflow-analytics.js';

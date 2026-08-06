@@ -5,6 +5,7 @@ import { useRouterContext } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     Bot,
+    Bug,
     ClipboardList,
     CopyIcon,
     DownloadCloudIcon,
@@ -13,7 +14,6 @@ import {
     InfoIcon,
     MessageSquareText,
     MoreVertical,
-    Rewind,
     Rows3,
     XIcon,
 } from 'lucide-react';
@@ -100,7 +100,9 @@ export default function Header({
     const controls = (
         <div
             className={cn(
-                isCompact ? 'flex flex-col items-center gap-1' : 'flex justify-end items-center gap-2 ms-auto',
+                isCompact
+                    ? 'flex flex-row items-center gap-1 lg:flex-col'
+                    : 'flex justify-end items-center gap-2 ms-auto',
             )}
         >
             {showPlanButton && (
@@ -177,14 +179,13 @@ export default function Header({
                     variant={isPlaybackEnabled ? 'primary' : 'ghost'}
                     onClick={onTogglePlayback}
                     aria-pressed={isPlaybackEnabled}
-                    aria-label={t('agent.rewind.label')}
                     title={t('agent.rewind.label')}
                     className={cn(
                         'transition-all duration-200 rounded-md',
                         variant === 'compact' && 'size-8 rounded-lg',
                     )}
                 >
-                    <Rewind className={cn('size-4', variant === 'full' && 'me-1.5')} />
+                    <Bug className={cn('size-4', variant === 'full' && 'me-1.5')} />
                     {variant === 'full' ? (
                         <span className="font-medium text-xs">{t('agent.rewind.label')}</span>
                     ) : (
@@ -376,7 +377,6 @@ function MoreDropdown({
                     size={compact ? 'icon' : 'xs'}
                     variant="ghost"
                     title={t('agent.moreActions')}
-                    aria-label={t('agent.moreActions')}
                     className={compact ? 'size-8 rounded-lg' : undefined}
                 >
                     <MoreVertical className="size-4" />

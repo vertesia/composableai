@@ -1,4 +1,4 @@
-import { Button, errorMessage, useToast } from '@vertesia/ui/core';
+import { Button, errorMessage, Switch, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -20,13 +20,26 @@ interface SchemaTreeProps {
     readonly?: boolean;
 }
 export function SchemaEditor({ schema, readonly = false }: SchemaTreeProps) {
+    const { t } = useUITranslation();
     return (
-        <ul className="">
-            {schema.children.map((prop) => {
-                return renderProperty(prop, readonly);
-            })}
-            {!readonly ? <AddPropertyButton parent={schema.root} /> : null}
-        </ul>
+        <div className="space-y-1">
+            <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-muted-foreground border-b border-border">
+                <div className="flex-1 min-w-0">{t('widgets.schema.propertyColumn')}</div>
+                {!readonly && (
+                    <div className="shrink-0 w-28 text-end pe-1" title={t('widgets.schema.extractFromDocumentHint')}>
+                        {t('widgets.schema.extractFromDocument')}
+                    </div>
+                )}
+                {/* space for expand/collapse on parent rows */}
+                <div className="w-8 shrink-0" />
+            </div>
+            <ul className="">
+                {schema.children.map((prop) => {
+                    return renderProperty(prop, readonly);
+                })}
+                {!readonly ? <AddPropertyButton parent={schema.root} /> : null}
+            </ul>
+        </div>
     );
 }
 
@@ -44,7 +57,7 @@ interface SimpleItemProps {
 }
 function SimpleItem({ node, readonly }: SimpleItemProps) {
     return (
-        <li>
+        <li className="border-b border-border/40 last:border-0">
             <PropertyTitleBar property={node} readonly={readonly} />
         </li>
     );
@@ -59,20 +72,21 @@ function ParentItem({ property, readonly }: ParentItemProps) {
     const Icon = isOpen ? ChevronDown : ChevronRight;
 
     return (
-        <li>
-            <div className="flex items-center w-full">
+        <li className="border-b border-border/40 last:border-0">
+            <div className="flex items-center w-full gap-1">
+                <div className="flex-1 min-w-0">
+                    <PropertyTitleBar property={property} readonly={readonly} />
+                </div>
                 <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setOpen(!isOpen)}
                     aria-label={isOpen ? `Collapse ${property.name}` : `Expand ${property.name}`}
                     aria-expanded={isOpen}
+                    className="shrink-0"
                 >
                     <Icon className="size-4 cn-rtl-flip" />
                 </Button>
-                <div className="flex-1">
-                    <PropertyTitleBar property={property} readonly={readonly} />
-                </div>
             </div>
             {isOpen && (
                 <ul className="ms-4 border-s border-gray-400 border-dashed">
@@ -110,7 +124,13 @@ function PropertyTitleBar({ property, readonly }: PropertyTitleBarProps) {
 
             const update = property.getUpdateFromNameAndTypeSignature(value.name, value.type);
 
-            if (property.update({ ...update, description: value.description })) {
+            if (
+                property.update({
+                    ...update,
+                    description: value.description,
+                    extractable: value.extractable,
+                })
+            ) {
                 property.reloadTree();
             }
         } catch (err: unknown) {
@@ -124,25 +144,56 @@ function PropertyTitleBar({ property, readonly }: PropertyTitleBarProps) {
         }
         return true;
     };
+
+    /** Toggle extractability without entering name/type edit mode. */
+    const onExtractableChange = (extractable: boolean) => {
+        if (property.update({ extractable })) {
+            property.reloadTree();
+        }
+    };
+
     const isNew = property.resetIsNew();
     const editableProp = getEditableSchemaProperty(property);
 
     return (
-        <Editable
-            value={editableProp}
-            onChange={onChange}
-            onDelete={() => {
-                property.remove();
-                property.reloadTree();
-            }}
-            editor={PropertyEditor}
-            viewer={PropertyViewer}
-            outlineOnHover
-            isEditing={isNew}
-            skipClickOutside={skipClickOutside}
-            readonly={readonly}
-            onValidate={(property) => validatePropertyName(property.name)}
-        />
+        <div className="flex items-center gap-2 w-full min-w-0 py-0.5">
+            <div className="flex-1 min-w-0">
+                <Editable
+                    value={editableProp}
+                    onChange={onChange}
+                    onDelete={() => {
+                        property.remove();
+                        property.reloadTree();
+                    }}
+                    editor={PropertyEditor}
+                    viewer={PropertyViewer}
+                    outlineOnHover
+                    isEditing={isNew}
+                    skipClickOutside={skipClickOutside}
+                    readonly={readonly}
+                    onValidate={(prop) => validatePropertyName(prop.name)}
+                />
+            </div>
+            {!readonly ? (
+                <div className="shrink-0 w-28 flex items-center justify-end gap-1.5 pe-1">
+                    <Switch
+                        size="sm"
+                        value={property.extractable}
+                        onChange={onExtractableChange}
+                        aria-label={`${t('widgets.schema.extractFromDocument')}: ${property.name}`}
+                    />
+                </div>
+            ) : property.extractable === false ? (
+                <div className="shrink-0 w-28 flex justify-end pe-1">
+                    <span
+                        className="text-[10px] uppercase tracking-wide text-attention border border-attention/40 bg-attention/10 rounded px-1.5 py-0.5"
+                        title={t('widgets.schema.extractFromDocumentHint')}
+                    >
+                        {t('widgets.schema.noExtract')}
+                    </span>
+                </div>
+            ) : null}
+        </div>
     );
 }
 

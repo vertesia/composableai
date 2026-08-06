@@ -12,7 +12,6 @@ import {
     Spinner,
     useIntersectionObserver,
     useToast,
-    VTooltip,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
@@ -24,7 +23,7 @@ import type { TypeRegistry } from '../types/TypeRegistry.js';
 import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { ContentOverview } from './components/ContentOverview';
-import { useDownloadFile } from './components/useDownloadFile';
+import { getContentObjectDownloadName, useDownloadFile } from './components/useDownloadFile';
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { DocumentQuickFilterProvider } from './DocumentQuickFilter';
 import { DocumentTable } from './DocumentTable';
@@ -452,11 +451,9 @@ function Toolsbar(props: ToolsbarProps) {
             )}
             <div className="flex gap-1 items-center">
                 {toolbarActions}
-                <VTooltip description={t('store.refresh')} asChild size="xs" placement="top">
-                    <Button variant="outline" onClick={handleRefetch} aria-label={t('store.refresh')}>
-                        <RefreshCw size={16} />
-                    </Button>
-                </VTooltip>
+                <Button variant="outline" onClick={handleRefetch} title={t('store.refresh')}>
+                    <RefreshCw size={16} />
+                </Button>
                 <ContentDispositionButton onUpdate={setIsGridView} />
             </div>
         </div>
@@ -486,7 +483,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
                         variant="ghost"
                         size="sm"
                         title="Download"
-                        onClick={() => downloadFromContentSource(contentSource, object.name || object.content?.name)}
+                        onClick={() => downloadFromContentSource(contentSource, getContentObjectDownloadName(object))}
                     >
                         <Download className="size-4" />
                     </Button>

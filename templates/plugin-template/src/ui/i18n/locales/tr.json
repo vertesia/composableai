@@ -2,7 +2,7 @@
   "access.account": "Hesap",
   "access.denied": "Erişim reddedildi",
   "access.noPermission": "«{{project}}» projesinde {{name}} uygulamasını görüntüleme izniniz yok.",
-  "access.orgNotAuthorized": "<strong>{{name}}</strong> kuruluşu bu uygulamaya erişme yetkisine sahip değil.",
+  "access.orgNotAuthorized": "{{name}} kuruluşu bu uygulamaya erişme yetkisine sahip değil.",
   "access.project": "Proje",
   "access.selectAccount": "Hesap seç",
   "access.selectProject": "Proje seç",

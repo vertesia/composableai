@@ -1,4 +1,4 @@
-import type { ContentObjectTypeItem } from '@vertesia/common';
+import type { ContentObjectTypeCatalogEntry } from '@vertesia/common';
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircleIcon, Info } from 'lucide-react';
@@ -18,7 +18,7 @@ interface SelectContentTypeModalProps {
     /** Children to render in the modal */
     children?: ReactNode;
     /** Optional initial selected type */
-    initialSelectedType?: ContentObjectTypeItem | null;
+    initialSelectedType?: ContentObjectTypeCatalogEntry | null;
     /** Optional description text */
     description?: string;
     /** Label for the confirm button */
@@ -45,7 +45,7 @@ export function SelectContentTypeModal({
     const { t } = useUITranslation();
     const resolvedTitle = title ?? t('store.selectContentType');
     const { registry: typeRegistry } = useTypeRegistry();
-    const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | null>(initialSelectedType);
+    const [selectedType, setSelectedType] = useState<ContentObjectTypeCatalogEntry | null>(initialSelectedType);
 
     // Get available types from the registry
     const types = typeRegistry?.types || [];
@@ -79,7 +79,7 @@ export function SelectContentTypeModal({
                             value={selectedType}
                             optionLabel={(type) => (type ? type.name : t('store.selectContentTypeLabel'))}
                             placeholder={t('store.selectContentTypeAuto')}
-                            onChange={(selected: ContentObjectTypeItem | null | undefined) =>
+                            onChange={(selected: ContentObjectTypeCatalogEntry | null | undefined) =>
                                 setSelectedType(selected || null)
                             }
                             filterBy="name"
@@ -91,7 +91,7 @@ export function SelectContentTypeModal({
                             value={selectedType}
                             optionLabel={(type) => (type ? type.name : t('store.selectContentTypeLabel'))}
                             placeholder={t('store.selectContentTypeLabel')}
-                            onChange={(selected: ContentObjectTypeItem | null | undefined) =>
+                            onChange={(selected: ContentObjectTypeCatalogEntry | null | undefined) =>
                                 setSelectedType(selected || null)
                             }
                             filterBy="name"
@@ -110,10 +110,10 @@ export function SelectContentTypeModal({
                 )}
             </ModalBody>
             <ModalFooter>
-                <Button variant="ghost" onClick={handleClose} alt={t('modal.cancel')}>
+                <Button variant="ghost" onClick={handleClose} title={t('modal.cancel')}>
                     {t('modal.cancel')}
                 </Button>
-                <Button onClick={handleConfirm} alt={t('store.confirmSelection')}>
+                <Button onClick={handleConfirm} title={t('store.confirmSelection')}>
                     {t('modal.confirm')}
                 </Button>
             </ModalFooter>

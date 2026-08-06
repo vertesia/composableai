@@ -13,11 +13,15 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { config, validation } from './configuration.js';
 import { downloadTemplate } from './download-template.js';
+import { appendModuleOption, parseModuleOption, runTemplateCodegen, type ScaffoldContext } from './modules.js';
 import { installDependencies, selectPackageManager } from './package-manager.js';
 import { runPostInstallHooks, runPreInstallHooks } from './post-install.js';
 import {
     adjustPackageJson,
+    applyDevModeAnswers,
+    applyDevModePackageManagerConfig,
     handleConditionalRemoves,
+    normalizePackageManagerScripts,
     removeMetaFiles,
     renameFiles,
     replaceVariables,
@@ -39,6 +43,13 @@ async function main() {
         .option('-y, --yes', 'Non-interactive mode: use defaults for all prompts', false)
         .option('--dev', 'Use workspace dependencies (development mode)', false)
         .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
+        .option('--skip-install', 'Skip dependency installation after copying and configuring the template', false)
+        .option(
+            '--module <name>',
+            'Template module to enable. Can be repeated or comma-separated; defaults to the template module named "default".',
+            appendModuleOption,
+            [],
+        )
         .option(
             '--package-manager <manager>',
             'Package manager to use: pnpm or npm (overrides template default and interactive selection)',
@@ -61,9 +72,21 @@ Documentation: ${config.docsUrl}
         yes: boolean;
         dev: boolean;
         localTemplates?: string;
+        skipInstall: boolean;
+        module: string[];
         packageManager?: string;
     }>();
-    const { branch, template, yes: nonInteractive, dev, localTemplates, packageManager: packageManagerOverride } = opts;
+    const {
+        branch,
+        template,
+        yes: nonInteractive,
+        dev,
+        localTemplates,
+        skipInstall,
+        module: moduleOptions,
+        packageManager: packageManagerOverride,
+    } = opts;
+    const selectedModules = parseModuleOption(moduleOptions);
 
     // Prompt for project name if not provided as CLI argument
     if (!projectName) {
@@ -130,6 +153,10 @@ Documentation: ${config.docsUrl}
         answers.PM_RUN = `${packageManager} run`;
         answers.PM_VERSION = execSync(`${packageManager} --version`, { encoding: 'utf8' }).trim();
 
+        if (dev) {
+            applyDevModeAnswers(templateConfig, answers);
+        }
+
         // Step 5: Replace variables in files
         replaceVariables(projectName, templateConfig, answers);
 
@@ -144,10 +171,32 @@ Documentation: ${config.docsUrl}
         // Step 8: Rename files (e.g., .env.template -> .env)
         renameFiles(projectName, templateConfig);
 
-        // Step 9: Remove meta files
+        // Step 8b: Apply package-manager configuration that depends on renamed files.
+        applyDevModePackageManagerConfig(projectName, templateConfig, dev, packageManager);
+
+        // Step 9: Run template-specific code generation
+        const scaffoldContext: ScaffoldContext = {
+            projectName,
+            projectPath: fs.realpathSync(projectName),
+            modules: selectedModules.length > 0 ? selectedModules : ['default'],
+            answers,
+            packageManager,
+            template: {
+                name: selectedTemplate.name,
+                repository: selectedTemplate.repository,
+            },
+        };
+        runTemplateCodegen(projectName, templateConfig, scaffoldContext);
+
+        const scriptReplacements = normalizePackageManagerScripts(projectName, packageManager);
+        if (scriptReplacements > 0) {
+            console.log(chalk.gray(`   Updated ${scriptReplacements} scripts for ${packageManager}\n`));
+        }
+
+        // Step 10: Remove meta files
         removeMetaFiles(projectName, templateConfig);
 
-        // Step 9: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
+        // Step 11: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
         let skipDependencyInstall = false;
         if (templateConfig.preInstall) {
             const preInstallSuccess = await runPreInstallHooks(
@@ -165,17 +214,25 @@ Documentation: ${config.docsUrl}
             }
         }
 
-        // Step 10: Install dependencies
+        // Step 12: Install dependencies
+        if (skipInstall) {
+            console.log(chalk.yellow('Skipping dependency installation (--skip-install).\n'));
+            console.log(chalk.gray('You can install dependencies manually when needed:\n'));
+            console.log(chalk.gray(`  cd ${projectName}`));
+            console.log(chalk.gray(`  ${packageManager} install\n`));
+            skipDependencyInstall = true;
+        }
+
         if (!skipDependencyInstall) {
             await installDependencies(projectName, packageManager);
         }
 
-        // Step 11: Run post-install hooks (if any)
+        // Step 13: Run post-install hooks (if any)
         if (!skipDependencyInstall && templateConfig.postInstall) {
             await runPostInstallHooks(projectName, templateConfig.postInstall, packageManager, nonInteractive);
         }
 
-        // Step 12: Success!
+        // Step 14: Success!
         showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
     } catch (error) {
         console.log(

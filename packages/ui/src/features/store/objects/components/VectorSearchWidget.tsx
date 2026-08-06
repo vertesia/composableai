@@ -141,7 +141,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
             <Button
                 variant="ghost"
                 onClick={() => setShowSettings(true)}
-                alt={t('store.semanticSearchSettings')}
+                title={t('store.semanticSearchSettings')}
                 className="ms-1"
             >
                 <Settings size={18} />
@@ -194,7 +194,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
                 isLoading={isLoading}
                 onClick={fireSearch}
                 isDisabled={!isReady}
-                alt={t('store.semanticSearch')}
+                title={t('store.semanticSearch')}
             >
                 {t('store.search')}
             </Button>

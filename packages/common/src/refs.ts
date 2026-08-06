@@ -1,3 +1,6 @@
+import type { z } from 'zod';
+import type { ResourceRefSchema } from './api-schemas/agent-runs.js';
+
 export enum ResolvableRefType {
     project = 'Project',
     projects = 'Projects',
@@ -17,13 +20,4 @@ export interface RefResolutionRequest {
     refs: ResolvableRef[];
 }
 
-export interface ResourceRef {
-    id: string;
-    name: string;
-    type: string;
-    description?: string;
-    version?: number;
-    status?: string;
-    tags?: string[];
-    endpoint?: string;
-}
+export type ResourceRef = z.infer<typeof ResourceRefSchema>;

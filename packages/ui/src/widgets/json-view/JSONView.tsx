@@ -35,7 +35,7 @@ interface PropertyTitleProps {
     name: string;
 }
 function PropertyTitle({ name }: PropertyTitleProps) {
-    return <div className="text-md font-semibold">{computeTitleFromName(name)}</div>;
+    return <div className="text-sm font-semibold">{computeTitleFromName(name)}</div>;
 }
 
 interface BlockElementProps {
@@ -64,14 +64,14 @@ function PropertyElement({ name, value }: PropertyElementProps) {
     switch (info.type) {
         case ValueType.Inline:
             return (
-                <div className="w-full flex gap-2">
+                <div className="w-full flex gap-2 text-sm">
                     <PropertyTitle name={`${name}:`} />
                     <p>{info.value}</p>
                 </div>
             );
         case ValueType.Paragraph:
             return (
-                <div>
+                <div className="w-full flex flex-col gap-2 text-sm">
                     <PropertyTitle name={name} />
                     <p>{info.value}</p>
                 </div>
@@ -80,14 +80,14 @@ function PropertyElement({ name, value }: PropertyElementProps) {
             return (
                 <div className="prose dark:prose-invert">
                     <PropertyTitle name={name} />
-                    <div className="vprose dark:prose-invert">{info.value}</div>
+                    <div className="vprose prose-sm dark:prose-invert">{info.value}</div>
                 </div>
             );
         case ValueType.Array:
             return <ArrayProperty name={name} value={value as JSONArray} />;
         case ValueType.Object:
             return (
-                <div>
+                <div className="w-full flex flex-col gap-2 text-sm">
                     <PropertyTitle name={name} />
                     <BlockElement className="mt-2">
                         {Object.entries(value as JSONObject).map(([key, value]) => (
@@ -164,8 +164,8 @@ function ItemProperty({ index, value, useBullet }: ItemPropertyProps) {
             break;
     }
     return (
-        <div className="flex gap-4 hover:bg-slate-50 dark:hover:bg-slate-800 py-2 pe-2 ps-4">
-            <div className="font-semibold text-gray-600 dark:text-gray-400">{bullet}</div>
+        <div className="flex gap-4 hover:bg-muted py-2 pe-2 ps-4">
+            <div className="font-semibold text-muted">{bullet}</div>
             <div>{content}</div>
         </div>
     );

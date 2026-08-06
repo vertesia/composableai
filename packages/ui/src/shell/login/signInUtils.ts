@@ -222,8 +222,21 @@ export function firstNameFromEmail(email: string): string {
     return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
+function hasWhitespace(value: string): boolean {
+    for (const char of value) {
+        if (char.trim() === '') return true;
+    }
+    return false;
+}
+
 export function isValidEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim());
+    const value = (email || '').trim();
+    const at = value.indexOf('@');
+    if (at <= 0 || at !== value.lastIndexOf('@')) return false;
+
+    const domain = value.slice(at + 1);
+    const dot = domain.indexOf('.');
+    return dot > 0 && dot < domain.length - 1 && !hasWhitespace(value);
 }
 
 /**

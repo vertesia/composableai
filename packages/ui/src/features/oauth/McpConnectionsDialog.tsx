@@ -98,7 +98,6 @@ export function McpConnectionsDialog({
                                                 size="sm"
                                                 disabled
                                                 className="h-6 w-32 justify-center px-2 text-xs"
-                                                aria-label={t('mcpConnections.checkingStatus')}
                                                 title={t('mcpConnections.checkingStatus')}
                                             >
                                                 <Spinner className="size-3" />

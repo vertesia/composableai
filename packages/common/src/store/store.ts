@@ -1,8 +1,90 @@
-import type { ComputedFacetResponse } from '../facets.js';
+import type { z } from 'zod';
+import type { ContentObjectTypeRefSchema } from '../api-schemas/app-lifecycle.js';
+import type {
+    ComplexSearchPayloadSchema,
+    ContentObjectApiResponseSchema,
+    ContentObjectApiRevisionSchema,
+    ContentObjectApiTypeRefSchema,
+    ContentObjectExportArtifactFileSchema,
+    ContentObjectExportArtifactSchema,
+    ContentObjectExportProgressSchema,
+    ContentObjectExportResultSchema,
+    ContentObjectExportStatusResponseSchema,
+    ContentObjectItemApiResponseSchema,
+    ContentObjectTextResponseSchema,
+    ContentObjectUserPermissionsSchema,
+    ContentSourceSchema,
+    CreateContentObjectHeadersSchema,
+    CreateContentObjectPayloadSchema,
+    CreateContentObjectQuerySchema,
+    DeleteContentObjectExportResponseSchema,
+    DeleteContentObjectResultSchema,
+    EmbeddingSchema,
+    ExportContentObjectsFilterSchema,
+    ExportContentObjectsIncludeOptionsSchema,
+    GenerationRunMetadataSchema,
+    GetObjectRenditionQuerySchema,
+    GetRenditionResponseSchema,
+    InheritedPropertyMetadataSchema,
+    ListContentObjectExportsResponseSchema,
+    ObjectSearchResponseSchema,
+    RevisionInfoSchema,
+    SetObjectEmbeddingsResponseSchema,
+    StartContentObjectExportRequestSchema,
+    StartContentObjectExportResponseSchema,
+    TranscriptSchema,
+    TranscriptSegmentSchema,
+    UpdateContentObjectHeadersSchema,
+    UpdateContentObjectQuerySchema,
+} from '../api-schemas/content.js';
+import type { MarkdownRenditionFormatSchema } from '../api-schemas/document-processing.js';
+import type {
+    CreateWorkflowRulePayloadSchema,
+    WorkflowRuleItemSchema,
+    WorkflowRuleSchema,
+} from '../api-schemas/events.js';
+import type {
+    BucketReadAccessStatusResponseSchema,
+    BulkUploadUrlsPayloadSchema,
+    BulkUploadUrlsResponseSchema,
+    CopyFilePayloadSchema,
+    CopyFileResponseSchema,
+    DeleteFileResultSchema,
+    EnsureBucketReadAccessPayloadSchema,
+    EnsureBucketReadAccessResponseSchema,
+    FileBucketResponseSchema,
+    FileDeleteQuerySchema,
+    FileListQuerySchema,
+    FileListResponseSchema,
+    FileMetadataQuerySchema,
+    FileMetadataResponseSchema,
+    FileMetadataUpdateResultSchema,
+    GetFileUrlPayloadSchema,
+    GetFileUrlResponseSchema,
+    GetUploadUrlPayloadSchema,
+    SetFileMetadataPayloadSchema,
+} from '../api-schemas/files.js';
+import type {
+    ColumnLayoutSchema,
+    ContentObjectTypeCatalogEntrySchema,
+    ContentObjectTypeCatalogQuerySchema,
+    ContentObjectTypeItemSchema,
+    ContentObjectTypeListQuerySchema,
+    ContentObjectTypeSchema,
+    ContentObjectTypeStatusSchema,
+    ContentTypeEditingPolicySchema,
+    ContentTypeExtractionGroundingPolicySchema,
+    ContentTypeExtractionGroundingReviewPolicySchema,
+    ContentTypeIntakePolicySchema,
+    CreateContentObjectTypePayloadSchema,
+    InCodeTypeDefinitionSchema,
+    IntakePageRangesSchema,
+    IntakePageScopeSchema,
+    IntakeVisionDetailSchema,
+    UpdateContentObjectTypePayloadSchema,
+} from '../api-schemas/store.js';
 import type { JSONObject } from '../json.js';
-import type { SearchPayload } from '../payload.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
-import type { ComplexSearchQuery } from '../query.js';
 import type { BaseObject } from './common.js';
 
 export enum ContentObjectApiHeaders {
@@ -16,39 +98,15 @@ export enum ContentObjectApiHeaders {
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
-export interface CreateContentObjectQuery {
-    collection_id?: string;
-    processing_priority?: ContentObjectProcessingPriority;
-}
+export type CreateContentObjectQuery = z.infer<typeof CreateContentObjectQuerySchema>;
 
-export interface CreateContentObjectHeaders {
-    'x-collection-id'?: string;
-    'x-processing-priority'?: ContentObjectProcessingPriority;
-}
+export type CreateContentObjectHeaders = z.infer<typeof CreateContentObjectHeadersSchema>;
 
-export interface UpdateContentObjectQuery {
-    create_revision?: boolean;
-    revision_label?: string;
-    processing_priority?: ContentObjectProcessingPriority;
-}
+export type UpdateContentObjectQuery = z.infer<typeof UpdateContentObjectQuerySchema>;
 
-export interface UpdateContentObjectHeaders {
-    'if-match'?: string;
-    'x-create-revision'?: boolean;
-    'x-revision-label'?: string;
-    'x-processing-priority'?: ContentObjectProcessingPriority;
-    /**
-     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
-     */
-    'x-suppress-workflows'?: boolean;
-}
+export type UpdateContentObjectHeaders = z.infer<typeof UpdateContentObjectHeadersSchema>;
 
-export interface GetObjectRenditionQuery {
-    block_on_generation?: boolean;
-    generate_if_missing?: boolean;
-    max_hw?: number;
-    sign_url?: boolean;
-}
+export type GetObjectRenditionQuery = z.infer<typeof GetObjectRenditionQuerySchema>;
 
 /**
  * Headers for Data Store API calls.
@@ -68,52 +126,11 @@ export enum ContentObjectStatus {
     archived = 'archived',
 }
 
-export interface Embedding {
-    model: string; //the model used to generate this embedding
-    values: number[];
-    etag?: string; // the etag of the text used for the embedding
-}
+export type Embedding = z.infer<typeof EmbeddingSchema>;
 
-/**
- * Optional object context to include in content object export rows.
- */
-export interface ExportContentObjectsIncludeOptions {
-    /**
-     * Include stored embeddings. Disabled by default for generic object exports.
-     */
-    embeddings?: boolean;
-    /**
-     * Include content source metadata. Enabled by default.
-     */
-    content?: boolean;
-    /**
-     * Include object lifecycle status. Enabled by default.
-     */
-    status?: boolean;
-    /**
-     * Include object properties. Enabled by default.
-     */
-    properties?: boolean;
-    /**
-     * Include technical object metadata. Disabled by default because metadata may be large.
-     */
-    metadata?: boolean;
-    /**
-     * Include object revision details. Enabled by default.
-     */
-    revision?: boolean;
-}
+export type ExportContentObjectsIncludeOptions = z.infer<typeof ExportContentObjectsIncludeOptionsSchema>;
 
-/**
- * Bounded filters supported by the bulk content object export API.
- */
-export interface ExportContentObjectsFilter {
-    types?: string[];
-    created_from?: string;
-    created_to?: string;
-    updated_from?: string;
-    updated_to?: string;
-}
+export type ExportContentObjectsFilter = z.infer<typeof ExportContentObjectsFilterSchema>;
 
 /**
  * Exported object identity and context for a single content object row.
@@ -144,34 +161,9 @@ export interface ExportedContentObjectRecord {
     embeddings?: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
 }
 
-export interface StartContentObjectExportRequest {
-    /**
-     * Embedding types to export when include.embeddings is true. Defaults to all supported embedding types.
-     */
-    embedding_types?: SupportedEmbeddingTypes[];
-    /**
-     * Explicit export filters. This intentionally does not accept the search API's full Mongo/search DSL.
-     */
-    filter?: ExportContentObjectsFilter;
-    /**
-     * Include all revisions. Defaults to false, exporting only head revisions.
-     */
-    all_revisions?: boolean;
-    /**
-     * Optional object context selectors.
-     */
-    include?: ExportContentObjectsIncludeOptions;
-    /**
-     * Compress the export with gzip. Defaults to true.
-     */
-    compression?: boolean;
-}
+export type StartContentObjectExportRequest = z.infer<typeof StartContentObjectExportRequestSchema>;
 
-export interface StartContentObjectExportResponse {
-    workflow_id: string;
-    run_id: string;
-    export_id: string;
-}
+export type StartContentObjectExportResponse = z.infer<typeof StartContentObjectExportResponseSchema>;
 
 export interface ZenoBulkContentObjectExportRequest extends Omit<StartContentObjectExportRequest, 'compression'> {
     tenant_id: string;
@@ -238,145 +230,36 @@ export interface ZenoBulkContentObjectExportComposeRequest extends ZenoBulkConte
     started_at?: string;
 }
 
-export interface ContentObjectExportResult {
-    status: 'completed';
-    path: string;
-    filename: string;
-    content_type: string;
-    manifest_path?: string;
-    manifest_filename?: string;
-    manifest_content_type?: string;
-    manifest_bytes?: number;
-    records: number;
-    bytes: number;
-    started_at: string;
-    completed_at: string;
-    duration_ms: number;
-}
+export type ContentObjectExportResult = z.infer<typeof ContentObjectExportResultSchema>;
 
-export interface ContentObjectExportProgress {
-    status: 'queued' | 'planning' | 'exporting' | 'composing' | 'completed' | 'failed';
-    records: number;
-    bytes: number;
-    path?: string;
-    filename?: string;
-    completed_shards?: number;
-    total_shards?: number;
-    started_at?: string;
-    completed_at?: string;
-    error?: string;
-}
+export type ContentObjectExportProgress = z.infer<typeof ContentObjectExportProgressSchema>;
 
-export interface ContentObjectExportStatusResponse {
-    workflow_id: string;
-    run_id: string;
-    status: 'queued' | 'running' | 'completed' | 'failed' | 'canceled' | 'terminated' | 'timed_out' | 'unknown';
-    done: boolean;
-    progress?: ContentObjectExportProgress;
-    result?: ContentObjectExportResult;
-    error?: string;
-}
+export type ContentObjectExportStatusResponse = z.infer<typeof ContentObjectExportStatusResponseSchema>;
 
-export interface ContentObjectExportArtifact {
-    export_id: string;
-    path: string;
-    filename: string;
-    content_type: string;
-    bytes: number;
-    created_at?: string;
-    files?: ContentObjectExportArtifactFile[];
-}
+export type ContentObjectExportArtifact = z.infer<typeof ContentObjectExportArtifactSchema>;
 
-export interface ContentObjectExportArtifactFile {
-    role: 'data' | 'manifest';
-    path: string;
-    filename: string;
-    content_type: string;
-    bytes: number;
-}
+export type ContentObjectExportArtifactFile = z.infer<typeof ContentObjectExportArtifactFileSchema>;
 
-export interface ListContentObjectExportsResponse {
-    items: ContentObjectExportArtifact[];
-    limit: number;
-}
+export type ListContentObjectExportsResponse = z.infer<typeof ListContentObjectExportsResponseSchema>;
 
-export interface DeleteContentObjectExportResponse {
-    success: boolean;
-    export_id: string;
-    path: string;
-}
+export type DeleteContentObjectExportResponse = z.infer<typeof DeleteContentObjectExportResponseSchema>;
 
-/**
- * Metadata about a single inherited property.
- */
-export interface InheritedPropertyMetadata {
-    /** The property name that was inherited */
-    name: string;
-    /** The collection ID that provided this property */
-    collection: string;
-}
-/**
- * Computed per-request permissions for the current user on a content object.
- * Not stored in the database — computed on the fly by the API from the object's security field.
- */
-export interface ContentObjectUserPermissions {
-    can_write: boolean;
-    can_delete: boolean;
-}
+export type InheritedPropertyMetadata = z.infer<typeof InheritedPropertyMetadataSchema>;
+export type ContentObjectUserPermissions = z.infer<typeof ContentObjectUserPermissionsSchema>;
 
-export interface ContentObjectTextResponse {
-    text?: string;
-}
+export type ContentObjectTextResponse = z.infer<typeof ContentObjectTextResponseSchema>;
 
-export interface DeleteContentObjectResult {
-    id: string;
-    count: number;
-}
+export type DeleteContentObjectResult = z.infer<typeof DeleteContentObjectResultSchema>;
 
-export interface SetObjectEmbeddingsResponse {
-    type?: Embedding;
-}
+export type SetObjectEmbeddingsResponse = z.infer<typeof SetObjectEmbeddingsResponseSchema>;
 
-export type ContentObjectApiTypeRef = ContentObjectTypeRef;
+export type ContentObjectApiTypeRef = z.infer<typeof ContentObjectApiTypeRefSchema>;
 
-export interface ContentObjectApiRevision {
-    parent?: string;
-    root: string;
-    head: boolean;
-    label?: string;
-}
+export type ContentObjectApiRevision = z.infer<typeof ContentObjectApiRevisionSchema>;
 
-export interface ContentObjectItemApiResponse extends BaseObject {
-    parent?: string;
-    location: string;
-    status: ContentObjectStatus;
-    type?: ContentObjectApiTypeRef;
-    content?: ContentSource;
-    external_id?: string;
-    properties: JSONObject;
-    metadata?: Record<string, unknown>;
-    tokens?: {
-        count?: number;
-        encoding?: string;
-        etag?: string;
-    };
-    revision: ContentObjectApiRevision;
-    is_deleted?: boolean;
-    is_locked?: boolean;
-    score?: number;
-    user_permissions?: ContentObjectUserPermissions;
-}
+export type ContentObjectItemApiResponse = z.infer<typeof ContentObjectItemApiResponseSchema>;
 
-export interface ContentObjectApiResponse extends ContentObjectItemApiResponse {
-    text?: string;
-    text_etag?: string;
-    embeddings?: Record<string, Embedding>;
-    parts?: string[];
-    parts_etag?: string;
-    transcript?: Record<string, unknown>;
-    security?: Record<string, string[]>;
-    inherited_properties?: InheritedPropertyMetadata[];
-}
+export type ContentObjectApiResponse = z.infer<typeof ContentObjectApiResponseSchema>;
 
 export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
@@ -417,12 +300,7 @@ export interface Location {
     longitude: number;
 }
 
-export interface GenerationRunMetadata {
-    id: string;
-    date: string;
-    model: string;
-    target?: string;
-}
+export type GenerationRunMetadata = z.infer<typeof GenerationRunMetadataSchema>;
 
 // Base rendition interface for document and audio
 export interface Rendition {
@@ -448,7 +326,89 @@ export interface ContentMetadata {
     location?: Location;
     generation_runs?: GenerationRunMetadata[];
     etag?: string;
+    /** ETag of text materialized from object properties by intake rendering. */
+    rendered_text_etag?: string;
     renditions?: Rendition[];
+    /**
+     * Embedded/technical metadata harvested from the source file by intake
+     * (office docProps, PDF docinfo). Free-form, nature-appropriate keys.
+     */
+    embedded?: Record<string, unknown>;
+    /** Type-detection provenance recorded by the intake sniff pipeline. */
+    type_detection?: TypeDetectionMetadata;
+    /** Locate-pass provenance: which pages the document map found relevant. */
+    locate?: LocateMetadata;
+    /** Vision-evidence provenance for the last visual extraction run. */
+    vision_evidence?: VisionEvidenceMetadata;
+}
+
+/**
+ * Provenance persisted at `metadata.locate` when the intake locate (document-map) pass runs.
+ * The page list doubles as navigation metadata for the UI.
+ */
+export interface LocateMetadata {
+    /** Relevant pages proposed by the locate pass, in plan-ranked order (1-based). */
+    pages: number[];
+    /** Detail profile the plan requested for visual extraction. */
+    visual_detail?: 'low' | 'standard' | 'high';
+    /** Whether the plan asked for color rendering. */
+    needs_color?: boolean;
+    /** The model's one-line explanation of the selection. */
+    reason?: string;
+    page_count?: number;
+    /** Pages per contact sheet used for the pass (8 or 16). */
+    detail?: number;
+    sheet_count?: number;
+    located_at: string;
+}
+
+/**
+ * Provenance persisted at `metadata.vision_evidence` whenever intake prepares scoped page
+ * images for visual extraction (design: vision evidence spec — dropped pages are recorded,
+ * never silently batched).
+ */
+export interface VisionEvidenceMetadata {
+    /** Extraction source that requested the evidence. */
+    source_requested?: 'auto' | 'text' | 'vision' | 'mixed';
+    /** Pages rendered and sent as evidence, in ranked order (1-based). */
+    pages_sent: number[];
+    /** Resolved detail profile name. */
+    detail: 'low' | 'standard' | 'high';
+    /** Candidate pages dropped by budget clamping (recorded, not batched). */
+    dropped_pages?: number[];
+    /** The locate plan's reason, when the plan drove the page selection. */
+    plan_reason?: string;
+    /** Which clamps fired (page_count, allowed_details, token budget, page caps, payload). */
+    clamps_applied?: string[];
+    /** Estimated image tokens for the pages sent. */
+    est_tokens?: number;
+    page_count?: number;
+    prepared_at: string;
+}
+
+/**
+ * Durable provenance persisted at `metadata.type_detection` whenever the intake sniff pipeline
+ * runs. `method` records which mechanism decides the type: the sniff itself (high confidence),
+ * the post-conversion selector (medium/low/other), or the post-conversion selector because the
+ * document was below the small-doc page threshold.
+ */
+export interface TypeDetectionMetadata {
+    method: 'sniff' | 'post_conversion' | 'post_conversion_small_doc';
+    /** Sniffed type id, or 'other'. */
+    type?: string;
+    type_name?: string;
+    /** Sniff confidence, 0..1. */
+    confidence?: number;
+    band?: 'high' | 'medium' | 'low';
+    rationale?: string;
+    alternates?: string[];
+    /** Which evidence kinds the sniff saw. */
+    evidence?: 'text' | 'image' | 'both';
+    page_count?: number;
+    /** Why the sniff LLM call was skipped (e.g. 'below_min_pages'). */
+    skipped_reason?: string;
+    min_pages?: number;
+    detected_at: string;
 }
 
 // Type-specific metadata interfaces
@@ -491,15 +451,35 @@ export interface DocumentMetadata extends ContentMetadata {
         image_count?: number;
         zone_count?: number;
         needs_ocr_count?: number;
+        /** Fingerprint of source+policy used for custom conversion, to skip re-converting unchanged docs. */
+        conversion_fingerprint?: string;
     };
+    /**
+     * Grounded-extraction trust signal + key data. Written by the grounded pipeline
+     * (verdict, confidence, citation counts, review status, source etag, ...) and
+     * queryable for list/filter. Open-ended so more grounded key-data can be stored
+     * without a type change.
+     */
+    grounded?: GroundedMetadata;
     sections?: TextSection[]; // List of sections with descriptions and line indexes
 }
 
-export interface Transcript {
-    text?: string;
-    segments?: TranscriptSegment[];
-    etag?: string;
+/** Grounded-extraction summary stored on document metadata. Additional keys allowed. */
+export interface GroundedMetadata {
+    verdict?: string;
+    confidence?: number;
+    citation_count?: number;
+    verified_citations?: number;
+    reviewed_at?: string;
+    generated_at?: string;
+    /** Source PDF content etag used by the grounded extraction. */
+    source_content_etag?: string | null;
+    /** @deprecated Grounded source identity is tracked by source_content_etag. */
+    source_text_etag?: string | null;
+    [key: string]: unknown;
 }
+
+export type Transcript = z.infer<typeof TranscriptSchema>;
 
 export const TextExtractionStatus = {
     success: 'success',
@@ -512,48 +492,11 @@ export interface TranscriptMediaResult {
     gladiaTranscriptionId?: string;
 }
 
-export interface TranscriptSegment {
-    start: number;
-    text: string;
-    speaker?: number;
-    end?: number;
-    confidence?: number;
-    language?: string;
-}
+export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
 
-export interface ContentSource {
-    // the URI of the content source. Usually an URL to the uploaded file inside a cloud file storage like s3.
-    source?: string;
-    // the mime type of the content source.
-    type?: string;
-    // the original name of the input file if any
-    name?: string;
-    // the etag of the content source if any
-    etag?: string;
-}
+export type ContentSource = z.infer<typeof ContentSourceSchema>;
 
-/**
- *
- */
-export interface RevisionInfo {
-    /** Direct parent revision id (omit on the first revision) */
-    parent?: string;
-
-    /** The root revision id (omit on the first revision) */
-    root: string;
-
-    /** True if this revision is the head revision */
-    head: boolean;
-
-    /** Human‑friendly tag or state ("v1.2", "approved") */
-    label?: string;
-
-    /** Extra parents when two branches are merged (leave undefined until needed) */
-    //merge_parents?: string[]; //maybe later
-
-    /** Pointer to a diff / patch blob if you store deltas instead of full content */
-    //delta_ref?: string;
-}
+export type RevisionInfo = z.infer<typeof RevisionInfoSchema>;
 
 /**
  * The content object item is a simplified version of the ContentObject that is returned by the store API when listing objects.
@@ -636,15 +579,15 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     user_permissions?: ContentObjectUserPermissions;
 }
 
-/**
- * When creating from an uploaded file the content should be an URL to the uploaded file
- */
-export interface CreateContentObjectPayload<T = JSONObject>
-    extends Partial<Omit<ContentObject<T>, 'id' | 'root' | 'created_at' | 'updated_at' | 'type' | 'owner'>> {
-    id?: string; // An optional existing object ID to be replaced by the new one
-    type?: string; // the object type ID
-    generation_run_info?: GenerationRunMetadata;
-}
+type CreateContentObjectPayloadWire = z.infer<typeof CreateContentObjectPayloadSchema>;
+export type CreateContentObjectPayload<T = JSONObject> = Omit<
+    CreateContentObjectPayloadWire,
+    'properties' | 'metadata'
+> & {
+    properties?: T;
+    /** Known metadata interfaces remain assignable; the runtime contract deliberately accepts any object keys. */
+    metadata?: ContentObjectItem['metadata'];
+};
 
 type LegacyContentObjectTypeRef = Partial<ContentObjectTypeRef> & {
     ref_type?: 'stored' | 'incode';
@@ -669,89 +612,66 @@ export function withContentObjectTypeRefDiscriminator(
     return { ref_type: 'stored', id, name };
 }
 
+export type ContentObjectTypeRef = z.infer<typeof ContentObjectTypeRefSchema>;
+
+export type ComplexSearchPayload = z.infer<typeof ComplexSearchPayloadSchema>;
+
+export type ColumnLayout = z.infer<typeof ColumnLayoutSchema>;
+
+export type ContentObjectTypeStatus = z.infer<typeof ContentObjectTypeStatusSchema>;
+
+export type IntakeVisionDetail = z.infer<typeof IntakeVisionDetailSchema>;
+
+export type IntakePageScope = z.infer<typeof IntakePageScopeSchema>;
+
 /**
- * Reference to a content object type. `id` is the canonical identifier for both
- * stored and in-code types.
+ * Inclusive `[start, end]` pairs.
+ *
+ * Inferred as `number[][]` rather than the `[number, number][]` this used to declare: the published
+ * component is a uniform-items array with `minItems`/`maxItems`, which is what the scanner made of the
+ * tuple, and reproducing it is what keeps the generated clients unchanged. The length is still
+ * enforced at runtime.
  */
-/**
- * @discriminator ref_type
- */
-export type ContentObjectTypeRef = StoredTypeRef | InCodeTypeRef;
+export type IntakePageRanges = z.infer<typeof IntakePageRangesSchema>;
 
-interface StoredTypeRef {
-    ref_type: 'stored';
-    /**
-     * MongoDB ObjectId string for stored types
-     */
-    id: string;
-    name: string;
+/** Rendering settings behind a vision detail name (platform defaults, project-overridable
+ * via `configuration.intake.vision_profiles`). */
+export interface IntakeVisionProfileSettings {
+    /** Render resolution in dots per inch. */
+    dpi: number;
+    /** Maximum height/width of the rendered page image in pixels. */
+    max_hw: number;
+    /** JPEG quality (0-100). */
+    quality: number;
+    /** grayscale renders gray always; auto keeps color when the plan asks for it. */
+    color_mode: 'grayscale' | 'auto';
 }
 
-interface InCodeTypeRef {
-    ref_type: 'incode';
-    /**
-     * Namespaced identifier for in-code types (e.g. "sys:Invoice", "app:myapp:Contract")
-     */
-    id: string;
-    name: string;
-}
-
-export interface ComplexSearchPayload extends Omit<SearchPayload, 'query'> {
-    query?: ComplexSearchQuery;
-}
-
-export interface ColumnLayout {
-    /**
-     * The path of the field to use (e.g. "properties.title")
-     */
-    field: string;
-    /**
-     * The name to display in the table column
-     */
-    name: string;
-    /**
-     * The type of the field specifies how the rendering will be done. If not specified the string type will be used.
-     * The type may contain additional parameters prepended using a web-like query string syntax: date?LLL
-     */
-    type?: string;
-    /*
-     * a fallback field to use if the field is not present in the object
-     */
-    fallback?: string;
-    /**
-     * A default value to be used if the field is not present in the object
-     */
-    default?: unknown;
-}
-export interface ContentObjectType extends ContentObjectTypeItem {}
-export interface ContentObjectTypeItem extends BaseObject {
-    is_chunkable?: boolean;
-    /**
-     * This is only included in ContentObjectTypeItem if explicitly requested
-     * It is always included in ContentObjectType
-     */
-    table_layout?: ColumnLayout[];
-    /**
-     * this is only included in ContentObjectTypeItem if explicitly requested
-     * It is always included in ContentObjectType
-     */
-    object_schema?: Record<string, unknown>; // an optional JSON schema for the object properties.
-
-    /**
-     * Determines if the content will be validated against the object schema a generation time and save/update time.
-     */
-    strict_mode?: boolean;
-}
-export type InCodeTypeDefinition = Pick<
-    ContentObjectTypeItem,
-    'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'
+export type ContentTypeExtractionGroundingReviewPolicy = z.infer<
+    typeof ContentTypeExtractionGroundingReviewPolicySchema
 >;
-export interface ContentObjectTypeCatalogEntry extends InCodeTypeDefinition {
-    updated_by?: string;
-    created_by?: string;
-    created_at?: string;
-    updated_at?: string;
-}
+
+export type ContentTypeExtractionGroundingPolicy = z.infer<typeof ContentTypeExtractionGroundingPolicySchema>;
+
+export type ContentTypeIntakePolicy = z.infer<typeof ContentTypeIntakePolicySchema>;
+
+// No TSDoc: the description is the canonical schema's, and a doc comment above a canonical alias is
+// published a second time.
+//
+// The hand-written AJV `ContentTypeEditingPolicySchema` that used to sit here is gone. It said the
+// same thing as the Zod schema and had to be kept in step by hand; `./editing-policy-schema.generated.ts`
+// now emits it from the canonical component, under the same exported name, so the validator the types
+// resource compiles and the component the spec publishes are the same object.
+export type ContentTypeEditingPolicy = z.infer<typeof ContentTypeEditingPolicySchema>;
+
+export type ContentObjectType = z.infer<typeof ContentObjectTypeSchema>;
+export type ContentObjectTypeItem = z.infer<typeof ContentObjectTypeItemSchema>;
+// Was `Pick<ContentObjectTypeItem, ...>`, and published under the name that derived from:
+// `Pick_ContentObjectTypeItem_id_name_description_tags_object_schema_...`. A mapped type over a
+// canonical alias resolves to `{}`, so the shape is authored now — and it publishes under its own
+// name, which is what the API always meant.
+export type InCodeTypeDefinition = z.infer<typeof InCodeTypeDefinitionSchema>;
+export type ContentObjectTypeCatalogEntry = z.infer<typeof ContentObjectTypeCatalogEntrySchema>;
 /**
  * The itnerface to be used whend efining types in a plugin app.
  */
@@ -766,61 +686,19 @@ export function isInCodeType(typeId: string): boolean {
     return typeId.includes(':');
 }
 
-export interface CreateContentObjectTypePayload
-    extends Omit<ContentObjectType, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'> {}
+export type CreateContentObjectTypePayload = z.infer<typeof CreateContentObjectTypePayloadSchema>;
+
+export type UpdateContentObjectTypePayload = z.infer<typeof UpdateContentObjectTypePayloadSchema>;
 
 export enum WorkflowRuleInputType {
     single = 'single',
     multiple = 'multiple',
     none = 'none',
 }
-export interface WorkflowRuleItem extends BaseObject {
-    // the name of the workflow function
-    endpoint: string;
-    input_type: WorkflowRuleInputType;
-}
-export interface WorkflowRule extends WorkflowRuleItem {
-    /*
-     * mongo matching rules for a content event
-     */
-    match?: Record<string, unknown>;
-    /**
-     * Activities configuration if any.
-     */
-    config?: Record<string, unknown>;
+export type WorkflowRuleItem = z.infer<typeof WorkflowRuleItemSchema>;
+export type WorkflowRule = z.infer<typeof WorkflowRuleSchema>;
 
-    /**
-     * Debug mode for the rule
-     * @default false
-     */
-    debug?: boolean;
-
-    /**
-     * Customer override for the rule
-     * When set to true the rule will not be updated by the system
-     */
-    customer_override?: boolean;
-
-    /**
-     * Optional task queue name to use when starting workflows for this rule
-     */
-    task_queue?: string;
-
-    /**
-     * Event subscription migration status for legacy workflow-rule cutover.
-     */
-    event_subscription_migration_status?: 'migrated' | 'unsupported_match' | 'failed';
-
-    /**
-     * Migration failure or unsupported-match reason, when applicable.
-     */
-    event_subscription_migration_error?: string;
-}
-
-export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
-    name: string; // required
-    endpoint: string; // required
-}
+export type CreateWorkflowRulePayload = z.infer<typeof CreateWorkflowRulePayloadSchema>;
 export interface UploadWorkflowRulePayload
     extends Partial<Omit<WorkflowRule, 'id' | 'created_at' | 'updated_at' | 'owner'>> {}
 
@@ -830,10 +708,12 @@ export enum ImageRenditionFormat {
     webp = 'webp',
 }
 
-export enum MarkdownRenditionFormat {
-    docx = 'docx',
-    pdf = 'pdf',
-}
+export const MarkdownRenditionFormat = {
+    docx: 'docx',
+    pdf: 'pdf',
+} as const;
+
+export type MarkdownRenditionFormat = z.infer<typeof MarkdownRenditionFormatSchema>;
 
 export interface GetRenditionParams {
     format: ImageRenditionFormat | MarkdownRenditionFormat;
@@ -843,17 +723,9 @@ export interface GetRenditionParams {
     block_on_generation?: boolean;
 }
 
-export interface GetRenditionResponse {
-    status: 'found' | 'generating' | 'failed';
-    renditions?: string[]; //file paths for the renditions
-    workflow_run_id?: string;
-}
+export type GetRenditionResponse = z.infer<typeof GetRenditionResponseSchema>;
 
-export interface ObjectSearchResponse {
-    results: ContentObjectItemApiResponse[];
-    facets: ComputedFacetResponse;
-    aggregations?: Record<string, unknown>;
-}
+export type ObjectSearchResponse = z.infer<typeof ObjectSearchResponseSchema>;
 
 // ============================================================================
 // Rendition Format Compatibility Utilities
@@ -967,127 +839,47 @@ export function supportsVisualRendition(contentType: string | undefined): boolea
     return canGenerateRendition(contentType, ImageRenditionFormat.jpeg);
 }
 
-export interface GetUploadUrlPayload {
-    name: string;
-    id?: string;
-    mime_type?: string;
-    ttl?: number;
-}
+export type GetUploadUrlPayload = z.infer<typeof GetUploadUrlPayloadSchema>;
 
-export interface GetFileUrlPayload {
-    file: string;
-    // Optional filename to use in Content-Disposition for downloads
-    name?: string;
-    // Optional disposition for downloads (default: attachment)
-    disposition?: 'inline' | 'attachment';
-}
+export type GetFileUrlPayload = z.infer<typeof GetFileUrlPayloadSchema>;
 
-export interface GetFileUrlResponse {
-    url: string;
-    id: string;
-    mime_type?: string;
-    path: string;
-}
+export type GetFileUrlResponse = z.infer<typeof GetFileUrlResponseSchema>;
 
-export interface EnsureBucketReadAccessPayload {
-    principal: string;
-}
+export type EnsureBucketReadAccessPayload = z.infer<typeof EnsureBucketReadAccessPayloadSchema>;
 
-export interface EnsureBucketReadAccessResponse {
-    bucket: string;
-    principal: string;
-    granted: boolean;
-}
+export type EnsureBucketReadAccessResponse = z.infer<typeof EnsureBucketReadAccessResponseSchema>;
 
-export interface BucketReadAccessStatusResponse {
-    bucket: string;
-    principal: string;
-    hasAccess: boolean;
-}
+export type BucketReadAccessStatusResponse = z.infer<typeof BucketReadAccessStatusResponseSchema>;
 
-export interface FileMetadataResponse {
-    name: string;
-    size: number;
-    contentType: string;
-    contentDisposition?: string;
-    etag?: string;
-    customMetadata?: Record<string, string>;
-}
+export type FileMetadataResponse = z.infer<typeof FileMetadataResponseSchema>;
 
-export interface SetFileMetadataPayload {
-    /** The file path (relative to bucket) or full URI */
-    file: string;
-    /** Custom metadata key-value pairs to set on the file */
-    metadata: Record<string, string>;
-}
+export type SetFileMetadataPayload = z.infer<typeof SetFileMetadataPayloadSchema>;
 
-export interface FileMetadataUpdateResult {
-    success: boolean;
-    file: string;
-}
+export type FileMetadataUpdateResult = z.infer<typeof FileMetadataUpdateResultSchema>;
 
-export interface BulkUploadUrlsPayload {
-    files: { name: string; mime_type?: string; id?: string }[];
-}
+export type BulkUploadUrlsPayload = z.infer<typeof BulkUploadUrlsPayloadSchema>;
 
-export interface BulkUploadUrlsResponse {
-    files: GetFileUrlResponse[];
-}
+export type BulkUploadUrlsResponse = z.infer<typeof BulkUploadUrlsResponseSchema>;
 
-export interface FileBucketResponse {
-    bucket: string;
-}
+export type FileBucketResponse = z.infer<typeof FileBucketResponseSchema>;
 
-export interface FileListResponse {
-    files: string[];
-}
+export type FileListResponse = z.infer<typeof FileListResponseSchema>;
 
-export interface FileMetadataQuery {
-    file: string;
-}
+export type FileMetadataQuery = z.infer<typeof FileMetadataQuerySchema>;
 
-export interface FileListQuery {
-    prefix: string;
-}
+export type FileListQuery = z.infer<typeof FileListQuerySchema>;
 
-export interface FileDeleteQuery {
-    prefix?: boolean;
-}
+export type FileDeleteQuery = z.infer<typeof FileDeleteQuerySchema>;
 
-export interface ContentObjectTypeCatalogQuery {
-    tag?: string;
-    layout?: boolean;
-    schema?: boolean;
-    limit?: number;
-    offset?: number;
-}
+export type ContentObjectTypeCatalogQuery = z.infer<typeof ContentObjectTypeCatalogQuerySchema>;
 
-export interface ContentObjectTypeListQuery {
-    name?: string;
-    chunkable?: boolean;
-    layout?: boolean;
-    schema?: boolean;
-    limit?: number;
-    offset?: number;
-}
+export type ContentObjectTypeListQuery = z.infer<typeof ContentObjectTypeListQuerySchema>;
 
-export interface CopyFilePayload {
-    source: string;
-    dest: string;
-}
+export type CopyFilePayload = z.infer<typeof CopyFilePayloadSchema>;
 
-export interface CopyFileResponse {
-    success: boolean;
-    source: string;
-    dest: string;
-}
+export type CopyFileResponse = z.infer<typeof CopyFileResponseSchema>;
 
-export interface DeleteFileResult {
-    success: boolean;
-    count: number;
-    message?: string;
-    file?: string;
-}
+export type DeleteFileResult = z.infer<typeof DeleteFileResultSchema>;
 
 export enum ContentObjectProcessingPriority {
     normal = 'normal',

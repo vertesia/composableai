@@ -5,13 +5,19 @@ import { useUserSession } from '@vertesia/ui/session';
 import { XIcon } from 'lucide-react';
 import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
 import { AskUserWidget } from './AskUserWidget';
-import { getRequestInputDisplayText, type RequestInputMessageWithUx } from './ModernAgentOutput/requestInputMessages';
+import {
+    getRequestInputDisplayText,
+    getRequestInputResponseMetadata,
+    getToolApprovalResponseMetadata,
+    type RequestInputMessageWithUx,
+    sendRequestInputResponse,
+} from './ModernAgentOutput/requestInputMessages';
 
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
     onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     /** Called after the user connects the MCP server requested by request_mcp_connection. */
-    onMcpConnected?: (cfg: McpConnectUxConfig) => void;
+    onMcpConnected?: (cfg: McpConnectUxConfig, metadata?: Record<string, unknown>) => void;
     isLoading?: boolean;
     disabled?: boolean;
     className?: string;
@@ -77,11 +83,7 @@ export function AgentRequestInputOverlay({
     const displayText = getRequestInputDisplayText(message);
     const send = (value: string, metadata?: Record<string, unknown>) => {
         if (isDisabled) return;
-        if (metadata) {
-            onSendMessage?.(value, metadata);
-        } else {
-            onSendMessage?.(value);
-        }
+        sendRequestInputResponse(onSendMessage, message, value, metadata);
     };
 
     const wrapperClassName = cn(
@@ -98,7 +100,7 @@ export function AgentRequestInputOverlay({
                     <div className="min-w-0 text-sm leading-6 text-foreground/85">{displayText}</div>
                     <McpRequestInputControls
                         mcpConnect={mcpConnect}
-                        onMcpConnected={onMcpConnected}
+                        onMcpConnected={(cfg) => onMcpConnected?.(cfg, getRequestInputResponseMetadata(message))}
                         onDecline={() => send(t('agent.mcpDeclinedMessage', { name: mcpConnect.name }))}
                         disabled={isDisabled}
                     />
@@ -118,7 +120,7 @@ export function AgentRequestInputOverlay({
                     allowFreeResponse={options.length === 0 || !!freeResponse}
                     placeholder={freeResponse?.placeholder}
                     submitLabel={freeResponse?.submit_label}
-                    onSelect={send}
+                    onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
                     onMultiSelect={(optionIds) => send(optionIds.join(', '))}
                     onSubmit={(value) => send(value, freeResponse?.metadata)}
                     hideBorder

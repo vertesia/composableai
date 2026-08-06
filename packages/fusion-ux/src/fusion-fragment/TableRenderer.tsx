@@ -181,8 +181,9 @@ export function TableRenderer({ columns, rows }: TableRendererProps): ReactEleme
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((row, rowIndex) => (
-                        <tr key={`row-${rowIndex}`}>
+                    {/* TODO: Accept a row-key callback or key field; rows with identical values produce duplicate keys. */}
+                    {rows.map((row) => (
+                        <tr key={columns.map((column) => String(row[column.key])).join('\u0000')}>
                             {columns.map((col) => {
                                 const value = row[col.key];
                                 const formatted = formatCellValue(value, col);

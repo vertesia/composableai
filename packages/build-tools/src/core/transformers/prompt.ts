@@ -6,6 +6,7 @@
 import path from 'node:path';
 import { PromptRole } from '@llumiverse/common';
 import { type JSONSchema, TemplateType } from '@vertesia/common';
+import { executeHandlebars } from '@vertesia/studio-utils';
 import { z } from 'zod';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
 import type { TransformerPreset } from '../types.js';
@@ -152,6 +153,21 @@ function buildPromptDefinition(
     return { prompt, imports, schemaImportName };
 }
 
+function validatePromptContent(content: string, contentType: TemplateType, filePath: string): void {
+    if (contentType !== TemplateType.handlebars) {
+        return;
+    }
+
+    const result = executeHandlebars(content, {}, {});
+    if (!result.success) {
+        throw new Error(
+            `Invalid Handlebars prompt in ${filePath}: ${result.error}\n\n` +
+                'Supported helpers are: _now, stringify, and standard block helpers if/each/with/unless. ' +
+                'For array formatting, use {{#each items}}...{{/each}} rather than an unregistered helper such as {{join items ", "}}.',
+        );
+    }
+}
+
 /**
  * Prompt transformer preset
  * Transforms template files with ?prompt suffix into prompt definition objects
@@ -193,6 +209,7 @@ export const promptTransformer: TransformerPreset = {
             promptContent,
             filePath,
         );
+        validatePromptContent(prompt.content, prompt.content_type, filePath);
 
         // If schema is specified, generate custom code with schema reference
         if (schemaImportName) {

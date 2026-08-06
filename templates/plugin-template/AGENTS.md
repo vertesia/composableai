@@ -30,78 +30,113 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 ## Build & Dev Commands
 
 ```bash
-pnpm build                 # Full build (server + UI), lint runs as prebuild
-pnpm build:server          # Rolldown: tool server only → lib/
-pnpm build:ui:lib          # Vite: plugin library → dist/lib/plugin.js
-pnpm build:ui:app          # Vite: standalone app → dist/ui/
+{{PM_RUN}} build                 # Full build (server + UI), lint runs as prebuild
+{{PM_RUN}} build:server          # Vertesia build tools: tool server only → lib/
+{{PM_RUN}} build:ui:lib          # Vite: plugin library → dist/lib/plugin.js
+{{PM_RUN}} build:ui:app          # Vite: standalone app → dist/app/
+{{PM_RUN}} service:build         # Vertesia service build: UI + service runtime + app package metadata
+{{PM_RUN}} service:build:server  # Vertesia service runtime and package metadata only
 
-pnpm dev                   # Vite dev server with API middleware (https://localhost:5173)
-pnpm start                 # Preview production build (build:server + vite preview)
+{{PM_RUN}} dev                   # Vite dev server with API middleware (https://localhost:5173)
+{{PM_RUN}} start                 # Preview production build (build:server + vite preview)
 ```
 
 ## Dual Build System
 
-| Component   | Bundler | Entry                       | tsconfig                    | Output                |
-|-------------|---------|-----------------------------|-----------------------------|-----------------------|
-| Tool Server | Rolldown | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js`            |
-| UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js`  |
-| UI App      | Vite    | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/ui/`            |
-| Widgets     | Rolldown | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |
+| Component   | Build path           | Entry                       | tsconfig                    | Output               |
+| ----------- | -------------------- | --------------------------- | --------------------------- | -------------------- |
+| Tool Server | Vertesia build tools | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/`               |
+| UI Plugin   | Vite                 | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js` |
+| UI App      | Vite                 | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/app/`          |
+| Widgets     | Vertesia build tools | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`      |
 
 ## Key Files
 
 | File                          | Purpose                                              |
 |-------------------------------|------------------------------------------------------|
-| `src/tool-server/config.ts`   | Registers all collections — add new resources here   |
+| `src/tool-server/config.ts`   | Registers generated module collections               |
 | `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
 | `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
 | `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
-| `src/ui/app/App.tsx`          | App root (NestedRouterProvider)                      |
-| `src/ui/app/routes.tsx`       | Route definitions                                    |
+| `src/ui/shell/App.tsx`        | Shared app runtime (module providers + router)       |
+| `src/modules/app/ui/routes.tsx` | User app route definitions                         |
+| `src/modules/app/resources/`  | User app Vertesia resource definitions               |
 | `src/ui/index.css`            | Tailwind CSS 4 entry with shared styles import       |
 
 ## UI Directory Structure
 
-User application code lives under `src/ui/app/`. Place new files according to the layout below — `app/README.md` has the full convention and the "add a feature" recipe.
+User application code lives under `src/modules/app/`. Place new app pages, features, and resources
+there — `src/modules/app/README.md` has the full convention and the "add a feature" recipe.
 
 ```text
 src/ui/
 ├── main.tsx, plugin.tsx, env.ts, index.css   ← bootstrap / wiring (don't add app code here)
 ├── i18n/
-└── app/                                       ← user application code
-    ├── App.tsx, routes.tsx, constants.ts
-    ├── components/    ← cross-feature shared components (generic primitives)
-    ├── hooks/         ← cross-feature shared hooks
-    ├── layouts/       ← plugin chrome (PluginLayout, PluginSidebar, …)
-    ├── pages/         ← thin route-level wrappers (one file per route)
-    └── features/<name>/
-        ├── components/, hooks/, types.ts, utils.ts
-        ├── <Feature>View.tsx
-        └── index.ts   ← public barrel
+└── shell/                                     ← shared app runtime/chrome
+    ├── App.tsx
+    ├── components/
+    └── layouts/
+
+src/modules/app/                              ← user-owned app module
+├── ui/
+│   ├── routes.tsx
+│   ├── pages/
+│   ├── components/
+│   ├── hooks/
+│   └── features/<name>/
+└── resources/
+    ├── activities/
+    ├── interactions/
+    ├── skills/
+    ├── templates/
+    ├── tools/
+    └── types/
 ```
 
 Rules of thumb:
 
-- A new route → thin component in `app/pages/` that imports its feature.
-- Self-contained business logic → `app/features/<name>/` with its own components/hooks/types.
-- A primitive used by ≥2 features (e.g. a sortable header) → promote to `app/components/`.
-- A hook used by ≥2 features → promote to `app/hooks/`.
+- A new route → thin component in `src/modules/app/ui/pages/` that imports its feature.
+- Self-contained business logic → `src/modules/app/ui/features/<name>/` with its own components/hooks/types.
+- A primitive used by multiple app features → promote to `src/modules/app/ui/components/`.
+- A hook used by multiple app features → promote to `src/modules/app/ui/hooks/`.
 
 ## Plugin-Specific Conventions
 
-- ESM with `.js` import extensions in tool-server code: `import { x } from './foo.js'`
+- ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
 - Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
-- All collections must be registered in `src/tool-server/config.ts` (or its per-type index files)
+- User collections must be exported from `src/modules/app/resources/<type>/index.ts`
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files
+
+## App Identity And Portable IDs
+
+The app name must stay aligned across `package.json` `name`, `VITE_APP_NAME`, the app manifest name,
+and the `app:<name>:` namespace used for app-owned ids.
+
+- App-owned content type refs are strings, not ObjectIds: use `app:<app-name>:<type-name>` directly in `client.objects.create({ type, ... })`.
+- Do not resolve app-owned types through `client.types.list()` or store a project-local type ObjectId in app code.
+- For content types, `<type-name>` is the declared type `name` and does not include the collection name.
+- For interactions and activities, use the full id `app:<app-name>:<collection>:<name>`. Prefer a `main` collection unless there is a real reason to split collections.
+- Do not name a collection after the app; that creates confusing ids like `app:<app-name>:<app-name>:<name>`.
+
+## Version Build Target And Seeding
+
+If the app registers backend resources under `src/modules/app/resources` or another active module, build the
+version with target `service`. A `static` version contains only UI assets, so app-owned types, interactions,
+activities, tools, skills, templates, and processes will not resolve.
+
+Seed demo or test content from standalone scripts launched during development, not from the app UI or app API.
+Do not add visible "Seed" buttons, auto-seed on UI load, or create `/api/seed` routes. App runtime code should
+read real objects; seeding is a build/test concern.
 
 ## Cross-Cutting Pitfalls
 
 Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
 
 - **Import hooks are server-build only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
-- **Must register in `config.ts`**: a collection that isn't wired into `config.ts` (or its per-type index) won't be served.
+- **Must export from module resource indexes**: a collection that isn't added to `src/modules/app/resources/<type>/index.ts` won't be served.
+- **Generated wiring is not user code**: do not hand-edit `src/tool-server/app-server-modules.ts`, `src/ui/app-ui-modules.tsx`, or `src/ui/app-ui-entry.tsx`; change module resource/route/provider exports instead.
 - **`Input.onChange` takes the value directly** (`onChange={setValue}`), not a React event — `Textarea` uses standard events.
 
 For full UI patterns (tables, filters, sort, security) see `vertesia-ui`; for tool-server scaffolding conventions see `vertesia-tool-server-resource`.

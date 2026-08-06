@@ -3,6 +3,7 @@ import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../../dsl/setup/ActivityContext.js';
+import { execActivityFile } from './exec.js';
 import { type ProbeMediaStreamsParams, type ProbeMediaStreamsResult, probeMediaStreams } from './probeMediaStreams.js';
 
 vi.mock('../../dsl/setup/ActivityContext.js', async (importOriginal) => {
@@ -10,14 +11,12 @@ vi.mock('../../dsl/setup/ActivityContext.js', async (importOriginal) => {
     return { ...actual, setupActivity: vi.fn() };
 });
 
-// child_process.exec uses util.promisify.custom to return { stdout, stderr }.
-// vi.hoisted ensures these are defined before the vi.mock factory runs.
-const { execMock, execCustom } = vi.hoisted(() => {
-    const custom = vi.fn();
-    const mock = Object.assign(vi.fn(), { [Symbol.for('nodejs.util.promisify.custom')]: custom });
-    return { execMock: mock, execCustom: custom };
+// probeMediaStreams delegates ffprobe to the shared exec helper, so mock that seam and drive the parsed output
+// directly. The helper's cancellation/timeout wrapping is covered by exec.test.ts.
+vi.mock('./exec.js', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('./exec.js')>();
+    return { ...actual, execActivityFile: vi.fn() };
 });
-vi.mock('child_process', () => ({ exec: execMock }));
 
 let testEnv: MockActivityEnvironment;
 
@@ -44,7 +43,7 @@ const createPayload = (objectId = 'test-object-id'): DSLActivityExecutionPayload
 });
 
 function mockExec(stdout: string) {
-    execCustom.mockResolvedValue({ stdout, stderr: '' });
+    vi.mocked(execActivityFile).mockResolvedValue({ stdout, stderr: '' });
 }
 
 async function setupMockContext(objectId: string, signedUrl: string): Promise<void> {

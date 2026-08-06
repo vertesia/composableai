@@ -1,5 +1,11 @@
 import type { JSONSchema } from '@llumiverse/common';
-import type { AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from '@vertesia/common';
+import type {
+    AppDashboardDefinition,
+    AppUIConfig,
+    InCodeProcessDefinition,
+    InCodeViewDefinition,
+    ProjectConfiguration,
+} from '@vertesia/common';
 import type { Context } from 'hono';
 import type { ActivityCollection } from '../ActivityCollection.js';
 import type { AuthSession } from '../auth.js';
@@ -63,6 +69,14 @@ export interface ToolServerConfig {
      * Process definitions to expose as app-contributed processes.
      */
     processes?: InCodeProcessDefinition[];
+    /**
+     * Dashboard definitions to expose as app-contributed dashboards.
+     */
+    dashboards?: AppDashboardDefinition[];
+    /**
+     * View Experiences to expose as app-contributed in-code definitions.
+     */
+    views?: InCodeViewDefinition[];
     /**
      * Skill collections to expose
      */

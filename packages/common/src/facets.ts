@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+import type { ComputedFacetResponseSchema, FacetSpecSchema } from './api-schemas/interaction.js';
 // this is the mongo definition of a facet. see https://www.mongodb.com/docs/atlas/atlas-search/facet/
 export interface StringFacet {
     type: 'string';
@@ -21,10 +23,7 @@ export interface DateFacet<T extends Date | string = string> {
 
 export type Facet<DateT extends Date | string = string> = StringFacet | NumericFacet | DateFacet<DateT>;
 
-export interface FacetSpec {
-    name: string;
-    field: string;
-}
+export type FacetSpec = z.infer<typeof FacetSpecSchema>;
 
 export interface FacetBucket {
     _id: string;
@@ -46,6 +45,4 @@ export interface ComputedFacetBucket {
     count: number;
 }
 
-export type ComputedFacetResponse = Record<string, ComputedFacetBucket[] | number> & {
-    total?: number;
-};
+export type ComputedFacetResponse = z.infer<typeof ComputedFacetResponseSchema>;

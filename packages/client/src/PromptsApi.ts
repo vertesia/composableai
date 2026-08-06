@@ -1,29 +1,28 @@
-import type { PromptRole } from '@llumiverse/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    ComputedFacetResponse,
     ComputePromptFacetPayload,
     PromptSearchPayload,
     PromptSearchQuery,
     PromptTemplate,
     PromptTemplateCreatePayload,
     PromptTemplateForkPayload,
+    PromptTemplateInteractionsResponse,
     PromptTemplateRef,
     PromptTemplateUpdatePayload,
-    TemplateType,
+    RenderPromptPayload,
+    RenderPromptResponse,
 } from '@vertesia/common';
 
-export interface ComputePromptFacetsResponse {
-    role?: { _id: string; count: number }[];
-    total?: { count: number }[];
-}
+/**
+ * @deprecated Use `ComputedFacetResponse` from `@vertesia/common`, which is what the endpoint
+ * publishes. This restated the facet buckets in their pre-collapse shape: `total` is a number by
+ * the time the response is written, not a one-element array.
+ */
+export type ComputePromptFacetsResponse = ComputedFacetResponse;
 
-export interface PromptRenderResponse {
-    id: string;
-    name: string;
-    role: PromptRole;
-    content_type: TemplateType;
-    rendered: string;
-}
+/** @deprecated Use `RenderPromptResponse` from `@vertesia/common`. */
+export type PromptRenderResponse = RenderPromptResponse;
 
 export default class PromptsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -48,9 +47,9 @@ export default class PromptsApi extends ApiTopic {
     /**
      * Get the list of all prompt facets
      * @param payload query payload to filter facet search
-     * @returns ComputePromptFacetsResponse[]
+     * @returns ComputedFacetResponse
      **/
-    computeFacets(query: ComputePromptFacetPayload): Promise<ComputePromptFacetsResponse> {
+    computeFacets(query: ComputePromptFacetPayload): Promise<ComputedFacetResponse> {
         return this.post('/facets', {
             payload: query,
         });
@@ -125,7 +124,7 @@ export default class PromptsApi extends ApiTopic {
      * @throws 404 if not found
      * @throws 403 if the prompt is not in the current project
      */
-    render(id: string, payload: object): Promise<PromptRenderResponse> {
+    render(id: string, payload: RenderPromptPayload): Promise<RenderPromptResponse> {
         return this.post(`/${id}/render`, {
             payload,
         });
@@ -153,7 +152,7 @@ export default class PromptsApi extends ApiTopic {
     /**
      * Retrieve list of interactions that use the prompt template
      */
-    listInteractions(id: string): Promise<ListInteractionsResponse> {
+    listInteractions(id: string): Promise<PromptTemplateInteractionsResponse> {
         return this.get(`/${id}/interactions`);
     }
 
@@ -167,11 +166,9 @@ export default class PromptsApi extends ApiTopic {
     }
 }
 
-export interface ListInteractionsResponse {
-    prompt: string;
-    interactions: {
-        id: string;
-        name: string;
-        versions: string[];
-    }[];
-}
+/**
+ * @deprecated Use `PromptTemplateInteractionsResponse` from `@vertesia/common`, which is what the
+ * endpoint publishes. This declared `versions: string[]`; the endpoint has always sent
+ * `[{ version: number }]`.
+ */
+export type ListInteractionsResponse = PromptTemplateInteractionsResponse;

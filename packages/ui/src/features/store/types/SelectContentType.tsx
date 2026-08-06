@@ -1,4 +1,4 @@
-import type { ContentObjectTypeItem } from '@vertesia/common';
+import type { ContentObjectTypeCatalogEntry } from '@vertesia/common';
 import { SelectBox } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useEffect, useState } from 'react';
@@ -6,7 +6,7 @@ import { useTypeRegistry } from './TypeRegistryProvider.js';
 
 interface SelectContentTypeProps {
     defaultValue?: string | string[] | null; // the typeId
-    onChange: (type: ContentObjectTypeItem | null | ContentObjectTypeItem[]) => void;
+    onChange: (type: ContentObjectTypeCatalogEntry | null | ContentObjectTypeCatalogEntry[]) => void;
     className?: string;
     isClearable?: boolean;
     multiple?: boolean;
@@ -22,7 +22,7 @@ export function SelectContentType({
     const { registry: typeRegistry } = useTypeRegistry();
     const [isMounted, setIsMounted] = useState(false);
 
-    const optionLabel = (type: ContentObjectTypeItem | null) => {
+    const optionLabel = (type: ContentObjectTypeCatalogEntry | null) => {
         if (type === null) return t('store.none');
 
         return (
@@ -32,8 +32,8 @@ export function SelectContentType({
             </div>
         );
     };
-    const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | undefined>();
-    const [selectedTypes, setSelectedTypes] = useState<ContentObjectTypeItem[]>([]);
+    const [selectedType, setSelectedType] = useState<ContentObjectTypeCatalogEntry | undefined>();
+    const [selectedTypes, setSelectedTypes] = useState<ContentObjectTypeCatalogEntry[]>([]);
 
     useEffect(() => {
         if (!isMounted) {
@@ -51,12 +51,12 @@ export function SelectContentType({
         }
     }, [isMounted, typeRegistry, defaultValue, multiple]);
 
-    const _onChange = (option: ContentObjectTypeItem | null) => {
+    const _onChange = (option: ContentObjectTypeCatalogEntry | null) => {
         setSelectedType(option || undefined);
         onChange(option);
     };
 
-    const _onChangeMultiple = (options: ContentObjectTypeItem[]) => {
+    const _onChangeMultiple = (options: ContentObjectTypeCatalogEntry[]) => {
         setSelectedTypes(options);
         onChange(options);
     };
@@ -64,7 +64,7 @@ export function SelectContentType({
     if (multiple) {
         return (
             <div className="flex flex-col gap-4 content-between">
-                <SelectBox<ContentObjectTypeItem>
+                <SelectBox<ContentObjectTypeCatalogEntry>
                     options={typeRegistry?.types || []}
                     value={selectedTypes}
                     onChange={_onChangeMultiple}
@@ -81,7 +81,7 @@ export function SelectContentType({
 
     return (
         <div className="flex flex-col gap-4 content-between">
-            <SelectBox<ContentObjectTypeItem>
+            <SelectBox<ContentObjectTypeCatalogEntry>
                 options={typeRegistry?.types || []}
                 value={selectedType}
                 onChange={_onChange}

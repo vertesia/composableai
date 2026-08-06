@@ -1,9 +1,10 @@
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { Button, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { UserSessionContext } from '@vertesia/ui/session';
-import { FileTextIcon, ImageIcon, XIcon } from 'lucide-react';
+import { ChevronDown, FileTextIcon, ImageIcon, XIcon } from 'lucide-react';
 import type React from 'react';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useId, useState } from 'react';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache';
 
@@ -26,6 +27,7 @@ const TEXT_EXTENSIONS = new Set([
     'yaml',
     'yml',
 ]);
+const DEFAULT_COLLAPSED_ATTACHMENT_COUNT = 3;
 
 export interface AttachmentPreviewItem {
     id: string;
@@ -47,6 +49,7 @@ export interface ParsedUserAttachments {
 interface AttachmentPreviewListProps {
     items: AttachmentPreviewItem[];
     artifactRunId?: string;
+    onOpenArtifact?: (path: string) => void;
     className?: string;
     align?: 'start' | 'end';
     variant?: 'composer' | 'message';
@@ -103,16 +106,27 @@ function isCollectionHref(href: string | undefined): boolean {
 function AttachmentLink({
     item,
     children,
+    onOpenArtifact,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: {
     item: AttachmentPreviewItem;
     children: React.ReactNode;
+    onOpenArtifact?: (path: string) => void;
     StoreLinkComponent?: AttachmentPreviewListProps['StoreLinkComponent'];
     CollectionLinkComponent?: AttachmentPreviewListProps['CollectionLinkComponent'];
 }) {
     const href = item.href;
     if (!href) return <>{children}</>;
+
+    const artifactPath = getArtifactPath(item);
+    if (artifactPath && /\.md$/i.test(artifactPath) && onOpenArtifact) {
+        return (
+            <button type="button" className="max-w-full text-start" onClick={() => onOpenArtifact(artifactPath)}>
+                {children}
+            </button>
+        );
+    }
 
     if (isStoreObjectHref(href)) {
         const documentId = getStoreObjectId(href);
@@ -158,6 +172,7 @@ function AttachmentPreview({
     artifactRunId,
     variant,
     onRemove,
+    onOpenArtifact,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: {
@@ -165,6 +180,7 @@ function AttachmentPreview({
     artifactRunId?: string;
     variant: 'composer' | 'message';
     onRemove?: (fileId: string) => void;
+    onOpenArtifact?: (path: string) => void;
     StoreLinkComponent?: AttachmentPreviewListProps['StoreLinkComponent'];
     CollectionLinkComponent?: AttachmentPreviewListProps['CollectionLinkComponent'];
 }) {
@@ -338,6 +354,7 @@ function AttachmentPreview({
         <span className="relative inline-flex max-w-full">
             <AttachmentLink
                 item={item}
+                onOpenArtifact={onOpenArtifact}
                 StoreLinkComponent={StoreLinkComponent}
                 CollectionLinkComponent={CollectionLinkComponent}
             >
@@ -355,24 +372,57 @@ export function AttachmentPreviewList({
     align = 'start',
     variant = 'message',
     onRemove,
+    onOpenArtifact,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: AttachmentPreviewListProps) {
+    const { t } = useUITranslation();
+    const [isExpanded, setIsExpanded] = useState(false);
+    const attachmentListId = useId();
+    const isCollapsible = variant === 'composer' && items.length > DEFAULT_COLLAPSED_ATTACHMENT_COUNT;
+    const visibleItems = isCollapsible && !isExpanded ? items.slice(0, DEFAULT_COLLAPSED_ATTACHMENT_COUNT) : items;
+    const hiddenItemCount = items.length - DEFAULT_COLLAPSED_ATTACHMENT_COUNT;
+
+    useEffect(() => {
+        if (items.length <= DEFAULT_COLLAPSED_ATTACHMENT_COUNT) {
+            setIsExpanded(false);
+        }
+    }, [items.length]);
+
     if (items.length === 0) return null;
 
     return (
-        <div className={cn('flex flex-wrap gap-2', align === 'end' && 'justify-end', className)}>
-            {items.map((item) => (
+        <div id={attachmentListId} className={cn('flex flex-wrap gap-2', align === 'end' && 'justify-end', className)}>
+            {visibleItems.map((item) => (
                 <AttachmentPreview
                     key={item.id}
                     item={item}
                     artifactRunId={artifactRunId}
                     variant={variant}
                     onRemove={onRemove}
+                    onOpenArtifact={onOpenArtifact}
                     StoreLinkComponent={StoreLinkComponent}
                     CollectionLinkComponent={CollectionLinkComponent}
                 />
             ))}
+            {isCollapsible && (
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-controls={attachmentListId}
+                    aria-expanded={isExpanded}
+                    onClick={() => setIsExpanded((expanded) => !expanded)}
+                    className="h-8 shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted"
+                >
+                    {!isExpanded && <span>+{hiddenItemCount}</span>}
+                    {isExpanded ? t('agent.showLess') : t('agent.showMore')}
+                    <ChevronDown
+                        className={cn('size-3.5 transition-transform', isExpanded && 'rotate-180')}
+                        aria-hidden="true"
+                    />
+                </Button>
+            )}
         </div>
     );
 }
@@ -425,4 +475,29 @@ export function parseUserMessageAttachments(content: string): ParsedUserAttachme
         body: bodyLines.join('\n').trim(),
         attachments,
     };
+}
+
+/**
+ * Collect the artifact references (`artifact:...` hrefs and bare artifact paths) embedded in
+ * sent user messages. A file whose reference appears here has already been delivered to the
+ * agent, so the composer must not offer it as a pending attachment again (e.g. after a reload).
+ */
+export function collectDeliveredArtifactRefs(messages: AgentMessage[]): Set<string> {
+    const refs = new Set<string>();
+    for (const message of messages) {
+        // Only persisted server echoes prove delivery. Optimistic messages can still be sending
+        // or can fail, in which case suppressing their files would prevent a retry.
+        if (
+            message.type !== AgentMessageType.QUESTION ||
+            message.details?._optimistic ||
+            typeof message.message !== 'string'
+        ) {
+            continue;
+        }
+        for (const attachment of parseUserMessageAttachments(message.message).attachments) {
+            if (attachment.href) refs.add(attachment.href);
+            if (attachment.artifactPath) refs.add(attachment.artifactPath);
+        }
+    }
+    return refs;
 }

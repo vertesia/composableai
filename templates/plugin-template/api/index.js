@@ -4,7 +4,7 @@
  * This adapter allows the Hono server to run as a Vercel serverless function.
  * All HTTP methods are forwarded to the Hono app's fetch handler.
  */
-import app from '../lib/server.js';
+import app from '../lib/tool-server/server.js';
 
 export async function GET(request) {
     return await app.fetch(request);

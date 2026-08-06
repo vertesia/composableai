@@ -48,6 +48,51 @@ function resolveInternalVersion(
     return latest ? { version: latest, pinned: false } : null;
 }
 
+function rewritePackageManagerScripts(
+    packageJson: { scripts?: Record<string, string> },
+    packageManager: string,
+): number {
+    if (!packageJson.scripts) return 0;
+
+    let replacements = 0;
+    const runCommand = `${packageManager} run`;
+    const commandPrefix = String.raw`(^|(?:&&|\|\||[;|])\s*)`;
+    const scriptNames = Object.keys(packageJson.scripts).filter((name) => name !== 'run');
+
+    for (const [scriptName, scriptCommand] of Object.entries(packageJson.scripts)) {
+        let updatedCommand = scriptCommand;
+        for (const targetScript of scriptNames) {
+            const directScriptPattern = new RegExp(
+                `${commandPrefix}pnpm\\s+${escapeRegex(targetScript)}(?=\\s|$)`,
+                'g',
+            );
+            updatedCommand = updatedCommand.replace(directScriptPattern, `$1${runCommand} ${targetScript}`);
+        }
+        const explicitRunPattern = new RegExp(`${commandPrefix}(?:npm|pnpm)\\s+run\\b`, 'g');
+        updatedCommand = updatedCommand.replace(explicitRunPattern, `$1${runCommand}`);
+        if (updatedCommand !== scriptCommand) {
+            packageJson.scripts[scriptName] = updatedCommand;
+            replacements++;
+        }
+    }
+
+    return replacements;
+}
+
+export function normalizePackageManagerScripts(projectName: string, packageManager: string): number {
+    const packageJsonPath = path.join(projectName, 'package.json');
+    if (!fs.existsSync(packageJsonPath)) return 0;
+
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as {
+        scripts?: Record<string, string>;
+    };
+    const replacements = rewritePackageManagerScripts(packageJson, packageManager);
+    if (replacements > 0) {
+        fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+    }
+    return replacements;
+}
+
 function stripYamlQuotes(value: string): string {
     const trimmed = value.trim();
     if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
@@ -178,13 +223,13 @@ export function replaceVariables(
         return;
     }
 
-    console.log(chalk.blue('✏️  Configuring files...\n'));
+    console.log(chalk.blue('Configuring files...\n'));
 
     for (const file of templateConfig.files) {
         const filePath = path.join(projectName, file);
 
         if (!fs.existsSync(filePath)) {
-            console.log(chalk.yellow(`   ⚠️  File not found: ${file} (skipping)`));
+            console.log(chalk.yellow(`   File not found: ${file} (skipping)`));
             continue;
         }
 
@@ -204,11 +249,66 @@ export function replaceVariables(
 
         if (modified) {
             fs.writeFileSync(filePath, content);
-            console.log(chalk.gray(`   ✓ ${file}`));
+            console.log(chalk.gray(`   ${file}`));
         }
     }
 
     console.log();
+}
+
+export function applyDevModeAnswers(templateConfig: TemplateConfig, answers: Record<string, unknown>): void {
+    if (!templateConfig.devMode?.answers) return;
+
+    Object.assign(answers, templateConfig.devMode.answers);
+}
+
+function appendUniqueYamlListSection(content: string, sectionName: string, values: string[]): string {
+    if (values.length === 0) return content;
+
+    const existing = new Set<string>();
+    const lines = content.split(/\r?\n/);
+    let inSection = false;
+
+    for (const line of lines) {
+        if (line.trim() === `${sectionName}:`) {
+            inSection = true;
+            continue;
+        }
+        if (inSection && line.length > 0 && !line.startsWith(' ') && !line.startsWith('\t')) {
+            inSection = false;
+        }
+        if (inSection) {
+            const match = line.match(/^\s*-\s+['"]?(.+?)['"]?\s*$/);
+            if (match) existing.add(match[1]);
+        }
+    }
+
+    const missing = values.filter((value) => !existing.has(value));
+    if (missing.length === 0) return content;
+
+    const suffix = content.endsWith('\n') ? '' : '\n';
+    return `${content}${suffix}${sectionName}:\n${missing.map((value) => `  - '${value}'`).join('\n')}\n`;
+}
+
+export function applyDevModePackageManagerConfig(
+    projectName: string,
+    templateConfig: TemplateConfig,
+    isDev: boolean,
+    packageManager: string,
+): void {
+    if (!isDev || packageManager !== 'pnpm') return;
+
+    const exclusions = templateConfig.devMode?.pnpmWorkspace?.minimumReleaseAgeExclude ?? [];
+    if (exclusions.length === 0) return;
+
+    const workspacePath = path.join(projectName, 'pnpm-workspace.yaml');
+    if (!fs.existsSync(workspacePath)) return;
+
+    const current = fs.readFileSync(workspacePath, 'utf8');
+    const next = appendUniqueYamlListSection(current, 'minimumReleaseAgeExclude', exclusions);
+    if (next !== current) {
+        fs.writeFileSync(workspacePath, next);
+    }
 }
 
 /**
@@ -222,12 +322,12 @@ export function adjustPackageJson(
     isDev: boolean,
     packageManager: string,
 ): void {
-    console.log(chalk.blue('📝 Adjusting package.json...\n'));
+    console.log(chalk.blue('Adjusting package.json...\n'));
 
     const packageJsonPath = path.join(projectName, 'package.json');
 
     if (!fs.existsSync(packageJsonPath)) {
-        console.log(chalk.yellow('   ⚠️  package.json not found (skipping adjustment)'));
+        console.log(chalk.yellow('   package.json not found (skipping adjustment)'));
         console.log();
         return;
     }
@@ -239,13 +339,13 @@ export function adjustPackageJson(
         const newName = answers.PROJECT_NAME || projectName;
         if (packageJson.name !== newName) {
             packageJson.name = newName;
-            console.log(chalk.gray(`   ✓ Set package name to "${newName}"`));
+            console.log(chalk.gray(`   Set package name to "${newName}"`));
         }
 
         // Pin the chosen package manager via Corepack
         if (answers.PM_VERSION) {
             packageJson.packageManager = `${packageManager}@${answers.PM_VERSION}`;
-            console.log(chalk.gray(`   ✓ Set packageManager to "${packageJson.packageManager}"`));
+            console.log(chalk.gray(`   Set packageManager to "${packageJson.packageManager}"`));
         }
 
         // 2. Replace catalog: specs with concrete versions for package managers that do not support pnpm catalogs.
@@ -297,8 +397,16 @@ export function adjustPackageJson(
                                     : `^${resolved.version}`;
                                 workspaceReplacements++;
                             } else {
-                                packageJson[depType][pkgName] = 'latest';
-                                workspaceReplacements++;
+                                // No version map entry and no resolvable registry version. Floating
+                                // a generated app onto the npm `latest` tag silently couples it to
+                                // whatever publishes next (a different major can break the build at
+                                // an unrelated time). Fail loudly instead so the caller pins a
+                                // version map or uses --dev.
+                                throw new Error(
+                                    `Cannot resolve a version for internal dependency "${pkgName}": no entry in the ` +
+                                        'pinned version map and the npm registry returned no version. ' +
+                                        'Provide a version map (CLI-pinned versions) or run with --dev to use the "dev" tag.',
+                                );
                             }
                         }
                     }
@@ -309,7 +417,7 @@ export function adjustPackageJson(
         if (workspaceReplacements > 0) {
             const method = versionMap ? 'pinned' : 'latest';
             console.log(
-                chalk.gray(`   ✓ Resolved ${workspaceReplacements} workspace:* dependencies to ${method} versions`),
+                chalk.gray(`   Resolved ${workspaceReplacements} workspace:* dependencies to ${method} versions`),
             );
         }
 
@@ -318,7 +426,7 @@ export function adjustPackageJson(
     } catch (error) {
         console.log(
             chalk.yellow(
-                `   ⚠️  Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                `   Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`,
             ),
         );
     }
@@ -336,7 +444,7 @@ export function handleConditionalRemoves(
 ): void {
     if (!templateConfig.conditionalRemove) return;
 
-    console.log(chalk.blue('🔧 Applying conditional configurations...\n'));
+    console.log(chalk.blue('Applying conditional configurations...\n'));
 
     for (const [varName, conditions] of Object.entries(templateConfig.conditionalRemove)) {
         const value = String(answers[varName]);
@@ -347,7 +455,7 @@ export function handleConditionalRemoves(
                 const filePath = path.join(projectName, file);
                 if (fs.existsSync(filePath)) {
                     fs.rmSync(filePath, { recursive: true, force: true });
-                    console.log(chalk.gray(`   ✓ Removed: ${file}`));
+                    console.log(chalk.gray(`   Removed: ${file}`));
                 }
             }
         }
@@ -363,7 +471,7 @@ export function handleConditionalRemoves(
 export function renameFiles(projectName: string, templateConfig: TemplateConfig): void {
     if (!templateConfig.renameFiles) return;
 
-    console.log(chalk.blue('📝 Renaming files...\n'));
+    console.log(chalk.blue('Renaming files...\n'));
 
     for (const [source, destination] of Object.entries(templateConfig.renameFiles)) {
         const sourcePath = path.join(projectName, source);
@@ -371,9 +479,9 @@ export function renameFiles(projectName: string, templateConfig: TemplateConfig)
 
         if (fs.existsSync(sourcePath)) {
             fs.renameSync(sourcePath, destPath);
-            console.log(chalk.gray(`   ✓ ${source} → ${destination}`));
+            console.log(chalk.gray(`   ${source} → ${destination}`));
         } else {
-            console.log(chalk.yellow(`   ⚠️  File not found: ${source} (skipping rename)`));
+            console.log(chalk.yellow(`   File not found: ${source} (skipping rename)`));
         }
     }
 
@@ -384,7 +492,7 @@ export function renameFiles(projectName: string, templateConfig: TemplateConfig)
  * Remove meta files that shouldn't be in the user's project
  */
 export function removeMetaFiles(projectName: string, templateConfig: TemplateConfig): void {
-    console.log(chalk.blue('🧹 Cleaning up...\n'));
+    console.log(chalk.blue('Cleaning up...\n'));
 
     const filesToRemove = templateConfig.removeAfterInstall || [];
 
@@ -392,7 +500,7 @@ export function removeMetaFiles(projectName: string, templateConfig: TemplateCon
         const filePath = path.join(projectName, file);
         if (fs.existsSync(filePath)) {
             fs.rmSync(filePath, { recursive: true, force: true });
-            console.log(chalk.gray(`   ✓ Removed: ${file}`));
+            console.log(chalk.gray(`   Removed: ${file}`));
         }
     }
 

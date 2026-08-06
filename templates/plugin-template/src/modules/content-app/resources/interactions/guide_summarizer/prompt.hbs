@@ -1,0 +1,16 @@
+---
+role: user
+content_type: handlebars
+schema: ./prompt_schema.ts
+---
+Today's date is {{_now}}.
+
+Summarize this field guide for {{audience}}.
+
+Guide: {{guide_title}}
+Location: {{location}}
+
+Content:
+{{body}}
+
+Return a concise editorial summary, useful bullets, a recommended status, and next steps.

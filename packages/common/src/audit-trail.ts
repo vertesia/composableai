@@ -1,4 +1,21 @@
-import type { EventCategory } from './platform-event.js';
+import type { z } from 'zod';
+import type {
+    AuditAggregationDetailFieldSchema,
+    AuditAggregationDetailFilterSchema,
+    AuditAggregationDistinctFieldSchema,
+    AuditAggregationFilterSchema,
+    AuditAggregationGroupSchema,
+    AuditAggregationMetricSchema,
+    AuditAggregationOperationSchema,
+    AuditAggregationQuerySchema,
+    AuditAggregationResolutionSchema,
+    AuditAggregationResponseSchema,
+    AuditAggregationRowSchema,
+    AuditMeterSchema,
+    AuditTrailEventSchema,
+    AuditTrailQuerySchema,
+    AuditTrailResponseSchema,
+} from './api-schemas/audit-trail.js';
 
 export const AUDIT_ACTIONS = [
     // CRUD operations
@@ -19,8 +36,13 @@ export const AUDIT_ACTIONS = [
     'inference',
     'embedding',
     'image_generation',
+    // Content processing outcomes
+    'document_processed',
 ] as const;
 
+// `AuditAction` is deliberately NOT inferred from `AuditActionSchema`: the schema is
+// `KnownAuditAction | string`, which TypeScript collapses to `string`, losing the completion the
+// `(string & {})` half of the union exists to preserve. The two agree on what they accept.
 export type KnownAuditAction = (typeof AUDIT_ACTIONS)[number];
 export type AuditAction = KnownAuditAction | (string & {});
 
@@ -37,79 +59,48 @@ export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generati
  *   { category: "compute", type: "duration_ms", quantity: 2100 }
  *   { category: "processing", type: "pages", quantity: 12 }
  */
-export interface AuditMeter {
-    category: string;
-    type: string;
-    quantity: number;
-}
+export type AuditMeter = z.infer<typeof AuditMeterSchema>;
 
-export interface AuditTrailEvent {
-    event_type: 'audit';
-    event_id?: string;
-    event_category?: EventCategory;
-    source?: string | null;
-    root_event_id?: string;
-    caused_by_event_id?: string;
-    hop_count?: number;
-    audit_trail?: boolean;
-    replay_of?: string;
-    replay_root_event_id?: string;
-    replayed_by?: string;
-    action: AuditAction;
-    resource_type: string;
-    resource_id: string;
-    timestamp: string;
-    request_id: string;
-    status: number;
-    success: boolean;
-    principal_id: string | null;
-    principal_type: string | null;
-    effective_principal_id: string | null;
-    roles: string[];
-    account_id: string | null;
-    project_id: string | null;
-    tenant_id: string | null;
-    account_name: string | null;
-    project_name: string | null;
-    /** Provider type for billable/provider-backed events, e.g. vertexai, bedrock. */
-    provider?: string | null;
-    /** Generic metering data for cost attribution and usage tracking */
-    meters?: AuditMeter[];
-    /** Event-specific metadata — shape varies by action/resource_type */
-    details?: Record<string, unknown>;
-}
+export type AuditTrailEvent = z.infer<typeof AuditTrailEventSchema>;
 
-export interface AuditTrailQuery {
-    /** Filter by action types */
-    actions?: AuditAction[];
-    /** Filter by resource types */
-    resourceTypes?: string[];
-    /** Filter by resource ID */
-    resourceId?: string;
-    /** Filter by exact actor principal ref (matches principal_id column). */
-    principalId?: string;
-    /** Filter by top-level actor category (matches principal_type column). */
-    principalType?: string;
-    /** Filter by delegated/direct effective principal ref (matches effective_principal_id column). */
-    effectivePrincipalId?: string;
-    /** Filter by whether an event has an effective principal ref. */
-    hasEffectivePrincipal?: boolean;
-    /** Filter by project ID */
-    projectId?: string;
-    /** Start time (ISO string) */
-    from?: string;
-    /** End time (ISO string) */
-    to?: string;
-    /** Pagination: number of items to return (default 50, max 200) */
-    limit?: number;
-    /** Pagination: offset */
-    offset?: number;
-}
+export type AuditTrailQuery = z.infer<typeof AuditTrailQuerySchema>;
 
-export interface AuditTrailResponse {
-    events: AuditTrailEvent[];
-    /** Whether there are more events after this page */
-    hasNext: boolean;
-    limit: number;
-    offset: number;
-}
+export type AuditTrailResponse = z.infer<typeof AuditTrailResponseSchema>;
+
+export const AUDIT_AGGREGATION_DIMENSIONS = [
+    'time',
+    'action',
+    'resource_type',
+    'event_category',
+    'provider',
+    'project_id',
+    'details.pipeline',
+    'details.verdict',
+    'details.workflow_type',
+    'details.rule_id',
+    'model',
+] as const;
+
+export type AuditAggregationDimension = (typeof AUDIT_AGGREGATION_DIMENSIONS)[number];
+export type AuditAggregationResolution = z.infer<typeof AuditAggregationResolutionSchema>;
+export type AuditAggregationDetailField = z.infer<typeof AuditAggregationDetailFieldSchema>;
+export type AuditAggregationOperation = z.infer<typeof AuditAggregationOperationSchema>;
+export type AuditAggregationDistinctField = z.infer<typeof AuditAggregationDistinctFieldSchema>;
+
+export type AuditAggregationGroup = z.infer<typeof AuditAggregationGroupSchema>;
+
+export type AuditAggregationMetric = z.infer<typeof AuditAggregationMetricSchema>;
+
+export type AuditAggregationDetailFilter = z.infer<typeof AuditAggregationDetailFilterSchema>;
+
+export type AuditAggregationFilter = z.infer<typeof AuditAggregationFilterSchema>;
+
+/**
+ * Safe audit aggregation query. The server always applies the authenticated account scope and,
+ * for project-scoped principals, replaces projectId with the authenticated project.
+ */
+export type AuditAggregationQuery = z.infer<typeof AuditAggregationQuerySchema>;
+
+export type AuditAggregationRow = z.infer<typeof AuditAggregationRowSchema>;
+
+export type AuditAggregationResponse = z.infer<typeof AuditAggregationResponseSchema>;

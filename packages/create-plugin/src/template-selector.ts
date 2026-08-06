@@ -51,7 +51,7 @@ export async function selectTemplate(branchOverride?: string, templateName?: str
         selectedTemplate = templates[0];
     } else {
         // Multiple templates - let user choose
-        console.log(chalk.blue('📋 Template Selection\n'));
+        console.log(chalk.blue('Template Selection\n'));
 
         const response = await prompts(
             {

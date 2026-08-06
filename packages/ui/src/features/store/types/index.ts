@@ -1,6 +1,7 @@
 export * from './ContentObjectTypesSearch';
 export * from './ContentObjectTypesTable';
 export * from './CreateOrUpdateTypeModal';
+export * from './IntakePolicyEditor';
 export * from './ObjectSchemaEditor';
 export * from './SelectContentType';
 export * from './SelectContentTypeModal';
@@ -8,3 +9,4 @@ export * from './search';
 export * from './TableLayoutEditor';
 export * from './TypeRegistry';
 export * from './TypeRegistryProvider';
+export * from './typeCatalogCache';

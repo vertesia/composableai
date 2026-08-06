@@ -49,7 +49,8 @@ Prefer realistic generated content uploaded to Vertesia over hardcoded UI mock d
 When seeding app-defined content:
 
 - Use query/search names such as `clm_contract` for filters and object searches.
-- Use the resolved app type code such as `app:<app-name>:clm:ClmContract` for object creation.
+- For object creation, pass the in-code app type string directly, such as `app:<app-name>:clm_contract`.
+- Do not resolve app-owned types to project-local ObjectIds with `types.list()` or `getTypeByName()`; the app type string is portable.
 - If UI actions create child records, use the same explicit app type codes there too.
 - If agent runs or workflow `executeInteraction` calls target app interactions, use the full app interaction id such as `app:<app-name>:clm:ExtractContractMetadata`.
 
@@ -61,7 +62,7 @@ If the CLI says the type does not exist:
 
 1. verify the app package exposes the type
 2. verify the project app-type APIs list and retrieve it
-3. test direct object creation with the resolved app type code
+3. test direct object creation with the app type string
 4. use a repo-local uploader script or direct API if the project accepts the type but the CLI still rejects it
 
 Do not assume CLI rejection means the app type is missing from the project.

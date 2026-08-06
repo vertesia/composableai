@@ -181,12 +181,21 @@ function isWorkstreamActivityFailureMessage(message: AgentMessage): boolean {
               tool_event?: unknown;
               tool_run_id?: unknown;
               tool_status?: unknown;
+              workstream_id?: unknown;
               workstream_event?: unknown;
           }
         | undefined;
 
     if (details?.event_class !== 'activity') return false;
     if (details.workstream_event) return false;
+    const workstreamId =
+        typeof message.workstream_id === 'string' && message.workstream_id.trim()
+            ? message.workstream_id.trim()
+            : typeof details.workstream_id === 'string'
+              ? details.workstream_id.trim()
+              : '';
+    const normalizedWorkstreamId = workstreamId.toLowerCase();
+    if (!workstreamId || normalizedWorkstreamId === 'main' || normalizedWorkstreamId === 'all') return false;
 
     return !(
         details.tool ||

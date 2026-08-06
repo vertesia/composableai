@@ -4,7 +4,7 @@ import {
     type IRequestRetryPolicy,
     type RequestError,
 } from '@vertesia/api-fetch-client';
-import type { BulkOperationPayload, BulkOperationResponse } from '@vertesia/common';
+import { APP_VERSION_HEADER, type BulkOperationPayload, type BulkOperationResponse } from '@vertesia/common';
 import { AgentsApi } from './AgentsApi.js';
 import { CollectionsApi } from './CollectionsApi.js';
 import { CostApi } from './CostApi.js';
@@ -24,6 +24,7 @@ import { RenderingApi } from './RenderingApi.js';
 import { SchedulesApi } from './SchedulesApi.js';
 import { TaskApi } from './TaskApi.js';
 import { TypesApi } from './TypesApi.js';
+import { StoreViewsApi } from './ViewsApi.js';
 import { VERSION, VERSION_HEADER } from './version.js';
 import { WorkflowsApi } from './WorkflowsApi.js';
 
@@ -77,6 +78,16 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         return this;
     }
 
+    /** Pin the app version this client's requests resolve against (see VertesiaClient.withAppVersion). */
+    withAppVersion(version: string | null | undefined) {
+        if (!version) {
+            delete this.headers[APP_VERSION_HEADER];
+        } else {
+            this.headers[APP_VERSION_HEADER] = String(version);
+        }
+        return this;
+    }
+
     withApiKey(apiKey: string | null) {
         return this.withAuthCallback(apiKey ? () => Promise.resolve(`Bearer ${apiKey}`) : undefined);
     }
@@ -115,4 +126,5 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     query = new QueryApi(this);
     hiveMemory = new HiveMemoryApi(this);
     rendering = new RenderingApi(this);
+    views = new StoreViewsApi(this);
 }

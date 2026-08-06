@@ -1,0 +1,14 @@
+import { InteractionCollection } from '@vertesia/tools-sdk';
+import assistant from './assistant/index.js';
+import icon from './icon.svg.js';
+import whatColor from './what_color/index.js';
+
+export const ExampleInteractions = new InteractionCollection({
+    name: 'examples',
+    title: 'Example Interactions',
+    description: 'A collection of interaction examples',
+    icon,
+    interactions: [whatColor, assistant],
+});
+
+export const interactions = [ExampleInteractions];

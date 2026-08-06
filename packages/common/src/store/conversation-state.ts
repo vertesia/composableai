@@ -1,4 +1,13 @@
 import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
+import type { z } from 'zod';
+import type {
+    ExternalizedToolInputRefSchema,
+    ExternalizedToolInputRefsSchema,
+    PendingMcpConnectionSchema,
+    TextArtifactReferenceSchema,
+    ToolReferenceSchema,
+    UsedSkillSchema,
+} from '../api-schemas/interaction.js';
 import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
 import type { ExecutionRunDocRef } from '../runs.js';
 import type { AgentToolApprovalMode, PendingToolApprovalResults, ToolApprovalGrant } from './agent-approval.js';
@@ -8,15 +17,31 @@ import type { Plan, WorkflowAncestor } from './workflow.js';
  * Lightweight tool reference for activity payloads.
  * References tools stored in GCP instead of embedding full tool definitions.
  */
-export interface ToolReference {
-    storage_key: string;
-    tool_count: number;
-    stored_at: string;
+export type ToolReference = z.infer<typeof ToolReferenceSchema>;
+
+/** Reference to text content externalized to agent artifact storage. */
+export type TextArtifactReference = z.infer<typeof TextArtifactReferenceSchema>;
+
+/**
+ * Sidecar metadata for generated tool input fields that were stored outside
+ * model-visible tool_input. Keyed by tool_use.id on ConversationState.
+ */
+export type ExternalizedToolInputRef = z.infer<typeof ExternalizedToolInputRefSchema>;
+
+export type ExternalizedToolInputRefs = z.infer<typeof ExternalizedToolInputRefsSchema>;
+
+export function toolInputRefsArtifactPath(storageId: string): string {
+    return `agents/${storageId}/tool-input-refs.json`;
 }
 
 /**
- * Conversation state passed between workflow activities.
- * Contains all context needed to continue a multi-turn agent conversation.
+ * Conversation state passed between workflow activities: the activity-safe,
+ * per-turn dynamic subset of a multi-turn agent conversation. Rides every
+ * conversation activity payload, so it deliberately excludes anything large or
+ * fetchable — the conversation history and tool definitions live in artifact
+ * storage (referenced via `tool_reference` / the conversation storage id), and
+ * catalog/activation data lives in the workflow-memory
+ * {@link ConversationCatalogState} (persisted as catalog.json).
  */
 export interface ConversationState {
     /**
@@ -50,6 +75,15 @@ export interface ConversationState {
 
     /** Compact, redacted latest user intent for reviewer-style system interactions. */
     latest_user_message?: string;
+
+    /**
+     * Transport sidecar for large generated tool input fields.
+     *
+     * These refs are intentionally kept out of tool_use.tool_input so they are
+     * not shown to the model. Tool execution hydrates them from artifact storage
+     * immediately before activity validation.
+     */
+    tool_input_refs?: ExternalizedToolInputRefs;
 
     /**
      * The output of the this conversation step
@@ -94,20 +128,26 @@ export interface ConversationState {
     /** Active tools that should not be evicted by bounded active-tool pruning. */
     pinned_tool_names?: string[];
 
-    /**
-     * Activation and usage metadata for tools seen during the conversation.
-     * Used to keep the active tool set bounded without losing recovery context.
-     */
-    tool_activation_metadata?: Record<string, ToolActivationMetadata>;
-
     /** Skills that have been used in this conversation (for auto-syncing scripts and package installation) */
     used_skills?: UsedSkill[];
 
-    /** All available skills from registered tool collections (for upfront hydration in sandbox) */
-    available_skills?: AvailableSkill[];
-
     /** Whether to stream LLM responses to Redis (cached from project config) */
     streaming_enabled?: boolean;
+
+    /**
+     * Project-configured checkpoint threshold as a fraction of the model's
+     * context window (cached from project.configuration.agent_checkpoint_threshold
+     * at conversation start).
+     */
+    checkpoint_threshold?: number;
+
+    /**
+     * Project-configured checkpoint hard cap in tokens (cached from
+     * project.configuration.agent_checkpoint_tokens at conversation start).
+     * The workflow resolves the effective threshold from these, the per-run
+     * checkpoint_tokens override, and the model-based default.
+     */
+    checkpoint_tokens?: number;
 
     /**
      * Active communication channels with their current state.
@@ -152,22 +192,19 @@ export interface ConversationState {
     latest_streaming_id?: string;
 
     /**
-     * Mapping of skill names to their related tools.
-     * When a skill is called, its related tools are added to unlocked_tools.
-     */
-    skill_tool_map?: Record<string, string[]>;
-
-    /**
      * Names of skills whose full instructions are already present in the live conversation
      * history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill
      * re-activation idempotent: a repeat call returns a short "already active" acknowledgement
      * instead of re-dumping the instructions.
      *
-     * Unlike `unlocked_tools`/`skill_tool_map` (which must survive a checkpoint so tools stay
-     * unlocked), this list is reset when a checkpoint compacts the conversation, because the
+     * Unlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked),
+     * this list is reset when a checkpoint compacts the conversation, because the
      * summary no longer carries the skill instructions and the next call must re-deliver them.
      */
     skill_instructions_delivered?: string[];
+
+    /** Stable ids of initialization tool calls completed before the first model turn. */
+    initialization_call_ids?: string[];
 
     /**
      * Denylist of MCP tool-collection ids deactivated for this conversation.
@@ -204,25 +241,60 @@ export interface ConversationState {
      * to consolidate all artifacts under the parent agent run.
      */
     launch_id?: string;
+
+    /**
+     * The exact app version this run is pinned to, derived from the `@version` on the
+     * started interaction ref / the `x-vertesia-app-version` header at start. Persisted on the state
+     * so it survives resume, and applied to the activity client (`withAppVersion`) so every app-owned
+     * ref the run resolves — interactions, types, processes, tools — targets this version instead of
+     * the current/promoted one. Undefined → current/promoted. Resolution-time only; never a stored
+     * capability-ref version.
+     */
+    app_version?: string;
 }
+
+/**
+ * Tool/skill catalog state for a conversation, split out of {@link ConversationState}
+ * so it never rides Temporal activity payloads:
+ * - `skill_tool_map` and `available_skills` are composed by tool generation and
+ *   persisted next to the tool universe (catalog.json); the workflow holds them in
+ *   memory and the few consuming activities fetch them from artifact storage.
+ * - `tool_activation_metadata` is workflow-side eviction/pin bookkeeping; it survives
+ *   continueAsNew via the continuation payload, never via activity inputs.
+ */
+export interface ConversationCatalogState {
+    /**
+     * Mapping of skill names to their related tools.
+     * When a skill is called, its related tools are added to unlocked_tools.
+     */
+    skill_tool_map?: Record<string, string[]>;
+
+    /** All available skills from registered tool collections (for upfront hydration in sandbox) */
+    available_skills?: AvailableSkill[];
+
+    /**
+     * Activation and usage metadata for tools seen during the conversation.
+     * Used to keep the active tool set bounded without losing recovery context.
+     */
+    tool_activation_metadata?: Record<string, ToolActivationMetadata>;
+}
+
+/**
+ * The subset of {@link ConversationCatalogState} persisted to artifact storage
+ * (catalog.json, next to conversation.json and tools.json). Activation metadata is
+ * runtime bookkeeping and is deliberately not part of the stored catalog.
+ */
+export type StoredConversationCatalog = Pick<ConversationCatalogState, 'skill_tool_map' | 'available_skills'>;
+
+/** Artifact key of the stored conversation catalog, relative to the agent storage root. */
+export const CONVERSATION_CATALOG_ARTIFACT_KEY = 'catalog.json';
 
 /**
  * An MCP server the user can connect to but hasn't yet (active + accessible, no OAuth token).
  * Built at tool-discovery time and stored on the conversation state so the agent can
  * discover it (by description) and ask the user to connect.
  */
-export interface PendingMcpConnection {
-    /** The app installation id owning the collection (used for OAuth operations). */
-    app_install_id: string;
-    /** The MCP tool-collection id. */
-    collection_id: string;
-    /** Human-readable label for the server/collection. */
-    name: string;
-    /** Manifest description of what the server provides (used for discovery). */
-    description?: string;
-    /** Tool-name prefix for this collection. */
-    namespace?: string;
-}
+export type PendingMcpConnection = z.infer<typeof PendingMcpConnectionSchema>;
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
 export interface AvailableSkill {
@@ -252,18 +324,7 @@ export function getConversationStorageId(
 }
 
 /** Skill metadata tracked when a skill is used */
-export interface UsedSkill {
-    /** Skill name (e.g., "analyze_data") */
-    name: string;
-    /** Source URL of the skill collection (e.g., "https://tools.vertesia.io/api/skills/data-analysis") */
-    src: string;
-    /** Programming language (e.g., "python") */
-    language?: string;
-    /** Required packages (e.g., ["pandas", "numpy"]) */
-    packages?: string[];
-    /** System-level packages to install via sudo apt-get (e.g., ["poppler-utils"]) */
-    system_packages?: string[];
-}
+export type UsedSkill = z.infer<typeof UsedSkillSchema>;
 
 export interface ToolActivationMetadata {
     /** Turn when the tool became active in this conversation. */

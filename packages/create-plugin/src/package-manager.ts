@@ -69,7 +69,7 @@ export async function selectPackageManager(
     }
 
     // Both are installed - let user choose
-    console.log(chalk.blue('📦 Package Manager\n'));
+    console.log(chalk.blue('Package Manager\n'));
 
     const response = await prompts(
         {
@@ -97,7 +97,7 @@ export async function selectPackageManager(
  * Install dependencies using the specified package manager
  */
 export async function installDependencies(projectName: string, packageManager: string): Promise<void> {
-    console.log(chalk.blue('📦 Installing dependencies...\n'));
+    console.log(chalk.blue('Installing dependencies...\n'));
     console.log(chalk.gray(`   Using: ${packageManager}\n`));
 
     try {

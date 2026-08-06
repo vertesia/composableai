@@ -81,20 +81,18 @@ export function ContentObjectTypesTable({
                                 <span className="truncate">{obj.name}</span>
                                 <CopyButton content={obj.id} className={ACTION_BTN_CLASS} />
                                 {onFilter && (
-                                    <VTooltip description={`Filter by ${obj.name}`} asChild size="xs">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            aria-label={`Filter by ${obj.name}`}
-                                            className={ACTION_BTN_CLASS}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onFilter('name', obj.name);
-                                            }}
-                                        >
-                                            <Filter className="size-3" />
-                                        </Button>
-                                    </VTooltip>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        title={`Filter by ${obj.name}`}
+                                        className={ACTION_BTN_CLASS}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onFilter('name', obj.name);
+                                        }}
+                                    >
+                                        <Filter className="size-3" />
+                                    </Button>
                                 )}
                             </div>
                         </td>

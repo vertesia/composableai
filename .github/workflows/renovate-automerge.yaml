@@ -20,7 +20,7 @@ jobs:
   approve-and-merge:
     name: Approve and merge eligible Renovate PR
     if: |
-      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.event == 'pull_request' &&
       startsWith(github.event.workflow_run.head_branch, 'renovate/')
     runs-on: ubuntu-latest
     environment: renovate-automerge
@@ -176,14 +176,12 @@ jobs:
           )
 
           for workflow in "${required_workflows[@]}"; do
-            runs_json="$(gh run list \
-              --repo "$REPO" \
-              --workflow "$workflow" \
-              --branch "$HEAD_BRANCH" \
-              --commit "$HEAD_SHA" \
-              --json databaseId,status,conclusion,event,headSha,url \
-              --limit 20)"
-            run_json="$(jq -c --arg sha "$HEAD_SHA" '[.[] | select(.headSha == $sha and .event == "push")] | sort_by(.databaseId) | last // empty' <<< "$runs_json")"
+            runs_json="$(gh api --method GET \
+              "repos/${REPO}/actions/workflows/${workflow}/runs" \
+              -f branch="$HEAD_BRANCH" -f event=pull_request -f head_sha="$HEAD_SHA" -f per_page=20)"
+            run_json="$(jq -c --arg sha "$HEAD_SHA" --argjson pr "$pr_number" \
+              '[.workflow_runs[] | select(.head_sha == $sha and any(.pull_requests[]?; .number == $pr))] | sort_by(.id) | last // empty' \
+              <<< "$runs_json")"
 
             if [[ -z "$run_json" ]]; then
               echo "Waiting for $workflow to run for $HEAD_SHA."
@@ -192,7 +190,7 @@ jobs:
 
             status="$(jq -r '.status' <<< "$run_json")"
             conclusion="$(jq -r '.conclusion // ""' <<< "$run_json")"
-            url="$(jq -r '.url' <<< "$run_json")"
+            url="$(jq -r '.html_url' <<< "$run_json")"
 
             if [[ "$status" != "completed" ]]; then
               echo "Waiting for $workflow to complete for $HEAD_SHA: $url"
@@ -283,7 +281,7 @@ jobs:
         if: |
           steps.eligibility.outputs.should_repair_lock == 'true' ||
           steps.merge.outputs.should_repair_lock == 'true'
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ steps.generate-token.outputs.token }}
           ref: ${{ github.event.workflow_run.head_branch }}
@@ -302,7 +300,7 @@ jobs:
           steps.eligibility.outputs.should_repair_lock == 'true' ||
           steps.merge.outputs.should_repair_lock == 'true'
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         if: |
           steps.eligibility.outputs.should_repair_lock == 'true' ||
           steps.merge.outputs.should_repair_lock == 'true'

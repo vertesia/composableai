@@ -2,50 +2,35 @@
  * STS Token Request Types
  * These types define the structure for token requests to the Security Token Service
  */
-import type { SystemRoles } from './project.js';
+import type { z } from 'zod';
+import type {
+    AgentTokenRequestSchema,
+    ApiKeyTokenRequestSchema,
+    EnvironmentTokenRequestSchema,
+    IssueTokenForbiddenResponseSchema,
+    IssueTokenRequestSchema,
+    IssueTokenResponseSchema,
+    ProjectTokenRequestSchema,
+    ServiceAccountTokenRequestSchema,
+    SigningAlgorithmSchema,
+    TokenTypeSchema,
+    UserTokenRequestSchema,
+} from './api-schemas/sts.js';
 
-export type TokenType = 'apikey' | 'user' | 'project' | 'environment' | 'agent' | 'service_account';
-export type SigningAlgorithm = 'ES256' | 'RS256';
-
-interface BaseTokenRequest {
-    type: TokenType;
-    audience?: string;
-    /** Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility. */
-    algorithm?: SigningAlgorithm;
-}
+export type TokenType = z.infer<typeof TokenTypeSchema>;
+export type SigningAlgorithm = z.infer<typeof SigningAlgorithmSchema>;
 
 // API key doesn't need account/project as it's determined from the key
-export interface ApiKeyTokenRequest extends BaseTokenRequest {
-    type: 'apikey';
-    key: string;
-}
+export type ApiKeyTokenRequest = z.infer<typeof ApiKeyTokenRequestSchema>;
 
 // User token needs optional account/project for scoping
-export interface UserTokenRequest extends BaseTokenRequest {
-    type: 'user';
-    user_id?: string; // Optional - can be determined from auth token
-    account_id?: string; // Optional - for scoping to specific account
-    project_id?: string; // Optional - for scoping to specific project
-    expires_at?: number;
-
-    on_behalf_of?: string; // Optional - user ID when acting on behalf of another user
-}
+export type UserTokenRequest = z.infer<typeof UserTokenRequestSchema>;
 
 // Project token requires project_id and account_id
-export interface ProjectTokenRequest extends BaseTokenRequest {
-    type: 'project';
-    project_id: string;
-    account_id: string;
-}
+export type ProjectTokenRequest = z.infer<typeof ProjectTokenRequestSchema>;
 
 // Environment token requires IDs - names fetched from DB
-export interface EnvironmentTokenRequest extends BaseTokenRequest {
-    type: 'environment';
-    environment_id: string;
-    environment_name: string; // Still required as environments may not be in DB
-    project_id: string; // Will fetch name and verify account
-    account_id: string; // Will fetch name and verify project belongs to it
-}
+export type EnvironmentTokenRequest = z.infer<typeof EnvironmentTokenRequestSchema>;
 
 /**
  * Agent token for a service account to act as agent on behalf of a user.
@@ -56,46 +41,15 @@ export interface EnvironmentTokenRequest extends BaseTokenRequest {
  * - `workload_id_token`: a workload acts on behalf of a user. It implies that a full verification
  *   will be performed based on the workload identity.
  */
-export interface AgentTokenRequest extends BaseTokenRequest {
-    type: 'agent';
-    account_id: string;
-    project_id: string; // Will verify it belongs to account
-    name?: string;
-
-    /**
-     * User information.
-     *
-     * The value of this field can be either:
-     *   - a signed Vertesia token used to verify the user context
-     *   - a user ID prefixed with `user:` to indicate the user on behalf of whom the agent is
-     *     acting.
-     *
-     * @example {JsonWebToken}
-     * @example user:68100a7c9f3c2b7d11a1b2c3
-     */
-    on_behalf_of: string;
-}
+export type AgentTokenRequest = z.infer<typeof AgentTokenRequestSchema>;
 
 // Service account token
-export interface ServiceAccountTokenRequest extends BaseTokenRequest {
-    type: 'service_account';
-    account_id: string;
-    project_id: string; // Will verify it belongs to account
-    roles?: SystemRoles[]; // Optional - roles for the service account token
-    name?: string;
-    email?: string;
-}
+export type ServiceAccountTokenRequest = z.infer<typeof ServiceAccountTokenRequestSchema>;
 
 /**
  * @discriminator type
  */
-export type IssueTokenRequest =
-    | ApiKeyTokenRequest
-    | UserTokenRequest
-    | ProjectTokenRequest
-    | EnvironmentTokenRequest
-    | AgentTokenRequest
-    | ServiceAccountTokenRequest;
+export type IssueTokenRequest = z.infer<typeof IssueTokenRequestSchema>;
 
 export interface RefreshTokenRequest {
     token: string;
@@ -137,11 +91,8 @@ export interface TokenResponse {
     expires_in?: number;
 }
 
-export interface IssueTokenResponse {
-    token: string;
-    token_type: 'Bearer';
-    expires_in?: number;
-}
+export type IssueTokenResponse = z.infer<typeof IssueTokenResponseSchema>;
+export type IssueTokenForbiddenResponse = z.infer<typeof IssueTokenForbiddenResponseSchema>;
 
 export interface ValidateTokenResponse {
     valid: boolean;

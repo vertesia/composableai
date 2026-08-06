@@ -1,0 +1,15 @@
+---
+role: user
+content_type: handlebars
+schema: ./prompt_schema.ts
+---
+Today's date is {{_now}}.
+
+Build an editorial review checklist for this guide.
+
+Guide: {{guide_title}}
+Status: {{status}}
+Summary: {{summary}}
+Current review notes: {{review_notes}}
+
+Return specific checks, risk notes, and a suggested decision.

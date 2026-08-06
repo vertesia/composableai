@@ -6,7 +6,12 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
-import type { TransformerPreset } from '../types.js';
+import {
+    assertSkillMarkdown,
+    type PreprocessSkillMarkdownOptions,
+    preprocessSkillMarkdown,
+} from '../skill-markdown/preprocess.js';
+import type { TransformerPreset, TransformerRule, TransformResult } from '../types.js';
 import { discoverSkillAssets } from '../utils/asset-discovery.js';
 
 /**
@@ -78,6 +83,7 @@ const SkillFrontmatterSchema = z
         // Flat structure fields (legacy)
         keywords: z.array(z.string()).optional(),
         tools: z.array(z.string()).optional(),
+        supporting_tools: z.array(z.string()).optional(),
         data_patterns: z.array(z.string()).optional(),
         language: z.string().optional(),
         packages: z.array(z.string()).optional(),
@@ -234,9 +240,12 @@ function buildSkillDefinition(
         }
     }
 
-    // Tools unlocked by this skill (from frontmatter `tools:` key)
-    if (frontmatter.tools) {
-        skill.tools = frontmatter.tools;
+    // Tools unlocked by this skill. `supporting_tools` unlock identically — the split exists only
+    // so validation knows which grants the author owes the reader an explanation for. Merged here so
+    // no runtime path has to know about the distinction.
+    const unlocked = [...(frontmatter.tools ?? []), ...(frontmatter.supporting_tools ?? [])];
+    if (unlocked.length > 0) {
+        skill.tools = unlocked;
     }
 
     // Input schema from frontmatter
@@ -267,51 +276,106 @@ function buildSkillDefinition(
  * // Both are SkillDefinition objects
  * ```
  */
-export const skillTransformer: TransformerPreset = {
-    pattern: /(\.md\?skill$|\/SKILL\.md$)/,
-    schema: SkillDefinitionSchema,
-    transform: (content: string, filePath: string) => {
-        const { frontmatter, content: markdown } = parseFrontmatter(content);
+export interface SkillTransformerConfig {
+    /**
+     * Catalog used to resolve `{@tool …}` / `{@skill …}` and validate `tool=`-tagged examples.
+     *
+     * Supplied by the consuming build, never discovered here: a transformer that went looking
+     * for a registry would couple build-tools to whichever package happens to own one.
+     */
+    markdown?: PreprocessSkillMarkdownOptions;
+}
 
-        // Validate frontmatter first to catch unknown properties
-        const frontmatterValidation = SkillFrontmatterSchema.safeParse(frontmatter);
-        if (!frontmatterValidation.success) {
-            const errors = frontmatterValidation.error.issues
-                .map((err) => {
-                    const pathStr = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
-                    return `  - ${pathStr}: ${err.message}`;
-                })
-                .join('\n');
-            throw new Error(`Invalid frontmatter in ${filePath}:\n${errors}`);
-        }
-
-        const validatedFrontmatter = frontmatterValidation.data;
-
-        // Determine content type from frontmatter or file extension
-        const content_type: SkillContentType = validatedFrontmatter.content_type || 'md';
-
-        // Discover assets (scripts and widgets) in the skill directory
-        const assets = discoverSkillAssets(filePath);
-
-        // Build skill definition using the same logic as parseSkillFile in tools-sdk
-        const skillData = buildSkillDefinition(
-            validatedFrontmatter,
-            markdown,
-            content_type,
-            assets.widgets,
-            assets.scripts,
+/**
+ * Render the skill body, failing closed when the semantic syntax is used without a catalog.
+ *
+ * Without this guard a package that writes `{@tool x}` but forgets to configure `skillCatalog`
+ * would ship the raw construct straight to the model — silently, and looking fine in review.
+ */
+function renderSkillMarkdown(markdown: string, filePath: string, options?: PreprocessSkillMarkdownOptions): string {
+    if (options) {
+        return assertSkillMarkdown(markdown, options, filePath).markdown;
+    }
+    const probe = preprocessSkillMarkdown(markdown, { tools: new Set(), skills: new Set() });
+    if (probe.references.length > 0 || probe.examples.length > 0 || probe.errors.length > 0) {
+        throw new Error(
+            `${filePath} uses {@tool …}, {@skill …} or a tool= example tag, but this build supplies no ` +
+                'skill catalog. Set "vertesia-build.skillCatalog" in package.json to a module exporting ' +
+                '{ tools, skills } (and optionally validateExample).',
         );
+    }
+    return markdown;
+}
 
-        // Check if properties.ts exists in the skill directory
-        const skillDir = path.dirname(filePath);
-        const propertiesPath = path.join(skillDir, 'properties.ts');
-        const hasProperties = existsSync(propertiesPath);
+/**
+ * Marks a rule as *this* preset rather than any rule that happens to share its pattern.
+ *
+ * The CLI swaps in a catalog-bound skill transformer; matching on `pattern.source` would also
+ * replace an unrelated custom transformer registered for the same files.
+ */
+const SKILL_TRANSFORMER = Symbol.for('@vertesia/build-tools:skillTransformer');
 
-        // If properties.ts exists, generate custom code with import and merge
-        // Rollup will handle transpiling properties.ts to properties.js
-        if (hasProperties) {
-            const skillDataJson = JSON.stringify(skillData, null, 2);
-            const code = `import properties from './properties.js';
+/** True when `rule` is a skill transformer produced by `createSkillTransformer`. */
+export function isSkillTransformer(rule: TransformerRule): boolean {
+    return (rule as unknown as Record<PropertyKey, unknown>)[SKILL_TRANSFORMER] === true;
+}
+
+/** Build a skill transformer bound to a specific catalog. `skillTransformer` is the unbound one. */
+export function createSkillTransformer(config: SkillTransformerConfig = {}): TransformerPreset {
+    return {
+        [SKILL_TRANSFORMER]: true,
+        pattern: /(\.md\?skill$|\/SKILL\.md$)/,
+        schema: SkillDefinitionSchema,
+        transform: (content: string, filePath: string) => transformSkill(content, filePath, config),
+    } as TransformerPreset;
+}
+
+export const skillTransformer: TransformerPreset = createSkillTransformer();
+
+function transformSkill(content: string, filePath: string, config: SkillTransformerConfig): TransformResult {
+    const { frontmatter, content: rawMarkdown } = parseFrontmatter(content);
+    const markdown = renderSkillMarkdown(rawMarkdown, filePath, config.markdown);
+
+    // Validate frontmatter first to catch unknown properties
+    const frontmatterValidation = SkillFrontmatterSchema.safeParse(frontmatter);
+    if (!frontmatterValidation.success) {
+        const errors = frontmatterValidation.error.issues
+            .map((err) => {
+                const pathStr = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
+                return `  - ${pathStr}: ${err.message}`;
+            })
+            .join('\n');
+        throw new Error(`Invalid frontmatter in ${filePath}:\n${errors}`);
+    }
+
+    const validatedFrontmatter = frontmatterValidation.data;
+
+    // Determine content type from frontmatter or file extension
+    const content_type: SkillContentType = validatedFrontmatter.content_type || 'md';
+
+    // Discover assets (scripts and widgets) in the skill directory
+    const assets = discoverSkillAssets(filePath);
+
+    // Build skill definition using the same logic as parseSkillFile in tools-sdk
+    const skillData = buildSkillDefinition(
+        validatedFrontmatter,
+        markdown,
+        content_type,
+        assets.widgets,
+        assets.scripts,
+    );
+
+    // Check if properties.ts exists in the skill directory
+    const skillDir = path.dirname(filePath);
+    const propertiesPath = path.join(skillDir, 'properties.ts');
+    const hasProperties = existsSync(propertiesPath);
+
+    // If properties.ts exists, generate custom code with import and merge.
+    // `tsc` has already emitted properties.js beside this chunk — the pipeline runs after it and
+    // never compiles TypeScript itself — so the generated module can import './properties.js'.
+    if (hasProperties) {
+        const skillDataJson = JSON.stringify(skillData, null, 2);
+        const code = `import properties from './properties.js';
 
 // Runtime validation for function properties
 if ('isEnabled' in properties && typeof properties.isEnabled !== 'function') {
@@ -322,18 +386,17 @@ const skill = ${skillDataJson};
 
 export default { ...skill, ...properties };
 `;
-            return {
-                data: skillData,
-                assets: assets.assetFiles,
-                widgets: assets.widgetMetadata,
-                code,
-            };
-        }
-
         return {
             data: skillData,
             assets: assets.assetFiles,
             widgets: assets.widgetMetadata,
+            code,
         };
-    },
-};
+    }
+
+    return {
+        data: skillData,
+        assets: assets.assetFiles,
+        widgets: assets.widgetMetadata,
+    };
+}

@@ -144,7 +144,6 @@ export function RemoteMcpConnectionButton({
                     size="sm"
                     disabled
                     className={compactActionClassName}
-                    aria-label={t('mcpConnections.checkingStatus')}
                     title={t('mcpConnections.checkingStatus')}
                 >
                     <Spinner className="size-3" />
