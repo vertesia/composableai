@@ -41,6 +41,7 @@ describe('InteractionOutput', () => {
             expect(output.thoughts(' | ')).toBe('First reason | Second reason');
             expect(output.thoughtParts()).toEqual(['First reason', 'Second reason']);
             expect(output.text()).toBe('Answer');
+            expect(output.stringify()).toBe('Answer');
         });
     });
 
