@@ -156,10 +156,10 @@ export function useSmartFileUploadProcessing() {
                             await client.store.collections.searchMembers(limitToCollectionId, payload)
                         ).results.filter((doc): doc is ExistingHashMatch => typeof doc.id === 'string');
                     } else {
-                        const payload: FindPayload = {
+                        const payload = {
                             query,
                             select: 'id content.etag',
-                        };
+                        } satisfies FindPayload & { select: string };
                         res = (await client.store.objects.find(payload)).flatMap((doc) =>
                             typeof doc.id === 'string' ? [{ id: doc.id, content: doc.content }] : [],
                         );

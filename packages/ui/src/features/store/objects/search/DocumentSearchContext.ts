@@ -118,6 +118,8 @@ export class DocumentSearch implements SearchInterface {
     }
 
     _searchRequest(query: ComplexSearchQuery, limit: number, offset: number, includeFacets: boolean = true) {
+        // Keep this as `satisfies`: the full-object overload depends on preserving the literal
+        // `select?: undefined` shape rather than widening to a generic ComplexSearchPayload.
         const payload = {
             limit,
             offset,

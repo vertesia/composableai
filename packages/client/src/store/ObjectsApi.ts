@@ -229,7 +229,7 @@ export class ObjectsApi extends ApiTopic {
     find(payload: FindPayload & { select?: undefined }): Promise<ContentObject[]>;
     find(payload: FindPayload & { select: `+${string}` }): Promise<ContentObject[]>;
     find(payload: FindPayload & { select: string }): Promise<ProjectedContentObjectApiResponse[]>;
-    find(payload: FindPayload): Promise<ContentObject[]>;
+    find(payload: FindPayload): Promise<ContentObject[] | ProjectedContentObjectApiResponse[]>;
     find(payload: FindPayload): Promise<ContentObject[] | ProjectedContentObjectApiResponse[]> {
         return this.post('/find', {
             payload,

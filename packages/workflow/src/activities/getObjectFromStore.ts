@@ -31,8 +31,8 @@ interface RetrievedContentObject {
     type?: ContentObjectApiTypeRef;
 }
 
-function mergeProjection<T extends object>(object: T, projection: Partial<T>): T {
-    return { ...object, ...projection };
+function mergeProjection<T extends { id?: unknown }>(object: T, projection: Partial<T>): T {
+    return { ...object, ...projection, id: object.id };
 }
 
 function hasObjectId(value: { id?: string }): value is { id: string } {

@@ -2718,6 +2718,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DSLActivitySpec',
     'DSLActivityStep',
     'ContentObjectApiResponse',
+    'ProjectedContentObjectApiResponse',
     'ComputeObjectFacetPayload',
     'EventSubscriptionFilter',
     'EventDeliverySummary',
