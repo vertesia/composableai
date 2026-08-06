@@ -273,6 +273,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         type: 'string',
                     },
                 },
+                include_thoughts: {
+                    type: 'boolean',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -345,6 +348,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         type: 'string',
                     },
                 },
+                include_thoughts: {
+                    type: 'boolean',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -370,6 +376,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+                include_thoughts: {
+                    type: 'boolean',
                 },
             },
             required: ['_option_id'],
@@ -432,6 +441,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+                include_thoughts: {
+                    type: 'boolean',
                 },
             },
             required: ['_option_id'],
@@ -515,6 +527,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['low', 'high', 'auto'],
                 },
+                include_thoughts: {
+                    type: 'boolean',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -541,6 +556,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         type: 'string',
                     },
                 },
+                include_thoughts: {
+                    type: 'boolean',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -566,6 +584,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+                include_thoughts: {
+                    type: 'boolean',
                 },
             },
             required: ['_option_id'],
@@ -1191,6 +1212,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['low', 'high', 'auto'],
                 },
+                include_thoughts: {
+                    type: 'boolean',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -1220,6 +1244,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 image_detail: {
                     type: 'string',
                     enum: ['low', 'high', 'auto'],
+                },
+                include_thoughts: {
+                    type: 'boolean',
                 },
             },
             required: ['_option_id'],
@@ -1263,6 +1290,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+                include_thoughts: {
+                    type: 'boolean',
                 },
             },
             required: ['_option_id'],
