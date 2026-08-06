@@ -668,7 +668,7 @@ export const CancelEventDeliveryIntentsPayloadSchema = z
             .meta({ description: 'Restrict cancellation to one subscription.' })
             .optional(),
         target_type: z
-            .array(z.enum(['workflow', 'webhook', 'agent', 'process']))
+            .array(z.enum(['workflow', 'webhook', 'app', 'agent', 'process']))
             .min(1)
             .meta({ description: 'Restrict cancellation to one or more delivery target types.' })
             .optional(),
