@@ -3433,28 +3433,14 @@ function visitSchemaNodes(value: unknown, visit: (node: JsonObject) => void): vo
     for (const item of Object.values(value)) visitSchemaNodes(item, visit);
 }
 
-/**
- * Which component each schema object in AJV's copy came from, by object identity.
- *
- * AJV resolves a `$ref` to the very object registered under that name, and `verbose: true` puts that
- * object on the error as `parentSchema` — so identity recovers the component name that a
- * `$ref`-flattened `schemaPath` has already thrown away. Both are needed by {@link collectIssues} to
- * tell one branch of an undiscriminated union from another.
- */
-let ajvComponentNames: Map<unknown, string> | undefined;
-
 function getAjv(): Ajv2020 {
     if (ajvInstance) return ajvInstance;
-    // `verbose` is what carries `parentSchema` onto each error. It is populated only when validation
-    // fails, and the value is a reference to the already-registered schema rather than a copy.
-    const ajv = new Ajv2020({ strictSchema: false, allErrors: true, discriminator: true, verbose: true });
+    const ajv = new Ajv2020({ strictSchema: false, allErrors: true, discriminator: true });
     // Without this, AJV treats `format` as an annotation and ignores it, so a `date-time` property
     // would document a constraint nothing checks — the exact spec/enforcement gap this design is
     // meant to close.
     addFormats(ajv);
-    const schemas = toAjvComponents();
-    ajvComponentNames = new Map(Object.entries(schemas).map(([name, schema]) => [schema, name]));
-    ajv.addSchema({ $id: 'vertesia://openapi', components: { schemas } });
+    ajv.addSchema({ $id: 'vertesia://openapi', components: { schemas: toAjvComponents() } });
     ajvInstance = ajv;
     return ajv;
 }
@@ -3498,86 +3484,42 @@ export interface ApiValidationIssue {
     message: string;
     /** Undeclared property names at {@link path}, in the order AJV reported them. */
     undeclared?: string[];
-    /**
-     * The component this issue is stated against, set only when {@link path} has issues from more
-     * than one — i.e. under an undiscriminated `oneOf`, where each is a claim about a DIFFERENT
-     * candidate shape and reading them as one set of facts about the value is wrong.
-     */
-    component?: string;
 }
 
 /**
- * The failures, with the undeclared properties a SINGLE schema reported at a given path gathered
- * into one issue.
+ * The failures, with all undeclared properties at a given path gathered into ONE issue.
  *
- * AJV reports `additionalProperties` per property, so a value carrying a whole foreign object — a
- * Mongoose document that reached the response mapper unmapped, say — produces one error per own key
- * and buries every other failure in the payload. Gathering is lossless: every name is kept, in the
- * order AJV found it.
- *
- * Gathering by path ALONE was wrong, and visibly so. Under an undiscriminated `oneOf` every branch
- * reports against the same path, so merging produced a union of names from shapes the value never
- * claimed to be. A condition branch `{ label, to, when }` came out as
- *
- *     /nodes/x/branches/0 must NOT have additional properties: label, to, when
- *
- * naming `to` and `when` — both declared on `BranchDefinition`, the branch it obviously meant — and
- * pointing the reader at valid fields. Only `label` is undeclared anywhere.
- *
- * So the gather is keyed by the schema that raised the error as well as the path. `schemaPath` will
- * not do: a `$ref`'d branch resets it to `#/additionalProperties`, identical for every branch. The
- * schema object itself is unambiguous, and `verbose: true` supplies it.
- *
- * `discriminator: true` already narrows a TAGGED union to one branch, so this is what is left: the
- * unions with no tag to narrow by, where all that can honestly be said is what each candidate shape
- * rejected. Those get named — see {@link ApiValidationIssue.component}.
+ * AJV reports `additionalProperties` per property, so a value carrying a whole foreign object —
+ * a Mongoose document that reached the response mapper unmapped, say — produces one error per own
+ * key and buries every other failure in the payload. Gathering is lossless: every name is kept, in
+ * the order AJV found it, on the issue for the path it belongs to.
  */
 function collectIssues(validate: ValidateFunction): ApiValidationIssue[] {
-    const issues: ApiValidationIssue[] = [];
-    // Keyed by the raising schema, then by path: two branches at one path stay separate, and one
-    // schema's repeats at one path merge.
-    const gathered = new Map<unknown, Map<string, { issue: ApiValidationIssue; names: Set<string> }>>();
-    const componentsByPath = new Map<string, Set<string>>();
-
-    for (const error of validate.errors ?? []) {
-        const path = error.instancePath || '/';
-        const message = error.message ?? 'is invalid';
-        const component = ajvComponentNames?.get(error.parentSchema);
-        if (component !== undefined) {
-            const seen = componentsByPath.get(path);
-            if (seen) seen.add(component);
-            else componentsByPath.set(path, new Set([component]));
-        }
-
+    const errors = validate.errors ?? [];
+    const undeclaredByPath = new Map<string, Set<string>>();
+    for (const error of errors) {
         const additional = additionalProperty(error);
-        if (additional === undefined) {
-            issues.push({ path, message, component });
-            continue;
-        }
-
-        let byPath = gathered.get(error.parentSchema);
-        if (!byPath) {
-            byPath = new Map();
-            gathered.set(error.parentSchema, byPath);
-        }
-        const existing = byPath.get(path);
-        if (existing) {
-            // One schema reporting the same name twice is not a second fact.
-            if (!existing.names.has(additional)) {
-                existing.names.add(additional);
-                existing.issue.undeclared?.push(additional);
-            }
-            continue;
-        }
-        const issue: ApiValidationIssue = { path, message, undeclared: [additional], component };
-        byPath.set(path, { issue, names: new Set([additional]) });
-        issues.push(issue);
+        if (additional === undefined) continue;
+        const where = error.instancePath || '/';
+        const names = undeclaredByPath.get(where);
+        // A union whose branches all reject the same property reports it once per branch. The name
+        // is the same fact each time, so it is listed once.
+        if (names) names.add(additional);
+        else undeclaredByPath.set(where, new Set([additional]));
     }
 
-    // A component name is worth carrying only where it disambiguates. Everywhere else it is the
-    // component the reader already knows they are validating against, and only lengthens the line.
-    for (const issue of issues) {
-        if ((componentsByPath.get(issue.path)?.size ?? 0) < 2) issue.component = undefined;
+    const gathered = new Set<string>();
+    const issues: ApiValidationIssue[] = [];
+    for (const error of errors) {
+        const path = error.instancePath || '/';
+        const message = error.message ?? 'is invalid';
+        if (additionalProperty(error) === undefined) {
+            issues.push({ path, message });
+            continue;
+        }
+        if (gathered.has(path)) continue;
+        gathered.add(path);
+        issues.push({ path, message, undeclared: [...(undeclaredByPath.get(path) ?? [])] });
     }
     return issues;
 }
@@ -3589,9 +3531,7 @@ function collectIssues(validate: ValidateFunction): ApiValidationIssue[] {
  * with a length limit rather than shortening this string; see `reportableErrors` in the enforcer.
  */
 export function renderApiValidationIssue(issue: ApiValidationIssue): string {
-    const head = issue.component
-        ? `${issue.path} as ${issue.component}: ${issue.message}`
-        : `${issue.path} ${issue.message}`;
+    const head = `${issue.path} ${issue.message}`;
     return issue.undeclared?.length ? `${head}: ${issue.undeclared.join(', ')}` : head;
 }
 
