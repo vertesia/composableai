@@ -93,13 +93,15 @@ Templates are auto-discovered: the collection imports `./all?templates`.
 
 ### Application Hooks
 
-Use an install or uninstall hook when the app must initialize or clean up project data as part of its installation
-lifecycle. Hooks receive an authenticated context with the current project token and `getClient()`.
+Use an install or uninstall hook when the app must initialize or clean up project data as a version becomes or stops
+being promoted. Hooks receive an authenticated context with the current project token and `getClient()`.
 
 - Implement hooks in `src/modules/app/resources/hooks/install.ts` or `uninstall.ts`.
 - Register named hook definitions in `src/modules/app/resources/hooks/index.ts`.
 - Make install behavior idempotent. Studio may invoke it again during a reinstall or an explicit recovery.
 - Do not use hooks to materialize app-owned package types as project-local types. Use portable `app:<app>:<type>` refs.
+- An unpromoted version advertises hook definitions but does not run lifecycle hooks. Validate source/package wiring on a
+  candidate and defer lifecycle execution until explicit promotion; do not invoke lifecycle endpoints manually for QA.
 - When an appgen capability manifest is present, declare each lifecycle or event hook as a `hook` artifact using
   `app:<app-name>:<hook-name>`.
 
@@ -123,8 +125,10 @@ Use an app-owned subscription to route matching platform events to an event hook
 - Give each definition a stable kebab-case `id`.
 - Set `hook` to an `AppEventHookDefinition.name`; lifecycle hooks are not valid targets.
 - Define the event `filter` and required `run_as_role`, normally `automation`.
-- Do not set a URL or scope. Studio derives the project scope and deployed hook URL during installation.
+- Do not set a URL or scope. Studio derives the project scope and promoted hook URL when a version is promoted.
 - Inspect contributions through `/api/package?scope=subscriptions`.
+- A bare version exposes subscription definitions in its package but does not materialize them in Event Bus. Candidate
+  QA should validate the definition and hook reference only; registration and delivery checks require promotion.
 - When an appgen capability manifest is present, declare the subscription as a `subscription` artifact using
   `app:<app-name>:<subscription-id>`.
 

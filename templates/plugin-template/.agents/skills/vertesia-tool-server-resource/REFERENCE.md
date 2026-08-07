@@ -414,6 +414,11 @@ Registered hooks are exposed as authenticated POST endpoints at `/api/hooks/inst
 app package advertises their endpoint paths under `hooks` for inspection. Studio invokes the conventional endpoints
 directly and treats a 404 as an absent optional hook.
 
+Building an immutable version advertises these definitions but does not execute them. Studio runs the promoted
+version's install hook during promotion reconciliation and runs the previous promoted version's uninstall hook when
+it is replaced or removed. For an unpromoted candidate, validate source registration and package output only; do not
+invoke lifecycle endpoints manually or fail candidate QA because their side effects are absent.
+
 In an appgen capability manifest, declare lifecycle hooks with type `hook` and ids such as
 `app:<app-name>:install` and `app:<app-name>:uninstall`.
 
@@ -472,7 +477,8 @@ Represent it in an appgen capability manifest as a `hook` artifact such as
 ## Application event subscriptions
 
 Subscriptions are declarative package contributions that route matching platform events to an event hook in the same
-app. They do not contain a deployment URL or project scope. Studio derives both when it installs the app.
+app. They do not contain a deployment URL or project scope. Studio derives both from the version selected during
+promotion.
 
 ```typescript
 // src/modules/app/resources/subscriptions/index.ts
@@ -500,6 +506,11 @@ lifecycle hooks, duplicate subscription ids, and ids that are not kebab-case. Mu
 the same event hook with different filters. Inspect the result with `GET /api/package?scope=subscriptions`.
 Represent each definition in an appgen capability manifest as a `subscription` artifact such as
 `app:<app-name>:content-updated`.
+
+An unpromoted candidate exposes these package definitions but does not create protected Event Bus subscriptions, and
+matching events are not delivered to that candidate's hook. Candidate validation is therefore limited to source and
+package-summary wiring. Use Event Bus subscription and delivery evidence only after the version has been explicitly
+promoted.
 
 ---
 

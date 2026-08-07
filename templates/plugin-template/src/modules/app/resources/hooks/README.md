@@ -5,9 +5,10 @@ Define their handlers in this directory and register every hook in `index.ts`.
 
 ## Lifecycle hooks
 
-The reserved lifecycle hook names are `install` and `uninstall`. Studio calls them when an app installation is
-created or removed. A lifecycle hook receives the authenticated Vertesia client factory, decoded token payload,
-and installation metadata:
+The reserved lifecycle hook names are `install` and `uninstall`. Studio calls them while reconciling the promoted app
+version: `install` for the newly promoted version and `uninstall` for a previous promoted version that is replaced or
+removed. A lifecycle hook receives the authenticated Vertesia client factory, decoded token payload, and installation
+metadata:
 
 ```ts
 import type { AppLifecycleHook } from '@vertesia/tools-sdk';
@@ -34,6 +35,10 @@ export const hooks = [
     { kind: 'lifecycle', name: 'uninstall', handler: uninstall },
 ] satisfies AppHookDefinition[];
 ```
+
+An unpromoted immutable version exposes these definitions in its package but does not run them. During candidate QA,
+validate registration and package output only. Do not invoke lifecycle endpoints manually or expect their project
+side effects before promotion.
 
 ## Event hooks
 
@@ -71,6 +76,10 @@ import { SystemRoles } from '@vertesia/common';
     run_as_role: SystemRoles.automation,
 }
 ```
+
+Subscription definitions are visible in an unpromoted version's package, but Studio materializes them in Event Bus
+only when that version is promoted. Do not expect a bare candidate to appear in the subscription list or receive
+matching event deliveries.
 
 Hooks belong to application modules, not `src/tool-server`. The generated `app-server-modules.ts` aggregates
 the `hooks` and `subscriptions` exports from every selected module into the runtime configuration.
