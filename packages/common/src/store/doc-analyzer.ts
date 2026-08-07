@@ -65,30 +65,6 @@ export interface AdaptTablesParams {
      */
     process_as_csv?: boolean;
 }
-
-interface DocAnalyzerRequestBase {
-    synchronous?: boolean;
-
-    notify_endpoints?: string[];
-
-    /**
-     * What environment to use to run the request
-     * If none specified the project embedded environment will be used
-     */
-    environment?: string;
-}
-
-export interface AdaptTablesRequest extends DocAnalyzerRequestBase, AdaptTablesParams {}
-
-/**
- * Get Adapted Tables Request
- * @param raw If true, the raw data will be returned
- * @param format The format to return the data in (csv, json)
- */
-export interface GetAdaptedTablesRequestQuery {
-    raw?: boolean;
-    format: 'csv' | 'json';
-}
 /**
  * The adapted table result format
  */
@@ -96,5 +72,3 @@ export interface AdaptedTable {
     comment?: string;
     data: Record<string, unknown>[];
 }
-
-export type AdaptedTableResponse = Record<string, AdaptedTable>;

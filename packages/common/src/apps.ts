@@ -166,11 +166,6 @@ export type AppInstallationsQuery = z.infer<typeof AppInstallationsQuerySchema>;
 
 export type ToolCollectionAuthType = z.infer<typeof ToolCollectionAuthTypeSchema>;
 
-/**
- * Tool collection type
- */
-export type ToolCollectionType = 'mcp' | 'vertesia_sdk';
-
 export type MCPOAuthConfig = z.infer<typeof MCPOAuthConfigSchema>;
 
 /** Install-time provisioning blueprint for an `auth: 'api_key'` MCP collection. Never holds the key. */
@@ -182,35 +177,13 @@ export type VertesiaSDKToolCollectionObject = z.infer<typeof VertesiaSDKToolColl
 
 export type ToolCollectionObject = z.infer<typeof ToolCollectionObjectSchema>;
 
-/**
- * Backward-compatible TypeScript alias. Public API payloads should reference
- * ToolCollectionObject directly so generated clients do not create a wrapper
- * model around the discriminated union.
- */
-export type ToolCollection = ToolCollectionObject;
-
-export const MCP_COLLECTION_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
-export const MCP_COLLECTION_NAMESPACE_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
-
-export function isValidMCPCollectionId(id: string): boolean {
-    return MCP_COLLECTION_ID_PATTERN.test(id);
-}
-
-export function isValidMCPCollectionNamespace(namespace: string): boolean {
-    return MCP_COLLECTION_NAMESPACE_PATTERN.test(namespace);
-}
-
-export function deriveMCPCollectionId(input: string): string {
+function deriveMCPCollectionId(input: string): string {
     return input
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '')
         .replace(/_+/g, '_');
-}
-
-export function getDefaultOAuthAppNameForCollectionId(collectionId: string): string {
-    return collectionId.replace(/_/g, '-');
 }
 
 /**
@@ -293,95 +266,6 @@ export type AppCapabilities = z.infer<typeof AppCapabilitiesSchema>;
  * Resolution-time only; never persisted. Set by the generated app template via client.withAppVersion.
  */
 export const APP_VERSION_HEADER = 'x-vertesia-app-version';
-/**
- * The platform-artifact types an app build can be required to create. A finer-grained
- * counterpart to {@link AppCapabilities}: a single `interactions` capability may comprise
- * several `interaction` artifacts plus `agent`, `activity`, and `tool` artifacts that
- * {@link AppCapabilities} folds together. Used by the App Solution Architect manifest and
- * the publish-time capability gate.
- */
-export const APP_ARTIFACT_TYPES = [
-    'interaction',
-    'agent',
-    'type',
-    'process',
-    'view',
-    'template',
-    'dashboard',
-    'activity',
-    'tool',
-    'hook',
-    'subscription',
-] as const;
-
-export type AppArtifactType = (typeof APP_ARTIFACT_TYPES)[number];
-
-/**
- * A single platform artifact the App Solution Architect requires the build to create.
- * `id` is the app-owned in-code id the implementation must register and reference
- * (e.g. `app:<name>:main:extract-item` for interactions/agents, `app:<name>:<type>` for
- * types, `app:<name>:<process>` for processes, and `app:<name>:<local-id>` for hooks/subscriptions).
- */
-/**
- * Build progress for one artifact, maintained by the developer agent as a living checklist:
- *  - `pending` — defined by the architect, not yet built.
- *  - `built`   — registered in the package, not yet successfully exercised.
- *  - `done`    — built AND successfully exercised against real data.
- * This is the agent's self-reported claim for tracking/handoff; the capability gate verifies
- * the truth independently via package registration + run/data telemetry and does not trust it.
- */
-export type AppArtifactStatus = 'pending' | 'built' | 'done';
-
-export const APP_ARTIFACT_STATUSES: readonly AppArtifactStatus[] = ['pending', 'built', 'done'];
-
-export interface AppPlannedArtifact {
-    /** App-owned in-code id the build must register and reference. */
-    id: string;
-    type: AppArtifactType;
-    /** Short human label. */
-    name?: string;
-    /** Why this artifact exists / what it does — carried into the build checklist. */
-    purpose?: string;
-    /**
-     * When false, the artifact is planned but optional: the capability gate warns rather
-     * than blocks if it is missing or never exercised. Defaults to required (true).
-     */
-    required?: boolean;
-    /** Build progress, updated by the developer agent. Defaults to `pending`. */
-    status?: AppArtifactStatus;
-}
-
-/**
- * Structured result the App Solution Architect emits alongside its prose artifacts — the
- * machine-readable contract for the build. The implementation MUST register every required artifact
- * before building a candidate, then successfully exercise it after that candidate is installed and
- * version-pinned. Persisted into the app repo as {@link APP_CAPABILITY_MANIFEST_PATH} so it survives
- * across runs and the package-registration gate can verify it deterministically. If the builder finds the plan
- * wrong or insufficient, the orchestrator relaunches the architect to revise the manifest;
- * the gate always checks against the latest committed copy.
- */
-export interface AppCapabilityManifest {
-    /** Artifact-storage ref to the prose architecture spec (e.g. the architecture `.md`). */
-    spec_artifact: string;
-    /** Platform artifacts the build must create. */
-    artifacts: AppPlannedArtifact[];
-    /**
-     * Monotonic revision, starting at 1, bumped each time the architect evolves the manifest for
-     * the SAME app on a later iteration (read the committed manifest, preserve untouched artifacts,
-     * add/modify/remove, then bump). Lets downstream agents tell which contract they are building to.
-     */
-    revision?: number;
-    /**
-     * Newest-first change notes, one entry per revision (what was added/modified/removed and why).
-     * How manifest changes are communicated to downstream agents across iterations.
-     */
-    changelog?: string[];
-    /** Optional free-form notes the architect wants the builder to honor. */
-    notes?: string;
-}
-
-/** Repo-relative path the capability manifest is committed to, read by version-build gates. */
-export const APP_CAPABILITY_MANIFEST_PATH = 'docs/app-capability-manifest.json';
 export type AppAvailableIn = z.infer<typeof AppAvailableInSchema>;
 
 export type AppVersionKind = z.infer<typeof AppVersionKindSchema>;
@@ -415,27 +299,6 @@ export type StartAppBuildRequest = z.infer<typeof StartAppBuildRequestSchema>;
 
 export type StartAppBuildResponse = z.infer<typeof StartAppBuildResponseSchema>;
 
-export interface AppBuildWorkflowInput extends StartAppBuildRequest {
-    app_id: string;
-    app_record_id?: string;
-    /** Rebuild this persisted version record at its original commit and target. */
-    rebuild_version_record_id?: string;
-    app_title?: string;
-    app_description?: string;
-    source_git_url?: string;
-}
-
-export interface AppBuildWorkflowResult {
-    app_id: string;
-    version_id: string;
-    kind: Extract<AppVersionKind, 'version'>;
-    state: AppVersionState;
-    source_commit: string;
-    source_git?: AppVersionGitSource;
-    urls?: AppVersionUrls;
-    file_count?: number;
-}
-
 export type AppBuildProgressStatus = z.infer<typeof AppBuildProgressStatusSchema>;
 
 export type AppBuildProgress = z.infer<typeof AppBuildProgressSchema>;
@@ -445,18 +308,6 @@ export type AppScaffoldModule = z.infer<typeof AppScaffoldModuleSchema>;
 export type StartAppScaffoldRequest = z.infer<typeof StartAppScaffoldRequestSchema>;
 
 export type StartAppScaffoldResponse = z.infer<typeof StartAppScaffoldResponseSchema>;
-
-export interface AppScaffoldWorkflowInput extends StartAppScaffoldRequest {}
-
-export interface AppScaffoldWorkflowResult {
-    app_id: string;
-    app_record_id?: string;
-    installation_id?: string;
-    git_url?: string;
-    source_git?: AppVersionGitSource;
-    files?: number;
-    initial_version_build?: StartAppBuildResponse;
-}
 
 export type AppScaffoldProgressStatus = z.infer<typeof AppScaffoldProgressStatusSchema>;
 
@@ -475,22 +326,6 @@ export type AppScaffoldProgress = z.infer<typeof AppScaffoldProgressSchema>;
  * Declared on the manifest as the app's default. May be overridden per-installation.
  */
 export type AppAccessControl = z.infer<typeof AppAccessControlSchema>;
-
-/**
- * Resolve the effective access_control policy for an installed app:
- * installation override wins, then manifest default, then `'all'`.
- *
- * Shared by the STS (JWT generation), the studio-server (validation), and the UI (badge display)
- * so the resolution rule lives in exactly one place. Named `effectiveAppAccessControl` (not just
- * `effectiveAccessControl`) because exports from `@vertesia/common` are flattened — the broader
- * name would risk colliding with other access-control families added later.
- */
-export function effectiveAppAccessControl(
-    installation: { access_control?: AppAccessControl } | null | undefined,
-    manifest: { access_control?: AppAccessControl } | null | undefined,
-): AppAccessControl {
-    return installation?.access_control ?? manifest?.access_control ?? 'all';
-}
 
 // QUARANTINED from the tenth batch, and the blocker is not in this file. A `//` comment rather than
 // TSDoc on purpose: this component is still DERIVED, so a doc comment here would be published as its
@@ -560,12 +395,6 @@ export type AppRepoTreeEntry = z.infer<typeof AppRepoTreeEntrySchema>;
 
 /** A non-recursive listing of an app git repo directory at a given ref. */
 export type AppRepoTree = z.infer<typeof AppRepoTreeSchema>;
-
-/** Browser-side limits mirrored by the app Git service document endpoint. */
-export const APP_REPO_DOCUMENT_UPLOAD_MAX_FILE_BYTES = 20 * 1024 * 1024;
-export const APP_REPO_DOCUMENT_UPLOAD_MAX_TOTAL_BYTES = 80 * 1024 * 1024;
-export const APP_REPO_DOCUMENT_UPLOAD_MAX_FILES = 20;
-export const APP_REPO_DOCUMENT_UPLOAD_PREFIX = 'docs/';
 
 /** Result of committing one or more uploaded documents to an app repository. */
 export type AppRepoDocumentCommit = z.infer<typeof AppRepoDocumentCommitSchema>;
@@ -677,11 +506,12 @@ export type AppInstallation = z.infer<typeof AppInstallationSchema>;
 
 export type AppInstallationWithManifest = z.infer<typeof AppInstallationWithManifestSchema>;
 
-export type AppInstallationListEntry = z.infer<typeof AppInstallationListEntrySchema>;
-
+/** An installation whose app manifest could not be resolved (the app was deleted or is unpublished). */
 export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
     manifest: null;
 }
+
+export type AppInstallationListEntry = z.infer<typeof AppInstallationListEntrySchema>;
 
 export type OAuthClientCredentials = z.infer<typeof OAuthClientCredentialsSchema>;
 
@@ -720,11 +550,6 @@ export type OAuthAuthStatus = z.infer<typeof OAuthAuthStatusSchema>;
  * Response from OAuth authorization endpoint
  */
 export type OAuthAuthorizeResponse = z.infer<typeof OAuthAuthorizeResponseSchema>;
-
-export interface McpOAuthCollectionRef {
-    app_install_id: string;
-    collection_id: string;
-}
 
 /**
  * Payload for storing the static bearer token of an `auth: 'api_key'` MCP collection.
@@ -880,9 +705,6 @@ export type CompositeAppHeaderItemKind = z.infer<typeof CompositeAppHeaderItemKi
 
 /** Where a header link opens. */
 export type CompositeAppHeaderItemTarget = z.infer<typeof CompositeAppHeaderItemTargetSchema>;
-
-/** Stable identifiers for the built-in header items. */
-export const COMPOSITE_APP_HEADER_BUILTIN_IDS = ['app_portal', 'docs', 'help', 'user_menu'] as const;
 
 /**
  * A single button in the CompositeApp header bar.

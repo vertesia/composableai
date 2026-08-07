@@ -5,7 +5,6 @@ import type {
     UserGroupRefSchema,
     UserGroupSchema,
 } from './api-schemas/group.js';
-import type { UserRef } from './user.js';
 
 /**
  * The user group and its payloads as they cross the wire.
@@ -21,17 +20,6 @@ import type { UserRef } from './user.js';
 export type UserGroup = z.infer<typeof UserGroupSchema>;
 export type CreateUserGroupPayload = z.infer<typeof CreateUserGroupPayloadSchema>;
 export type UpdateUserGroupPayload = z.infer<typeof UpdateUserGroupPayloadSchema>;
-
-/**
- * A group with its members resolved.
- *
- * Not a published component, and deliberately not one: `members` is `select: false` on the model, no
- * endpoint documents it on `UserGroup`, and the members listing publishes `UserRef[]` on its own
- * route instead.
- */
-export interface PopulatesUserGroup extends UserGroup {
-    members: UserRef[];
-}
 
 /**
  * The group as it appears in a token payload, read by the servers' authorization layer, the clients

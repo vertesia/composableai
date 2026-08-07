@@ -25,7 +25,7 @@ export interface McpConnectUxConfig {
 }
 
 /** Optional free-form response rendered alongside predefined options. */
-export interface AskUserFreeResponseConfig {
+interface AskUserFreeResponseConfig {
     /** Placeholder text for the input. */
     placeholder?: string;
     /** Label for the submit button. */

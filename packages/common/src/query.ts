@@ -81,15 +81,6 @@ export type InteractionSearchQuery = z.infer<typeof InteractionSearchQuerySchema
 
 export type RunSearchQuery = z.infer<typeof RunSearchQuerySchema>;
 
-export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
-    documentId?: string;
-    eventName?: string;
-    ruleId?: string;
-    start?: string;
-    end?: string;
-    status?: string;
-}
-
 export type ComplexSearchQuery = z.infer<typeof ComplexSearchQuerySchema>;
 
 export type ComplexCollectionSearchQuery = z.infer<typeof ComplexCollectionSearchQuerySchema>;

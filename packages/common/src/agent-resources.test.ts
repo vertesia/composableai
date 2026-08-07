@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type AgentResourceReference, getResourcesFromToolResult, normalizeAgentResources } from './interaction.js';
+import { type AgentResourceReference, normalizeAgentResources } from './interaction.js';
 import { AgentMessageType, getResourcesFromMessage } from './store/workflow.js';
 
 const validRef: AgentResourceReference = {
@@ -62,17 +62,6 @@ describe('normalizeAgentResources', () => {
         ] as const;
         const input = types.map((type, i) => ({ type, id: `id-${i}`, label: `L${i}`, action: 'created' }));
         expect(normalizeAgentResources(input)).toHaveLength(types.length);
-    });
-});
-
-describe('getResourcesFromToolResult', () => {
-    it('reads resources from result meta', () => {
-        expect(getResourcesFromToolResult({ meta: { resources: [validRef] } })).toEqual([validRef]);
-    });
-
-    it('returns an empty array when meta or resources are absent', () => {
-        expect(getResourcesFromToolResult({})).toEqual([]);
-        expect(getResourcesFromToolResult({ meta: {} })).toEqual([]);
     });
 });
 

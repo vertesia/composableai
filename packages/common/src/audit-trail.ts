@@ -46,9 +46,6 @@ export const AUDIT_ACTIONS = [
 export type KnownAuditAction = (typeof AUDIT_ACTIONS)[number];
 export type AuditAction = KnownAuditAction | (string & {});
 
-/** Billable audit actions for cost analytics queries */
-export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];
-
 /**
  * Generic metering entry attached to audit events.
  * Used for cost attribution, usage tracking, and billing.
@@ -104,3 +101,6 @@ export type AuditAggregationQuery = z.infer<typeof AuditAggregationQuerySchema>;
 export type AuditAggregationRow = z.infer<typeof AuditAggregationRowSchema>;
 
 export type AuditAggregationResponse = z.infer<typeof AuditAggregationResponseSchema>;
+
+/** Billable audit actions for cost analytics queries */
+export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];

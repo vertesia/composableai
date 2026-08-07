@@ -33,7 +33,7 @@ export interface ImageRenditionVars extends BaseRenditionVars {
     max_pages?: number;
 }
 
-export interface ImageRenditionParams {
+interface ImageRenditionParams {
     max_hw: number;
     format: ImageRenditionFormat;
     outputPath?: string;
@@ -77,11 +77,6 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
 
 /** Discriminated union of all rendition workflow vars */
 export type GenerateRenditionVars = ImageRenditionVars | MarkdownRenditionVars;
-
-/** Type guard for markdown rendition vars */
-export function isMarkdownRenditionVars(vars: GenerateRenditionVars): vars is MarkdownRenditionVars {
-    return vars.format === 'pdf' || vars.format === 'docx';
-}
 
 // ============================================================================
 // API Payload Types
@@ -148,7 +143,7 @@ export interface RenderMarkdownResponse {
 // ============================================================================
 
 /** A slide rendered from a named SVG template with structured content */
-export interface TemplateSlide {
+interface TemplateSlide {
     type: 'template';
     /** Template name: 'title' | 'section' | 'bullets' | 'two-column' | 'image-text' */
     template: string;
@@ -157,7 +152,7 @@ export interface TemplateSlide {
 }
 
 /** A slide with raw SVG markup */
-export interface RawSvgSlide {
+interface RawSvgSlide {
     type: 'svg';
     /** Complete SVG markup (should use 1920x1080 viewBox) */
     svg: string;

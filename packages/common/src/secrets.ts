@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type {
     CreateSecretRequestSchema,
+    DeleteSecretResponseSchema,
     EventIngestSigningSecretRequestSchema,
     EventIngestSigningSecretResponseSchema,
     EventWebhookSigningSecretRequestSchema,
@@ -48,3 +49,5 @@ export type VerifyEventIngestSignatureRequest = z.infer<typeof VerifyEventIngest
 export type VerifyEventIngestSignatureResponse = z.infer<typeof VerifyEventIngestSignatureResponseSchema>;
 export type GithubInstallationTokenRequest = z.infer<typeof GithubInstallationTokenRequestSchema>;
 export type GithubInstallationTokenResponse = z.infer<typeof GithubInstallationTokenResponseSchema>;
+
+export type DeleteSecretResponse = z.infer<typeof DeleteSecretResponseSchema>;

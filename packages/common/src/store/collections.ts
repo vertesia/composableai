@@ -9,6 +9,7 @@ import type {
     CollectionSchema,
     CollectionSecuritySettingsResponseSchema,
     CreateCollectionPayloadSchema,
+    UpdateCollectionPayloadSchema,
 } from '../api-schemas/content.js';
 import type { BaseObject } from './common.js';
 import type { ColumnLayout, ContentObjectTypeRef } from './store.js';
@@ -54,12 +55,6 @@ export interface CollectionItem extends BaseObject {
 
 export type Collection = z.infer<typeof CollectionSchema>;
 
-export interface StaticCollection extends Collection {
-    dynamic: false;
-    members: string[];
-    query: never;
-}
-
 export interface DynamicCollection extends Collection {
     dynamic: true;
 }
@@ -88,3 +83,5 @@ export type CollectionMembersUpdatePayload = z.infer<typeof CollectionMembersUpd
 export type CollectionChildrenUpdatePayload = z.infer<typeof CollectionChildrenUpdatePayloadSchema>;
 
 export type CollectionMembersQuery = z.infer<typeof CollectionMembersQuerySchema>;
+
+export type UpdateCollectionPayload = z.infer<typeof UpdateCollectionPayloadSchema>;

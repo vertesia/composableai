@@ -18,8 +18,6 @@ export interface TransientToken<T> {
     updated_at: Date;
 }
 
-export interface CreateOrUpdateTransientTokenPayload<T> extends Partial<TransientToken<T>> {}
-
 /**
  * The invite payload as it crosses the wire, inferred from `./api-schemas/invites.js`. Every
  * reference is populated by the handlers before the response is built.

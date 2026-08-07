@@ -45,6 +45,7 @@ import type {
     DataColumnForAISchema,
     DataColumnSchema,
     DataColumnTypeSchema,
+    DataColumnUpdateSchema,
     DataForeignKeyForAISchema,
     DataForeignKeySchema,
     DataIndexSchema,
@@ -424,7 +425,7 @@ export type DataSchemaForAI = z.infer<typeof DataSchemaForAISchema>;
 /**
  * Version retention configuration.
  */
-export interface DataStoreRetentionConfig {
+interface DataStoreRetentionConfig {
     /** Keep versions for this many days */
     retention_days: number;
     /** Named snapshots are exempt from retention */
@@ -499,15 +500,6 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayout = {
 };
 
 /**
- * SQL query parameters with default values.
- * Supports {{param_name}} placeholders in SQL that get substituted at runtime.
- */
-export interface DashboardQueryParameters {
-    /** Default values for SQL parameters. Keys are parameter names (without braces). */
-    defaults: Record<string, string>;
-}
-
-/**
  * Elasticsearch DSL supported by dashboard data sources.
  * Queries execute through Vertesia Store, so project/security filtering remains server-side.
  */
@@ -575,31 +567,6 @@ export type CreateDashboardPayload = z.infer<typeof CreateDashboardPayloadSchema
 export type UpdateDashboardPayload = z.infer<typeof UpdateDashboardPayloadSchema>;
 
 /**
- * Payload for previewing a dashboard (render without saving).
- */
-export interface PreviewDashboardPayload {
-    // ============= New architecture (v2) =============
-    /** Data source used to populate Vega `data.values`. */
-    dataSource?: DashboardDataSource;
-    /** SQL query that returns all data for the dashboard */
-    query?: string;
-    /** Maximum rows to return from the query (default: 10000) */
-    queryLimit?: number;
-    /** Default values for SQL parameters */
-    queryParameters?: Record<string, string>;
-    /** Complete Vega-Lite specification for the entire dashboard */
-    spec?: Record<string, unknown>;
-
-    // ============= Legacy architecture (v1, deprecated) =============
-    /** @deprecated Use single `query` field instead */
-    queries?: DashboardQuery[];
-    /** @deprecated Use single `spec` field with vconcat/hconcat instead */
-    panels?: DashboardPanel[];
-    /** @deprecated Layout is now handled within the Vega-Lite spec */
-    layout?: Partial<DashboardLayout>;
-}
-
-/**
  * Options for rendering a dashboard.
  */
 export interface RenderDashboardOptions {
@@ -609,22 +576,6 @@ export interface RenderDashboardOptions {
     force?: boolean;
     /** Background color (default: white) */
     backgroundColor?: string;
-}
-
-/**
- * Result of rendering a dashboard.
- */
-export interface RenderDashboardResult {
-    /** URL to the rendered PNG image */
-    url: string;
-    /** When the URL expires (seconds from now) */
-    expires_in: number;
-    /** When the dashboard was rendered */
-    rendered_at: string;
-    /** Image width in pixels */
-    width: number;
-    /** Image height in pixels */
-    height: number;
 }
 
 // ============================================================================
@@ -651,3 +602,5 @@ export type CreateDashboardSnapshotPayload = z.infer<typeof CreateDashboardSnaps
  * Payload for promoting a version to current.
  */
 export type PromoteDashboardVersionPayload = z.infer<typeof PromoteDashboardVersionPayloadSchema>;
+
+export type DataColumnUpdate = z.infer<typeof DataColumnUpdateSchema>;

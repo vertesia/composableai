@@ -40,7 +40,7 @@ export interface SupportedProviderParams extends Omit<ProviderParams, 'id'> {
     id: SupportedProviders;
 }
 
-export const CustomProvidersList: Record<CustomProviders, SupportedProviderParams> = {
+const CustomProvidersList: Record<CustomProviders, SupportedProviderParams> = {
     virtual_lb: {
         id: CustomProviders.virtual_lb,
         name: 'Virtual - Load Balancer',
@@ -92,19 +92,6 @@ export type MediatorEnvConfig = z.infer<typeof MediatorEnvConfigSchema>;
 export type { TextFallbackOptions } from '@llumiverse/common';
 
 export type ExecutionEnvironmentSettings = z.infer<typeof ExecutionEnvironmentSettingsSchema>;
-
-/**
- * Returns the configured Vertex AI bucket access principal for an environment, or undefined.
- * Only Vertex AI environments expose this setting; the value is trimmed and empty strings
- * are treated as unset so callers get a single, normalized representation.
- */
-export function getVertexBucketAccessPrincipal(
-    env: { provider?: SupportedProviders; settings?: ExecutionEnvironmentSettings } | undefined,
-): string | undefined {
-    if (!env || env.provider !== SupportedProviders.vertexai) return undefined;
-    const principal = env.settings?.bucket_access_principal;
-    return typeof principal === 'string' && principal.trim().length > 0 ? principal.trim() : undefined;
-}
 
 export type ExecutionEnvironment = z.infer<typeof ExecutionEnvironmentSchema>;
 

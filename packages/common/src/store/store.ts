@@ -1,5 +1,9 @@
 import type { z } from 'zod';
-import type { ContentObjectTypeRefSchema } from '../api-schemas/app-lifecycle.js';
+import type {
+    ContentObjectTypeRefSchema,
+    InCodeTypeRefSchema,
+    StoredTypeRefSchema,
+} from '../api-schemas/app-lifecycle.js';
 import type {
     ComplexSearchPayloadSchema,
     ContentObjectApiResponseSchema,
@@ -36,11 +40,13 @@ import type {
     TranscriptSchema,
     TranscriptSegmentSchema,
     UpdateContentObjectHeadersSchema,
+    UpdateContentObjectPayloadSchema,
     UpdateContentObjectQuerySchema,
 } from '../api-schemas/content.js';
 import type { MarkdownRenditionFormatSchema } from '../api-schemas/document-processing.js';
 import type {
     CreateWorkflowRulePayloadSchema,
+    UpdateWorkflowRulePayloadSchema,
     WorkflowRuleItemSchema,
     WorkflowRuleSchema,
 } from '../api-schemas/events.js';
@@ -132,35 +138,6 @@ export type Embedding = z.infer<typeof EmbeddingSchema>;
 export type ExportContentObjectsIncludeOptions = z.infer<typeof ExportContentObjectsIncludeOptionsSchema>;
 
 export type ExportContentObjectsFilter = z.infer<typeof ExportContentObjectsFilterSchema>;
-
-/**
- * Exported object identity and context for a single content object row.
- */
-export interface ExportedContentObjectRecord {
-    id: string;
-    name: string;
-    location: string;
-    external_id?: string;
-    type?: {
-        ref_type?: 'stored' | 'incode' | 'untyped';
-        id?: string;
-        code?: string;
-        name?: string;
-    };
-    status?: ContentObjectStatus;
-    content?: {
-        source?: string;
-        type?: string;
-        name?: string;
-        etag?: string;
-    };
-    created_at: string;
-    updated_at: string;
-    revision?: RevisionInfo;
-    properties?: Record<string, unknown>;
-    metadata?: Record<string, unknown>;
-    embeddings?: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
-}
 
 export type StartContentObjectExportRequest = z.infer<typeof StartContentObjectExportRequestSchema>;
 
@@ -419,7 +396,7 @@ export interface TypeDetectionMetadata {
 }
 
 // Type-specific metadata interfaces
-export interface TemporalMediaMetadata extends ContentMetadata {
+interface TemporalMediaMetadata extends ContentMetadata {
     duration?: number; // in seconds
     transcript?: Transcript;
 }
@@ -472,7 +449,7 @@ export interface DocumentMetadata extends ContentMetadata {
 }
 
 /** Grounded-extraction summary stored on document metadata. Additional keys allowed. */
-export interface GroundedMetadata {
+interface GroundedMetadata {
     verdict?: string;
     confidence?: number;
     citation_count?: number;
@@ -487,17 +464,6 @@ export interface GroundedMetadata {
 }
 
 export type Transcript = z.infer<typeof TranscriptSchema>;
-
-export const TextExtractionStatus = {
-    success: 'success',
-} as const;
-
-export interface TranscriptMediaResult {
-    hasText: boolean;
-    status: typeof TextExtractionStatus.success;
-    message?: string;
-    gladiaTranscriptionId?: string;
-}
 
 export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
 
@@ -596,27 +562,8 @@ export type CreateContentObjectPayload<T = JSONObject> = Omit<
     metadata?: ContentObjectItem['metadata'];
 };
 
-type LegacyContentObjectTypeRef = Partial<ContentObjectTypeRef> & {
-    ref_type?: 'stored' | 'incode';
-    id?: string;
-    code?: string;
-    name?: string;
-};
-
 export function getContentTypeRefId(type: ContentObjectTypeRef): string {
     return type.id;
-}
-
-export function withContentObjectTypeRefDiscriminator(
-    type: ContentObjectTypeRef | LegacyContentObjectTypeRef,
-): ContentObjectTypeRef {
-    const legacyCode = 'code' in type ? type.code : undefined;
-    const id = type.id || legacyCode || '';
-    const name = type.name || '';
-    if (type.ref_type === 'incode' || isInCodeType(id)) {
-        return { ref_type: 'incode', id, name };
-    }
-    return { ref_type: 'stored', id, name };
 }
 
 export type ContentObjectTypeRef = z.infer<typeof ContentObjectTypeRefSchema>;
@@ -640,19 +587,6 @@ export type IntakePageScope = z.infer<typeof IntakePageScopeSchema>;
  * enforced at runtime.
  */
 export type IntakePageRanges = z.infer<typeof IntakePageRangesSchema>;
-
-/** Rendering settings behind a vision detail name (platform defaults, project-overridable
- * via `configuration.intake.vision_profiles`). */
-export interface IntakeVisionProfileSettings {
-    /** Render resolution in dots per inch. */
-    dpi: number;
-    /** Maximum height/width of the rendered page image in pixels. */
-    max_hw: number;
-    /** JPEG quality (0-100). */
-    quality: number;
-    /** grayscale renders gray always; auto keeps color when the plan asks for it. */
-    color_mode: 'grayscale' | 'auto';
-}
 
 export type ContentTypeExtractionGroundingReviewPolicy = z.infer<
     typeof ContentTypeExtractionGroundingReviewPolicySchema
@@ -683,15 +617,6 @@ export type ContentObjectTypeCatalogEntry = z.infer<typeof ContentObjectTypeCata
  * The itnerface to be used whend efining types in a plugin app.
  */
 export type InCodeTypeSpec = Omit<InCodeTypeDefinition, 'id'>;
-
-/**
- * Returns true if the type id represents an in-code type (system or app-contributed).
- * In-code types use colon-separated ids like "sys:Invoice" or "app:myapp:Article".
- * These types are read-only and cannot be edited through the UI.
- */
-export function isInCodeType(typeId: string): boolean {
-    return typeId.includes(':');
-}
 
 export type CreateContentObjectTypePayload = z.infer<typeof CreateContentObjectTypePayloadSchema>;
 
@@ -738,7 +663,7 @@ export type ObjectSearchResponse = z.infer<typeof ObjectSearchResponseSchema>;
 // Rendition Format Compatibility Utilities
 // ============================================================================
 
-export type RenditionFormat = ImageRenditionFormat | MarkdownRenditionFormat;
+type RenditionFormat = ImageRenditionFormat | MarkdownRenditionFormat;
 
 /**
  * Matrix of supported content type → format conversions.
@@ -800,52 +725,6 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
     return false;
 }
 
-/**
- * Get the list of rendition formats supported for a given content type.
- *
- * @param contentType - The MIME type of the source content
- * @returns Array of supported rendition formats, or empty array if none
- *
- * @example
- * getSupportedRenditionFormats('image/png') // [jpeg, png, webp]
- * getSupportedRenditionFormats('text/markdown') // [pdf, docx]
- * getSupportedRenditionFormats('text/html') // []
- */
-export function getSupportedRenditionFormats(contentType: string | undefined): RenditionFormat[] {
-    if (!contentType) return [];
-
-    // Check exact match first
-    if (RENDITION_COMPATIBILITY[contentType]) {
-        return [...RENDITION_COMPATIBILITY[contentType]];
-    }
-
-    // Check wildcard patterns
-    const [category] = contentType.split('/');
-    const wildcardKey = `${category}/*`;
-    const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
-    if (wildcardMatch) {
-        return [...wildcardMatch];
-    }
-
-    return [];
-}
-
-/**
- * Check if a content type supports visual (image) renditions.
- * This is useful for determining if a document can have thumbnails/previews.
- *
- * @param contentType - The MIME type of the source content
- * @returns true if the content type can generate JPEG renditions
- *
- * @example
- * supportsVisualRendition('image/png') // true
- * supportsVisualRendition('application/pdf') // true
- * supportsVisualRendition('text/markdown') // false
- */
-export function supportsVisualRendition(contentType: string | undefined): boolean {
-    return canGenerateRendition(contentType, ImageRenditionFormat.jpeg);
-}
-
 export type GetUploadUrlPayload = z.infer<typeof GetUploadUrlPayloadSchema>;
 
 export type GetFileUrlPayload = z.infer<typeof GetFileUrlPayloadSchema>;
@@ -892,3 +771,99 @@ export enum ContentObjectProcessingPriority {
     normal = 'normal',
     low = 'low',
 }
+
+/**
+ * Exported object identity and context for a single content object row.
+ */
+export interface ExportedContentObjectRecord {
+    id: string;
+    name: string;
+    location: string;
+    external_id?: string;
+    type?: {
+        ref_type?: 'stored' | 'incode' | 'untyped';
+        id?: string;
+        code?: string;
+        name?: string;
+    };
+    status?: ContentObjectStatus;
+    content?: {
+        source?: string;
+        type?: string;
+        name?: string;
+        etag?: string;
+    };
+    created_at: string;
+    updated_at: string;
+    revision?: RevisionInfo;
+    properties?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+    embeddings?: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
+}
+
+/**
+ * Get the list of rendition formats supported for a given content type.
+ *
+ * @param contentType - The MIME type of the source content
+ * @returns Array of supported rendition formats, or empty array if none
+ *
+ * @example
+ * getSupportedRenditionFormats('image/png') // [jpeg, png, webp]
+ * getSupportedRenditionFormats('text/markdown') // [pdf, docx]
+ * getSupportedRenditionFormats('text/html') // []
+ */
+export function getSupportedRenditionFormats(contentType: string | undefined): RenditionFormat[] {
+    if (!contentType) return [];
+
+    // Check exact match first
+    if (RENDITION_COMPATIBILITY[contentType]) {
+        return [...RENDITION_COMPATIBILITY[contentType]];
+    }
+
+    // Check wildcard patterns
+    const [category] = contentType.split('/');
+    const wildcardKey = `${category}/*`;
+    const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
+    if (wildcardMatch) {
+        return [...wildcardMatch];
+    }
+
+    return [];
+}
+
+/**
+ * Check if a content type supports visual (image) renditions.
+ * This is useful for determining if a document can have thumbnails/previews.
+ *
+ * @param contentType - The MIME type of the source content
+ * @returns true if the content type can generate JPEG renditions
+ *
+ * @example
+ * supportsVisualRendition('image/png') // true
+ * supportsVisualRendition('application/pdf') // true
+ * supportsVisualRendition('text/markdown') // false
+ */
+export function supportsVisualRendition(contentType: string | undefined): boolean {
+    return canGenerateRendition(contentType, ImageRenditionFormat.jpeg);
+}
+
+export type InCodeTypeRef = z.infer<typeof InCodeTypeRefSchema>;
+
+export type StoredTypeRef = z.infer<typeof StoredTypeRefSchema>;
+
+type UpdateContentObjectPayloadWire = z.infer<typeof UpdateContentObjectPayloadSchema>;
+
+/**
+ * Mirrors {@link CreateContentObjectPayload}: `properties` and `metadata` are reopened over the wire
+ * type so the known metadata interfaces stay assignable and callers can name their property shape.
+ * The runtime contract accepts any object keys for both.
+ */
+export type UpdateContentObjectPayload<T = JSONObject> = Omit<
+    UpdateContentObjectPayloadWire,
+    'properties' | 'metadata'
+> & {
+    properties?: T;
+    metadata?: ContentObjectItem['metadata'];
+};
+
+export type UpdateWorkflowRulePayload = z.infer<typeof UpdateWorkflowRulePayloadSchema>;

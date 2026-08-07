@@ -19,6 +19,8 @@ import type {
     RenderingTemplateDefinition,
     RenderingTemplateDefinitionRef,
     SupportedIntegrations,
+    UpdateProjectConfigurationPayload,
+    UpdateProjectPayload,
 } from '@vertesia/common';
 
 export default class ProjectsApi extends ApiTopic {
@@ -43,7 +45,7 @@ export default class ProjectsApi extends ApiTopic {
         });
     }
 
-    update(projectId: string, payload: Partial<Project>): Promise<Project> {
+    update(projectId: string, payload: UpdateProjectPayload): Promise<Project> {
         return this.put(`/${projectId}`, {
             payload,
         });
@@ -53,7 +55,7 @@ export default class ProjectsApi extends ApiTopic {
         return this.del(`/${projectId}`);
     }
 
-    updateConfiguration(projectId: string, payload: Partial<ProjectConfiguration>): Promise<ProjectConfiguration> {
+    updateConfiguration(projectId: string, payload: UpdateProjectConfigurationPayload): Promise<ProjectConfiguration> {
         return this.put(`/${projectId}/configuration`, {
             payload,
         });
