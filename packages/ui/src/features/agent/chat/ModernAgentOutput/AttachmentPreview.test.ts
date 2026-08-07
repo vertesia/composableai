@@ -47,6 +47,20 @@ describe('parseUserMessageAttachments', () => {
         expect(parsed.attachments[1].contentType).toBeUndefined();
     });
 
+    // The previous regex pair backtracked polynomially on lines packed with ") (" sequences
+    // (CodeQL js/polynomial-redos). The scanner must stay linear and still pick the rightmost
+    // note split — the same split the greedy regex produced.
+    it('handles pathological paren-dense lines in linear time with the rightmost note split', () => {
+        const hostile = `[a](${') ('.repeat(20_000)}x) (note)`;
+        const started = performance.now();
+        const parsed = parseUserMessageAttachments(`Uploaded artifacts:\n${hostile}`);
+        expect(performance.now() - started).toBeLessThan(200);
+
+        expect(parsed.attachments).toHaveLength(1);
+        expect(parsed.attachments[0].href).toBe(`${') ('.repeat(20_000)}x`);
+        expect(parsed.attachments[0].contentType).toBeUndefined();
+    });
+
     it('keeps parsing plain links and note-suffixed links without parentheses', () => {
         const parsed = parseUserMessageAttachments(
             [

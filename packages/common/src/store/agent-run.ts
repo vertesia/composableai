@@ -30,6 +30,7 @@ import type {
     AgentMessage,
     CompactMessage,
     ConversationActivityState,
+    ConversationFileBatchRef,
     ConversationFileRef,
     ConversationFileRemovedRef,
     WorkflowRunEvent,
@@ -472,6 +473,7 @@ export type SignalAgentPayload =
     | StopSignal
     | ConversationFileRef
     | ConversationFileRemovedRef
+    | ConversationFileBatchRef
     | Record<string, unknown>;
 
 /**

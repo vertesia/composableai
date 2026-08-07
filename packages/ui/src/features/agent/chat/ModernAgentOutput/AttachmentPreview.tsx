@@ -379,14 +379,47 @@ export function AttachmentPreviewList({
 }
 
 const ATTACHMENT_SECTION_RE = /^\s*(?:\*\*)?(attachments|uploaded artifacts):(?:\*\*)?\s*$/i;
-// Hrefs mirror user filenames, so they can contain parentheses and spaces
-// ("artifact:files/report (6).json"). A [^)]-style href capture truncates at the first ")",
-// making the whole line fail to parse — the file then renders as plain text and its reference
-// escapes collectDeliveredArtifactRefs. Match the note-suffixed form first (workflow-composed
-// lines end with "(image - ...)" / "(text extracted to ...)"), then fall back to
-// greedy-to-last-paren for plain links.
-const ATTACHMENT_LINK_WITH_NOTE_RE = /^\s*(?:[-*]\s*)?\[([^\]]+)]\((.+)\)\s+\((.*)\)\s*$/;
-const ATTACHMENT_LINK_RE = /^\s*(?:[-*]\s*)?\[([^\]]+)]\((.+)\)\s*$/;
+
+const SINGLE_WHITESPACE_RE = /\s/;
+
+interface AttachmentLineParts {
+    name: string;
+    href: string;
+    note?: string;
+}
+
+/**
+ * Parse one attachment line of the form `- [label](href)` or `- [label](href) (note)`.
+ *
+ * Hrefs mirror user filenames, so they can contain parentheses and spaces
+ * ("artifact:files/report (6).json"), and workflow-composed lines append a parenthesized note
+ * ("(image - ...)", "(text extracted to ...)") that can itself contain parentheses. A regex for
+ * that shape needs overlapping greedy captures, which backtrack polynomially on message content
+ * (CodeQL js/polynomial-redos) — so the line is split with a linear scan instead: the label runs
+ * to the first "]", and the note starts at the rightmost "(" preceded by whitespace and a ")",
+ * which is the same split the greedy href capture would have produced.
+ */
+function parseAttachmentLine(trimmed: string): AttachmentLineParts | null {
+    let text = trimmed;
+    if (text.startsWith('-') || text.startsWith('*')) {
+        text = text.slice(1).trimStart();
+    }
+    if (!text.startsWith('[') || !text.endsWith(')')) return null;
+    const labelEnd = text.indexOf(']');
+    if (labelEnd < 2 || text[labelEnd + 1] !== '(') return null;
+    const name = text.slice(1, labelEnd);
+    // Everything between "](" and the final ")": either the whole href, or "href) (note".
+    const body = text.slice(labelEnd + 2, -1);
+    for (let open = body.lastIndexOf('('); open > 0; open = body.lastIndexOf('(', open - 1)) {
+        let wsStart = open;
+        while (wsStart > 0 && SINGLE_WHITESPACE_RE.test(body[wsStart - 1])) {
+            wsStart--;
+        }
+        if (wsStart === open || wsStart < 2 || body[wsStart - 1] !== ')') continue;
+        return { name, href: body.slice(0, wsStart - 1), note: body.slice(open + 1) };
+    }
+    return body ? { name, href: body } : null;
+}
 
 export function parseUserMessageAttachments(content: string): ParsedUserAttachments {
     const lines = content.split(/\r?\n/);
@@ -411,14 +444,14 @@ export function parseUserMessageAttachments(content: string): ParsedUserAttachme
             continue;
         }
 
-        const match = ATTACHMENT_LINK_WITH_NOTE_RE.exec(trimmed) ?? ATTACHMENT_LINK_RE.exec(trimmed);
-        if (!match) {
+        const parsed = parseAttachmentLine(trimmed);
+        if (!parsed) {
             inAttachmentSection = false;
             bodyLines.push(line);
             continue;
         }
 
-        const [, name, href, note] = match;
+        const { name, href, note } = parsed;
         const artifactPath = href.startsWith('artifact:') ? href.slice('artifact:'.length) : undefined;
         attachments.push({
             id: `${href}-${attachments.length}`,

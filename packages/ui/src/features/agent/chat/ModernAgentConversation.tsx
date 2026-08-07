@@ -6,6 +6,7 @@ import {
     type AgentToolApprovalMode,
     type CompletedWorkstreamEntry,
     type ConversationFile,
+    type ConversationFileBatchRef,
     type ConversationFileRef,
     FileProcessingStatus,
     type McpConnectUxConfig,
@@ -937,26 +938,41 @@ function StartWorkflowView({
                 // StudioAssistantPanel feed the new agentRunId straight back as a prop, which
                 // switches ModernAgentConversation to its agentRunId branch and unmounts this
                 // view — any state handoff dies with it. Inline client calls survive regardless
-                // of what renders next. deliver_when_ready makes the workflow itself deliver the
-                // "[Files Ready]" turn once processing settles, so no follow-up signal is sent
-                // here and delivery does not depend on this client staying alive.
+                // of what renders next. The closing FileBatchClosed manifest names the batch's
+                // exact membership, so the workflow delivers the "[Files Ready]" turn itself
+                // once — and only once — every listed file has settled, even when a small file
+                // finishes processing while a larger one is still uploading. Delivery does not
+                // depend on this client staying alive.
                 if (canStageFiles && stagedFiles.length > 0) {
+                    const batchId = `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    const uploadedFileIds: string[] = [];
                     for (const file of stagedFiles) {
                         try {
                             const artifactPath = `files/${file.name}`;
                             await client.agents.uploadArtifact(agentId, artifactPath, file);
+                            const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                             await client.agents.sendSignal(agentId, 'FileUploaded', {
-                                id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                                id: fileId,
                                 name: file.name,
                                 content_type: file.type || 'application/octet-stream',
                                 reference: `artifact:${artifactPath}`,
                                 artifact_path: artifactPath,
-                                deliver_when_ready: true,
                             } as ConversationFileRef);
+                            uploadedFileIds.push(fileId);
                         } catch (uploadErr) {
                             console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
                             // Continue with other files
                         }
+                    }
+                    try {
+                        // Close the batch even when every upload failed — the workflow then
+                        // tells the agent to stop waiting instead of leaving the run parked.
+                        await client.agents.sendSignal(agentId, 'FileBatchClosed', {
+                            batch_id: batchId,
+                            file_ids: uploadedFileIds,
+                        } as ConversationFileBatchRef);
+                    } catch (batchErr) {
+                        console.error('Failed to close staged file batch:', batchErr);
                     }
                     setStagedFiles([]);
                 }

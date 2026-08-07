@@ -341,7 +341,7 @@ describe('ModernAgentConversation send handling', () => {
         // view: consumers like StudioAssistantPanel feed the new agentRunId straight back as a
         // prop, which unmounts StartWorkflowView (and any handoff state) the moment the run
         // starts. Regression coverage for the flow where staged files silently vanished.
-        it('uploads staged files flagged deliver_when_ready and sends no follow-up message', async () => {
+        it('uploads staged files, closes the batch with a manifest, and sends no follow-up message', async () => {
             const startWorkflow = vi.fn().mockResolvedValue({ agent_run_id: 'agent-run-2' });
             mockStreamState({
                 messages: [],
@@ -372,13 +372,32 @@ describe('ModernAgentConversation send handling', () => {
                     expect.objectContaining({
                         name: 'report.pdf',
                         artifact_path: 'files/report.pdf',
-                        deliver_when_ready: true,
                     }),
                 );
             });
 
-            // The workflow owns the "[Files Ready]" turn (deliver_when_ready): the client must
-            // not send a UserInput of its own — it would race the workflow's delivery.
+            // The closing manifest defines the batch's membership: the workflow delivers only
+            // when every listed file has settled, so a fast first file can never trigger a
+            // partial delivery.
+            await waitFor(() => {
+                expect(mocks.sendSignal).toHaveBeenCalledWith(
+                    'agent-run-2',
+                    'FileBatchClosed',
+                    expect.objectContaining({
+                        batch_id: expect.stringMatching(/^batch-/),
+                        file_ids: [
+                            (
+                                mocks.sendSignal.mock.calls.find((call) => call[1] === 'FileUploaded')?.[2] as {
+                                    id: string;
+                                }
+                            ).id,
+                        ],
+                    }),
+                );
+            });
+
+            // The workflow owns the "[Files Ready]" turn: the client must not send a UserInput
+            // of its own — it would race the workflow's delivery.
             const userInputCalls = mocks.sendSignal.mock.calls.filter((call) => call[1] === 'UserInput');
             expect(userInputCalls).toHaveLength(0);
 

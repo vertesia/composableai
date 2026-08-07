@@ -1180,11 +1180,6 @@ export interface ConversationFile {
      * accessible to tools via its artifact_path/md_path.
      */
     consumed_at?: number;
-    /**
-     * Carried over from the FileUploaded signal: the workflow owes a "[Files Ready]" user turn
-     * once every flagged file of the batch has settled. See ConversationFileRef.deliver_when_ready.
-     */
-    deliver_when_ready?: boolean;
 }
 
 /**
@@ -1229,13 +1224,24 @@ export interface ConversationFileRef {
     reference: string;
     /** Artifact path without prefix (e.g., "files/document.pdf") */
     artifact_path: string;
+}
+
+/**
+ * Manifest closing a staged-upload batch (the FileBatchClosed signal). Sent by clients that
+ * stage files before the run exists (the agent start screen) after every upload attempt has
+ * finished: those clients cannot wait for text extraction themselves, so the workflow owns the
+ * "[Files Ready]" user turn. The manifest is the batch's authoritative membership — the
+ * workflow delivers once, and only once, every listed file has settled, so a fast first file
+ * can never trigger delivery while later files are still uploading.
+ */
+export interface ConversationFileBatchRef {
+    /** Client-generated batch id. */
+    batch_id: string;
     /**
-     * When true, the workflow delivers a "[Files Ready]" user turn itself once every flagged
-     * file of the batch has finished processing. Set by clients that stage files before the
-     * run exists (the agent start screen) and therefore cannot wait for readiness themselves —
-     * delivery must not depend on the client staying alive during text extraction.
+     * Ids (ConversationFileRef.id) of the files successfully uploaded and signaled for this
+     * batch. Files whose upload failed client-side are omitted; empty when every upload failed.
      */
-    deliver_when_ready?: boolean;
+    file_ids: string[];
 }
 
 /**
