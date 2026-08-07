@@ -211,24 +211,6 @@ export interface ToolCallEvent extends BaseAgentEvent {
 }
 
 // ============================================================================
-// Checkpoint Events
-// ============================================================================
-
-/**
- * Emitted when a checkpoint is created.
- * Extends LlmCallEvent since checkpoint creation involves an LLM call.
- */
-export interface CheckpointCreatedEvent extends LlmCallEvent {
-    callType: LlmCallType.Checkpoint;
-    /** Token count that triggered the checkpoint (before this LLM call) */
-    tokenCountAtCheckpoint: number;
-    /** Checkpoint threshold configured */
-    checkpointThreshold: number;
-    /** Current iteration number */
-    iteration: number;
-}
-
-// ============================================================================
 // Nested Interaction Execution Events
 // ============================================================================
 

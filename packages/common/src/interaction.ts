@@ -1,7 +1,6 @@
 import type {
     CompletionResult,
     ExecutionTokenUsage,
-    JSONObject,
     JSONSchema,
     Modalities,
     ModelOptions,
@@ -72,10 +71,9 @@ import type {
     UserMessagePayloadSchema,
 } from './api-schemas/interaction.js';
 import type { InteractionExecutionConfigurationSchema } from './api-schemas/store.js';
-import type { MCPToolAnnotations } from './apps.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
 import type { ProjectRef } from './project.js';
-import type { ExecutablePromptSegmentDef, PopulatedPromptSegmentDef } from './prompt.js';
+import type { PopulatedPromptSegmentDef } from './prompt.js';
 import type { TextArtifactReference } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 
@@ -86,7 +84,7 @@ import type { AccountRef } from './user.js';
  */
 export * from './interaction-values.js';
 
-import { RunDataStorageLevel } from './interaction-values.js';
+import type { RunDataStorageLevel } from './interaction-values.js';
 
 export type InteractionExecutionError = z.infer<typeof InteractionExecutionErrorSchema>;
 
@@ -259,12 +257,6 @@ export type InteractionRef = z.infer<typeof InteractionRefSchema>;
 
 /** An interaction reduced to the fields a name picker needs. */
 export type InteractionName = z.infer<typeof InteractionNameSchema>;
-export const InteractionNamePopulate = 'id name';
-
-export const InteractionRefPopulate =
-    'id name endpoint parent description status version visibility tags agent_runner_options updated_at prompts';
-
-export const InteractionRefWithSchemaPopulate = `${InteractionRefPopulate} result_schema`;
 
 /**
  * An interaction reference carrying the schemas an export needs to reconstruct it.
@@ -293,18 +285,6 @@ export enum ExecutionRunStatus {
     failed = 'failed',
 }
 
-enum RunDataStorageDescription {
-    STANDARD = 'Run data is stored for both the model inputs and output.',
-    RESTRICTED = 'No run data is stored for the model inputs — only the model output.',
-    DEBUG = 'Run data is stored for the model inputs and output, schema, and final prompt.',
-}
-
-export const RunDataStorageOptions: Record<RunDataStorageLevel, RunDataStorageDescription> = {
-    [RunDataStorageLevel.STANDARD]: RunDataStorageDescription.STANDARD,
-    [RunDataStorageLevel.RESTRICTED]: RunDataStorageDescription.RESTRICTED,
-    [RunDataStorageLevel.DEBUG]: RunDataStorageDescription.DEBUG,
-};
-
 /**
  * Schema can be stored or specified as a reference to an external schema.
  * We only support "store:" references for now
@@ -312,39 +292,7 @@ export const RunDataStorageOptions: Record<RunDataStorageLevel, RunDataStorageDe
 export type SchemaRef = z.infer<typeof SchemaRefSchema>;
 export type CachePolicy = z.infer<typeof CachePolicySchema>;
 export type InteractionVisibility = z.infer<typeof InteractionVisibilitySchema>;
-
-interface InteractionData {
-    readonly id: string;
-    name: string;
-    endpoint: string;
-    description?: string;
-    project: string | ProjectRef;
-    tags: string[];
-    agent_runner_options?: AgentRunnerOptions;
-    result_schema?: JSONSchema | SchemaRef;
-    environment?: string | ExecutionEnvironmentRef;
-    model?: string;
-    model_options?: ModelOptions;
-    restriction?: RunDataStorageLevel;
-
-    /**
-     * @deprecated This is deprecated. Use CompletionResult.type information instead.
-     */
-    output_modality?: Modalities;
-}
 export type Interaction = z.infer<typeof InteractionSchema>;
-
-export interface PopulatedInteraction extends Omit<Interaction, 'prompts'> {
-    prompts: PopulatedPromptSegmentDef[];
-}
-
-/**
- * Used to describe an interaction that can be executed. Contains only the interaction data useful
- * to execute the interaction plus the prompt templates
- */
-export interface ExecutableInteraction extends InteractionData {
-    prompts: ExecutablePromptSegmentDef[];
-}
 
 export type InteractionCreatePayload = z.infer<typeof InteractionCreatePayloadSchema>;
 
@@ -535,11 +483,6 @@ export function normalizeAgentResources(value: unknown): AgentResourceReference[
     return result;
 }
 
-/** Extract the normalized resource references a tool declared in its result metadata. */
-export function getResourcesFromToolResult(result: Pick<ToolResultContent, 'meta'>): AgentResourceReference[] {
-    return normalizeAgentResources(result.meta?.resources);
-}
-
 export type ToolResult = z.infer<typeof ToolResultSchema>;
 
 /**
@@ -548,8 +491,6 @@ export type ToolResult = z.infer<typeof ToolResultSchema>;
 export type ToolResultsPayload = z.infer<typeof ToolResultsPayloadSchema>;
 
 export type UserMessagePayload = z.infer<typeof UserMessagePayloadSchema>;
-
-export type CheckpointConversationPayload = Omit<ToolResultsPayload, 'results' | 'tools'>;
 
 // ================= end async execution payloads ====================
 
@@ -656,16 +597,7 @@ export interface InteractionExecutionResult<P = unknown>
     options?: StatelessExecutionOptions;
 }
 
-export interface LegacyInteractionExecutionResult<P = unknown>
-    extends Omit<InteractionExecutionResult<P>, 'result' | 'account' | 'project'> {
-    account: string | AccountRef;
-    project: string | ProjectRef;
-    result?: JSONObject | string | null;
-}
-
 export type ExecutionRunRef = z.infer<typeof ExecutionRunRefSchema>;
-
-export const ExecutionRunRefSelect = '-result -parameters -result_schema -prompt';
 
 export type InteractionExecutionConfiguration = z.infer<typeof InteractionExecutionConfigurationSchema>;
 
@@ -728,78 +660,6 @@ export type ResolvedRuntimeConfig = z.infer<typeof ResolvedRuntimeConfigSchema>;
  */
 export type ResolvedInteractionExecutionInfo = z.infer<typeof ResolvedInteractionExecutionInfoSchema>;
 
-/**
- * A builtin tool definition from the tools catalog
- */
-interface BuiltinToolDefinition {
-    /**
-     * The unique tool name
-     */
-    name: string;
-
-    /**
-     * One-line summary shown in the tool selector UI
-     */
-    summary?: string;
-
-    /**
-     * JSON schema for the tool's parameters
-     */
-    params: JSONSchema;
-
-    /**
-     * Whether this tool is active by default when no explicit tool list is provided.
-     * Tools with default: false are only activated by skills.
-     */
-    default: boolean;
-
-    /**
-     * Behavioral hints following the MCP ToolAnnotations spec.
-     * Used for display purposes only — not sent to LLMs.
-     */
-    annotations?: MCPToolAnnotations;
-}
-
-/**
- * A system skill entry in the tools catalog.
- * System skills are built into the platform and unlock hidden tools.
- */
-interface SystemSkillCatalogEntry {
-    /** Skill name without the learn_ prefix, e.g. "document_search" */
-    name: string;
-    /** Tool name used in agent selection, i.e. "learn_document_search" */
-    tool_name: string;
-    /** Human-readable display title */
-    title: string;
-    /** Description of what the skill unlocks */
-    description: string;
-    /** Tool names this skill enables (unlocks) when called */
-    tools: string[];
-    /** Whether this skill is part of the default agent toolkit */
-    default?: boolean;
-}
-
-/**
- * Response from the builtin tools catalog endpoint
- */
-export interface BuiltinToolsCatalogResponse {
-    /**
-     * List of available builtin tools
-     */
-    tools: BuiltinToolDefinition[];
-
-    /**
-     * When the catalog was generated
-     */
-    generated_at: string;
-
-    /**
-     * Total number of tools in the catalog
-     */
-    total_tools: number;
-
-    /**
-     * System skills bundled in the platform, available without app installation
-     */
-    skills?: SystemSkillCatalogEntry[];
+export interface PopulatedInteraction extends Omit<Interaction, 'prompts'> {
+    prompts: PopulatedPromptSegmentDef[];
 }

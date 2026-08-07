@@ -49,7 +49,7 @@ import type {
 import type { AuditMeter } from './audit-trail.js';
 import type { ConversationVisibility } from './interaction.js';
 import type { SystemRoles } from './project.js';
-import type { GroundedVerificationBreakdown, ProcessDefinitionBody, ProcessRunType } from './store/index.js';
+import type { ProcessDefinitionBody, ProcessRunType } from './store/index.js';
 
 // Inferred from `./api-schemas/audit-trail.js`, which is where the schema sits: the audit trail is
 // the only place the category is published, and the converter grouped it with the endpoints that
@@ -91,108 +91,6 @@ export interface PlatformEvent extends EventRef {
     details?: Record<string, unknown>;
 }
 
-/**
- * Lifecycle actions published by the workflow completion interceptor. The names intentionally
- * match the legacy notify_endpoints event_name values so migrated webhook subscribers receive
- * byte-identical status/event_name fields.
- */
-export type WorkflowLifecycleAction = 'workflow_completed' | 'workflow_failed';
-
-export interface DocumentProcessingModelUsage {
-    role: 'extraction' | 'review';
-    run_id: string;
-    model?: string;
-    environment_id?: string;
-    provider?: string;
-}
-
-/** Compact, content-free operational summary emitted after grounded IDP completes. */
-export interface DocumentProcessedEventData {
-    schema_version: 1;
-    pipeline: 'grounded_extraction';
-    object_id: string;
-    page_count: number;
-    ocr_page_count: number;
-    vision_page_count: number;
-    property_count: number;
-    citation_count: number;
-    verification: GroundedVerificationBreakdown;
-    result_path: string;
-    confidence?: number;
-    coverage_min?: number;
-    hardness?: number;
-    escalated?: boolean;
-    reviewed?: boolean;
-    review_issue_count?: number;
-    verdict?: 'good_to_go' | 'needs_review';
-    verdict_reason?: string;
-    models_used?: DocumentProcessingModelUsage[];
-    review_agent_run_id?: string;
-}
-
-/**
- * Resource flavor of a workflow lifecycle event, derived from the Temporal workflow type:
- * ExecuteConversationWorkflow -> agent_run, ExecuteProcessWorkflow -> process_run,
- * document-scoped workflows may use content_object, and anything else -> workflow_run.
- */
-export type WorkflowLifecycleResourceType = 'workflow_run' | 'agent_run' | 'process_run' | 'content_object';
-
-/**
- * Body of POST /internal/events/publish (zeno-server, workload-identity gated). Sent by Temporal
- * workers to publish a workflow lifecycle event to the event bus; the server fills event ids,
- * tenant, timestamp and causality from caused_by.
- */
-export interface PublishWorkflowLifecycleEventRequest {
-    account_id: string;
-    project_id: string;
-    action: WorkflowLifecycleAction;
-    resource_type: WorkflowLifecycleResourceType;
-    /** Domain resource the workflow acted on. Defaults to workflow_id for workflow-scoped events. */
-    resource_id?: string;
-    workflow_id: string;
-    workflow_run_id: string;
-    workflow_type: string;
-    /** Rule/subscription name that started the run (payload.wf_rule_name), used for filtering. */
-    workflow_rule_name?: string;
-    initiated_by?: string;
-    /** Workflow return value for completed runs. */
-    result?: unknown;
-    /** Error message for failed runs. */
-    error?: string;
-    /** EventRef of the event that started the workflow (payload.vars.event_ref), if any. */
-    caused_by?: EventRef;
-    /** Optional IDP outcome published as a separate, subscribable content event. */
-    document_processed?: DocumentProcessedEventData;
-}
-
-/**
- * A provider-neutral external work-item thread identity. The pair `(resource_type, resource_id)`
- * derives a stable `eventThreadTag` (see `@dglabs/event-bus`), so all events of the same thread
- * correlate to one agent run.
- */
-interface EventThreadRef {
-    resource_type: string;
-    resource_id: string;
-}
-
-/**
- * Body of the internal, workload-identity-gated run-threads endpoint. Sent by a Temporal worker so an
- * agent run can register additional external-thread identities on **itself** mid-run, so later events on
- * those threads route to the same run. The server computes the thread tags from `(account, project,
- * resource_type, resource_id)` and idempotently appends them to the run; the worker never supplies a raw
- * tag.
- */
-export interface AppendAgentRunThreadsRequest {
-    account_id: string;
-    project_id: string;
-    threads: EventThreadRef[];
-}
-
-export interface AppendAgentRunThreadsResponse {
-    /** The thread tags that are now present on the run (the full event-thread tag set). */
-    thread_tags: string[];
-}
-
 export type EventSubscriptionFilter = z.infer<typeof EventSubscriptionFilterSchema>;
 
 // --- Semantic conditions ---
@@ -218,8 +116,6 @@ export type SemanticEvaluationRecord = z.infer<typeof SemanticEvaluationRecordSc
 export type WorkflowEventDeliveryTarget = z.infer<typeof WorkflowEventDeliveryTargetSchema>;
 
 export type WebhookEventDeliveryTarget = z.infer<typeof WebhookEventDeliveryTargetSchema>;
-
-export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
 
 export type AgentDeliveryMatchMode = z.infer<typeof AgentDeliveryMatchModeSchema>;
 
@@ -261,16 +157,6 @@ export type EventDeliveryTargetInput =
     | WebhookEventDeliveryTargetInput
     | AgentEventDeliveryTarget
     | ProcessEventDeliveryTarget;
-
-export interface MatchedEventSubscriptionSnapshot {
-    subscription_id: string;
-    subscription_name: string;
-    target: EventDeliveryTarget;
-    priority: EventPriority;
-    run_as_role: SystemRoles;
-    /** Semantic condition carried from the subscription filter, evaluated at delivery time. */
-    semantic_condition?: EventSemanticCondition;
-}
 
 export interface EventSubscription {
     id: string;
@@ -416,11 +302,6 @@ export type CancelEventDeliveryIntentsPayload = z.infer<typeof CancelEventDelive
 
 export type CancelEventDeliveryIntentsResponse = z.infer<typeof CancelEventDeliveryIntentsResponseSchema>;
 
-export interface PublishPlatformEventPayload {
-    event: PlatformEvent;
-    priority?: EventPriority;
-}
-
 // --- External event ingest channels ---
 // An ingest channel is a token-authenticated inbound endpoint that lets external systems publish
 // events into the platform event bus. Ingested events get event_category 'external' and
@@ -443,26 +324,3 @@ export type CreateEventIngestChannelPayload = z.infer<typeof CreateEventIngestCh
 export type UpdateEventIngestChannelPayload = z.infer<typeof UpdateEventIngestChannelPayloadSchema>;
 
 export type EventIngestChannelMutationResponse = z.infer<typeof EventIngestChannelMutationResponseSchema>;
-
-/**
- * Body accepted by the public ingest webhook
- * `POST /webhooks/events/:accountId/:projectId/:channelId`. All fields are optional: when omitted the
- * channel transform / defaults are applied. The raw body is preserved under `event.details.payload`.
- */
-export interface IngestExternalEventPayload {
-    action?: string;
-    resource_type?: string;
-    resource_id?: string;
-    /** Domain payload; defaults to the full raw body when omitted. */
-    payload?: Record<string, unknown>;
-    /** Extra fields merged into `event.details`. */
-    details?: Record<string, unknown>;
-    /** Deduplication key: the same key produces the same event id. */
-    idempotency_key?: string;
-    /** ISO 8601 event timestamp; defaults to ingest time. */
-    timestamp?: string;
-}
-
-export interface IngestExternalEventResponse {
-    event_id: string;
-}
