@@ -30,7 +30,7 @@ import {
     ToolDefinitionSchema,
     ToolUseSchema,
 } from '@llumiverse/common/schemas';
-import type { ValidateFunction } from 'ajv/dist/2020.js';
+import type { ErrorObject, ValidateFunction } from 'ajv/dist/2020.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
 import { z } from 'zod';
@@ -3433,28 +3433,22 @@ function visitSchemaNodes(value: unknown, visit: (node: JsonObject) => void): vo
     for (const item of Object.values(value)) visitSchemaNodes(item, visit);
 }
 
-/**
- * Which component each schema object in AJV's copy came from, by object identity.
- *
- * AJV resolves a `$ref` to the very object registered under that name, and `verbose: true` puts that
- * object on the error as `parentSchema` — so identity recovers the component name that a
- * `$ref`-flattened `schemaPath` has already thrown away. Both are needed by {@link collectIssues} to
- * tell one branch of an undiscriminated union from another.
- */
-let ajvComponentNames: Map<unknown, string> | undefined;
+/** The `$id` the whole component envelope is registered under, and the base of every `$ref` to it. */
+const AJV_SCHEMA_ID = 'vertesia://openapi';
 
 function getAjv(): Ajv2020 {
     if (ajvInstance) return ajvInstance;
-    // `verbose` is what carries `parentSchema` onto each error. It is populated only when validation
-    // fails, and the value is a reference to the already-registered schema rather than a copy.
+    // `verbose` carries two things {@link collectIssues} needs and nothing else supplies: the schema
+    // object that raised each error, which is the only unambiguous way to tell one union candidate
+    // from another, and the value under evaluation, which is what a failed union is re-checked
+    // against. Both are populated only when validation fails, and both are references rather than
+    // copies.
     const ajv = new Ajv2020({ strictSchema: false, allErrors: true, discriminator: true, verbose: true });
     // Without this, AJV treats `format` as an annotation and ignores it, so a `date-time` property
     // would document a constraint nothing checks — the exact spec/enforcement gap this design is
     // meant to close.
     addFormats(ajv);
-    const schemas = toAjvComponents();
-    ajvComponentNames = new Map(Object.entries(schemas).map(([name, schema]) => [schema, name]));
-    ajv.addSchema({ $id: 'vertesia://openapi', components: { schemas } });
+    ajv.addSchema({ $id: AJV_SCHEMA_ID, components: { schemas: toAjvComponents() } });
     ajvInstance = ajv;
     return ajv;
 }
@@ -3462,7 +3456,7 @@ function getAjv(): Ajv2020 {
 function getValidator(name: ApiComponentName): ValidateFunction {
     const cached = validators.get(name);
     if (cached) return cached;
-    const validate = getAjv().compile({ $ref: `vertesia://openapi${apiComponentRef(name)}` });
+    const validate = getAjv().compile({ $ref: `${AJV_SCHEMA_ID}${apiComponentRef(name)}` });
     validators.set(name, validate);
     return validate;
 }
@@ -3499,59 +3493,99 @@ export interface ApiValidationIssue {
     /** Undeclared property names at {@link path}, in the order AJV reported them. */
     undeclared?: string[];
     /**
-     * The component this issue is stated against, set only when {@link path} has issues from more
-     * than one — i.e. under an undiscriminated `oneOf`, where each is a claim about a DIFFERENT
-     * candidate shape and reading them as one set of facts about the value is wrong.
+     * The union candidate this issue is a claim ABOUT, when it is not a fact about the value.
+     *
+     * Set on every issue produced by expanding a failed untagged `oneOf`/`anyOf` — see
+     * {@link collectIssues}. Under such a union each candidate rejects the value for its own
+     * reasons, most of which are irrelevant to the shape the value actually meant, so an issue
+     * carrying a component must be read as "as a `<component>`, this is wrong" and never as
+     * "this is wrong".
+     *
+     * Absent means the opposite and stronger thing: the issue holds against the component the
+     * payload is being validated as, whatever candidate it turns out to be.
      */
     component?: string;
 }
 
 /**
  * The failures, with the undeclared properties a SINGLE schema reported at a given path gathered
- * into one issue.
+ * into one issue, and each failed untagged union expanded per candidate.
  *
  * AJV reports `additionalProperties` per property, so a value carrying a whole foreign object — a
  * Mongoose document that reached the response mapper unmapped, say — produces one error per own key
  * and buries every other failure in the payload. Gathering is lossless: every name is kept, in the
- * order AJV found it.
- *
- * Gathering by path ALONE was wrong, and visibly so. Under an undiscriminated `oneOf` every branch
- * reports against the same path, so merging produced a union of names from shapes the value never
- * claimed to be. A condition branch `{ label, to, when }` came out as
- *
- *     /nodes/x/branches/0 must NOT have additional properties: label, to, when
- *
- * naming `to` and `when` — both declared on `BranchDefinition`, the branch it obviously meant — and
- * pointing the reader at valid fields. Only `label` is undeclared anywhere.
- *
- * So the gather is keyed by the schema that raised the error as well as the path. `schemaPath` will
- * not do: a `$ref`'d branch resets it to `#/additionalProperties`, identical for every branch. The
+ * order AJV found it. It is keyed by the schema that raised the error as well as the path, so two
+ * candidates complaining at one path never merge into a single line. `schemaPath` will not do: a
+ * `$ref`'d candidate resets it to `#/additionalProperties`, identical for every candidate. The
  * schema object itself is unambiguous, and `verbose: true` supplies it.
  *
- * `discriminator: true` already narrows a TAGGED union to one branch, so this is what is left: the
- * unions with no tag to narrow by, where all that can honestly be said is what each candidate shape
- * rejected. Those get named — see {@link ApiValidationIssue.component}.
+ * `discriminator: true` narrows a TAGGED union to the one branch its tag names, so nothing below
+ * applies to those. What is left is the unions with no tag: AJV runs the value against every
+ * candidate and reports all of their failures, flat and unattributed. Read as facts they are
+ * nonsense — for a condition branch `{ to, when }` with a malformed `when`, raw AJV says
+ *
+ *     /nodes/a/branches/0/when must be object                              <- BranchDefinition
+ *     /nodes/a/branches/0 must have required property 'id'                 <- BranchNodeBranchDefinition
+ *     /nodes/a/branches/0 must NOT have additional properties: to, when    <- BranchNodeBranchDefinition
+ *     /nodes/a/branches/0 must match exactly one schema in oneOf
+ *
+ * where `to` and `when` are declared on `BranchDefinition` and only wrong for a candidate the value
+ * never meant. Nothing in the error list says which claim belongs to which candidate, and the
+ * candidates fail at DIFFERENT paths, so no rule based on the path can recover it.
+ *
+ * So the union is re-validated candidate by candidate, and each candidate's own failures are
+ * attributed to it by name. That is exact rather than inferred, at the cost of one extra validation
+ * per candidate — paid only on a response that is already failing:
+ *
+ *     /nodes/a/branches/0 must match exactly one schema in oneOf
+ *     /nodes/a/branches/0/when as BranchDefinition: must be object
+ *     /nodes/a/branches/0 as BranchNodeBranchDefinition: must have required property 'id'
+ *     /nodes/a/branches/0 as BranchNodeBranchDefinition: must NOT have additional properties: to, when
+ *
+ * Expansion goes ONE level deep: a candidate's own errors are collected without expanding any union
+ * nested inside it, which bounds the work and keeps the output readable.
  */
 function collectIssues(validate: ValidateFunction): ApiValidationIssue[] {
+    return toIssues(validate.errors ?? [], true);
+}
+
+function toIssues(errors: readonly ErrorObject[], expandUnions: boolean): ApiValidationIssue[] {
+    const expansions = new Map<string, ApiValidationIssue[]>();
+    if (expandUnions) {
+        for (const error of errors) {
+            if (error.keyword !== 'oneOf' && error.keyword !== 'anyOf') continue;
+            const expanded = expandUnion(error);
+            if (expanded) expansions.set(error.instancePath, expanded);
+        }
+    }
+    /** Whether an expanded union already accounts for this error, making the raw form redundant. */
+    const superseded = (error: ErrorObject): boolean => {
+        for (const base of expansions.keys()) {
+            if (error.instancePath === base || error.instancePath.startsWith(`${base}/`)) return true;
+        }
+        return false;
+    };
+
     const issues: ApiValidationIssue[] = [];
-    // Keyed by the raising schema, then by path: two branches at one path stay separate, and one
+    // Keyed by the raising schema, then by path: two candidates at one path stay separate, and one
     // schema's repeats at one path merge.
     const gathered = new Map<unknown, Map<string, { issue: ApiValidationIssue; names: Set<string> }>>();
-    const componentsByPath = new Map<string, Set<string>>();
 
-    for (const error of validate.errors ?? []) {
+    for (const error of errors) {
         const path = error.instancePath || '/';
         const message = error.message ?? 'is invalid';
-        const component = ajvComponentNames?.get(error.parentSchema);
-        if (component !== undefined) {
-            const seen = componentsByPath.get(path);
-            if (seen) seen.add(component);
-            else componentsByPath.set(path, new Set([component]));
+        const expanded = expansions.get(error.instancePath);
+        if (expanded && (error.keyword === 'oneOf' || error.keyword === 'anyOf')) {
+            // The union's own line frames the candidates that follow it.
+            issues.push({ path, message });
+            issues.push(...expanded);
+            continue;
         }
+        if (superseded(error)) continue;
 
         const additional = additionalProperty(error);
         if (additional === undefined) {
-            issues.push({ path, message, component });
+            issues.push({ path, message });
             continue;
         }
 
@@ -3569,17 +3603,48 @@ function collectIssues(validate: ValidateFunction): ApiValidationIssue[] {
             }
             continue;
         }
-        const issue: ApiValidationIssue = { path, message, undeclared: [additional], component };
+        const issue: ApiValidationIssue = { path, message, undeclared: [additional] };
         byPath.set(path, { issue, names: new Set([additional]) });
         issues.push(issue);
     }
-
-    // A component name is worth carrying only where it disambiguates. Everywhere else it is the
-    // component the reader already knows they are validating against, and only lengthens the line.
-    for (const issue of issues) {
-        if ((componentsByPath.get(issue.path)?.size ?? 0) < 2) issue.component = undefined;
-    }
     return issues;
+}
+
+/**
+ * One failed union, re-stated as what each candidate objected to.
+ *
+ * `undefined` when the union cannot be attributed exactly — a candidate that is not a `$ref` to a
+ * registered component has no name to report it under, and a partly-named expansion would read as
+ * though the unnamed candidate had no objection. The raw errors are kept in that case, which is what
+ * AJV would have produced anyway.
+ */
+function expandUnion(error: ErrorObject): ApiValidationIssue[] | undefined {
+    const parent = error.parentSchema;
+    if (!isPlainObject(parent)) return undefined;
+    const members = Array.isArray(parent.oneOf) ? parent.oneOf : Array.isArray(parent.anyOf) ? parent.anyOf : undefined;
+    if (!members?.length) return undefined;
+
+    const issues: ApiValidationIssue[] = [];
+    for (const member of members) {
+        const ref = isPlainObject(member) && typeof member.$ref === 'string' ? member.$ref : undefined;
+        if (!ref?.startsWith(COMPONENT_REF_PREFIX)) return undefined;
+        const validateMember = getAjv().getSchema(`${AJV_SCHEMA_ID}${ref}`);
+        if (!validateMember) return undefined;
+        // `verbose: true` puts the value under evaluation on the error, so the candidates are run
+        // against exactly what the union saw.
+        if (validateMember(error.data)) continue;
+        const component = ref.slice(COMPONENT_REF_PREFIX.length);
+        for (const issue of toIssues(validateMember.errors ?? [], false)) {
+            issues.push({ ...issue, path: joinInstancePath(error.instancePath, issue.path), component });
+        }
+    }
+    return issues.length > 0 ? issues : undefined;
+}
+
+/** Re-roots a candidate-relative path under the union's own path. */
+function joinInstancePath(base: string, relative: string): string {
+    if (relative === '/') return base || '/';
+    return `${base}${relative}`;
 }
 
 /**
@@ -3589,10 +3654,23 @@ function collectIssues(validate: ValidateFunction): ApiValidationIssue[] {
  * with a length limit rather than shortening this string; see `reportableErrors` in the enforcer.
  */
 export function renderApiValidationIssue(issue: ApiValidationIssue): string {
-    const head = issue.component
-        ? `${issue.path} as ${issue.component}: ${issue.message}`
-        : `${issue.path} ${issue.message}`;
+    const head = renderApiValidationIssueHead(issue);
     return issue.undeclared?.length ? `${head}: ${issue.undeclared.join(', ')}` : head;
+}
+
+/**
+ * Everything in a rendered issue except the property names: `<path> [as <component>]: <message>`.
+ *
+ * Exported because it is not the only renderer. A caller that has to bound the length of a message
+ * cannot use {@link renderApiValidationIssue} — it emits every name — and has to rebuild the line
+ * from {@link ApiValidationIssue} with its own budget for the names. Rebuilding the HEAD too is what
+ * lets the two drift: when `component` was added, the bounded renderer at the HTTP boundary went on
+ * concatenating path and message and silently dropped it, so callers were told
+ * `must NOT have additional properties: to, when` with no sign it was one candidate's claim. There is
+ * one definition of the head so that cannot happen again.
+ */
+export function renderApiValidationIssueHead(issue: ApiValidationIssue): string {
+    return issue.component ? `${issue.path} as ${issue.component}: ${issue.message}` : `${issue.path} ${issue.message}`;
 }
 
 /** The failed branch of every validator here, so the two views cannot be built inconsistently. */
