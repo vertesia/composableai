@@ -1,10 +1,8 @@
 import {
-    type ActiveWorkstreamEntry,
     type AgentMessage,
     AgentMessageType,
     type AgentRun,
     type AgentToolApprovalMode,
-    type CompletedWorkstreamEntry,
     type ConversationFile,
     type ConversationFileRef,
     FileProcessingStatus,
@@ -40,8 +38,17 @@ import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
+import {
+    activeWorkstreamEntryToInfo,
+    completedWorkstreamEntryToInfo,
+    deriveWorkstreamsFromMessages,
+    isActiveWorkstreamStatus,
+    mergeWorkstreamInfo,
+} from './deriveWorkstreams.js';
+import { useActiveWorkstreams } from './hooks/useActiveWorkstreams.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
+import { deriveArtifactRefreshKey } from './hooks/useArtifacts.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
 import { useFileProcessing } from './hooks/useFileProcessing.js';
 import { ImageLightboxProvider } from './ImageLightbox';
@@ -68,7 +75,6 @@ import {
     debugAgentChat,
     filterMessagesForActiveWorkstream,
     getConversationUrl,
-    getWorkstreamId,
     isInProgress,
 } from './ModernAgentOutput/utils';
 import {
@@ -82,12 +88,7 @@ import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
 import { VegaLiteChart } from './VegaLiteChart';
 import { ThinkingMessages } from './WaitingMessages';
-import {
-    getWorkstreamDisplayName,
-    getWorkstreamLaunchDetails,
-    getWorkstreamLifecycleStatus,
-    isWorkstreamInternalResultMessage,
-} from './workstreams.js';
+import { getWorkstreamDisplayName } from './workstreams.js';
 
 export interface StartWorkflowOptions {
     tool_approval_mode?: AgentToolApprovalMode;
@@ -105,20 +106,6 @@ function getTimestampMs(timestamp: number | string | undefined): number {
     if (!timestamp) return Date.now();
     const parsed = new Date(timestamp).getTime();
     return Number.isFinite(parsed) ? parsed : Date.now();
-}
-
-type DerivedWorkstreamInfo = WorkstreamInfo & {
-    started_at: number;
-    updated_at: number;
-    order: number;
-};
-
-function isActiveWorkstreamStatus(status: WorkstreamInfo['status']) {
-    return status === 'running' || status === 'canceling';
-}
-
-function isTerminalWorkstreamStatus(status: WorkstreamInfo['status']) {
-    return !isActiveWorkstreamStatus(status);
 }
 
 function getNumberDetail(value: unknown): number | undefined {
@@ -149,237 +136,6 @@ function toContextWindowUsage(messages: AgentMessage[]): ContextWindowUsage | un
     }
 
     return undefined;
-}
-
-function mergePreservingTerminalStatus(existing: WorkstreamInfo, next: WorkstreamInfo): WorkstreamInfo {
-    if (!isTerminalWorkstreamStatus(existing.status) || !isActiveWorkstreamStatus(next.status)) {
-        return { ...existing, ...next };
-    }
-
-    return {
-        ...existing,
-        interaction: existing.interaction ?? next.interaction,
-        elapsed_ms: Math.max(existing.elapsed_ms, next.elapsed_ms),
-        deadline_ms: Math.max(existing.deadline_ms, next.deadline_ms),
-        remaining_ms: 0,
-        phase: existing.phase ?? next.phase,
-        child_workflow_id: existing.child_workflow_id ?? next.child_workflow_id,
-        child_workflow_run_id: existing.child_workflow_run_id ?? next.child_workflow_run_id,
-    };
-}
-
-function getWorkstreamMessageDetails(message: AgentMessage): {
-    workstreamId: string;
-    launchId?: string;
-    interaction?: string;
-    childWorkflowId?: string;
-    childWorkflowRunId?: string;
-} | null {
-    const details = message.details as
-        | {
-              workstream_id?: unknown;
-              launch_id?: unknown;
-              interaction?: unknown;
-              child_workflow_id?: unknown;
-              child_workflow_run_id?: unknown;
-          }
-        | undefined;
-
-    const workstreamId =
-        typeof details?.workstream_id === 'string' && details.workstream_id.trim()
-            ? details.workstream_id
-            : getWorkstreamId(message);
-
-    if (workstreamId === 'main' || workstreamId === 'all') return null;
-
-    return {
-        workstreamId,
-        launchId: typeof details?.launch_id === 'string' ? details.launch_id : undefined,
-        interaction: typeof details?.interaction === 'string' ? details.interaction : undefined,
-        childWorkflowId: typeof details?.child_workflow_id === 'string' ? details.child_workflow_id : undefined,
-        childWorkflowRunId:
-            typeof details?.child_workflow_run_id === 'string' ? details.child_workflow_run_id : undefined,
-    };
-}
-
-function isWorkstreamActivityFailureMessage(message: AgentMessage): boolean {
-    if (message.type !== AgentMessageType.ERROR) return false;
-
-    const details = message.details as
-        | {
-              activity_group_id?: unknown;
-              event_class?: unknown;
-              tool?: unknown;
-              tool_event?: unknown;
-              tool_run_id?: unknown;
-              tool_status?: unknown;
-              workstream_event?: unknown;
-          }
-        | undefined;
-
-    if (details?.event_class !== 'activity') return false;
-    if (details.workstream_event) return false;
-
-    return !(
-        details.tool ||
-        details.tool_status ||
-        details.tool_run_id ||
-        details.activity_group_id ||
-        details.tool_event
-    );
-}
-
-function ensureWorkstreamRecord(
-    records: Map<string, DerivedWorkstreamInfo>,
-    latestKeyByWorkstream: Map<string, string>,
-    workstreamId: string,
-    launchId: string | undefined,
-    timestamp: number,
-    order: number,
-): DerivedWorkstreamInfo {
-    if (launchId) {
-        const previousKey = latestKeyByWorkstream.get(workstreamId);
-        if (previousKey?.startsWith('message-derived:')) {
-            const previous = records.get(previousKey);
-            if (previous) {
-                records.delete(previousKey);
-                records.set(launchId, {
-                    ...previous,
-                    launch_id: launchId,
-                    updated_at: Math.max(previous.updated_at, timestamp),
-                });
-            }
-        }
-        latestKeyByWorkstream.set(workstreamId, launchId);
-    }
-
-    const key = launchId ?? latestKeyByWorkstream.get(workstreamId) ?? `message-derived:${workstreamId}`;
-    const existing = records.get(key);
-    if (existing) return existing;
-
-    const record: DerivedWorkstreamInfo = {
-        workstream_id: workstreamId,
-        launch_id: key,
-        elapsed_ms: 0,
-        deadline_ms: 0,
-        remaining_ms: 0,
-        status: 'running',
-        started_at: timestamp,
-        updated_at: timestamp,
-        order,
-    };
-    records.set(key, record);
-    if (!latestKeyByWorkstream.has(workstreamId)) latestKeyByWorkstream.set(workstreamId, key);
-    return record;
-}
-
-function deriveWorkstreamsFromMessages(messages: AgentMessage[]): WorkstreamInfo[] {
-    const records = new Map<string, DerivedWorkstreamInfo>();
-    const latestKeyByWorkstream = new Map<string, string>();
-
-    messages.forEach((message, order) => {
-        const timestamp = getTimestampMs(message.timestamp);
-        const details = getWorkstreamMessageDetails(message);
-        const launchDetails = getWorkstreamLaunchDetails(message);
-        const workstreamId = launchDetails?.workstreamId ?? details?.workstreamId;
-        if (!workstreamId) return;
-
-        const launchId = launchDetails?.launchId ?? details?.launchId;
-        const isInternalResult = isWorkstreamInternalResultMessage(message);
-        if (!launchDetails && !launchId && isInternalResult && !latestKeyByWorkstream.has(workstreamId)) return;
-
-        const record = ensureWorkstreamRecord(records, latestKeyByWorkstream, workstreamId, launchId, timestamp, order);
-
-        if (launchDetails) {
-            record.interaction = launchDetails.interaction ?? record.interaction;
-            record.child_workflow_id = launchDetails.childWorkflowId ?? record.child_workflow_id;
-            record.child_workflow_run_id = launchDetails.childWorkflowRunId ?? record.child_workflow_run_id;
-            record.status = 'running';
-        } else {
-            record.interaction = details?.interaction ?? record.interaction;
-            record.child_workflow_id = details?.childWorkflowId ?? record.child_workflow_id;
-            record.child_workflow_run_id = details?.childWorkflowRunId ?? record.child_workflow_run_id;
-        }
-
-        const lifecycleStatus = getWorkstreamLifecycleStatus(message);
-        if (lifecycleStatus) {
-            record.status = lifecycleStatus;
-        } else if (!isInternalResult) {
-            if (isWorkstreamActivityFailureMessage(message)) {
-                record.status = 'failed';
-            } else if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
-                record.status = 'completed';
-            }
-        }
-
-        if (isInternalResult) return;
-
-        record.updated_at = Math.max(record.updated_at, timestamp);
-        if (isActiveWorkstreamStatus(record.status)) {
-            record.elapsed_ms = Math.max(record.elapsed_ms, timestamp - record.started_at);
-        } else {
-            record.elapsed_ms = Math.max(record.elapsed_ms, timestamp - record.started_at);
-            record.remaining_ms = 0;
-        }
-    });
-
-    return Array.from(records.values())
-        .sort((a, b) => {
-            const activeDelta =
-                Number(!isActiveWorkstreamStatus(a.status)) - Number(!isActiveWorkstreamStatus(b.status));
-            if (activeDelta !== 0) return activeDelta;
-            if (isActiveWorkstreamStatus(a.status)) return a.order - b.order;
-            return b.updated_at - a.updated_at || a.order - b.order;
-        })
-        .map(({ started_at, updated_at, order, ...workstream }) => workstream);
-}
-
-function activeWorkstreamEntryToInfo(ws: ActiveWorkstreamEntry): WorkstreamInfo {
-    return {
-        workstream_id: ws.workstream_id,
-        launch_id: ws.launch_id,
-        interaction: ws.interaction,
-        elapsed_ms: ws.elapsed_ms,
-        deadline_ms: ws.deadline_ms,
-        remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
-        status: ws.status,
-        phase: ws.latest_progress?.phase,
-        child_workflow_id: ws.child_workflow_id,
-        child_workflow_run_id: ws.child_workflow_run_id,
-    };
-}
-
-function completedWorkstreamEntryToInfo(ws: CompletedWorkstreamEntry): WorkstreamInfo {
-    return {
-        workstream_id: ws.workstream_id,
-        launch_id: ws.launch_id,
-        interaction: ws.interaction,
-        elapsed_ms: ws.duration_ms ?? 0,
-        deadline_ms: 0,
-        remaining_ms: 0,
-        status: ws.status,
-        phase: ws.last_progress?.phase,
-        child_workflow_id: ws.child_workflow_id,
-        child_workflow_run_id: ws.child_workflow_run_id,
-    };
-}
-
-function mergeWorkstreamInfo(workstreams: WorkstreamInfo[], next: WorkstreamInfo) {
-    const existingIndex = workstreams.findIndex((ws) => ws.launch_id === next.launch_id);
-    if (existingIndex >= 0) {
-        workstreams[existingIndex] = mergePreservingTerminalStatus(workstreams[existingIndex], next);
-        return;
-    }
-
-    const fallbackIndex = workstreams.findIndex(
-        (ws) => ws.workstream_id === next.workstream_id && ws.launch_id.startsWith('message-derived:'),
-    );
-    if (fallbackIndex >= 0 && !next.launch_id.startsWith('message-derived:')) {
-        workstreams[fallbackIndex] = mergePreservingTerminalStatus(workstreams[fallbackIndex], next);
-        return;
-    }
-
-    workstreams.push(next);
 }
 
 function formatCompactDuration(seconds: number): string {
@@ -1397,9 +1153,6 @@ function ModernAgentConversationInner({
     const [playbackCursor, setPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
     const [isPlaybackToggleEnabled, setIsPlaybackToggleEnabled] = useState(false);
     const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
-    const [queriedActiveWorkstreams, setQueriedActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
-    const [queriedCompletedWorkstreams, setQueriedCompletedWorkstreams] = useState<CompletedWorkstreamEntry[]>([]);
-    const [isWorkstreamQueryUnavailable, setIsWorkstreamQueryUnavailable] = useState(false);
     const initialResolvedToolApprovalMode = useMemo<AgentToolApprovalMode | undefined>(
         () =>
             initialToolApprovalMode === undefined && interactive
@@ -1410,7 +1163,6 @@ function ModernAgentConversationInner({
     const [toolApprovalMode, setToolApprovalMode] = useState<AgentToolApprovalMode | undefined>(
         initialResolvedToolApprovalMode,
     );
-    const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
     const pendingPlaybackScrollRef = useRef(false);
     const toolApprovalModeChangeVersionRef = useRef(0);
@@ -1453,6 +1205,16 @@ function ModernAgentConversationInner({
             normalizedStatus === 'TIMED_OUT'
         );
     }, [effectiveWorkflowStatus]);
+
+    const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
+
+    // Live enrichment on top of the message stream: poll the backend for workstream
+    // state while the run can still answer, then fall back to the persisted messages.
+    const { active: queriedActiveWorkstreams, completed: queriedCompletedWorkstreams } = useActiveWorkstreams(
+        client,
+        agentRunId,
+        initialHistoryStatus !== 'loading' && !effectiveIsCompleted && !isWorkflowTerminal,
+    );
 
     // When a terminal conversation can be restarted (host provided a restart handler),
     // we keep the composer visible and seamlessly resume the agent on the next message
@@ -1569,7 +1331,6 @@ function ModernAgentConversationInner({
         () => playbackDerivedWorkstreams.filter((ws) => isActiveWorkstreamStatus(ws.status)),
         [playbackDerivedWorkstreams],
     );
-    const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const pendingRequestInputMessage = useMemo(
         () => getPendingRequestInputMessage(displayedMessages),
@@ -1796,95 +1557,6 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onWorkstreamStatusChange?.(workstreamStatusMap);
     }, [workstreamStatusMap, onWorkstreamStatusChange]);
-
-    useEffect(() => {
-        void agentRunId;
-        workstreamFetchFailedRef.current = false;
-        setIsWorkstreamQueryUnavailable(false);
-        setQueriedActiveWorkstreams([]);
-        setQueriedCompletedWorkstreams([]);
-    }, [agentRunId]);
-
-    // Poll the backend query only as live enrichment. Persisted messages remain the
-    // source of truth for the right-panel history once a workflow can no longer be queried.
-    useEffect(() => {
-        const shouldPoll =
-            initialHistoryStatus !== 'loading' &&
-            !effectiveIsCompleted &&
-            !isWorkflowTerminal &&
-            !isWorkstreamQueryUnavailable;
-        debugAgentChat('active workstreams poll state', {
-            agentRunId,
-            shouldPoll,
-            initialHistoryStatus,
-            effectiveIsCompleted,
-            isWorkflowTerminal,
-            isWorkstreamQueryUnavailable,
-        });
-        if (!shouldPoll) {
-            setQueriedActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
-            return;
-        }
-
-        let isCancelled = false;
-        let isFetchInFlight = false;
-
-        const fetchActiveWorkstreams = async () => {
-            if (isFetchInFlight) {
-                debugAgentChat('active workstreams fetch skipped while previous request is pending', { agentRunId });
-                return;
-            }
-
-            isFetchInFlight = true;
-            try {
-                debugAgentChat('active workstreams fetch start', { agentRunId });
-                const result = await client.agents.getActiveWorkstreams(agentRunId);
-                if (isCancelled) return;
-                debugAgentChat('active workstreams fetch success', {
-                    agentRunId,
-                    runningCount: result.running?.length ?? 0,
-                    completedCount: result.completed?.length ?? 0,
-                    unavailable: result.unavailable === true,
-                });
-                setQueriedActiveWorkstreams(result.running ?? []);
-                setQueriedCompletedWorkstreams(result.completed ?? []);
-                if (result.unavailable) {
-                    setIsWorkstreamQueryUnavailable(true);
-                    return;
-                }
-                workstreamFetchFailedRef.current = false;
-            } catch (error) {
-                if (isCancelled) return;
-                setQueriedActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
-                setIsWorkstreamQueryUnavailable(true);
-                debugAgentChat('active workstreams fetch failed', {
-                    agentRunId,
-                    error: error instanceof Error ? error.message : String(error),
-                });
-                if (!workstreamFetchFailedRef.current) {
-                    console.warn('Failed to fetch active workstreams:', error);
-                    workstreamFetchFailedRef.current = true;
-                }
-            } finally {
-                isFetchInFlight = false;
-            }
-        };
-
-        void fetchActiveWorkstreams();
-        const pollHandle = window.setInterval(fetchActiveWorkstreams, 10000);
-
-        return () => {
-            isCancelled = true;
-            window.clearInterval(pollHandle);
-        };
-    }, [
-        client.agents,
-        agentRunId,
-        effectiveIsCompleted,
-        initialHistoryStatus,
-        isWorkflowTerminal,
-        isWorkstreamQueryUnavailable,
-    ]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
@@ -2370,16 +2042,7 @@ function ModernAgentConversationInner({
 
     // Artifact refresh key — bumps when tool calls complete or conversation finishes,
     // which is when new artifacts are most likely to appear.
-    const artifactRefreshKey = useMemo(() => {
-        return messages.filter((m) => {
-            if (m.type === AgentMessageType.COMPLETE) return true;
-            if (m.type === AgentMessageType.THOUGHT) {
-                const details = m.details as Record<string, unknown> | undefined;
-                return details?.tool_status === 'completed';
-            }
-            return false;
-        }).length;
-    }, [messages]);
+    const artifactRefreshKey = useMemo(() => deriveArtifactRefreshKey(messages), [messages]);
 
     // PERFORMANCE: Memoize taskLabels to prevent AllMessagesMixed re-renders
     const taskLabels = useMemo(
