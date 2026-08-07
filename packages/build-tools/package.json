@@ -52,7 +52,7 @@
     },
     "peerDependencies": {
         "@hono/node-server": "^2.0.12",
-        "vite": "^8.1.4"
+        "vite": "^8.2.0"
     },
     "peerDependenciesMeta": {
         "@hono/node-server": {

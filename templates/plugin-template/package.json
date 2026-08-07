@@ -62,8 +62,8 @@
         "mcp"
     ],
     "peerDependencies": {
-        "react": "^19.2.7",
-        "react-dom": "^19.2.7"
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8"
     },
     "devDependencies": {
         "@biomejs/biome": "2.5.6",
@@ -76,7 +76,7 @@
         "@vertesia/build-tools": "workspace:*",
         "@vertesia/plugin-builder": "workspace:*",
         "@vitejs/plugin-basic-ssl": "^2.3.0",
-        "@vitejs/plugin-react": "^6.0.3",
+        "@vitejs/plugin-react": "^6.0.5",
         "concurrently": "^10.0.4",
         "esbuild": "^0.28.1",
         "globals": "^17.8.0",
