@@ -33,6 +33,17 @@
   ],
   "prConcurrentLimit": 40,
   "labels": ["dependencies"],
+  "customManagers": [
+    {
+      "description": "Update the zizmor version pinned in its GitHub Actions workflow",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/zizmor\\.ya?ml$/"],
+      "matchStrings": ["uvx\\s+zizmor@(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "depNameTemplate": "zizmor",
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
+    }
+  ],
   "npm": {
     // Extend Renovate's default npm manager configuration to include .template files.
     "managerFilePatterns": [
