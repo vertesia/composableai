@@ -3467,7 +3467,13 @@ function additionalProperty(error: { params?: unknown }): string | undefined {
  * on the array, where a name can be dropped whole.
  */
 export interface ApiValidationIssue {
-    /** JSON pointer to the failing value; `'/'` for the root. */
+    /**
+     * AJV's `instancePath` for the failing value, with `'/'` substituted for the root.
+     *
+     * Not quite a JSON Pointer: the pointer for a document root is the empty string, which reads as
+     * a missing path in a message. `'/'` is a display sentinel, so treat this as human-facing rather
+     * than as something to resolve against the payload.
+     */
     path: string;
     /** AJV's own message, e.g. `must NOT have additional properties`. */
     message: string;
