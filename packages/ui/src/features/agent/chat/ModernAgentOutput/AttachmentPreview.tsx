@@ -379,7 +379,14 @@ export function AttachmentPreviewList({
 }
 
 const ATTACHMENT_SECTION_RE = /^\s*(?:\*\*)?(attachments|uploaded artifacts):(?:\*\*)?\s*$/i;
-const ATTACHMENT_LINK_RE = /^\s*(?:[-*]\s*)?\[([^\]]+)]\(([^)]+)\)(?:\s+\((.*)\))?\s*$/;
+// Hrefs mirror user filenames, so they can contain parentheses and spaces
+// ("artifact:files/report (6).json"). A [^)]-style href capture truncates at the first ")",
+// making the whole line fail to parse — the file then renders as plain text and its reference
+// escapes collectDeliveredArtifactRefs. Match the note-suffixed form first (workflow-composed
+// lines end with "(image - ...)" / "(text extracted to ...)"), then fall back to
+// greedy-to-last-paren for plain links.
+const ATTACHMENT_LINK_WITH_NOTE_RE = /^\s*(?:[-*]\s*)?\[([^\]]+)]\((.+)\)\s+\((.*)\)\s*$/;
+const ATTACHMENT_LINK_RE = /^\s*(?:[-*]\s*)?\[([^\]]+)]\((.+)\)\s*$/;
 
 export function parseUserMessageAttachments(content: string): ParsedUserAttachments {
     const lines = content.split(/\r?\n/);
@@ -404,7 +411,7 @@ export function parseUserMessageAttachments(content: string): ParsedUserAttachme
             continue;
         }
 
-        const match = ATTACHMENT_LINK_RE.exec(trimmed);
+        const match = ATTACHMENT_LINK_WITH_NOTE_RE.exec(trimmed) ?? ATTACHMENT_LINK_RE.exec(trimmed);
         if (!match) {
             inAttachmentSection = false;
             bodyLines.push(line);

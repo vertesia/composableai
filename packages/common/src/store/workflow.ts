@@ -1180,6 +1180,11 @@ export interface ConversationFile {
      * accessible to tools via its artifact_path/md_path.
      */
     consumed_at?: number;
+    /**
+     * Carried over from the FileUploaded signal: the workflow owes a "[Files Ready]" user turn
+     * once every flagged file of the batch has settled. See ConversationFileRef.deliver_when_ready.
+     */
+    deliver_when_ready?: boolean;
 }
 
 /**
@@ -1224,6 +1229,13 @@ export interface ConversationFileRef {
     reference: string;
     /** Artifact path without prefix (e.g., "files/document.pdf") */
     artifact_path: string;
+    /**
+     * When true, the workflow delivers a "[Files Ready]" user turn itself once every flagged
+     * file of the batch has finished processing. Set by clients that stage files before the
+     * run exists (the agent start screen) and therefore cannot wait for readiness themselves —
+     * delivery must not depend on the client staying alive during text extraction.
+     */
+    deliver_when_ready?: boolean;
 }
 
 /**
