@@ -11,6 +11,7 @@ import type {
     CreateCollectionPayload,
     DynamicCollection,
     ObjectSearchResponse,
+    UpdateCollectionPayload,
 } from '@vertesia/common';
 
 export class CollectionsApi extends ApiTopic {
@@ -53,7 +54,7 @@ export class CollectionsApi extends ApiTopic {
         });
     }
 
-    update(collectionId: string, payload: Partial<CreateCollectionPayload>): Promise<{ id: string }> {
+    update(collectionId: string, payload: UpdateCollectionPayload): Promise<{ id: string }> {
         return this.put(`/${collectionId}`, {
             payload,
         });

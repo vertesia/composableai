@@ -25,6 +25,9 @@ import type {
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
     CreateAgentRunPayloadSchema,
+    CreateProcessRunByIdPayloadSchema,
+    CreateProcessRunWithDefinitionPayloadSchema,
+    CreateRunPayloadSchema,
     IngestAgentEventsPayloadSchema,
     IngestAgentEventsResponseSchema,
     ListAgentRunsQuerySchema,
@@ -46,7 +49,7 @@ import type {
     RunTypeSchema,
 } from '../api-schemas/app-lifecycle.js';
 import type { ProcessRunConfigSchema, ProcessRunTypeSchema } from '../api-schemas/process.js';
-import type { BindRunWorkflowPayloadSchema } from '../api-schemas/workflow-runs.js';
+import type { BindRunWorkflowPayloadSchema, RestartAgentRunPayloadSchema } from '../api-schemas/workflow-runs.js';
 import type { ConversationVisibility, InteractionExecutionConfiguration, RunSource } from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
@@ -412,3 +415,11 @@ export interface AgentRunInternals {
     created_at: string;
     updated_at: string;
 }
+
+export type CreateProcessRunByIdPayload = z.infer<typeof CreateProcessRunByIdPayloadSchema>;
+
+export type CreateProcessRunWithDefinitionPayload = z.infer<typeof CreateProcessRunWithDefinitionPayloadSchema>;
+
+export type CreateRunPayload = z.infer<typeof CreateRunPayloadSchema>;
+
+export type RestartAgentRunPayload = z.infer<typeof RestartAgentRunPayloadSchema>;

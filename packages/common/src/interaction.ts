@@ -68,6 +68,7 @@ import type {
     ToolResultMetaSchema,
     ToolResultSchema,
     ToolResultsPayloadSchema,
+    UpdateExecutionRunPayloadSchema,
     UserMessagePayloadSchema,
 } from './api-schemas/interaction.js';
 import type { InteractionExecutionConfigurationSchema } from './api-schemas/store.js';
@@ -663,3 +664,5 @@ export type ResolvedInteractionExecutionInfo = z.infer<typeof ResolvedInteractio
 export interface PopulatedInteraction extends Omit<Interaction, 'prompts'> {
     prompts: PopulatedPromptSegmentDef[];
 }
+
+export type UpdateExecutionRunPayload = z.infer<typeof UpdateExecutionRunPayloadSchema>;

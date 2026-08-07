@@ -4,6 +4,7 @@ import type {
     WebsiteCredentialFillRequestSchema,
     WebsiteCredentialFillResponseSchema,
     WebsiteCredentialMetadataSchema,
+    WebsiteCredentialMetadataUpdateSchema,
     WebsiteCredentialRecordSchema,
     WebsiteCredentialSecretInputSchema,
     WebsiteCredentialTotpAlgorithmSchema,
@@ -39,3 +40,5 @@ export interface UpdateWebsiteCredentialRequest extends Partial<WebsiteCredentia
 export type WebsiteCredentialFillRequest = z.infer<typeof WebsiteCredentialFillRequestSchema>;
 
 export type WebsiteCredentialFillResponse = z.infer<typeof WebsiteCredentialFillResponseSchema>;
+
+export type WebsiteCredentialMetadataUpdate = z.infer<typeof WebsiteCredentialMetadataUpdateSchema>;

@@ -45,6 +45,7 @@ import type {
     DataColumnForAISchema,
     DataColumnSchema,
     DataColumnTypeSchema,
+    DataColumnUpdateSchema,
     DataForeignKeyForAISchema,
     DataForeignKeySchema,
     DataIndexSchema,
@@ -601,3 +602,5 @@ export type CreateDashboardSnapshotPayload = z.infer<typeof CreateDashboardSnaps
  * Payload for promoting a version to current.
  */
 export type PromoteDashboardVersionPayload = z.infer<typeof PromoteDashboardVersionPayloadSchema>;
+
+export type DataColumnUpdate = z.infer<typeof DataColumnUpdateSchema>;

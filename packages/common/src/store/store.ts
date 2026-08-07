@@ -1,5 +1,9 @@
 import type { z } from 'zod';
-import type { ContentObjectTypeRefSchema } from '../api-schemas/app-lifecycle.js';
+import type {
+    ContentObjectTypeRefSchema,
+    InCodeTypeRefSchema,
+    StoredTypeRefSchema,
+} from '../api-schemas/app-lifecycle.js';
 import type {
     ComplexSearchPayloadSchema,
     ContentObjectApiResponseSchema,
@@ -35,11 +39,13 @@ import type {
     TranscriptSchema,
     TranscriptSegmentSchema,
     UpdateContentObjectHeadersSchema,
+    UpdateContentObjectPayloadSchema,
     UpdateContentObjectQuerySchema,
 } from '../api-schemas/content.js';
 import type { MarkdownRenditionFormatSchema } from '../api-schemas/document-processing.js';
 import type {
     CreateWorkflowRulePayloadSchema,
+    UpdateWorkflowRulePayloadSchema,
     WorkflowRuleItemSchema,
     WorkflowRuleSchema,
 } from '../api-schemas/events.js';
@@ -833,3 +839,24 @@ export function getSupportedRenditionFormats(contentType: string | undefined): R
 export function supportsVisualRendition(contentType: string | undefined): boolean {
     return canGenerateRendition(contentType, ImageRenditionFormat.jpeg);
 }
+
+export type InCodeTypeRef = z.infer<typeof InCodeTypeRefSchema>;
+
+export type StoredTypeRef = z.infer<typeof StoredTypeRefSchema>;
+
+type UpdateContentObjectPayloadWire = z.infer<typeof UpdateContentObjectPayloadSchema>;
+
+/**
+ * Mirrors {@link CreateContentObjectPayload}: `properties` and `metadata` are reopened over the wire
+ * type so the known metadata interfaces stay assignable and callers can name their property shape.
+ * The runtime contract accepts any object keys for both.
+ */
+export type UpdateContentObjectPayload<T = JSONObject> = Omit<
+    UpdateContentObjectPayloadWire,
+    'properties' | 'metadata'
+> & {
+    properties?: T;
+    metadata?: ContentObjectItem['metadata'];
+};
+
+export type UpdateWorkflowRulePayload = z.infer<typeof UpdateWorkflowRulePayloadSchema>;

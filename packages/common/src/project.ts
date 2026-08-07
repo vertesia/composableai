@@ -21,6 +21,8 @@ import type {
     ProjectPluginsUpdatePayloadSchema,
     ProjectSchema,
     ProjectTagQuerySchema,
+    UpdateProjectConfigurationPayloadSchema,
+    UpdateProjectPayloadSchema,
 } from './api-schemas/project.js';
 import type {
     AgentCheckpointConfigurationSchema,
@@ -29,6 +31,7 @@ import type {
     BrowserUseRiskPolicySchema,
     BrowserUseScreenshotCaptureSchema,
     ElasticsearchBackendSchema,
+    IntakeVisionProfileSettingsUpdateSchema,
     ModalityDefaultsSchema,
     ModelDefaultSchema,
     ProjectConfigurationEmbeddingSchema,
@@ -678,3 +681,9 @@ export type DriftAnalysisStatusResponse = z.infer<typeof DriftAnalysisStatusResp
 export type ProjectIntegrationListEntry = z.infer<typeof ProjectIntegrationListEntrySchema>;
 
 export type ProjectIntegrationListResponse = z.infer<typeof ProjectIntegrationListResponseSchema>;
+
+export type UpdateProjectPayload = z.infer<typeof UpdateProjectPayloadSchema>;
+
+export type UpdateProjectConfigurationPayload = z.infer<typeof UpdateProjectConfigurationPayloadSchema>;
+
+export type IntakeVisionProfileSettingsUpdate = z.infer<typeof IntakeVisionProfileSettingsUpdateSchema>;

@@ -10,6 +10,7 @@ import type {
     IssueTokenForbiddenResponseSchema,
     IssueTokenRequestSchema,
     IssueTokenResponseSchema,
+    IssueTokenUnavailableResponseSchema,
     ProjectTokenRequestSchema,
     ServiceAccountTokenRequestSchema,
     SigningAlgorithmSchema,
@@ -96,3 +97,5 @@ export interface ValidateTokenResponse {
     payload?: unknown;
     error?: string;
 }
+
+export type IssueTokenUnavailableResponse = z.infer<typeof IssueTokenUnavailableResponseSchema>;

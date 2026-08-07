@@ -1,5 +1,9 @@
 import type { z } from 'zod';
-import type { StripeBillingStatusResponseSchema } from './api-schemas/account.js';
+import type {
+    StripeBillingDisabledSchema,
+    StripeBillingEnabledSchema,
+    StripeBillingStatusResponseSchema,
+} from './api-schemas/account.js';
 
 interface MeterAdjustment {
     meter: string;
@@ -20,3 +24,7 @@ export interface AdjustMetersMeterWorkflowParams {
  * `status` now tells TypeScript which fields exist.
  */
 export type StripeBillingStatusResponse = z.infer<typeof StripeBillingStatusResponseSchema>;
+
+export type StripeBillingEnabled = z.infer<typeof StripeBillingEnabledSchema>;
+
+export type StripeBillingDisabled = z.infer<typeof StripeBillingDisabledSchema>;

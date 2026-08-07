@@ -1,6 +1,7 @@
 import type { JSONSchema, PromptRole } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
+    ExportedPromptTemplateRefSchema,
     PromptTemplateCreatePayloadSchema,
     PromptTemplateRefSchema,
     PromptTemplateSchema,
@@ -84,3 +85,5 @@ export type RenderPromptPayload = z.infer<typeof RenderPromptPayloadSchema>;
  * been a name for it on either side of the wire.
  */
 export type RenderPromptResponse = z.infer<typeof RenderPromptResponseSchema>;
+
+export type ExportedPromptTemplateRef = z.infer<typeof ExportedPromptTemplateRefSchema>;

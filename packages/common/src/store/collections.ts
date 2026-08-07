@@ -9,6 +9,7 @@ import type {
     CollectionSchema,
     CollectionSecuritySettingsResponseSchema,
     CreateCollectionPayloadSchema,
+    UpdateCollectionPayloadSchema,
 } from '../api-schemas/content.js';
 import type { BaseObject } from './common.js';
 import type { ColumnLayout, ContentObjectTypeRef } from './store.js';
@@ -82,3 +83,5 @@ export type CollectionMembersUpdatePayload = z.infer<typeof CollectionMembersUpd
 export type CollectionChildrenUpdatePayload = z.infer<typeof CollectionChildrenUpdatePayloadSchema>;
 
 export type CollectionMembersQuery = z.infer<typeof CollectionMembersQuerySchema>;
+
+export type UpdateCollectionPayload = z.infer<typeof UpdateCollectionPayloadSchema>;

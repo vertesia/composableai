@@ -40,6 +40,7 @@ import {
     type StartContentObjectExportRequest,
     type StartContentObjectExportResponse,
     type SupportedEmbeddingTypes,
+    type UpdateContentObjectPayload,
     type ZenoBulkContentObjectExportComposeRequest,
     type ZenoBulkContentObjectExportPlanRequest,
     type ZenoBulkContentObjectExportPlanResponse,
@@ -60,7 +61,19 @@ import type { ZenoClient } from './client.js';
 import { fetchSignedUrl } from './signed-url.js';
 import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
+/**
+ * The two write payloads, each widened at `content` so callers can hand us a browser `File` or a
+ * `StreamSource` and let the method upload it before sending the wire shape.
+ *
+ * They are separate on purpose: `POST /objects` and `PUT /objects/:id` publish distinct components,
+ * so deriving the update signature from the create payload would silently drift the day the two
+ * schemas diverge.
+ */
 type ContentObjectWritePayload = Omit<CreateContentObjectPayload, 'content'> & {
+    content?: ContentSource | File | StreamSource;
+};
+
+type ContentObjectUpdateWritePayload = Omit<UpdateContentObjectPayload, 'content'> & {
     content?: ContentSource | File | StreamSource;
 };
 
@@ -381,7 +394,7 @@ export class ObjectsApi extends ApiTopic {
      */
     async update(
         id: string,
-        payload: Partial<ContentObjectWritePayload>,
+        payload: ContentObjectUpdateWritePayload,
         options?: {
             createRevision?: boolean;
             revisionLabel?: string;
@@ -393,7 +406,7 @@ export class ObjectsApi extends ApiTopic {
         },
     ): Promise<ContentObject> {
         const { content, ...payloadWithoutContent } = payload;
-        const updatePayload: Partial<CreateContentObjectPayload> = {
+        const updatePayload: UpdateContentObjectPayload = {
             ...payloadWithoutContent,
         };
 
