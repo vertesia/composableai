@@ -5,7 +5,7 @@
 /**
  * Endpoint configuration that can override JWT-embedded endpoints
  */
-interface ToolEndpointOverrides {
+export interface ToolEndpointOverrides {
     /**
      * Studio server URL
      */
