@@ -70,6 +70,9 @@ test('default module codegen keeps only the app module', () => {
         assert.doesNotMatch(uiModules, /modules\/examples/);
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.doesNotMatch(serverModules, /modules\/examples/);
+        assert.match(serverModules, /export const hooks = \[\.\.\.appResources\.hooks\];/);
+        assert.match(serverModules, /export const mcpProviders = \[\.\.\.appResources\.mcpProviders\];/);
+        assert.match(serverModules, /export const subscriptions = \[\.\.\.appResources\.subscriptions\];/);
         const packageJson = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
         assert.equal(packageJson.scripts['codegen:dev'], undefined);
         assert.equal(packageJson.scripts.pretest, undefined);
@@ -81,6 +84,9 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(packageJson.scripts['service:build'], undefined);
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/hooks/index.ts')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/mcp/index.ts')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/subscriptions/index.ts')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
         const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
@@ -134,7 +140,7 @@ test('appgen module selects the service entry and cleans inactive modules', () =
     }
 });
 
-test('examples module contributes optional UI routes and views', () => {
+test('examples module contributes optional UI routes, views, hooks, and subscriptions', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
         copyTemplateInputs(tmpRoot);
@@ -148,12 +154,22 @@ test('examples module contributes optional UI routes and views', () => {
             path.join(tmpRoot, 'src/modules/examples/resources/views/index.ts'),
             'utf8',
         );
+        const exampleHooks = fs.readFileSync(
+            path.join(tmpRoot, 'src/modules/examples/resources/hooks/index.ts'),
+            'utf8',
+        );
+        const exampleSubscriptions = fs.readFileSync(
+            path.join(tmpRoot, 'src/modules/examples/resources/subscriptions/index.ts'),
+            'utf8',
+        );
 
         assert.match(uiModules, /modules\/examples\/ui\/routes/);
         assert.match(serverModules, /modules\/examples\/resources\/index\.js/);
         assert.doesNotMatch(appRoutes, /Document Library/);
         assert.match(exampleRoutes, /Document Library/);
         assert.match(exampleResources, /DocumentLibraryView/);
+        assert.match(exampleHooks, /content-object-changed/);
+        assert.match(exampleSubscriptions, /hook: 'content-object-changed'/);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

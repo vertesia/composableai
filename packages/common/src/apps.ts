@@ -54,11 +54,16 @@ import type {
     ValidateUrlResponseSchema,
 } from './api-schemas/app-lifecycle.js';
 import type {
+    AppEventHookDeliverySchema,
+    AppEventHookPayloadSchema,
+    AppEventSubscriptionDefinitionSchema,
     AppInstallationListEntrySchema,
     AppInstallationSchema,
     AppInstallationWithManifestSchema,
     AppManifestDataSchema,
     AppManifestSchema,
+    AppPackageEventHookSchema,
+    AppPackageHooksSchema,
     AppPackageSchema,
     AppWidgetInfoSchema,
     CompositeAppCardOverridesSchema,
@@ -305,6 +310,8 @@ export const APP_ARTIFACT_TYPES = [
     'dashboard',
     'activity',
     'tool',
+    'hook',
+    'subscription',
 ] as const;
 
 export type AppArtifactType = (typeof APP_ARTIFACT_TYPES)[number];
@@ -313,7 +320,7 @@ export type AppArtifactType = (typeof APP_ARTIFACT_TYPES)[number];
  * A single platform artifact the App Solution Architect requires the build to create.
  * `id` is the app-owned in-code id the implementation must register and reference
  * (e.g. `app:<name>:main:extract-item` for interactions/agents, `app:<name>:<type>` for
- * types, `app:<name>:<process>` for processes).
+ * types, `app:<name>:<process>` for processes, and `app:<name>:<local-id>` for hooks/subscriptions).
  */
 /**
  * Build progress for one artifact, maintained by the developer agent as a living checklist:
@@ -609,10 +616,17 @@ export const APP_PACKAGE_SCOPES = [
     'settings',
     'widgets',
     'activities',
+    'hooks',
+    'subscriptions',
     'all',
 ] as const;
 
 export type AppPackageScope = (typeof APP_PACKAGE_SCOPES)[number];
+export type AppPackageEventHook = z.infer<typeof AppPackageEventHookSchema>;
+export type AppPackageHooks = z.infer<typeof AppPackageHooksSchema>;
+export type AppEventHookDelivery = z.infer<typeof AppEventHookDeliverySchema>;
+export type AppEventHookPayload = z.infer<typeof AppEventHookPayloadSchema>;
+export type AppEventSubscriptionDefinition = z.infer<typeof AppEventSubscriptionDefinitionSchema>;
 export type AppPackage = z.infer<typeof AppPackageSchema>;
 
 /**
