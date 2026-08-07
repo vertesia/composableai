@@ -78,11 +78,6 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
 /** Discriminated union of all rendition workflow vars */
 export type GenerateRenditionVars = ImageRenditionVars | MarkdownRenditionVars;
 
-/** Type guard for markdown rendition vars */
-export function isMarkdownRenditionVars(vars: GenerateRenditionVars): vars is MarkdownRenditionVars {
-    return vars.format === 'pdf' || vars.format === 'docx';
-}
-
 // ============================================================================
 // API Payload Types
 // ============================================================================

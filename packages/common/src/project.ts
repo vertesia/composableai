@@ -120,24 +120,6 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
 };
 
 /**
- * Get category for a system interaction endpoint.
- * Returns undefined if category is non-applicable or endpoint is not recognized.
- * Note: Caller is responsible for determining if the interaction is a system interaction.
- * @param endpoint - The interaction endpoint name
- */
-export function getSystemInteractionCategory(endpoint: string): SystemInteractionCategory | undefined {
-    if (endpoint.startsWith('sys:')) {
-        // Strip sys: prefix
-        endpoint = endpoint.substring(4);
-    }
-    const category = SYSTEM_INTERACTION_CATEGORIES[endpoint];
-    if (category === SystemInteractionCategory.non_applicable) {
-        return undefined;
-    }
-    return category || undefined;
-}
-
-/**
  * One optional default per {@link SystemInteractionCategory}.
  *
  * The schema writes the categories out rather than mapping over the enum, so `project.contract.test`
@@ -228,46 +210,6 @@ export type EmbeddingsStatusResponse = z.infer<typeof EmbeddingsStatusResponseSc
 export type IndexingStatusResponse = z.infer<typeof IndexingStatusResponseSchema>;
 
 export type StartProjectReindexPayload = z.infer<typeof StartProjectReindexPayloadSchema>;
-
-/**
- * Auto-tunes shard sizing based on project doc count.
- *
- * Returns:
- * - shard_size: target docs per shard (workflow path uses this; zeno-bulk
- *   computes shard count from total/shard_size).
- * - parallel_shard_count: max in-flight shard activities (workflow path only).
- * - max_shards: hard cap on shard count for the direct path. Direct path
- *   passes this as `shards` to zeno-bulk so all shards run as cursors in
- *   ONE process; without this cap, an under-estimated shard_size (e.g.
- *   from stale estimatedDocumentCount) can spawn 10+ in-flight cursors
- *   and exceed Cloud Run memory.
- *
- * Explicit overrides should bypass this function and use user-provided values.
- */
-export function autoTuneReindexParams(docCount: number): {
-    shard_size: number;
-    parallel_shard_count: number;
-    max_shards: number;
-} {
-    if (docCount < 50_000) {
-        // Tiny/small project: aim for ~4 shards, with a 5k floor.
-        return {
-            shard_size: Math.max(Math.ceil(docCount / 4), 5_000),
-            parallel_shard_count: Math.min(4, Math.max(1, Math.ceil(docCount / 5_000))),
-            max_shards: 4,
-        };
-    }
-    if (docCount < 500_000) {
-        // Medium project: 50k shards → 1-10 shards
-        return { shard_size: 50_000, parallel_shard_count: 8, max_shards: 10 };
-    }
-    if (docCount < 2_000_000) {
-        // Large project: 100k shards → 5-20 shards
-        return { shard_size: 100_000, parallel_shard_count: 8, max_shards: 20 };
-    }
-    // Huge project: stick to 250k shards to keep coordination overhead bounded.
-    return { shard_size: 250_000, parallel_shard_count: 8, max_shards: 40 };
-}
 
 export type ReindexAgentRunsPayload = z.infer<typeof ReindexAgentRunsPayloadSchema>;
 

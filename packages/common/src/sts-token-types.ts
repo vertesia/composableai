@@ -57,31 +57,6 @@ export interface RevokeTokenRequest {
     token: string;
 }
 
-// Helper type guards for type narrowing
-export function isApiKeyRequest(req: IssueTokenRequest): req is ApiKeyTokenRequest {
-    return req.type === 'apikey';
-}
-
-export function isUserRequest(req: IssueTokenRequest): req is UserTokenRequest {
-    return req.type === 'user';
-}
-
-export function isProjectRequest(req: IssueTokenRequest): req is ProjectTokenRequest {
-    return req.type === 'project';
-}
-
-export function isEnvironmentRequest(req: IssueTokenRequest): req is EnvironmentTokenRequest {
-    return req.type === 'environment';
-}
-
-export function isAgentRequest(req: IssueTokenRequest): req is AgentTokenRequest {
-    return req.type === 'agent';
-}
-
-export function isServiceAccountRequest(req: IssueTokenRequest): req is ServiceAccountTokenRequest {
-    return req.type === 'service_account';
-}
-
 // Response types
 export interface TokenResponse {
     token: string;

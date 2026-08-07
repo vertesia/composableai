@@ -16,14 +16,6 @@ import type {
 export type GroundedExtractionVerdict = z.infer<typeof GroundedExtractionVerdictSchema>;
 
 /**
- * Canonical workflow id for object-scoped grounded extraction. Every entry point
- * must use this id so Temporal prevents overlapping extraction runs per object.
- */
-export function getGroundedExtractionWorkflowId(accountId: string, objectId: string): string {
-    return `${accountId.slice(0, 6)}:workflow_execution_request:${objectId}:grounded`;
-}
-
-/**
  * Request body to start a grounded extraction on a content object. All fields are
  * optional: with none set, the object's own content-type schema drives the
  * extraction with default models and settings.

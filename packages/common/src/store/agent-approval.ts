@@ -22,7 +22,3 @@ export function normalizeAgentToolApprovalMode(
     }
     return mode ?? 'full_control';
 }
-
-export function isAgentToolApprovalMode(value: unknown): value is AgentToolApprovalMode {
-    return typeof value === 'string' && (AgentToolApprovalModes as readonly string[]).includes(value);
-}

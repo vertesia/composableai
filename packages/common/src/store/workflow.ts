@@ -653,15 +653,6 @@ export enum FileProcessingStatus {
 export type ConversationFile = z.infer<typeof ConversationFileSchema>;
 
 /**
- * A file is deliverable when it is ready and has not yet been delivered to the agent as part
- * of a user message. Deliverable files get attached to the next message; consumed ones stay
- * reachable to tools via artifact_path/md_path but are not re-attached.
- */
-export function isDeliverableFile(file: ConversationFile): boolean {
-    return file.status === FileProcessingStatus.READY && !file.consumed_at;
-}
-
-/**
  * Details for file processing SYSTEM messages.
  * Used when type is AgentMessageType.SYSTEM with system_type: 'file_processing'.
  */
@@ -702,24 +693,6 @@ export interface ConversationFileRef {
 export interface ConversationFileRemovedRef {
     /** Client-generated unique ID */
     id: string;
-}
-
-/**
- * Get the Redis pub/sub channel name for workflow messages.
- * Used by both publishers (workflow activities, studio-server) and subscribers (zeno-server, clients).
- * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)
- */
-export function getWorkflowChannel(workflowRunId: string): string {
-    return `workflow:${workflowRunId}:channel`;
-}
-
-/**
- * Get the Redis list key for storing workflow message history.
- * Messages are stored here for retrieval by reconnecting clients.
- * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)
- */
-export function getWorkflowUpdatesKey(workflowRunId: string): string {
-    return `workflow:${workflowRunId}:updates`;
 }
 
 export type PlanTask = z.infer<typeof PlanTaskSchema>;
