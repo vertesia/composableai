@@ -4,9 +4,12 @@ import { fileURLToPath } from 'node:url';
 const SERVER_RESOURCES = [
     'activities',
     'dashboards',
+    'hooks',
     'interactions',
+    'mcpProviders',
     'processes',
     'skills',
+    'subscriptions',
     'templates',
     'tools',
     'types',

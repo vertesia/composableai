@@ -166,6 +166,8 @@ report.artifacts = {
     tools: namesFromResourceFiles(serverResourceFiles, 'tools'),
     skills: namesFromResourceFiles(serverResourceFiles, 'skills'),
     activities: namesFromResourceFiles(serverResourceFiles, 'activities'),
+    hooks: namesFromResourceFiles(serverResourceFiles, 'hooks'),
+    subscriptions: namesFromResourceFiles(serverResourceFiles, 'subscriptions'),
     widgets: [
         ...directFiles(sourceFiles, 'src/widgets/', ['.ts', '.tsx']),
         ...directResourceFiles(serverResourceFiles, 'skills', ['.tsx']),

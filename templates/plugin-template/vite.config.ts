@@ -1,3 +1,4 @@
+import { setDefaultResultOrder } from 'node:dns';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import tailwindcss from '@tailwindcss/vite';
@@ -198,6 +199,12 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * @returns
  */
 function defineAppConfig({ command }: ConfigEnv): UserConfig {
+    // Keep localhost on the same address family as the Studio dev server. Otherwise macOS can bind
+    // Studio to 127.0.0.1:5173 and this app to [::1]:5173, bypassing Vite's next-port fallback.
+    if (command === 'serve') {
+        setDefaultResultOrder('ipv4first');
+    }
+
     // DEV_MODE is used by appgen/sandbox previews. Vercel also proxies to the
     // framework dev server over HTTP, so both modes disable HTTPS.
     const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';

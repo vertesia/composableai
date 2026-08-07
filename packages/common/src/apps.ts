@@ -54,11 +54,16 @@ import type {
     ValidateUrlResponseSchema,
 } from './api-schemas/app-lifecycle.js';
 import type {
+    AppEventHookDeliverySchema,
+    AppEventHookPayloadSchema,
+    AppEventSubscriptionDefinitionSchema,
     AppInstallationListEntrySchema,
     AppInstallationSchema,
     AppInstallationWithManifestSchema,
     AppManifestDataSchema,
     AppManifestSchema,
+    AppPackageEventHookSchema,
+    AppPackageHooksSchema,
     AppPackageSchema,
     AppWidgetInfoSchema,
     CompositeAppCardOverridesSchema,
@@ -440,10 +445,17 @@ export const APP_PACKAGE_SCOPES = [
     'settings',
     'widgets',
     'activities',
+    'hooks',
+    'subscriptions',
     'all',
 ] as const;
 
 export type AppPackageScope = (typeof APP_PACKAGE_SCOPES)[number];
+export type AppPackageEventHook = z.infer<typeof AppPackageEventHookSchema>;
+export type AppPackageHooks = z.infer<typeof AppPackageHooksSchema>;
+export type AppEventHookDelivery = z.infer<typeof AppEventHookDeliverySchema>;
+export type AppEventHookPayload = z.infer<typeof AppEventHookPayloadSchema>;
+export type AppEventSubscriptionDefinition = z.infer<typeof AppEventSubscriptionDefinitionSchema>;
 export type AppPackage = z.infer<typeof AppPackageSchema>;
 
 /**

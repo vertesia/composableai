@@ -3,6 +3,9 @@ import type { VertesiaClient } from '@vertesia/client';
 import type {
     AgentToolDefinition,
     AuthTokenPayload,
+    AppEventHookDelivery as CommonAppEventHookDelivery,
+    AppEventHookPayload as CommonAppEventHookPayload,
+    AppEventSubscriptionDefinition as CommonAppEventSubscriptionDefinition,
     MCPToolAnnotations,
     ProjectConfiguration,
     RenderingTemplateDefinition,
@@ -13,6 +16,9 @@ import type {
 } from '@vertesia/common';
 
 export type { ToolExecutionMetadata };
+export type AppEventSubscriptionDefinition = CommonAppEventSubscriptionDefinition;
+export type AppEventHookDelivery = CommonAppEventHookDelivery;
+export type AppEventHookPayload = CommonAppEventHookPayload;
 
 export type ICollection<T = object> = CollectionProperties & Iterable<T>;
 
@@ -52,6 +58,50 @@ export interface ToolExecutionContext {
      * @returns a vertesia client instance
      */
     getClient: () => Promise<VertesiaClient>;
+}
+
+export type AppLifecycleHookName = 'install' | 'uninstall';
+
+export interface AppLifecycleHookContext extends ToolExecutionContext {
+    /** Metadata supplied by Studio for this installation lifecycle call. */
+    metadata: ToolExecutionMetadata;
+}
+
+export interface AppLifecycleHookResult {
+    message?: string;
+    data?: Record<string, unknown>;
+}
+
+// biome-ignore lint/suspicious/noConfusingVoidType: lifecycle hooks may complete without a response body.
+export type AppLifecycleHook = (context: AppLifecycleHookContext) => Promise<void | AppLifecycleHookResult>;
+
+export interface AppLifecycleHookDefinition {
+    kind: 'lifecycle';
+    name: AppLifecycleHookName;
+    handler: AppLifecycleHook;
+}
+
+export type AppEventHookContext = ToolExecutionContext;
+export type AppEventHookResult = AppLifecycleHookResult;
+
+export type AppEventHook = (
+    payload: AppEventHookPayload,
+    context: AppEventHookContext,
+) => Promise<AppEventHookResult> | Promise<void>;
+
+export interface AppEventHookDefinition {
+    kind: 'event';
+    /** Kebab-case URL-safe name. The lifecycle names install and uninstall are reserved. */
+    name: string;
+    description?: string;
+    handler: AppEventHook;
+}
+
+/** App-owned hook definitions aggregated from active application modules. */
+export type AppHookDefinition = AppLifecycleHookDefinition | AppEventHookDefinition;
+
+export interface AppLifecycleHookPayload {
+    metadata?: ToolExecutionMetadata;
 }
 
 export interface ToolExecutionResult extends ToolResultContent {

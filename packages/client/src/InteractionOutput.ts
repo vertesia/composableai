@@ -23,7 +23,7 @@ export function enhanceExecutionRun<ResultT = unknown, ParamsT = unknown>(
 
 /**
  * A convenient wrapper around CompletionResult[] that provides ergonomic accessors
- * for different result types (text, JSON/objects, images) from interaction executions.
+ * for different result types (text, thoughts, JSON/objects, images) from interaction executions.
  *
  * Use the static from() method to create a proxied array that acts as both
  * an array and has these convenience methods.
@@ -112,6 +112,10 @@ export class InteractionOutput<T = unknown> {
         return this.results.some((r) => r.type === 'text');
     }
 
+    hasThoughts() {
+        return this.results.some((r) => r.type === 'thoughts');
+    }
+
     hasImage() {
         return this.results.some((r) => r.type === 'image');
     }
@@ -132,6 +136,18 @@ export class InteractionOutput<T = unknown> {
      */
     texts(): string[] {
         return this.results.filter((r) => r.type === 'text').map((r) => r.value);
+    }
+
+    /** Get visible reasoning without mixing it into the assistant answer. */
+    thoughts(delimiter = '\n'): string {
+        return this.results
+            .filter((r) => r.type === 'thoughts')
+            .map((r) => r.value)
+            .join(delimiter);
+    }
+
+    thoughtParts(): string[] {
+        return this.results.filter((r) => r.type === 'thoughts').map((r) => r.value);
     }
 
     /**
@@ -198,7 +214,8 @@ export class InteractionOutput<T = unknown> {
     }
 
     /**
-     * Convert all results to a string representation.
+     * Convert all answer results to a string representation.
+     * Thoughts are available through thoughts() and remain separate from the answer.
      * Text and image results are used as-is, JSON results are stringified with the specified indent.
      * All parts are joined using the specified separator.
      *
@@ -216,6 +233,7 @@ export class InteractionOutput<T = unknown> {
      */
     stringify(separator = '\n', indent = 2): string {
         return this.results
+            .filter((r) => r.type !== 'thoughts')
             .map((r) => {
                 switch (r.type) {
                     case 'json':
