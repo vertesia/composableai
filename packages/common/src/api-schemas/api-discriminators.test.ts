@@ -15,21 +15,32 @@ import { type ApiComponentName, ApiSchemaComponents, validateApiResponse } from 
  * property present and REQUIRED in every branch, and a `const` or single-valued `enum` for the tag
  * in each. A hand-written `.meta({ discriminator })` gets no such check when it is written, which
  * is the case this test exists for.
+ *
+ * Generating a validator for each of the ~1000 components is real work: well under a second on a
+ * developer machine, ~8s on a loaded CI runner, past vitest's 5s default, hence the explicit budget
+ * below. It is generous on purpose — an unsupported discriminator makes AJV THROW during
+ * compilation, so a genuine regression is caught by the try/catch and never by the clock.
  */
+const COMPILE_ALL_TIMEOUT_MS = 60_000;
+
 describe('published discriminators', () => {
-    it('compiles every registered component under AJV discriminator support', () => {
-        const failures: string[] = [];
-        for (const name of Object.keys(ApiSchemaComponents)) {
-            try {
-                // Compilation is the subject; the value only has to reach the validator. An invalid
-                // result is expected and irrelevant.
-                validateApiResponse(name as ApiComponentName, undefined);
-            } catch (err: unknown) {
-                failures.push(`${name}: ${err instanceof Error ? err.message : String(err)}`);
+    it(
+        'compiles every registered component under AJV discriminator support',
+        () => {
+            const failures: string[] = [];
+            for (const name of Object.keys(ApiSchemaComponents)) {
+                try {
+                    // Compilation is the subject; the value only has to reach the validator. An
+                    // invalid result is expected and irrelevant.
+                    validateApiResponse(name as ApiComponentName, undefined);
+                } catch (err: unknown) {
+                    failures.push(`${name}: ${err instanceof Error ? err.message : String(err)}`);
+                }
             }
-        }
-        expect(failures, `components AJV could not compile:\n${failures.join('\n')}`).toEqual([]);
-    });
+            expect(failures, `components AJV could not compile:\n${failures.join('\n')}`).toEqual([]);
+        },
+        COMPILE_ALL_TIMEOUT_MS,
+    );
 
     it('keeps discriminator mapping in the published components for generated clients', () => {
         // AJV's copy drops `mapping`; the OpenAPI document must not. A Java or Go client reads the
