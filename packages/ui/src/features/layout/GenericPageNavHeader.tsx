@@ -14,6 +14,17 @@ interface GenericPageNavHeaderProps {
     children?: ReactNode;
     className?: string;
     useDynamicBreadcrumbs?: boolean;
+    /**
+     * Parent page linked from the breadcrumbs when there is no history chain to walk (the user
+     * landed on this URL directly). Give it as an absolute app path, including the module mount.
+     *
+     * Without it the parent is inferred as the current path minus its id segment, which is wrong
+     * whenever the collection page lives elsewhere — e.g. `/store/process-runs/:id`, whose list
+     * page is `/store/processes` (`/store/process-runs` is not a route).
+     */
+    parentPath?: string;
+    /** Label for {@link parentPath}; defaults to its last segment, title-cased. */
+    parentLabel?: string;
 }
 
 interface BreadcrumbElementProps {
@@ -43,6 +54,8 @@ export function GenericPageNavHeader({
     actions,
     breadcrumbs,
     useDynamicBreadcrumbs = true,
+    parentPath,
+    parentLabel,
 }: GenericPageNavHeaderProps) {
     const navigate = useNavigate();
 
@@ -90,6 +103,13 @@ export function GenericPageNavHeader({
                         href: entry.href,
                         onClick: () => navigate(entry.href, { stepsBack: stepsBack }),
                     });
+                });
+            } else if (parentPath) {
+                // Caller knows where this page belongs; skip the URL inference below.
+                items.push({
+                    label: parentLabel ?? buildBreadcrumbLabel({ href: parentPath }),
+                    href: parentPath,
+                    onClick: () => navigate(parentPath, { isBasePathNested: false }),
                 });
             } else {
                 // Infer parents from URL when navigating directly to a detail page
