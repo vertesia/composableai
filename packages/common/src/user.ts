@@ -16,13 +16,8 @@ import type {
     UserRefSchema,
     UserSchema,
 } from './api-schemas/user.js';
-import type { ApiKey } from './apikey.js';
 
 export * from './account-values.js';
-
-export interface UserWithAccounts extends User {
-    accounts: AccountRef[];
-}
 
 /**
  * The user and its update payload as they cross the wire.
@@ -97,21 +92,6 @@ export type InviteUserResponsePayload = z.infer<typeof InviteUserResponsePayload
 export type InviteAcceptanceResponse = z.infer<typeof InviteAcceptanceResponseSchema>;
 export type InviteDeclineResponse = z.infer<typeof InviteDeclineResponseSchema>;
 export type AccountProjectsResponse = z.infer<typeof AccountProjectsResponseSchema>;
-
-type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
-type SessionType<T extends User | ApiKey> = T extends User ? 'user' : 'apikey';
-export interface SessionInfo<T extends User | ApiKey> {
-    isNew?: boolean;
-    type: SessionType<T>;
-    subject: UserOrApiKey<T>;
-    //User | ApiKey; // no user if using an apikey
-    current_account: Account;
-    //role: string; // TODO the role on the selected account
-    accounts: AccountRef[];
-}
-
-export interface UserSessionInfo extends SessionInfo<User> {}
-export interface ApiKeySessionInfo extends SessionInfo<ApiKey> {}
 
 export type OnboardingProgress = z.infer<typeof OnboardingProgressSchema>;
 

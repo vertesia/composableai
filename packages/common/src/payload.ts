@@ -26,7 +26,7 @@ export type SortOrder = z.infer<typeof SortOrderSchema>;
 
 export type SortOption = z.infer<typeof SortOptionSchema>;
 
-export interface SearchPayload {
+interface SearchPayload {
     facets?: FacetSpec[];
     /**
      * If the facets should be limited to the current page of results.
@@ -43,11 +43,6 @@ export interface SearchPayload {
     sort?: SortOption[];
     /** Arbitrary Elasticsearch aggregation definitions. Ignored when search falls back to MongoDB. */
     aggs?: Record<string, unknown>;
-}
-
-export interface ComputeFacetPayload {
-    facets: FacetSpec[];
-    query?: SimpleSearchQuery;
 }
 
 export interface InteractionSearchPayload extends SearchPayload {

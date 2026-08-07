@@ -21,6 +21,8 @@ import type {
     ProjectPluginsUpdatePayloadSchema,
     ProjectSchema,
     ProjectTagQuerySchema,
+    UpdateProjectConfigurationPayloadSchema,
+    UpdateProjectPayloadSchema,
 } from './api-schemas/project.js';
 import type {
     AgentCheckpointConfigurationSchema,
@@ -29,6 +31,7 @@ import type {
     BrowserUseRiskPolicySchema,
     BrowserUseScreenshotCaptureSchema,
     ElasticsearchBackendSchema,
+    IntakeVisionProfileSettingsUpdateSchema,
     ModalityDefaultsSchema,
     ModelDefaultSchema,
     ProjectConfigurationEmbeddingSchema,
@@ -43,7 +46,6 @@ import type {
     SystemDefaultsSchema,
 } from './api-schemas/project-configuration.js';
 import type { AccountRef } from './user.js';
-import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
 
 /**
  * `SystemRoles` lives in `./project-values.js` so the API schemas can read it without importing this
@@ -51,24 +53,7 @@ import { ELASTICSEARCH_FIELD_PATH_PATTERN } from './view-validation-helpers.js';
  */
 export * from './project-values.js';
 
-import { SystemRoles } from './project-values.js';
-
 export type ICreateProjectPayload = CreateProjectPayloadFromSchema;
-
-export function isRoleIncludedIn(role: string, includingRole: string) {
-    switch (includingRole) {
-        case SystemRoles.owner:
-            return true; // includes billing to?
-        case SystemRoles.admin:
-            return role !== SystemRoles.billing && role !== SystemRoles.owner;
-        case SystemRoles.developer:
-            return role === SystemRoles.developer;
-        case SystemRoles.billing:
-            return role === SystemRoles.billing;
-        default:
-            return false;
-    }
-}
 
 export interface PopulatedProjectRef {
     id: string;
@@ -135,24 +120,6 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
 };
 
 /**
- * Get category for a system interaction endpoint.
- * Returns undefined if category is non-applicable or endpoint is not recognized.
- * Note: Caller is responsible for determining if the interaction is a system interaction.
- * @param endpoint - The interaction endpoint name
- */
-export function getSystemInteractionCategory(endpoint: string): SystemInteractionCategory | undefined {
-    if (endpoint.startsWith('sys:')) {
-        // Strip sys: prefix
-        endpoint = endpoint.substring(4);
-    }
-    const category = SYSTEM_INTERACTION_CATEGORIES[endpoint];
-    if (category === SystemInteractionCategory.non_applicable) {
-        return undefined;
-    }
-    return category || undefined;
-}
-
-/**
  * One optional default per {@link SystemInteractionCategory}.
  *
  * The schema writes the categories out rather than mapping over the enum, so `project.contract.test`
@@ -197,81 +164,6 @@ export type ProjectSearchPropertyType = z.infer<typeof ProjectSearchPropertyType
 
 export type ProjectSearchPropertyMapping = z.infer<typeof ProjectSearchPropertyMappingSchema>;
 
-export const PROJECT_SEARCH_PROPERTY_TYPES: readonly ProjectSearchPropertyType[] = [
-    'keyword',
-    'text',
-    'boolean',
-    'long',
-    'double',
-    'date',
-];
-
-const MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS = 200;
-const MAX_KEYWORD_IGNORE_ABOVE = 8191;
-
-/**
- * Validate property mappings at API and index-creation boundaries.
- *
- * Returns user-facing issue strings instead of throwing so callers can map the
- * result to the error type appropriate for their boundary.
- */
-export function validateProjectSearchPropertyMappings(value: unknown): string[] {
-    if (value === undefined) return [];
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-        return ['indexing.property_mappings must be an object keyed by property path'];
-    }
-
-    const entries = Object.entries(value as Record<string, unknown>);
-    const issues: string[] = [];
-    if (entries.length > MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS) {
-        issues.push(`indexing.property_mappings must contain at most ${MAX_PROJECT_SEARCH_PROPERTY_MAPPINGS} fields`);
-    }
-
-    const supportedTypes = new Set<string>(PROJECT_SEARCH_PROPERTY_TYPES);
-    for (const [path, rawMapping] of entries) {
-        const field = `indexing.property_mappings.${path}`;
-        if (!ELASTICSEARCH_FIELD_PATH_PATTERN.test(path)) {
-            issues.push(`${field} must be a dot-separated path containing only letters, numbers, and underscores`);
-        }
-        if (!rawMapping || typeof rawMapping !== 'object' || Array.isArray(rawMapping)) {
-            issues.push(`${field} must be an object`);
-            continue;
-        }
-        const mapping = rawMapping as Record<string, unknown>;
-        const extraKeys = Object.keys(mapping).filter(
-            (key) => !['type', 'format', 'ignore_above', 'ignore_malformed'].includes(key),
-        );
-        if (extraKeys.length > 0) {
-            issues.push(`${field} contains unsupported option(s): ${extraKeys.join(', ')}`);
-        }
-        if (typeof mapping.type !== 'string' || !supportedTypes.has(mapping.type)) {
-            issues.push(`${field}.type must be one of: ${PROJECT_SEARCH_PROPERTY_TYPES.join(', ')}`);
-        }
-        if (mapping.format !== undefined && (mapping.type !== 'date' || typeof mapping.format !== 'string')) {
-            issues.push(`${field}.format is supported only for date mappings`);
-        }
-        if (
-            mapping.ignore_above !== undefined &&
-            (mapping.type !== 'keyword' ||
-                !Number.isInteger(mapping.ignore_above) ||
-                (mapping.ignore_above as number) < 1 ||
-                (mapping.ignore_above as number) > MAX_KEYWORD_IGNORE_ABOVE)
-        ) {
-            issues.push(
-                `${field}.ignore_above is supported only for keyword mappings and must be an integer from 1 to ${MAX_KEYWORD_IGNORE_ABOVE}`,
-            );
-        }
-        if (
-            mapping.ignore_malformed !== undefined &&
-            (!['long', 'double', 'date'].includes(String(mapping.type)) ||
-                typeof mapping.ignore_malformed !== 'boolean')
-        ) {
-            issues.push(`${field}.ignore_malformed is supported only for long, double, and date mappings`);
-        }
-    }
-    return issues;
-}
-
 export type ProjectIndexingConfiguration = z.infer<typeof ProjectIndexingConfigurationSchema>;
 
 // export interface ProjectConfigurationEmbeddings {
@@ -287,7 +179,7 @@ export enum SupportedEmbeddingTypes {
     properties = 'properties',
 }
 
-export enum FullTextType {
+enum FullTextType {
     full_text = 'full_text',
 }
 
@@ -306,13 +198,6 @@ export type ProjectConfigurationEmbeddingEnablePayload = z.infer<
 
 export type Project = z.infer<typeof ProjectSchema>;
 
-export interface ProjectCreatePayload {
-    name: string;
-    description?: string;
-}
-
-export interface ProjectUpdatePayload extends Partial<Project> {}
-
 export type ProjectPluginsUpdatePayload = z.infer<typeof ProjectPluginsUpdatePayloadSchema>;
 
 export const ProjectRefPopulate = 'id name account';
@@ -325,46 +210,6 @@ export type EmbeddingsStatusResponse = z.infer<typeof EmbeddingsStatusResponseSc
 export type IndexingStatusResponse = z.infer<typeof IndexingStatusResponseSchema>;
 
 export type StartProjectReindexPayload = z.infer<typeof StartProjectReindexPayloadSchema>;
-
-/**
- * Auto-tunes shard sizing based on project doc count.
- *
- * Returns:
- * - shard_size: target docs per shard (workflow path uses this; zeno-bulk
- *   computes shard count from total/shard_size).
- * - parallel_shard_count: max in-flight shard activities (workflow path only).
- * - max_shards: hard cap on shard count for the direct path. Direct path
- *   passes this as `shards` to zeno-bulk so all shards run as cursors in
- *   ONE process; without this cap, an under-estimated shard_size (e.g.
- *   from stale estimatedDocumentCount) can spawn 10+ in-flight cursors
- *   and exceed Cloud Run memory.
- *
- * Explicit overrides should bypass this function and use user-provided values.
- */
-export function autoTuneReindexParams(docCount: number): {
-    shard_size: number;
-    parallel_shard_count: number;
-    max_shards: number;
-} {
-    if (docCount < 50_000) {
-        // Tiny/small project: aim for ~4 shards, with a 5k floor.
-        return {
-            shard_size: Math.max(Math.ceil(docCount / 4), 5_000),
-            parallel_shard_count: Math.min(4, Math.max(1, Math.ceil(docCount / 5_000))),
-            max_shards: 4,
-        };
-    }
-    if (docCount < 500_000) {
-        // Medium project: 50k shards → 1-10 shards
-        return { shard_size: 50_000, parallel_shard_count: 8, max_shards: 10 };
-    }
-    if (docCount < 2_000_000) {
-        // Large project: 100k shards → 5-20 shards
-        return { shard_size: 100_000, parallel_shard_count: 8, max_shards: 20 };
-    }
-    // Huge project: stick to 250k shards to keep coordination overhead bounded.
-    return { shard_size: 250_000, parallel_shard_count: 8, max_shards: 40 };
-}
 
 export type ReindexAgentRunsPayload = z.infer<typeof ReindexAgentRunsPayloadSchema>;
 
@@ -649,7 +494,7 @@ export interface ElasticsearchIndexStats {
 /**
  * Embedding configuration for a single type
  */
-export interface EmbeddingTypeConfig {
+interface EmbeddingTypeConfig {
     environment?: string;
     dimensions?: number;
     model?: string;
@@ -778,3 +623,9 @@ export type DriftAnalysisStatusResponse = z.infer<typeof DriftAnalysisStatusResp
 export type ProjectIntegrationListEntry = z.infer<typeof ProjectIntegrationListEntrySchema>;
 
 export type ProjectIntegrationListResponse = z.infer<typeof ProjectIntegrationListResponseSchema>;
+
+export type UpdateProjectPayload = z.infer<typeof UpdateProjectPayloadSchema>;
+
+export type UpdateProjectConfigurationPayload = z.infer<typeof UpdateProjectConfigurationPayloadSchema>;
+
+export type IntakeVisionProfileSettingsUpdate = z.infer<typeof IntakeVisionProfileSettingsUpdateSchema>;

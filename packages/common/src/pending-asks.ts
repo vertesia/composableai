@@ -4,7 +4,6 @@
  */
 
 import type { UserChannel } from './email.js';
-import type { TaskField } from './store/task.js';
 
 // ================= Pending Ask Data ====================
 
@@ -106,8 +105,4 @@ export interface AskUserWebhookEvent {
  */
 export interface ListPendingAsksResponse {
     asks: PendingAskData[];
-}
-
-export interface AskUserTaskMetadata {
-    taskFields?: TaskField[];
 }

@@ -56,26 +56,12 @@ export const VIEW_EXPERIENCE_SCHEMA_VERSION = 1 as const;
 
 export type ViewExperienceSchemaVersion = typeof VIEW_EXPERIENCE_SCHEMA_VERSION;
 
-/** Build the generic reusable client route for a persisted or app-contributed View. */
-export function viewExperienceRoute(id: string): string {
-    return `/view/${encodeURIComponent(id)}`;
-}
-
 /** An author-provided Elasticsearch query subtree validated by the View runtime. */
 export type ViewElasticsearchQuery = z.infer<typeof ViewElasticsearchQuerySchema>;
 
 export type ViewExperienceLayout = z.infer<typeof ViewExperienceLayoutSchema>;
 
 export type ViewExperienceScope = z.infer<typeof ViewExperienceScopeSchema>;
-
-export interface ViewNavigationBase {
-    id: string;
-    label: string;
-    presentation?: 'tree' | 'list' | 'select' | 'chips';
-    multi_select?: boolean;
-    order?: number;
-    renderer?: string;
-}
 
 export type ViewLocationNavigation = z.infer<typeof ViewLocationNavigationSchema>;
 
@@ -139,13 +125,6 @@ export type ViewResultField = z.infer<typeof ViewResultFieldSchema>;
 
 export type ViewResultMedia = z.infer<typeof ViewResultMediaSchema>;
 
-export interface ViewDisplayBase {
-    id: string;
-    label: string;
-    renderer?: string;
-    page_size?: number;
-}
-
 export type ViewListDisplay = z.infer<typeof ViewListDisplaySchema>;
 
 export type ViewTableColumn = z.infer<typeof ViewTableColumnSchema>;
@@ -176,35 +155,6 @@ export type ViewExperienceConfiguration = z.infer<typeof ViewExperienceConfigura
  */
 export interface PersistedViewExperienceConfiguration extends Omit<ViewExperienceConfiguration, 'description'> {
     description: string;
-}
-
-/**
- * Project a persisted or extended View value back to its reusable configuration
- * fields. Callers that require a persisted configuration must validate the
- * result at their API or persistence boundary because legacy records may not
- * satisfy newer persisted-only requirements.
- */
-export function getViewExperienceConfiguration(value: ViewExperienceConfiguration): ViewExperienceConfiguration {
-    return {
-        name: value.name,
-        ...(value.description === undefined ? {} : { description: value.description }),
-        ...(value.enabled === undefined ? {} : { enabled: value.enabled }),
-        ...(value.layout === undefined ? {} : { layout: value.layout }),
-        ...(value.scope === undefined ? {} : { scope: value.scope }),
-        ...(value.navigation === undefined ? {} : { navigation: value.navigation }),
-        ...(value.search === undefined ? {} : { search: value.search }),
-        ...(value.results === undefined ? {} : { results: value.results }),
-    };
-}
-
-/** Project a type-valid persisted View while preserving its required documentation field. */
-export function getPersistedViewExperienceConfiguration(
-    value: PersistedViewExperienceConfiguration,
-): PersistedViewExperienceConfiguration {
-    return {
-        ...getViewExperienceConfiguration(value),
-        description: value.description,
-    };
 }
 
 /** A View definition contributed by application code through the app package endpoint. */

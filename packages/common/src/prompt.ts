@@ -1,6 +1,7 @@
 import type { JSONSchema, PromptRole } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
+    ExportedPromptTemplateRefSchema,
     PromptTemplateCreatePayloadSchema,
     PromptTemplateRefSchema,
     PromptTemplateSchema,
@@ -38,10 +39,6 @@ export interface PromptSegmentDef<T = string | PromptTemplate | PromptTemplateRe
     configuration?: unknown; // the configuration if any in case of builtin prompts
 }
 
-export interface PromptSegmentRef<T = string | PromptTemplate | PromptTemplateRef> extends PromptSegmentDef<T> {
-    id: string;
-}
-
 export interface PopulatedPromptSegmentDef extends Omit<PromptSegmentDef, 'template'> {
     template?: PromptTemplate;
 }
@@ -53,10 +50,6 @@ export interface ExecutablePromptSegmentDef extends Omit<PromptSegmentDef, 'temp
 }
 
 export type PromptTemplateRef = z.infer<typeof PromptTemplateRefSchema>;
-
-export interface PromptTemplateRefWithSchema extends PromptTemplateRef {
-    inputSchema?: JSONSchema;
-}
 
 export enum TemplateType {
     jst = 'jst',
@@ -92,3 +85,5 @@ export type RenderPromptPayload = z.infer<typeof RenderPromptPayloadSchema>;
  * been a name for it on either side of the wire.
  */
 export type RenderPromptResponse = z.infer<typeof RenderPromptResponseSchema>;
+
+export type ExportedPromptTemplateRef = z.infer<typeof ExportedPromptTemplateRefSchema>;

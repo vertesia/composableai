@@ -6,7 +6,6 @@ import type {
     GroundedExtractionVerdictSchema,
     GroundedVerificationBreakdownSchema,
 } from '../api-schemas/document-processing.js';
-import type { WorkflowRunStatus } from './workflow.js';
 
 /**
  * Document-level trust verdict for a grounded extraction. `good_to_go` means the
@@ -15,14 +14,6 @@ import type { WorkflowRunStatus } from './workflow.js';
  * correctness, not how many citation boxes rendered.
  */
 export type GroundedExtractionVerdict = z.infer<typeof GroundedExtractionVerdictSchema>;
-
-/**
- * Canonical workflow id for object-scoped grounded extraction. Every entry point
- * must use this id so Temporal prevents overlapping extraction runs per object.
- */
-export function getGroundedExtractionWorkflowId(accountId: string, objectId: string): string {
-    return `${accountId.slice(0, 6)}:workflow_execution_request:${objectId}:grounded`;
-}
 
 /**
  * Request body to start a grounded extraction on a content object. All fields are
@@ -38,15 +29,6 @@ export type GroundedExtractionRequest = z.infer<typeof GroundedExtractionRequest
  * client renders the conversation with `agent_run_id`.
  */
 export type GroundedAssistantResponse = z.infer<typeof GroundedAssistantResponseSchema>;
-
-/**
- * Status of a grounded extraction workflow. Carries the doc-level verdict once the
- * run has completed and written its result.
- */
-export interface GroundedExtractionRunStatusResponse extends WorkflowRunStatus {
-    /** The trust verdict, present once the run has completed. */
-    verdict?: GroundedExtractionVerdict;
-}
 
 /**
  * How each extracted value was verified. Two kinds, both trustworthy:

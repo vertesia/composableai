@@ -23,8 +23,6 @@ import type {
     RevokeOAuthGrantQuerySchema,
     UpdateOAuthClientPayloadSchema,
 } from './api-schemas/oauth-server.js';
-import type { AuthTokenPayload, PrincipalType } from './apikey.js';
-import type { ProjectRef } from './project.js';
 
 /**
  * The types the three studio OAuth resources publish are inferred from
@@ -39,14 +37,8 @@ export type OAuthProjectBindingMode = z.infer<typeof OAuthProjectBindingModeSche
 export type OAuthTokenEndpointAuthMethod = z.infer<typeof OAuthTokenEndpointAuthMethodSchema>;
 export type OAuthGrantType = z.infer<typeof OAuthGrantTypeSchema>;
 export type OAuthResponseType = z.infer<typeof OAuthResponseTypeSchema>;
-export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
+type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
-/**
- * How Vertesia identified itself to a *remote* authorization server when connecting
- * out as an OAuth client. Distinct from {@link OAuthClientRegistrationMode}, which
- * describes how inbound clients identified themselves to Vertesia's own AS.
- */
-export type RemoteOAuthRegistrationMode = 'dynamic_client_registration' | 'client_id_metadata_document';
 export type OAuthGrantStatus = z.infer<typeof OAuthGrantStatusSchema>;
 export type OAuthGrantSortField = z.infer<typeof OAuthGrantSortFieldSchema>;
 export type OAuthGrantSortOrder = z.infer<typeof OAuthGrantSortOrderSchema>;
@@ -92,20 +84,6 @@ export interface OAuthAuthorizationServerMetadata {
     scopes_supported: string[];
     client_id_metadata_document_supported?: boolean;
     device_authorization_endpoint?: string;
-}
-
-export interface OAuthClientMetadataDocument {
-    client_id: string;
-    client_name: string;
-    redirect_uris: string[];
-    grant_types?: OAuthGrantType[];
-    response_types?: OAuthResponseType[];
-    token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
-    scope?: string;
-    client_uri?: string;
-    logo_uri?: string;
-    tos_uri?: string;
-    policy_uri?: string;
 }
 
 export interface OAuthClientDisplayMetadata {
@@ -188,37 +166,6 @@ export interface OAuthDeviceAuthorizationResponse {
     interval: number;
 }
 
-export interface OAuthTokenRequestAuthorizationCode {
-    grant_type: 'authorization_code';
-    code: string;
-    redirect_uri: string;
-    client_id: string;
-    resource?: string;
-    code_verifier: string;
-    client_secret?: string;
-}
-
-export interface OAuthTokenRequestRefreshToken {
-    grant_type: 'refresh_token';
-    refresh_token: string;
-    client_id: string;
-    resource?: string;
-    project_id?: string;
-    client_secret?: string;
-}
-
-export interface OAuthTokenRequestDeviceCode {
-    grant_type: 'urn:ietf:params:oauth:grant-type:device_code';
-    device_code: string;
-    client_id: string;
-    client_secret?: string;
-}
-
-export type OAuthTokenRequest =
-    | OAuthTokenRequestAuthorizationCode
-    | OAuthTokenRequestRefreshToken
-    | OAuthTokenRequestDeviceCode;
-
 export interface OAuthTokenResponse {
     access_token: string;
     token_type: 'Bearer';
@@ -226,56 +173,4 @@ export interface OAuthTokenResponse {
     scope: string;
     refresh_token?: string;
     id_token?: string;
-}
-
-export interface OAuthAuthorizationCodeRecord {
-    code: string;
-    client_id: string;
-    user_id: string;
-    account_id: string;
-    project_id: string;
-    resource: string;
-    scope: string[];
-    redirect_uri: string;
-    code_challenge: string;
-    code_challenge_method: 'S256';
-    expires_at: string;
-}
-
-export interface OAuthConsentRecord {
-    user_id: string;
-    client_id: string;
-    account_id: string;
-    project_id: string;
-    scope: string[];
-    granted_at: string;
-    revoked_at?: string;
-}
-
-export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' | 'project'> {
-    type: PrincipalType.OAuthAccess;
-    client_id: string;
-    scope: string;
-    user_id: string;
-    project: ProjectRef;
-    allowed_collections?: string[];
-    resource?: string;
-}
-
-export interface OAuthIdTokenPayload {
-    sub: string;
-    user_id: string;
-    name?: string;
-    email?: string;
-    picture?: string;
-    type: 'oauth_id';
-    client_id: string;
-    account?: AuthTokenPayload['account'];
-    accounts?: AuthTokenPayload['accounts'];
-    project?: ProjectRef;
-    /** User groups */
-    groups?: AuthTokenPayload['groups'];
-    iss: string;
-    aud: string;
-    exp: number;
 }

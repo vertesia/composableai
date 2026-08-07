@@ -8,7 +8,13 @@ import type {
     BulkOperationResponseSchema,
     BulkOperationResultSchema,
 } from './api-schemas/bulk-operation.js';
-import type { DeleteCountResultSchema, GenericCommandResponseSchema } from './api-schemas/commands.js';
+import type {
+    DeleteCountResultSchema,
+    GenericCommandResponseSchema,
+    MigrationListResponseSchema,
+    RunMigrationPayloadSchema,
+    RunMigrationResponseSchema,
+} from './api-schemas/commands.js';
 import type { FindPayloadSchema } from './api-schemas/content.js';
 import type { SuccessResponseSchema } from './api-schemas/oauth.js';
 import type { CountResultSchema } from './api-schemas/project.js';
@@ -81,3 +87,9 @@ export interface BulkObjectUpdateOptions {
 }
 
 export type BulkOperationResponse = z.infer<typeof BulkOperationResponseSchema>;
+
+export type RunMigrationPayload = z.infer<typeof RunMigrationPayloadSchema>;
+
+export type RunMigrationResponse = z.infer<typeof RunMigrationResponseSchema>;
+
+export type MigrationListResponse = z.infer<typeof MigrationListResponseSchema>;

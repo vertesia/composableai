@@ -154,25 +154,6 @@ export interface ScheduleListItem {
 }
 
 /**
- * Information about a schedule's recent and upcoming runs.
- */
-export interface ScheduleRunInfo {
-    /** The schedule ID */
-    schedule_id: string;
-
-    /** Recent workflow executions from this schedule */
-    recent_runs: Array<{
-        workflow_id: string;
-        run_id: string;
-        started_at: Date;
-        status: string;
-    }>;
-
-    /** Upcoming scheduled execution times */
-    upcoming_runs: Date[];
-}
-
-/**
  * Extended schedule information including Temporal execution details.
  */
 export interface AgentScheduleWithTemporalInfo extends AgentSchedule {

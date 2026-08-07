@@ -1,5 +1,7 @@
 import type { z } from 'zod';
 import type {
+    AdvanceProcessPayloadSchema,
+    AnswerProcessTaskPayloadSchema,
     BranchDefinitionSchema,
     BranchJoinPolicySchema,
     HumanTaskDefinitionSchema,
@@ -11,11 +13,13 @@ import type {
     ParallelCollectModeSchema,
     ParallelFailurePolicySchema,
     ProcessContextDefinitionSchema,
+    ProcessContextResponseSchema,
     ProcessDefinitionFormatVersionSchema,
     ProcessDefinitionMetadataSchema,
     ProcessDefinitionRevisionInfoSchema,
     ProcessDefinitionStatusSchema,
     ProcessHistoryRefSchema,
+    ProcessHistoryResponseSchema,
     ProcessNodeReturnsDefinitionSchema,
     ProcessNodeRunTypeSchema,
     ProcessNodeTypeSchema,
@@ -26,6 +30,7 @@ import type {
     ProcessScriptSourceSchema,
     ProcessStateSchema,
     PublishProcessDefinitionPayloadSchema,
+    RetryProcessNodePayloadSchema,
     RevertProcessDefinitionPayloadSchema,
     TransitionDefinitionSchema,
     TransitionTriggerSchema,
@@ -227,3 +232,13 @@ export interface UpdateProcessDefinitionPayload {
 export type PublishProcessDefinitionPayload = z.infer<typeof PublishProcessDefinitionPayloadSchema>;
 
 export type RevertProcessDefinitionPayload = z.infer<typeof RevertProcessDefinitionPayloadSchema>;
+
+export type AdvanceProcessPayload = z.infer<typeof AdvanceProcessPayloadSchema>;
+
+export type AnswerProcessTaskPayload = z.infer<typeof AnswerProcessTaskPayloadSchema>;
+
+export type RetryProcessNodePayload = z.infer<typeof RetryProcessNodePayloadSchema>;
+
+export type ProcessContextResponse = z.infer<typeof ProcessContextResponseSchema>;
+
+export type ProcessHistoryResponse = z.infer<typeof ProcessHistoryResponseSchema>;

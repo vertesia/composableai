@@ -15,7 +15,13 @@ import type {
 import type { ToolExecutionMetadata } from '../tool-execution.js';
 import type { BaseObject } from './common.js';
 import type { WorkflowExecutionPayload } from './index.js';
-import type { ParentClosePolicyType } from './temporalio.js';
+
+/**
+ * Copied from temporalio: the child-workflow parent-close policy, as authored in a DSL workflow
+ * step. Declared here rather than in `./temporalio.js` because that module is Vertesia-internal
+ * while this union is part of the public DSL that clients write.
+ */
+export type ParentClosePolicyType = 'TERMINATE' | 'ABANDON' | 'REQUEST_CANCEL' | undefined;
 
 export type DurationValue = z.infer<typeof DurationValueSchema>;
 
@@ -65,7 +71,7 @@ export interface DSLActivityExecutionPayload<ParamsT extends object> extends Wor
 export type ImportSpec = (string | Record<string, string>)[];
 export type ActivityFetchSpec = z.infer<typeof ActivityFetchSpecSchema>;
 
-export interface DSLWorkflowStepBase {
+interface DSLWorkflowStepBase {
     /**
      * The type fo the step.
      * If not set defaults to "activity"
@@ -148,7 +154,7 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
  */
 export type DSLWorkflowStep = DSLActivityStep | DSLChildWorkflowStep;
 
-export interface DSLWorkflowSpecBase {
+interface DSLWorkflowSpecBase {
     name: string;
     description?: string;
     tags?: string[];
@@ -208,7 +214,7 @@ export type DSLWorkflowSpec = DSLWorkflowSpecWithSteps | DSLWorkflowSpecWithActi
  * against the stored value for optimistic concurrency. All server-assigned on the read side, hence
  * optional here and absent from {@link DSLWorkflowSpec}.
  */
-export interface LegacyWorkflowDefinitionUpsertFields {
+interface LegacyWorkflowDefinitionUpsertFields {
     id?: string;
     created_at?: string;
     updated_at?: string;
