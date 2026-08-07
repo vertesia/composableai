@@ -99,7 +99,7 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         return skipped(`no embedding environment configured for type ${type}`);
     }
 
-    let document: Awaited<ReturnType<typeof client.objects.retrieve>>;
+    let document: ContentObject;
     try {
         document = await client.objects.retrieve(objectId, '+text +parts +embeddings +tokens +properties');
     } catch (error) {
@@ -107,10 +107,6 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
             throw new DocumentNotFoundError(`Document not found: ${objectId}`, [objectId]);
         }
         throw error;
-    }
-
-    if (!document) {
-        throw new DocumentNotFoundError('Document not found', [objectId]);
     }
 
     let res:

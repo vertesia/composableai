@@ -10,7 +10,7 @@ function useMongoId(query: Record<string, unknown>) {
     return query;
 }
 
-function asRecords<T extends object>(items: T[]): Record<string, unknown>[] {
+function asRecords(items: object[]): Record<string, unknown>[] {
     return items as unknown as Record<string, unknown>[];
 }
 

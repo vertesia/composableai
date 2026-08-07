@@ -31,6 +31,7 @@ export const FileMetadataResponseSchema = z
         contentType: z.string(),
         contentDisposition: z.string().optional(),
         etag: z.string().optional(),
+        generation: z.string().optional(),
         customMetadata: StringValueMapSchema.optional(),
     })
     .meta({ id: 'FileMetadataResponse' });

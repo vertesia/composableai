@@ -28,6 +28,7 @@ import type {
     InheritedPropertyMetadataSchema,
     ListContentObjectExportsResponseSchema,
     ObjectSearchResponseSchema,
+    ProjectedContentObjectApiResponseSchema,
     RevisionInfoSchema,
     SetObjectEmbeddingsResponseSchema,
     StartContentObjectExportRequestSchema,
@@ -260,6 +261,12 @@ export type ContentObjectApiRevision = z.infer<typeof ContentObjectApiRevisionSc
 export type ContentObjectItemApiResponse = z.infer<typeof ContentObjectItemApiResponseSchema>;
 
 export type ContentObjectApiResponse = z.infer<typeof ContentObjectApiResponseSchema>;
+
+export type ProjectedContentObjectApiResponse = z.infer<typeof ProjectedContentObjectApiResponseSchema>;
+
+export type FullObjectSearchResponse = Omit<ObjectSearchResponse, 'results'> & {
+    results: ContentObjectItemApiResponse[];
+};
 
 export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object

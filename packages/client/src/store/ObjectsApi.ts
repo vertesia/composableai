@@ -26,6 +26,7 @@ import {
     type ExportPropertiesPayload,
     type ExportPropertiesResponse,
     type FindPayload,
+    type FullObjectSearchResponse,
     type GetFileUrlPayload,
     type GetFileUrlResponse,
     type GetRenditionParams,
@@ -36,6 +37,7 @@ import {
     type ObjectSearchPayload,
     type ObjectSearchQuery,
     type ObjectSearchResponse,
+    type ProjectedContentObjectApiResponse,
     type SetObjectEmbeddingsResponse,
     type StartContentObjectExportRequest,
     type StartContentObjectExportResponse,
@@ -224,7 +226,11 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Find object based on query */
-    find(payload: FindPayload): Promise<ContentObject[]> {
+    find(payload: FindPayload & { select?: undefined }): Promise<ContentObject[]>;
+    find(payload: FindPayload & { select: `+${string}` }): Promise<ContentObject[]>;
+    find(payload: FindPayload & { select: string }): Promise<ProjectedContentObjectApiResponse[]>;
+    find(payload: FindPayload): Promise<ContentObject[] | ProjectedContentObjectApiResponse[]>;
+    find(payload: FindPayload): Promise<ContentObject[] | ProjectedContentObjectApiResponse[]> {
         return this.post('/find', {
             payload,
         });
@@ -238,13 +244,18 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Search object — different from find because allow full text search */
+    search(payload: ComplexSearchPayload & { select?: undefined }): Promise<FullObjectSearchResponse>;
+    search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse>;
     search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
         return this.post('/search', {
             payload,
         });
     }
 
-    retrieve(id: string, select?: string): Promise<ContentObject> {
+    retrieve(id: string): Promise<ContentObject>;
+    retrieve(id: string, select: `+${string}` | undefined): Promise<ContentObject>;
+    retrieve(id: string, select: string): Promise<ProjectedContentObjectApiResponse>;
+    retrieve(id: string, select?: string): Promise<ContentObject | ProjectedContentObjectApiResponse> {
         return this.get(`/${id}`, {
             query: {
                 select,

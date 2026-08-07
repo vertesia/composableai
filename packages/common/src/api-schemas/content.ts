@@ -804,6 +804,18 @@ export const ContentObjectApiResponseSchema = z
     })
     .meta({ id: 'ContentObjectApiResponse' });
 
+/**
+ * Read shape for field-projected objects. Projection intentionally changes requiredness without
+ * weakening the full object or any create/update payload.
+ */
+export const ProjectedContentObjectApiResponseSchema = ContentObjectApiResponseSchema.partial().meta({
+    id: 'ProjectedContentObjectApiResponse',
+});
+
+export const ProjectedContentObjectApiResponseArraySchema = z
+    .array(ProjectedContentObjectApiResponseSchema)
+    .meta({ id: 'ProjectedContentObjectApiResponseArray' });
+
 export const ComputeObjectFacetPayloadSchema = z
     .strictObject({
         facets: z.array(FacetSpecSchema),
@@ -882,7 +894,7 @@ export const ContentObjectItemApiResponseArraySchema = z
 
 export const ObjectSearchResponseSchema = z
     .strictObject({
-        results: z.array(ContentObjectItemApiResponseSchema),
+        results: z.array(ProjectedContentObjectApiResponseSchema),
         facets: ComputedFacetResponseSchema,
         aggregations: z.looseObject({}).optional(),
     })

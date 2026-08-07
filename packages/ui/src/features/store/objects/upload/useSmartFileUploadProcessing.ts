@@ -1,4 +1,4 @@
-import type { ComplexSearchPayload, ContentObjectItem, FindPayload } from '@vertesia/common';
+import type { ComplexSearchPayload, FindPayload } from '@vertesia/common';
 import { errorMessage, useToast } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -6,6 +6,11 @@ import { useCallback } from 'react';
 import { Md5 } from 'ts-md5';
 
 const t = i18nInstance.getFixedT(null, NAMESPACE);
+
+interface ExistingHashMatch {
+    id: string;
+    content?: { etag?: string };
+}
 
 /**
  * Types of actions that can be taken with a file
@@ -140,20 +145,24 @@ export function useSmartFileUploadProcessing() {
                         'content.etag': { $in: hashes },
                     };
 
-                    let res: Array<Pick<ContentObjectItem, 'id' | 'content'>>;
+                    let res: ExistingHashMatch[];
 
                     if (limitToCollectionId) {
                         const payload: ComplexSearchPayload = {
                             query: { match: query },
                             select: 'id content.etag',
                         };
-                        res = (await client.store.collections.searchMembers(limitToCollectionId, payload)).results;
+                        res = (
+                            await client.store.collections.searchMembers(limitToCollectionId, payload)
+                        ).results.filter((doc): doc is ExistingHashMatch => typeof doc.id === 'string');
                     } else {
-                        const payload: FindPayload = {
+                        const payload = {
                             query,
                             select: 'id content.etag',
-                        };
-                        res = await client.store.objects.find(payload);
+                        } satisfies FindPayload & { select: string };
+                        res = (await client.store.objects.find(payload)).flatMap((doc) =>
+                            typeof doc.id === 'string' ? [{ id: doc.id, content: doc.content }] : [],
+                        );
                     }
 
                     for (const doc of res) {

@@ -1,6 +1,6 @@
 // Runtime schemas for the process API domain.
 
-import { JSONSchemaSchema } from '@llumiverse/common/schemas';
+import { JSONObjectSchema, JSONSchemaSchema } from '@llumiverse/common/schemas';
 import type { StringValue } from 'ms';
 import { z } from 'zod';
 import { StringValueMapSchema } from './files.js';
@@ -227,6 +227,7 @@ export const ProcessHistoryResponseSchema = z
     .strictObject({
         run_id: z.string(),
         current_node: z.string(),
+        node_history: z.array(NodeHistoryEntrySchema),
         node_history_ref: z
             .strictObject({
                 path: z.string(),
@@ -241,6 +242,7 @@ export const ProcessContextResponseSchema = z
     .strictObject({
         run_id: z.string(),
         current_node: z.string(),
+        context: JSONObjectSchema,
     })
     .meta({ id: 'ProcessContextResponse' });
 
