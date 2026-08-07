@@ -27,6 +27,23 @@ export {
     ConfirmationWidget,
     type ConfirmationWidgetProps,
 } from './AskUserWidget';
+// Workstream reconstruction from the message stream + query-API merge helpers
+export * from './deriveWorkstreams.js';
+// Active-workstreams polling hook for external use
+export {
+    ACTIVE_WORKSTREAMS_POLL_INTERVAL_MS,
+    type UseActiveWorkstreamsResult,
+    useActiveWorkstreams,
+} from './hooks/useActiveWorkstreams.js';
+// Artifact listing hook (run artifacts tree) for external use
+export {
+    type ArtifactTreeNode,
+    deriveArtifactRefreshKey,
+    type UseArtifactsResult,
+    useArtifacts,
+} from './hooks/useArtifacts.js';
+// Document side-panel hook for external use
+export { type UseDocumentPanelResult, useDocumentPanel } from './hooks/useDocumentPanel.js';
 export * from './JumpingDots';
 export {
     ModernAgentConversation,
@@ -74,3 +91,5 @@ export {
 export * from './SkillWidgetProvider';
 export { VegaLiteChart } from './VegaLiteChart';
 export * from './WaitingMessages';
+// Workstream naming / status / lifecycle helpers and the WorkstreamInfo shape
+export * from './workstreams.js';

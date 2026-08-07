@@ -1,4 +1,5 @@
 import type { VertesiaClient } from '@vertesia/client';
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // ---------------------------------------------------------------------------
@@ -81,6 +82,26 @@ function stripToRelativePath(fullPath: string, runId: string): string {
     const idx = fullPath.indexOf(prefix);
     if (idx !== -1) return fullPath.slice(idx + prefix.length);
     return fullPath.split('/').pop() ?? fullPath;
+}
+
+// ---------------------------------------------------------------------------
+// Refresh signal
+// ---------------------------------------------------------------------------
+
+/**
+ * Counts the messages that mark a point where new artifacts are likely to exist —
+ * a completed tool call, or the run finishing. Feed the result to {@link useArtifacts}
+ * as `refreshKey` to re-list artifacts at those points instead of polling.
+ */
+export function deriveArtifactRefreshKey(messages: AgentMessage[]): number {
+    return messages.filter((m) => {
+        if (m.type === AgentMessageType.COMPLETE) return true;
+        if (m.type === AgentMessageType.THOUGHT) {
+            const details = m.details as Record<string, unknown> | undefined;
+            return details?.tool_status === 'completed';
+        }
+        return false;
+    }).length;
 }
 
 // ---------------------------------------------------------------------------

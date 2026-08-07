@@ -21,6 +21,8 @@ interface AgentRunnerFacetsNavProps {
         statuses?: FacetBucket[];
         initiated_by?: FacetBucket[];
         interactions?: EnrichedFacetBucket[];
+        /** `run_kind` buckets — `agent` (autonomous runs) and `process` (process runs). */
+        kinds?: FacetBucket[];
     };
     search: SearchInterface;
     actions?: React.ReactNode[];
@@ -46,6 +48,14 @@ export function useAgentRunnerFilterGroups(facets: AgentRunnerFacetsNavProps['fa
         type: 'text',
         multiple: false,
     });
+
+    customFilterGroups.push(
+        VStringFacet({
+            buckets: facets.kinds || [],
+            name: 'run_kind',
+            placeholder: 'Kind',
+        }),
+    );
 
     customFilterGroups.push(
         VInteractionFacet({
@@ -154,7 +164,7 @@ export function AgentRunnerFacetsNav({
                         {!selectionCount && (
                             <div className="flex items-center justify-between px-2 py-1">
                                 <div className="text-sm text-muted-foreground">
-                                    {search.initialized ? `${search.totalCount} agent runs` : 'Loading agent runs...'}
+                                    {search.initialized ? `${search.totalCount} runs` : 'Loading runs...'}
                                 </div>
                             </div>
                         )}
