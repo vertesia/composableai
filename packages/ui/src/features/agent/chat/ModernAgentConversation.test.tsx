@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
     reconnect: vi.fn(),
     restart: vi.fn(),
     sendSignal: vi.fn(),
+    uploadArtifact: vi.fn(),
     headerProps: vi.fn(),
     allMessagesMixedProps: vi.fn(),
     messageInputProps: vi.fn(),
@@ -30,6 +31,7 @@ vi.mock('@vertesia/ui/session', () => ({
             agents: {
                 restart: mocks.restart,
                 sendSignal: mocks.sendSignal,
+                uploadArtifact: mocks.uploadArtifact,
                 getActiveWorkstreams: mocks.getActiveWorkstreams,
                 retrieve: mocks.retrieve,
             },
@@ -218,6 +220,7 @@ describe('ModernAgentConversation send handling', () => {
         vi.clearAllMocks();
         mocks.restart.mockResolvedValue({ id: 'agent-run-1' });
         mocks.sendSignal.mockResolvedValue({});
+        mocks.uploadArtifact.mockResolvedValue({});
         mocks.getActiveWorkstreams.mockResolvedValue({ running: [] });
         mocks.retrieve.mockResolvedValue({ disabled_mcp_collections: undefined });
         mocks.useAgentPlans.mockReturnValue({
@@ -330,6 +333,79 @@ describe('ModernAgentConversation send handling', () => {
         );
         await waitFor(() => {
             expect(clearProcessingFiles).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('files staged before the run existed', () => {
+        // Staging must upload inline in StartWorkflowView, not via a handoff to the conversation
+        // view: consumers like StudioAssistantPanel feed the new agentRunId straight back as a
+        // prop, which unmounts StartWorkflowView (and any handoff state) the moment the run
+        // starts. Regression coverage for the flow where staged files silently vanished.
+        it('uploads staged files, closes the batch with a manifest, and sends no follow-up message', async () => {
+            const startWorkflow = vi.fn().mockResolvedValue({ agent_run_id: 'agent-run-2' });
+            mockStreamState({
+                messages: [],
+                isCompleted: false,
+                initialHistoryStatus: 'empty',
+                agentRunStatus: 'RUNNING',
+            });
+
+            const { container } = renderWithProviders(
+                <ModernAgentConversation startWorkflow={startWorkflow} hideHeader initialMessage="" />,
+            );
+
+            const file = new File(['pdf'], 'report.pdf', { type: 'application/pdf' });
+            const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+            expect(fileInput).not.toBeNull();
+            fireEvent.change(fileInput, { target: { files: [file] } });
+
+            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Look at these files' } });
+            fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+
+            await waitFor(() => {
+                expect(mocks.uploadArtifact).toHaveBeenCalledWith('agent-run-2', 'files/report.pdf', file);
+            });
+            await waitFor(() => {
+                expect(mocks.sendSignal).toHaveBeenCalledWith(
+                    'agent-run-2',
+                    'FileUploaded',
+                    expect.objectContaining({
+                        name: 'report.pdf',
+                        artifact_path: 'files/report.pdf',
+                    }),
+                );
+            });
+
+            // The closing manifest defines the batch's membership: the workflow delivers only
+            // when every listed file has settled, so a fast first file can never trigger a
+            // partial delivery.
+            await waitFor(() => {
+                expect(mocks.sendSignal).toHaveBeenCalledWith(
+                    'agent-run-2',
+                    'FileBatchClosed',
+                    expect.objectContaining({
+                        batch_id: expect.stringMatching(/^batch-/),
+                        file_ids: [
+                            (
+                                mocks.sendSignal.mock.calls.find((call) => call[1] === 'FileUploaded')?.[2] as {
+                                    id: string;
+                                }
+                            ).id,
+                        ],
+                    }),
+                );
+            });
+
+            // The workflow owns the "[Files Ready]" turn: the client must not send a UserInput
+            // of its own — it would race the workflow's delivery.
+            const userInputCalls = mocks.sendSignal.mock.calls.filter((call) => call[1] === 'UserInput');
+            expect(userInputCalls).toHaveLength(0);
+
+            // The staged note still rides on the initial message so the agent knows to wait.
+            expect(startWorkflow).toHaveBeenCalledWith(
+                expect.stringContaining('1 file(s) are being uploaded'),
+                expect.anything(),
+            );
         });
     });
 
