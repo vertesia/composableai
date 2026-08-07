@@ -3,12 +3,15 @@
 import type { JSONSchema } from '@llumiverse/common';
 import { z } from 'zod';
 import type { CompositeAppMenuNavItem } from '../apps.js';
+import type { PlatformEvent } from '../platform-event.js';
 import type { InCodeProcessDefinition } from '../store/process.js';
+import { SystemRolesSchema } from './apikey.js';
 import {
     AgentToolDefinitionSchema,
     AppInstallationOAuthBindingSchema,
     AppInstallationProviderBindingSchema,
     AppVersionRecordSchema,
+    EventRefSchema,
 } from './app-lifecycle.js';
 import {
     AppAccessControlSchema,
@@ -19,12 +22,14 @@ import {
     MCPOAuthConfigSchema,
     ToolCollectionObjectSchema,
 } from './apps.js';
+import { AuditMeterSchema } from './audit-trail.js';
 import {
     DashboardDataSourceSchema,
     DashboardLayoutSchema,
     DashboardPanelSchema,
     DashboardQuerySchema,
 } from './dashboard.js';
+import { EventPrioritySchema, EventSubscriptionFilterSchema } from './events.js';
 import { StringValueMapSchema } from './files.js';
 import { RemoteActivityDefinitionSchema } from './integrations.js';
 import { CatalogInteractionRefSchema } from './interaction.js';
@@ -804,6 +809,99 @@ export const CompositeAppConfigSchema = z
             'CompositeApp shell configuration. This is the main configuration interface for storing CompositeApp settings. Used as the MongoDB model for persisting CompositeApp configurations.',
     });
 
+export const AppPackageEventHookSchema = z
+    .strictObject({
+        name: z.string().meta({ description: 'Registered event hook name.' }),
+        path: z.string().meta({ description: 'Authenticated endpoint that receives the event delivery envelope.' }),
+        description: z.string().meta({ description: 'Optional description of the event hook behavior.' }).optional(),
+    })
+    .meta({
+        id: 'AppPackageEventHook',
+        description: 'An authenticated event hook exposed by the app runtime.',
+    });
+
+export const AppPackageHooksSchema = z
+    .strictObject({
+        install: z.string().meta({ description: 'Authenticated endpoint for the app install hook.' }).optional(),
+        uninstall: z.string().meta({ description: 'Authenticated endpoint for the app uninstall hook.' }).optional(),
+        events: z
+            .array(AppPackageEventHookSchema)
+            .meta({ description: 'Named event hooks exposed by the app runtime.' })
+            .optional(),
+    })
+    .meta({
+        id: 'AppPackageHooks',
+        description:
+            'Lifecycle and event hooks exposed by the app runtime. Lifecycle entries are informational; Studio invokes their conventional sibling endpoints directly.',
+    });
+
+const AppEventHookPlatformEventSchema = EventRefSchema.extend({
+    timestamp: z.string(),
+    source: z.string(),
+    audit_trail: z.boolean().optional(),
+    replay_of: z.string().optional(),
+    replay_root_event_id: z.string().optional(),
+    replayed_by: z.string().optional(),
+    request_id: z.string().nullable().optional(),
+    status: z.number().optional(),
+    success: z.boolean().optional(),
+    principal_id: z.string().nullable().optional(),
+    principal_type: z.string().nullable().optional(),
+    effective_principal_id: z.string().nullable().optional(),
+    roles: z.array(z.string()).optional(),
+    account_name: z.string().nullable().optional(),
+    project_name: z.string().nullable().optional(),
+    provider: z.string().nullable().optional(),
+    meters: z.array(AuditMeterSchema).optional(),
+    resource_data: z.record(z.string(), z.unknown()).optional(),
+    resource_version: z.string().optional(),
+    details: z.record(z.string(), z.unknown()).optional(),
+}) satisfies z.ZodType<PlatformEvent>;
+
+export const AppEventHookDeliverySchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Event-delivery intent id.' }),
+        subscription_id: z.string().meta({ description: 'Event subscription id.' }),
+        attempt: z.number().finite().meta({ description: 'Current delivery attempt number.' }),
+    })
+    .meta({
+        id: 'AppEventHookDelivery',
+        description: 'Delivery metadata accompanying an app event-hook invocation.',
+    });
+
+export const AppEventHookPayloadSchema = z
+    .strictObject({
+        event: AppEventHookPlatformEventSchema,
+        delivery: AppEventHookDeliverySchema,
+    })
+    .meta({
+        id: 'AppEventHookPayload',
+        description: 'Canonical platform event envelope delivered to an authenticated app event hook.',
+    });
+
+export const AppEventSubscriptionDefinitionSchema = z
+    .strictObject({
+        id: z
+            .string()
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+            .meta({ description: 'Stable app-local subscription id in kebab case.' }),
+        name: z.string().meta({ description: 'Human-readable subscription name.' }),
+        description: z.string().meta({ description: 'Optional description of the subscription behavior.' }).optional(),
+        hook: z.string().meta({ description: 'Name of an event hook registered by the same app package.' }),
+        filter: EventSubscriptionFilterSchema,
+        run_as_role: SystemRolesSchema.meta({
+            description:
+                'Identity used for event delivery. Use automation for the standard event-triggered execution identity.',
+        }),
+        enabled: z.boolean().meta({ description: 'Whether the installed subscription is enabled.' }).optional(),
+        priority: EventPrioritySchema.meta({ description: 'Delivery priority for matching events.' }).optional(),
+    })
+    .meta({
+        id: 'AppEventSubscriptionDefinition',
+        description:
+            'An app-owned event subscription. Studio derives its project scope and delivery target from the app installation and referenced event hook.',
+    });
+
 export const AppPackageSchema = z
     .strictObject({
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
@@ -850,6 +948,11 @@ export const AppPackageSchema = z
         settings_schema: JSONSchemaRefSchema.meta({
             description: 'A JSON chema for the app installation settings.',
         }).optional(),
+        hooks: AppPackageHooksSchema.optional(),
+        subscriptions: z
+            .array(AppEventSubscriptionDefinitionSchema)
+            .meta({ description: 'Event subscriptions contributed by the app.' })
+            .optional(),
     })
     .meta({ id: 'AppPackage' });
 

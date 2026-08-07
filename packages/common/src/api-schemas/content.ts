@@ -787,8 +787,19 @@ export const ContentObjectApiResponseSchema = z
         parts_etag: z.string().optional(),
         transcript: z.looseObject({}).optional(),
         security: StringArrayMapSchema.optional(),
-        sensitivity: z.number().optional(),
-        compartments: z.array(z.string()).optional(),
+        sensitivity: z
+            .number()
+            .meta({
+                description:
+                    'BLP sensitivity level — set directly or inherited from collections (max across collections).',
+            })
+            .optional(),
+        compartments: z
+            .array(z.string())
+            .meta({
+                description: 'Compartments — set directly or inherited from collections (union across collections).',
+            })
+            .optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectApiResponse' });

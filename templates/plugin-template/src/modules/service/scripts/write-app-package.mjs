@@ -3,6 +3,7 @@ import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import * as VertesiaCommon from '@vertesia/common';
+import { summarizeAppPackage } from './app-package-summary.mjs';
 import {
     isTemplateExampleId,
     isTemplateScaffoldPackageName,
@@ -32,10 +33,6 @@ const getProcessDefinitionValidationResult =
     typeof VertesiaCommon.getProcessDefinitionValidationResult === 'function'
         ? VertesiaCommon.getProcessDefinitionValidationResult
         : () => ({ errors: [] });
-
-function names(items, selector) {
-    return (items || []).map(selector).filter(Boolean).sort();
-}
 
 async function readJsonIfExists(path) {
     try {
@@ -275,26 +272,6 @@ async function readAppPackage() {
     }
 
     return assertPackage(await response.json());
-}
-
-function summarizeAppPackage(pkg) {
-    const tools = names(pkg.tools, (tool) => tool.name);
-    return {
-        ui: Boolean(pkg.ui),
-        settings: Boolean(pkg.settings_schema),
-        tools: tools.filter((name) => !name.startsWith('learn_')),
-        skills: tools.filter((name) => name.startsWith('learn_')),
-        interactions: names(pkg.interactions, (interaction) => interaction.id || interaction.name),
-        types: names(pkg.types, (type) => type.id || type.name),
-        processes: names(pkg.processes, (process) => process.id || process.name),
-        views: names(pkg.views, (view) => view.id || view.name),
-        templates: names(pkg.templates, (template) => template.id || template.name || template.path),
-        dashboards: names(pkg.dashboards, (dashboard) => dashboard.id || dashboard.name),
-        widgets: Object.keys(pkg.widgets || {}).sort(),
-        activities: names(pkg.activities, (activity) =>
-            activity.collection ? `${activity.collection}:${activity.name}` : activity.name,
-        ),
-    };
 }
 
 function printSummary(summary) {

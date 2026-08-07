@@ -6,6 +6,7 @@ import { createActivitiesRoute } from './server/activities.js';
 import { createPackageRoute } from './server/app-package.js';
 import { createContentTypesRoute } from './server/content-types.js';
 import { createDashboardsRoute } from './server/dashboards.js';
+import { createHooksRoute } from './server/hooks.js';
 import { createInteractionsRoute } from './server/interactions.js';
 import { createMcpRoute } from './server/mcp.js';
 import { createProcessesRoute } from './server/processes.js';
@@ -68,6 +69,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
             try {
                 const text = await c.req.text();
                 const body = JSON.parse(text);
+                ctx.requestBody = body;
                 const result = ToolExecutionPayloadSchema.safeParse(body);
                 if (result.success) {
                     ctx.payload = result.data as ToolExecutionPayload;
@@ -112,6 +114,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
     });
 
     createPackageRoute(app, `${prefix}/package`, config);
+    createHooksRoute(app, `${prefix}/hooks`, config);
     createToolsRoute(app, `${prefix}/tools`, config);
     createSkillsRoute(app, `${prefix}/skills`, config);
     createWidgetsRoute(app, `${prefix}/widgets`, config);

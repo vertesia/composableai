@@ -333,7 +333,7 @@ For package-only checks during authoring, run:
 pnpm run service:build:server
 \`\`\`
 
-The output must list the package artifacts. If an expected type, interaction, prompt, process, view, dashboard, template, widget, activity, tool, or seed script is missing from the summary, fix the exports before publishing.
+The output must list the package artifacts. If an expected type, interaction, prompt, process, view, dashboard, template, widget, activity, hook, subscription, tool, or seed script is missing from the summary, fix the exports before publishing.
 
 ## ServerConfig Checklist
 
@@ -344,9 +344,12 @@ import type { ToolServerConfig } from '@vertesia/tools-sdk';
 import {
   activities,
   dashboards,
+  hooks,
   interactions,
+  mcpProviders,
   processes,
   skills,
+  subscriptions,
   templates,
   tools,
   types,
@@ -364,8 +367,16 @@ export const ServerConfig = {
   dashboards,
   processes,
   views,
+  hooks,
+  subscriptions,
+  mcpProviders,
 } satisfies ToolServerConfig;
 \`\`\`
+
+The app module must provide a typed empty default for every supported contribution kind, even when the app does not
+currently register one. When adding a new contribution kind to the template, export its default from
+\`src/modules/app/resources\`, add it to the codegen \`SERVER_RESOURCES\` list, and let codegen regenerate
+\`src/tool-server/app-server-modules.ts\`. Do not put app-owned registries directly under \`src/tool-server\`.
 
 If a capability is authored in source but absent from the package summary, check that:
 

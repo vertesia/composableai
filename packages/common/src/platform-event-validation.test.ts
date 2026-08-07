@@ -63,6 +63,32 @@ describe('event subscription input validation', () => {
         expect(result.errors.join(' ')).toContain('timeout_ms');
     });
 
+    it('accepts a fully resolved app hook target', () => {
+        const result = getCreateEventSubscriptionValidationResult(
+            validCreate({
+                target: {
+                    type: 'app',
+                    app_id: 'content-app',
+                    installation_id: 'installation-1',
+                    hook: 'content-updated',
+                    url: 'https://gateway.example/apps/content-app/api/hooks/content-updated',
+                },
+            }),
+        );
+        expect(result.valid).toBe(true);
+    });
+
+    it('requires app hook identity and URL fields', () => {
+        const result = getCreateEventSubscriptionValidationResult(
+            validCreate({ target: { type: 'app', app_id: '', installation_id: '', hook: '', url: '' } }),
+        );
+        expect(result.valid).toBe(false);
+        expect(result.errors.join(' ')).toContain('app_id');
+        expect(result.errors.join(' ')).toContain('installation_id');
+        expect(result.errors.join(' ')).toContain('hook');
+        expect(result.errors.join(' ')).toContain('url');
+    });
+
     it('requires endpoint for workflow targets', () => {
         const result = getCreateEventSubscriptionValidationResult(
             validCreate({ target: { type: 'workflow' } as never }),
