@@ -163,8 +163,8 @@ function validateTarget(target: unknown, errors: string[]): void {
         return;
     }
     const type = target.type;
-    if (type !== 'workflow' && type !== 'webhook' && type !== 'agent' && type !== 'process') {
-        errors.push('target.type must be one of workflow, webhook, agent, process');
+    if (type !== 'workflow' && type !== 'webhook' && type !== 'app' && type !== 'agent' && type !== 'process') {
+        errors.push('target.type must be one of workflow, webhook, app, agent, process');
         return;
     }
     const t = target as EventDeliveryTargetInput;
@@ -201,6 +201,19 @@ function validateTarget(target: unknown, errors: string[]): void {
             }
             if (t.headers !== undefined && !isRecord(t.headers)) {
                 errors.push('webhook target.headers must be an object of strings');
+            }
+            break;
+        }
+        case 'app': {
+            for (const field of ['app_id', 'installation_id', 'hook', 'url'] as const) {
+                if (typeof t[field] !== 'string' || t[field].length === 0) {
+                    errors.push(`app target requires a non-empty "${field}"`);
+                }
+            }
+            if (t.timeout_ms !== undefined) {
+                if (!Number.isInteger(t.timeout_ms) || t.timeout_ms <= 0 || t.timeout_ms > MAX_WEBHOOK_TIMEOUT_MS) {
+                    errors.push(`app target.timeout_ms must be an integer between 1 and ${MAX_WEBHOOK_TIMEOUT_MS}`);
+                }
             }
             break;
         }

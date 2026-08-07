@@ -1190,6 +1190,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 max_tokens: {
                     type: 'number',
                 },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                reasoning_effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
                 temperature: {
                     type: 'number',
                 },

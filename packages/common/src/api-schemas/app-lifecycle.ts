@@ -180,6 +180,8 @@ export const AppPackageScopeSchema = z
         'settings',
         'widgets',
         'activities',
+        'hooks',
+        'subscriptions',
         'all',
     ])
     .meta({ id: 'AppPackageScope' });

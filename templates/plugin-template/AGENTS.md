@@ -10,7 +10,7 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 | ------------------------------------------------------------------------------- | ------------------------------- |
 | Reviewing requirement docs, discovery notes, or feature/demo asks               | `vertesia-gap-assessment`       |
 | Understanding plugin architecture, dual build system, or `config.ts`            | `vertesia-plugin`               |
-| Adding tools, skills, interactions, content types, or rendering templates       | `vertesia-tool-server-resource` |
+| Adding tools, skills, interactions, types, templates, hooks, or subscriptions   | `vertesia-tool-server-resource` |
 | Building or modifying React UI pages or components                              | `vertesia-ui`                   |
 | Calling the Vertesia client API (objects, workflows, interactions, files)       | `vertesia-api`                  |
 | Writing or debugging DSL workflows that call remote activities                  | `vertesia-dsl-workflow`         |
@@ -21,7 +21,7 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 1. If the requirement is fuzzy or comes from a discovery doc → `vertesia-gap-assessment` first.
 2. Need plugin context (build, layout, deployment) → `vertesia-plugin`.
 3. Pick the implementation skill:
-   - Backend resources (tools/skills/interactions/types/templates) → `vertesia-tool-server-resource`
+   - Backend resources (tools/skills/interactions/types/templates/hooks/subscriptions) → `vertesia-tool-server-resource`
    - UI page or component → `vertesia-ui`
    - Multi-step orchestration → `vertesia-dsl-workflow`
 4. Add `vertesia-api` whenever the implementation reads or writes the platform.
@@ -86,8 +86,12 @@ src/modules/app/                              ← user-owned app module
 │   └── features/<name>/
 └── resources/
     ├── activities/
+    ├── dashboards/
+    ├── hooks/
     ├── interactions/
+    ├── mcp/
     ├── skills/
+    ├── subscriptions/
     ├── templates/
     ├── tools/
     └── types/
@@ -104,7 +108,9 @@ Rules of thumb:
 
 - ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
 - Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
-- User collections must be exported from `src/modules/app/resources/<type>/index.ts`
+- User contributions must be exported from `src/modules/app/resources/<type>/index.ts`
+- Hooks use explicit definitions in `src/modules/app/resources/hooks/index.ts`: lifecycle hooks are `install`/`uninstall`; event hooks use kebab-case names and receive the canonical `{ event, delivery }` envelope
+- Event subscriptions live in `src/modules/app/resources/subscriptions/index.ts` and reference a registered event hook by its local `name`; do not hardcode a deployed hook URL
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files
@@ -135,7 +141,7 @@ read real objects; seeding is a build/test concern.
 Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
 
 - **Import hooks are server-build only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
-- **Must export from module resource indexes**: a collection that isn't added to `src/modules/app/resources/<type>/index.ts` won't be served.
+- **Must export from module resource indexes**: a contribution that isn't added to `src/modules/app/resources/<type>/index.ts` won't be served. New contribution types also need an empty app-module default and must be added to the codegen `SERVER_RESOURCES` list so generated `src/tool-server/app-server-modules.ts` includes them.
 - **Generated wiring is not user code**: do not hand-edit `src/tool-server/app-server-modules.ts`, `src/ui/app-ui-modules.tsx`, or `src/ui/app-ui-entry.tsx`; change module resource/route/provider exports instead.
 - **`Input.onChange` takes the value directly** (`onChange={setValue}`), not a React event — `Textarea` uses standard events.
 

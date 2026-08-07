@@ -10,6 +10,9 @@ Full code examples for each resource type. SKILL.md has the workflow and decisio
 - [Interaction (code-based)](#interaction-code-based)
 - [Content Type](#content-type)
 - [Rendering Template](#rendering-template)
+- [Application lifecycle hooks](#application-lifecycle-hooks)
+- [Application event hooks](#application-event-hooks)
+- [Application event subscriptions](#application-event-subscriptions)
 - [Collection registration & icons](#collection-registration--icons)
 
 ---
@@ -366,6 +369,148 @@ export const MyTemplates = new RenderingTemplateCollection({
     templates   // Auto-discovers all subdirs with TEMPLATE.md
 });
 ```
+
+---
+
+## Application lifecycle hooks
+
+Lifecycle hooks are authenticated server handlers, not resource collections. They remain app-owned module
+contributions. Use them when installation must initialize project data or uninstallation must clean it up. Keep install
+hooks idempotent because they may be invoked again for recovery or reinstallation.
+
+### `src/modules/app/resources/hooks/install.ts`
+
+```typescript
+import type { AppLifecycleHook } from "@vertesia/tools-sdk";
+
+export const install = (async (context) => {
+    const client = await context.getClient();
+    const project = context.payload.project;
+    if (!project) throw new Error("Install hooks require a project-scoped token");
+    const installationId = context.metadata.app_install_id;
+    const settings = context.metadata.app_settings;
+
+    // Query existing project state first and create only what is missing.
+    console.log("Installing app", { projectId: project.id, installationId, settings });
+    void client;
+}) satisfies AppLifecycleHook;
+```
+
+An uninstall hook has the same signature and belongs in `src/modules/app/resources/hooks/uninstall.ts`.
+
+### Registration
+
+```typescript
+// src/modules/app/resources/hooks/index.ts
+import type { AppHookDefinition } from "@vertesia/tools-sdk";
+import { install } from "./install.js";
+
+export const hooks = [
+    { kind: "lifecycle", name: "install", handler: install },
+] satisfies AppHookDefinition[];
+```
+
+Registered hooks are exposed as authenticated POST endpoints at `/api/hooks/install` and `/api/hooks/uninstall`. The
+app package advertises their endpoint paths under `hooks` for inspection. Studio invokes the conventional endpoints
+directly and treats a 404 as an absent optional hook.
+
+Building an immutable version advertises these definitions but does not execute them. Studio runs the promoted
+version's install hook during promotion reconciliation and runs the previous promoted version's uninstall hook when
+it is replaced or removed. For an unpromoted candidate, validate source registration and package output only; do not
+invoke lifecycle endpoints manually or fail candidate QA because their side effects are absent.
+
+In an appgen capability manifest, declare lifecycle hooks with type `hook` and ids such as
+`app:<app-name>:install` and `app:<app-name>:uninstall`.
+
+Do not create project-local copies of app-owned package type definitions. When hooks create content objects, use the
+portable `app:<app-name>:<type-name>` type reference.
+
+---
+
+## Application event hooks
+
+Event hooks are authenticated webhook handlers for platform event deliveries. Their payload is the standard event
+envelope `{ event, delivery: { id, subscription_id, attempt } }`, and their context exposes the caller token,
+decoded token payload, and `getClient()`.
+
+### `src/modules/app/resources/hooks/content-updated.ts`
+
+```typescript
+import type { AppEventHook } from "@vertesia/tools-sdk";
+
+export const contentUpdated = (async ({ event, delivery }, context) => {
+    const client = await context.getClient();
+    console.log("Processing event", {
+        eventId: event.event_id,
+        category: event.event_category,
+        action: event.action,
+        resourceId: event.resource_id,
+        deliveryId: delivery.id,
+    });
+    void client;
+}) satisfies AppEventHook;
+```
+
+### Registration
+
+```typescript
+import type { AppHookDefinition } from "@vertesia/tools-sdk";
+import { contentUpdated } from "./content-updated.js";
+
+export const hooks = [
+    {
+        kind: "event",
+        name: "content-updated",
+        description: "Processes updated content objects.",
+        handler: contentUpdated,
+    },
+] satisfies AppHookDefinition[];
+```
+
+Event hook names must be kebab-case URL-safe segments. `install` and `uninstall` are reserved. The example is exposed
+at `POST /api/hooks/content-updated` and advertised by `/api/package?scope=hooks`.
+Represent it in an appgen capability manifest as a `hook` artifact such as
+`app:<app-name>:content-updated`.
+
+---
+
+## Application event subscriptions
+
+Subscriptions are declarative package contributions that route matching platform events to an event hook in the same
+app. They do not contain a deployment URL or project scope. Studio derives both from the version selected during
+promotion.
+
+```typescript
+// src/modules/app/resources/subscriptions/index.ts
+import type { AppEventSubscriptionDefinition } from "@vertesia/tools-sdk";
+
+export const subscriptions = [
+    {
+        id: "content-updated",
+        name: "Content updated",
+        description: "Refresh app-owned projections after content changes.",
+        hook: "content-updated",
+        filter: {
+            action: ["update"],
+            resource_type: ["content_object"],
+        },
+        run_as_role: "automation",
+        enabled: true,
+        priority: "normal",
+    },
+] satisfies AppEventSubscriptionDefinition[];
+```
+
+The `hook` value must match the `name` of a registered event hook. Package generation rejects missing hooks,
+lifecycle hooks, duplicate subscription ids, and ids that are not kebab-case. Multiple subscriptions may reference
+the same event hook with different filters. Inspect the result with `GET /api/package?scope=subscriptions`.
+Represent each definition in an appgen capability manifest as a `subscription` artifact such as
+`app:<app-name>:content-updated`.
+
+An unpromoted candidate exposes these package definitions but does not create protected Event Bus subscriptions, and
+matching events are not delivered to that candidate's hook. Candidate validation is therefore limited to source and
+package-summary wiring. Use Event Bus subscription and delivery evidence only after the version has been explicitly
+promoted.
 
 ---
 

@@ -1,6 +1,13 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
-import { ApiVersions, ContentEventName, type DSLActivityExecutionPayload, type WebHookSpec } from '@vertesia/common';
+import {
+    ApiVersions,
+    type AuthTokenPayload,
+    ContentEventName,
+    type DSLActivityExecutionPayload,
+    PrincipalType,
+    type WebHookSpec,
+} from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     type NotifyWebhookParams,
@@ -10,6 +17,8 @@ import {
 } from './notifyWebhook.js';
 
 const mockValidateUrl = vi.hoisted(() => vi.fn());
+const mockIssueToken = vi.hoisted(() => vi.fn());
+const mockWithApiKey = vi.hoisted(() => vi.fn());
 
 vi.mock('../utils/client.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../utils/client.js')>();
@@ -18,6 +27,9 @@ vi.mock('../utils/client.js', async (importOriginal) => {
         getVertesiaClient: vi.fn(
             () =>
                 ({
+                    tokenServerUrl: 'http://mock-token-server',
+                    post: mockIssueToken,
+                    withApiKey: mockWithApiKey,
                     apps: {
                         validateUrl: mockValidateUrl,
                     },
@@ -40,6 +52,26 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockValidateUrl.mockResolvedValue({ valid: true });
 });
+
+function createToken(overrides: Partial<AuthTokenPayload> = {}): string {
+    const claims = {
+        sub: 'service_account:account-1:project-1:1',
+        name: 'Event subscription automation',
+        type: PrincipalType.ServiceAccount,
+        account: { id: 'account-1', name: 'Account' },
+        account_roles: [],
+        accounts: [{ id: 'account-1', name: 'Account' }],
+        project: { id: 'project-1', name: 'Project', account: 'account-1' },
+        project_roles: [],
+        apps: [],
+        groups: [],
+        iss: 'http://mock-token-server',
+        aud: 'http://mock-token-server',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        ...overrides,
+    } satisfies AuthTokenPayload;
+    return `header.${Buffer.from(JSON.stringify(claims)).toString('base64url')}.signature`;
+}
 
 const defaultParams = {
     webhook: 'https://vertesia.test',
@@ -268,6 +300,73 @@ describe('Webhook should be notified', () => {
             message: 'Accepted',
             url: defaultParams.webhook,
         });
+    });
+
+    it('authenticates an app hook with the existing workflow token when it is still fresh', async () => {
+        const token = createToken();
+        mockFetch.mockResolvedValueOnce(
+            new Response(null, {
+                status: 202,
+                statusText: 'Accepted',
+                headers: { 'content-type': 'application/json' },
+            }),
+        );
+
+        const payload = createTestPayload({
+            body: JSON.stringify({ event: { event_id: 'evt-1' } }),
+            auth_mode: 'vertesia',
+        });
+        payload.auth_token = token;
+
+        await expect(testEnv.run(notifyWebhook, payload)).resolves.toMatchObject({ status: 202 });
+
+        expect(mockIssueToken).not.toHaveBeenCalled();
+        expect(mockFetch).toHaveBeenCalledWith(
+            defaultParams.webhook,
+            expect.objectContaining({
+                headers: expect.objectContaining({ Authorization: `Bearer ${token}` }),
+            }),
+        );
+    });
+
+    it('refreshes a near-expiry app-hook token without reconstructing its identity', async () => {
+        const token = createToken({
+            exp: Math.floor(Date.now() / 1000) + 60,
+        });
+        mockIssueToken.mockResolvedValueOnce({ token: 'fresh-token' });
+        mockFetch.mockResolvedValueOnce(
+            new Response(null, {
+                status: 202,
+                statusText: 'Accepted',
+                headers: { 'content-type': 'application/json' },
+            }),
+        );
+
+        const payload = createTestPayload({
+            body: JSON.stringify({ event: { event_id: 'evt-1' } }),
+            auth_mode: 'vertesia',
+        });
+        payload.auth_token = token;
+
+        await expect(testEnv.run(notifyWebhook, payload)).resolves.toMatchObject({ status: 202 });
+
+        expect(mockIssueToken).toHaveBeenCalledWith('http://mock-token-server/token/refresh', {
+            headers: {
+                authorization: `Bearer ${token}`,
+                'content-type': 'application/json',
+            },
+            payload: { token },
+        });
+        expect(mockWithApiKey).toHaveBeenCalledWith('fresh-token');
+        expect(mockWithApiKey.mock.invocationCallOrder[0]).toBeLessThan(
+            mockValidateUrl.mock.invocationCallOrder[0] ?? 0,
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+            defaultParams.webhook,
+            expect.objectContaining({
+                headers: expect.objectContaining({ Authorization: 'Bearer fresh-token' }),
+            }),
+        );
     });
 
     it('should send workflow info in new POST format when detail is undefined', async () => {

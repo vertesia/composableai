@@ -131,6 +131,27 @@ describe.skipIf(!publishedDocument)('gate — generated artifact = canonical com
     });
 });
 
+describe('content object response classification', () => {
+    it('accepts the current sensitivity and compartments fields', () => {
+        const result = validateApiResponse('ContentObjectApiResponse', {
+            id: 'content-object-id',
+            name: 'Classified document',
+            updated_by: 'user-id',
+            created_by: 'user-id',
+            created_at: '2026-08-06T09:00:00.000Z',
+            updated_at: '2026-08-06T09:00:00.000Z',
+            location: '/',
+            status: 'completed',
+            properties: {},
+            revision: { root: 'content-object-id', head: true },
+            sensitivity: 3,
+            compartments: ['legal'],
+        });
+
+        expect(result).toMatchObject({ valid: true });
+    });
+});
+
 /**
  * Bodies that probe where the two validators could disagree.
  *

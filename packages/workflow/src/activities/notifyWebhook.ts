@@ -1,7 +1,9 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
-import { VertesiaClient } from '@vertesia/client';
+import { decodeJWT, VertesiaClient } from '@vertesia/client';
 import {
     ApiVersions,
+    type AuthTokenPayload,
+    type AuthTokenResponse,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
     type WebHookSpec,
@@ -24,6 +26,8 @@ export interface NotifyWebhookParams {
     method: 'GET' | 'POST'; //HTTP method to use
     headers?: Record<string, string>; // additional headers to send
     timeout_ms?: number;
+    /** Authenticate a trusted app-hook request with the workflow token. */
+    auth_mode?: 'vertesia';
 }
 
 export interface WebhookNotificationPayload {
@@ -43,6 +47,8 @@ export interface NotifyWebhookResult {
     message: string;
     url: string;
 }
+
+const APP_HOOK_TOKEN_REFRESH_THRESHOLD_MS = 5 * 60_000;
 
 function validationStatusCode(error: unknown): number | undefined {
     if (typeof error !== 'object' || error === null) {
@@ -67,6 +73,11 @@ export async function notifyWebhook(
 ): Promise<NotifyWebhookResult> {
     const { params, client } = await setupActivity<NotifyWebhookParams>(payload);
     const { webhook, method, headers: defaultHeaders } = params;
+    const appHookAuthToken =
+        params.auth_mode === 'vertesia' ? await ensureFreshAppHookAuthToken(payload, client) : undefined;
+    if (appHookAuthToken && appHookAuthToken !== payload.auth_token) {
+        await client.withApiKey(appHookAuthToken);
+    }
     // resolve the url and the api version of the webhook
     let target_url: string, version: number | undefined;
     if (typeof webhook === 'string') {
@@ -110,6 +121,9 @@ export async function notifyWebhook(
     };
     if (hasBody && !hasHeader(headers, 'content-type')) {
         headers['Content-Type'] = 'application/json';
+    }
+    if (appHookAuthToken) {
+        setHeader(headers, 'Authorization', `Bearer ${appHookAuthToken}`);
     }
     const body = params.body ?? (hasBody ? await createRequestBody(payload, params, version) : undefined);
 
@@ -172,6 +186,46 @@ export async function notifyWebhook(
 function hasHeader(headers: Record<string, string>, name: string): boolean {
     const lowerName = name.toLowerCase();
     return Object.keys(headers).some((header) => header.toLowerCase() === lowerName);
+}
+
+function setHeader(headers: Record<string, string>, name: string, value: string): void {
+    const existingName = Object.keys(headers).find((header) => header.toLowerCase() === name.toLowerCase());
+    if (existingName) {
+        delete headers[existingName];
+    }
+    headers[name] = value;
+}
+
+export async function ensureFreshAppHookAuthToken(
+    payload: WorkflowExecutionBaseParams<unknown>,
+    client: VertesiaClient,
+): Promise<string> {
+    const currentToken = payload.auth_token;
+    if (!currentToken) {
+        throw new WorkflowParamNotFoundError('Authentication Token is missing from WorkflowExecutionPayload.authToken');
+    }
+
+    const claims = decodeJWT(currentToken);
+    if (!shouldRefreshAppHookToken(claims)) {
+        return currentToken;
+    }
+
+    const response = await refreshAppHookToken(client, currentToken);
+    return response.token;
+}
+
+function shouldRefreshAppHookToken(claims: AuthTokenPayload): boolean {
+    return claims.exp * 1000 - Date.now() < APP_HOOK_TOKEN_REFRESH_THRESHOLD_MS;
+}
+
+async function refreshAppHookToken(client: VertesiaClient, currentToken: string): Promise<AuthTokenResponse> {
+    return client.post<AuthTokenResponse>(`${client.tokenServerUrl}/token/refresh`, {
+        headers: {
+            authorization: `Bearer ${currentToken}`,
+            'content-type': 'application/json',
+        },
+        payload: { token: currentToken },
+    });
 }
 
 // --------------------------------------

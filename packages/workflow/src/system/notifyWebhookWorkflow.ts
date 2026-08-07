@@ -27,6 +27,8 @@ export interface NotifyWebhookRequest {
     body: string;
     headers?: Record<string, string>;
     timeout_ms?: number;
+    /** Authenticate a trusted app-hook request with the workflow token. */
+    auth_mode?: 'vertesia';
 }
 
 export async function notifyWebhookWorkflow(
@@ -64,6 +66,7 @@ export async function notifyWebhookWorkflow(
             body: request.body,
             headers: request.headers,
             timeout_ms: request.timeout_ms,
+            auth_mode: request.auth_mode,
         }).then((res) => {
             log.info(`Webhook notified at ${request.url} with response code: ${res.status}`, { res });
             return res;

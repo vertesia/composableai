@@ -13,9 +13,13 @@ src/modules/app/
 │   └── hooks/            # Optional app-specific hooks
 └── resources/
     ├── activities/
+    ├── dashboards/
+    ├── hooks/
     ├── interactions/
+    ├── mcp/
     ├── processes/
     ├── skills/
+    ├── subscriptions/
     ├── templates/
     ├── tools/
     └── types/
@@ -64,3 +68,14 @@ Redirecting keeps the target module's internal navigation consistent with its pr
 
 Add definitions to the matching folder under `src/modules/app/resources/` and export them from that
 folder's `index.ts`. The module codegen collects these exports into the tool server package.
+
+The tool-server bootstrap only exposes generated module contributions. When introducing a new contribution type,
+add its typed empty default to this app module and update the template codegen `SERVER_RESOURCES` list; do not add an
+app-owned registry directly under `src/tool-server/`.
+
+Register lifecycle and event hooks in `resources/hooks/index.ts`. Event hooks use kebab-case names, receive the
+standard `{ event, delivery }` webhook envelope, and are advertised through `/api/package?scope=hooks`.
+
+Register app-owned event subscriptions in `resources/subscriptions/index.ts`. A subscription references the local
+name of an event hook from `resources/hooks/index.ts`; Studio derives the project scope and deployed target URL when
+the app is installed.

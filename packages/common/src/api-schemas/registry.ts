@@ -80,7 +80,7 @@ import {
     SystemRoleDefinitionArraySchema,
 } from './access-control.js';
 import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
-import { findUnprunablePaths, type JsonObject, pruneToSchema, toOpenApiComponents } from './adapter.js';
+import { findUnprunablePaths, isPlainObject, type JsonObject, pruneToSchema, toOpenApiComponents } from './adapter.js';
 import * as AgentRunSchemas from './agent-runs.js';
 import {
     AnalyticsAxisSchema,
@@ -1590,12 +1590,14 @@ const EVENT_DELIVERY_SCHEMAS = {
     EventOutboxStatus: EventSchemas.EventOutboxStatusSchema,
     EventDeliverySortField: EventSchemas.EventDeliverySortFieldSchema,
     WebhookEventDeliveryTarget: EventSchemas.WebhookEventDeliveryTargetSchema,
+    AppEventDeliveryTarget: EventSchemas.AppEventDeliveryTargetSchema,
     WorkflowEventDeliveryTarget: EventSchemas.WorkflowEventDeliveryTargetSchema,
     EventDeliveryQueueFailureSummary: EventSchemas.EventDeliveryQueueFailureSummarySchema,
     EventOutboxQueueSummary: EventSchemas.EventOutboxQueueSummarySchema,
     EventDeliveryQueueSortField: EventSchemas.EventDeliveryQueueSortFieldSchema,
     AgentEventDeliveryTarget: EventSchemas.AgentEventDeliveryTargetSchema,
     WebhookEventDeliveryTargetInput: EventSchemas.WebhookEventDeliveryTargetInputSchema,
+    AppEventDeliveryTargetInput: EventSchemas.AppEventDeliveryTargetInputSchema,
     WorkflowEventDeliveryTargetInput: EventSchemas.WorkflowEventDeliveryTargetInputSchema,
     SemanticEvaluator: EventSchemas.SemanticEvaluatorSchema,
     SemanticEvaluationRecord: EventSchemas.SemanticEvaluationRecordSchema,
@@ -3354,14 +3356,88 @@ const validators = new Map<string, ValidateFunction>();
  */
 let ajvInstance: Ajv2020 | undefined;
 
+/**
+ * The published components as AJV can consume them: the same schemas, with the two adjustments
+ * AJV's discriminator support requires and the OpenAPI document must not have.
+ *
+ * `discriminator: true` below is what makes AJV validate a discriminated union through the branch
+ * its tag names, instead of trying every branch and reporting all of their failures at once. The
+ * difference is not cosmetic — a legacy MCP tool collection missing `id` used to report the real
+ * error alongside two impossible ones from the branch it was never meant to match:
+ *
+ *     / must have required property 'id'                        <- the real one
+ *     / must NOT have additional properties: oauth_app          <- vertesia_sdk branch
+ *     /type must be equal to constant                           <- vertesia_sdk branch
+ *     / must match exactly one schema in oneOf
+ *
+ * AJV rejects `mapping` outright ("discriminator: mapping is not supported"), because it derives
+ * the tag-to-branch map from each branch's own `const`/`enum` instead. The OpenAPI document still
+ * needs the mapping — a generated Java or Go client reads it to pick a concrete subtype — so both
+ * fixups here apply to AJV's copy only, and `ApiSchemaComponents` is published exactly as built.
+ *
+ * AJV's remaining requirements — the tag required in every branch, carrying `const` or a
+ * single-valued `enum`, with the union node typed as an object — are what `synthesizeDiscriminator`
+ * in the adapter already checks before it emits a discriminator at all, and what the hand-written
+ * `.meta({ discriminator })` declarations restate. `api-discriminators.test.ts` compiles every
+ * registered component so a union satisfying neither fails the build rather than the request.
+ */
+function toAjvComponents(): Record<string, JsonObject> {
+    const schemas = structuredClone(ApiSchemaComponents) as Record<string, JsonObject>;
+    const resolve = (value: unknown): JsonObject | undefined => {
+        if (!isPlainObject(value)) return undefined;
+        const ref = value.$ref;
+        if (typeof ref !== 'string' || !ref.startsWith(COMPONENT_REF_PREFIX)) return value;
+        return schemas[ref.slice(COMPONENT_REF_PREFIX.length)];
+    };
+
+    visitSchemaNodes(schemas, (node) => {
+        const discriminator = node.discriminator;
+        if (!isPlainObject(discriminator) || !Array.isArray(node.oneOf)) return;
+        // AJV derives the tag-to-branch map from each branch's own literal, so `mapping` is both
+        // redundant and rejected.
+        delete discriminator.mapping;
+
+        const tag = discriminator.propertyName;
+        if (typeof tag !== 'string') return;
+        for (const member of node.oneOf) {
+            const branch = resolve(member);
+            const properties = branch && isPlainObject(branch.properties) ? branch.properties : undefined;
+            const tagSchema = properties?.[tag];
+            if (!isPlainObject(tagSchema) || tagSchema.const !== undefined || tagSchema.enum !== undefined) continue;
+            // The tag is a `$ref` to a named literal component — `TaskType_ACTIVITY`,
+            // `SupportedIntegrations_gladia` — because the literal carries its own `.meta({ id })`.
+            // AJV reads `properties/<tag>` looking for `const` or `enum` and does not follow a
+            // `$ref` to find one, so it refuses to compile the union at all. Restating the resolved
+            // literal ALONGSIDE the `$ref` is validation-neutral: `$ref` has no special precedence
+            // in 2020-12, both keywords apply, and they carry the same value by construction.
+            const target = resolve(tagSchema);
+            if (!target) continue;
+            if (target.const !== undefined) tagSchema.const = target.const;
+            else if (Array.isArray(target.enum)) tagSchema.enum = target.enum;
+        }
+    });
+    return schemas;
+}
+
+/** Every object node in the component graph, parents before children. */
+function visitSchemaNodes(value: unknown, visit: (node: JsonObject) => void): void {
+    if (Array.isArray(value)) {
+        for (const item of value) visitSchemaNodes(item, visit);
+        return;
+    }
+    if (!isPlainObject(value)) return;
+    visit(value);
+    for (const item of Object.values(value)) visitSchemaNodes(item, visit);
+}
+
 function getAjv(): Ajv2020 {
     if (ajvInstance) return ajvInstance;
-    const ajv = new Ajv2020({ strictSchema: false, allErrors: true });
+    const ajv = new Ajv2020({ strictSchema: false, allErrors: true, discriminator: true });
     // Without this, AJV treats `format` as an annotation and ignores it, so a `date-time` property
     // would document a constraint nothing checks — the exact spec/enforcement gap this design is
     // meant to close.
     addFormats(ajv);
-    ajv.addSchema({ $id: 'vertesia://openapi', components: { schemas: ApiSchemaComponents } });
+    ajv.addSchema({ $id: 'vertesia://openapi', components: { schemas: toAjvComponents() } });
     ajvInstance = ajv;
     return ajv;
 }
@@ -3374,20 +3450,101 @@ function getValidator(name: ApiComponentName): ValidateFunction {
     return validate;
 }
 
-function formatErrors(validate: ValidateFunction): string[] {
-    return (validate.errors ?? []).map((error) => {
-        const where = error.instancePath || '/';
-        // AJV writes "must NOT have additional properties" and puts the offending key in `params`,
-        // so the message alone says a body is wrong without saying which property made it wrong.
-        // Every other keyword names its subject already — `required` quotes the missing property,
-        // `enum` and `type` describe the value in place — and this is the one a caller most often
-        // trips, so it is the one worth spelling out rather than reformatting all of them.
-        const additional = (error.params as { additionalProperty?: string } | undefined)?.additionalProperty;
-        return additional ? `${where} ${error.message}: ${additional}` : `${where} ${error.message}`;
-    });
+function additionalProperty(error: { params?: unknown }): string | undefined {
+    // AJV writes "must NOT have additional properties" and puts the offending key in `params`,
+    // so the message alone says a body is wrong without saying which property made it wrong.
+    // Every other keyword names its subject already — `required` quotes the missing property,
+    // `enum` and `type` describe the value in place — and this is the one a caller most often
+    // trips, so it is the one worth spelling out rather than reformatting all of them.
+    return (error.params as { additionalProperty?: string } | undefined)?.additionalProperty;
 }
 
-export type ValidateApiPayloadResult<T> = { valid: true; data: T } | { valid: false; errors: string[] };
+/**
+ * One validation failure, with the undeclared property names kept AS NAMES.
+ *
+ * The structure exists because the rendered line cannot be taken apart again. Property names are
+ * arbitrary JSON strings: `{"customer secret token": 1}` and `{"a, b": 1}` are both valid, so
+ * neither a space nor a comma is a reliable separator once the names have been joined. Any consumer
+ * that needs to shorten the list — the HTTP boundary does, the log does not — has to do it here,
+ * on the array, where a name can be dropped whole.
+ */
+export interface ApiValidationIssue {
+    /**
+     * AJV's `instancePath` for the failing value, with `'/'` substituted for the root.
+     *
+     * Not quite a JSON Pointer: the pointer for a document root is the empty string, which reads as
+     * a missing path in a message. `'/'` is a display sentinel, so treat this as human-facing rather
+     * than as something to resolve against the payload.
+     */
+    path: string;
+    /** AJV's own message, e.g. `must NOT have additional properties`. */
+    message: string;
+    /** Undeclared property names at {@link path}, in the order AJV reported them. */
+    undeclared?: string[];
+}
+
+/**
+ * The failures, with all undeclared properties at a given path gathered into ONE issue.
+ *
+ * AJV reports `additionalProperties` per property, so a value carrying a whole foreign object —
+ * a Mongoose document that reached the response mapper unmapped, say — produces one error per own
+ * key and buries every other failure in the payload. Gathering is lossless: every name is kept, in
+ * the order AJV found it, on the issue for the path it belongs to.
+ */
+function collectIssues(validate: ValidateFunction): ApiValidationIssue[] {
+    const errors = validate.errors ?? [];
+    const undeclaredByPath = new Map<string, Set<string>>();
+    for (const error of errors) {
+        const additional = additionalProperty(error);
+        if (additional === undefined) continue;
+        const where = error.instancePath || '/';
+        const names = undeclaredByPath.get(where);
+        // A union whose branches all reject the same property reports it once per branch. The name
+        // is the same fact each time, so it is listed once.
+        if (names) names.add(additional);
+        else undeclaredByPath.set(where, new Set([additional]));
+    }
+
+    const gathered = new Set<string>();
+    const issues: ApiValidationIssue[] = [];
+    for (const error of errors) {
+        const path = error.instancePath || '/';
+        const message = error.message ?? 'is invalid';
+        if (additionalProperty(error) === undefined) {
+            issues.push({ path, message });
+            continue;
+        }
+        if (gathered.has(path)) continue;
+        gathered.add(path);
+        issues.push({ path, message, undeclared: [...(undeclaredByPath.get(path) ?? [])] });
+    }
+    return issues;
+}
+
+/**
+ * The complete rendering of one issue — every name, no budget.
+ *
+ * This is what gets logged. A caller-facing message renders from {@link ApiValidationIssue} itself
+ * with a length limit rather than shortening this string; see `reportableErrors` in the enforcer.
+ */
+export function renderApiValidationIssue(issue: ApiValidationIssue): string {
+    const head = `${issue.path} ${issue.message}`;
+    return issue.undeclared?.length ? `${head}: ${issue.undeclared.join(', ')}` : head;
+}
+
+/** The failed branch of every validator here, so the two views cannot be built inconsistently. */
+function invalidResult(validate: ValidateFunction): { valid: false; errors: string[]; issues: ApiValidationIssue[] } {
+    const issues = collectIssues(validate);
+    return { valid: false, errors: issues.map(renderApiValidationIssue), issues };
+}
+
+export type ValidateApiPayloadResult<T> =
+    | { valid: true; data: T }
+    /**
+     * `errors` is the rendered form, complete and ready to log; `issues` is the same failures with
+     * the property names still separable. Shorten from `issues`, never from `errors`.
+     */
+    | { valid: false; errors: string[]; issues: ApiValidationIssue[] };
 
 /**
  * Validates an untyped request body against the component the endpoint publishes.
@@ -3409,7 +3566,7 @@ export function validateApiRequest<N extends ApiComponentName>(
     if (validate(value)) {
         return { valid: true, data: value as ApiComponentType<N> };
     }
-    return { valid: false, errors: formatErrors(validate) };
+    return invalidResult(validate);
 }
 
 /**
@@ -3427,7 +3584,7 @@ export function validateApiResponse<N extends ApiComponentName>(
     if (validate(value)) {
         return { valid: true, data: value as ApiComponentType<N> };
     }
-    return { valid: false, errors: formatErrors(validate) };
+    return invalidResult(validate);
 }
 
 /**
@@ -3455,7 +3612,9 @@ export function pruneApiResponse<N extends ApiComponentName>(name: N, value: Api
     return pruneToSchema(value, { $ref: apiComponentRef(name) }, ApiSchemaComponents) as ApiComponentType<N>;
 }
 
-export type PruneAndValidateResult<T> = { valid: true; data: T } | { valid: false; data: unknown; errors: string[] };
+export type PruneAndValidateResult<T> =
+    | { valid: true; data: T }
+    | { valid: false; data: unknown; errors: string[]; issues: ApiValidationIssue[] };
 
 /**
  * Prunes an untyped payload and validates the result against the published component.
@@ -3476,7 +3635,7 @@ export function pruneAndValidateApiResponse<N extends ApiComponentName>(
     if (validate(pruned)) {
         return { valid: true, data: pruned as ApiComponentType<N> };
     }
-    return { valid: false, data: pruned, errors: formatErrors(validate) };
+    return { ...invalidResult(validate), data: pruned };
 }
 
 /**
