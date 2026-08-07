@@ -21,6 +21,8 @@ minimumReleaseAgeExclude:
   - "@llumiverse/*"
   # Renovate security update: js-yaml@5.2.2
   - js-yaml@5.2.2
+  - js-yaml@4.3.1
+  - mermaid@11.16.1
   # GHSA-mh99-v99m-4gvg backport to the 2.x line, published 2026-07-30. Version-scoped exception
   # so we take the fix now rather than waiting out the 3-day cooldown.
   - brace-expansion@2.1.4
@@ -82,7 +84,7 @@ overrides:
   # GHSA-fxqj-rqcc-2cmp: incomplete fix of GHSA-6g55-p6wh-862q (attacker-controlled
   # sourceMappingURL reads arbitrary .map files when `from` is unset).
   postcss@<8.5.23: 8.5.23
-  js-yaml@>=4.0.0 <4.3.0: 4.3.0
+  "js-yaml@>=4.0.0 <4.3.1": 4.3.1
   # GHSA-pm4m-ph32-ghv5 (5.x line, reached via packages/build-tools). This lockfile already
   # resolves 5.2.2; the floor pins that in place so a future resolution cannot drop back to a
   # vulnerable 5.x. Major-scoped on purpose — a bare `js-yaml@<5.2.2` would drag the 4.x
