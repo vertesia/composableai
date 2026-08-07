@@ -42,7 +42,7 @@ export class SchemaAdapterError extends Error {}
 const REF = '$ref';
 const COMPONENT_PREFIX = '#/components/schemas/';
 
-function isPlainObject(value: unknown): value is JsonObject {
+export function isPlainObject(value: unknown): value is JsonObject {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
