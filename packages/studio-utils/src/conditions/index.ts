@@ -1,1 +1,1 @@
-export { matchConditions, matchLike, resolvePath } from './match.js';
+export { matchConditions, matchLike, resolveConditions, resolvePath } from './match.js';
