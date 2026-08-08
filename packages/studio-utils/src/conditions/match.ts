@@ -56,6 +56,20 @@ function compareOrdered(value: unknown, expected: unknown, op: '$gt' | '$gte' | 
     }
 }
 
+function matchesEquality(value: unknown, expected: unknown): boolean {
+    if (Array.isArray(value) && !Array.isArray(expected)) {
+        return value.includes(expected);
+    }
+    if (Array.isArray(value) && Array.isArray(expected)) {
+        return value.length === expected.length && value.every((entry, index) => entry === expected[index]);
+    }
+    return value === expected;
+}
+
+function matchesAny(value: unknown, expected: unknown[]): boolean {
+    return Array.isArray(value) ? value.some((entry) => expected.includes(entry)) : expected.includes(value);
+}
+
 /**
  * Evaluate a PropertyConditions object against a set of properties (JS-side, in-memory).
  *
@@ -80,9 +94,8 @@ function compareOrdered(value: unknown, expected: unknown, op: '$gt' | '$gte' | 
  * Unknown operators emit a warning via the studio-utils logger and return false — surfacing
  * misconfiguration loudly without breaking the surrounding token mint or permission check.
  *
- * `$principal.X` substitutions in conditions are expected to have already been resolved at
- * JWT-mint time by `resolveConditions` in token-server; values reaching this function are
- * concrete.
+ * `$principal.X` substitutions in conditions are expected to have already been resolved by
+ * {@link resolveConditions}; values reaching this function are concrete.
  */
 export function matchConditions(conditions: PropertyConditions, properties: Record<string, unknown>): boolean {
     for (const [key, condition] of Object.entries(conditions)) {
@@ -90,17 +103,17 @@ export function matchConditions(conditions: PropertyConditions, properties: Reco
 
         if (condition === null || condition === undefined || typeof condition !== 'object') {
             // Direct value match
-            if (value !== condition) return false;
+            if (!matchesEquality(value, condition)) return false;
         } else {
             // Operator object
             const ops = condition as Record<string, unknown>;
             for (const [op, expected] of Object.entries(ops)) {
                 switch (op) {
                     case '$eq':
-                        if (value !== expected) return false;
+                        if (!matchesEquality(value, expected)) return false;
                         break;
                     case '$ne':
-                        if (value === expected) return false;
+                        if (matchesEquality(value, expected)) return false;
                         break;
                     case '$gt':
                         if (!compareOrdered(value, expected, '$gt')) return false;
@@ -115,10 +128,10 @@ export function matchConditions(conditions: PropertyConditions, properties: Reco
                         if (!compareOrdered(value, expected, '$lte')) return false;
                         break;
                     case '$in':
-                        if (!Array.isArray(expected) || !expected.includes(value)) return false;
+                        if (!Array.isArray(expected) || !matchesAny(value, expected)) return false;
                         break;
                     case '$nin':
-                        if (Array.isArray(expected) && expected.includes(value)) return false;
+                        if (Array.isArray(expected) && matchesAny(value, expected)) return false;
                         break;
                     case '$exists':
                         if (typeof expected !== 'boolean' || (value !== undefined) !== expected) return false;
@@ -143,4 +156,67 @@ export function matchConditions(conditions: PropertyConditions, properties: Reco
         }
     }
     return true;
+}
+
+const PRINCIPAL_REF_PREFIX = '$principal.';
+const NUMERIC_OPS = new Set(['$gt', '$gte', '$lt', '$lte']);
+
+/**
+ * Resolve `$principal.X` references in resource conditions to concrete values.
+ *
+ * Missing properties use the same non-matching defaults as token generation:
+ * numeric comparisons receive `0`, `$in`/`$nin` receive `[]`, `$exists`
+ * receives `false`, and other contexts receive an empty string.
+ */
+export function resolveConditions(
+    conditions: PropertyConditions,
+    principalProps: Record<string, unknown>,
+): PropertyConditions {
+    const resolved: PropertyConditions = {};
+
+    for (const [key, condition] of Object.entries(conditions)) {
+        if (typeof condition === 'string' && condition.startsWith(PRINCIPAL_REF_PREFIX)) {
+            resolved[key] = resolvePrincipalRef(condition, principalProps);
+        } else if (condition !== null && typeof condition === 'object' && !Array.isArray(condition)) {
+            resolved[key] = resolveOperatorObject(condition as Record<string, unknown>, principalProps);
+        } else {
+            resolved[key] = condition;
+        }
+    }
+
+    return resolved;
+}
+
+function resolvePrincipalRef(ref: string, principalProps: Record<string, unknown>): unknown {
+    const value = resolvePath(principalProps, ref.slice(PRINCIPAL_REF_PREFIX.length));
+    return value === undefined ? '' : value;
+}
+
+function resolveOperatorObject(
+    operators: Record<string, unknown>,
+    principalProps: Record<string, unknown>,
+): Record<string, unknown> {
+    const resolved: Record<string, unknown> = {};
+
+    for (const [operator, value] of Object.entries(operators)) {
+        if (typeof value === 'string' && value.startsWith(PRINCIPAL_REF_PREFIX)) {
+            const principalValue = resolvePath(principalProps, value.slice(PRINCIPAL_REF_PREFIX.length));
+            resolved[operator] =
+                principalValue === undefined
+                    ? operator === '$in' || operator === '$nin'
+                        ? []
+                        : defaultForOperator(operator)
+                    : principalValue;
+        } else {
+            resolved[operator] = value;
+        }
+    }
+
+    return resolved;
+}
+
+function defaultForOperator(operator: string): string | number | boolean {
+    if (NUMERIC_OPS.has(operator)) return 0;
+    if (operator === '$exists') return false;
+    return '';
 }
