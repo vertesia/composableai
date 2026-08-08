@@ -34,7 +34,7 @@ export const RoleDomainSchema = z.enum(RoleDomains).meta({
     description:
         'Logical grouping of roles by the service area that owns them. One domain may declare roles ' +
         'applicable to multiple scopes (e.g. the `content` domain owns roles applicable to both `document` ' +
-        'and `collection` scopes). The `system` domain owns the built-in foundational roles (currently ' +
+        'and `collection` scopes, while `agent_runs` owns the `agent_run` scope). The `system` domain owns the built-in foundational roles (currently ' +
         'exposed as `SystemRoles`) — registered first so domain partitions cannot shadow them.',
 });
 
@@ -72,7 +72,7 @@ export const AceConditionsSchema = z
         scope: AbacScopeSchema.meta({
             description:
                 "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles " +
-                'apply (e.g. content roles vs task roles) and to form the JWT `content_security` key prefix ' +
+                'apply (e.g. content roles vs agent-run roles) and to form the JWT `content_security` key prefix ' +
                 "(`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys " +
                 'for backward compatibility).',
         }).optional(),
@@ -105,7 +105,7 @@ export const AccessControlEntrySchema = z
             description:
                 'Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` ' +
                 "enum values for system-domain roles, and bare strings for ABAC-domain roles (e.g. `'content:reader'`, " +
-                "`'content:writer'`, `'content:manager'`). Mongoose schema validates the value against the " +
+                "`'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose schema validates the value against the " +
                 'registered role catalog via `getAllRoleNames()`.',
         }),
         resource_type: AccessControlResourceTypeSchema,
