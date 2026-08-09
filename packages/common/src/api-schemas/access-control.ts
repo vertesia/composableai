@@ -103,10 +103,11 @@ export const AccessControlEntrySchema = z
     .object({
         role: z.string().meta({
             description:
-                'Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` ' +
-                "enum values for system-domain roles, and bare strings for ABAC-domain roles (e.g. `'content:reader'`, " +
-                "`'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose schema validates the value against the " +
-                'registered role catalog via `getAllRoleNames()`.',
+                'Role name. Typed as `string` because role names now span multiple partitions: ' +
+                '`SystemRoles` enum values for system-domain roles, and bare strings for ABAC-domain roles ' +
+                "(e.g. `'content:reader'`, `'content:writer'`, `'content:manager'`, `'agent_runs:reader'`, and " +
+                "`'agent_runs:operator'`). Mongoose schema validates the value against the registered role catalog " +
+                'via `getAllRoleNames()`.',
         }),
         resource_type: AccessControlResourceTypeSchema,
         resource: z.string(),
