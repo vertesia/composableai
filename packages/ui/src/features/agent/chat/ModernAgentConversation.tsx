@@ -992,13 +992,15 @@ function StartWorkflowView({
                 messageContent = [message, '', 'Attachments:', ...lines].join('\n');
             }
 
-            // If files are staged, add a note to the message so the agent knows files are coming
+            // If files are staged, add a note to the message so the agent knows files are coming.
+            // FileUploaded starts asynchronous processing; only the platform's structured
+            // file-processing READY update means converted content is available.
             if (canStageFiles && stagedFiles.length > 0) {
                 const fileNames = stagedFiles.map((f) => f.name).join(', ');
                 messageContent = [
                     messageContent,
                     '',
-                    `[System: ${stagedFiles.length} file(s) are being uploaded: ${fileNames}. Please wait for the "Files Ready" notification before processing them.]`,
+                    `[System: ${stagedFiles.length} file(s) are being uploaded: ${fileNames}. Please wait for the platform's file-processing ready notification before processing them.]`,
                 ].join('\n');
             }
 
@@ -1015,7 +1017,6 @@ function StartWorkflowView({
             const agentId = newRun.agent_run_id;
 
             // Upload staged files to the new run's artifact space and signal agent
-            const uploadedFiles: string[] = [];
             if (canStageFiles && stagedFiles.length > 0) {
                 for (const file of stagedFiles) {
                     try {
@@ -1030,25 +1031,9 @@ function StartWorkflowView({
                             reference: `artifact:${artifactPath}`,
                             artifact_path: artifactPath,
                         } as ConversationFileRef);
-                        uploadedFiles.push(file.name);
                     } catch (uploadErr) {
                         console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
                         // Continue with other files
-                    }
-                }
-
-                // Send a follow-up message to notify the agent that all files are ready
-                if (uploadedFiles.length > 0) {
-                    try {
-                        await client.agents.sendSignal(agentId, 'UserInput', {
-                            message: `[Files Ready] All ${uploadedFiles.length} file(s) have been uploaded and are now available: ${uploadedFiles.join(', ')}. You can now process them.`,
-                            metadata: {
-                                type: 'files_ready',
-                                files: uploadedFiles,
-                            },
-                        } as UserInputSignal);
-                    } catch (signalErr) {
-                        console.error('Failed to send files ready signal:', signalErr);
                     }
                 }
 
