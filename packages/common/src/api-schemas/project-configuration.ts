@@ -66,12 +66,14 @@ export const ProjectSearchTierSchema = z.enum(['standard', 'performance']).meta(
 
 export const ElasticsearchBackendSchema = z.enum(['serverless', 'hosted']).meta({ id: 'ElasticsearchBackend' });
 
-export const ProjectSearchPropertyTypeSchema = z.enum(['keyword', 'text', 'boolean', 'long', 'double', 'date']).meta({
-    id: 'ProjectSearchPropertyType',
-    description:
-        'Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are ' +
-        "relative to the object's `properties` field.",
-});
+export const ProjectSearchPropertyTypeSchema = z
+    .enum(['keyword', 'text', 'boolean', 'long', 'double', 'date', 'geo_point'])
+    .meta({
+        id: 'ProjectSearchPropertyType',
+        description:
+            'Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are ' +
+            "relative to the object's `properties` field.",
+    });
 
 export const ProjectSearchPropertyMappingSchema = z
     .object({
@@ -90,7 +92,7 @@ export const ProjectSearchPropertyMappingSchema = z
             .meta({
                 description:
                     'Skip malformed values instead of rejecting the whole document. Valid only for long, double, ' +
-                    'and date mappings.',
+                    'date, and geo_point mappings.',
             }),
     })
     .meta({
