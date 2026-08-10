@@ -354,6 +354,17 @@ export const AutonomousRunResponseSchema = z
         }).optional(),
         id: z.string().meta({ description: 'The stable identifier used by all client code' }),
         run_kind: z.literal('agent').meta({ description: 'Internal discriminator key' }),
+        parent_run_id: z
+            .string()
+            .meta({
+                description:
+                    'Process run this agent belongs to — set when a process agent node recorded this run. Its conversation lives on the parent run under `workstream_id`.',
+            })
+            .optional(),
+        workstream_id: z
+            .string()
+            .meta({ description: 'Workstream this run occupies inside its parent run (the process node id).' })
+            .optional(),
         run_type: z.literal('autonomous'),
         account: z.string().meta({ description: 'Account ID' }),
         project: z.string().meta({ description: 'Project ID' }),
@@ -483,6 +494,17 @@ export const AgentRunSchema = z
         }).optional(),
         id: z.string().meta({ description: 'The stable identifier used by all client code' }),
         run_kind: z.literal('agent').meta({ description: 'Internal discriminator key' }),
+        parent_run_id: z
+            .string()
+            .meta({
+                description:
+                    'Process run this agent belongs to — set when a process agent node recorded this run. Its conversation lives on the parent run under `workstream_id`.',
+            })
+            .optional(),
+        workstream_id: z
+            .string()
+            .meta({ description: 'Workstream this run occupies inside its parent run (the process node id).' })
+            .optional(),
         run_type: z.literal('autonomous').meta({ description: 'Public-facing runtime mode' }),
         account: z.string().meta({ description: 'Account ID' }),
         project: z.string().meta({ description: 'Project ID' }),
@@ -1034,6 +1056,8 @@ export const RecordAgentRunPayloadSchema = z
         first_workflow_run_id: z.string(),
         run_kind: z.literal('agent').optional(),
         interaction: z.string(),
+        parent_run_id: z.string().optional(),
+        workstream_id: z.string().optional(),
         schedule_id: z.string().optional(),
         visibility: ConversationVisibilitySchema.optional(),
         data: z.looseObject({}).optional(),
