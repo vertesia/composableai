@@ -132,11 +132,20 @@ describe('OAuth protocol response parsing', () => {
         expect(
             OAuthTokenResponseSchema.safeParse({
                 access_token: 'token',
-                token_type: 'bearer',
+                token_type: 'Basic',
                 expires_in: 3600,
-                scope: 'openid',
             }).success,
         ).toBe(false);
+    });
+
+    it('accepts RFC 6749 token responses with an omitted scope and case-insensitive bearer type', () => {
+        expect(
+            OAuthTokenResponseSchema.safeParse({
+                access_token: 'token',
+                token_type: 'bearer',
+                expires_in: 3600,
+            }).success,
+        ).toBe(true);
     });
 
     it('accepts OAuth token response extensions without widening the inferred contract', () => {

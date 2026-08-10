@@ -168,9 +168,9 @@ export const OAuthDeviceAuthorizationResponseSchema = z
 export const OAuthTokenResponseSchema = z
     .object({
         access_token: z.string(),
-        token_type: z.literal('Bearer'),
+        token_type: z.string().regex(/^bearer$/i),
         expires_in: z.number(),
-        scope: z.string(),
+        scope: z.string().optional(),
         refresh_token: z.string().optional(),
         id_token: z.string().optional(),
     })

@@ -50,15 +50,24 @@ interface OAuthDiscovery {
 }
 
 interface OAuthWireSchema<T> {
-    safeParse(value: unknown): { success: true; data: T } | { success: false };
+    safeParse(value: unknown): { success: true; data: T } | { success: false; error: Error };
 }
 
 function parseOAuthWireResponse<T>(schema: OAuthWireSchema<T>, value: unknown, errorMessage: string): T {
     const result = schema.safeParse(value);
     if (!result.success) {
-        throw new Error(errorMessage);
+        throw new Error(`${errorMessage} ${result.error.message}`, { cause: result.error });
     }
     return result.data;
+}
+
+function parseOAuthTokenResponse(value: unknown): OAuthTokenResponse {
+    const response = parseOAuthWireResponse(
+        OAuthTokenResponseSchema,
+        value,
+        'OAuth token endpoint returned an invalid response.',
+    );
+    return { ...response, token_type: 'Bearer' };
 }
 
 export class OAuthUnavailableError extends Error {
@@ -362,11 +371,7 @@ async function pollDeviceToken(
         });
 
         if (response.ok) {
-            return parseOAuthWireResponse(
-                OAuthTokenResponseSchema,
-                await response.json(),
-                'OAuth token endpoint returned an invalid response.',
-            );
+            return parseOAuthTokenResponse(await response.json());
         }
 
         const error = await readOAuthError(response);
@@ -424,11 +429,7 @@ async function exchangeToken(endpoint: string, body: URLSearchParams): Promise<O
         throw new Error(`OAuth token exchange failed (${response.status}): ${await readErrorMessage(response)}`);
     }
 
-    return parseOAuthWireResponse(
-        OAuthTokenResponseSchema,
-        await response.json(),
-        'OAuth token endpoint returned an invalid response.',
-    );
+    return parseOAuthTokenResponse(await response.json());
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
