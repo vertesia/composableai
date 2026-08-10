@@ -22,6 +22,8 @@ minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
   - "@vertesia/*"
   - "@llumiverse/*"
+  # Security fix published inside the 3-day cooldown.
+  - mermaid@11.16.1
   # Renovate security update: dompurify@3.4.11
   - dompurify@3.4.11
   # Renovate security update: undici@7.28.0
