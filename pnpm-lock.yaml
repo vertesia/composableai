@@ -31,7 +31,7 @@ overrides:
   brace-expansion@>=2.0.0 <2.1.4: 2.1.4
   brace-expansion@>=3.0.0 <5.0.9: 5.0.9
   diff@>=6.0.0 <8.0.3: ^8.0.3
-  dompurify@<=3.4.10: ^3.4.11
+  dompurify@<=3.4.12: ^3.4.13
   fast-uri@>=3.0.0 <3.1.5: 3.1.5
   '@grpc/grpc-js@<1.9.16': ~1.9.16
   '@grpc/grpc-js@>=1.14.0 <1.14.4': ~1.14.4
@@ -914,7 +914,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       dompurify:
-        specifier: ^3.4.12
+        specifier: ^3.4.13
         version: 3.4.13
       fast-xml-parser:
         specifier: ^5.10.1
