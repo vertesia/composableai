@@ -29,6 +29,8 @@ minimumReleaseAgeExclude:
   # GHSA-8j4g-w8fx-2239 (ReDoS in CORS middleware) fix, published 2026-08-03. Version-scoped
   # exception so we take the fix now rather than waiting out the 3-day cooldown.
   - hono@4.12.34
+  # Renovate security update: dompurify@3.4.13
+  - dompurify@3.4.13
 catalog:
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
@@ -75,7 +77,7 @@ overrides:
   "brace-expansion@>=2.0.0 <2.1.4": 2.1.4
   "brace-expansion@>=3.0.0 <5.0.9": 5.0.9
   diff@>=6.0.0 <8.0.3: ^8.0.3
-  dompurify@<=3.4.10: ^3.4.11
+  dompurify@<=3.4.12: ^3.4.13
   "fast-uri@>=3.0.0 <3.1.5": 3.1.5
   # Tilde (not caret) so @firebase/firestore stays on its ~1.9 line and @temporalio/* on 1.14.
   "@grpc/grpc-js@<1.9.16": ~1.9.16

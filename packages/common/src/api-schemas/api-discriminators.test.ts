@@ -75,6 +75,107 @@ describe('published discriminators', () => {
         expect(result.errors).toEqual(["/ must have required property 'id'"]);
     });
 
+    /** A one-branch `condition` node, the smallest thing that reaches the untagged `branches` union. */
+    function withBranch(branch: unknown): unknown {
+        return {
+            format_version: 1,
+            process: 'demo',
+            initial: 'a',
+            context: { schema: { type: 'object' }, initial: {} },
+            nodes: { a: { type: 'condition', branches: [branch] } },
+        };
+    }
+
+    it('attributes every claim under an untagged union to the candidate that made it', () => {
+        // The process-runs list, which `ProcessDefinitionBody` reaches through
+        // `ListAgentRunsResponse.items[].process_definition_snapshot`. `branches` is a `oneOf` with
+        // no tag, so AJV reports every candidate's failures flat and unattributed:
+        //
+        //     /nodes/a/branches/0 must NOT have additional properties: label, to, when
+        //
+        // `to` and `when` are declared on `BranchDefinition` — the shape this value plainly means —
+        // so read as a fact that line sends the reader after two valid fields.
+        const result = validateApiResponse(
+            'ProcessDefinitionBody',
+            withBranch({ label: 'Accepted', to: 'accepted', when: { '==': [{ var: 'ok' }, true] } }),
+        );
+        expect(result.valid).toBe(false);
+        if (result.valid) return;
+
+        // Against the candidate it means, `label` is the whole story.
+        expect(result.errors).toContain(
+            '/nodes/a/branches/0 as BranchDefinition: must NOT have additional properties: label',
+        );
+        // The other candidate is still reported — with no tag neither can be ruled out — but named,
+        // so it reads as a claim about that shape rather than about the value.
+        expect(result.errors).toContain(
+            '/nodes/a/branches/0 as BranchNodeBranchDefinition: must NOT have additional properties: label, to, when',
+        );
+        // Every attributed claim names a candidate of THIS union, never some nearer schema.
+        const named = result.issues.filter((i) => i.component !== undefined).map((i) => i.component);
+        expect(new Set(named)).toEqual(new Set(['BranchDefinition', 'BranchNodeBranchDefinition']));
+    });
+
+    it('attributes candidates that fail at different paths', () => {
+        // The case that defeats counting candidates per instance path: with a malformed `when`, the
+        // intended candidate fails at `/when` while the other fails at the branch root, so no path
+        // has two candidates and a per-path rule drops EVERY name — leaving
+        //
+        //     /nodes/a/branches/0 must NOT have additional properties: to, when
+        //
+        // stated as a bare fact again. Attribution has to follow the union, not the path.
+        const result = validateApiResponse('ProcessDefinitionBody', withBranch({ to: 'accepted', when: 'bad' }));
+        expect(result.valid).toBe(false);
+        if (result.valid) return;
+
+        expect(result.errors).toContain('/nodes/a/branches/0/when as BranchDefinition: must be object');
+        expect(result.errors).toContain(
+            '/nodes/a/branches/0 as BranchNodeBranchDefinition: must NOT have additional properties: to, when',
+        );
+        // The point of the fix: nothing under a failed union is left unattributed except the union's
+        // own line, so no candidate's complaint can be mistaken for a fact about the value.
+        const unattributed = result.issues.filter((i) => i.component === undefined);
+        expect(unattributed.map((i) => i.message)).toEqual(['must match exactly one schema in oneOf']);
+    });
+
+    it('leaves the component off outside a union', () => {
+        // A component name marks a claim as conditional. Attaching one where the issue holds
+        // outright would weaken a fact, besides spending characters against the response budget.
+        const result = validateApiResponse('ProcessDefinitionBody', {
+            format_version: 1,
+            process: 'demo',
+            initial: 'a',
+            title: 'Undeclared at the body level',
+            context: { schema: { type: 'object' }, initial: {} },
+            nodes: {},
+        });
+        expect(result.valid).toBe(false);
+        if (result.valid) return;
+        expect(result.issues).toEqual([
+            { path: '/', message: 'must NOT have additional properties', undeclared: ['title'], component: undefined },
+        ]);
+        expect(result.errors).toEqual(['/ must NOT have additional properties: title']);
+    });
+
+    it('still gathers every undeclared name one schema reports at a path', () => {
+        // The case gathering exists for, unaffected by the split above: one strict object, many
+        // foreign keys — an unmapped Mongoose subdocument — stays a single issue.
+        const result = validateApiResponse('ProcessDefinitionBody', {
+            format_version: 1,
+            process: 'demo',
+            initial: 'a',
+            context: { schema: { type: 'object' }, initial: {} },
+            nodes: {},
+            $__parent: {},
+            $isNew: false,
+            _doc: {},
+        });
+        expect(result.valid).toBe(false);
+        if (result.valid) return;
+        expect(result.issues).toHaveLength(1);
+        expect(result.issues[0].undeclared).toEqual(['$__parent', '$isNew', '_doc']);
+    });
+
     it('rejects a value whose tag names no branch', () => {
         const result = validateApiResponse('ToolCollectionObject', { type: 'nonesuch', url: 'https://example.com' });
         expect(result.valid).toBe(false);

@@ -31,7 +31,7 @@ overrides:
   brace-expansion@>=2.0.0 <2.1.4: 2.1.4
   brace-expansion@>=3.0.0 <5.0.9: 5.0.9
   diff@>=6.0.0 <8.0.3: ^8.0.3
-  dompurify@<=3.4.10: ^3.4.11
+  dompurify@<=3.4.12: ^3.4.13
   fast-uri@>=3.0.0 <3.1.5: 3.1.5
   '@grpc/grpc-js@<1.9.16': ~1.9.16
   '@grpc/grpc-js@>=1.14.0 <1.14.4': ~1.14.4
@@ -741,7 +741,7 @@ importers:
         specifier: workspace:*
         version: link:../ui
       lucide-react:
-        specifier: ^1.27.0
+        specifier: ^1.28.0
         version: 1.28.0(react@19.2.7)
     devDependencies:
       '@tailwindcss/vite':
@@ -914,8 +914,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       dompurify:
-        specifier: ^3.4.12
-        version: 3.4.12
+        specifier: ^3.4.13
+        version: 3.4.13
       fast-xml-parser:
         specifier: ^5.10.1
         version: 5.10.1
@@ -923,8 +923,8 @@ importers:
         specifier: ^12.16.0
         version: 12.16.0
       framer-motion:
-        specifier: ^12.42.2
-        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^12.43.0
+        version: 12.43.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       i18next:
         specifier: ^26.3.6
         version: 26.3.6(typescript@7.0.2)
@@ -938,7 +938,7 @@ importers:
         specifier: ^4.18.1
         version: 4.18.1
       lucide-react:
-        specifier: ^1.27.0
+        specifier: ^1.28.0
         version: 1.28.0(react@19.2.7)
       mermaid:
         specifier: ^11.16.1
@@ -947,8 +947,8 @@ importers:
         specifier: ^0.56.0
         version: 0.56.0
       motion:
-        specifier: ^12.42.2
-        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^12.43.0
+        version: 12.43.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       papaparse:
         specifier: ^5.5.4
         version: 5.5.4
@@ -959,8 +959,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react-date-picker:
-        specifier: ^12.0.2
-        version: 12.0.2(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^12.1.0
+        version: 12.1.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react-dom:
         specifier: 19.2.7
         version: 19.2.7(react@19.2.7)
@@ -1225,7 +1225,7 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       lucide-react:
-        specifier: ^1.27.0
+        specifier: ^1.28.0
         version: 1.28.0(react@19.2.7)
       react-vega:
         specifier: ^8.0.0
@@ -4881,8 +4881,8 @@ packages:
   dom-accessibility-api@0.5.16:
     resolution: {integrity: sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==}
 
-  dompurify@3.4.12:
-    resolution: {integrity: sha512-zQvGet8Z2sWbQhCmfFz/T5QWH2oBmjnqK3qvOjaqaNLrLEF912WamU+ohnTp0TCep/MFVHpdJuCZEdFOdTnEFg==}
+  dompurify@3.4.13:
+    resolution: {integrity: sha512-2vmYIoqjze2d+kakP8S/nS5shfsl587kzwEjcGlTdiksUVgFHnFCsLYDVj/JNqJVOQZGSYBTmuycv0PodwmnMQ==}
 
   dotenv@17.4.2:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
@@ -5104,8 +5104,8 @@ packages:
     resolution: {integrity: sha512-YikH+7CUTOtP44ZTnUhR7Ic2UASBPOqmaRkRKxRbywPTe5VxF7RRCck4af9wutiZ/QKM5nME9Bie2fFaPz5Gug==}
     engines: {node: '>=14.0.0'}
 
-  framer-motion@12.42.2:
-    resolution: {integrity: sha512-5XY9luDiu0oHfHBjpDthFMh0ES+122w6p/papSJBweMkO8Sn+PW2QaEgRblQBpWFnuvZS5qvarpt/hO2pjGmnw==}
+  framer-motion@12.43.0:
+    resolution: {integrity: sha512-1eaL3RvR/kAlbG7UYcpMptEyzPoENO0c6w7ZnB3/hh2vSAz/6uGAFn6fdoqTBguNstf3MsFhJHsD/0DHiclG+g==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: 19.2.7
@@ -6018,14 +6018,14 @@ packages:
   monaco-editor@0.56.0:
     resolution: {integrity: sha512-sXboRm3BeBeLm938eaiyLMe0OxzfXIlZvbv4ir/jVgQy1zDhWjgmny0WoN45fuDKhCCQsYMbBJrv/A6jd8aCUg==}
 
-  motion-dom@12.42.2:
-    resolution: {integrity: sha512-5gIMWLp/PycBtJRJWRgjxke5n8dlvkSn2DrYW+tr3XcqAZY1xZh6BJyooJXCM8wdfM7wfMjkBJNLge1CKPUIRA==}
+  motion-dom@12.43.0:
+    resolution: {integrity: sha512-azKON4d9S65PEoFUiQTMTgPheEmzf2QngdRc50AKfJp9Q9mmcBVw22c8eMq9k8kxOFHdL7+WZY7N/5F/lwiDag==}
 
   motion-utils@12.39.0:
     resolution: {integrity: sha512-8nadJAJjTtqRkmRF36FoJTrywK9nnFmnPwnSMyxaOCU7GDjN9RTMJIxx9De8ErM+vpPhMccr/6fo5WciyQLnMQ==}
 
-  motion@12.42.2:
-    resolution: {integrity: sha512-Atvv11yUKIid41cVrRBDVX5m8tF8kNpExRSlbpt6APClhDjtwQssgFHhQzejxw7/7YYbjHSPKBVbHo05BuJT5Q==}
+  motion@12.43.0:
+    resolution: {integrity: sha512-BQgQbSa9Hn3/mtbib0MK53y6JSANa+YKUKlaYnWzAVDH424RYQ5LVpV3pNiWH00BA2z4ojsSdMzqT7g2FQwjuQ==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: 19.2.7
@@ -6302,8 +6302,8 @@ packages:
       '@types/react':
         optional: true
 
-  react-date-picker@12.0.2:
-    resolution: {integrity: sha512-jh6dGY2I/NZ+bDx/5bcTY3kRBkWQijtGkhy0AN+5qbcU34avsJR319GWHkDIJfEdcSCofGdCNnRry/UsjBypZg==}
+  react-date-picker@12.1.0:
+    resolution: {integrity: sha512-ukbSL2FH9EJ4YdWegT0z6ptkvQqL65IaAdSO5YFEVN4zZDQ4bO8vlkZt9Q+hmKq64dkxznW6CJNskpD9W24Kbw==}
     peerDependencies:
       '@types/react': 19.2.17
       react: 19.2.7
@@ -6941,8 +6941,8 @@ packages:
     peerDependencies:
       browserslist: '>= 4.21.0'
 
-  update-input-width@1.4.2:
-    resolution: {integrity: sha512-/p0XLhrQQQ4bMWD7bL9duYObwYCO1qGr8R19xcMmoMSmXuQ7/1//veUnCObQ7/iW6E2pGS6rFkS4TfH4ur7e/g==}
+  update-input-width@2.0.0:
+    resolution: {integrity: sha512-Ri49Yv+QEwaf/nZEKxuOeD+M65NE+WLau4rGyHTUBCNKNN+jtKT36vUpOugt0lIrEb8l9ZkEgY+Sg+I+zO/3PA==}
 
   use-callback-ref@1.3.3:
     resolution: {integrity: sha512-jQL3lRnocaFtu3V00JToYz/4QkNWswxijDaCVNZRiRTO3HQDLsdu1ZtmIUvV4yPp+rvWm5j0y0TG/S61cuijTg==}
@@ -10872,7 +10872,7 @@ snapshots:
 
   dom-accessibility-api@0.5.16: {}
 
-  dompurify@3.4.12:
+  dompurify@3.4.13:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -11129,9 +11129,9 @@ snapshots:
       dezalgo: 1.0.4
       once: 1.4.0
 
-  framer-motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  framer-motion@12.43.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
-      motion-dom: 12.42.2
+      motion-dom: 12.43.0
       motion-utils: 12.39.0
       tslib: 2.8.1
     optionalDependencies:
@@ -12060,7 +12060,7 @@ snapshots:
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.14
       dayjs: 1.11.21
-      dompurify: 3.4.12
+      dompurify: 3.4.13
       es-toolkit: 1.46.1
       katex: 0.16.47
       khroma: 2.1.0
@@ -12374,18 +12374,18 @@ snapshots:
 
   monaco-editor@0.56.0:
     dependencies:
-      dompurify: 3.4.12
+      dompurify: 3.4.13
       marked: 14.0.0
 
-  motion-dom@12.42.2:
+  motion-dom@12.43.0:
     dependencies:
       motion-utils: 12.39.0
 
   motion-utils@12.39.0: {}
 
-  motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  motion@12.43.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
-      framer-motion: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      framer-motion: 12.43.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       tslib: 2.8.1
     optionalDependencies:
       react: 19.2.7
@@ -12685,7 +12685,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.17
 
-  react-date-picker@12.0.2(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  react-date-picker@12.1.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
       '@wojtekmaj/date-utils': 2.0.2
       clsx: 2.1.1
@@ -12695,7 +12695,7 @@ snapshots:
       react-calendar: 6.0.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react-dom: 19.2.7(react@19.2.7)
       react-fit: 3.0.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      update-input-width: 1.4.2
+      update-input-width: 2.0.0
     optionalDependencies:
       '@types/react': 19.2.17
 
@@ -13440,7 +13440,7 @@ snapshots:
       escalade: 3.2.0
       picocolors: 1.1.1
 
-  update-input-width@1.4.2: {}
+  update-input-width@2.0.0: {}
 
   use-callback-ref@1.3.3(@types/react@19.2.17)(react@19.2.7):
     dependencies:
