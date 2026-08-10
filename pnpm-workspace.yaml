@@ -29,6 +29,8 @@ minimumReleaseAgeExclude:
   # GHSA-8j4g-w8fx-2239 (ReDoS in CORS middleware) fix, published 2026-08-03. Version-scoped
   # exception so we take the fix now rather than waiting out the 3-day cooldown.
   - hono@4.12.34
+  # Renovate security update: dompurify@3.4.13
+  - dompurify@3.4.13
 catalog:
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
