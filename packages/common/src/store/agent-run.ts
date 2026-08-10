@@ -233,6 +233,13 @@ interface RecordRunWorkflowPayload {
  */
 export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends RecordRunWorkflowPayload {
     run_kind?: 'agent';
+    /**
+     * Process run that owns this agent, when a process agent node recorded it. The run's
+     * conversation stays on the parent under {@link workstream_id} — see the note on RunBase.
+     */
+    parent_run_id?: string;
+    /** Workstream this run occupies inside its parent run (the process node id). */
+    workstream_id?: string;
     interaction: string;
     first_workflow_run_id: string;
     schedule_id?: string;
