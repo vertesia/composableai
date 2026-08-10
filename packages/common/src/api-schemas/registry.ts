@@ -81,6 +81,7 @@ import {
 } from './access-control.js';
 import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
 import { findUnprunablePaths, isPlainObject, type JsonObject, pruneToSchema, toOpenApiComponents } from './adapter.js';
+import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as AgentRunSchemas from './agent-runs.js';
 import {
     AnalyticsAxisSchema,
@@ -231,6 +232,7 @@ import {
     RunMigrationResponseSchema,
 } from './commands.js';
 import * as ContentSchemas from './content.js';
+import * as ContentQuerySchemas from './content-query.js';
 import {
     CostAnalyticsQuerySchema,
     CostAnalyticsResponseSchema,
@@ -415,6 +417,7 @@ import {
 } from './files.js';
 import {
     CreateUserGroupPayloadSchema,
+    ListUserGroupsQuerySchema,
     UpdateUserGroupPayloadSchema,
     UserGroupArraySchema,
     UserGroupRefSchema,
@@ -451,6 +454,7 @@ import {
     ComputedFacetResponseSchema,
     ComputeInteractionFacetPayloadSchema,
     ComputeRunFacetPayloadSchema,
+    ComputeRunFacetsResponseSchema,
     ConversationStateSchema,
     ConversationStripOptionsSchema,
     ConversationVisibilitySchema,
@@ -816,6 +820,7 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     UserGroupArray: UserGroupArraySchema,
     UserGroupRef: UserGroupRefSchema,
     CreateUserGroupPayload: CreateUserGroupPayloadSchema,
+    ListUserGroupsQuery: ListUserGroupsQuerySchema,
     UpdateUserGroupPayload: UpdateUserGroupPayloadSchema,
     AccessControlEntry: AccessControlEntrySchema,
     AccessControlEntryArray: AccessControlEntryArraySchema,
@@ -1211,6 +1216,7 @@ const EXECUTION_RUN_SCHEMAS = {
     RateLimitRequestPayload: RateLimitRequestPayloadSchema,
     RateLimitRequestResponse: RateLimitRequestResponseSchema,
     ComputeRunFacetPayload: ComputeRunFacetPayloadSchema,
+    ComputeRunFacetsResponse: ComputeRunFacetsResponseSchema,
     RunSearchMetaResponse: RunSearchMetaResponseSchema,
     ToolResultsPayload: ToolResultsPayloadSchema,
     UserMessagePayload: UserMessagePayloadSchema,
@@ -2148,6 +2154,32 @@ const STS_SCHEMAS = {
     IssueTokenUnavailableResponse: StsSchemas.IssueTokenUnavailableResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const AGENT_COMMUNICATION_SCHEMAS = {
+    EmailRouteData: AgentCommunicationSchemas.EmailRouteDataSchema,
+    SendEmailRequest: AgentCommunicationSchemas.SendEmailRequestSchema,
+    SendEmailResponse: AgentCommunicationSchemas.SendEmailResponseSchema,
+    ResolveEmailRouteRequest: AgentCommunicationSchemas.ResolveEmailRouteRequestSchema,
+    CreateEmailRouteRequest: AgentCommunicationSchemas.CreateEmailRouteRequestSchema,
+    CreateEmailRouteResponse: AgentCommunicationSchemas.CreateEmailRouteResponseSchema,
+    EmailRouteResponse: AgentCommunicationSchemas.EmailRouteResponseSchema,
+    UpdateEmailRouteRequest: AgentCommunicationSchemas.UpdateEmailRouteRequestSchema,
+    UpdateEmailRouteResponse: AgentCommunicationSchemas.UpdateEmailRouteResponseSchema,
+    ForwardEmailRequest: AgentCommunicationSchemas.ForwardEmailRequestSchema,
+    ForwardEmailResponse: AgentCommunicationSchemas.ForwardEmailResponseSchema,
+    PendingAskStatus: AgentCommunicationSchemas.PendingAskStatusSchema,
+    PendingAskData: AgentCommunicationSchemas.PendingAskDataSchema,
+    RegisterPendingAskRequest: AgentCommunicationSchemas.RegisterPendingAskRequestSchema,
+    RegisterPendingAskResponse: AgentCommunicationSchemas.RegisterPendingAskResponseSchema,
+    ResolvePendingAskRequest: AgentCommunicationSchemas.ResolvePendingAskRequestSchema,
+    ResolvePendingAskResponse: AgentCommunicationSchemas.ResolvePendingAskResponseSchema,
+    ListPendingAsksResponse: AgentCommunicationSchemas.ListPendingAsksResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const CONTENT_QUERY_SCHEMAS = {
+    ContentQueryPayload: ContentQuerySchemas.ContentQueryPayloadSchema,
+    ContentQueryResult: ContentQuerySchemas.ContentQueryResultSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const API_SCHEMA_GROUPS = [
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2171,6 +2203,8 @@ const API_SCHEMA_GROUPS = [
     APP_MANIFEST_SCHEMAS,
     APP_INSTALLATION_SCHEMAS,
     STS_SCHEMAS,
+    AGENT_COMMUNICATION_SCHEMAS,
+    CONTENT_QUERY_SCHEMAS,
     FILE_STORAGE_SCHEMAS,
     DURABLE_TASK_SCHEMAS,
     CONTENT_TYPE_CATALOG_SCHEMAS,
@@ -2230,6 +2264,8 @@ type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof APP_MANIFEST_SCHEMAS &
     typeof APP_INSTALLATION_SCHEMAS &
     typeof STS_SCHEMAS &
+    typeof AGENT_COMMUNICATION_SCHEMAS &
+    typeof CONTENT_QUERY_SCHEMAS &
     typeof FILE_STORAGE_SCHEMAS &
     typeof DURABLE_TASK_SCHEMAS &
     typeof CONTENT_TYPE_CATALOG_SCHEMAS &
@@ -2322,6 +2358,27 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'UserGroupRef',
     'CreateUserGroupPayload',
     'UpdateUserGroupPayload',
+    'ListUserGroupsQuery',
+    // Agent communication and content query endpoints.
+    'EmailRouteData',
+    'SendEmailRequest',
+    'SendEmailResponse',
+    'ResolveEmailRouteRequest',
+    'CreateEmailRouteRequest',
+    'CreateEmailRouteResponse',
+    'EmailRouteResponse',
+    'UpdateEmailRouteRequest',
+    'UpdateEmailRouteResponse',
+    'ForwardEmailRequest',
+    'ForwardEmailResponse',
+    'PendingAskData',
+    'RegisterPendingAskRequest',
+    'RegisterPendingAskResponse',
+    'ResolvePendingAskRequest',
+    'ResolvePendingAskResponse',
+    'ListPendingAsksResponse',
+    'ContentQueryPayload',
+    'ContentQueryResult',
     // The roles / access-control closure. `AceConditions` is closed too, and has to be listed by
     // name: it is a hoisted component, so the parent's strict policy does not reach it.
     // `PropertyConditions` is deliberately absent — it is a map whose `additionalProperties` is a
@@ -3173,6 +3230,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'PricingSyncResult',
     'ComputeRunFacetPayload',
     'RunSearchMetaResponse',
+    'ComputeRunFacetsResponse',
     'ToolResultsPayload',
     'UserMessagePayload',
     'ExecutionResponse',

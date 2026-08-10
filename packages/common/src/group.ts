@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type {
     CreateUserGroupPayloadSchema,
+    ListUserGroupsQuerySchema,
     UpdateUserGroupPayloadSchema,
     UserGroupRefSchema,
     UserGroupSchema,
@@ -20,6 +21,7 @@ import type {
 export type UserGroup = z.infer<typeof UserGroupSchema>;
 export type CreateUserGroupPayload = z.infer<typeof CreateUserGroupPayloadSchema>;
 export type UpdateUserGroupPayload = z.infer<typeof UpdateUserGroupPayloadSchema>;
+export type ListUserGroupsQuery = z.infer<typeof ListUserGroupsQuerySchema>;
 
 /**
  * The group as it appears in a token payload, read by the servers' authorization layer, the clients

@@ -11,12 +11,14 @@
  */
 export * from './account.js';
 export * from './adapter.js';
+export * from './agent-communication.js';
 export * from './agent-runs.js';
 export * from './analytics.js';
 export * from './apikey.js';
 export * from './app-runtime.js';
 export * from './bulk-operation.js';
 export * from './content.js';
+export * from './content-query.js';
 export * from './cost-analytics.js';
 export * from './dashboard.js';
 export * from './data-store.js';
