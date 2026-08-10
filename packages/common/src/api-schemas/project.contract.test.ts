@@ -197,6 +197,10 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         });
     });
 
+    it('publishes geo_point as an explicit project property mapping type', () => {
+        expect(ApiSchemaComponents.ProjectSearchPropertyType.enum).toContain('geo_point');
+    });
+
     it('enforces the browser-use configuration the deleted AJV schema only described', () => {
         // A `JSONSchemaType<BrowserUseProjectConfiguration>` used to sit beside the interface with
         // descriptions that had already drifted from the TSDoc, and nothing compiled it. This is the
