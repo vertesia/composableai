@@ -592,6 +592,12 @@ export interface ModernAgentConversationProps {
     onShowDetails?: () => void;
     /** Whether workflow control actions such as cancel should be shown. */
     allowWorkflowControl?: boolean;
+    /**
+     * Workstream selected on mount instead of "all" — use it to open the conversation on one
+     * sub-agent (a process agent node's workstream is its node id). Initial value only; the user's
+     * later tab choices win.
+     */
+    initialWorkstream?: string;
 
     // File upload props - passed through to MessageInput
     /** Called when files are dropped/pasted/selected */
@@ -1453,6 +1459,7 @@ function ModernAgentConversationInner({
     enablePlayback,
     showPlaybackToggle = true,
     messageFilter,
+    initialWorkstream,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -1531,7 +1538,17 @@ function ModernAgentConversationInner({
     );
     const [isStopping, setIsStopping] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
-    const [activeWorkstream, setActiveWorkstream] = useState('all');
+    const [activeWorkstream, setActiveWorkstream] = useState(initialWorkstream || 'all');
+    // The route can move to another workstream while this component stays mounted — e.g. between
+    // two agent nodes of the same process run, which differ only by a path param — so follow the
+    // prop whenever it actually changes. A manual tab click still wins until it changes again.
+    const requestedWorkstreamRef = useRef(initialWorkstream);
+    useEffect(() => {
+        if (initialWorkstream && initialWorkstream !== requestedWorkstreamRef.current) {
+            requestedWorkstreamRef.current = initialWorkstream;
+            setActiveWorkstream(initialWorkstream);
+        }
+    }, [initialWorkstream]);
     const [playbackCursor, setPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
     const [isPlaybackToggleEnabled, setIsPlaybackToggleEnabled] = useState(false);
     const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
