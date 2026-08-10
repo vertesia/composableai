@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { OAuthGrantStatusSchema } from './oauth-server.js';
+import {
+    OAuthAuthorizationServerMetadataSchema,
+    OAuthDeviceAuthorizationResponseSchema,
+    OAuthGrantStatusSchema,
+    OAuthTokenResponseSchema,
+} from './oauth-server.js';
 import { ApiSchemaComponents, validateApiRequest, validateApiResponse } from './registry.js';
 
 /**
@@ -98,6 +103,55 @@ describe('UpdateOAuthProviderPayload', () => {
         expect(validateApiRequest('UpdateOAuthProviderPayload', {}).valid).toBe(true);
         expect(validateApiRequest('UpdateOAuthProviderPayload', { display_name: 'Acme' }).valid).toBe(true);
         expect(validateApiRequest('UpdateOAuthProviderPayload', { displayName: 'Acme' }).valid).toBe(false);
+    });
+});
+
+describe('OAuth protocol response parsing', () => {
+    it('parses complete authorization-server metadata and ignores registered extensions', () => {
+        const result = OAuthAuthorizationServerMetadataSchema.safeParse({
+            issuer: 'https://sts.example.com',
+            authorization_endpoint: 'https://cloud.example.com/oauth/authorize',
+            token_endpoint: 'https://sts.example.com/oauth/token',
+            jwks_uri: 'https://sts.example.com/.well-known/jwks.json',
+            response_types_supported: ['code'],
+            grant_types_supported: ['authorization_code'],
+            code_challenge_methods_supported: ['S256'],
+            token_endpoint_auth_methods_supported: ['none'],
+            scopes_supported: ['openid'],
+            extension_parameter: 'ignored',
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).not.toHaveProperty('extension_parameter');
+        }
+    });
+
+    it('rejects incomplete device and token responses', () => {
+        expect(OAuthDeviceAuthorizationResponseSchema.safeParse({ device_code: 'device' }).success).toBe(false);
+        expect(
+            OAuthTokenResponseSchema.safeParse({
+                access_token: 'token',
+                token_type: 'bearer',
+                expires_in: 3600,
+                scope: 'openid',
+            }).success,
+        ).toBe(false);
+    });
+
+    it('accepts OAuth token response extensions without widening the inferred contract', () => {
+        const result = OAuthTokenResponseSchema.safeParse({
+            access_token: 'token',
+            token_type: 'Bearer',
+            expires_in: 3600,
+            scope: 'openid',
+            extension_parameter: true,
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).not.toHaveProperty('extension_parameter');
+        }
     });
 });
 

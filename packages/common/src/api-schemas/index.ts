@@ -26,6 +26,7 @@ export * from './environment.js';
 export * from './events.js';
 export * from './indexing.js';
 export * from './integrations.js';
+export * from './oauth-server.js';
 export * from './parameters.js';
 export * from './process.js';
 export * from './quota.js';

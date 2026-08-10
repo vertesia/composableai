@@ -10,6 +10,11 @@ import {
     OAUTH_SCOPE_PROJECT_SWITCH,
     Permission,
 } from '@vertesia/common';
+import {
+    OAuthAuthorizationServerMetadataSchema,
+    OAuthDeviceAuthorizationResponseSchema,
+    OAuthTokenResponseSchema,
+} from '@vertesia/common/api-schemas';
 import jwt from 'jsonwebtoken';
 import open from 'open';
 import type { Profile } from './index.js';
@@ -42,6 +47,18 @@ interface TokenRefs {
 interface OAuthDiscovery {
     metadata: OAuthAuthorizationServerMetadata;
     serverUrl: string;
+}
+
+interface OAuthWireSchema<T> {
+    safeParse(value: unknown): { success: true; data: T } | { success: false };
+}
+
+function parseOAuthWireResponse<T>(schema: OAuthWireSchema<T>, value: unknown, errorMessage: string): T {
+    const result = schema.safeParse(value);
+    if (!result.success) {
+        throw new Error(errorMessage);
+    }
+    return result.data;
 }
 
 export class OAuthUnavailableError extends Error {
@@ -253,11 +270,11 @@ async function fetchAuthorizationServerMetadata(oauthServerUrl: string): Promise
         );
     }
 
-    const metadata = (await response.json()) as Partial<OAuthAuthorizationServerMetadata>;
-    if (!metadata.authorization_endpoint || !metadata.token_endpoint || !metadata.issuer) {
-        throw new Error(`Invalid OAuth authorization metadata returned by ${oauthServerUrl}.`);
-    }
-    return metadata as OAuthAuthorizationServerMetadata;
+    return parseOAuthWireResponse(
+        OAuthAuthorizationServerMetadataSchema,
+        await response.json(),
+        `Invalid OAuth authorization metadata returned by ${oauthServerUrl}.`,
+    );
 }
 
 async function createDeviceAuthorization(
@@ -301,18 +318,11 @@ async function createDeviceAuthorization(
         throw new Error(`OAuth device authorization failed (${response.status}): ${error.message}`);
     }
 
-    const payload = (await response.json()) as Partial<OAuthDeviceAuthorizationResponse>;
-    if (
-        !payload.device_code ||
-        !payload.user_code ||
-        !payload.verification_uri ||
-        !payload.verification_uri_complete ||
-        typeof payload.expires_in !== 'number' ||
-        typeof payload.interval !== 'number'
-    ) {
-        throw new Error('OAuth device authorization endpoint returned an invalid response.');
-    }
-    return payload as OAuthDeviceAuthorizationResponse;
+    return parseOAuthWireResponse(
+        OAuthDeviceAuthorizationResponseSchema,
+        await response.json(),
+        'OAuth device authorization endpoint returned an invalid response.',
+    );
 }
 
 function buildDeviceVerificationUrl(profile: OAuthProfile, device: OAuthDeviceAuthorizationResponse): string {
@@ -352,11 +362,11 @@ async function pollDeviceToken(
         });
 
         if (response.ok) {
-            const payload = (await response.json()) as Partial<OAuthTokenResponse>;
-            if (!payload.access_token || !payload.token_type || typeof payload.expires_in !== 'number') {
-                throw new Error('OAuth token endpoint returned an invalid response.');
-            }
-            return payload as OAuthTokenResponse;
+            return parseOAuthWireResponse(
+                OAuthTokenResponseSchema,
+                await response.json(),
+                'OAuth token endpoint returned an invalid response.',
+            );
         }
 
         const error = await readOAuthError(response);
@@ -414,11 +424,11 @@ async function exchangeToken(endpoint: string, body: URLSearchParams): Promise<O
         throw new Error(`OAuth token exchange failed (${response.status}): ${await readErrorMessage(response)}`);
     }
 
-    const payload = (await response.json()) as Partial<OAuthTokenResponse>;
-    if (!payload.access_token || !payload.token_type || typeof payload.expires_in !== 'number') {
-        throw new Error('OAuth token endpoint returned an invalid response.');
-    }
-    return payload as OAuthTokenResponse;
+    return parseOAuthWireResponse(
+        OAuthTokenResponseSchema,
+        await response.json(),
+        'OAuth token endpoint returned an invalid response.',
+    );
 }
 
 async function readErrorMessage(response: Response): Promise<string> {

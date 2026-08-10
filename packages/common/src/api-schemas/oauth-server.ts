@@ -5,9 +5,10 @@ import { z } from 'zod';
  * their users have approved. Vertesia acting as a client of someone else's authorization server is
  * `./oauth.js`.
  *
- * Only the three resources backed by the studio API have slots here. The token server's own surface
- * — authorize, token, device code, consent — is still TypeScript-derived and has not been converted,
- * so the types it uses stay declared in `../oauth-server.ts` rather than moving here.
+ * This module also owns the token server's public authorize, token, device-code, consent, and
+ * discovery wire contracts. Standard OAuth responses remain extensible so clients can ignore
+ * additional response parameters as required by OAuth; Vertesia-specific request and response
+ * objects are strict.
  */
 
 export const OAuthClientTypeSchema = z.enum(['public', 'confidential']).meta({ id: 'OAuthClientType' });
@@ -28,6 +29,14 @@ export const OAuthGrantTypeSchema = z
 
 export const OAuthResponseTypeSchema = z.literal('code').meta({ id: 'OAuthResponseType' });
 
+export const OAuthAuthorizationRequestStatusSchema = z
+    .enum(['pending', 'denied', 'consumed'])
+    .meta({ id: 'OAuthAuthorizationRequestStatus' });
+
+export const OAuthClientRegistrationModeSchema = z
+    .enum(['registered', 'client_id_metadata_document'])
+    .meta({ id: 'OAuthClientRegistrationMode' });
+
 export const OAuthGrantStatusSchema = z.enum(['active', 'revoked', 'expired']).meta({ id: 'OAuthGrantStatus' });
 
 export const OAuthGrantSortFieldSchema = z
@@ -35,6 +44,137 @@ export const OAuthGrantSortFieldSchema = z
     .meta({ id: 'OAuthGrantSortField' });
 
 export const OAuthGrantSortOrderSchema = z.enum(['asc', 'desc']).meta({ id: 'OAuthGrantSortOrder' });
+
+/** RFC 8414 metadata is extensible; parsing keeps the standardized fields and ignores extensions. */
+export const OAuthAuthorizationServerMetadataSchema = z
+    .object({
+        issuer: z.string(),
+        authorization_endpoint: z.string(),
+        token_endpoint: z.string(),
+        jwks_uri: z.string(),
+        registration_endpoint: z.string().optional(),
+        revocation_endpoint: z.string().optional(),
+        response_types_supported: z.array(z.string()),
+        grant_types_supported: z.array(z.string()),
+        code_challenge_methods_supported: z.array(z.string()),
+        token_endpoint_auth_methods_supported: z.array(z.string()),
+        scopes_supported: z.array(z.string()),
+        client_id_metadata_document_supported: z.boolean().optional(),
+        authorization_response_iss_parameter_supported: z.boolean().optional(),
+        device_authorization_endpoint: z.string().optional(),
+    })
+    .meta({ id: 'OAuthAuthorizationServerMetadata' });
+
+export const OAuthClientDisplayMetadataSchema = z
+    .strictObject({
+        client_uri: z.string().optional(),
+        logo_uri: z.string().optional(),
+        tos_uri: z.string().optional(),
+        policy_uri: z.string().optional(),
+    })
+    .meta({ id: 'OAuthClientDisplayMetadata' });
+
+const oauthAuthorizeQueryFields = {
+    response_type: OAuthResponseTypeSchema,
+    client_id: z.string(),
+    redirect_uri: z.string(),
+    resource: z.string().optional(),
+    scope: z.string().optional(),
+    state: z.string().optional(),
+    code_challenge: z.string(),
+    code_challenge_method: z.literal('S256'),
+    project_id: z.string().optional(),
+};
+
+export const OAuthAuthorizeQuerySchema = z.strictObject(oauthAuthorizeQueryFields).meta({ id: 'OAuthAuthorizeQuery' });
+
+export const CreateOAuthAuthorizationRequestPayloadSchema = z
+    .strictObject(oauthAuthorizeQueryFields)
+    .meta({ id: 'CreateOAuthAuthorizationRequestPayload' });
+
+export const OAuthAuthorizationRequestSchema = z
+    .strictObject({
+        request_id: z.string(),
+        client_id: z.string(),
+        client_name: z.string(),
+        client_metadata: OAuthClientDisplayMetadataSchema.optional(),
+        client_registration_mode: OAuthClientRegistrationModeSchema.optional(),
+        redirect_uri: z.string(),
+        redirect_origin: z.string(),
+        resource: z.string().optional(),
+        requested_scopes: z.array(z.string()),
+        optional_scopes: z.array(z.string()).optional(),
+        requested_project_id: z.string().optional(),
+        project_binding_mode: OAuthProjectBindingModeSchema,
+        fixed_project_id: z.string().optional(),
+        restrict_to_owner_account: z.boolean().optional().meta({
+            description:
+                'When true, consent must be limited to projects in the OAuth client owning account. False allows any project the approving user can access.',
+        }),
+        owner_account_id: z
+            .string()
+            .optional()
+            .meta({ description: 'Owning account enforced when restrict_to_owner_account is true.' }),
+        status: OAuthAuthorizationRequestStatusSchema,
+        created_at: z.string(),
+        expires_at: z.string(),
+    })
+    .meta({ id: 'OAuthAuthorizationRequest' });
+
+export const ApproveOAuthAuthorizationRequestPayloadSchema = z
+    .strictObject({
+        project_id: z.string().optional(),
+        granted_scopes: z.array(z.string()),
+    })
+    .meta({ id: 'ApproveOAuthAuthorizationRequestPayload' });
+
+export const OAuthGrantableScopesResponseSchema = z
+    .strictObject({
+        project_id: z.string(),
+        requested_permission_scopes: z.array(z.string()),
+        grantable_permission_scopes: z.array(z.string()),
+        unavailable_permission_scopes: z.array(z.string()),
+    })
+    .meta({ id: 'OAuthGrantableScopesResponse' });
+
+export const OAuthAuthorizationDecisionResponseSchema = z
+    .strictObject({
+        redirect_url: z.string(),
+    })
+    .meta({ id: 'OAuthAuthorizationDecisionResponse' });
+
+export const OAuthDeviceAuthorizationRequestSchema = z
+    .strictObject({
+        client_id: z.string(),
+        resource: z.string().optional(),
+        scope: z.string().optional(),
+        project_id: z.string().optional(),
+    })
+    .meta({ id: 'OAuthDeviceAuthorizationRequest' });
+
+/** RFC 8628 responses can gain extension parameters; consumers parse the standardized fields. */
+export const OAuthDeviceAuthorizationResponseSchema = z
+    .object({
+        device_code: z.string(),
+        user_code: z.string(),
+        verification_uri: z.string(),
+        verification_uri_complete: z.string(),
+        expires_in: z.number(),
+        interval: z.number(),
+    })
+    .meta({ id: 'OAuthDeviceAuthorizationResponse' });
+
+/** RFC 6749 requires clients to ignore unrecognized token response parameters. */
+export const OAuthTokenResponseSchema = z
+    .object({
+        access_token: z.string(),
+        token_type: z.literal('Bearer'),
+        expires_in: z.number(),
+        scope: z.string(),
+        refresh_token: z.string().optional(),
+        id_token: z.string().optional(),
+    })
+    .meta({ id: 'OAuthTokenResponse' });
 
 /**
  * A client's registration, without its issued id.
