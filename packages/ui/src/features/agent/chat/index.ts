@@ -37,6 +37,15 @@ export {
     ConfirmationWidget,
     type ConfirmationWidgetProps,
 } from './AskUserWidget';
+// Artifact listing hook (run artifacts tree) for external use
+export {
+    type ArtifactTreeNode,
+    isSystemArtifact,
+    type UseArtifactsResult,
+    useArtifacts,
+} from './hooks/useArtifacts.js';
+// Document side-panel hook for external use
+export { type UseDocumentPanelResult, useDocumentPanel } from './hooks/useDocumentPanel.js';
 export * from './JumpingDots';
 export {
     type AgentMessageFilter,
@@ -86,3 +95,5 @@ export {
 export * from './SkillWidgetProvider';
 export { VegaLiteChart } from './VegaLiteChart';
 export * from './WaitingMessages';
+// Workstream naming / status / lifecycle helpers and the WorkstreamInfo shape
+export * from './workstreams.js';
