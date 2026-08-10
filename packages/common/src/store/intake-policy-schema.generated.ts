@@ -251,6 +251,48 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
     additionalProperties: false,
     description: 'Per-content-type policy for the standard intake workflows.',
     $defs: {
+        AzureFoundryChatOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'azure-foundry-chat',
+                },
+                max_tokens: {
+                    type: 'number',
+                },
+                temperature: {
+                    type: 'number',
+                },
+                top_p: {
+                    type: 'number',
+                },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
+                stop_sequence: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                seed: {
+                    type: 'number',
+                },
+                image_detail: {
+                    type: 'string',
+                    enum: ['low', 'high', 'auto'],
+                },
+                include_thoughts: {
+                    type: 'boolean',
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
         BedrockAI21Options: {
             type: 'object',
             properties: {
@@ -441,6 +483,14 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+                effort: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
+                },
+                reasoning_effort: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
                 },
                 include_thoughts: {
                     type: 'boolean',
@@ -988,10 +1038,71 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             },
             additionalProperties: false,
         },
+        MistralTextOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'mistral-text',
+                },
+                max_tokens: {
+                    type: 'number',
+                },
+                temperature: {
+                    type: 'number',
+                },
+                top_p: {
+                    type: 'number',
+                },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
+                stop_sequence: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                effort: {
+                    type: 'string',
+                    enum: ['none', 'high'],
+                },
+                random_seed: {
+                    type: 'integer',
+                    minimum: -9007199254740991,
+                    maximum: 9007199254740991,
+                },
+                safe_prompt: {
+                    type: 'boolean',
+                },
+                parallel_tool_calls: {
+                    type: 'boolean',
+                },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
+                },
+                prompt_mode: {
+                    type: 'string',
+                    const: 'reasoning',
+                },
+                include_thoughts: {
+                    type: 'boolean',
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
         ModelOptions: {
             oneOf: [
                 {
                     $ref: '#/$defs/TextFallbackOptions',
+                },
+                {
+                    $ref: '#/$defs/AzureFoundryChatOptions',
                 },
                 {
                     $ref: '#/$defs/ImagenOptions',
@@ -1058,6 +1169,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 {
                     $ref: '#/$defs/GroqOptions',
+                },
+                {
+                    $ref: '#/$defs/MistralTextOptions',
                 },
             ],
         },

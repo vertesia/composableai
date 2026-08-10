@@ -5,7 +5,7 @@ import type { JsonObject } from './adapter.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest } from './registry.js';
 
 /**
- * The two llumiverse closures the registry publishes: `ModelOptions` with its twenty-three driver
+ * The two llumiverse closures the registry publishes: `ModelOptions` with its twenty-five driver
  * option sets and four enums, and `JSONSchema` with its property map.
  *
  * Their schemas live in `@llumiverse/common/schemas` — they describe llumiverse's types, and a copy
@@ -21,6 +21,7 @@ function compile(name: string) {
 
 const UNION_MEMBERS = [
     'TextFallbackOptions',
+    'AzureFoundryChatOptions',
     'ImagenOptions',
     'VertexAIClaudeOptions',
     'VertexAIGeminiOptions',
@@ -43,6 +44,7 @@ const UNION_MEMBERS = [
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
     'GroqOptions',
+    'MistralTextOptions',
 ];
 
 describe('the ModelOptions closure is published whole and enforced closed', () => {
@@ -78,6 +80,16 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
         // published byte alone would not catch it.
         expect((ApiSchemaComponents.TextFallbackOptions as JsonObject).additionalProperties).toBe(false);
         expect(validate({ _option_id: 'text-fallback', top_p: 0.9, unknown_option: 1 })).toBe(false);
+        expect(
+            validate({
+                _option_id: 'mistral-text',
+                effort: 'high',
+                random_seed: 42,
+                safe_prompt: true,
+                include_thoughts: false,
+            }),
+            JSON.stringify(validate.errors),
+        ).toBe(true);
         expect(validate({ _option_id: 'not-a-driver' })).toBe(false);
     });
 });
