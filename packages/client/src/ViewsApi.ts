@@ -45,7 +45,7 @@ export default class ViewsApi extends ApiTopic {
     }
 
     /**
-     * Execute a persisted or app-contributed View through the content service.
+     * Execute a persisted, built-in system, or app-contributed View through the content service.
      */
     execute(id: string, payload: ExecuteViewRequest = {}): Promise<ViewExecutionResult> {
         return this.executionApi.execute(id, payload);

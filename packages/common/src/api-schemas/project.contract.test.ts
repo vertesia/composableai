@@ -13,12 +13,13 @@ import {
     type SerperConfigurationInput,
     SupportedIntegrations,
 } from '../integrations.js';
-import type {
-    ICreateProjectPayload,
-    ModelDefault,
-    Project,
-    ProjectPluginsUpdatePayload,
-    SystemDefaults,
+import {
+    type ICreateProjectPayload,
+    type ModelDefault,
+    type Project,
+    type ProjectPluginsUpdatePayload,
+    SYSTEM_INTERACTION_CATEGORIES,
+    type SystemDefaults,
     SystemInteractionCategory,
 } from '../project.js';
 import type { JsonObject } from './adapter.js';
@@ -184,6 +185,11 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         assertType<Equals<keyof SystemDefaults, `${SystemInteractionCategory}`>>(true);
         assertType<Equals<SystemDefaults['intake'], ModelDefault | undefined>>(true);
         expect(true).toBe(true);
+    });
+
+    it('uses the analysis model default for both content query planning and reranking', () => {
+        expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchAgent).toBe(SystemInteractionCategory.analysis);
+        expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchReranker).toBe(SystemInteractionCategory.analysis);
     });
 
     it('publishes the property-mapping map without the propertyNames z.record adds', () => {
