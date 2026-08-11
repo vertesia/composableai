@@ -83,4 +83,46 @@ describe('DefaultViewNavigation', () => {
         fireEvent.click(screen.getByRole('button', { name: 'FL' }));
         expect(onChange).toHaveBeenLastCalledWith(['h1:florida']);
     });
+
+    it('renders location breadcrumbs and navigates to an ancestor', () => {
+        const onChange = vi.fn();
+        renderWithProviders(
+            <DefaultViewNavigation
+                configuration={{ id: 'location', label: 'Location', source: 'location' }}
+                result={{
+                    id: 'location',
+                    selected: ['/Customers/Acme'],
+                    breadcrumbs: [
+                        { id: '/Customers', label: 'Customers', count: 12 },
+                        { id: '/Customers/Acme', label: 'Acme', count: 8, selected: true },
+                    ],
+                    nodes: [{ id: '/Customers/Acme/Orders', label: 'Orders', count: 8 }],
+                }}
+                isLoading={false}
+                onChange={onChange}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Customers' }));
+        expect(onChange).toHaveBeenCalledWith(['/Customers']);
+    });
+
+    it('submits a collection navigation query', () => {
+        const onQueryChange = vi.fn();
+        renderWithProviders(
+            <DefaultViewNavigation
+                configuration={{ id: 'collections', label: 'Collections', source: 'collection' }}
+                result={{ id: 'collections', selected: [], nodes: [] }}
+                isLoading={false}
+                onChange={vi.fn()}
+                onQueryChange={onQueryChange}
+            />,
+        );
+
+        fireEvent.change(screen.getByRole('textbox', { name: 'Filter Collections' }), {
+            target: { value: '  legal  ' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Search Collections' }));
+        expect(onQueryChange).toHaveBeenCalledWith('legal');
+    });
 });

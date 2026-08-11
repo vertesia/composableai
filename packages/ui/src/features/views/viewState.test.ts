@@ -6,12 +6,13 @@ describe('View URL state', () => {
     it('parses repeated key terms and navigation values', () => {
         expect(
             parseViewState(
-                '?q=find+contracts&t.party=Acme&t.party=Globex&n.brand=Vertesia&display=cards&sort=updated&offset=20',
+                '?q=find+contracts&t.party=Acme&t.party=Globex&n.brand=Vertesia&nq.collections=legal&display=cards&sort=updated&offset=20',
             ),
         ).toEqual({
             query: 'find contracts',
             key_terms: { party: ['Acme', 'Globex'] },
             navigation: { brand: ['Vertesia'] },
+            navigation_queries: { collections: 'legal' },
             display: 'cards',
             sort: 'updated',
             offset: 20,
@@ -29,6 +30,7 @@ describe('View URL state', () => {
                     brand: ['Contoso', 'Vertesia'],
                     geography: [hierarchyPath],
                 },
+                navigation_queries: { collections: '  legal contracts  ' },
                 display: 'table',
             },
             '?account=account-1&project=project-1&q=stale&n.brand=stale',
@@ -44,6 +46,7 @@ describe('View URL state', () => {
                 geography: [hierarchyPath],
                 location: ['/Customers/Acme'],
             },
+            navigation_queries: { collections: 'legal contracts' },
             display: 'table',
         });
     });
@@ -59,6 +62,7 @@ describe('View URL state', () => {
                     query: '  contracts  ',
                     key_terms: { party: ['Acme'], retired: ['old'] },
                     navigation: { brand: ['stale'], retired: ['old'] },
+                    navigation_queries: { collections: 'legal', retired: 'old' },
                     display: 'retired',
                     sort: 'retired',
                     offset: 20,
@@ -77,6 +81,7 @@ describe('View URL state', () => {
                     total: 0,
                     navigation: {
                         brand: { id: 'brand', selected: ['Acme'], nodes: [] },
+                        collections: { id: 'collections', selected: [], nodes: [], query: 'legal' },
                     },
                     took: 5,
                 },
@@ -85,6 +90,7 @@ describe('View URL state', () => {
             query: 'contracts',
             key_terms: { party: ['Acme'] },
             navigation: { brand: ['Acme'] },
+            navigation_queries: { collections: 'legal' },
             display: 'table',
             sort: 'updated',
             offset: 20,
