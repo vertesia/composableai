@@ -50,6 +50,13 @@ export const GetFileUrlPayloadSchema = z
         file: z.string(),
         name: z.string().optional(),
         disposition: z.enum(['inline', 'attachment']).optional(),
+        ttl: z
+            .number()
+            .int()
+            .positive()
+            .max(7 * 24 * 60 * 60)
+            .optional()
+            .meta({ description: 'Signed URL lifetime in seconds, up to seven days.' }),
     })
     .meta({ id: 'GetFileUrlPayload' });
 
