@@ -9,6 +9,17 @@ import {
     type RateLimitRequestResponse,
 } from '@vertesia/common';
 import type { VertesiaClient } from './client.js';
+import type { EnhancedExecutionRun } from './InteractionOutput.js';
+
+function toInteractionExecutionResult<P>(run: EnhancedExecutionRun<P, P>): InteractionExecutionResult<P> {
+    return {
+        ...run,
+        account: typeof run.account === 'string' ? run.account : run.account.id,
+        project: typeof run.project === 'string' ? run.project : run.project.id,
+        interaction:
+            typeof run.interaction === 'string' || run.interaction === undefined ? run.interaction : run.interaction.id,
+    };
+}
 
 /**
  * Client-side timeout for a synchronous (non-streaming) interaction execution. The request blocks on
@@ -47,7 +58,7 @@ export async function executeInteraction<P = unknown>(
     onChunk?: (chunk: string) => void,
 ): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
-    const response = (await client.runs.create(
+    const run = await client.runs.create<P, P>(
         {
             ...payload,
             interaction: interactionId,
@@ -56,7 +67,8 @@ export async function executeInteraction<P = unknown>(
         // Synchronous interaction execution blocks on the model; keep a long client timeout.
         // (Streaming returns the run immediately, then streams over a separate channel — see below.)
         { timeoutMs: stream ? undefined : INTERACTION_EXECUTION_TIMEOUT_MS },
-    )) as unknown as InteractionExecutionResult<P>;
+    );
+    const response = toInteractionExecutionResult(run);
     if (stream) {
         if (response.status === ExecutionRunStatus.failed) {
             return response;

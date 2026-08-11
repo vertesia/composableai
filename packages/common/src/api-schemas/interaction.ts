@@ -418,6 +418,7 @@ export const PromptTemplateSchema = z
         updated_by: z.string(),
         created_at: z.string().meta({ format: 'date-time' }),
         updated_at: z.string().meta({ format: 'date-time' }),
+        latest: z.unknown().optional(),
     })
     .meta({ id: 'PromptTemplate' });
 
@@ -893,6 +894,7 @@ export const PromptTemplateRefSchema = z
         tags: z.array(z.string()).optional(),
         created_at: z.string().meta({ format: 'date-time' }),
         updated_at: z.string().meta({ format: 'date-time' }),
+        latest: z.unknown().optional(),
     })
     .meta({ id: 'PromptTemplateRef' });
 
@@ -994,6 +996,7 @@ export const InteractionSchema = z
         updated_by: z.string(),
         created_at: z.string().meta({ format: 'date-time' }),
         updated_at: z.string().meta({ format: 'date-time' }),
+        latest: z.unknown().optional(),
     })
     .meta({ id: 'Interaction' });
 
@@ -1354,9 +1357,12 @@ export const ExecutionRunSchema: z.ZodType = z
         }),
         tags: z.array(z.string()).optional(),
         interaction: ExecutionRunInteractionSchema.optional(),
-        environment: ExecutionEnvironmentRefSchema.meta({
-            description: 'Environment reference - populated with full object in API responses',
-        }),
+        environment: z
+            .union([z.string(), ExecutionEnvironmentRefSchema])
+            .transform((value) => value as z.output<typeof ExecutionEnvironmentRefSchema>)
+            .meta({
+                description: 'Environment reference - populated with full object in API responses',
+            }),
         modelId: z.string().optional(),
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
@@ -1412,9 +1418,12 @@ export const InteractionExecutionResultSchema = z
                 'The parameters used to create the interaction. If the parameters contains the special property "@memory" it will be used to locate a memory pack and the other properties will be used as the memory pack mapping.',
         }),
         tags: z.array(z.string()).optional(),
-        environment: ExecutionEnvironmentRefSchema.meta({
-            description: 'Environment reference - populated with full object in API responses',
-        }),
+        environment: z
+            .union([z.string(), ExecutionEnvironmentRefSchema])
+            .transform((value) => value as z.output<typeof ExecutionEnvironmentRefSchema>)
+            .meta({
+                description: 'Environment reference - populated with full object in API responses',
+            }),
         modelId: z.string().optional(),
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
@@ -1443,6 +1452,7 @@ export const InteractionExecutionResultSchema = z
         account: z.string(),
         project: z.string(),
         interaction: z.string().optional(),
+        interaction_code: z.string().optional(),
         tool_use: z.array(ToolUseSchema).optional(),
         conversation: z.unknown().optional(),
         options: StatelessExecutionOptionsSchema.optional(),
@@ -1521,9 +1531,12 @@ export const ExecutionRunRefSchema = z
             })
             .optional(),
         tags: z.array(z.string()).optional(),
-        environment: ExecutionEnvironmentRefSchema.meta({
-            description: 'Environment reference - populated with full object in API responses',
-        }),
+        environment: z
+            .union([z.string(), ExecutionEnvironmentRefSchema])
+            .transform((value) => value as z.output<typeof ExecutionEnvironmentRefSchema>)
+            .meta({
+                description: 'Environment reference - populated with full object in API responses',
+            }),
         modelId: z.string().optional(),
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
@@ -1535,8 +1548,12 @@ export const ExecutionRunRefSchema = z
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }),
         updated_at: z.string().meta({ format: 'date-time' }),
-        account: AccountRefSchema,
-        project: ProjectRefSchema,
+        account: z
+            .union([z.string(), AccountRefSchema])
+            .transform((value) => value as z.output<typeof AccountRefSchema>),
+        project: z
+            .union([z.string(), ProjectRefSchema])
+            .transform((value) => value as z.output<typeof ProjectRefSchema>),
         config: InteractionExecutionConfigurationSchema,
         error: InteractionExecutionErrorSchema.optional(),
         source: RunSourceSchema,
@@ -1551,7 +1568,13 @@ export const ExecutionRunRefSchema = z
             description:
                 'The Vertesia Workflow related to this Interaction Run.\n\nThis is only set when the interaction is executed as part of a workflow.',
         }).optional(),
-        interaction: InteractionRefSchema.optional(),
+        interaction: z
+            .union([z.string(), InteractionRefSchema])
+            .transform((value) => value as z.output<typeof InteractionRefSchema>)
+            .optional(),
+        interaction_code: z.string().optional(),
+        result: z.array(CompletionResultSchema).optional(),
+        parameters: z.unknown().optional(),
     })
     .meta({ id: 'ExecutionRunRef' });
 
@@ -2355,6 +2378,27 @@ export const RunSearchMetaResponseSchema = z
         ),
     })
     .meta({ id: 'RunSearchMetaResponse' });
+
+const RunFacetBucketSchema = z.strictObject({
+    _id: z.string().nullable(),
+    count: z.number(),
+});
+
+export const RunFacetsResponseSchema = z
+    .object({
+        environments: z.array(RunFacetBucketSchema).optional(),
+        interactions: z.array(RunFacetBucketSchema).optional(),
+        models: z.array(RunFacetBucketSchema).optional(),
+        statuses: z.array(RunFacetBucketSchema).optional(),
+        tags: z.array(RunFacetBucketSchema).optional(),
+        finish_reason: z.array(RunFacetBucketSchema).optional(),
+        created_by: z.array(RunFacetBucketSchema).optional(),
+        start: z.array(RunFacetBucketSchema).optional(),
+        end: z.array(RunFacetBucketSchema).optional(),
+        total: z.number().optional(),
+    })
+    .passthrough()
+    .meta({ id: 'RunFacetsResponse' });
 
 export const RunClonePayloadSchema = z
     .strictObject({
