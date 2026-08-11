@@ -2356,6 +2356,35 @@ export const RunSearchMetaResponseSchema = z
     })
     .meta({ id: 'RunSearchMetaResponse' });
 
+const RunFacetBucketSchema = z
+    .object({
+        _id: z.string().nullable(),
+        count: z.number(),
+    })
+    .passthrough();
+
+/**
+ * Legacy response returned by POST /runs/facets.
+ *
+ * Facet names come from the request, so the known Studio facet fields are typed explicitly while
+ * additional requested facet names remain accepted for compatibility.
+ */
+export const RunFacetsResponseSchema = z
+    .object({
+        environments: z.array(RunFacetBucketSchema).optional(),
+        interactions: z.array(RunFacetBucketSchema).optional(),
+        models: z.array(RunFacetBucketSchema).optional(),
+        statuses: z.array(RunFacetBucketSchema).optional(),
+        tags: z.array(RunFacetBucketSchema).optional(),
+        finish_reason: z.array(RunFacetBucketSchema).optional(),
+        created_by: z.array(RunFacetBucketSchema).optional(),
+        start: z.array(RunFacetBucketSchema).optional(),
+        end: z.array(RunFacetBucketSchema).optional(),
+        total: z.number().optional(),
+    })
+    .passthrough()
+    .meta({ id: 'RunFacetsResponse' });
+
 export const RunClonePayloadSchema = z
     .strictObject({
         source_run_id: z.string(),

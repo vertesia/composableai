@@ -537,6 +537,7 @@ import {
     ResultStorageOptionsSchema,
     RunClonePayloadSchema,
     RunCreatePayloadSchema,
+    RunFacetsResponseSchema,
     RunListQuerySchema,
     RunSearchMetaResponseSchema,
     RunSearchPayloadSchema,
@@ -1075,6 +1076,7 @@ const INTERACTION_SCHEMAS = {
     NumberValueMap: NumberValueMapSchema,
     ComputeInteractionFacetPayload: ComputeInteractionFacetPayloadSchema,
     ComputedFacetResponse: ComputedFacetResponseSchema,
+    RunFacetsResponse: RunFacetsResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const INTERACTION_AUTHORING_SCHEMAS = {

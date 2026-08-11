@@ -3,6 +3,7 @@ import type {
     ExecutionRunDocRefSchema,
     RunClonePayloadSchema,
     RunCreatePayloadSchema,
+    RunFacetsResponseSchema,
     RunSearchMetaResponseSchema,
 } from './api-schemas/interaction.js';
 
@@ -35,3 +36,4 @@ export interface RangeValue {
 }
 
 export type RunSearchMetaResponse = z.infer<typeof RunSearchMetaResponseSchema>;
+export type RunFacetsResponse = z.infer<typeof RunFacetsResponseSchema>;
