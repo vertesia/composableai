@@ -1,12 +1,6 @@
 import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
-import type {
-    ContentObject,
-    CreateContentObjectPayload,
-    DSLActivityExecutionPayload,
-    DSLActivitySpec,
-    WorkflowInputFile,
-} from '@vertesia/common';
+import type { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec, WorkflowInputFile } from '@vertesia/common';
 import { markdownWithMarkitdown } from '../conversion/markitdown.js';
 import { mutoolPdfToText } from '../conversion/mutool.js';
 import { markdownWithPandoc } from '../conversion/pandoc.js';
@@ -114,16 +108,18 @@ async function extractFromObject(
     const tokensData = countTokens(txt);
     const etag = doc.content.etag ?? md5(txt);
 
-    const updateData: CreateContentObjectPayload = {
-        text: txt,
-        text_etag: etag,
+    // Persist the extracted text through the dedicated text endpoint which stores it as a text
+    // artifact (dual-writing the inline text during the rollout window). Passing the content etag
+    // records it as `text_etag` so the skip-if-already-extracted check above keeps working.
+    await client.objects.setObjectText(doc.id, { text: txt, etag });
+
+    // Token counts are not part of the text artifact contract — keep updating them on the object.
+    await client.objects.update(doc.id, {
         tokens: {
             ...tokensData,
             etag: etag,
         },
-    };
-
-    await client.objects.update(doc.id, updateData);
+    });
 
     return createResponse(doc, txt, TextExtractionStatus.success);
 }

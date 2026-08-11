@@ -35,6 +35,7 @@ import type {
     ProjectedContentObjectApiResponseSchema,
     RevisionInfoSchema,
     SetObjectEmbeddingsResponseSchema,
+    SetObjectTextPayloadSchema,
     StartContentObjectExportRequestSchema,
     StartContentObjectExportResponseSchema,
     TranscriptSchema,
@@ -226,6 +227,8 @@ export type InheritedPropertyMetadata = z.infer<typeof InheritedPropertyMetadata
 export type ContentObjectUserPermissions = z.infer<typeof ContentObjectUserPermissionsSchema>;
 
 export type ContentObjectTextResponse = z.infer<typeof ContentObjectTextResponseSchema>;
+
+export type SetObjectTextPayload = z.infer<typeof SetObjectTextPayloadSchema>;
 
 export type DeleteContentObjectResult = z.infer<typeof DeleteContentObjectResultSchema>;
 
