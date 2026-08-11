@@ -93,7 +93,23 @@ export {
     isLocalhostAgentChatPlaybackEnabled,
 } from './playback';
 export * from './SkillWidgetProvider';
+// Item type of UseDocumentPanelResult.openDocuments
+export type { OpenDocument } from './types/document.js';
 export { VegaLiteChart } from './VegaLiteChart';
 export * from './WaitingMessages';
-// Workstream naming / status / lifecycle helpers and the WorkstreamInfo shape
-export * from './workstreams.js';
+// Workstream naming / status / lifecycle helpers. Listed explicitly rather than
+// re-exported wholesale so that adding a helper to workstreams.ts is not silently
+// an addition to this package's public surface.
+export {
+    formatWorkstreamName,
+    getWorkstreamActivityDetails,
+    getWorkstreamDisplayName,
+    getWorkstreamLaunchDetails,
+    getWorkstreamLifecycleStatus,
+    getWorkstreamStatusClass,
+    isWorkstreamInternalResultMessage,
+    isWorkstreamInternalResultText,
+    isWorkstreamTerminalMessage,
+    type WorkstreamInfo,
+    type WorkstreamLaunchDetails,
+} from './workstreams.js';
