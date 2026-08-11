@@ -479,7 +479,10 @@ export default function MessageInput({
             <ActiveWorkstreamsSummary activeWorkstreams={activeWorkstreams} onSelectWorkstream={onSelectWorkstream} />
 
             {/* Input row */}
-            <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border/70 bg-mixer-muted/15 p-2.5 shadow-lg shadow-black/5">
+            <div
+                className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border/70 bg-mixer-muted/15 p-2.5 shadow-lg shadow-black/5"
+                data-agent-composer-input
+            >
                 {attachmentItems.length > 0 && (
                     <AttachmentPreviewList
                         items={attachmentItems}

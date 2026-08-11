@@ -92,6 +92,7 @@ export function AgentApprovalModeSelector({
                         className,
                     )}
                     aria-label={t('agent.approvalMode.selectorLabel')}
+                    data-agent-approval-pill
                 >
                     <span className={cn('shrink-0', getModeIconClassName(mode))}>{getModeIcon(mode)}</span>
                     <span className="min-w-0 truncate">{selected.label}</span>
