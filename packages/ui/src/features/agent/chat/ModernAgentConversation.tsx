@@ -1306,8 +1306,11 @@ function StartWorkflowView({
                             disabled={isSending}
                             rows={2}
                             className={cn(
-                                'min-h-[72px] resize-none overflow-hidden border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
-                                isExpandedStartComposer && 'min-h-0 flex-1',
+                                'min-h-[72px] resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
+                                // The expanded composer is a fixed-height flex box (adjustTextareaHeight
+                                // pins it to 100%), so it has to scroll its own overflow. The auto-growing
+                                // variant hides overflow because it resizes to fit instead.
+                                isExpandedStartComposer ? 'min-h-0 flex-1 overflow-y-auto' : 'overflow-hidden',
                                 inputClassName,
                             )}
                             style={
