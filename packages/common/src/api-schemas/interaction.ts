@@ -730,6 +730,7 @@ export const SortOptionSchema = z
 export const RunSearchQuerySchema = z
     .strictObject({
         name: z.string().optional(),
+        batch_id: z.string().meta({ description: 'Inference batch id to filter by.' }).optional(),
         status: ExecutionRunStatusSchema.optional(),
         limit: z.number().optional(),
         offset: z.number().optional(),
@@ -783,6 +784,7 @@ export const RunListQuerySchema = z
     .strictObject({
         limit: z.number().int().meta({ description: 'Maximum number of runs to return.' }).optional(),
         offset: z.number().int().meta({ description: 'Number of runs to skip.' }).optional(),
+        batch_id: z.string().meta({ description: 'Inference batch id to filter by.' }).optional(),
         interaction: z
             .array(z.string())
             .meta({ description: 'Interaction ids, or in-code interaction names, to filter by.' })
