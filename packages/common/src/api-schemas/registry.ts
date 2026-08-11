@@ -469,6 +469,8 @@ import {
     ExternalizedToolInputRefSchema,
     ExternalizedToolInputRefsSchema,
     FacetSpecSchema,
+    FindRunResultArraySchema,
+    FindRunResultSchema,
     GeneratedInteractionDefinitionArraySchema,
     GeneratedInteractionDefinitionSchema,
     GeneratedInteractionPromptSegmentSchema,
@@ -1166,6 +1168,8 @@ const EXECUTION_RUN_SCHEMAS = {
     InteractionExecutionPayload: InteractionExecutionPayloadSchema,
     NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
     InteractionExecutionResult: InteractionExecutionResultSchema,
+    FindRunResult: FindRunResultSchema,
+    FindRunResultArray: FindRunResultArraySchema,
     // The retrieve variant, and the two pre-versioning result shapes. See the schema module for why
     // the populated interaction cannot share a component with the create path.
     PopulatedExecutionRunResult: PopulatedExecutionRunResultSchema,
@@ -3139,7 +3143,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'PricingSyncDayResult',
     'PricingSyncResult',
     'ComputeRunFacetPayload',
-    'RunFacetsResponse',
+    'FindRunResult',
+    'FindRunResultArray',
     'RunSearchMetaResponse',
     'ToolResultsPayload',
     'UserMessagePayload',

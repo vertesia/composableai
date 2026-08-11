@@ -1,6 +1,9 @@
 import type { z } from 'zod';
 import type {
     ExecutionRunDocRefSchema,
+    FindRunResultArraySchema,
+    FindRunResultSchema,
+    PopulatedExecutionRunResultSchema,
     RunClonePayloadSchema,
     RunCreatePayloadSchema,
     RunFacetsResponseSchema,
@@ -11,6 +14,9 @@ import type {
  * The run ref is used to identify a run document in the storage
  */
 export type ExecutionRunDocRef = z.infer<typeof ExecutionRunDocRefSchema>;
+export type FindRunResult = z.infer<typeof FindRunResultSchema>;
+export type FindRunResultArray = z.infer<typeof FindRunResultArraySchema>;
+export type PopulatedExecutionRunResult = z.infer<typeof PopulatedExecutionRunResultSchema>;
 
 /**
  * Interaction execution payload for creating a new run
