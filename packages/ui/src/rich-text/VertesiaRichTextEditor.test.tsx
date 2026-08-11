@@ -1,7 +1,12 @@
 /** @vitest-environment jsdom */
 
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MarkdownRichTextEditor, type MarkdownRichTextEditorProps, setEditorMarkdown } from '@vertesia/rich-text';
+import {
+    DOCUMENT_EDITOR_CHANGE_DEBOUNCE_MS,
+    MarkdownRichTextEditor,
+    type MarkdownRichTextEditorProps,
+    setEditorMarkdown,
+} from '@vertesia/rich-text';
 import { describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../i18n/index.js';
 import {
@@ -174,6 +179,32 @@ describe('VertesiaMarkdownRichTextEditor', () => {
         expect(await screen.findByRole('heading', { name: 'Setext heading' })).not.toBeNull();
         expect(screen.getByRole('textbox', { name: 'Markdown document editor' })).not.toBeNull();
         expect(screen.queryByRole('heading', { name: 'Some Markdown formatting may change' })).toBeNull();
+        // The document editor debounces serialization, so wait past that window: otherwise this
+        // assertion passes merely because a spurious change has not been flushed yet.
+        await new Promise((resolve) => setTimeout(resolve, DOCUMENT_EDITOR_CHANGE_DEBOUNCE_MS * 2));
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('does not report a change when the document is locked or unlocked', async () => {
+        const onChange = vi.fn();
+        const view = render(
+            <I18nProvider lng="en">
+                <VertesiaMarkdownDocumentEditor value={'Setext heading\n=============='} onChange={onChange} />
+            </I18nProvider>,
+        );
+
+        expect(await screen.findByRole('heading', { name: 'Setext heading' })).not.toBeNull();
+        view.rerender(
+            <I18nProvider lng="en">
+                <VertesiaMarkdownDocumentEditor
+                    value={'Setext heading\n=============='}
+                    onChange={onChange}
+                    editable={false}
+                />
+            </I18nProvider>,
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, DOCUMENT_EDITOR_CHANGE_DEBOUNCE_MS * 2));
         expect(onChange).not.toHaveBeenCalled();
     });
 
