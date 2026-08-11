@@ -320,7 +320,10 @@ describe('@vertesia/ui accessibility (axe)', () => {
         const { baseElement } = renderWithProviders(<Harness />);
         // Radix portals the dialog into document.body, not the render container.
         // noCloseButton avoids the Button.alt -> aria-label gap (deferred to Section 3).
-        expect(await axe(baseElement)).toHaveNoViolations();
+        // Radix focus guards are intentionally focusable, visually hidden sentinels. Newer
+        // axe-core versions flag their tabindex + aria-hidden combination even though they
+        // are infrastructure outside the dialog's accessible content.
+        expect(await axe(baseElement, { exclude: ['[data-radix-focus-guard]'] })).toHaveNoViolations();
     });
 
     it('Table with column headers and sortable button has no violations', async () => {

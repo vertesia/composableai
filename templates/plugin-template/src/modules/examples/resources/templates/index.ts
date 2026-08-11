@@ -1,4 +1,5 @@
 import { RenderingTemplateCollection } from '@vertesia/tools-sdk';
+
 import templateDefinitions from './all?templates';
 
 export const ExampleTemplates = new RenderingTemplateCollection({

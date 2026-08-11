@@ -30,6 +30,9 @@ export interface ActivityTypeDefinition {
     enum?: string[] | number[] | undefined;
     // in case of unions
     union?: ActivityTypeDefinition[];
+    // in case of records
+    keyType?: ActivityTypeDefinition;
+    valueType?: ActivityTypeDefinition;
 }
 
 export interface ActivityPropertyDefinition {

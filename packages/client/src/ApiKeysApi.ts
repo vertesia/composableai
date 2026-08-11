@@ -4,9 +4,10 @@ import type {
     ApiKeyReadResponse,
     ApiKeyWithValue,
     AuthTokenResponse,
-    CreateOrUpdateApiKeyPayload,
+    CreateApiKeyPayload,
     CreatePublicKeyPayload,
     DeleteOperationResult,
+    UpdateApiKeyPayload,
 } from '@vertesia/common';
 
 export class ApiKeysApi extends ApiTopic {
@@ -28,7 +29,7 @@ export class ApiKeysApi extends ApiTopic {
      * ALL REQUESTS ARE LOGGED IN SECURITY AUDIT LOG
      * @returns ApiKeyWithValue
      */
-    create(payload: CreateOrUpdateApiKeyPayload): Promise<ApiKeyWithValue> {
+    create(payload: CreateApiKeyPayload): Promise<ApiKeyWithValue> {
         return this.post('/', { payload });
     }
 
@@ -36,7 +37,7 @@ export class ApiKeysApi extends ApiTopic {
      * Update an existing ApiKey for account
      * @returns ApiKey
      */
-    update(id: string, payload: CreateOrUpdateApiKeyPayload): Promise<ApiKey> {
+    update(id: string, payload: UpdateApiKeyPayload): Promise<ApiKey> {
         return this.put(`/${id}`, { payload });
     }
 

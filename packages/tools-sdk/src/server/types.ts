@@ -1,5 +1,6 @@
 import type { JSONSchema } from '@llumiverse/common';
 import type {
+    AppDashboardDefinition,
     AppUIConfig,
     InCodeProcessDefinition,
     InCodeViewDefinition,
@@ -13,7 +14,12 @@ import type { InteractionCollection } from '../InteractionCollection.js';
 import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
 import type { SkillCollection } from '../SkillCollection.js';
 import type { ToolCollection } from '../ToolCollection.js';
-import type { MCPConnectionDetails, ToolExecutionPayload } from '../types.js';
+import type {
+    AppEventSubscriptionDefinition,
+    AppHookDefinition,
+    MCPConnectionDetails,
+    ToolExecutionPayload,
+} from '../types.js';
 
 /**
  * Extended context with parsed payload for tool/skill execution
@@ -25,6 +31,8 @@ export interface ToolContext extends Context {
     toolUseId?: string;
     /** The tool_use.tool_name from the payload */
     toolName?: string;
+    /** Parsed JSON body for non-tool routes such as lifecycle hooks. */
+    requestBody?: unknown;
 }
 
 /**
@@ -69,6 +77,10 @@ export interface ToolServerConfig {
      */
     processes?: InCodeProcessDefinition[];
     /**
+     * Dashboard definitions to expose as app-contributed dashboards.
+     */
+    dashboards?: AppDashboardDefinition[];
+    /**
      * View Experiences to expose as app-contributed in-code definitions.
      */
     views?: InCodeViewDefinition[];
@@ -84,6 +96,12 @@ export interface ToolServerConfig {
      * MCP providers to expose
      */
     mcpProviders?: MCPProviderConfig[];
+
+    /** Authenticated application hooks aggregated from active application modules. */
+    hooks?: AppHookDefinition[];
+
+    /** App-owned subscriptions whose delivery target is a registered event hook. */
+    subscriptions?: AppEventSubscriptionDefinition[];
 
     /**
      * A JSON schema defining settings for the application using this server

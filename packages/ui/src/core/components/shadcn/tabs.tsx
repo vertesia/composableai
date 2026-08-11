@@ -15,6 +15,17 @@ export interface Tab {
     is_allowed?: boolean;
 }
 
+/**
+ * Guard consulted before switching to another tab. Return `false` to cancel the switch — the active
+ * tab, the URL hash and the browser history are all left untouched, so the guard can hold the user
+ * on a tab that has unsaved changes while a confirmation is shown.
+ *
+ * It is only called when the target tab differs from the active one, but it may be called more than
+ * once for a single attempted switch (a click reaches both the trigger and the Radix root), so any
+ * side effect it performs must be idempotent.
+ */
+export type CanChangeTab = (nextTab: string, currentTab?: string) => boolean;
+
 const TabsContext = React.createContext<{
     size?: number;
     tabs?: Tab[];
@@ -23,6 +34,7 @@ const TabsContext = React.createContext<{
     responsive?: boolean;
     variant?: 'tabs' | 'pills';
     updateHash?: boolean;
+    canChangeTab?: CanChangeTab;
 }>({
     size: undefined,
     tabs: undefined,
@@ -45,6 +57,7 @@ interface TabsProps {
     responsive?: boolean;
     variant?: 'tabs' | 'pills';
     updateHash?: boolean;
+    canChangeTab?: CanChangeTab;
 }
 
 const Tabs = ({
@@ -59,6 +72,7 @@ const Tabs = ({
     responsive = false,
     variant = 'tabs',
     updateHash = true,
+    canChangeTab,
 }: TabsProps) => {
     // Filter tabs based on is_allowed (undefined or true means visible)
     const visibleTabs = React.useMemo(
@@ -121,6 +135,9 @@ const Tabs = ({
 
     const handleValueChange = React.useCallback(
         (newValue: string) => {
+            // Bail before touching the value or the history so a cancelled switch is a no-op.
+            if (newValue !== value && canChangeTab && !canChangeTab(newValue, value)) return;
+
             setValue(newValue);
 
             // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
@@ -135,7 +152,7 @@ const Tabs = ({
                 onTabChange(newValue);
             }
         },
-        [current, onTabChange, updateHash],
+        [current, onTabChange, updateHash, canChangeTab, value],
     );
 
     const setTab = React.useCallback(
@@ -155,6 +172,7 @@ const Tabs = ({
                 responsive: responsive,
                 variant,
                 updateHash,
+                canChangeTab,
             }}
         >
             <TabsPrimitive.Root
@@ -176,13 +194,17 @@ interface TabsBarProps {
 }
 
 const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
-    const { tabs, size, current, setTab, responsive, variant, updateHash } = React.useContext(TabsContext);
+    const { tabs, size, current, setTab, responsive, variant, updateHash, canChangeTab } =
+        React.useContext(TabsContext);
 
     const fullWidth = size !== 0;
 
     const handleTabChange = React.useCallback(
         (tabName: string) => {
             if (!tabs || !setTab) return;
+            // Consulted here too: this path pushes the tab href before `setTab` reaches the guard in
+            // `Tabs`, so a cancelled switch would otherwise leave the URL pointing at the other tab.
+            if (tabName !== current && canChangeTab && !canChangeTab(tabName, current)) return;
 
             const tab = tabs.find((t) => t.name === tabName);
 
@@ -194,7 +216,7 @@ const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
 
             setTab(tabName);
         },
-        [tabs, setTab, updateHash],
+        [tabs, setTab, updateHash, canChangeTab, current],
     );
 
     if (!tabs || !setTab) {

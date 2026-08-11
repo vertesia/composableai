@@ -14,6 +14,7 @@ export * from './LanguageSwitcher';
 export * from './label';
 export * from './MessageBox';
 export * from './modal';
+export * from './overflowTabs';
 export * from './Panel';
 export * from './popover';
 export * from './radioGroup';

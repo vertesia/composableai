@@ -24,6 +24,8 @@ describe('AgentChatPlaybackControls', () => {
             <AgentChatPlaybackControls cursor="live" messages={messages} onChangeCursor={onChangeCursor} />,
         );
 
+        expect(screen.getByText('Debug')).toBeTruthy();
+
         fireEvent.click(screen.getByRole('button', { name: 'Jump to first message' }));
 
         expect(onChangeCursor).toHaveBeenCalledWith(0);

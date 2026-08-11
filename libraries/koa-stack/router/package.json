@@ -38,8 +38,8 @@
         "@types/koa-send": "^4.1.6",
         "@types/statuses": "^2.0.6",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
-        "vitest": "^4.1.9"
+        "typescript": "catalog:",
+        "vitest": "^4.1.10"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",

@@ -1,37 +1,89 @@
 import { describe, expect, it } from 'vitest';
-import { effectiveAppAccessControl } from './apps.js';
+import {
+    AppEventHookPayloadSchema,
+    AppEventSubscriptionDefinitionSchema,
+    AppPackageHooksSchema,
+} from './api-schemas/app-runtime.js';
+import { APP_CAPABILITIES, APP_PACKAGE_SCOPES } from './apps.js';
 
-describe('effectiveAppAccessControl', () => {
-    it("returns 'all' when neither installation nor manifest set the field", () => {
-        expect(effectiveAppAccessControl({}, {})).toBe('all');
+describe('app capability contracts', () => {
+    it('keeps views in the manifest and package contracts', () => {
+        expect(APP_CAPABILITIES).toContain('views');
+        expect(APP_PACKAGE_SCOPES).toContain('views');
     });
 
-    it("returns 'all' when both inputs are null/undefined", () => {
-        expect(effectiveAppAccessControl(null, null)).toBe('all');
-        expect(effectiveAppAccessControl(undefined, undefined)).toBe('all');
-        expect(effectiveAppAccessControl(null, undefined)).toBe('all');
+    it('exposes app hooks as a package query scope', () => {
+        expect(APP_PACKAGE_SCOPES).toContain('hooks');
+        expect(APP_PACKAGE_SCOPES).toContain('subscriptions');
     });
 
-    it('falls back to the manifest default when the installation has no override', () => {
-        expect(effectiveAppAccessControl({}, { access_control: 'ui' })).toBe('ui');
-        expect(effectiveAppAccessControl({}, { access_control: 'none' })).toBe('none');
-        expect(effectiveAppAccessControl({}, { access_control: 'all' })).toBe('all');
+    it('accepts app-owned subscriptions without a deployment-specific target', () => {
+        expect(
+            AppEventSubscriptionDefinitionSchema.parse({
+                id: 'content-updated',
+                name: 'Content updated',
+                hook: 'content-updated',
+                filter: { action: ['update'], resource_type: ['content_object'] },
+                run_as_role: 'automation',
+            }),
+        ).toEqual({
+            id: 'content-updated',
+            name: 'Content updated',
+            hook: 'content-updated',
+            filter: { action: ['update'], resource_type: ['content_object'] },
+            run_as_role: 'automation',
+        });
     });
 
-    it('lets the installation override the manifest default for all three values', () => {
-        expect(effectiveAppAccessControl({ access_control: 'ui' }, { access_control: 'all' })).toBe('ui');
-        expect(effectiveAppAccessControl({ access_control: 'none' }, { access_control: 'ui' })).toBe('none');
-        expect(effectiveAppAccessControl({ access_control: 'all' }, { access_control: 'none' })).toBe('all');
+    it('validates the canonical app event-hook envelope', () => {
+        const payload = {
+            event: {
+                event_id: 'event-1',
+                root_event_id: 'event-1',
+                hop_count: 0,
+                event_category: 'content',
+                action: 'update',
+                resource_type: 'content_object',
+                resource_id: 'object-1',
+                account_id: 'account-1',
+                project_id: 'project-1',
+                tenant_id: 'account-1_project-1',
+                timestamp: '2026-08-05T10:00:00.000Z',
+                source: 'zeno-server',
+                details: { changed: ['title'] },
+            },
+            delivery: {
+                id: 'delivery-1',
+                subscription_id: 'subscription-1',
+                attempt: 1,
+            },
+        };
+
+        expect(AppEventHookPayloadSchema.parse(payload)).toEqual(payload);
+        expect(() => AppEventHookPayloadSchema.parse({ event: payload.event })).toThrow();
     });
 
-    it('treats null arguments the same as undefined', () => {
-        expect(effectiveAppAccessControl(null, { access_control: 'ui' })).toBe('ui');
-        expect(effectiveAppAccessControl({ access_control: 'ui' }, null)).toBe('ui');
-    });
-
-    it('treats null/undefined access_control fields the same as the field being absent', () => {
-        expect(effectiveAppAccessControl({ access_control: undefined }, { access_control: 'ui' })).toBe('ui');
-        // The override accepts AppAccessControl | null at the payload boundary; nullish should fall through.
-        expect(effectiveAppAccessControl({ access_control: undefined }, { access_control: undefined })).toBe('all');
+    it('accepts lifecycle and event hook package metadata', () => {
+        expect(
+            AppPackageHooksSchema.parse({
+                install: '/api/hooks/install',
+                events: [
+                    {
+                        name: 'content-updated',
+                        path: '/api/hooks/content-updated',
+                        description: 'Processes updated content.',
+                    },
+                ],
+            }),
+        ).toEqual({
+            install: '/api/hooks/install',
+            events: [
+                {
+                    name: 'content-updated',
+                    path: '/api/hooks/content-updated',
+                    description: 'Processes updated content.',
+                },
+            ],
+        });
     });
 });

@@ -1,4 +1,3 @@
-import type { ContentObject } from '@vertesia/common';
 import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -6,7 +5,7 @@ import { Download } from 'lucide-react';
 import { getResourceUrl } from './MagicPdfProvider';
 
 interface DownloadPopoverProps {
-    object: ContentObject;
+    object: { id: string };
 }
 export function DownloadPopover({ object }: DownloadPopoverProps) {
     const { t } = useUITranslation();

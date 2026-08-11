@@ -1,7 +1,9 @@
 import { ApiTopic } from '@vertesia/api-fetch-client';
 import {
+    type BulkObjectCreateOptions,
     type BulkObjectCreateResult,
     type BulkObjectDeleteResult,
+    type BulkObjectUpdateOptions,
     type BulkObjectUpdateResult,
     type Collection,
     type ComplexSearchPayload,
@@ -24,6 +26,7 @@ import {
     type ExportPropertiesPayload,
     type ExportPropertiesResponse,
     type FindPayload,
+    type FullObjectSearchResponse,
     type GetFileUrlPayload,
     type GetFileUrlResponse,
     type GetRenditionParams,
@@ -34,10 +37,12 @@ import {
     type ObjectSearchPayload,
     type ObjectSearchQuery,
     type ObjectSearchResponse,
+    type ProjectedContentObjectApiResponse,
     type SetObjectEmbeddingsResponse,
     type StartContentObjectExportRequest,
     type StartContentObjectExportResponse,
     type SupportedEmbeddingTypes,
+    type UpdateContentObjectPayload,
     type ZenoBulkContentObjectExportComposeRequest,
     type ZenoBulkContentObjectExportPlanRequest,
     type ZenoBulkContentObjectExportPlanResponse,
@@ -56,8 +61,21 @@ import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
 import { fetchSignedUrl } from './signed-url.js';
+import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
+/**
+ * The two write payloads, each widened at `content` so callers can hand us a browser `File` or a
+ * `StreamSource` and let the method upload it before sending the wire shape.
+ *
+ * They are separate on purpose: `POST /objects` and `PUT /objects/:id` publish distinct components,
+ * so deriving the update signature from the create payload would silently drift the day the two
+ * schemas diverge.
+ */
 type ContentObjectWritePayload = Omit<CreateContentObjectPayload, 'content'> & {
+    content?: ContentSource | File | StreamSource;
+};
+
+type ContentObjectUpdateWritePayload = Omit<UpdateContentObjectPayload, 'content'> & {
     content?: ContentSource | File | StreamSource;
 };
 
@@ -221,7 +239,11 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Find object based on query */
-    find(payload: FindPayload): Promise<ContentObject[]> {
+    find(payload: FindPayload & { select?: undefined }): Promise<ContentObject[]>;
+    find(payload: FindPayload & { select: `+${string}` }): Promise<ContentObject[]>;
+    find(payload: FindPayload & { select: string }): Promise<ProjectedContentObjectApiResponse[]>;
+    find(payload: FindPayload): Promise<ContentObject[] | ProjectedContentObjectApiResponse[]>;
+    find(payload: FindPayload): Promise<ContentObject[] | ProjectedContentObjectApiResponse[]> {
         return this.post('/find', {
             payload,
         });
@@ -235,13 +257,18 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Search object — different from find because allow full text search */
+    search(payload: ComplexSearchPayload & { select?: undefined }): Promise<FullObjectSearchResponse>;
+    search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse>;
     search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
         return this.post('/search', {
             payload,
         });
     }
 
-    retrieve(id: string, select?: string): Promise<ContentObject> {
+    retrieve(id: string): Promise<ContentObject>;
+    retrieve(id: string, select: `+${string}` | undefined): Promise<ContentObject>;
+    retrieve(id: string, select: string): Promise<ProjectedContentObjectApiResponse>;
+    retrieve(id: string, select?: string): Promise<ContentObject | ProjectedContentObjectApiResponse> {
         return this.get(`/${id}`, {
             query: {
                 select,
@@ -259,9 +286,9 @@ export class ObjectsApi extends ApiTopic {
         const { url, id, mime_type } = await this.getUploadUrl({
             id: isStream ? source.id : undefined,
             name: source.name,
-            mime_type: source.type,
+            mime_type: getUploadMimeTypeHint(source.type),
         });
-        const sourceMimeType = source.type || mime_type;
+        const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
 
         // upload the file content to the signed URL
         const res = await fetchSignedUrl(url, {
@@ -378,7 +405,7 @@ export class ObjectsApi extends ApiTopic {
      */
     async update(
         id: string,
-        payload: Partial<ContentObjectWritePayload>,
+        payload: ContentObjectUpdateWritePayload,
         options?: {
             createRevision?: boolean;
             revisionLabel?: string;
@@ -390,7 +417,7 @@ export class ObjectsApi extends ApiTopic {
         },
     ): Promise<ContentObject> {
         const { content, ...payloadWithoutContent } = payload;
-        const updatePayload: Partial<CreateContentObjectPayload> = {
+        const updatePayload: UpdateContentObjectPayload = {
             ...payloadWithoutContent,
         };
 
@@ -457,23 +484,21 @@ export class ObjectsApi extends ApiTopic {
         return this.del(`/${idOrIds}`);
     }
 
-    bulkUpdate(updates: Record<string, Record<string, unknown>>): Promise<BulkObjectUpdateResult> {
+    bulkUpdate(
+        updates: Record<string, Record<string, unknown>>,
+        options?: BulkObjectUpdateOptions,
+    ): Promise<BulkObjectUpdateResult> {
         const ids = Object.keys(updates);
         return this.client.runOperation({
             name: 'update',
             ids,
-            params: updates,
+            params: options ? { updates, ...options } : updates,
         }) as Promise<BulkObjectUpdateResult>;
     }
 
     bulkCreate(
         objects: CreateContentObjectPayload[],
-        options?: {
-            collection_id?: string;
-            /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
-            skip_workflows?: boolean;
-            processing_priority?: ContentObjectProcessingPriority;
-        },
+        options?: BulkObjectCreateOptions,
     ): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({
             name: 'create',

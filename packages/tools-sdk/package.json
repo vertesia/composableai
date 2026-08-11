@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-sdk",
-    "version": "1.5.0-dev.20260714.072725Z",
+    "version": "1.5.0-dev.20260807.073259Z",
     "description": "Tools SDK - utilities for building remote tools",
     "type": "module",
     "main": "./lib/index.js",
@@ -27,17 +27,17 @@
     "devDependencies": {
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
-        "vitest": "^4.1.9"
+        "typescript": "catalog:",
+        "vitest": "^4.1.10"
     },
     "peerDependencies": {
-        "hono": "^4.12.28"
+        "hono": "^4.12.34"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "jose": "^6.2.3",
+        "jose": "^6.2.4",
         "zod": "^4.4.3"
     },
     "repository": {
@@ -53,5 +53,6 @@
         "ai",
         "agents",
         "typescript"
-    ]
+    ],
+    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
 }

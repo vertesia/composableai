@@ -1,3 +1,4 @@
+import { setDefaultResultOrder } from 'node:dns';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import tailwindcss from '@tailwindcss/vite';
@@ -149,7 +150,7 @@ function staleAssetRecoveryPlugin(enabled: boolean): Plugin {
 /**
  * Vite configuration to build the plugin as a library or as a standalone application or to run the application in dev mode.
  * Use `vite build --mode lib` to build a library (plugin)
- * Use `vite build` or `vite build --mode app`to build a standalone application
+ * Use `vite build` or `vite build --mode app` to build a standalone application
  * Use `vite dev --mode app` to run the application in dev mode.
  */
 export default defineConfig((env) => {
@@ -198,19 +199,34 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * @returns
  */
 function defineAppConfig({ command }: ConfigEnv): UserConfig {
-    // Vercel dev proxies to the framework dev server over HTTP — HTTPS would break that.
-    const useHttps = !process.env.VERCEL;
-    const base = command === 'build' ? '/app/' : '/';
+    // Keep localhost on the same address family as the Studio dev server. Otherwise macOS can bind
+    // Studio to 127.0.0.1:5173 and this app to [::1]:5173, bypassing Vite's next-port fallback.
+    if (command === 'serve') {
+        setDefaultResultOrder('ipv4first');
+    }
+
+    // DEV_MODE is used by appgen/sandbox previews. Vercel also proxies to the
+    // framework dev server over HTTP, so both modes disable HTTPS.
+    const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
+    // Build with a RELATIVE base so asset URLs are mount-agnostic (`./assets/x.js`, not `/app/...`).
+    // The serving layer is the only thing that knows the real mount path — which for appgen is a
+    // version-stamped deep path assigned at version-build time (`/tenants/<t>/apps/<a>/versions/<v>/app/`),
+    // unknowable at build time. The app-gateway injects a matching `<base href="<mount>/">` into the
+    // served index.html, so relative asset refs resolve under whatever mount the app is served at
+    // (promoted, version-pinned, or live preview). Dev still serves at `/`.
+    // TODO(appgen): verify this does not break regular non-appgen/Vercel app builds. If it does,
+    // keep `./` only for appgen builds and restore `/app/` for the default plugin template build.
+    const base = command === 'build' ? './' : '/';
     const isVercelBuild = command === 'build' && process.env.VERCEL === '1';
 
     return {
-        base, // Dev serves the admin UI at /; Vercel serves built app assets from /app/.
+        base,
         plugins: [
             tailwindcss(),
             react(),
             reactImportMapPlugin(),
             staleAssetRecoveryPlugin(isVercelBuild),
-            // HTTPS is required for Firebase auth but must be disabled under vercel dev
+            // HTTPS is required for Firebase auth but must be disabled under appgen/Vercel dev
             ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
             serveStatic([
@@ -225,8 +241,13 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         build: {
             outDir: 'dist/app', // App build goes to dist/app/
         },
+        optimizeDeps:
+            process.env.DEV_MODE === '1'
+                ? { include: ['html-parse-stringify', 'use-sync-external-store/shim'] }
+                : undefined,
         // for authentication with Firebase
         server: {
+            hmr: process.env.APPGEN_DISABLE_HMR === '1' ? false : undefined,
             proxy: {
                 '/__/auth': {
                     target: 'https://dengenlabs.firebaseapp.com',

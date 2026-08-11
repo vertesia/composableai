@@ -1,57 +1,71 @@
+import type { z } from 'zod';
+import type {
+    AdvanceProcessPayloadSchema,
+    AnswerProcessTaskPayloadSchema,
+    BranchDefinitionSchema,
+    BranchJoinPolicySchema,
+    HumanTaskDefinitionSchema,
+    JsonLogicRuleSchema,
+    ListProcessDefinitionsQuerySchema,
+    NodeHistoryEntrySchema,
+    ParallelCollectDefinitionSchema,
+    ParallelCollectFieldSchema,
+    ParallelCollectModeSchema,
+    ParallelFailurePolicySchema,
+    ProcessContextDefinitionSchema,
+    ProcessContextResponseSchema,
+    ProcessDefinitionFormatVersionSchema,
+    ProcessDefinitionMetadataSchema,
+    ProcessDefinitionRevisionInfoSchema,
+    ProcessDefinitionStatusSchema,
+    ProcessHistoryRefSchema,
+    ProcessHistoryResponseSchema,
+    ProcessNodeReturnsDefinitionSchema,
+    ProcessNodeRunTypeSchema,
+    ProcessNodeTypeSchema,
+    ProcessResourcesDefinitionSchema,
+    ProcessScriptInlineSourceSchema,
+    ProcessScriptLanguageSchema,
+    ProcessScriptResourceSchema,
+    ProcessScriptSourceSchema,
+    ProcessStateSchema,
+    PublishProcessDefinitionPayloadSchema,
+    RetryProcessNodePayloadSchema,
+    RevertProcessDefinitionPayloadSchema,
+    TransitionDefinitionSchema,
+    TransitionTriggerSchema,
+} from '../api-schemas/process.js';
 import type { JSONSchema } from '../json-schema.js';
-import type { TaskField } from './task.js';
 
-export type JsonLogicRule = Record<string, unknown>;
+export type JsonLogicRule = z.infer<typeof JsonLogicRuleSchema>;
 
-export type ProcessDefinitionStatus = 'draft' | 'published' | 'archived';
+export type ProcessDefinitionStatus = z.infer<typeof ProcessDefinitionStatusSchema>;
+export type ListProcessDefinitionsQuery = z.infer<typeof ListProcessDefinitionsQuerySchema>;
 export const PROCESS_DEFINITION_FORMAT_VERSION = 1 as const;
-export type ProcessDefinitionFormatVersion = typeof PROCESS_DEFINITION_FORMAT_VERSION;
+export type ProcessDefinitionFormatVersion = z.infer<typeof ProcessDefinitionFormatVersionSchema>;
 
-export type ProcessNodeType =
-    | 'tool'
-    | 'interaction'
-    | 'agent'
-    | 'process'
-    | 'human_task'
-    | 'foreach'
-    | 'branch'
-    | 'condition'
-    | 'final';
+export type ProcessNodeType = z.infer<typeof ProcessNodeTypeSchema>;
 
-export type TransitionTrigger = 'auto' | 'agent' | 'user';
-export type ParallelFailurePolicy = 'fail_fast' | 'collect_errors';
-export type ProcessNodeRunType = 'supervised' | 'programmatic';
-export type ParallelCollectMode = 'array';
-export type BranchJoinPolicy = 'all';
-export type ProcessDefinitionMetadata = Record<string, unknown>;
-export type ParallelCollectField =
-    | 'status'
-    | 'index'
-    | 'item'
-    | 'item_id'
-    | 'branch_id'
-    | 'branch_title'
-    | 'output'
-    | 'context_update'
-    | 'error'
-    | 'child_run_id'
-    | 'child_workflow_id'
-    | 'child_workflow_run_id';
+export type TransitionTrigger = z.infer<typeof TransitionTriggerSchema>;
+export type ParallelFailurePolicy = z.infer<typeof ParallelFailurePolicySchema>;
+export type ProcessNodeRunType = z.infer<typeof ProcessNodeRunTypeSchema>;
+export type ParallelCollectMode = z.infer<typeof ParallelCollectModeSchema>;
+export type BranchJoinPolicy = z.infer<typeof BranchJoinPolicySchema>;
+export type ProcessDefinitionMetadata = z.infer<typeof ProcessDefinitionMetadataSchema>;
+export type ProcessScriptLanguage = z.infer<typeof ProcessScriptLanguageSchema>;
 
-export interface TransitionDefinition {
-    to: string;
-    guard?: JsonLogicRule;
-    trigger?: TransitionTrigger;
-    label?: string;
-    metadata?: ProcessDefinitionMetadata;
-}
+export type ProcessScriptInlineSource = z.infer<typeof ProcessScriptInlineSourceSchema>;
 
-export interface BranchDefinition {
-    to: string;
-    when?: JsonLogicRule;
-    default?: boolean;
-    metadata?: ProcessDefinitionMetadata;
-}
+export type ProcessScriptSource = z.infer<typeof ProcessScriptSourceSchema>;
+
+export type ProcessScriptResource = z.infer<typeof ProcessScriptResourceSchema>;
+
+export type ProcessResourcesDefinition = z.infer<typeof ProcessResourcesDefinitionSchema>;
+export type ParallelCollectField = z.infer<typeof ParallelCollectFieldSchema>;
+
+export type TransitionDefinition = z.infer<typeof TransitionDefinitionSchema>;
+
+export type BranchDefinition = z.infer<typeof BranchDefinitionSchema>;
 
 export interface BranchNodeBranchDefinition {
     id: string;
@@ -61,49 +75,19 @@ export interface BranchNodeBranchDefinition {
     metadata?: ProcessDefinitionMetadata;
 }
 
-export interface HumanTaskDefinition {
-    title: string;
-    description?: string;
-    /**
-     * Who owns the task. Either a group reference (`group:<name>`) or a
-     * concrete user id. Leave unset to make the task available to anyone
-     * who can see the inbox. `role:<name>` is not supported — use
-     * `group:<name>` instead.
-     */
-    assignee?: string;
-    fields: TaskField[];
-}
+export type HumanTaskDefinition = z.infer<typeof HumanTaskDefinitionSchema>;
 
-export interface ProcessNodeReturnsDefinition {
-    /**
-     * Path to read from the completed child process state. Use `context.foo`
-     * for child context values or `state.sequence` for process-state fields.
-     * If omitted, the child context is used as the node output.
-     */
-    from?: string;
-    /**
-     * Select specific fields from the completed child process context.
-     * Ignored when `from` is set.
-     */
-    context?: string[];
-}
+export type ProcessNodeReturnsDefinition = z.infer<typeof ProcessNodeReturnsDefinitionSchema>;
 
-export interface ParallelCollectDefinition {
-    /**
-     * Context key that receives the collected results.
-     */
-    into: string;
-    mode?: ParallelCollectMode;
-    /**
-     * Fields to include in each collected item. Defaults to the operational
-     * envelope: status, index, item_id, output, error, and child_run_id.
-     */
-    include?: ParallelCollectField[];
-}
+export type ParallelCollectDefinition = z.infer<typeof ParallelCollectDefinitionSchema>;
 
 export interface NodeDefinition {
     type: ProcessNodeType;
     tool?: string;
+    /** Named entry in process resources.scripts for script nodes. */
+    script?: string;
+    /** Script execution timeout in seconds. Defaults to 300 and is capped at 600. */
+    timeout?: number;
     interaction?: string;
     process?: string;
     process_definition?: ProcessDefinitionBody;
@@ -154,10 +138,7 @@ export interface NodeDefinition {
     metadata?: ProcessDefinitionMetadata;
 }
 
-export interface ProcessContextDefinition {
-    schema: JSONSchema;
-    initial: Record<string, unknown>;
-}
+export type ProcessContextDefinition = z.infer<typeof ProcessContextDefinitionSchema>;
 
 export interface ProcessDefinitionBody {
     format_version: ProcessDefinitionFormatVersion;
@@ -165,6 +146,7 @@ export interface ProcessDefinitionBody {
     description?: string;
     initial: string;
     model?: string;
+    resources?: ProcessResourcesDefinition;
     context: ProcessContextDefinition;
     nodes: Record<string, NodeDefinition>;
     metadata?: ProcessDefinitionMetadata;
@@ -184,18 +166,7 @@ export interface InCodeProcessDefinition {
     definition: ProcessDefinitionBody;
 }
 
-export interface ProcessDefinitionRevisionInfo {
-    /** Direct parent revision id. Omitted for the first revision in a bucket. */
-    parent?: string;
-    /** Root revision id shared by all revisions of the same process definition. */
-    root: string;
-    /** True when this is the latest revision returned by default list/resolve calls. */
-    head: boolean;
-    /** Optional human-readable label for the revision. */
-    label?: string;
-    /** Optional publish note captured when a draft is promoted. */
-    comment?: string;
-}
+export type ProcessDefinitionRevisionInfo = z.infer<typeof ProcessDefinitionRevisionInfoSchema>;
 
 export interface ProcessDefinition {
     id: string;
@@ -214,26 +185,9 @@ export interface ProcessDefinition {
     updated_by: string;
 }
 
-export interface NodeHistoryEntry {
-    id?: string;
-    node: string;
-    attempt?: number;
-    entered_at: Date | string;
-    exited_at?: Date | string;
-    status: 'running' | 'completed' | 'skipped' | 'failed' | 'cancelled';
-    context_diff?: Record<string, unknown>;
-    data_ref?: string;
-    sequence?: number;
-    child_run_id?: string;
-    child_workflow_id?: string;
-    child_workflow_run_id?: string;
-}
+export type NodeHistoryEntry = z.infer<typeof NodeHistoryEntrySchema>;
 
-export interface ProcessHistoryRef {
-    path: string;
-    latest_sequence: number;
-    count: number;
-}
+export type ProcessHistoryRef = z.infer<typeof ProcessHistoryRefSchema>;
 
 export interface ProcessHistoryCheckpoint {
     sequence: number;
@@ -242,18 +196,7 @@ export interface ProcessHistoryCheckpoint {
     entries: NodeHistoryEntry[];
 }
 
-export interface ProcessState {
-    context: Record<string, unknown>;
-    current_node: string;
-    node_history: NodeHistoryEntry[];
-    node_history_ref?: ProcessHistoryRef;
-    sequence: number;
-    _current_node?: string;
-    _previous_node?: string;
-    _transition_count?: number;
-    _node_entries?: Record<string, number>;
-    _node_tool_calls?: Record<string, number>;
-}
+export type ProcessState = z.infer<typeof ProcessStateSchema>;
 
 export interface CreateProcessDefinitionPayload {
     name: string;
@@ -286,20 +229,16 @@ export interface UpdateProcessDefinitionPayload {
     definition?: ProcessDefinitionBody;
 }
 
-export interface PublishProcessDefinitionPayload {
-    /** Required explicit confirmation from the caller. */
-    confirmed: boolean;
-    /** Optional tags to merge into the published revision. */
-    tags?: string[];
-    /** Optional human-readable revision label. */
-    label?: string;
-    /** Optional publish note. */
-    comment?: string;
-}
+export type PublishProcessDefinitionPayload = z.infer<typeof PublishProcessDefinitionPayloadSchema>;
 
-export interface RevertProcessDefinitionPayload {
-    /** Required explicit confirmation from the caller. */
-    confirmed: boolean;
-    /** Optional note explaining why this version is being restored as the draft. */
-    comment?: string;
-}
+export type RevertProcessDefinitionPayload = z.infer<typeof RevertProcessDefinitionPayloadSchema>;
+
+export type AdvanceProcessPayload = z.infer<typeof AdvanceProcessPayloadSchema>;
+
+export type AnswerProcessTaskPayload = z.infer<typeof AnswerProcessTaskPayloadSchema>;
+
+export type RetryProcessNodePayload = z.infer<typeof RetryProcessNodePayloadSchema>;
+
+export type ProcessContextResponse = z.infer<typeof ProcessContextResponseSchema>;
+
+export type ProcessHistoryResponse = z.infer<typeof ProcessHistoryResponseSchema>;

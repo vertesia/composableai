@@ -152,11 +152,27 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                             onChange={(value) => setValue(['text_conversion', 'scope'], value)}
                             readonly={readonly}
                         />
+                        <NumberField
+                            label={t('intakePolicy.field.renderDpi')}
+                            value={policy.text_conversion?.render_dpi}
+                            min={72}
+                            onChange={(value) => setValue(['text_conversion', 'render_dpi'], value)}
+                            readonly={readonly}
+                        />
                     </div>
                     <TextAreaField
                         label={t('intakePolicy.field.instructions')}
                         value={policy.text_conversion?.instructions}
                         onChange={(value) => setValue(['text_conversion', 'instructions'], value)}
+                        readonly={readonly}
+                    />
+                </FormSection>
+
+                <FormSection title={t('intakePolicy.section.conversionModel')}>
+                    <ModelConfigFields
+                        title={t('intakePolicy.field.model')}
+                        config={policy.text_conversion?.config}
+                        onChange={(value) => setValue(['text_conversion', 'config'], value)}
                         readonly={readonly}
                     />
                 </FormSection>
@@ -239,6 +255,15 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     <PageRangesField
                         value={policy.extraction?.page_ranges}
                         onChange={(value) => setValue(['extraction', 'page_ranges'], value)}
+                        readonly={readonly}
+                    />
+                </FormSection>
+
+                <FormSection title={t('intakePolicy.section.extractionModel')}>
+                    <ModelConfigFields
+                        title={t('intakePolicy.field.model')}
+                        config={policy.extraction?.config}
+                        onChange={(value) => setValue(['extraction', 'config'], value)}
                         readonly={readonly}
                     />
                 </FormSection>

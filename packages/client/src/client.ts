@@ -1,5 +1,5 @@
 import { AbstractFetchClient, type FETCH_FN, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
-import type { AuthTokenPayload, AuthTokenResponse } from '@vertesia/common';
+import { APP_VERSION_HEADER, type AuthTokenPayload, type AuthTokenResponse } from '@vertesia/common';
 import AccountApi from './AccountApi.js';
 import AccountsApi from './AccountsApi.js';
 import AnalyticsApi from './AnalyticsApi.js';
@@ -117,7 +117,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     static async fromAuthToken(
         token: string,
         payload?: AuthTokenPayload,
-        endpoints?: { studio: string; store: string; token?: string },
+        endpoints?: { studio: string; store: string; token?: string; git?: string },
     ) {
         if (!payload) {
             payload = decodeJWT(token);
@@ -238,6 +238,21 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             delete this.headers[VERSION_HEADER];
         } else {
             this.headers[VERSION_HEADER] = String(version);
+        }
+        return this;
+    }
+
+    /**
+     * Pin the app version this client's requests resolve against. A generated app's UI sets this from
+     * its build-time `VITE_APP_VERSION` so studio/zeno resolve its `app:<app>:…` refs against that
+     * exact built version instead of the promoted version. Pass null/empty to clear (→ promoted).
+     */
+    withAppVersion(version: string | null | undefined) {
+        this.store.withAppVersion(version);
+        if (!version) {
+            delete this.headers[APP_VERSION_HEADER];
+        } else {
+            this.headers[APP_VERSION_HEADER] = String(version);
         }
         return this;
     }
@@ -503,6 +518,7 @@ function getEndpointsFromDomain(domain: string) {
             studio: `http://localhost:8091`,
             store: `http://localhost:8092`,
             token: getRuntimeStsUrl() ?? 'https://sts.dev1.vertesia.io',
+            git: 'https://git.dev1.vertesia.io',
         };
     } else {
         const url = `https://${domain}`;
@@ -512,6 +528,7 @@ function getEndpointsFromDomain(domain: string) {
             studio: url,
             store: url,
             token: url.replace('api', 'sts'),
+            git: url.replace('api', 'git'),
         };
     }
 }

@@ -1,3 +1,4 @@
+export { substituteEndpoints } from './apps/index.js';
 export { extractHandlebarsVariables } from './prompts/extract-vars.js';
 export { generateMockData } from './prompts/mock-data.js';
 export {

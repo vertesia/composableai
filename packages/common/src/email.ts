@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+import type { EmailChannelSchema, InteractiveChannelSchema, UserChannelSchema } from './api-schemas/interaction.js';
 /**
  * Email-related types for agent communication and routing.
  */
@@ -8,27 +10,13 @@
  * Email channel configuration with threading support.
  * Used for email-based agent communication.
  */
-export interface EmailChannel {
-    type: 'email';
-    /** Email address to send agent messages to */
-    to_email: string;
-    /** Subject for the email thread (without "Re:" prefix) */
-    thread_subject?: string;
-    /** Message ID for In-Reply-To header (most recent message) */
-    in_reply_to?: string;
-    /** Chain of message IDs for References header */
-    references?: string[];
-    /** Short routing key for reply emails (8-char alphanumeric, stored in Redis) */
-    route_key?: string;
-}
+export type EmailChannel = z.infer<typeof EmailChannelSchema>;
 
 /**
  * Interactive (UI chat) channel configuration.
  * Used for real-time chat interface communication.
  */
-export interface InteractiveChannel {
-    type: 'interactive';
-}
+export type InteractiveChannel = z.infer<typeof InteractiveChannelSchema>;
 
 /**
  * Union of all supported user communication channel types.
@@ -36,7 +24,7 @@ export interface InteractiveChannel {
 /**
  * @discriminator type
  */
-export type UserChannel = EmailChannel | InteractiveChannel;
+export type UserChannel = z.infer<typeof UserChannelSchema>;
 
 /**
  * Type guard for email channels

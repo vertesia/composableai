@@ -154,6 +154,23 @@ describe('ModernAgentOutput utils - progress state', () => {
 
         expect(isInProgress([idle, question])).toBe(true);
     });
+
+    it('ignores passive artifact working-copy saves after the agent goes idle', () => {
+        const idle = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.IDLE,
+            message: 'Waiting for your command...',
+        });
+        const userAutosave = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.UPDATE,
+            message: 'Updated working copy files/blog_post_draft.md',
+            details: { event_class: 'artifact_updated', source: 'user_edit', generation: '1784609448394436' },
+        });
+
+        // The user editing their artifact while the agent is idle must not resurrect "Working".
+        expect(isInProgress([idle, userAutosave])).toBe(false);
+    });
 });
 
 describe('ModernAgentOutput utils - sliding view thinking', () => {
@@ -556,6 +573,27 @@ describe('ModernAgentOutput summary conversation items', () => {
                 type: 'message',
                 message: legacyAnalyzeError,
             },
+        ]);
+    });
+
+    it('keeps a main-workstream activity error visible as a primary message', () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: 'do the thing',
+        });
+        const terminationError = makeMessage({
+            timestamp: 1100,
+            type: AgentMessageType.ERROR,
+            message: 'Stopped: the agent called create_document with the same input 4 times in a row.',
+            details: { event_class: 'activity' },
+        });
+
+        const items = buildSummaryConversationItems([question, terminationError], true);
+
+        expect(items).toEqual([
+            { type: 'message', message: question },
+            { type: 'message', message: terminationError },
         ]);
     });
 

@@ -9,11 +9,10 @@ import { NodeStreamSource } from '@vertesia/client/node';
 import type {
     ComplexSearchPayload,
     ContentObject,
-    ContentObjectItem,
-    ContentObjectItemApiResponse,
     ContentObjectTypeItem,
     CreateContentObjectPayload,
     ObjectSearchPayload,
+    ProjectedContentObjectApiResponse,
 } from '@vertesia/common';
 import type { Command } from 'commander';
 import enquirer from 'enquirer';
@@ -144,14 +143,14 @@ export async function createObject(program: Command, files: string[], options: C
         if (options.type === AUTOMATIC_TYPE_SELECTION) {
             delete options.type;
         }
-        return createObjectFromFiles(program, files, options);
+        return await createObjectFromFiles(program, files, options);
     } else {
         let file = files[0];
         if (file.indexOf('*') > -1) {
             const files = await glob(file);
-            return createObjectFromFiles(program, files, options);
+            return await createObjectFromFiles(program, files, options);
         } else if (file.includes('://')) {
-            return createObjectFromExternalSource(await getClient(program), file, options);
+            return await createObjectFromExternalSource(await getClient(program), file, options);
         } else {
             file = resolve(file);
             let stats: Stats;
@@ -195,7 +194,7 @@ export async function createObject(program: Command, files: string[], options: C
                     delete options.type;
                 }
 
-                return createObjectFromFile(program, file, options);
+                return await createObjectFromFile(program, file, options);
             } else if (stats.isDirectory()) {
                 questions.push({
                     type: 'select',
@@ -215,7 +214,7 @@ export async function createObject(program: Command, files: string[], options: C
                 }
 
                 const files = await listFilesInDirectory(file, options.recursive ?? false);
-                return createObjectFromFiles(program, files, options);
+                return await createObjectFromFiles(program, files, options);
             }
         }
     }
@@ -446,7 +445,9 @@ function printJson(value: unknown) {
     console.log(JSON.stringify(value, null, 2));
 }
 
-function printObjectItems(objects: Array<ContentObjectItem<unknown> | ContentObjectItemApiResponse>) {
+type ObjectListRow = Pick<ProjectedContentObjectApiResponse, 'id' | 'name' | 'type' | 'status' | 'location'>;
+
+function printObjectItems(objects: ObjectListRow[]) {
     if (objects.length === 0) {
         console.log('No objects found');
         return;
@@ -463,7 +464,7 @@ function printObjectItems(objects: Array<ContentObjectItem<unknown> | ContentObj
     );
 }
 
-function readObjectTypeName(object: ContentObjectItem<unknown> | ContentObjectItemApiResponse): string {
+function readObjectTypeName(object: ObjectListRow): string {
     if (!object.type) {
         return '';
     }

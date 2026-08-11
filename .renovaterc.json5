@@ -33,6 +33,17 @@
   ],
   "prConcurrentLimit": 40,
   "labels": ["dependencies"],
+  "customManagers": [
+    {
+      "description": "Update the zizmor version pinned in its GitHub Actions workflow",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/zizmor\\.ya?ml$/"],
+      "matchStrings": ["uvx\\s+zizmor@(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "depNameTemplate": "zizmor",
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
+    }
+  ],
   "npm": {
     // Extend Renovate's default npm manager configuration to include .template files.
     "managerFilePatterns": [
@@ -86,6 +97,7 @@
     // Catch-all npm dependencies, later groups take precedence
     {
       "groupName": "node dependencies",
+      "assignees": ["michaelva"],
       "matchManagers": [
         "npm"
       ],
@@ -100,6 +112,7 @@
     // developer laptop (arm64 / Apple Silicon), so bumps need manual review.
     {
       "groupName": "biome",
+      "assignees": ["michaelva"],
       "matchManagers": [
         "npm"
       ],
@@ -120,17 +133,10 @@
       ],
       "schedule": "* * * * 2" // Tuesday
     },
-    // Docker dependencies
-    {
-      "groupName": "docker",
-      "matchManagers": [
-        "dockerfile"
-      ],
-      "schedule": "* * * * 5" // Friday
-    },
     // Group dependencies by mono-repo(s) or similarity to reduce the number of updates.
     {
       "groupName": "backend dependencies",
+      "assignees": ["cmorman89"],
       "matchManagers": [
         "npm"
       ],
@@ -157,6 +163,7 @@
     },
     {
       "groupName": "codemirror dependencies",
+      "assignees": ["bstefanescu"],
       "matchManagers": [
         "npm"
       ],
@@ -171,24 +178,8 @@
       "schedule": "* * * * 2" // Tuesday
     },
     {
-      "groupName": "eslint dependencies",
-      "matchManagers": [
-        "npm"
-      ],
-      "matchDepTypes": [
-        "!overrides"
-      ],
-      "matchPackageNames": [
-        "@eslint/**",
-        "@typescript-eslint/**",
-        "typescript-eslint",
-        "eslint**"
-      ],
-      "rangeStrategy": "bump",
-      "schedule": "* * * * 4" // Thursday
-    },
-    {
       "groupName": "UI Component dependencies",
+      "assignees": ["yangchi-tw"],
       "matchManagers": [
         "npm"
       ],
@@ -224,6 +215,7 @@
     },
     {
       "groupName": "UI Infrastructure dependencies",
+      "assignees": ["bstefanescu"],
       "matchManagers": [
         "npm"
       ],
@@ -245,6 +237,7 @@
     },
     {
       "groupName": "google-cloud dependencies",
+      "assignees": ["cmorman89"],
       "matchManagers": [
         "npm"
       ],
@@ -265,6 +258,7 @@
     },
     {
       "groupName": "tsconfig dependencies",
+      "assignees": ["bstefanescu"],
       "matchManagers": [
         "npm"
       ],
@@ -291,7 +285,26 @@
       "allowedVersions": "<25",
       "rangeStrategy": "bump"
     },
-        {
+    {
+      // `typescript-legacy` is the pnpm catalog alias for the last TypeScript major that still
+      // ships the JavaScript compiler API (`typescript@6`). TypeScript 7 is the native port and
+      // does not expose it, so `packages/cli`'s ts-loader, which imports `typescript-legacy` for
+      // AST work, breaks on v7 — that is the whole reason the alias exists next to the
+      // `typescript` catalog entry, which does track the current major. Matched by depName
+      // because the catalog key, not the aliased package name (`typescript`), is what Renovate
+      // reports for `npm:` aliases; matching the package name here would also freeze the real
+      // `typescript` entry.
+      "description": "Keep the typescript-legacy catalog alias on the TypeScript 6 line (JS compiler API)",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepNames": [
+        "typescript-legacy"
+      ],
+      "allowedVersions": "<7",
+      "rangeStrategy": "bump"
+    },
+    {
       // The undici Agent is passed as a dispatcher to Node's built-in global
       // fetch (see core/src/http-agent.ts). undici v8 renamed the dispatch
       // handler interface (onRequestStart), so a v8 Agent is rejected by the
@@ -308,6 +321,7 @@
     },
     {
       "groupName": "package manager dependencies",
+      "assignees": ["LeonRuggiero"],
       "matchManagers": [
         "npm"
       ],
@@ -350,6 +364,14 @@
         "engines"
       ],
       "enabled": false
+    },
+    // Ownership: assign GitHub Actions dependency PRs to their maintainer.
+    {
+      "description": "Assign GitHub Actions dependency PRs to mincong-h",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "assignees": ["mincong-h"]
     }
   ]
 }

@@ -1,3 +1,16 @@
+import type { z } from 'zod';
+import type {
+    CollectionChildrenUpdatePayloadSchema,
+    CollectionChildrenUpdateResultSchema,
+    CollectionMembersQuerySchema,
+    CollectionMembersUpdatePayloadSchema,
+    CollectionMembersUpdateResultSchema,
+    CollectionPropagationResponseSchema,
+    CollectionSchema,
+    CollectionSecuritySettingsResponseSchema,
+    CreateCollectionPayloadSchema,
+    UpdateCollectionPayloadSchema,
+} from '../api-schemas/content.js';
 import type { BaseObject } from './common.js';
 import type { ColumnLayout, ContentObjectTypeRef } from './store.js';
 
@@ -6,25 +19,7 @@ export enum CollectionStatus {
     archived = 'archived',
 }
 
-export interface CreateCollectionPayload {
-    name: string;
-    dynamic: boolean;
-    description?: string;
-    skip_head_sync?: boolean;
-    tags?: string[];
-    type?: string | null;
-    query?: Record<string, unknown>;
-    properties?: Record<string, unknown>;
-    parent?: string | null;
-    table_layout?: ColumnLayout[] | null;
-    allowed_types?: string[];
-    updated_by?: string;
-    shared_properties?: string[];
-    /** BLP sensitivity level for member documents */
-    sensitivity?: number;
-    /** Compartments for member documents */
-    compartments?: string[];
-}
+export type CreateCollectionPayload = z.infer<typeof CreateCollectionPayloadSchema>;
 
 export interface CollectionItem extends BaseObject {
     /**
@@ -58,26 +53,7 @@ export interface CollectionItem extends BaseObject {
     allowed_types?: string[];
 }
 
-export interface Collection extends CollectionItem {
-    properties?: Record<string, unknown>;
-    query?: Record<string, unknown>;
-    security?: Record<string, string[]>; // ACL for collection access
-    /** BLP sensitivity level — propagated to member documents (max across collections) */
-    sensitivity?: number;
-    /** Compartments — propagated to member documents (union across collections) */
-    compartments?: string[];
-    /**
-     * List of property names from the collection's properties that should be shared with (injected into) member objects.
-     * These properties will be propagated to all members of this collection and merged as arrays.
-     */
-    shared_properties?: string[];
-}
-
-export interface StaticCollection extends Collection {
-    dynamic: false;
-    members: string[];
-    query: never;
-}
+export type Collection = z.infer<typeof CollectionSchema>;
 
 export interface DynamicCollection extends Collection {
     dynamic: true;
@@ -94,39 +70,18 @@ export interface CollectionSearchPayload {
     types?: string[];
 }
 
-export interface CollectionMembersUpdateResult {
-    id: string;
-}
+export type CollectionMembersUpdateResult = z.infer<typeof CollectionMembersUpdateResultSchema>;
 
-export interface CollectionSecuritySettingsResponse {
-    id: string;
-    security: Record<string, string[]>;
-}
+export type CollectionSecuritySettingsResponse = z.infer<typeof CollectionSecuritySettingsResponseSchema>;
 
-export interface CollectionPropagationResponse {
-    id: string;
-    message: string;
-    security?: Record<string, string[]>;
-    shared_properties?: string[];
-}
+export type CollectionPropagationResponse = z.infer<typeof CollectionPropagationResponseSchema>;
 
-export interface CollectionChildrenUpdateResult {
-    count: number;
-}
+export type CollectionChildrenUpdateResult = z.infer<typeof CollectionChildrenUpdateResultSchema>;
 
-export interface CollectionMembersUpdatePayload {
-    action: 'add' | 'delete';
-    members: string[];
-}
+export type CollectionMembersUpdatePayload = z.infer<typeof CollectionMembersUpdatePayloadSchema>;
 
-export interface CollectionChildrenUpdatePayload {
-    action: 'add' | 'delete';
-    children: string[];
-}
+export type CollectionChildrenUpdatePayload = z.infer<typeof CollectionChildrenUpdatePayloadSchema>;
 
-export interface CollectionMembersQuery {
-    status?: string;
-    type?: string;
-    limit?: number;
-    offset?: number;
-}
+export type CollectionMembersQuery = z.infer<typeof CollectionMembersQuerySchema>;
+
+export type UpdateCollectionPayload = z.infer<typeof UpdateCollectionPayloadSchema>;

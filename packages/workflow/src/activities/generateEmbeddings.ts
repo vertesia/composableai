@@ -99,7 +99,7 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         return skipped(`no embedding environment configured for type ${type}`);
     }
 
-    let document: Awaited<ReturnType<typeof client.objects.retrieve>>;
+    let document: ContentObject;
     try {
         document = await client.objects.retrieve(objectId, '+text +parts +embeddings +tokens +properties');
     } catch (error) {
@@ -107,14 +107,6 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
             throw new DocumentNotFoundError(`Document not found: ${objectId}`, [objectId]);
         }
         throw error;
-    }
-
-    if (!document) {
-        throw new DocumentNotFoundError('Document not found', [objectId]);
-    }
-
-    if (!document.content) {
-        throw new DocumentNotFoundError('Document content not found', [objectId]);
     }
 
     let res:
@@ -174,14 +166,19 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
         };
     }
 
-    if (type === SupportedEmbeddingTypes.text && !document.text) {
-        return { id: document.id, status: 'failed', message: 'no text found' };
-    }
-    if (type === SupportedEmbeddingTypes.properties && !document?.properties) {
+    const sourceText =
+        type === SupportedEmbeddingTypes.text
+            ? document.text
+            : document.properties
+              ? JSON.stringify(document.properties)
+              : undefined;
+
+    if (!sourceText) {
         return {
             id: document.id,
-            status: 'failed',
-            message: 'no properties found',
+            type,
+            status: 'skipped',
+            message: type === SupportedEmbeddingTypes.text ? 'no text found' : 'no properties found',
         };
     }
 
@@ -192,12 +189,12 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
         );
     }
 
-    // Compute text etag for comparison
-    const textEtag = document.text_etag ?? (document.text ? md5(document.text) : undefined);
+    const sourceEtag =
+        type === SupportedEmbeddingTypes.text ? (document.text_etag ?? md5(sourceText)) : md5(sourceText);
 
     // Skip if embeddings already exist with matching etag (unless force=true)
     const existingEmbedding = document.embeddings?.[type];
-    if (!force && existingEmbedding?.etag && textEtag && existingEmbedding.etag === textEtag) {
+    if (!force && existingEmbedding?.etag && existingEmbedding.etag === sourceEtag) {
         log.debug(`Skipping ${type} embeddings for document ${document.id} - etag unchanged`);
         return {
             id: document.id,
@@ -208,15 +205,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     }
 
     // Count tokens if needed, do not rely on existing token count
-    let tokenCount: number | undefined;
-    if (type === SupportedEmbeddingTypes.text && document.text) {
-        tokenCount = countTokens(document.text).count;
-    }
-
-    if (type === SupportedEmbeddingTypes.properties && document.properties) {
-        const propertiesText = JSON.stringify(document.properties);
-        tokenCount = countTokens(propertiesText).count;
-    }
+    const tokenCount = countTokens(sourceText).count;
 
     const maxTokens = config.max_tokens ?? 8000;
 
@@ -233,7 +222,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     } else {
         log.debug(`Generating ${type} embeddings for document`);
 
-        const res = await generateEmbeddingsFromStudio(JSON.stringify(document[type]), environment, client);
+        const res = await generateEmbeddingsFromStudio(sourceText, environment, client);
         const values = res?.results?.[0]?.outputs?.[0]?.values;
         if (!values) {
             return {
@@ -249,7 +238,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
         await client.objects.setEmbedding(document.id, type, {
             values,
             model: res.model,
-            etag: textEtag,
+            etag: sourceEtag,
         });
 
         return {

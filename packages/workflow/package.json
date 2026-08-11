@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "1.5.0-dev.20260714.072725Z",
+    "version": "1.5.0-dev.20260807.073259Z",
     "type": "module",
     "description": "Vertesia workflow DSL",
     "main": "./lib/index.js",
@@ -22,25 +22,25 @@
     },
     "license": "Apache-2.0",
     "devDependencies": {
-        "@smithy/types": "^4.15.1",
-        "@temporalio/proto": "^1.20.2",
-        "@temporalio/testing": "^1.20.2",
-        "@temporalio/worker": "^1.20.2",
+        "@smithy/types": "^4.16.1",
+        "@temporalio/proto": "^1.21.1",
+        "@temporalio/testing": "^1.21.1",
+        "@temporalio/worker": "^1.21.1",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "catalog:",
         "@types/papaparse": "^5.5.2",
         "@types/tmp": "^0.2.6",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
-        "vitest": "^4.1.9"
+        "typescript": "catalog:",
+        "vitest": "^4.1.10"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1083.0",
-        "@aws-sdk/client-textract": "^3.1083.0",
-        "@aws-sdk/credential-providers": "^3.1081.0",
+        "@aws-sdk/client-s3": "^3.1098.0",
+        "@aws-sdk/client-textract": "^3.1098.0",
+        "@aws-sdk/credential-providers": "^3.1098.0",
         "@llumiverse/common": "workspace:*",
-        "@temporalio/activity": "^1.20.2",
-        "@temporalio/workflow": "^1.20.2",
+        "@temporalio/activity": "^1.21.1",
+        "@temporalio/workflow": "^1.21.1",
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
@@ -49,14 +49,14 @@
         "mime": "^4.1.0",
         "ms": "3.0.0-canary.202508261828",
         "node-web-stream-adapters": "^0.2.1",
-        "p-limit": "^7.3.0",
+        "p-limit": "^7.3.1",
         "papaparse": "^5.5.4",
         "seedrandom": "^3.0.5",
         "sharp": "^0.35.3",
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",
-        "undici": "^7.28.0",
+        "undici": "^7.29.0",
         "yaml": "^2.9.0"
     },
     "exports": {
@@ -110,5 +110,6 @@
         "ai",
         "agents",
         "typescript"
-    ]
+    ],
+    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
 }

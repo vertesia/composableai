@@ -3,7 +3,7 @@ import type { BaseObject } from './common.js';
 /**
  * Tool recommendation within a hive memory unit
  */
-export interface HiveMemoryToolRecommendation {
+interface HiveMemoryToolRecommendation {
     tool_name: string;
     guidance: string;
 }
@@ -11,12 +11,12 @@ export interface HiveMemoryToolRecommendation {
 /**
  * Memory unit scope - project-scoped by default, can be elevated to account
  */
-export type HiveMemoryScope = 'project' | 'account';
+type HiveMemoryScope = 'project' | 'account';
 
 /**
  * Base interface for hive memory items (list/summary view)
  */
-export interface HiveMemoryItem extends BaseObject {
+interface HiveMemoryItem extends BaseObject {
     // Classification
     task_category: string; // "document-analysis", "data-extraction", etc.
     domain?: string; // "financial", "legal", etc.

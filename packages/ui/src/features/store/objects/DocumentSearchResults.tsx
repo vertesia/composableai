@@ -23,7 +23,7 @@ import type { TypeRegistry } from '../types/TypeRegistry.js';
 import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { ContentOverview } from './components/ContentOverview';
-import { useDownloadFile } from './components/useDownloadFile';
+import { getContentObjectDownloadName, useDownloadFile } from './components/useDownloadFile';
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { DocumentQuickFilterProvider } from './DocumentQuickFilter';
 import { DocumentTable } from './DocumentTable';
@@ -483,7 +483,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
                         variant="ghost"
                         size="sm"
                         title="Download"
-                        onClick={() => downloadFromContentSource(contentSource, object.name || object.content?.name)}
+                        onClick={() => downloadFromContentSource(contentSource, getContentObjectDownloadName(object))}
                     >
                         <Download className="size-4" />
                     </Button>

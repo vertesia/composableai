@@ -18,6 +18,52 @@ export async function ensureProfileAccessToken(
     return result?.token;
 }
 
+/**
+ * Build an authorization callback that resolves the profile access token at call time.
+ *
+ * Long-running commands (streaming an agent run for hours, tailing a workflow) outlive the access
+ * token TTL. Pinning the token captured when the command started makes every later request — and
+ * every stream reconnect — fail with 401/403. This callback goes back through the same profile
+ * refresh path as `vertesia auth token` on each call, and collapses concurrent callers onto a
+ * single refresh.
+ */
+export function createProfileAuthProvider(profile: Profile): () => Promise<string> {
+    let pending: Promise<string | undefined> | undefined;
+
+    return async () => {
+        if (!pending) {
+            pending = resolveProfileToken(profile).finally(() => {
+                pending = undefined;
+            });
+        }
+        const token = await pending;
+        if (!token) {
+            throw new Error(
+                `No auth token is available for profile "${profile.name}". Run \`vertesia auth refresh\` to authenticate again.`,
+            );
+        }
+        return `Bearer ${token}`;
+    };
+}
+
+async function resolveProfileToken(profile: Profile): Promise<string | undefined> {
+    try {
+        const token = await ensureProfileAccessToken(profile);
+        if (token) {
+            return token;
+        }
+    } catch (error) {
+        // A refresh failure is often transient (network, STS hiccup). Report it and fall back to
+        // the stored token so a long-running command can recover on the next request.
+        console.warn(
+            `Failed to refresh the access token for profile "${profile.name}": ${
+                error instanceof Error ? error.message : String(error)
+            }`,
+        );
+    }
+    return readProfileAccessToken(profile);
+}
+
 export async function refreshProfileAccessToken(
     profile: Profile,
     onResult?: OnResultCallback,

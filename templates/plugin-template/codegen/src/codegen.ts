@@ -4,9 +4,13 @@ import { fileURLToPath } from 'node:url';
 
 type ServerResource =
     | 'activities'
+    | 'dashboards'
+    | 'hooks'
     | 'interactions'
+    | 'mcpProviders'
     | 'processes'
     | 'skills'
+    | 'subscriptions'
     | 'templates'
     | 'tools'
     | 'types'
@@ -41,9 +45,13 @@ interface ResolvedModule {
 
 const SERVER_RESOURCES: ServerResource[] = [
     'activities',
+    'dashboards',
+    'hooks',
     'interactions',
+    'mcpProviders',
     'processes',
     'skills',
+    'subscriptions',
     'templates',
     'tools',
     'types',

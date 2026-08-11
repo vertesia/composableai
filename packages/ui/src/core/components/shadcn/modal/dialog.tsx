@@ -16,7 +16,7 @@ interface ModalProps {
     className?: string;
     allowOverflow?: boolean;
     disableCloseOnClickOutside?: boolean;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
     action?: React.ReactNode;
 }
 const ModalContext = createContext<boolean>(false);
@@ -54,6 +54,8 @@ export function Modal({
                 return 'max-w-[80vw] md:max-w-[60vw]';
             case 'xl':
                 return 'max-w-[95vw] lg:max-w-[80vw]';
+            case 'full':
+                return 'h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)]';
             default:
                 return 'max-w-[60vw] lg:max-w-[40vw]';
         }

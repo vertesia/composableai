@@ -1,5 +1,20 @@
-import type { JSONObject, JSONSchema, PromptRole } from '@llumiverse/common';
-import type { ProjectRef } from './project.js';
+import type { JSONSchema, PromptRole } from '@llumiverse/common';
+import type { z } from 'zod';
+import type {
+    ExportedPromptTemplateRefSchema,
+    PromptTemplateCreatePayloadSchema,
+    PromptTemplateRefSchema,
+    PromptTemplateSchema,
+    PromptTemplateUpdatePayloadSchema,
+} from './api-schemas/interaction.js';
+import type {
+    PromptTemplateForkPayloadSchema,
+    PromptTemplateInteractionsResponseSchema,
+    PromptTemplateInteractionUsageSchema,
+    PromptTemplateInteractionVersionSchema,
+    RenderPromptPayloadSchema,
+    RenderPromptResponseSchema,
+} from './api-schemas/prompt.js';
 
 export interface ChatPromptSchema {
     role: PromptRole.user | PromptRole.assistant;
@@ -24,10 +39,6 @@ export interface PromptSegmentDef<T = string | PromptTemplate | PromptTemplateRe
     configuration?: unknown; // the configuration if any in case of builtin prompts
 }
 
-export interface PromptSegmentRef<T = string | PromptTemplate | PromptTemplateRef> extends PromptSegmentDef<T> {
-    id: string;
-}
-
 export interface PopulatedPromptSegmentDef extends Omit<PromptSegmentDef, 'template'> {
     template?: PromptTemplate;
 }
@@ -38,22 +49,7 @@ export interface ExecutablePromptSegmentDef extends Omit<PromptSegmentDef, 'temp
     template?: ExecutablePromptTemplate;
 }
 
-export interface PromptTemplateRef {
-    id: string;
-    name: string;
-    description?: string;
-    role: PromptRole;
-    version: number;
-    status: PromptStatus;
-    content_type?: TemplateType;
-    tags?: string[];
-    created_at: Date;
-    updated_at: Date;
-}
-
-export interface PromptTemplateRefWithSchema extends PromptTemplateRef {
-    inputSchema?: JSONSchema;
-}
+export type PromptTemplateRef = z.infer<typeof PromptTemplateRefSchema>;
 
 export enum TemplateType {
     jst = 'jst',
@@ -66,56 +62,28 @@ export interface ExecutablePromptTemplate {
     content_type: TemplateType;
     inputSchema?: JSONSchema;
 }
-export interface PromptTemplate extends ExecutablePromptTemplate {
-    id: string;
-    name: string;
-    status: PromptStatus;
-    version: number;
-    // only to be used by published versions
-    // the id draft version which is the source of this published version (only when published)
-    parent?: string;
-    description?: string;
-    test_data?: JSONObject; // optional test data satisfying the schema
-    script?: string; // cache the template output
-    project: string | ProjectRef; // or projectRef? ObjectIdType;
-    // The name of a field in the input data that is of the specified schema and on each the template will iterate.
-    // If not specified then the schema will define the whole input data
-    tags?: string[];
-    // only for drafts - when it was last published
-    last_published_at?: Date;
-    created_by: string;
-    updated_by: string;
-    created_at: Date;
-    updated_at: Date;
-}
+export type PromptTemplate = z.infer<typeof PromptTemplateSchema>;
 
-export interface PromptTemplateForkPayload {
-    keepTags?: boolean;
-    targetProject?: string;
-}
+export type PromptTemplateForkPayload = z.infer<typeof PromptTemplateForkPayloadSchema>;
 
-export interface PromptTemplateCreatePayload
-    extends Omit<
-        PromptTemplate,
-        'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project' | 'status' | 'version'
-    > {}
+export type PromptTemplateCreatePayload = z.infer<typeof PromptTemplateCreatePayloadSchema>;
 
-export interface PromptTemplateUpdatePayload
-    extends Partial<
-        Omit<PromptTemplate, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project'>
-    > {}
+export type PromptTemplateUpdatePayload = z.infer<typeof PromptTemplateUpdatePayloadSchema>;
 
-export interface PromptTemplateInteractionVersion {
-    version: number;
-}
+export type PromptTemplateInteractionVersion = z.infer<typeof PromptTemplateInteractionVersionSchema>;
 
-export interface PromptTemplateInteractionUsage {
-    id: string;
-    name: string;
-    versions: PromptTemplateInteractionVersion[];
-}
+export type PromptTemplateInteractionUsage = z.infer<typeof PromptTemplateInteractionUsageSchema>;
 
-export interface PromptTemplateInteractionsResponse {
-    prompt: string;
-    interactions: PromptTemplateInteractionUsage[];
-}
+export type PromptTemplateInteractionsResponse = z.infer<typeof PromptTemplateInteractionsResponseSchema>;
+
+export type RenderPromptPayload = z.infer<typeof RenderPromptPayloadSchema>;
+
+/**
+ * What `POST /prompts/:id/render` answers with: the segment identity plus the rendered body.
+ *
+ * Stated here for the first time — the endpoint declared its response inline, so there has never
+ * been a name for it on either side of the wire.
+ */
+export type RenderPromptResponse = z.infer<typeof RenderPromptResponseSchema>;
+
+export type ExportedPromptTemplateRef = z.infer<typeof ExportedPromptTemplateRefSchema>;

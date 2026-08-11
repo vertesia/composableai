@@ -91,6 +91,7 @@ async function mockSetup(
         }),
     );
     const listTypes = vi.fn(() => Promise.resolve(types));
+    const createType = vi.fn(() => Promise.resolve({ id: 'type-new', name: 'NewType' }));
 
     vi.mocked(setupActivity).mockImplementation((activityPayload) =>
         Promise.resolve({
@@ -103,6 +104,7 @@ async function mockSetup(
                     catalog: {
                         list: listTypes,
                     },
+                    create: createType,
                 },
             } as unknown as VertesiaClient,
             fetchProject: vi.fn(() => Promise.resolve({ configuration: {} })),
@@ -111,10 +113,37 @@ async function mockSetup(
         } as unknown as ActivityContext<GenerateOrAssignContentTypeParams>),
     );
 
-    return { listTypes, update };
+    return { createType, listTypes, update };
 }
 
 describe('generateOrAssignContentType', () => {
+    it('assigns an app-contributed type instead of generating a duplicate', async () => {
+        // An `app:<app>:<type>` entry in the catalog is a real selection candidate: when the model
+        // picks it, the activity must assign it as-is and create nothing. If app-contributed types
+        // are missing from the catalog, selection cannot match one and a duplicate stored type gets
+        // generated for a document the installed app already had a type for.
+        const appType = {
+            id: 'app:invoice-app:Invoice',
+            name: 'Invoice',
+            status: 'active',
+        } as ContentObjectTypeItem;
+        const { createType, update } = await mockSetup([appType, typeItem('GenericDocument', 'active')]);
+        mockSelectionResult('Invoice');
+
+        const result: GenerateOrAssignContentTypeResult = await testEnv.run(
+            generateOrAssignContentType,
+            payload({ allowNewContentTypes: true }),
+        );
+
+        expect(createType).not.toHaveBeenCalled();
+        expect(update).toHaveBeenCalledWith(
+            'object-1',
+            { type: 'app:invoice-app:Invoice' },
+            { suppressWorkflows: true },
+        );
+        expect(result).toEqual({ id: 'app:invoice-app:Invoice', isNew: false, name: 'Invoice' });
+    });
+
     it('excludes draft types from selection and does not assign them if returned by the model', async () => {
         const { update } = await mockSetup([
             typeItem('Invoice', 'active'),

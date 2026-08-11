@@ -73,18 +73,3 @@ export interface InjectedSkill {
      */
     match_score?: number;
 }
-
-/**
- * Result from generateTools activity with skills
- */
-export interface ToolsWithSkills {
-    /**
-     * Array of tool definitions
-     */
-    tools: unknown[]; // ToolDefinition[]
-
-    /**
-     * Skills injected based on context
-     */
-    injected_skills: InjectedSkill[];
-}

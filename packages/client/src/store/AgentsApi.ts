@@ -1,6 +1,7 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
     type ActiveWorkstreamsQueryResult,
+    type AgentArtifactContentResponse,
     type AgentArtifactUrlResponse,
     type AgentEvent,
     type AgentMessage,
@@ -41,6 +42,8 @@ import {
     type ToolParameterAnalyticsResponse,
     type TopPrincipalsAnalyticsResponse,
     toAgentMessage,
+    type UpdateAgentArtifactContentPayload,
+    type UpdateAgentArtifactContentResponse,
     type UpdateAgentRunStatusPayload,
     type WorkflowAnalyticsFilterOptionsResponse,
     type WorkflowAnalyticsSummaryQuery,
@@ -140,8 +143,8 @@ export class AgentsApi extends ApiTopic {
         }
         if (query?.interaction) params.interaction = query.interaction;
         if (query?.started_by) params.started_by = query.started_by;
-        if (query?.since) params.since = query.since.toISOString();
-        if (query?.until) params.until = query.until.toISOString();
+        if (query?.since) params.since = query.since;
+        if (query?.until) params.until = query.until;
         if (query?.schedule_id) params.schedule_id = query.schedule_id;
         if (query?.type) params.type = query.type;
         if (query?.run_type)
@@ -169,8 +172,8 @@ export class AgentsApi extends ApiTopic {
         if (query?.categories?.length) params.categories = query.categories.join(',');
         if (query?.tags?.length) params.tags = query.tags.join(',');
         if (query?.content_type_name) params.content_type_name = query.content_type_name;
-        if (query?.since) params.since = query.since.toISOString();
-        if (query?.until) params.until = query.until.toISOString();
+        if (query?.since) params.since = query.since;
+        if (query?.until) params.until = query.until;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
         if (query?.sort?.length) params.sort = query.sort.join(',');
@@ -323,6 +326,10 @@ export class AgentsApi extends ApiTopic {
         let currentSse: EventSource | null = null;
         let interval: ReturnType<typeof setInterval> | null = null;
         let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+        let pollTimer: ReturnType<typeof setTimeout> | null = null;
+        let sseRetryTimer: ReturnType<typeof setTimeout> | null = null;
+        let isPolling = false;
+        let consecutivePollFailures = 0;
         let abortHandler: (() => void) | null = null;
 
         const maxReconnectAttempts = 10;
@@ -335,11 +342,24 @@ export class AgentsApi extends ApiTopic {
             return exponentialDelay + jitter;
         };
 
+        const stopPolling = () => {
+            isPolling = false;
+            if (pollTimer) {
+                clearTimeout(pollTimer);
+                pollTimer = null;
+            }
+            if (sseRetryTimer) {
+                clearTimeout(sseRetryTimer);
+                sseRetryTimer = null;
+            }
+        };
+
         const cleanup = () => {
             if (reconnectTimer) {
                 clearTimeout(reconnectTimer);
                 reconnectTimer = null;
             }
+            stopPolling();
             if (interval) {
                 clearInterval(interval);
                 interval = null;
@@ -360,6 +380,110 @@ export class AgentsApi extends ApiTopic {
                 cleanup();
                 resolveFn(payload);
             }
+        };
+
+        // SSE reconnection exhausted. The run is durable and still executing
+        // server-side — only the live view dropped. Failing fatally here aborts
+        // headless consumers (CLI `agents stream`, agent test harnesses) before
+        // they can read the result. Instead degrade gracefully: poll GET /updates
+        // for any messages we missed and exit cleanly once the run is terminal,
+        // even if the terminal message never streamed.
+        const POLL_INTERVAL_MS = 5000;
+        // Polling is a degraded mode: retry the real-time channel periodically so a transient
+        // outage (proxy restart, expired credentials that the auth callback later refreshes)
+        // does not permanently downgrade the stream.
+        const SSE_RETRY_INTERVAL_MS = 60000;
+        const isTerminalStatus = (status: unknown): boolean =>
+            typeof status === 'string' && ['completed', 'failed', 'cancelled'].includes(status);
+
+        // Never swallow a poll failure: while polling, it is the only channel left, so a silent
+        // catch turns a recoverable error (expired token, network blip) into an endless silence.
+        const warnPollFailure = (what: string, error: unknown) => {
+            consecutivePollFailures++;
+            console.warn(
+                `Agent stream ${id}: ${what} failed while polling (consecutive failures: ${consecutivePollFailures}); retrying in ${Math.round(POLL_INTERVAL_MS / 1000)}s:`,
+                error instanceof Error ? error.message : error,
+            );
+        };
+
+        const pollTick = async () => {
+            if (isClosed || !isPolling) return;
+            let polledMessages = false;
+            try {
+                // Resume from the last message we handed to the caller, whether it came from
+                // history, SSE, or an earlier poll. The server returns messages with ts > since.
+                const recent = await this.retrieveMessages(id, lastMessageTimestamp || undefined);
+                polledMessages = true;
+                for (const msg of recent) {
+                    if (isClosed) return;
+                    const timestamp = msg.timestamp || 0;
+                    if (timestamp <= lastMessageTimestamp) continue;
+                    lastMessageTimestamp = timestamp;
+                    if (onMessage) onMessage(msg, exit);
+                    if (isClosed) return;
+                    if (shouldCloseAgentRunStream(msg, id)) {
+                        exit(null);
+                        return;
+                    }
+                }
+            } catch (err) {
+                warnPollFailure('GET /updates', err);
+            }
+            if (isClosed || !isPolling) return;
+            // Exit even when no terminal message ever streams, by reading the run record.
+            try {
+                const run = (await this.get(`/${id}`)) as { status?: unknown };
+                if (isTerminalStatus(run?.status)) {
+                    exit(null);
+                    return;
+                }
+                if (polledMessages) consecutivePollFailures = 0;
+            } catch (err) {
+                warnPollFailure('run status check', err);
+            }
+            if (isClosed || !isPolling) return;
+            pollTimer = setTimeout(() => {
+                pollTimer = null;
+                void pollTick();
+            }, POLL_INTERVAL_MS);
+        };
+
+        const retrySseAfterPolling = () => {
+            sseRetryTimer = null;
+            if (isClosed || !isPolling) return;
+            stopPolling();
+            reconnectAttempts = 0;
+            console.log(`Agent stream ${id}: retrying the SSE connection after the polling fallback.`);
+            void setupStream('resume');
+        };
+
+        const degradeToPolling = (reason: unknown) => {
+            if (isClosed || isPolling) return;
+            cleanup();
+            isPolling = true;
+            consecutivePollFailures = 0;
+            console.warn(
+                `Agent stream ${id}: SSE unavailable after ${maxReconnectAttempts} attempts; falling back to GET /updates polling every ${Math.round(POLL_INTERVAL_MS / 1000)}s (SSE retried every ${Math.round(SSE_RETRY_INTERVAL_MS / 1000)}s).`,
+                reason instanceof Error ? reason.message : reason,
+            );
+            sseRetryTimer = setTimeout(retrySseAfterPolling, SSE_RETRY_INTERVAL_MS);
+            void pollTick();
+        };
+
+        // Schedules attempt N of `maxReconnectAttempts`. `reconnectAttempts` holds the number of
+        // the attempt about to run, so the announced counter never exceeds the announced maximum.
+        const scheduleReconnect = (reason: unknown) => {
+            if (isClosed) return;
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                degradeToPolling(reason);
+                return;
+            }
+            const delay = calculateBackoffDelay(reconnectAttempts);
+            reconnectAttempts++;
+            reconnectTimer = setTimeout(() => {
+                reconnectTimer = null;
+                if (!isClosed) void setupStream('reconnect');
+            }, delay);
         };
 
         if (signal) {
@@ -410,7 +534,7 @@ export class AgentsApi extends ApiTopic {
         }
 
         // 2. Connect to SSE for real-time updates
-        const setupStream = async (isReconnect: boolean = false) => {
+        const setupStream = async (mode: 'initial' | 'reconnect' | 'resume' = 'initial') => {
             if (isClosed) return;
             try {
                 const EventSourceImpl = await EventSourceProvider();
@@ -423,6 +547,10 @@ export class AgentsApi extends ApiTopic {
                 }
                 streamUrl.searchParams.set('skipHistory', 'true');
 
+                // Resolve the credential on every attempt (never reuse the one captured when the
+                // stream started): a stream can stay open far longer than the access token TTL,
+                // so a pinned token makes every reconnect fail with 401/403 until the retry
+                // budget is exhausted. The auth callback owns refreshing.
                 const bearerToken = client._auth ? await client._auth() : undefined;
                 if (isClosed) return;
                 if (!bearerToken) {
@@ -435,9 +563,9 @@ export class AgentsApi extends ApiTopic {
                 const token = bearerToken.split(' ')[1];
                 streamUrl.searchParams.set('access_token', token);
 
-                if (isReconnect) {
+                if (mode === 'reconnect') {
                     console.log(
-                        `Reconnecting to agent stream ${id} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`,
+                        `Reconnecting to agent stream ${id} (attempt ${reconnectAttempts}/${maxReconnectAttempts})`,
                     );
                 }
 
@@ -449,7 +577,7 @@ export class AgentsApi extends ApiTopic {
                 let connectionOpenedAt = 0;
 
                 sse.onopen = () => {
-                    if (isReconnect) console.log(`Reconnected to agent stream ${id}`);
+                    if (mode !== 'initial') console.log(`Reconnected to agent stream ${id}`);
                     connectionOpenedAt = Date.now();
                 };
 
@@ -491,39 +619,17 @@ export class AgentsApi extends ApiTopic {
                         reconnectAttempts = 0;
                     }
 
-                    if (reconnectAttempts < maxReconnectAttempts) {
-                        const delay = calculateBackoffDelay(reconnectAttempts);
-                        reconnectAttempts++;
-                        reconnectTimer = setTimeout(() => {
-                            reconnectTimer = null;
-                            if (!isClosed) void setupStream(true);
-                        }, delay);
-                    } else {
-                        isClosed = true;
-                        cleanup();
-                        rejectFn(
-                            new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`),
-                        );
-                    }
+                    scheduleReconnect(
+                        new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`),
+                    );
                 };
             } catch (err) {
                 if (isClosed) return;
-                if (reconnectAttempts < maxReconnectAttempts) {
-                    const delay = calculateBackoffDelay(reconnectAttempts);
-                    reconnectAttempts++;
-                    reconnectTimer = setTimeout(() => {
-                        reconnectTimer = null;
-                        if (!isClosed) void setupStream(true);
-                    }, delay);
-                } else {
-                    isClosed = true;
-                    cleanup();
-                    rejectFn(err);
-                }
+                scheduleReconnect(err);
             }
         };
 
-        void setupStream(false);
+        void setupStream('initial');
         return promise;
     }
 
@@ -681,6 +787,20 @@ export class AgentsApi extends ApiTopic {
     listArtifacts(id: string, options?: { visibility?: 'user' | 'internal' | 'all' }): Promise<string[]> {
         const query = options?.visibility ? { visibility: options.visibility } : undefined;
         return this.get(`/${id}/artifacts`, { query });
+    }
+
+    /** Read a text artifact together with its conditional-write generation token. */
+    getArtifactContent(id: string, path: string): Promise<AgentArtifactContentResponse> {
+        return this.get(`/${id}/artifact-content/${path}`);
+    }
+
+    /** Conditionally replace the text content of an agent artifact. */
+    updateArtifactContent(
+        id: string,
+        path: string,
+        payload: UpdateAgentArtifactContentPayload,
+    ): Promise<UpdateAgentArtifactContentResponse> {
+        return this.put(`/${id}/artifact-content/${path}`, { payload });
     }
 
     /**

@@ -1,4 +1,5 @@
 import { SkillCollection } from '@vertesia/tools-sdk';
+
 import skillDefinitions from './all?skills';
 
 export const ExampleSkills = new SkillCollection({

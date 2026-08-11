@@ -8,13 +8,29 @@ export const activities = [
     ...examplesResources.activities,
     ...contentAppResources.activities,
 ];
+export const dashboards = [
+    ...appResources.dashboards,
+    ...examplesResources.dashboards,
+    ...contentAppResources.dashboards,
+];
+export const hooks = [...appResources.hooks, ...examplesResources.hooks, ...contentAppResources.hooks];
 export const interactions = [
     ...appResources.interactions,
     ...examplesResources.interactions,
     ...contentAppResources.interactions,
 ];
+export const mcpProviders = [
+    ...appResources.mcpProviders,
+    ...examplesResources.mcpProviders,
+    ...contentAppResources.mcpProviders,
+];
 export const processes = [...appResources.processes, ...examplesResources.processes, ...contentAppResources.processes];
 export const skills = [...appResources.skills, ...examplesResources.skills, ...contentAppResources.skills];
+export const subscriptions = [
+    ...appResources.subscriptions,
+    ...examplesResources.subscriptions,
+    ...contentAppResources.subscriptions,
+];
 export const templates = [...appResources.templates, ...examplesResources.templates, ...contentAppResources.templates];
 export const tools = [...appResources.tools, ...examplesResources.tools, ...contentAppResources.tools];
 export const types = [...appResources.types, ...examplesResources.types, ...contentAppResources.types];

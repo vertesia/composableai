@@ -1,6 +1,6 @@
 import { VertesiaClient } from '@vertesia/client';
 import type { Command } from 'commander';
-import { ensureProfileAccessToken } from './profiles/auth.js';
+import { createProfileAuthProvider, ensureProfileAccessToken } from './profiles/auth.js';
 import { config, type Profile } from './profiles/index.js';
 import { isKeyringAvailable } from './profiles/keyring.js';
 
@@ -23,13 +23,18 @@ export async function getClient(_program?: Command): Promise<VertesiaClient> {
 
 async function createClient(profile: Profile | undefined): Promise<VertesiaClient> {
     const token = process.env.VERTESIA_TOKEN;
+    const preferProfileEndpoints = Boolean(profile && config.explicitProfile);
 
-    // Explicit environment overrides should win over profile settings so the same
-    // credential can be reused against a local deployment without changing profiles.
+    // Endpoint env vars are useful for localhost development, but an explicit
+    // --profile must not be silently redirected by inherited local env vars.
     const env = {
         apikey: process.env.VERTESIA_APIKEY || process.env.COMPOSABLE_PROMPTS_APIKEY,
-        serverUrl: process.env.VERTESIA_SERVER_URL || process.env.COMPOSABLE_PROMPTS_SERVER_URL,
-        storeUrl: process.env.VERTESIA_STORE_URL || process.env.ZENO_SERVER_URL,
+        serverUrl: preferProfileEndpoints
+            ? profile?.studio_server_url
+            : process.env.VERTESIA_SERVER_URL || process.env.COMPOSABLE_PROMPTS_SERVER_URL,
+        storeUrl: preferProfileEndpoints
+            ? profile?.zeno_server_url
+            : process.env.VERTESIA_STORE_URL || process.env.ZENO_SERVER_URL,
         projectId:
             process.env.VERTESIA_PROJECT_ID ||
             process.env.COMPOSABLE_PROMPTS_PROJECT_ID ||
@@ -60,8 +65,8 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
     }
 
     if (!env.apikey && profile) {
-        env.apikey = await ensureProfileAccessToken(profile);
-        if (!env.apikey && !profile.apikey) {
+        const profileToken = await ensureProfileAccessToken(profile);
+        if (!profileToken && !profile.apikey) {
             if (!isKeyringAvailable()) {
                 throw new Error(
                     'No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY or VERTESIA_TOKEN instead.',
@@ -71,6 +76,14 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
                 'No auth token is stored for the selected profile. Run `vertesia auth refresh` to authenticate again.',
             );
         }
+        // A profile configured with a long-lived API key uses it directly.
+        if (!profileToken && profile.apikey) {
+            return new VertesiaClient({ ...env, apikey: profile.apikey });
+        }
+        // A profile access token is short-lived. Resolve it per request through the profile
+        // refresh path instead of pinning the token captured here, so commands that run longer
+        // than the token TTL (`agents stream`, workflow tails) keep working.
+        return new VertesiaClient({ ...env, apikey: undefined }).withAuthCallback(createProfileAuthProvider(profile));
     }
 
     return new VertesiaClient(env);

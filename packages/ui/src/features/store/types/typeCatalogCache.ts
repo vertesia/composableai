@@ -1,5 +1,5 @@
 import type { VertesiaClient } from '@vertesia/client';
-import type { ContentObjectTypeItem } from '@vertesia/common';
+import type { ContentObjectTypeCatalogEntry } from '@vertesia/common';
 
 /**
  * Browser-session cache for content-type catalog lookups, so render-time consumers
@@ -11,10 +11,17 @@ import type { ContentObjectTypeItem } from '@vertesia/common';
  * lookups self-evict so the next view retries. In-app type edits must call
  * `invalidateTypeCache` — edits made elsewhere (assistant, another tab) are picked up on
  * the next session.
+ *
+ * Entries are `ContentObjectTypeCatalogEntry`, not `ContentObjectTypeItem`: the catalog resolves
+ * in-code types contributed by plugins, whose audit fields are absent, so `created_by` and its three
+ * siblings are optional here.
  */
-const cachePerClient = new WeakMap<VertesiaClient, Map<string, Promise<ContentObjectTypeItem | undefined>>>();
+const cachePerClient = new WeakMap<VertesiaClient, Map<string, Promise<ContentObjectTypeCatalogEntry | undefined>>>();
 
-export function resolveTypeCached(client: VertesiaClient, typeId: string): Promise<ContentObjectTypeItem | undefined> {
+export function resolveTypeCached(
+    client: VertesiaClient,
+    typeId: string,
+): Promise<ContentObjectTypeCatalogEntry | undefined> {
     let cache = cachePerClient.get(client);
     if (!cache) {
         cache = new Map();

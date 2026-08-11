@@ -1,4 +1,4 @@
-import { ConnectionError, type RequestError, ServerError } from './errors.js';
+import { ConnectionError, type RateLimitMetadata, type RequestError, ServerError } from './errors.js';
 import { type ServerSentEvent, sse } from './sse/index.js';
 import { buildQueryString, join, removeTrailingSlash } from './utils.js';
 
@@ -199,6 +199,13 @@ function normalizeRetryPolicy(policy: IRequestRetryPolicy): NormalizedRetryPolic
 }
 
 function retryAfterDelayMs(res: Response): number | undefined {
+    const exact = res.headers.get('x-retry-after-ms');
+    if (exact) {
+        const exactMs = Number(exact);
+        if (Number.isFinite(exactMs) && exactMs >= 0) {
+            return exactMs;
+        }
+    }
     const retryAfter = res.headers.get('retry-after');
     if (!retryAfter) {
         return undefined;
@@ -227,6 +234,22 @@ function pacingDelayMs(res: Response, pacing: NormalizedPacingPolicy): number | 
         return undefined;
     }
     return delay;
+}
+
+function rateLimitMetadata(res: Response): RateLimitMetadata | undefined {
+    if (res.status !== 429) return undefined;
+    const reason = res.headers.get(RATELIMIT_REASON_HEADER);
+    if (reason !== 'pacing' && reason !== 'quota') return undefined;
+    const exact = res.headers.get(RATELIMIT_RETRY_MS_HEADER);
+    const exactMs = exact ? Number(exact) : Number.NaN;
+    const retryAfterMs = Number.isFinite(exactMs) && exactMs >= 0 ? exactMs : retryAfterDelayMs(res);
+    if (retryAfterMs === undefined) return undefined;
+    return {
+        reason,
+        retryAfterMs,
+        resource: res.headers.get('x-ratelimit-resource') ?? undefined,
+        window: res.headers.get('x-ratelimit-window') ?? undefined,
+    };
 }
 
 function sleep(ms: number): Promise<void> {
@@ -447,7 +470,15 @@ export abstract class ClientBase {
                 }
             }
         }
-        return new ServerError(message, req, res.status, payload, this.verboseErrors);
+        return new ServerError(
+            message,
+            req,
+            res.status,
+            payload,
+            this.verboseErrors,
+            rateLimitMetadata(res),
+            retryAfterDelayMs(res),
+        );
     }
 
     async readJSONPayload(res: Response) {

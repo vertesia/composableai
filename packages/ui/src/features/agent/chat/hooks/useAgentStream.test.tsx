@@ -124,6 +124,256 @@ describe('useAgentStream', () => {
         });
     });
 
+    it('retains structured update events even when their display message is empty', async () => {
+        const structuredUpdate: AgentMessage = {
+            ...createMessage(AgentMessageType.UPDATE, 1_000, ''),
+            details: { event_class: 'document_updated', document_id: 'document-1' },
+        };
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([structuredUpdate]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.messages).toEqual([structuredUpdate]);
+        });
+    });
+
+    it('retains resource-bearing lifecycle messages loaded from history even when their text is empty', async () => {
+        const resourceMessage: AgentMessage = {
+            ...createMessage(AgentMessageType.THOUGHT, 1_000, ''),
+            details: {
+                event_class: 'activity',
+                tool: 'create_document',
+                tool_event: 'completed',
+                resources: [{ type: 'document', id: 'doc-1', label: 'Doc One', action: 'created' }],
+            },
+        };
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([resourceMessage]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.messages).toEqual([resourceMessage]);
+        });
+    });
+
+    it('retains resource-bearing lifecycle messages received from the live stream', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const resourceMessage: AgentMessage = {
+            ...createMessage(AgentMessageType.THOUGHT, 1_000, ''),
+            details: {
+                event_class: 'activity',
+                tool: 'create_interaction',
+                tool_event: 'completed',
+                resources: [{ type: 'interaction', id: 'interaction-1', label: 'Daily News Agent', action: 'created' }],
+            },
+        };
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            onStreamMessage?.(resourceMessage);
+        });
+
+        await waitFor(() => {
+            expect(result.current.messages).toEqual([resourceMessage]);
+        });
+    });
+
+    it('continues to discard empty housekeeping messages without resources', async () => {
+        const emptyThought = createMessage(AgentMessageType.THOUGHT, 1_000, '');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([emptyThought]);
+            onMessage?.(emptyThought);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('has_messages');
+        });
+        expect(result.current.messages).toEqual([]);
+    });
+
+    it('forwards delivered stream messages without reconnecting when the callback changes', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const firstCallback = vi.fn();
+        const secondCallback = vi.fn();
+        const { rerender } = renderHook(
+            ({ onMessage }: { onMessage: (message: AgentMessage) => void }) =>
+                useAgentStream(client, 'agent-run-1', onMessage),
+            { initialProps: { onMessage: firstCallback } },
+        );
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        act(() => deliver?.(createMessage(AgentMessageType.UPDATE, 1_000, 'first update')));
+        expect(firstCallback).toHaveBeenCalledTimes(1);
+
+        rerender({ onMessage: secondCallback });
+        act(() => deliver?.(createMessage(AgentMessageType.UPDATE, 1_100, 'second update')));
+
+        expect(firstCallback).toHaveBeenCalledTimes(1);
+        expect(secondCallback).toHaveBeenCalledTimes(1);
+        expect(streamMessages).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not forward replayed history deliveries to onMessage', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const historical = createMessage(AgentMessageType.UPDATE, 1_000, 'historical update');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([historical]);
+            // Mirror completed-run behavior where archived events can be replayed
+            // immediately, before React has rendered the history state update.
+            onMessage?.(historical);
+            onMessage?.(createMessage(AgentMessageType.UPDATE, 900, 'older replay'));
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const onMessage = vi.fn();
+        renderHook(() => useAgentStream(client, 'agent-run-1', onMessage));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        expect(onMessage).not.toHaveBeenCalled();
+
+        act(() => deliver?.(createMessage(AgentMessageType.UPDATE, 1_100, 'live update')));
+        expect(onMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not apply replayed file_processing snapshots to server file updates', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const fileSnapshot = (timestamp: number, id: string): AgentMessage => ({
+            timestamp,
+            workflow_run_id: 'run-1',
+            type: AgentMessageType.SYSTEM,
+            message: '',
+            workstream_id: 'main',
+            details: {
+                system_type: 'file_processing',
+                batch_id: 'batch-1',
+                files: [
+                    {
+                        id,
+                        name: `${id}.pdf`,
+                        content_type: 'application/pdf',
+                        size: 1,
+                        status: FileProcessingStatus.READY,
+                        artifact_path: `files/${id}.pdf`,
+                        reference: `artifact:files/${id}.pdf`,
+                        started_at: timestamp,
+                    },
+                ],
+                pending_count: 0,
+                ready_count: 1,
+                error_count: 0,
+            },
+        });
+        const historical = fileSnapshot(1_000, 'old-upload');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([historical]);
+            // Completed runs replay archived file_processing snapshots through the
+            // live callback; applying them would rehydrate every historical upload
+            // as a staged composer chip on reopen.
+            onMessage?.(historical);
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1', vi.fn()));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        // History hydrates the latest archived inventory once so an unconsumed staged file
+        // survives a reload; the live replay of that same snapshot is ignored, leaving the
+        // hydrated entry untouched. Already-delivered files are dropped downstream by
+        // useFileProcessing (consumed_at + delivered artifact refs), not by refusing to hydrate.
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('old-upload')).toBe(true);
+
+        act(() => deliver?.(fileSnapshot(1_100, 'new-upload')));
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('new-upload')).toBe(true);
+    });
+
     it('marks initial history as errored when the history fetch fails', async () => {
         const streamMessages = vi.fn<
             (
@@ -597,5 +847,115 @@ describe('useAgentStream', () => {
         });
 
         expect(result.current.serverFileUpdates.has('file-1')).toBe(false);
+    });
+
+    it('hydrates the latest historical file snapshot once and ignores its live replay', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const fileSnapshot = (timestamp: number, id: string): AgentMessage => ({
+            timestamp,
+            workflow_run_id: 'run-1',
+            type: AgentMessageType.SYSTEM,
+            message: '',
+            workstream_id: 'main',
+            details: {
+                system_type: 'file_processing',
+                batch_id: 'batch-1',
+                files: [
+                    {
+                        id,
+                        name: `${id}.pdf`,
+                        content_type: 'application/pdf',
+                        size: 1,
+                        status: FileProcessingStatus.READY,
+                        artifact_path: `files/${id}.pdf`,
+                        reference: `artifact:files/${id}.pdf`,
+                        started_at: timestamp,
+                    },
+                ],
+                pending_count: 0,
+                ready_count: 1,
+                error_count: 0,
+            },
+        });
+        const olderHistorical = fileSnapshot(1_000, 'older-upload');
+        const latestHistorical = fileSnapshot(1_100, 'staged-upload');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            options?.onHistoryLoaded?.([olderHistorical, latestHistorical]);
+            // Completed runs replay archived file_processing snapshots through the
+            // live callback. Replaying the older snapshot must not replace the latest
+            // inventory selected from history.
+            onMessage?.(olderHistorical);
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('staged-upload')).toBe(true);
+
+        act(() => deliver?.(fileSnapshot(1_200, 'new-upload')));
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('new-upload')).toBe(true);
+    });
+
+    it('selects the newest historical file snapshot even when history arrives out of order', async () => {
+        let deliver: ((message: AgentMessage) => void) | undefined;
+        const fileSnapshot = (timestamp: number, id: string): AgentMessage => ({
+            timestamp,
+            workflow_run_id: 'run-1',
+            type: AgentMessageType.SYSTEM,
+            message: '',
+            workstream_id: 'main',
+            details: {
+                system_type: 'file_processing',
+                batch_id: 'batch-1',
+                files: [
+                    {
+                        id,
+                        name: `${id}.pdf`,
+                        content_type: 'application/pdf',
+                        size: 1,
+                        status: FileProcessingStatus.READY,
+                        artifact_path: `files/${id}.pdf`,
+                        reference: `artifact:files/${id}.pdf`,
+                        started_at: timestamp,
+                    },
+                ],
+                pending_count: 0,
+                ready_count: 1,
+                error_count: 0,
+            },
+        });
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            deliver = onMessage;
+            // retrieveMessages returns GET /updates unsorted, so the newest snapshot is not
+            // necessarily last. Selection must be by timestamp, not arrival order.
+            options?.onHistoryLoaded?.([fileSnapshot(1_100, 'staged-upload'), fileSnapshot(1_000, 'older-upload')]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => expect(deliver).toBeDefined());
+        expect(result.current.serverFileUpdates.size).toBe(1);
+        expect(result.current.serverFileUpdates.has('staged-upload')).toBe(true);
     });
 });

@@ -1,22 +1,17 @@
-import type { ToolResult } from '../interaction.js';
+import type { z } from 'zod';
+import type {
+    AgentToolApprovalModeSchema,
+    PendingToolApprovalResultsSchema,
+    ToolApprovalGrantSchema,
+} from '../api-schemas/interaction.js';
 
 export const AgentToolApprovalModes = ['ask', 'auto_review', 'full_control'] as const;
 
-export type AgentToolApprovalMode = (typeof AgentToolApprovalModes)[number];
+export type AgentToolApprovalMode = z.infer<typeof AgentToolApprovalModeSchema>;
 
-export interface ToolApprovalGrant {
-    key: string;
-    tool_name: string;
-    target?: string;
-    granted_at: string;
-}
+export type ToolApprovalGrant = z.infer<typeof ToolApprovalGrantSchema>;
 
-export interface PendingToolApprovalResults {
-    results: ToolResult[];
-    reason: 'denied' | 'denied_with_feedback' | 'timeout' | 'reviewer_denied';
-    message: string;
-    created_at: string;
-}
+export type PendingToolApprovalResults = z.infer<typeof PendingToolApprovalResultsSchema>;
 
 export function normalizeAgentToolApprovalMode(
     mode: AgentToolApprovalMode | undefined,
@@ -26,8 +21,4 @@ export function normalizeAgentToolApprovalMode(
         return 'full_control';
     }
     return mode ?? 'full_control';
-}
-
-export function isAgentToolApprovalMode(value: unknown): value is AgentToolApprovalMode {
-    return typeof value === 'string' && (AgentToolApprovalModes as readonly string[]).includes(value);
 }

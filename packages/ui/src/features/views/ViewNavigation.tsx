@@ -2,7 +2,7 @@ import type { ViewNavigationNode } from '@vertesia/common';
 import { Button, Checkbox, Input, SelectBox } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ChevronRight, Search, X } from 'lucide-react';
-import { type FormEvent, useEffect, useId, useState } from 'react';
+import { type SyntheticEvent, useEffect, useId, useState } from 'react';
 import type { ViewNavigationRendererProps } from './types.js';
 
 function nextSelection(current: string[], id: string, selected: boolean, multiSelect: boolean | undefined): string[] {
@@ -44,7 +44,7 @@ export function DefaultViewNavigation({
         onChange(nextSelection(result.selected, id, selected, multiSelect));
     };
 
-    const submitQuery = (event: FormEvent) => {
+    const submitQuery = (event: SyntheticEvent<HTMLFormElement>) => {
         event.preventDefault();
         onQueryChange?.(draftQuery.trim());
     };

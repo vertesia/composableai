@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "1.5.0-dev.20260714.072725Z",
+    "version": "1.5.0-dev.20260807.073259Z",
     "license": "Apache-2.0",
     "type": "module",
     "main": "./lib/index.js",
@@ -16,23 +16,32 @@
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
-        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
+        "gen:schemas": "tsx ./scripts/gen-intake-policy-schema.ts && pnpm exec biome format --write ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts"
     },
     "exports": {
         ".": {
             "types": "./lib/index.d.ts",
             "default": "./lib/index.js"
+        },
+        "./api-schemas": {
+            "types": "./lib/api-schemas/index.d.ts",
+            "default": "./lib/api-schemas/index.js"
         }
     },
     "devDependencies": {
+        "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
-        "typescript": "^6.0.3",
-        "vitest": "^4.1.9"
+        "tsx": "^4.23.1",
+        "typescript": "catalog:",
+        "vitest": "^4.1.10"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
-        "ajv": "^8.20.0"
+        "ajv": "^8.20.0",
+        "ajv-formats": "^3.0.1",
+        "zod": "^4.4.3"
     },
     "repository": {
         "type": "git",
@@ -46,5 +55,6 @@
         "llm",
         "ai",
         "typescript"
-    ]
+    ],
+    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
 }

@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-plugin",
-    "version": "1.5.0-dev.20260714.072725Z",
+    "version": "1.5.0-dev.20260807.073259Z",
     "description": "CLI to create Vertesia plugins: UI plugins or tool servers",
     "type": "module",
     "bin": {
@@ -15,7 +15,7 @@
         "build": "tsc -p tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "dev": "tsc --watch",
-        "test": "node ./scripts/run-smoke-test.mjs",
+        "test": "node --test ./scripts/*.test.mjs && node ./scripts/run-smoke-test.mjs",
         "prepublishOnly": "pnpm run build"
     },
     "keywords": [
@@ -29,8 +29,8 @@
     "author": "Vertesia",
     "license": "Apache-2.0",
     "templateVersions": {
-        "@vertesia": "1.5.0-dev.20260714.072725Z",
-        "@llumiverse": "1.5.0-dev.20260713.114357Z"
+        "@vertesia": "1.5.0-dev.20260807.073259Z",
+        "@llumiverse": "1.5.0-dev.20260807.072147Z"
     },
     "repository": {
         "type": "git",
@@ -38,16 +38,16 @@
         "directory": "packages/create-plugin"
     },
     "dependencies": {
-        "chalk": "^5.6.2",
+        "chalk": "^6.0.0",
         "commander": "^15.0.0",
-        "degit": "^3.4.7",
+        "degit": "^3.6.3",
         "prompts": "^2.4.2"
     },
     "devDependencies": {
         "@types/degit": "^2.8.6",
         "@types/node": "catalog:",
         "@types/prompts": "^2.4.9",
-        "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3"
-    }
+        "typescript": "^7.0.2"
+    },
+    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
 }

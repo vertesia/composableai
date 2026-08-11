@@ -5,6 +5,7 @@ import type {
     OAuthGrant,
     OAuthGrantListResponse,
     OAuthGrantRevokeResponse,
+    RevokeOAuthGrantQuery,
 } from '@vertesia/common';
 
 function toQueryRecord(query?: ListOAuthGrantsQuery): Record<string, string> | undefined {
@@ -32,7 +33,7 @@ export default class OAuthGrantsApi extends ApiTopic {
         return this.get(`/${grantId}`);
     }
 
-    revoke(grantId: string, query?: { include_consent?: boolean }): Promise<OAuthGrantRevokeResponse> {
+    revoke(grantId: string, query?: RevokeOAuthGrantQuery): Promise<OAuthGrantRevokeResponse> {
         return this.del(`/${grantId}`, { query });
     }
 

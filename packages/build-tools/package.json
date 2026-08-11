@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/build-tools",
-    "version": "1.5.0-dev.20260714.072725Z",
+    "version": "1.5.0-dev.20260807.073259Z",
     "description": "Build tools for Vertesia projects - import transformers (skill / template / prompt / raw), esbuild widget bundler, vertesia-build CLI, and a Vite dev plugin",
     "type": "module",
     "main": "./lib/index.js",
@@ -32,24 +32,27 @@
         }
     },
     "devDependencies": {
-        "@hono/node-server": "^2.0.8",
+        "@hono/node-server": "^2.0.12",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
+        "typescript": "catalog:",
         "vite": "catalog:",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.10"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
+        "@vertesia/studio-utils": "workspace:*",
+        "ajv": "^8.20.0",
+        "es-module-lexer": "^2.3.1",
         "esbuild": "^0.28.1",
-        "js-yaml": "^5.2.1",
+        "js-yaml": "^5.2.2",
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "@hono/node-server": "^2.0.8",
-        "vite": "^8.1.0"
+        "@hono/node-server": "^2.0.12",
+        "vite": "^8.1.4"
     },
     "peerDependenciesMeta": {
         "@hono/node-server": {
@@ -79,5 +82,6 @@
         "bundler",
         "zod",
         "validation"
-    ]
+    ],
+    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
 }

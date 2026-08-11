@@ -1,7 +1,6 @@
 import { type InCodeProcessDefinition, PROCESS_DEFINITION_FORMAT_VERSION } from '@vertesia/common';
+import { APP_NAME } from '../../../../constants.js';
 
-const CONFIG__PROJECT_NAME = 'my-plugin';
-const APP_NAME = CONFIG__PROJECT_NAME;
 const guideSummarizer = `app:${APP_NAME}:main:guide_summarizer`;
 const reviewChecklistBuilder = `app:${APP_NAME}:main:review_checklist_builder`;
 

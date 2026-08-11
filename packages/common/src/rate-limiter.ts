@@ -1,21 +1,31 @@
+import type { z } from 'zod';
 /**
  * Rate Limiter Types
  */
 
-export interface RateLimiterCapacity {
+import type {
+    QuotaEffectiveTierSchema,
+    QuotaStandingAdmissionClassSchema,
+    QuotaStandingResourceSchema,
+    QuotaStandingResponseSchema,
+    QuotaStandingWindowSchema,
+    QuotaTierResponseSchema,
+} from './api-schemas/quota.js';
+
+interface RateLimiterCapacity {
     current: number;
     base: number;
     max: number;
 }
 
-export interface RateLimiterBreakerState {
+interface RateLimiterBreakerState {
     state: 'open' | 'closed';
     is_open: boolean;
     last_opened_at?: string;
     consecutive_failures?: number;
 }
 
-export interface RateLimiterModelStatus {
+interface RateLimiterModelStatus {
     model_id: string;
     admitted: number;
     delayed: number;
@@ -34,79 +44,21 @@ export interface RateLimiterStatus {
 export type RateLimiterStatusResponse = RateLimiterStatus[];
 
 /**
- * A caller's own quota standing (GET /api/v1/quota/standing) — "where am I".
- * API rate limits are genuinely per-tenant; workflow admission and the LLM limiter are
- * global/discovered, so they are reported as posture, not per-tenant numbers.
+ * The quota contract as it crosses the wire, served by `GET /api/v1/quota/standing` and
+ * `GET /api/v1/quota/tier`.
+ *
+ * Derived from the schemas in `./api-schemas/quota.js`, not written alongside them: those schemas
+ * are what OpenAPI publishes and what AJV compiles, so a hand-written twin here could only ever
+ * drift from the contract actually being enforced. The documentation lives with the schemas too —
+ * zod reads `.meta()`, not TSDoc, so a comment here would describe the type while the published
+ * description came from somewhere else.
+ *
+ * `import type` erases at compile time, so nothing here pulls zod into a browser or SDK bundle;
+ * runtime consumers reach the schemas through the `@vertesia/common/api-schemas` entry point.
  */
-export interface QuotaStandingWindow {
-    /** Effective limit for this window (after effective account tier + per-tenant override). */
-    limit: number;
-    /** Requests used in the current window. */
-    used: number;
-    /** Requests remaining (max(0, limit - used)). */
-    remaining: number;
-    window_ms: number;
-}
-
-export interface QuotaStandingResource {
-    resource: string;
-    name: string;
-    burst: QuotaStandingWindow;
-    quota: QuotaStandingWindow;
-}
-
-export interface QuotaStandingAdmissionClass {
-    /** Workflow class (e.g. ExecuteConversationWorkflow). */
-    class: string;
-    /** This tenant's currently active (leased) slots for the class. */
-    tenant_active: number;
-}
-
-/**
- * Effective quota tier name after account-level overrides and account-type derivation.
- * Code-defined tier names are currently `QuotaTier`, but this remains a string because deployments
- * can introduce quota tiers through configuration.
- */
-export type QuotaEffectiveTier = string;
-
-export interface QuotaStandingResponse {
-    tenant_id: string;
-    /**
-     * False when the limiter store (Redis) was unavailable, so `api`/`admission` are empty because
-     * standing could not be read — NOT because there are no limits. Limiters fail open in this case.
-     */
-    available: boolean;
-    /** Deployment base tier (env QUOTA_BASE_TIER); `default` = the static limits stand. */
-    base_tier: string;
-    /**
-     * Tier used to compute the API limits below: explicit account `quota_tier`, else account_type
-     * derived tier, else `base_tier` when the account tier could not be resolved.
-     */
-    effective_tier: QuotaEffectiveTier;
-    /** Per-resource API rate-limit standing (effective limits + current usage). */
-    api: QuotaStandingResource[];
-    /**
-     * Workflow admission: per-tenant active slots per probed class. The budget itself is global and
-     * discovered (AIMD), not a per-tenant number — this is occupancy, not a limit.
-     */
-    admission: {
-        classes: QuotaStandingAdmissionClass[];
-        note: string;
-    };
-    /** The LLM interaction limiter is shared per environment/model, not per tenant. */
-    llm: {
-        note: string;
-    };
-}
-
-/**
- * Lightweight per-account quota tier for the calling account — served by `GET /api/v1/quota/tier`.
- * A cheap, cacheable read that lets another service (e.g. zeno-server's API rate limiter) resolve
- * the caller's tier through studio-server instead of reaching into the account store directly.
- * `tier` is the SAME value {@link QuotaStandingResponse.effective_tier} reports: the account's
- * explicit `quota_tier`, else its account_type-derived tier, else the deployment base tier when the
- * account tier cannot be resolved.
- */
-export interface QuotaTierResponse {
-    tier: QuotaEffectiveTier;
-}
+export type QuotaStandingWindow = z.infer<typeof QuotaStandingWindowSchema>;
+export type QuotaStandingResource = z.infer<typeof QuotaStandingResourceSchema>;
+export type QuotaStandingAdmissionClass = z.infer<typeof QuotaStandingAdmissionClassSchema>;
+export type QuotaEffectiveTier = z.infer<typeof QuotaEffectiveTierSchema>;
+export type QuotaStandingResponse = z.infer<typeof QuotaStandingResponseSchema>;
+export type QuotaTierResponse = z.infer<typeof QuotaTierResponseSchema>;

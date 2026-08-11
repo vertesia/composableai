@@ -1,6 +1,6 @@
 ---
 name: vertesia-tool-server-resource
-description: Creates tools, skills, interactions, content types, and rendering templates for the Vertesia plugin tool server. Handles file scaffolding and module resource index wiring. Use when adding new tool server resources to this plugin.
+description: Creates tools, skills, interactions, content types, rendering templates, hooks, and event subscriptions for the Vertesia plugin tool server. Handles file scaffolding and module resource index wiring. Use when adding new tool server resources to this plugin.
 ---
 
 # Vertesia Tool Server Resource
@@ -12,6 +12,10 @@ Step-by-step guide for creating tool server resources. Each resource follows the
 3. Register the collection in `src/modules/app/resources/<type>/index.ts` (only when adding a new collection)
 
 For full code templates of every resource type, see `REFERENCE.md`.
+
+Application hooks and event subscriptions are definitions rather than resource collections. They are still app-owned
+contributions: register hooks under `src/modules/app/resources/hooks/` and subscriptions under
+`src/modules/app/resources/subscriptions/`.
 
 ## Conventions
 
@@ -71,6 +75,9 @@ One file per type in `src/modules/app/resources/types/<collection>/<type-name>.t
 
 Key fields: `name` (snake_case), `object_schema` (JSON Schema with `additionalProperties: false`), `table_layout` (columns for the UI), `is_chunkable`, `strict_mode`.
 
+The type's public app id is its bare `name`: `app:<app-name>:<type-name>`. The collection is code organization
+only for content types and is not part of the public id. Type names must therefore be unique across collections.
+
 → Code in `REFERENCE.md` § Content Type.
 
 ### Rendering Template
@@ -83,6 +90,49 @@ Folder per template in `src/modules/app/resources/templates/<collection>/<templa
 Templates are auto-discovered: the collection imports `./all?templates`.
 
 → Code in `REFERENCE.md` § Rendering Template.
+
+### Application Hooks
+
+Use an install or uninstall hook when the app must initialize or clean up project data as a version becomes or stops
+being promoted. Hooks receive an authenticated context with the current project token and `getClient()`.
+
+- Implement hooks in `src/modules/app/resources/hooks/install.ts` or `uninstall.ts`.
+- Register named hook definitions in `src/modules/app/resources/hooks/index.ts`.
+- Make install behavior idempotent. Studio may invoke it again during a reinstall or an explicit recovery.
+- Do not use hooks to materialize app-owned package types as project-local types. Use portable `app:<app>:<type>` refs.
+- An unpromoted version advertises hook definitions but does not run lifecycle hooks. Validate source/package wiring on a
+  candidate and defer lifecycle execution until explicit promotion; do not invoke lifecycle endpoints manually for QA.
+- When an appgen capability manifest is present, declare each lifecycle or event hook as a `hook` artifact using
+  `app:<app-name>:<hook-name>`.
+
+→ Code in `REFERENCE.md` § Application lifecycle hooks.
+
+Use an event hook for authenticated event-bus webhook deliveries. Event hooks receive the platform event envelope and
+the same authenticated client context as tools.
+
+- Implement event hooks in `src/modules/app/resources/hooks/<hook-name>.ts`.
+- Use a kebab-case name; `install` and `uninstall` are reserved.
+- Register `{ kind: 'event', name, description, handler }` in the hooks index.
+- Inspect registered event hooks through `/api/package?scope=hooks`.
+
+→ Code in `REFERENCE.md` § Application event hooks.
+
+### Event Subscription
+
+Use an app-owned subscription to route matching platform events to an event hook registered by the same app.
+
+- Register definitions in `src/modules/app/resources/subscriptions/index.ts`.
+- Give each definition a stable kebab-case `id`.
+- Set `hook` to an `AppEventHookDefinition.name`; lifecycle hooks are not valid targets.
+- Define the event `filter` and required `run_as_role`, normally `automation`.
+- Do not set a URL or scope. Studio derives the project scope and promoted hook URL when a version is promoted.
+- Inspect contributions through `/api/package?scope=subscriptions`.
+- A bare version exposes subscription definitions in its package but does not materialize them in Event Bus. Candidate
+  QA should validate the definition and hook reference only; registration and delivery checks require promotion.
+- When an appgen capability manifest is present, declare the subscription as a `subscription` artifact using
+  `app:<app-name>:<subscription-id>`.
+
+→ Code in `REFERENCE.md` § Application event subscriptions.
 
 ## Collection registration
 
@@ -97,7 +147,15 @@ export const tools = [MyTools];
 
 `src/tool-server/app-server-modules.ts` is generated from active modules and `config.ts` imports from it, so no further server wiring is needed.
 
+Do not add app-owned registries directly under `src/tool-server`. When the platform introduces a new contribution
+type, add its typed empty default under `src/modules/app/resources`, export it from the module resource index, and
+update the template codegen `SERVER_RESOURCES` list so the generated aggregator includes it.
+
 Each collection needs an SVG `icon.svg.ts` (default string export). Code in `REFERENCE.md` § Collection registration & icons.
+
+For interactions and activities, prefer naming the default collection `main`. Runtime ids include the collection
+name, so `main` gives stable ids like `app:<app-name>:main:<interaction-name>`. Avoid naming a collection after
+the app, which creates redundant ids such as `app:<app-name>:<app-name>:<interaction-name>`.
 
 ## Verification
 

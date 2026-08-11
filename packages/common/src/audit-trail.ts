@@ -1,4 +1,21 @@
-import type { EventCategory } from './platform-event.js';
+import type { z } from 'zod';
+import type {
+    AuditAggregationDetailFieldSchema,
+    AuditAggregationDetailFilterSchema,
+    AuditAggregationDistinctFieldSchema,
+    AuditAggregationFilterSchema,
+    AuditAggregationGroupSchema,
+    AuditAggregationMetricSchema,
+    AuditAggregationOperationSchema,
+    AuditAggregationQuerySchema,
+    AuditAggregationResolutionSchema,
+    AuditAggregationResponseSchema,
+    AuditAggregationRowSchema,
+    AuditMeterSchema,
+    AuditTrailEventSchema,
+    AuditTrailQuerySchema,
+    AuditTrailResponseSchema,
+} from './api-schemas/audit-trail.js';
 
 export const AUDIT_ACTIONS = [
     // CRUD operations
@@ -23,11 +40,11 @@ export const AUDIT_ACTIONS = [
     'document_processed',
 ] as const;
 
+// `AuditAction` is deliberately NOT inferred from `AuditActionSchema`: the schema is
+// `KnownAuditAction | string`, which TypeScript collapses to `string`, losing the completion the
+// `(string & {})` half of the union exists to preserve. The two agree on what they accept.
 export type KnownAuditAction = (typeof AUDIT_ACTIONS)[number];
 export type AuditAction = KnownAuditAction | (string & {});
-
-/** Billable audit actions for cost analytics queries */
-export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];
 
 /**
  * Generic metering entry attached to audit events.
@@ -39,82 +56,13 @@ export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generati
  *   { category: "compute", type: "duration_ms", quantity: 2100 }
  *   { category: "processing", type: "pages", quantity: 12 }
  */
-export interface AuditMeter {
-    category: string;
-    type: string;
-    quantity: number;
-}
+export type AuditMeter = z.infer<typeof AuditMeterSchema>;
 
-export interface AuditTrailEvent {
-    event_type: 'audit';
-    event_id?: string;
-    event_category?: EventCategory;
-    source?: string | null;
-    root_event_id?: string;
-    caused_by_event_id?: string;
-    hop_count?: number;
-    audit_trail?: boolean;
-    replay_of?: string;
-    replay_root_event_id?: string;
-    replayed_by?: string;
-    action: AuditAction;
-    resource_type: string;
-    resource_id: string;
-    timestamp: string;
-    request_id: string;
-    status: number;
-    success: boolean;
-    principal_id: string | null;
-    principal_type: string | null;
-    effective_principal_id: string | null;
-    roles: string[];
-    account_id: string | null;
-    project_id: string | null;
-    tenant_id: string | null;
-    account_name: string | null;
-    project_name: string | null;
-    /** Provider type for billable/provider-backed events, e.g. vertexai, bedrock. */
-    provider?: string | null;
-    /** Generic metering data for cost attribution and usage tracking */
-    meters?: AuditMeter[];
-    /** Event-specific metadata — shape varies by action/resource_type */
-    details?: Record<string, unknown>;
-}
+export type AuditTrailEvent = z.infer<typeof AuditTrailEventSchema>;
 
-export interface AuditTrailQuery {
-    /** Filter by action types */
-    actions?: AuditAction[];
-    /** Filter by resource types */
-    resourceTypes?: string[];
-    /** Filter by resource ID */
-    resourceId?: string;
-    /** Filter by exact actor principal ref (matches principal_id column). */
-    principalId?: string;
-    /** Filter by top-level actor category (matches principal_type column). */
-    principalType?: string;
-    /** Filter by delegated/direct effective principal ref (matches effective_principal_id column). */
-    effectivePrincipalId?: string;
-    /** Filter by whether an event has an effective principal ref. */
-    hasEffectivePrincipal?: boolean;
-    /** Filter by project ID */
-    projectId?: string;
-    /** Start time (ISO string) */
-    from?: string;
-    /** End time (ISO string) */
-    to?: string;
-    /** Pagination: number of items to return (default 50, max 200) */
-    limit?: number;
-    /** Pagination: offset */
-    offset?: number;
-}
+export type AuditTrailQuery = z.infer<typeof AuditTrailQuerySchema>;
 
-export interface AuditTrailResponse {
-    events: AuditTrailEvent[];
-    /** Whether there are more events after this page */
-    hasNext: boolean;
-    limit: number;
-    offset: number;
-}
+export type AuditTrailResponse = z.infer<typeof AuditTrailResponseSchema>;
 
 export const AUDIT_AGGREGATION_DIMENSIONS = [
     'time',
@@ -131,68 +79,28 @@ export const AUDIT_AGGREGATION_DIMENSIONS = [
 ] as const;
 
 export type AuditAggregationDimension = (typeof AUDIT_AGGREGATION_DIMENSIONS)[number];
-export type AuditAggregationResolution = 'hour' | 'day' | 'week' | 'month';
-export type AuditAggregationDetailField = 'pipeline' | 'verdict' | 'workflow_type' | 'rule_id';
-export type AuditAggregationOperation = 'count' | 'count_distinct' | 'sum_meter' | 'average_meter';
-export type AuditAggregationDistinctField = 'resource_id' | 'request_id';
+export type AuditAggregationResolution = z.infer<typeof AuditAggregationResolutionSchema>;
+export type AuditAggregationDetailField = z.infer<typeof AuditAggregationDetailFieldSchema>;
+export type AuditAggregationOperation = z.infer<typeof AuditAggregationOperationSchema>;
+export type AuditAggregationDistinctField = z.infer<typeof AuditAggregationDistinctFieldSchema>;
 
-export interface AuditAggregationGroup {
-    dimension: AuditAggregationDimension;
-    /** Required for the time dimension; defaults to day. */
-    resolution?: AuditAggregationResolution;
-}
+export type AuditAggregationGroup = z.infer<typeof AuditAggregationGroupSchema>;
 
-export interface AuditAggregationMetric {
-    /** Stable key used in response rows. Must contain only letters, numbers, underscores, or hyphens. */
-    id: string;
-    operation: AuditAggregationOperation;
-    /** Required for count_distinct. */
-    field?: AuditAggregationDistinctField;
-    /** Required for meter operations. */
-    meterCategory?: string;
-    /** Required for meter operations. */
-    meterType?: string;
-}
+export type AuditAggregationMetric = z.infer<typeof AuditAggregationMetricSchema>;
 
-export interface AuditAggregationDetailFilter {
-    field: AuditAggregationDetailField;
-    values: string[];
-}
+export type AuditAggregationDetailFilter = z.infer<typeof AuditAggregationDetailFilterSchema>;
 
-export interface AuditAggregationFilter {
-    actions?: AuditAction[];
-    resourceTypes?: string[];
-    eventCategories?: EventCategory[];
-    providers?: string[];
-    success?: boolean;
-    details?: AuditAggregationDetailFilter[];
-}
+export type AuditAggregationFilter = z.infer<typeof AuditAggregationFilterSchema>;
 
 /**
  * Safe audit aggregation query. The server always applies the authenticated account scope and,
  * for project-scoped principals, replaces projectId with the authenticated project.
  */
-export interface AuditAggregationQuery {
-    /** Optional account-admin project filter. Ignored for project-scoped principals. */
-    projectId?: string;
-    /** Start time; defaults to 30 days before to. The server caps the range at 366 days. */
-    from?: string;
-    /** End time; defaults to the current time. */
-    to?: string;
-    filter?: AuditAggregationFilter;
-    groupBy?: AuditAggregationGroup[];
-    metrics: AuditAggregationMetric[];
-    /** Maximum groups returned (default 50, max 200). */
-    limit?: number;
-}
+export type AuditAggregationQuery = z.infer<typeof AuditAggregationQuerySchema>;
 
-export interface AuditAggregationRow {
-    dimensions: Partial<Record<AuditAggregationDimension, string | null>>;
-    metrics: Record<string, number>;
-}
+export type AuditAggregationRow = z.infer<typeof AuditAggregationRowSchema>;
 
-export interface AuditAggregationResponse {
-    rows: AuditAggregationRow[];
-    from: string;
-    to: string;
-}
+export type AuditAggregationResponse = z.infer<typeof AuditAggregationResponseSchema>;
+
+/** Billable audit actions for cost analytics queries */
+export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];

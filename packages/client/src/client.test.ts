@@ -1,3 +1,4 @@
+import { APP_VERSION_HEADER } from '@vertesia/common';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { isTokenExpired, VertesiaClient } from './client.js';
 
@@ -144,6 +145,21 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('https://studio-server-production.api.becomposable.com');
         expect(client.storeUrl).toBe('https://zeno-server-production.api.becomposable.com');
+    });
+
+    test('withAppVersion keeps Studio and Store requests pinned together', () => {
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio-server-production.api.becomposable.com',
+            storeUrl: 'https://zeno-server-production.api.becomposable.com',
+        });
+
+        expect(client.withAppVersion('candidate-v1')).toBe(client);
+        expect(client.headers[APP_VERSION_HEADER]).toBe('candidate-v1');
+        expect(client.store.headers[APP_VERSION_HEADER]).toBe('candidate-v1');
+
+        client.withAppVersion(null);
+        expect(client.headers[APP_VERSION_HEADER]).toBeUndefined();
+        expect(client.store.headers[APP_VERSION_HEADER]).toBeUndefined();
     });
 });
 

@@ -49,7 +49,8 @@ export function useFetch<T = unknown>(fetcher: () => Promise<T>, opts?: FetchOpt
     useEffect(() => {
         const currentOptions = optionsRef.current;
         if (!currentOptions.condition || currentOptions.condition()) {
-            fetch();
+            // `fetch` handles its own rejections (see the `.catch` above), so there is nothing to await here.
+            void fetch();
         }
     }, [fetch, ...(options.deps ?? [])]);
     return { data, isLoading, error, setData, refetch: fetch };

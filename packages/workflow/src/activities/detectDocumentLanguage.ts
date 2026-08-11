@@ -1,7 +1,11 @@
 import { log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import {
+    executeInteractionFromActivity,
+    getInteractionRateLimitFailure,
+    type InteractionExecutionParams,
+} from './executeInteraction.js';
 
 const INT_DETECT_LANGUAGE = 'sys:DetectLanguage';
 
@@ -60,7 +64,11 @@ export async function detectDocumentLanguage(payload: DSLActivityExecutionPayloa
             { content },
             payload.debug_mode ?? false,
         );
-    } catch (error) {
+    } catch (error: unknown) {
+        const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
+        if (rateLimitFailure) {
+            throw rateLimitFailure;
+        }
         // Language detection is best-effort — never fail the whole intake over it.
         log.warn(`detectDocumentLanguage: detection failed for ${objectId}, skipping`, { error: String(error) });
         return { status: 'skipped', message: 'detection-failed' };

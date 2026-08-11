@@ -1,6 +1,5 @@
-import { HomeIcon, LibraryIcon } from 'lucide-react';
+import { HomeIcon } from 'lucide-react';
 import { HomePage } from './pages/HomePage';
-import { ViewExamplePage } from './pages/ViewExamplePage';
 
 // To make another module the app home, use:
 // import { redirectTo } from '@vertesia/ui/router';
@@ -12,13 +11,6 @@ export const routes = [
         label: 'nav.home',
         icon: HomeIcon,
         Component: () => <HomePage />,
-    },
-    {
-        // Example: embed a reusable View Experience (see pages/ViewExamplePage.tsx).
-        path: '/views/document-library',
-        label: 'Document Library',
-        icon: LibraryIcon,
-        Component: () => <ViewExamplePage />,
     },
     {
         path: '*',
