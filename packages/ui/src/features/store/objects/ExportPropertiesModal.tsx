@@ -11,15 +11,22 @@ interface ExportPropertiesModalProps {
     isExporting: boolean;
     isOpen: boolean;
     onClose: (exportType?: string | null | undefined, exportAll?: boolean) => void;
+    /** Hide the all-objects option when the caller can only export an explicit selection. */
+    allowExportAll?: boolean;
 }
-export function ExportPropertiesModal({ isExporting, isOpen, onClose }: ExportPropertiesModalProps) {
+export function ExportPropertiesModal({
+    isExporting,
+    isOpen,
+    onClose,
+    allowExportAll = true,
+}: ExportPropertiesModalProps) {
     const title = 'Export Object Properties';
 
     return (
         <Modal onClose={() => onClose(undefined)} isOpen={isOpen}>
             <ModalTitle>{title}</ModalTitle>
             <ModalBody>
-                {!isExporting && <SelectPanel onClose={onClose} />}
+                {!isExporting && <SelectPanel onClose={onClose} allowExportAll={allowExportAll} />}
                 {isExporting && <WaitingPanel />}
             </ModalBody>
         </Modal>
@@ -28,13 +35,13 @@ export function ExportPropertiesModal({ isExporting, isOpen, onClose }: ExportPr
 
 interface SelectPanelProps {
     onClose: (exportType?: string | null, exportAll?: boolean) => void;
+    allowExportAll: boolean;
 }
-function SelectPanel({ onClose }: SelectPanelProps) {
+function SelectPanel({ onClose, allowExportAll }: SelectPanelProps) {
     const { t } = useUITranslation();
     const [exportType, setExportType] = useState<string | undefined>(undefined);
-    const [exportAll, setExportAll] = useState<string | undefined>(undefined);
-
     const selectionOption: string[] = ['Export selected objects', 'Export all objects'];
+    const [exportAll, setExportAll] = useState<string | undefined>(allowExportAll ? undefined : selectionOption[0]);
 
     const exportAllBoolean = (option: string | undefined) => {
         return option === selectionOption[1];
@@ -46,17 +53,19 @@ function SelectPanel({ onClose }: SelectPanelProps) {
 
     return (
         <ModalBody className="min-h-[104px] pt-0 flex flex-col gap-y-4">
-            <div className="h-1/3">
-                <SelectBox
-                    options={selectionOption}
-                    value={exportAll}
-                    onChange={setExportAll}
-                    placeholder={t('store.chooseWhatToExport')}
-                    className="h-full w-full text-sm"
-                    filterBy="name"
-                    isClearable
-                />
-            </div>
+            {allowExportAll && (
+                <div className="h-1/3">
+                    <SelectBox
+                        options={selectionOption}
+                        value={exportAll}
+                        onChange={setExportAll}
+                        placeholder={t('store.chooseWhatToExport')}
+                        className="h-full w-full text-sm"
+                        filterBy="name"
+                        isClearable
+                    />
+                </div>
+            )}
             <div className="h-1/2 flex flex-col gap-y-8 content-between">
                 <SelectBox
                     options={Object.values(ExportTypes)}

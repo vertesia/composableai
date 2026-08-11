@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { ViewNavigationNode } from '../views.js';
 import { ContentObjectItemApiResponseSchema } from './content.js';
 import { StringArrayMapSchema } from './dashboard.js';
+import { StringValueMapSchema } from './files.js';
 import * as ViewSchemas from './views.js';
 
 const ViewSearchFieldDefinitionSchema = ViewSchemas.ViewSearchFieldDefinitionSchema;
@@ -49,6 +50,9 @@ export const ExecuteViewRequestSchema = z
         query: z.string().optional(),
         key_terms: StringArrayMapSchema.optional(),
         navigation: StringArrayMapSchema.optional(),
+        navigation_queries: StringValueMapSchema.meta({
+            description: 'Server-side text filters for large navigation sources, keyed by navigation id.',
+        }).optional(),
         display: z.string().optional(),
         sort: z.string().optional(),
         offset: z.number().optional(),
@@ -65,9 +69,13 @@ export const ViewNavigationResultSchema = z
         id: z.string(),
         selected: z.array(z.string()),
         nodes: z.array(ViewNavigationNodeSchema),
+        query: z
+            .string()
+            .meta({ description: 'Applied server-side node filter, when the navigation source supports it.' })
+            .optional(),
         breadcrumbs: z
             .array(ViewNavigationNodeSchema)
-            .meta({ description: 'Selected hierarchy path from its root through the current value.' })
+            .meta({ description: 'Selected drill-down path from its root through the current value.' })
             .optional(),
         truncated: z.boolean().optional(),
     })
@@ -86,6 +94,20 @@ export const ViewExecutionQueryPlanSchema = z
         description:
             'Safe query-planning diagnostics. The query contains only the model-authored subtree; server-owned scope and content-security filters are never exposed.',
     });
+
+export const ViewRerankFailureCodeSchema = z
+    .enum(['interaction_failed', 'invalid_output', 'timeout', 'unknown'])
+    .meta({ id: 'ViewRerankFailureCode' });
+
+export const ViewExecutionRerankResultSchema = z
+    .strictObject({
+        status: z.enum(['applied', 'fallback', 'skipped']),
+        candidate_count: z.number(),
+        skip_reason: z.enum(['not_enough_candidates', 'query_fallback', 'explicit_sort', 'configured_sort']).optional(),
+        error_code: ViewRerankFailureCodeSchema.optional(),
+        error_message: z.string().optional(),
+    })
+    .meta({ id: 'ViewExecutionRerankResult' });
 
 export const ViewExecutionSearchConfigurationSchema = z
     .strictObject({
@@ -116,8 +138,9 @@ export const ViewExecutionSearchResultSchema = z
         interpretation: z.string().optional(),
         key_terms: StringArrayMapSchema.optional(),
         plan: ViewExecutionQueryPlanSchema.optional(),
+        rerank: ViewExecutionRerankResultSchema.optional(),
         requested_mode: z.enum(['browse', 'deterministic', 'agentic']),
-        applied_mode: z.enum(['browse', 'deterministic', 'query']),
+        applied_mode: z.enum(['browse', 'deterministic', 'query', 'query_and_view']),
         fallback_reason: z.string().optional(),
         warnings: z.array(ViewExecutionWarningSchema),
     })
@@ -185,6 +208,9 @@ export const PreviewViewExperienceRequestSchema = z
         query: z.string().optional(),
         key_terms: StringArrayMapSchema.optional(),
         navigation: StringArrayMapSchema.optional(),
+        navigation_queries: StringValueMapSchema.meta({
+            description: 'Server-side text filters for large navigation sources, keyed by navigation id.',
+        }).optional(),
         display: z.string().optional(),
         sort: z.string().optional(),
         offset: z.number().optional(),
