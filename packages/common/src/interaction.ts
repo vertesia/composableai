@@ -19,9 +19,12 @@ import type {
     AsyncExecutionPayloadSchema,
     AsyncExecutionResultSchema,
     AsyncInteractionExecutionPayloadSchema,
+    BatchDispatchResultSchema,
+    BatchFlushReasonSchema,
+    BatchPollResultSchema,
+    BatchPoolInfoSchema,
     BatchReconcileRequestSchema,
     BatchReconcileResponseSchema,
-    BatchPoolInfoSchema,
     CachePolicySchema,
     CatalogInteractionRefSchema,
     ConversationStripOptionsSchema,
@@ -38,6 +41,7 @@ import type {
     ImprovePromptPayloadConfigSchema,
     ImprovePromptPayloadSchema,
     InCodePromptSchema,
+    InferenceBatchSchema,
     InitialToolCallSchema,
     InteractionCreatePayloadSchema,
     InteractionEndpointQuerySchema,
@@ -54,7 +58,6 @@ import type {
     InteractionTagsSchema,
     InteractionUpdatePayloadSchema,
     InteractionVisibilitySchema,
-    InferenceBatchSchema,
     ListInferenceBatchesQuerySchema,
     NamedInteractionExecutionPayloadSchema,
     PromptImprovementResponseSchema,
@@ -318,6 +321,12 @@ export type InferenceBatch = z.infer<typeof InferenceBatchSchema>;
 export type ListInferenceBatchesQuery = z.infer<typeof ListInferenceBatchesQuerySchema>;
 
 export type BatchPoolInfo = z.infer<typeof BatchPoolInfoSchema>;
+
+export type BatchFlushReason = z.infer<typeof BatchFlushReasonSchema>;
+
+export type BatchDispatchResult = z.infer<typeof BatchDispatchResultSchema>;
+
+export type BatchPollResult = z.infer<typeof BatchPollResultSchema>;
 
 export type BatchReconcilerWakeReason = 'startup' | 'run_parked' | 'scheduled';
 

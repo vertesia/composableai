@@ -81,6 +81,39 @@ export const BatchPoolInfoSchema = z
 
 export const BatchPoolInfoArraySchema = z.array(BatchPoolInfoSchema).meta({ id: 'BatchPoolInfoArray' });
 
+export const BatchFlushReasonSchema = z
+    .enum(['volume', 'load', 'max_wait', 'accumulating', 'job_pool_full'])
+    .meta({ id: 'BatchFlushReason' });
+
+export const BatchDispatchResultSchema = z
+    .strictObject({
+        environment: z.string(),
+        model: z.string(),
+        reason: BatchFlushReasonSchema,
+        batched: z.number().int(),
+        synchronous: z.number().int().optional(),
+        batchId: z.string().optional(),
+        jobId: z.string().optional(),
+        error: z.string().optional(),
+    })
+    .meta({ id: 'BatchDispatchResult' });
+
+export const BatchDispatchResultArraySchema = z
+    .array(BatchDispatchResultSchema)
+    .meta({ id: 'BatchDispatchResultArray' });
+
+export const BatchPollResultSchema = z
+    .strictObject({
+        batchId: z.string(),
+        status: InferenceBatchStatusSchema,
+        completed: z.number().int().optional(),
+        failed: z.number().int().optional(),
+        error: z.string().optional(),
+    })
+    .meta({ id: 'BatchPollResult' });
+
+export const BatchPollResultArraySchema = z.array(BatchPollResultSchema).meta({ id: 'BatchPollResultArray' });
+
 export const ListInferenceBatchesQuerySchema = z
     .strictObject({ status: InferenceBatchStatusSchema.optional() })
     .meta({ id: 'ListInferenceBatchesQuery' });
