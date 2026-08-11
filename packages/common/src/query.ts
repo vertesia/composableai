@@ -29,6 +29,8 @@ export interface RunListingQueryOptions {
  * it. A single value and a one-element array are the same request.
  */
 export interface RunListingFilters {
+    /** Return runs belonging to this inference batch. */
+    batch_id?: string;
     interaction?: string | string[];
     status?: ExecutionRunStatus | ExecutionRunStatus[];
     model?: string | string[];

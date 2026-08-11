@@ -13,7 +13,9 @@ import {
 import { z } from 'zod';
 import {
     AgentSearchScope,
+    ExecutionMode,
     ExecutionRunStatus,
+    InferenceBatchStatus,
     InteractionStatus,
     ModelSource,
     RunSourceTypes,
@@ -37,6 +39,106 @@ import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } fr
 export const SortOrderSchema = z.enum(['asc', 'desc']).meta({ id: 'SortOrder' });
 
 export const ExecutionRunStatusSchema = z.enum(ExecutionRunStatus).meta({ id: 'ExecutionRunStatus' });
+
+export const ExecutionModeSchema = z.enum(ExecutionMode).meta({
+    id: 'ExecutionMode',
+    description: 'Explicit provider batch routing mode for an interaction execution.',
+});
+
+export const InferenceBatchStatusSchema = z.enum(InferenceBatchStatus).meta({ id: 'InferenceBatchStatus' });
+
+export const InferenceBatchSchema = z
+    .strictObject({
+        id: z.string(),
+        provider_job_id: z.string().optional(),
+        environment: z.string(),
+        model: z.string(),
+        region: z.string().optional(),
+        status: InferenceBatchStatusSchema,
+        run_count: z.number().int(),
+        completed_count: z.number().int().optional(),
+        submitted_at: z.string().meta({ format: 'date-time' }).optional(),
+        completed_at: z.string().meta({ format: 'date-time' }).optional(),
+        output_uri: z.string().optional(),
+        error: z.string().optional(),
+        created_at: z.string().meta({ format: 'date-time' }),
+        updated_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'InferenceBatch', description: 'A submitted provider inference batch.' });
+
+export const InferenceBatchArraySchema = z.array(InferenceBatchSchema).meta({ id: 'InferenceBatchArray' });
+
+export const BatchPoolInfoSchema = z
+    .strictObject({
+        environment: z.string(),
+        model: z.string(),
+        size: z.number().int(),
+        oldest_age_ms: z.number().int(),
+        batch_only: z.number().int(),
+        batch_preferred: z.number().int(),
+    })
+    .meta({ id: 'BatchPoolInfo', description: 'A pending provider batch pool grouped by environment and model.' });
+
+export const BatchPoolInfoArraySchema = z.array(BatchPoolInfoSchema).meta({ id: 'BatchPoolInfoArray' });
+
+export const BatchFlushReasonSchema = z
+    .enum(['volume', 'load', 'max_wait', 'accumulating', 'job_pool_full'])
+    .meta({ id: 'BatchFlushReason' });
+
+export const BatchDispatchResultSchema = z
+    .strictObject({
+        environment: z.string(),
+        model: z.string(),
+        reason: BatchFlushReasonSchema,
+        batched: z.number().int(),
+        synchronous: z.number().int().optional(),
+        batchId: z.string().optional(),
+        jobId: z.string().optional(),
+        error: z.string().optional(),
+    })
+    .meta({ id: 'BatchDispatchResult' });
+
+export const BatchDispatchResultArraySchema = z
+    .array(BatchDispatchResultSchema)
+    .meta({ id: 'BatchDispatchResultArray' });
+
+export const BatchPollResultSchema = z
+    .strictObject({
+        batchId: z.string(),
+        status: InferenceBatchStatusSchema,
+        completed: z.number().int().optional(),
+        failed: z.number().int().optional(),
+        error: z.string().optional(),
+    })
+    .meta({ id: 'BatchPollResult' });
+
+export const BatchPollResultArraySchema = z.array(BatchPollResultSchema).meta({ id: 'BatchPollResultArray' });
+
+export const ListInferenceBatchesQuerySchema = z
+    .strictObject({ status: InferenceBatchStatusSchema.optional() })
+    .meta({ id: 'ListInferenceBatchesQuery' });
+
+export const BatchReconcileRequestSchema = z
+    .strictObject({
+        account_id: z.string(),
+        project_id: z.string(),
+        max_pools: z.number().int().min(1).max(100).optional(),
+        max_batches: z.number().int().min(1).max(100).optional(),
+    })
+    .meta({ id: 'BatchReconcileRequest' });
+
+export const BatchReconcileResponseSchema = z
+    .strictObject({
+        dispatched: z.number().int(),
+        synchronous: z.number().int(),
+        polled: z.number().int(),
+        completed: z.number().int(),
+        failed: z.number().int(),
+        errors: z.number().int(),
+        has_more_work: z.boolean(),
+        next_poll_after_ms: z.number().int().optional(),
+    })
+    .meta({ id: 'BatchReconcileResponse' });
 
 export const FacetSpecSchema = z
     .strictObject({
@@ -628,6 +730,7 @@ export const SortOptionSchema = z
 export const RunSearchQuerySchema = z
     .strictObject({
         name: z.string().optional(),
+        batch_id: z.string().meta({ description: 'Inference batch id to filter by.' }).optional(),
         status: ExecutionRunStatusSchema.optional(),
         limit: z.number().optional(),
         offset: z.number().optional(),
@@ -681,6 +784,7 @@ export const RunListQuerySchema = z
     .strictObject({
         limit: z.number().int().meta({ description: 'Maximum number of runs to return.' }).optional(),
         offset: z.number().int().meta({ description: 'Number of runs to skip.' }).optional(),
+        batch_id: z.string().meta({ description: 'Inference batch id to filter by.' }).optional(),
         interaction: z
             .array(z.string())
             .meta({ description: 'Interaction ids, or in-code interaction names, to filter by.' })
@@ -1361,6 +1465,8 @@ export const ExecutionRunSchema: z.ZodType = z
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
         status: ExecutionRunStatusSchema,
+        execution_mode: ExecutionModeSchema.optional(),
+        batch_id: z.string().optional(),
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
@@ -1419,6 +1525,8 @@ export const InteractionExecutionResultSchema = z
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
         status: ExecutionRunStatusSchema,
+        execution_mode: ExecutionModeSchema.optional(),
+        batch_id: z.string().optional(),
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
@@ -1528,6 +1636,8 @@ export const ExecutionRunRefSchema = z
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number(),
         status: ExecutionRunStatusSchema,
+        execution_mode: ExecutionModeSchema.optional(),
+        batch_id: z.string().optional(),
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
@@ -1887,6 +1997,10 @@ export const NamedInteractionExecutionPayloadSchema = z
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
         }).optional(),
+        execution_mode: ExecutionModeSchema.meta({
+            description:
+                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
+        }).optional(),
         interaction: z.string().meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
@@ -1932,6 +2046,10 @@ export const InteractionExecutionPayloadSchema = z
         asyncCompletion: AsyncCompletionOptionsSchema.meta({
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
+        }).optional(),
+        execution_mode: ExecutionModeSchema.meta({
+            description:
+                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
         }).optional(),
     })
     .meta({ id: 'InteractionExecutionPayload' });
@@ -2231,6 +2349,10 @@ export const RunCreatePayloadSchema = z
         asyncCompletion: AsyncCompletionOptionsSchema.meta({
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
+        }).optional(),
+        execution_mode: ExecutionModeSchema.meta({
+            description:
+                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
         }).optional(),
         interaction: z.string().meta({
             description:

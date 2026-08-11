@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { ContentTypeIntakePolicySchema as GeneratedIntakePolicySchema } from '../store/intake-policy-schema.generated.js';
 import type { ContentObjectTypeRef, ContentTypeIntakePolicy, IntakePageRanges } from '../store/store.js';
 import type { JsonObject } from './adapter.js';
+import { GetFileUrlPayloadSchema } from './files.js';
 import { ApiSchemaComponents, bundleCanonicalComponent, validateApiResponse } from './registry.js';
 import { ContentTypeIntakePolicySchema } from './store.js';
 
@@ -149,6 +150,24 @@ describe('content object response classification', () => {
         });
 
         expect(result).toMatchObject({ valid: true });
+    });
+});
+
+describe('signed download URL ttl contract', () => {
+    const maximumTtl = 7 * 24 * 60 * 60;
+
+    it('accepts a positive integer lifetime up to seven days in both contract representations', () => {
+        const payload = { file: 'gs://bucket/image.png', ttl: 26 * 60 * 60 };
+
+        expect(GetFileUrlPayloadSchema.safeParse(payload).success).toBe(true);
+        expect(validateApiResponse('GetFileUrlPayload', payload)).toMatchObject({ valid: true });
+    });
+
+    it.each([0, 1.5, maximumTtl + 1])('rejects an invalid lifetime of %s seconds', (ttl) => {
+        const payload = { file: 'gs://bucket/image.png', ttl };
+
+        expect(GetFileUrlPayloadSchema.safeParse(payload).success).toBe(false);
+        expect(validateApiResponse('GetFileUrlPayload', payload)).toMatchObject({ valid: false });
     });
 });
 

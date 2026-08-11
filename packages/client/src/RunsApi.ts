@@ -1,11 +1,16 @@
 import type { ExecutionResponse } from '@llumiverse/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    BatchDispatchResult,
+    BatchPollResult,
+    BatchPoolInfo,
     ComputeRunFacetPayload,
     ExecutionRun,
     ExecutionRunDocRef,
     ExecutionRunRef,
     FindPayload,
+    InferenceBatch,
+    InferenceBatchStatus,
     PopulatedExecutionRun,
     RunClonePayload,
     RunCreatePayload,
@@ -52,6 +57,26 @@ export class RunsApi extends ApiTopic {
         };
 
         return this.get('/', { query: query });
+    }
+
+    /** List the pending batch-accumulator pools (`created` batch runs grouped by env:model). */
+    batchPools(): Promise<BatchPoolInfo[]> {
+        return this.get('/batch-pools');
+    }
+
+    /** List submitted inference batches, most recent first, optionally filtered by status. */
+    batches(status?: InferenceBatchStatus): Promise<InferenceBatch[]> {
+        return this.get('/batches', { query: status ? { status } : undefined });
+    }
+
+    /** Explicitly submit all currently pending batch pools to their providers. */
+    requestBatch(): Promise<BatchDispatchResult[]> {
+        return this.post('/batch-pools/dispatch');
+    }
+
+    /** Explicitly poll all non-terminal provider batches and finalize completed runs. */
+    pollBatches(): Promise<BatchPollResult[]> {
+        return this.post('/batches/poll');
     }
 
     find(payload: FindPayload): Promise<ExecutionRun[]> {

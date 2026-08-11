@@ -19,6 +19,12 @@ import type {
     AsyncExecutionPayloadSchema,
     AsyncExecutionResultSchema,
     AsyncInteractionExecutionPayloadSchema,
+    BatchDispatchResultSchema,
+    BatchFlushReasonSchema,
+    BatchPollResultSchema,
+    BatchPoolInfoSchema,
+    BatchReconcileRequestSchema,
+    BatchReconcileResponseSchema,
     CachePolicySchema,
     CatalogInteractionRefSchema,
     ConversationStripOptionsSchema,
@@ -35,6 +41,7 @@ import type {
     ImprovePromptPayloadConfigSchema,
     ImprovePromptPayloadSchema,
     InCodePromptSchema,
+    InferenceBatchSchema,
     InitialToolCallSchema,
     InteractionCreatePayloadSchema,
     InteractionEndpointQuerySchema,
@@ -51,6 +58,7 @@ import type {
     InteractionTagsSchema,
     InteractionUpdatePayloadSchema,
     InteractionVisibilitySchema,
+    ListInferenceBatchesQuerySchema,
     NamedInteractionExecutionPayloadSchema,
     PromptImprovementResponseSchema,
     PromptModalitiesSchema,
@@ -286,6 +294,64 @@ export enum ExecutionRunStatus {
     failed = 'failed',
 }
 
+/**
+ * How an execution may be routed with respect to provider batch inference.
+ * - `direct`: always run synchronously, never batched (real-time / near-line: agent uploads, manual drops).
+ * - `batch_preferred`: batch when it pays off (enough volume or the env:model slot is saturated), otherwise sync.
+ * - `batch_only`: force batch to guarantee the cost saving, even when alone (flushed after max_wait).
+ * Batch requires the environment's provider to support a batch API; otherwise these fall back to sync.
+ */
+export enum ExecutionMode {
+    direct = 'direct',
+    batch_preferred = 'batch_preferred',
+    batch_only = 'batch_only',
+}
+
+/** Status of a submitted provider inference batch. */
+export enum InferenceBatchStatus {
+    queued = 'queued',
+    running = 'running',
+    succeeded = 'succeeded',
+    failed = 'failed',
+    cancelled = 'cancelled',
+}
+
+export type InferenceBatch = z.infer<typeof InferenceBatchSchema>;
+
+export type ListInferenceBatchesQuery = z.infer<typeof ListInferenceBatchesQuerySchema>;
+
+export type BatchPoolInfo = z.infer<typeof BatchPoolInfoSchema>;
+
+export type BatchFlushReason = z.infer<typeof BatchFlushReasonSchema>;
+
+export type BatchDispatchResult = z.infer<typeof BatchDispatchResultSchema>;
+
+export type BatchPollResult = z.infer<typeof BatchPollResultSchema>;
+
+export type BatchReconcilerWakeReason = 'startup' | 'run_parked' | 'scheduled';
+
+/** A tenant whose batch accumulator should be reconciled. */
+export interface BatchReconcilerTenant {
+    account_id: string;
+    project_id: string;
+}
+
+/** Durable wake-up sent to the singleton reconciler. */
+export interface BatchReconcilerWake extends Partial<BatchReconcilerTenant> {
+    reason: BatchReconcilerWakeReason;
+}
+
+/** Initial/continuation state for the singleton reconciler workflow. */
+export interface BatchReconcilerWorkflowInput {
+    studio_url: string;
+    studio_audience?: string;
+    pending?: Array<BatchReconcilerTenant & { due_at: number }>;
+    cycles?: number;
+}
+
+export type BatchReconcileRequest = z.infer<typeof BatchReconcileRequestSchema>;
+
+export type BatchReconcileResponse = z.infer<typeof BatchReconcileResponseSchema>;
 /**
  * Schema can be stored or specified as a reference to an external schema.
  * We only support "store:" references for now
@@ -539,6 +605,10 @@ export interface BaseExecutionRun<P = unknown> {
     result_schema?: JSONSchema;
     ttl: number;
     status: ExecutionRunStatus;
+    /** Batch routing mode; when `batch_preferred`/`batch_only` the run is parked in `created` for the accumulator. */
+    execution_mode?: ExecutionMode;
+    /** Id of the accumulator batch this run was assigned to, once claimed. */
+    batch_id?: string;
     finish_reason?: string;
     prompt?: unknown;
     token_use?: ExecutionTokenUsage;
