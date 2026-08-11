@@ -9,6 +9,7 @@ import type {
     PopulatedExecutionRun,
     RunClonePayload,
     RunCreatePayload,
+    RunFacetsResponse,
     RunListingFilters,
     RunListingQueryOptions,
     RunSearchPayload,
@@ -24,14 +25,7 @@ export interface FilterOption {
     count: number;
 }
 
-export interface ComputeRunFacetsResponse {
-    environments?: { _id: string; count: number }[];
-    interactions?: { _id: string; count: number }[];
-    models?: { _id: string; count: number }[];
-    tags?: { _id: string; count: number }[];
-    status?: { _id: string; count: number }[];
-    total?: number;
-}
+export type ComputeRunFacetsResponse = RunFacetsResponse;
 
 export class RunsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -145,7 +139,7 @@ export class RunsApi extends ApiTopic {
     /**
      * Get the list of all runs facets
      * @param payload query payload to filter facet search
-     * @returns ComputeRunFacetsResponse[]
+     * @returns Facet buckets and the total number of matching runs
      **/
     computeFacets(query: ComputeRunFacetPayload): Promise<ComputeRunFacetsResponse> {
         return this.post('/facets', {

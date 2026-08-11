@@ -37,3 +37,4 @@ export interface RangeValue {
 
 export type RunSearchMetaResponse = z.infer<typeof RunSearchMetaResponseSchema>;
 export type RunFacetsResponse = z.infer<typeof RunFacetsResponseSchema>;
+export type RunFacetBucket = NonNullable<RunFacetsResponse['models']>[number];

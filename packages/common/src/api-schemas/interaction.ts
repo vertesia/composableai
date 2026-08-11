@@ -2340,8 +2340,16 @@ export const ExecutionResponseSchema = z
     })
     .meta({ id: 'ExecutionResponse' });
 
+const RunFacetSpecSchema = z.discriminatedUnion('name', [
+    z.strictObject({ name: z.literal('environments'), field: z.literal('environment') }),
+    z.strictObject({ name: z.literal('interactions'), field: z.literal('interaction') }),
+    z.strictObject({ name: z.literal('models'), field: z.literal('modelId') }),
+    z.strictObject({ name: z.literal('statuses'), field: z.literal('status') }),
+    z.strictObject({ name: z.literal('finish_reason'), field: z.literal('finish_reason') }),
+]);
+
 export const ComputeRunFacetPayloadSchema = z
-    .strictObject({ facets: z.array(FacetSpecSchema), query: RunSearchQuerySchema.optional() })
+    .strictObject({ facets: z.array(RunFacetSpecSchema).max(5), query: RunSearchQuerySchema.optional() })
     .meta({ id: 'ComputeRunFacetPayload' });
 
 export const RunSearchMetaResponseSchema = z
@@ -2356,33 +2364,26 @@ export const RunSearchMetaResponseSchema = z
     })
     .meta({ id: 'RunSearchMetaResponse' });
 
-const RunFacetBucketSchema = z
-    .object({
-        _id: z.string().nullable(),
-        count: z.number(),
-    })
-    .passthrough();
+const RunFacetBucketSchema = z.strictObject({
+    _id: z.string().nullable(),
+    count: z.number(),
+    name: z.string().optional(),
+    status: InteractionStatusSchema.optional(),
+    version: z.number().optional(),
+});
 
 /**
- * Legacy response returned by POST /runs/facets.
- *
- * Facet names come from the request, so the known Studio facet fields are typed explicitly while
- * additional requested facet names remain accepted for compatibility.
+ * Response returned by POST /runs/facets.
  */
 export const RunFacetsResponseSchema = z
-    .object({
+    .strictObject({
         environments: z.array(RunFacetBucketSchema).optional(),
         interactions: z.array(RunFacetBucketSchema).optional(),
         models: z.array(RunFacetBucketSchema).optional(),
         statuses: z.array(RunFacetBucketSchema).optional(),
-        tags: z.array(RunFacetBucketSchema).optional(),
         finish_reason: z.array(RunFacetBucketSchema).optional(),
-        created_by: z.array(RunFacetBucketSchema).optional(),
-        start: z.array(RunFacetBucketSchema).optional(),
-        end: z.array(RunFacetBucketSchema).optional(),
         total: z.number().optional(),
     })
-    .passthrough()
     .meta({ id: 'RunFacetsResponse' });
 
 export const RunClonePayloadSchema = z

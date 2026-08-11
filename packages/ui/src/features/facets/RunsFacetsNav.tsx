@@ -1,4 +1,4 @@
-import type { FacetBucket } from '@vertesia/common';
+import type { RunFacetBucket, RunFacetsResponse } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     Button,
@@ -15,19 +15,9 @@ import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
 import type { EnrichedFacetBucket } from './utils/VInteractionFacet';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
-import { VUserFacet } from './utils/VUserFacet';
 
 interface RunsFacetsNavProps {
-    facets: {
-        type?: FacetBucket[];
-        interactions?: EnrichedFacetBucket[];
-        environments?: FacetBucket[];
-        models?: FacetBucket[];
-        statuses?: FacetBucket[];
-        tags?: FacetBucket[];
-        finish_reason?: FacetBucket[];
-        created_by?: FacetBucket[];
-    };
+    facets: RunFacetsResponse;
     search: SearchInterface;
     actions?: React.ReactNode[];
     selectionCount?: number;
@@ -40,6 +30,10 @@ interface RunsFacetsNavProps {
     filters?: BaseFilter[];
     setFilters?: React.Dispatch<React.SetStateAction<BaseFilter[]>>;
     filterGroups?: FilterGroup[];
+}
+
+function selectableBuckets(buckets: RunFacetBucket[]): EnrichedFacetBucket[] {
+    return buckets.filter((bucket): bucket is typeof bucket & { _id: string } => bucket._id !== null);
 }
 
 // Hook to create filter groups for runs
@@ -56,7 +50,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.interactions) {
         const interactionFilterGroup = VInteractionFacet({
-            buckets: facets.interactions || [],
+            buckets: selectableBuckets(facets.interactions),
             name: 'interaction',
             placeholder: 'Interactions',
         });
@@ -65,7 +59,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.environments) {
         const environmentFilterGroup = VEnvironmentFacet({
-            buckets: facets.environments || [],
+            buckets: selectableBuckets(facets.environments),
             name: 'environments',
         });
         customFilterGroups.push(environmentFilterGroup);
@@ -82,7 +76,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.models) {
         const modelFilterGroup = VStringFacet({
-            buckets: facets.models || [],
+            buckets: selectableBuckets(facets.models),
             name: 'model',
         });
         customFilterGroups.push(modelFilterGroup);
@@ -90,7 +84,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.statuses) {
         const statusFilterGroup = VStringFacet({
-            buckets: facets.statuses || [],
+            buckets: selectableBuckets(facets.statuses),
             name: 'status',
         });
         customFilterGroups.push(statusFilterGroup);
@@ -108,15 +102,6 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
             placeholder: 'Finish Reason',
         });
         customFilterGroups.push(finishReasonFilterGroup);
-    }
-
-    if (facets.created_by) {
-        const createdByFilterGroup = VUserFacet({
-            buckets: facets.created_by || [],
-            name: 'created_by',
-            placeholder: 'Created By',
-        });
-        customFilterGroups.push(createdByFilterGroup);
     }
 
     const dateAfterFilterGroup = {

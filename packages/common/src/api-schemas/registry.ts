@@ -3139,6 +3139,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'PricingSyncDayResult',
     'PricingSyncResult',
     'ComputeRunFacetPayload',
+    'RunFacetsResponse',
     'RunSearchMetaResponse',
     'ToolResultsPayload',
     'UserMessagePayload',
