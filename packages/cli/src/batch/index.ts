@@ -43,7 +43,7 @@ export async function listBatches(
     options: CliOptions<{ status?: InferenceBatchStatus }>,
 ): Promise<void> {
     const client = await getClient(program);
-    const batches = await client.runs.batches(options.status);
+    const batches = await client.runs.batches(options.status ? { status: options.status } : undefined);
     if (batches.length === 0) {
         console.log('No batches.');
         return;

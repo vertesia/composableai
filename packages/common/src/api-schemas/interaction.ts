@@ -92,8 +92,8 @@ export const BatchDispatchResultSchema = z
         reason: BatchFlushReasonSchema,
         batched: z.number().int(),
         synchronous: z.number().int().optional(),
-        batchId: z.string().optional(),
-        jobId: z.string().optional(),
+        batch_id: z.string().optional(),
+        job_id: z.string().optional(),
         error: z.string().optional(),
     })
     .meta({ id: 'BatchDispatchResult' });
@@ -104,7 +104,7 @@ export const BatchDispatchResultArraySchema = z
 
 export const BatchPollResultSchema = z
     .strictObject({
-        batchId: z.string(),
+        batch_id: z.string(),
         status: InferenceBatchStatusSchema,
         completed: z.number().int().optional(),
         failed: z.number().int().optional(),
@@ -115,7 +115,16 @@ export const BatchPollResultSchema = z
 export const BatchPollResultArraySchema = z.array(BatchPollResultSchema).meta({ id: 'BatchPollResultArray' });
 
 export const ListInferenceBatchesQuerySchema = z
-    .strictObject({ status: InferenceBatchStatusSchema.optional() })
+    .strictObject({
+        status: InferenceBatchStatusSchema.optional(),
+        limit: z
+            .number()
+            .int()
+            .positive()
+            .meta({ description: 'Maximum number of batches to return. Defaults to 200, capped at 1000.' })
+            .optional(),
+        offset: z.number().int().min(0).meta({ description: 'Number of batches to skip.' }).optional(),
+    })
     .meta({ id: 'ListInferenceBatchesQuery' });
 
 export const BatchReconcileRequestSchema = z

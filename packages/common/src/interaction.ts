@@ -328,27 +328,6 @@ export type BatchDispatchResult = z.infer<typeof BatchDispatchResultSchema>;
 
 export type BatchPollResult = z.infer<typeof BatchPollResultSchema>;
 
-export type BatchReconcilerWakeReason = 'startup' | 'run_parked' | 'scheduled';
-
-/** A tenant whose batch accumulator should be reconciled. */
-export interface BatchReconcilerTenant {
-    account_id: string;
-    project_id: string;
-}
-
-/** Durable wake-up sent to the singleton reconciler. */
-export interface BatchReconcilerWake extends Partial<BatchReconcilerTenant> {
-    reason: BatchReconcilerWakeReason;
-}
-
-/** Initial/continuation state for the singleton reconciler workflow. */
-export interface BatchReconcilerWorkflowInput {
-    studio_url: string;
-    studio_audience?: string;
-    pending?: Array<BatchReconcilerTenant & { due_at: number }>;
-    cycles?: number;
-}
-
 export type BatchReconcileRequest = z.infer<typeof BatchReconcileRequestSchema>;
 
 export type BatchReconcileResponse = z.infer<typeof BatchReconcileResponseSchema>;

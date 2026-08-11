@@ -10,7 +10,7 @@ import type {
     ExecutionRunRef,
     FindPayload,
     InferenceBatch,
-    InferenceBatchStatus,
+    ListInferenceBatchesQuery,
     PopulatedExecutionRun,
     RunClonePayload,
     RunCreatePayload,
@@ -64,13 +64,16 @@ export class RunsApi extends ApiTopic {
         return this.get('/batch-pools');
     }
 
-    /** List submitted inference batches, most recent first, optionally filtered by status. */
-    batches(status?: InferenceBatchStatus): Promise<InferenceBatch[]> {
-        return this.get('/batches', { query: status ? { status } : undefined });
+    /**
+     * List submitted inference batches, most recent first, optionally filtered by status.
+     * Returns at most `limit` batches (default 200, max 1000); page with `offset`.
+     */
+    batches(query?: ListInferenceBatchesQuery): Promise<InferenceBatch[]> {
+        return this.get('/batches', { query });
     }
 
     /** Explicitly submit all currently pending batch pools to their providers. */
-    requestBatch(): Promise<BatchDispatchResult[]> {
+    dispatchBatches(): Promise<BatchDispatchResult[]> {
         return this.post('/batch-pools/dispatch');
     }
 

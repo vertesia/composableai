@@ -38,6 +38,19 @@ export const AUDIT_ACTIONS = [
     'image_generation',
     // Content processing outcomes
     'document_processed',
+    // Workflow lifecycle outcomes
+    'workflow_completed',
+    'workflow_failed',
+    // Provider inference batch lifecycle
+    'batch_created',
+    'batch_finished',
+    // Collection synchronization
+    'members_added',
+    'members_removed',
+    'collection_changed',
+    'collection_removed',
+    'ancestors_added',
+    'ancestors_removed',
 ] as const;
 
 // `AuditAction` is deliberately NOT inferred from `AuditActionSchema`: the schema is
