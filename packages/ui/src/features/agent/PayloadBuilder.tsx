@@ -6,6 +6,7 @@ import {
     type InCodeInteraction,
     type JSONSchema,
     mergeInCodePromptSchemas,
+    SupportedProviders,
     supportsToolUse,
     type UserChannel,
     type WorkflowInteractionVars,
@@ -18,6 +19,19 @@ import { createContext, useContext, useState, useSyncExternalStore } from 'react
 
 export type WorkflowMode = 'start' | 'schedule';
 type ModelOptions = NonNullable<WorkflowInteractionVars['config']['model_options']>;
+
+type ModelProvider = Parameters<typeof supportsToolUse>[1];
+
+function getExecutableProvider(provider: ExecutionEnvironmentRef['provider']): ModelProvider | undefined {
+    if (
+        provider === SupportedProviders.virtual_lb ||
+        provider === SupportedProviders.virtual_mediator ||
+        provider === SupportedProviders.test
+    ) {
+        return undefined;
+    }
+    return provider as ModelProvider;
+}
 
 export interface ScheduledWorkflowConfig {
     name: string;
@@ -323,13 +337,14 @@ export class PayloadBuilder {
         if (environment?.id !== this._environment?.id) {
             this._environment = environment;
             if (!this._preserveRunValues) {
+                const provider = environment ? getExecutableProvider(environment.provider) : undefined;
                 // First try to use the interaction model, then the environment default model
                 const interactionModel = this.interaction?.runtime?.model;
-                if (interactionModel && environment && supportsToolUse(interactionModel, environment.provider)) {
+                if (interactionModel && provider && supportsToolUse(interactionModel, provider)) {
                     this._model = interactionModel;
                 } else {
                     this._model =
-                        environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
+                        environment?.default_model && provider && supportsToolUse(environment.default_model, provider)
                             ? environment.default_model
                             : '';
                 }

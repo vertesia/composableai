@@ -873,7 +873,7 @@ const PROJECT_AND_APP_SCHEMAS = {
     BrowserUseProjectConfiguration: BrowserUseProjectConfigurationSchema,
     ProjectIntakeSniffConfiguration: ProjectIntakeSniffConfigurationSchema,
     // Leaves of the Project closure. `ModelOptions` hoists its
-    // twenty-three driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
+    // twenty-five driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
     JSONSchema: JSONSchemaSchema,
     ModelOptions: ModelOptionsSchema,
     HttpTimeoutOptions: HttpTimeoutOptionsSchema,
@@ -2466,7 +2466,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectConfiguration',
     'UpdateProjectPayload',
     'UpdateProjectConfigurationPayload',
-    // Every member of the `ModelOptions` union. All twenty-three are published closed today, and
+    // Every member of the `ModelOptions` union. All twenty-five are published closed today, and
     // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
     // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union
     // and takes no `additionalProperties`, and neither do the four hoisted enums.
@@ -2474,6 +2474,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // `JSONSchema` is deliberately absent: it is OPEN by design and by long-standing publication —
     // a JSON Schema carries keywords the type never enumerated. `JSONSchemaProperties` is a map.
     'TextFallbackOptions',
+    'AzureFoundryChatOptions',
     'ImagenOptions',
     'VertexAIClaudeOptions',
     'VertexAIGeminiOptions',
@@ -2496,6 +2497,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
     'GroqOptions',
+    'MistralTextOptions',
     // The app-manifest leaves. Every object among them is published closed today, the nested `git`
     // block included, and it is spelled `strictObject` so the emission carries it directly. The five
     // enums take no `additionalProperties` at all.
