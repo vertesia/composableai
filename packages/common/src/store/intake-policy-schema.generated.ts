@@ -318,6 +318,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 include_thoughts: {
                     type: 'boolean',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -364,6 +370,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['5m', '1h'],
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -393,6 +405,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 include_thoughts: {
                     type: 'boolean',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -421,6 +439,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 include_thoughts: {
                     type: 'boolean',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -457,6 +481,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 presence_penalty: {
                     type: 'number',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -609,6 +639,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 include_thoughts: {
                     type: 'boolean',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -637,6 +673,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 include_thoughts: {
                     type: 'boolean',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -675,6 +717,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 presence_penalty: {
                     type: 'number',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -1335,6 +1383,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 include_thoughts: {
                     type: 'boolean',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -1367,6 +1421,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 include_thoughts: {
                     type: 'boolean',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -1434,6 +1494,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 max_tokens: {
                     type: 'number',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -1532,8 +1598,17 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 thinking_level: {
                     $ref: '#/$defs/ThinkingLevel',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
                 flex: {
                     type: 'boolean',
+                    deprecated: true,
+                    'x-deprecated-message': 'Use service_tier="flex" instead.',
+                    description: 'Deprecated: Use service_tier="flex" instead.',
                 },
                 image_aspect_ratio: {
                     type: 'string',
