@@ -39,11 +39,15 @@ describe('run response contracts', () => {
                 account: 'account-1',
                 project: 'project-1',
                 interaction: 'interaction-1',
-                interaction_code: 'sys:Example',
                 result: [],
                 parameters: { query: 'test' },
             }),
         ).toMatchObject({ environment: 'env-1', account: 'account-1', project: 'project-1' });
+    });
+
+    it('does not publish run persistence-only fields', () => {
+        expect(() => FindRunResultSchema.parse({ interaction_code: 'sys:Example' })).toThrow();
+        expect(() => FindRunResultSchema.parse({ tmp_prompt: [] })).toThrow();
     });
 
     it('models enriched and dynamically named run facet buckets', () => {

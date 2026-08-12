@@ -1477,10 +1477,13 @@ export const FindRunResultSchema = InteractionExecutionResultSchema.omit({
 })
     .extend({
         environment: z.string(),
-        interaction_code: z.string().optional(),
     })
     .partial()
-    .meta({ id: 'FindRunResult' });
+    .meta({
+        id: 'FindRunResult',
+        description:
+            'A caller-selected subset of canonical stored run fields. Internal persistence fields are normalized at the API boundary.',
+    });
 
 export const FindRunResultArraySchema = z.array(FindRunResultSchema).meta({ id: 'FindRunResultArray' });
 
