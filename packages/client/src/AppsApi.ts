@@ -21,6 +21,7 @@ import type {
     AppRepoRefs,
     AppRepoTree,
     AppScaffoldProgress,
+    AppsQuery,
     AppToolCollection,
     AppVersionListQuery,
     AppVersionRecord,
@@ -294,11 +295,12 @@ export default class AppsApi extends ApiTopic {
     }
 
     /**
-     * @param ids - ids to filter by
+     * @param query - pass `{ scope: 'project' }` to list only the apps installed in, or built in,
+     * the current project. Defaults to every app visible to the account, including the public catalog.
      * @returns the app manifests but without the agent.tool property which can be big.
      */
-    list(): Promise<AppManifest[]> {
-        return this.get('/');
+    list(query?: AppsQuery): Promise<AppManifest[]> {
+        return this.get('/', { query: { ...(query?.scope && { scope: query.scope }) } });
     }
 
     /**
