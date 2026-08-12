@@ -69,7 +69,11 @@ describe('agent communication API contracts', () => {
         expect(
             validateApiResponse('ComputeRunFacetsResponse', {
                 total: 3,
-                statuses: [{ _id: 'completed', count: 3 }],
+                status: [{ _id: 'completed', count: 2 }],
+                statuses: [
+                    { _id: 'completed', count: 2 },
+                    { _id: null, count: 1 },
+                ],
             }).valid,
         ).toBe(true);
         expect(

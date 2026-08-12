@@ -2357,7 +2357,7 @@ export const RunSearchMetaResponseSchema = z
     .meta({ id: 'RunSearchMetaResponse' });
 
 const RunFacetBucketSchema = z.looseObject({
-    _id: z.string(),
+    _id: z.string().nullable(),
     count: z.number(),
     name: z.string().optional(),
     status: z.string().optional(),
@@ -2373,6 +2373,7 @@ export const ComputeRunFacetsResponseSchema = z
         interactions: RunFacetBucketArraySchema.optional(),
         environments: RunFacetBucketArraySchema.optional(),
         models: RunFacetBucketArraySchema.optional(),
+        status: RunFacetBucketArraySchema.optional(),
         statuses: RunFacetBucketArraySchema.optional(),
         tags: RunFacetBucketArraySchema.optional(),
         finish_reason: RunFacetBucketArraySchema.optional(),
