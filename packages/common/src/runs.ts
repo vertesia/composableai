@@ -1,12 +1,12 @@
 import type { z } from 'zod';
 import type {
+    ComputeRunFacetsResponseSchema,
     ExecutionRunDocRefSchema,
     FindRunResultArraySchema,
     FindRunResultSchema,
     PopulatedExecutionRunResultSchema,
     RunClonePayloadSchema,
     RunCreatePayloadSchema,
-    RunFacetsResponseSchema,
     RunSearchMetaResponseSchema,
 } from './api-schemas/interaction.js';
 
@@ -42,4 +42,4 @@ export interface RangeValue {
 }
 
 export type RunSearchMetaResponse = z.infer<typeof RunSearchMetaResponseSchema>;
-export type RunFacetsResponse = z.infer<typeof RunFacetsResponseSchema>;
+export type ComputeRunFacetsResponse = z.infer<typeof ComputeRunFacetsResponseSchema>;

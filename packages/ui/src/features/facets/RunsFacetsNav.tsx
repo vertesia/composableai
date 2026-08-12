@@ -1,4 +1,4 @@
-import type { FacetBucket } from '@vertesia/common';
+import type { ComputeRunFacetsResponse } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     Button,
@@ -12,22 +12,15 @@ import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
-import type { EnrichedFacetBucket } from './utils/VInteractionFacet';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
 
 interface RunsFacetsNavProps {
-    facets: {
-        type?: FacetBucket[];
-        interactions?: EnrichedFacetBucket[];
-        environments?: FacetBucket[];
-        models?: FacetBucket[];
-        statuses?: FacetBucket[];
-        tags?: FacetBucket[];
-        finish_reason?: FacetBucket[];
-        created_by?: FacetBucket[];
-    };
+    facets: Pick<
+        ComputeRunFacetsResponse,
+        'type' | 'interactions' | 'environments' | 'models' | 'statuses' | 'tags' | 'finish_reason' | 'created_by'
+    >;
     search: SearchInterface;
     actions?: React.ReactNode[];
     selectionCount?: number;
@@ -40,6 +33,13 @@ interface RunsFacetsNavProps {
     filters?: BaseFilter[];
     setFilters?: React.Dispatch<React.SetStateAction<BaseFilter[]>>;
     filterGroups?: FilterGroup[];
+}
+
+type RunFacetBucket = NonNullable<ComputeRunFacetsResponse['type']>[number];
+type IdentifiedRunFacetBucket<T extends RunFacetBucket = RunFacetBucket> = T & { _id: string };
+
+function identifiedBuckets<T extends RunFacetBucket>(buckets: T[]): IdentifiedRunFacetBucket<T>[] {
+    return buckets.filter((bucket): bucket is IdentifiedRunFacetBucket<T> => bucket._id !== null);
 }
 
 // Hook to create filter groups for runs
@@ -56,7 +56,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.interactions) {
         const interactionFilterGroup = VInteractionFacet({
-            buckets: facets.interactions || [],
+            buckets: identifiedBuckets(facets.interactions),
             name: 'interaction',
             placeholder: 'Interactions',
         });
@@ -65,7 +65,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.environments) {
         const environmentFilterGroup = VEnvironmentFacet({
-            buckets: facets.environments || [],
+            buckets: identifiedBuckets(facets.environments),
             name: 'environments',
         });
         customFilterGroups.push(environmentFilterGroup);
@@ -82,7 +82,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.models) {
         const modelFilterGroup = VStringFacet({
-            buckets: facets.models || [],
+            buckets: identifiedBuckets(facets.models),
             name: 'model',
         });
         customFilterGroups.push(modelFilterGroup);
@@ -90,7 +90,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.statuses) {
         const statusFilterGroup = VStringFacet({
-            buckets: facets.statuses || [],
+            buckets: identifiedBuckets(facets.statuses),
             name: 'status',
         });
         customFilterGroups.push(statusFilterGroup);
@@ -112,7 +112,10 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 
     if (facets.created_by) {
         const createdByFilterGroup = VUserFacet({
-            buckets: facets.created_by || [],
+            buckets: facets.created_by.map((bucket) => ({
+                ...bucket,
+                _id: bucket._id ?? 'Unknown User',
+            })),
             name: 'created_by',
             placeholder: 'Created By',
         });

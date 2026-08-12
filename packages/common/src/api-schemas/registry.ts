@@ -81,6 +81,7 @@ import {
 } from './access-control.js';
 import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
 import { findUnprunablePaths, isPlainObject, type JsonObject, pruneToSchema, toOpenApiComponents } from './adapter.js';
+import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as AgentRunSchemas from './agent-runs.js';
 import {
     AnalyticsAxisSchema,
@@ -231,6 +232,7 @@ import {
     RunMigrationResponseSchema,
 } from './commands.js';
 import * as ContentSchemas from './content.js';
+import * as ContentQuerySchemas from './content-query.js';
 import {
     CostAnalyticsQuerySchema,
     CostAnalyticsResponseSchema,
@@ -415,6 +417,7 @@ import {
 } from './files.js';
 import {
     CreateUserGroupPayloadSchema,
+    ListUserGroupsQuerySchema,
     UpdateUserGroupPayloadSchema,
     UserGroupArraySchema,
     UserGroupRefSchema,
@@ -451,6 +454,7 @@ import {
     ComputedFacetResponseSchema,
     ComputeInteractionFacetPayloadSchema,
     ComputeRunFacetPayloadSchema,
+    ComputeRunFacetsResponseSchema,
     ConversationStateSchema,
     ConversationStripOptionsSchema,
     ConversationVisibilitySchema,
@@ -539,7 +543,6 @@ import {
     ResultStorageOptionsSchema,
     RunClonePayloadSchema,
     RunCreatePayloadSchema,
-    RunFacetsResponseSchema,
     RunListQuerySchema,
     RunSearchMetaResponseSchema,
     RunSearchPayloadSchema,
@@ -588,15 +591,27 @@ import {
     UpdateOAuthProviderPayloadSchema,
 } from './oauth.js';
 import {
+    ApproveOAuthAuthorizationRequestPayloadSchema,
     BulkRevokeOAuthGrantsPayloadSchema,
+    CreateOAuthAuthorizationRequestPayloadSchema,
     CreateOAuthClientPayloadSchema,
     ListOAuthGrantsQuerySchema,
+    OAuthAuthorizationDecisionResponseSchema,
+    OAuthAuthorizationRequestSchema,
+    OAuthAuthorizationRequestStatusSchema,
+    OAuthAuthorizationServerMetadataSchema,
+    OAuthAuthorizeQuerySchema,
     OAuthClientArraySchema,
     OAuthClientCreateResponseSchema,
+    OAuthClientDisplayMetadataSchema,
+    OAuthClientRegistrationModeSchema,
     OAuthClientSchema,
     OAuthClientScopeMetadataSchema,
     OAuthClientStatusSchema,
     OAuthClientTypeSchema,
+    OAuthDeviceAuthorizationRequestSchema,
+    OAuthDeviceAuthorizationResponseSchema,
+    OAuthGrantableScopesResponseSchema,
     OAuthGrantListResponseSchema,
     OAuthGrantRevokeResponseSchema,
     OAuthGrantSchema,
@@ -608,6 +623,7 @@ import {
     OAuthRegistrationSourceSchema,
     OAuthResponseTypeSchema,
     OAuthTokenEndpointAuthMethodSchema,
+    OAuthTokenResponseSchema,
     RevokeOAuthGrantQuerySchema,
     UpdateOAuthClientPayloadSchema,
 } from './oauth-server.js';
@@ -806,6 +822,7 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     UserGroupArray: UserGroupArraySchema,
     UserGroupRef: UserGroupRefSchema,
     CreateUserGroupPayload: CreateUserGroupPayloadSchema,
+    ListUserGroupsQuery: ListUserGroupsQuerySchema,
     UpdateUserGroupPayload: UpdateUserGroupPayloadSchema,
     AccessControlEntry: AccessControlEntrySchema,
     AccessControlEntryArray: AccessControlEntryArraySchema,
@@ -912,9 +929,23 @@ const OAUTH_SCHEMAS = {
     OAuthTokenEndpointAuthMethod: OAuthTokenEndpointAuthMethodSchema,
     OAuthGrantType: OAuthGrantTypeSchema,
     OAuthResponseType: OAuthResponseTypeSchema,
+    OAuthAuthorizationRequestStatus: OAuthAuthorizationRequestStatusSchema,
+    OAuthClientRegistrationMode: OAuthClientRegistrationModeSchema,
     OAuthGrantStatus: OAuthGrantStatusSchema,
     OAuthGrantSortField: OAuthGrantSortFieldSchema,
     OAuthGrantSortOrder: OAuthGrantSortOrderSchema,
+    // OAuth authorization-server discovery, consent, device-code, and token contracts.
+    OAuthAuthorizationServerMetadata: OAuthAuthorizationServerMetadataSchema,
+    OAuthClientDisplayMetadata: OAuthClientDisplayMetadataSchema,
+    OAuthAuthorizeQuery: OAuthAuthorizeQuerySchema,
+    CreateOAuthAuthorizationRequestPayload: CreateOAuthAuthorizationRequestPayloadSchema,
+    OAuthAuthorizationRequest: OAuthAuthorizationRequestSchema,
+    ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayloadSchema,
+    OAuthGrantableScopesResponse: OAuthGrantableScopesResponseSchema,
+    OAuthAuthorizationDecisionResponse: OAuthAuthorizationDecisionResponseSchema,
+    OAuthDeviceAuthorizationRequest: OAuthDeviceAuthorizationRequestSchema,
+    OAuthDeviceAuthorizationResponse: OAuthDeviceAuthorizationResponseSchema,
+    OAuthTokenResponse: OAuthTokenResponseSchema,
     // Clients registered against Vertesia's own OAuth server. `OAuthClientData` is composed into
     // `OAuthClient` rather than hoisted, so it has no component of its own — as today.
     OAuthClient: OAuthClientSchema,
@@ -1189,8 +1220,8 @@ const EXECUTION_RUN_SCHEMAS = {
     RateLimitRequestPayload: RateLimitRequestPayloadSchema,
     RateLimitRequestResponse: RateLimitRequestResponseSchema,
     ComputeRunFacetPayload: ComputeRunFacetPayloadSchema,
+    ComputeRunFacetsResponse: ComputeRunFacetsResponseSchema,
     RunSearchMetaResponse: RunSearchMetaResponseSchema,
-    RunFacetsResponse: RunFacetsResponseSchema,
     ToolResultsPayload: ToolResultsPayloadSchema,
     UserMessagePayload: UserMessagePayloadSchema,
     ExecutionResponse: ExecutionResponseSchema,
@@ -2127,6 +2158,32 @@ const STS_SCHEMAS = {
     IssueTokenUnavailableResponse: StsSchemas.IssueTokenUnavailableResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const AGENT_COMMUNICATION_SCHEMAS = {
+    EmailRouteData: AgentCommunicationSchemas.EmailRouteDataSchema,
+    SendEmailRequest: AgentCommunicationSchemas.SendEmailRequestSchema,
+    SendEmailResponse: AgentCommunicationSchemas.SendEmailResponseSchema,
+    ResolveEmailRouteRequest: AgentCommunicationSchemas.ResolveEmailRouteRequestSchema,
+    CreateEmailRouteRequest: AgentCommunicationSchemas.CreateEmailRouteRequestSchema,
+    CreateEmailRouteResponse: AgentCommunicationSchemas.CreateEmailRouteResponseSchema,
+    EmailRouteResponse: AgentCommunicationSchemas.EmailRouteResponseSchema,
+    UpdateEmailRouteRequest: AgentCommunicationSchemas.UpdateEmailRouteRequestSchema,
+    UpdateEmailRouteResponse: AgentCommunicationSchemas.UpdateEmailRouteResponseSchema,
+    ForwardEmailRequest: AgentCommunicationSchemas.ForwardEmailRequestSchema,
+    ForwardEmailResponse: AgentCommunicationSchemas.ForwardEmailResponseSchema,
+    PendingAskStatus: AgentCommunicationSchemas.PendingAskStatusSchema,
+    PendingAskData: AgentCommunicationSchemas.PendingAskDataSchema,
+    RegisterPendingAskRequest: AgentCommunicationSchemas.RegisterPendingAskRequestSchema,
+    RegisterPendingAskResponse: AgentCommunicationSchemas.RegisterPendingAskResponseSchema,
+    ResolvePendingAskRequest: AgentCommunicationSchemas.ResolvePendingAskRequestSchema,
+    ResolvePendingAskResponse: AgentCommunicationSchemas.ResolvePendingAskResponseSchema,
+    ListPendingAsksResponse: AgentCommunicationSchemas.ListPendingAsksResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const CONTENT_QUERY_SCHEMAS = {
+    ContentQueryPayload: ContentQuerySchemas.ContentQueryPayloadSchema,
+    ContentQueryResult: ContentQuerySchemas.ContentQueryResultSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const API_SCHEMA_GROUPS = [
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2150,6 +2207,8 @@ const API_SCHEMA_GROUPS = [
     APP_MANIFEST_SCHEMAS,
     APP_INSTALLATION_SCHEMAS,
     STS_SCHEMAS,
+    AGENT_COMMUNICATION_SCHEMAS,
+    CONTENT_QUERY_SCHEMAS,
     FILE_STORAGE_SCHEMAS,
     DURABLE_TASK_SCHEMAS,
     CONTENT_TYPE_CATALOG_SCHEMAS,
@@ -2209,6 +2268,8 @@ type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof APP_MANIFEST_SCHEMAS &
     typeof APP_INSTALLATION_SCHEMAS &
     typeof STS_SCHEMAS &
+    typeof AGENT_COMMUNICATION_SCHEMAS &
+    typeof CONTENT_QUERY_SCHEMAS &
     typeof FILE_STORAGE_SCHEMAS &
     typeof DURABLE_TASK_SCHEMAS &
     typeof CONTENT_TYPE_CATALOG_SCHEMAS &
@@ -2301,6 +2362,27 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'UserGroupRef',
     'CreateUserGroupPayload',
     'UpdateUserGroupPayload',
+    'ListUserGroupsQuery',
+    // Agent communication and content query endpoints.
+    'EmailRouteData',
+    'SendEmailRequest',
+    'SendEmailResponse',
+    'ResolveEmailRouteRequest',
+    'CreateEmailRouteRequest',
+    'CreateEmailRouteResponse',
+    'EmailRouteResponse',
+    'UpdateEmailRouteRequest',
+    'UpdateEmailRouteResponse',
+    'ForwardEmailRequest',
+    'ForwardEmailResponse',
+    'PendingAskData',
+    'RegisterPendingAskRequest',
+    'RegisterPendingAskResponse',
+    'ResolvePendingAskRequest',
+    'ResolvePendingAskResponse',
+    'ListPendingAsksResponse',
+    'ContentQueryPayload',
+    'ContentQueryResult',
     // The roles / access-control closure. `AceConditions` is closed too, and has to be listed by
     // name: it is a hoisted component, so the parent's strict policy does not reach it.
     // `PropertyConditions` is deliberately absent — it is a map whose `additionalProperties` is a
@@ -2806,6 +2888,14 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthProviderAuthorizeResponse',
     'OAuthProviderAccessTokenResponse',
     'OAuthProviderExchangePayload',
+    'OAuthClientDisplayMetadata',
+    'OAuthAuthorizeQuery',
+    'CreateOAuthAuthorizationRequestPayload',
+    'OAuthAuthorizationRequest',
+    'ApproveOAuthAuthorizationRequestPayload',
+    'OAuthGrantableScopesResponse',
+    'OAuthAuthorizationDecisionResponse',
+    'OAuthDeviceAuthorizationRequest',
     'OAuthClient',
     'OAuthClientCreateResponse',
     'OAuthClientScopeMetadata',
@@ -3146,6 +3236,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'FindRunResult',
     'FindRunResultArray',
     'RunSearchMetaResponse',
+    'ComputeRunFacetsResponse',
     'ToolResultsPayload',
     'UserMessagePayload',
     'ExecutionResponse',

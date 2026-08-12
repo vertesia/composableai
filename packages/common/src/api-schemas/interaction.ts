@@ -2376,29 +2376,31 @@ export const RunSearchMetaResponseSchema = z
     })
     .meta({ id: 'RunSearchMetaResponse' });
 
-const RunFacetBucketSchema = z.strictObject({
+const RunFacetBucketSchema = z.looseObject({
     _id: z.string().nullable(),
     count: z.number(),
     name: z.string().optional(),
-    status: InteractionStatusSchema.optional(),
+    status: z.string().optional(),
     version: z.number().optional(),
 });
 
-export const RunFacetsResponseSchema = z
+const RunFacetBucketArraySchema = z.array(RunFacetBucketSchema);
+
+export const ComputeRunFacetsResponseSchema = z
     .object({
-        environments: z.array(RunFacetBucketSchema).optional(),
-        interactions: z.array(RunFacetBucketSchema).optional(),
-        models: z.array(RunFacetBucketSchema).optional(),
-        statuses: z.array(RunFacetBucketSchema).optional(),
-        tags: z.array(RunFacetBucketSchema).optional(),
-        finish_reason: z.array(RunFacetBucketSchema).optional(),
-        created_by: z.array(RunFacetBucketSchema).optional(),
-        start: z.array(RunFacetBucketSchema).optional(),
-        end: z.array(RunFacetBucketSchema).optional(),
         total: z.number().optional(),
+        type: RunFacetBucketArraySchema.optional(),
+        interactions: RunFacetBucketArraySchema.optional(),
+        environments: RunFacetBucketArraySchema.optional(),
+        models: RunFacetBucketArraySchema.optional(),
+        status: RunFacetBucketArraySchema.optional(),
+        statuses: RunFacetBucketArraySchema.optional(),
+        tags: RunFacetBucketArraySchema.optional(),
+        finish_reason: RunFacetBucketArraySchema.optional(),
+        created_by: RunFacetBucketArraySchema.optional(),
     })
-    .catchall(z.array(RunFacetBucketSchema))
-    .meta({ id: 'RunFacetsResponse' });
+    .catchall(z.union([z.number(), RunFacetBucketArraySchema]))
+    .meta({ id: 'ComputeRunFacetsResponse' });
 
 export const RunClonePayloadSchema = z
     .strictObject({

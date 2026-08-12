@@ -2,6 +2,7 @@ import type { ExecutionResponse } from '@llumiverse/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     ComputeRunFacetPayload,
+    ComputeRunFacetsResponse,
     ExecutionRun,
     ExecutionRunDocRef,
     ExecutionRunRef,
@@ -31,14 +32,7 @@ export interface FilterOption {
     count: number;
 }
 
-export interface ComputeRunFacetsResponse {
-    environments?: { _id: string; count: number }[];
-    interactions?: { _id: string; count: number }[];
-    models?: { _id: string; count: number }[];
-    tags?: { _id: string; count: number }[];
-    status?: { _id: string; count: number }[];
-    total?: number;
-}
+export type { ComputeRunFacetsResponse } from '@vertesia/common';
 
 export class RunsApi extends ApiTopic {
     constructor(parent: ClientBase) {

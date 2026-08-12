@@ -1,46 +1,10 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { ContentQueryPayload, ContentQueryResult } from '@vertesia/common';
 
-/**
- * Query payload for agent data access
- */
-export interface QueryPayload {
-    /** SQL query (uses ES SQL API) */
-    sql?: string;
-    /** ES|QL query (Elastic's piped query language) */
-    esql?: string;
-    /** Raw DSL query for full control */
-    dsl?: {
-        query?: Record<string, unknown>;
-        aggs?: Record<string, unknown>;
-        size?: number;
-        from?: number;
-        sort?: Array<Record<string, unknown>>;
-    };
-    /** Output format */
-    format?: 'json' | 'csv' | 'table';
-}
-
-/**
- * Query result
- */
-export interface QueryResult {
-    /** Result type */
-    type: 'sql' | 'esql' | 'dsl';
-    /** Column definitions */
-    columns?: Array<{ name: string; type: string }>;
-    /** Rows for SQL/ES|QL */
-    rows?: unknown[][];
-    /** Hits for DSL */
-    hits?: Array<{ id: string; score: number; source: unknown }>;
-    /** Total count */
-    total?: number;
-    /** Aggregations for DSL */
-    aggregations?: Record<string, unknown>;
-    /** Cursor for pagination (SQL) */
-    cursor?: string;
-    /** Query execution time in ms */
-    took?: number;
-}
+/** @deprecated Use ContentQueryPayload from @vertesia/common. */
+export type QueryPayload = ContentQueryPayload;
+/** @deprecated Use ContentQueryResult from @vertesia/common. */
+export type QueryResult = ContentQueryResult;
 
 /**
  * API for querying documents using SQL, ES|QL, or raw Elasticsearch DSL.
@@ -82,28 +46,28 @@ export class QueryApi extends ApiTopic {
      * });
      * ```
      */
-    async execute(payload: QueryPayload): Promise<QueryResult> {
+    async execute(payload: ContentQueryPayload): Promise<ContentQueryResult> {
         return this.post('/', { payload });
     }
 
     /**
      * Execute a SQL query
      */
-    async sql(query: string): Promise<QueryResult> {
+    async sql(query: string): Promise<ContentQueryResult> {
         return this.execute({ sql: query });
     }
 
     /**
      * Execute an ES|QL query
      */
-    async esql(query: string): Promise<QueryResult> {
+    async esql(query: string): Promise<ContentQueryResult> {
         return this.execute({ esql: query });
     }
 
     /**
      * Execute a DSL query
      */
-    async dsl(query: QueryPayload['dsl']): Promise<QueryResult> {
+    async dsl(query: ContentQueryPayload['dsl']): Promise<ContentQueryResult> {
         return this.execute({ dsl: query });
     }
 }

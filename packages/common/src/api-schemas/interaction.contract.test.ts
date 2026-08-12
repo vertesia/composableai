@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { AsyncConversationExecutionPayload } from '../interaction.js';
 import {
     AsyncConversationExecutionPayloadSchema,
+    ComputeRunFacetsResponseSchema,
     FindRunResultSchema,
-    RunFacetsResponseSchema,
 } from './interaction.js';
 
 describe('AsyncConversationExecutionPayload contract', () => {
@@ -48,7 +48,7 @@ describe('run response contracts', () => {
 
     it('models enriched and dynamically named run facet buckets', () => {
         expect(
-            RunFacetsResponseSchema.parse({
+            ComputeRunFacetsResponseSchema.parse({
                 environments: [{ _id: 'env-1', count: 2, name: 'Default' }],
                 interactions: [{ _id: 'interaction-1', count: 1, name: 'Example', status: 'published', version: 3 }],
                 modelId: [{ _id: 'gpt', count: 2 }],
