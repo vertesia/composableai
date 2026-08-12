@@ -1467,6 +1467,27 @@ export const PopulatedExecutionRunResultSchema = InteractionExecutionResultSchem
 });
 
 /**
+ * Stored run fields returned by the internal `/runs/find` projection endpoint.
+ * Callers choose an arbitrary MongoDB projection, so every field is optional and references remain ids.
+ */
+export const FindRunResultSchema = InteractionExecutionResultSchema.omit({
+    tool_use: true,
+    conversation: true,
+    options: true,
+})
+    .extend({
+        environment: z.string(),
+    })
+    .partial()
+    .meta({
+        id: 'FindRunResult',
+        description:
+            'A caller-selected subset of canonical stored run fields. Internal persistence fields are normalized at the API boundary.',
+    });
+
+export const FindRunResultArraySchema = z.array(FindRunResultSchema).meta({ id: 'FindRunResultArray' });
+
+/**
  * `result` in the shape the pre-`COMPLETION_RESULT_V1` endpoints report it.
  *
  * The legacy conversion collapses the `CompletionResult[]` into whichever single value the parts
@@ -1552,6 +1573,8 @@ export const ExecutionRunRefSchema = z
                 'The Vertesia Workflow related to this Interaction Run.\n\nThis is only set when the interaction is executed as part of a workflow.',
         }).optional(),
         interaction: InteractionRefSchema.optional(),
+        result: z.array(CompletionResultSchema).optional(),
+        parameters: z.unknown().optional(),
     })
     .meta({ id: 'ExecutionRunRef' });
 
