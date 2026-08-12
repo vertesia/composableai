@@ -33,7 +33,7 @@
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
-        "tsx": "^4.23.5",
+        "tsx": "^4.23.7",
         "typescript": "catalog:",
         "vitest": "^4.1.10"
     },
