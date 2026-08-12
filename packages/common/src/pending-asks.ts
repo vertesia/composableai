@@ -3,52 +3,30 @@
  * Used to notify external systems when agents are waiting for user input.
  */
 
-import type { UserChannel } from './email.js';
+import type { z } from 'zod';
+import type {
+    ListPendingAsksResponseSchema,
+    PendingAskDataSchema,
+    PendingAskStatusSchema,
+    RegisterPendingAskRequestSchema,
+    RegisterPendingAskResponseSchema,
+    ResolvePendingAskRequestSchema,
+    ResolvePendingAskResponseSchema,
+} from './api-schemas/agent-communication.js';
 
 // ================= Pending Ask Data ====================
 
 /**
  * Status of a pending ask request.
  */
-export type PendingAskStatus = 'pending' | 'resolved' | 'expired';
+export type PendingAskStatus = z.infer<typeof PendingAskStatusSchema>;
 
 /**
  * Data stored in Redis for pending ask_user requests.
  * Tracks which agents are waiting for user input and enables
  * both webhook notifications and portal views.
  */
-export interface PendingAskData {
-    /** Unique identifier for this ask (10-char alphanumeric) */
-    askId: string;
-    /** Temporal workflow run ID */
-    runId: string;
-    /** Temporal workflow ID */
-    workflowId: string;
-    /** Project ID */
-    projectId: string;
-    /** Account ID */
-    accountId: string;
-    /** Name of the agent/interaction that asked */
-    agentName: string;
-    /** Questions asked by the agent */
-    questions: string[];
-    /** Timeout in hours (default 48) */
-    timeoutHours: number;
-    /** Communication channels configured for the conversation */
-    userChannels: UserChannel[];
-    /** Timestamp when the ask was created (ms since epoch) */
-    createdAt: number;
-    /** Timestamp when the ask expires (ms since epoch) */
-    expiresAt: number;
-    /** Current status of the ask */
-    status: PendingAskStatus;
-    /** Durable task created for this ask_user request. */
-    taskId?: string;
-    /** Timestamp when resolved (ms since epoch) */
-    resolvedAt?: number;
-    /** User's response (after resolution) */
-    response?: string;
-}
+export type PendingAskData = z.infer<typeof PendingAskDataSchema>;
 
 // ================= Webhook Events ====================
 
@@ -103,6 +81,8 @@ export interface AskUserWebhookEvent {
 /**
  * Response from listing pending asks.
  */
-export interface ListPendingAsksResponse {
-    asks: PendingAskData[];
-}
+export type RegisterPendingAskRequest = z.infer<typeof RegisterPendingAskRequestSchema>;
+export type RegisterPendingAskResponse = z.infer<typeof RegisterPendingAskResponseSchema>;
+export type ResolvePendingAskRequest = z.infer<typeof ResolvePendingAskRequestSchema>;
+export type ResolvePendingAskResponse = z.infer<typeof ResolvePendingAskResponseSchema>;
+export type ListPendingAsksResponse = z.infer<typeof ListPendingAsksResponseSchema>;
