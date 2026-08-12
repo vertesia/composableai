@@ -2363,8 +2363,16 @@ export const ExecutionResponseSchema = z
     })
     .meta({ id: 'ExecutionResponse' });
 
+const RunFacetSpecSchema = z.discriminatedUnion('name', [
+    z.strictObject({ name: z.literal('environments'), field: z.literal('environment') }),
+    z.strictObject({ name: z.literal('interactions'), field: z.literal('interaction') }),
+    z.strictObject({ name: z.literal('models'), field: z.literal('modelId') }),
+    z.strictObject({ name: z.literal('statuses'), field: z.literal('status') }),
+    z.strictObject({ name: z.literal('finish_reason'), field: z.literal('finish_reason') }),
+]);
+
 export const ComputeRunFacetPayloadSchema = z
-    .strictObject({ facets: z.array(FacetSpecSchema), query: RunSearchQuerySchema.optional() })
+    .strictObject({ facets: z.array(RunFacetSpecSchema).max(5), query: RunSearchQuerySchema.optional() })
     .meta({ id: 'ComputeRunFacetPayload' });
 
 export const RunSearchMetaResponseSchema = z
@@ -2379,30 +2387,26 @@ export const RunSearchMetaResponseSchema = z
     })
     .meta({ id: 'RunSearchMetaResponse' });
 
-const RunFacetBucketSchema = z.looseObject({
+const RunFacetBucketSchema = z.strictObject({
     _id: z.string().nullable(),
     count: z.number(),
     name: z.string().optional(),
-    status: z.string().optional(),
+    status: InteractionStatusSchema.optional(),
     version: z.number().optional(),
 });
 
-const RunFacetBucketArraySchema = z.array(RunFacetBucketSchema);
-
+/**
+ * Response returned by POST /runs/facets.
+ */
 export const ComputeRunFacetsResponseSchema = z
-    .object({
+    .strictObject({
+        environments: z.array(RunFacetBucketSchema).optional(),
+        interactions: z.array(RunFacetBucketSchema).optional(),
+        models: z.array(RunFacetBucketSchema).optional(),
+        statuses: z.array(RunFacetBucketSchema).optional(),
+        finish_reason: z.array(RunFacetBucketSchema).optional(),
         total: z.number().optional(),
-        type: RunFacetBucketArraySchema.optional(),
-        interactions: RunFacetBucketArraySchema.optional(),
-        environments: RunFacetBucketArraySchema.optional(),
-        models: RunFacetBucketArraySchema.optional(),
-        status: RunFacetBucketArraySchema.optional(),
-        statuses: RunFacetBucketArraySchema.optional(),
-        tags: RunFacetBucketArraySchema.optional(),
-        finish_reason: RunFacetBucketArraySchema.optional(),
-        created_by: RunFacetBucketArraySchema.optional(),
     })
-    .catchall(z.union([z.number(), RunFacetBucketArraySchema]))
     .meta({ id: 'ComputeRunFacetsResponse' });
 
 export const RunClonePayloadSchema = z

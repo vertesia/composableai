@@ -146,7 +146,7 @@ export class RunsApi extends ApiTopic {
     /**
      * Get the list of all runs facets
      * @param payload query payload to filter facet search
-     * @returns ComputeRunFacetsResponse[]
+     * @returns Facet buckets and the total number of matching runs
      **/
     computeFacets(query: ComputeRunFacetPayload): Promise<ComputeRunFacetsResponse> {
         return this.post('/facets', {

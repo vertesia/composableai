@@ -14,13 +14,9 @@ import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } fr
 import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
-import { VUserFacet } from './utils/VUserFacet';
 
 interface RunsFacetsNavProps {
-    facets: Pick<
-        ComputeRunFacetsResponse,
-        'type' | 'interactions' | 'environments' | 'models' | 'statuses' | 'tags' | 'finish_reason' | 'created_by'
-    >;
+    facets: Pick<ComputeRunFacetsResponse, 'interactions' | 'environments' | 'models' | 'statuses' | 'finish_reason'>;
     search: SearchInterface;
     actions?: React.ReactNode[];
     selectionCount?: number;
@@ -35,7 +31,7 @@ interface RunsFacetsNavProps {
     filterGroups?: FilterGroup[];
 }
 
-type RunFacetBucket = NonNullable<ComputeRunFacetsResponse['type']>[number];
+type RunFacetBucket = NonNullable<ComputeRunFacetsResponse['models']>[number];
 type IdentifiedRunFacetBucket<T extends RunFacetBucket = RunFacetBucket> = T & { _id: string };
 
 function identifiedBuckets<T extends RunFacetBucket>(buckets: T[]): IdentifiedRunFacetBucket<T>[] {
@@ -108,18 +104,6 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
             placeholder: 'Finish Reason',
         });
         customFilterGroups.push(finishReasonFilterGroup);
-    }
-
-    if (facets.created_by) {
-        const createdByFilterGroup = VUserFacet({
-            buckets: facets.created_by.map((bucket) => ({
-                ...bucket,
-                _id: bucket._id ?? 'Unknown User',
-            })),
-            name: 'created_by',
-            placeholder: 'Created By',
-        });
-        customFilterGroups.push(createdByFilterGroup);
     }
 
     const dateAfterFilterGroup = {

@@ -1,25 +1,31 @@
-import { describe, expect, test } from 'vitest';
-import { useRunsFilterGroups } from './RunsFacetsNav';
+import { describe, expect, it } from 'vitest';
+import { useRunsFilterGroups } from './RunsFacetsNav.js';
 
 describe('useRunsFilterGroups', () => {
-    test('handles null facet identifiers from the run facets API', () => {
+    it('builds controls from supported facets and keeps query-only filters', () => {
         const groups = useRunsFilterGroups({
-            models: [
+            interactions: [
                 { _id: null, count: 2 },
-                { _id: 'model-1', count: 3 },
+                { _id: 'interaction-1', count: 3, name: 'Interaction One' },
             ],
             finish_reason: [{ _id: null, count: 4 }],
-            created_by: [{ _id: null, count: 5 }],
         });
 
-        expect(groups.find((group) => group.name === 'model')?.options).toEqual([
-            { label: 'model-1 (3)', value: 'model-1' },
+        expect(groups.map((group) => group.name)).toEqual([
+            'run_ids',
+            'interaction',
+            'tags',
+            'finish_reason',
+            'start',
+            'end',
+            'workflow_run_ids',
+            'workflow_ids',
+        ]);
+        expect(groups.find((group) => group.name === 'interaction')?.options).toEqual([
+            { label: '(3)', value: 'interaction-1' },
         ]);
         expect(groups.find((group) => group.name === 'finish_reason')?.options).toEqual([
             { label: 'none (4)', value: 'none' },
-        ]);
-        expect(groups.find((group) => group.name === 'created_by')?.options).toEqual([
-            { label: '(5)', value: 'Unknown User' },
         ]);
     });
 });
