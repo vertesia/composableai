@@ -1,4 +1,17 @@
 import type { z } from 'zod';
+import type {
+    CreateEmailRouteRequestSchema,
+    CreateEmailRouteResponseSchema,
+    EmailRouteDataSchema,
+    EmailRouteResponseSchema,
+    ForwardEmailRequestSchema,
+    ForwardEmailResponseSchema,
+    ResolveEmailRouteRequestSchema,
+    SendEmailRequestSchema,
+    SendEmailResponseSchema,
+    UpdateEmailRouteRequestSchema,
+    UpdateEmailRouteResponseSchema,
+} from './api-schemas/agent-communication.js';
 import type { EmailChannelSchema, InteractiveChannelSchema, UserChannelSchema } from './api-schemas/interaction.js';
 /**
  * Email-related types for agent communication and routing.
@@ -51,21 +64,14 @@ export function isInteractiveChannel(channel: UserChannel): channel is Interacti
  *
  * Pattern: r+{routeKey}@{domain} instead of r+{32-char-uuid}@{domain}
  */
-export interface EmailRouteData {
-    /** The workflow run ID */
-    runId: string;
-    /** Account ID for quick project lookup */
-    accountId: string;
-    /** Project ID for quick config lookup */
-    projectId: string;
-    /** Email thread subject (without "Re:" prefix) */
-    threadSubject?: string;
-    /** Message ID for In-Reply-To header (last message in thread) */
-    inReplyTo?: string;
-    /** Chain of message IDs for References header */
-    references?: string[];
-    /** User's email address (recipient of agent emails, sender of replies) */
-    userEmail: string;
-    /** Inbound domain for filtering (e.g., inbound.vertesia.io) */
-    inboundDomain: string;
-}
+export type EmailRouteData = z.infer<typeof EmailRouteDataSchema>;
+export type SendEmailRequest = z.infer<typeof SendEmailRequestSchema>;
+export type SendEmailResponse = z.infer<typeof SendEmailResponseSchema>;
+export type ResolveEmailRouteRequest = z.infer<typeof ResolveEmailRouteRequestSchema>;
+export type CreateEmailRouteRequest = z.infer<typeof CreateEmailRouteRequestSchema>;
+export type CreateEmailRouteResponse = z.infer<typeof CreateEmailRouteResponseSchema>;
+export type EmailRouteResponse = z.infer<typeof EmailRouteResponseSchema>;
+export type UpdateEmailRouteRequest = z.infer<typeof UpdateEmailRouteRequestSchema>;
+export type UpdateEmailRouteResponse = z.infer<typeof UpdateEmailRouteResponseSchema>;
+export type ForwardEmailRequest = z.infer<typeof ForwardEmailRequestSchema>;
+export type ForwardEmailResponse = z.infer<typeof ForwardEmailResponseSchema>;

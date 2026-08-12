@@ -64,6 +64,16 @@ export const UserGroupSchema = z
  */
 export const UserGroupArraySchema = z.array(UserGroupSchema).meta({ id: 'UserGroupArray' });
 
+export const ListUserGroupsQuerySchema = z
+    .object({
+        search: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+        project: z.string().optional(),
+    })
+    .meta({ id: 'ListUserGroupsQuery' });
+
 /**
  * Both payloads are picked from {@link UserGroupSchema}, for the same reason `UserRef` is: they are
  * subsets of the group, not parallel shapes. What each `.pick()` leaves out is the whitelist —

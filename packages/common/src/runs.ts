@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import type {
+    ComputeRunFacetsResponseSchema,
     ExecutionRunDocRefSchema,
     RunClonePayloadSchema,
     RunCreatePayloadSchema,
@@ -35,3 +36,4 @@ export interface RangeValue {
 }
 
 export type RunSearchMetaResponse = z.infer<typeof RunSearchMetaResponseSchema>;
+export type ComputeRunFacetsResponse = z.infer<typeof ComputeRunFacetsResponseSchema>;

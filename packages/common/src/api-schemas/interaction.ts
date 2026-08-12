@@ -2356,6 +2356,32 @@ export const RunSearchMetaResponseSchema = z
     })
     .meta({ id: 'RunSearchMetaResponse' });
 
+const RunFacetBucketSchema = z.looseObject({
+    _id: z.string().nullable(),
+    count: z.number(),
+    name: z.string().optional(),
+    status: z.string().optional(),
+    version: z.number().optional(),
+});
+
+const RunFacetBucketArraySchema = z.array(RunFacetBucketSchema);
+
+export const ComputeRunFacetsResponseSchema = z
+    .object({
+        total: z.number().optional(),
+        type: RunFacetBucketArraySchema.optional(),
+        interactions: RunFacetBucketArraySchema.optional(),
+        environments: RunFacetBucketArraySchema.optional(),
+        models: RunFacetBucketArraySchema.optional(),
+        status: RunFacetBucketArraySchema.optional(),
+        statuses: RunFacetBucketArraySchema.optional(),
+        tags: RunFacetBucketArraySchema.optional(),
+        finish_reason: RunFacetBucketArraySchema.optional(),
+        created_by: RunFacetBucketArraySchema.optional(),
+    })
+    .catchall(z.union([z.number(), RunFacetBucketArraySchema]))
+    .meta({ id: 'ComputeRunFacetsResponse' });
+
 export const RunClonePayloadSchema = z
     .strictObject({
         source_run_id: z.string(),

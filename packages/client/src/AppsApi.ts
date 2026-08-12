@@ -42,9 +42,7 @@ import type {
     ValidateUrlResponse,
 } from '@vertesia/common';
 
-export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
-    manifest: null;
-}
+export type { OrphanedAppInstallation } from '@vertesia/common';
 
 export default class AppsApi extends ApiTopic {
     constructor(parent: ClientBase) {
