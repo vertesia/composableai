@@ -2,20 +2,14 @@ import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateUserGroupPayload,
     DeleteByIdResult,
+    ListUserGroupsQuery,
     UpdateUserGroupPayload,
     UserGroup,
     UserRef,
 } from '@vertesia/common';
 
-export interface GroupsQueryOptions {
-    search?: string;
-    tags?: string[];
-    limit?: number;
-    offset?: number;
-    /** Only return groups usable in this project (org-wide + restricted-to-this-project). */
-    project?: string;
-    [key: string]: string | string[] | number | undefined;
-}
+/** @deprecated Use ListUserGroupsQuery from @vertesia/common. */
+export type GroupsQueryOptions = ListUserGroupsQuery;
 
 export class GroupsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -27,7 +21,7 @@ export class GroupsApi extends ApiTopic {
      * @param options Query options for filtering and pagination
      * @returns Array of UserGroup objects
      */
-    list(options?: GroupsQueryOptions): Promise<UserGroup[]> {
+    list(options?: ListUserGroupsQuery): Promise<UserGroup[]> {
         return this.get('/', { query: options });
     }
 

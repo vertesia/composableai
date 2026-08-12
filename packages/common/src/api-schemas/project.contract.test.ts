@@ -13,12 +13,13 @@ import {
     type SerperConfigurationInput,
     SupportedIntegrations,
 } from '../integrations.js';
-import type {
-    ICreateProjectPayload,
-    ModelDefault,
-    Project,
-    ProjectPluginsUpdatePayload,
-    SystemDefaults,
+import {
+    type ICreateProjectPayload,
+    type ModelDefault,
+    type Project,
+    type ProjectPluginsUpdatePayload,
+    SYSTEM_INTERACTION_CATEGORIES,
+    type SystemDefaults,
     SystemInteractionCategory,
 } from '../project.js';
 import type { JsonObject } from './adapter.js';
@@ -186,6 +187,11 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         expect(true).toBe(true);
     });
 
+    it('uses the analysis model default for both content query planning and reranking', () => {
+        expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchAgent).toBe(SystemInteractionCategory.analysis);
+        expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchReranker).toBe(SystemInteractionCategory.analysis);
+    });
+
     it('publishes the property-mapping map without the propertyNames z.record adds', () => {
         // `Record<string, ProjectSearchPropertyMapping>` is inline in the interface and has no
         // TypeScript name, so it never becomes a canonical alias — it stays canonical AND derived,
@@ -195,6 +201,10 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
             type: 'object',
             additionalProperties: { $ref: '#/components/schemas/ProjectSearchPropertyMapping' },
         });
+    });
+
+    it('publishes geo_point as an explicit project property mapping type', () => {
+        expect(ApiSchemaComponents.ProjectSearchPropertyType.enum).toContain('geo_point');
     });
 
     it('enforces the browser-use configuration the deleted AJV schema only described', () => {

@@ -4,15 +4,16 @@ import { basename, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
-import type { QueryResult, VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import type {
     ComplexSearchPayload,
     ContentObject,
     ContentObjectTypeItem,
-    CreateContentObjectPayload,
+    ContentQueryResult,
     ObjectSearchPayload,
     ProjectedContentObjectApiResponse,
+    UpdateContentObjectPayload,
 } from '@vertesia/common';
 import type { Command } from 'commander';
 import enquirer from 'enquirer';
@@ -288,7 +289,7 @@ export async function updateObject(
     if (searchedType === AUTOMATIC_TYPE_SELECTION) {
         searchedType = undefined;
     }
-    const payload: Partial<CreateContentObjectPayload> = { type: searchedType };
+    const payload: UpdateContentObjectPayload = { type: searchedType };
     const client = await getClient(program);
     console.log(await client.objects.update(objectId, payload));
 }
@@ -474,7 +475,7 @@ function readObjectTypeName(object: ObjectListRow): string {
     return object.type.name || object.type.id || '';
 }
 
-function printQueryResult(result: QueryResult) {
+function printQueryResult(result: ContentQueryResult) {
     if (result.type === 'dsl') {
         if (!result.hits || result.hits.length === 0) {
             console.log('No hits');
