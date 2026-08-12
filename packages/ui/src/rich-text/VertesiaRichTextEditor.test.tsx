@@ -187,23 +187,24 @@ describe('VertesiaMarkdownRichTextEditor', () => {
 
     it('does not report a change when the document is locked or unlocked', async () => {
         const onChange = vi.fn();
-        const view = render(
-            <I18nProvider lng="en">
-                <VertesiaMarkdownDocumentEditor value={'Setext heading\n=============='} onChange={onChange} />
-            </I18nProvider>,
-        );
-
-        expect(await screen.findByRole('heading', { name: 'Setext heading' })).not.toBeNull();
-        view.rerender(
+        const renderEditable = (editable: boolean) => (
             <I18nProvider lng="en">
                 <VertesiaMarkdownDocumentEditor
                     value={'Setext heading\n=============='}
                     onChange={onChange}
-                    editable={false}
+                    editable={editable}
                 />
-            </I18nProvider>,
+            </I18nProvider>
         );
+        const view = render(renderEditable(true));
 
+        expect(await screen.findByRole('heading', { name: 'Setext heading' })).not.toBeNull();
+        // Both directions matter: either toggle emits an editor update on its own.
+        view.rerender(renderEditable(false));
+        await new Promise((resolve) => setTimeout(resolve, DOCUMENT_EDITOR_CHANGE_DEBOUNCE_MS * 2));
+        expect(onChange).not.toHaveBeenCalled();
+
+        view.rerender(renderEditable(true));
         await new Promise((resolve) => setTimeout(resolve, DOCUMENT_EDITOR_CHANGE_DEBOUNCE_MS * 2));
         expect(onChange).not.toHaveBeenCalled();
     });
