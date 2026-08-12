@@ -3,7 +3,7 @@ import { CodeBlock, type CodeBlockOptions } from '@tiptap/extension-code-block';
 import { Image, type ImageOptions } from '@tiptap/extension-image';
 import { Link, type LinkOptions } from '@tiptap/extension-link';
 import { TableKit } from '@tiptap/extension-table';
-import { Markdown } from '@tiptap/markdown';
+import { Markdown, type MarkdownExtensionOptions } from '@tiptap/markdown';
 import {
     MarkViewContent,
     type MarkViewProps,
@@ -14,7 +14,7 @@ import {
     ReactNodeViewRenderer,
 } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Marked, type marked } from 'marked';
+import { Marked } from 'marked';
 import type { OpaqueMarkdownKind, RichTextRenderers } from './types.js';
 
 export const VERTESIA_WIDGET_LANGUAGES = new Set(['chart', 'vega-lite', 'vegalite', 'mermaid', 'mockup', 'svg']);
@@ -69,11 +69,12 @@ function markdownLabel(value: string): string {
     return value.replaceAll('\\', '\\\\').replaceAll('[', '\\[').replaceAll(']', '\\]');
 }
 
-function createIsolatedMarked(): typeof marked {
+function createIsolatedMarked(): NonNullable<MarkdownExtensionOptions['marked']> {
     // Tiptap types this option as the callable singleton even though MarkdownManager only
     // consumes the instance methods shared by Marked. A fresh instance prevents one editor's
-    // custom tokenizers from accumulating globally across tests, remounts, and workspaces.
-    return new Marked() as unknown as typeof marked;
+    // custom tokenizers from accumulating globally across tests, remounts, and workspaces. Type
+    // the adapter against Tiptap's bundled marked contract so direct major upgrades stay isolated.
+    return new Marked() as unknown as NonNullable<MarkdownExtensionOptions['marked']>;
 }
 
 function trimConsumedNewline(raw: string): string {
