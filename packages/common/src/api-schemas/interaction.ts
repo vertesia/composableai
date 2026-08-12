@@ -1467,6 +1467,27 @@ export const PopulatedExecutionRunResultSchema = InteractionExecutionResultSchem
 });
 
 /**
+ * Stored run fields returned by the internal `/runs/find` projection endpoint.
+ * Callers choose an arbitrary MongoDB projection, so every field is optional and references remain ids.
+ */
+export const FindRunResultSchema = InteractionExecutionResultSchema.omit({
+    tool_use: true,
+    conversation: true,
+    options: true,
+})
+    .extend({
+        environment: z.string(),
+    })
+    .partial()
+    .meta({
+        id: 'FindRunResult',
+        description:
+            'A caller-selected subset of canonical stored run fields. Internal persistence fields are normalized at the API boundary.',
+    });
+
+export const FindRunResultArraySchema = z.array(FindRunResultSchema).meta({ id: 'FindRunResultArray' });
+
+/**
  * `result` in the shape the pre-`COMPLETION_RESULT_V1` endpoints report it.
  *
  * The legacy conversion collapses the `CompletionResult[]` into whichever single value the parts
@@ -1552,6 +1573,8 @@ export const ExecutionRunRefSchema = z
                 'The Vertesia Workflow related to this Interaction Run.\n\nThis is only set when the interaction is executed as part of a workflow.',
         }).optional(),
         interaction: InteractionRefSchema.optional(),
+        result: z.array(CompletionResultSchema).optional(),
+        parameters: z.unknown().optional(),
     })
     .meta({ id: 'ExecutionRunRef' });
 
@@ -2340,8 +2363,16 @@ export const ExecutionResponseSchema = z
     })
     .meta({ id: 'ExecutionResponse' });
 
+const RunFacetSpecSchema = z.discriminatedUnion('name', [
+    z.strictObject({ name: z.literal('environments'), field: z.literal('environment') }),
+    z.strictObject({ name: z.literal('interactions'), field: z.literal('interaction') }),
+    z.strictObject({ name: z.literal('models'), field: z.literal('modelId') }),
+    z.strictObject({ name: z.literal('statuses'), field: z.literal('status') }),
+    z.strictObject({ name: z.literal('finish_reason'), field: z.literal('finish_reason') }),
+]);
+
 export const ComputeRunFacetPayloadSchema = z
-    .strictObject({ facets: z.array(FacetSpecSchema), query: RunSearchQuerySchema.optional() })
+    .strictObject({ facets: z.array(RunFacetSpecSchema).max(5), query: RunSearchQuerySchema.optional() })
     .meta({ id: 'ComputeRunFacetPayload' });
 
 export const RunSearchMetaResponseSchema = z
@@ -2355,6 +2386,28 @@ export const RunSearchMetaResponseSchema = z
         ),
     })
     .meta({ id: 'RunSearchMetaResponse' });
+
+const RunFacetBucketSchema = z.strictObject({
+    _id: z.string().nullable(),
+    count: z.number(),
+    name: z.string().optional(),
+    status: InteractionStatusSchema.optional(),
+    version: z.number().optional(),
+});
+
+/**
+ * Response returned by POST /runs/facets.
+ */
+export const ComputeRunFacetsResponseSchema = z
+    .strictObject({
+        environments: z.array(RunFacetBucketSchema).optional(),
+        interactions: z.array(RunFacetBucketSchema).optional(),
+        models: z.array(RunFacetBucketSchema).optional(),
+        statuses: z.array(RunFacetBucketSchema).optional(),
+        finish_reason: z.array(RunFacetBucketSchema).optional(),
+        total: z.number().optional(),
+    })
+    .meta({ id: 'ComputeRunFacetsResponse' });
 
 export const RunClonePayloadSchema = z
     .strictObject({

@@ -780,6 +780,15 @@ export const ContentObjectApiResponseSchema = z
         is_locked: z.boolean().optional(),
         score: z.number().optional(),
         user_permissions: ContentObjectUserPermissionsSchema.optional(),
+        searchTypeResult: z
+            .array(
+                z.strictObject({
+                    type: z.string(),
+                    score: z.number(),
+                    rank: z.number(),
+                }),
+            )
+            .optional(),
         text: z.string().optional(),
         text_etag: z.string().optional(),
         embeddings: EmbeddingMapSchema.optional(),
@@ -793,6 +802,7 @@ export const ContentObjectApiResponseSchema = z
                 description:
                     'BLP sensitivity level — set directly or inherited from collections (max across collections).',
             })
+            .nullable()
             .optional(),
         compartments: z
             .array(z.string())
@@ -853,6 +863,25 @@ export const ContentObjectItemApiResponseSchema = z
         is_locked: z.boolean().optional(),
         score: z.number().optional(),
         user_permissions: ContentObjectUserPermissionsSchema.optional(),
+        searchTypeResult: z
+            .array(
+                z.strictObject({
+                    type: z.string(),
+                    score: z.number(),
+                    rank: z.number(),
+                }),
+            )
+            .optional(),
+        text: z.string().optional(),
+        text_etag: z.string().optional(),
+        embeddings: EmbeddingMapSchema.optional(),
+        parts: z.array(z.string()).optional(),
+        parts_etag: z.string().optional(),
+        transcript: z.looseObject({}).optional(),
+        security: StringArrayMapSchema.optional(),
+        sensitivity: z.number().nullable().optional(),
+        compartments: z.array(z.string()).optional(),
+        inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectItemApiResponse' });
 

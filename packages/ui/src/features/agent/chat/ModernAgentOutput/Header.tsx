@@ -12,6 +12,7 @@ import {
     ExternalLink,
     GitFork,
     InfoIcon,
+    MessageCirclePlus,
     MessageSquareText,
     MoreVertical,
     Rows3,
@@ -194,6 +195,22 @@ export default function Header({
                 </Button>
             )}
 
+            {resetWorkflow && (
+                <Button
+                    type="button"
+                    size={variant === 'compact' ? 'icon' : 'sm'}
+                    variant="ghost"
+                    onClick={resetWorkflow}
+                    title={t('agent.startNewConversation')}
+                    className={cn(
+                        'transition-all duration-200 rounded-md',
+                        variant === 'compact' && 'size-8 rounded-lg',
+                    )}
+                >
+                    <MessageCirclePlus className={cn('size-4', variant === 'full' && 'me-1.5')} />
+                </Button>
+            )}
+
             {/* More actions */}
             <MoreDropdown
                 compact={isCompact}
@@ -237,7 +254,7 @@ export default function Header({
         <PayloadBuilderProvider>
             <div
                 className={cn(
-                    'flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0',
+                    'flex flex-wrap items-center justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0',
                     className,
                 )}
             >
