@@ -1490,6 +1490,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description:
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
+                flex: {
+                    type: 'boolean',
+                    deprecated: true,
+                    'x-deprecated-message': 'Use service_tier="flex" instead.',
+                    description: 'Deprecated: Use service_tier="flex" instead.',
+                },
                 image_aspect_ratio: {
                     type: 'string',
                     enum: ['1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9', '21:9'],
