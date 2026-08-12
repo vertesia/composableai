@@ -36,7 +36,7 @@
         "@tiptap/pm": "^3.29.2",
         "@tiptap/react": "^3.29.2",
         "@tiptap/starter-kit": "^3.29.2",
-        "marked": "^17.0.6",
+        "marked": "^18.0.9",
         "react": "catalog:",
         "react-dom": "catalog:"
     },

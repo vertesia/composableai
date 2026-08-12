@@ -670,8 +670,8 @@ importers:
         specifier: ^3.29.2
         version: 3.29.2
       marked:
-        specifier: ^17.0.6
-        version: 17.0.6
+        specifier: ^18.0.9
+        version: 18.0.9
       react:
         specifier: 19.2.7
         version: 19.2.7
@@ -5737,6 +5737,11 @@ packages:
 
   marked@17.0.6:
     resolution: {integrity: sha512-gB0gkNafnonOw0obSTEGZTT86IuhILt2Wfx0mWH/1Au83kybTayroZ/V6nS25mN7u8ASy+5fMhgB3XPNrOZdmA==}
+    engines: {node: '>= 20'}
+    hasBin: true
+
+  marked@18.0.9:
+    resolution: {integrity: sha512-/Sa4qiiHZxf0/FQdBBowr9q4r10krCwMvpK48FUBdXdUXScDxiQGR9zCPrFgRVR5LU3iySOiIjy09ZQvADir1w==}
     engines: {node: '>= 20'}
     hasBin: true
 
@@ -11819,6 +11824,8 @@ snapshots:
   marked@16.4.2: {}
 
   marked@17.0.6: {}
+
+  marked@18.0.9: {}
 
   math-intrinsics@1.1.0: {}
 
