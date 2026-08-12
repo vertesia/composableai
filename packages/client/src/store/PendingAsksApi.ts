@@ -1,61 +1,19 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
-import type { ListPendingAsksResponse, PendingAskData, TaskField, UserChannel } from '@vertesia/common';
+import type {
+    ListPendingAsksResponse,
+    PendingAskData,
+    RegisterPendingAskRequest,
+    RegisterPendingAskResponse,
+    ResolvePendingAskRequest,
+    ResolvePendingAskResponse,
+} from '@vertesia/common';
 
-/**
- * Request to register a pending ask.
- */
-export interface RegisterPendingAskRequest {
-    /** Temporal workflow run ID */
-    runId: string;
-    /** Temporal workflow ID */
-    workflowId: string;
-    /** Name of the agent/interaction */
-    agentName: string;
-    /** Questions asked by the agent */
-    questions: string[];
-    /** Timeout in hours (default 48) */
-    timeoutHours?: number;
-    /** User communication channels */
-    userChannels: UserChannel[];
-    /** Durable task fields shown in task inbox */
-    taskFields?: TaskField[];
-}
-
-/**
- * Response from registering a pending ask.
- */
-export interface RegisterPendingAskResponse {
-    /** Whether registration succeeded */
-    success: boolean;
-    /** Generated ask ID */
-    askId?: string;
-    /** Whether webhook was sent */
-    webhookSent?: boolean;
-    /** Error message if failed */
-    error?: string;
-}
-
-/**
- * Request to resolve a pending ask.
- */
-export interface ResolvePendingAskRequest {
-    /** User's response */
-    response: string;
-}
-
-/**
- * Response from resolving a pending ask.
- */
-export interface ResolvePendingAskResponse {
-    /** Whether resolution succeeded */
-    success: boolean;
-    /** Whether webhook was sent */
-    webhookSent?: boolean;
-    /** How long the user took to respond (ms) */
-    waitDurationMs?: number;
-    /** Error message if failed */
-    error?: string;
-}
+export type {
+    RegisterPendingAskRequest,
+    RegisterPendingAskResponse,
+    ResolvePendingAskRequest,
+    ResolvePendingAskResponse,
+} from '@vertesia/common';
 
 /**
  * Pending Asks API for tracking ask_user requests.

@@ -2,14 +2,16 @@ import type { ExecutionResponse } from '@llumiverse/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     ComputeRunFacetPayload,
+    ComputeRunFacetsResponse,
     ExecutionRun,
     ExecutionRunDocRef,
     ExecutionRunRef,
     FindPayload,
+    FindRunResult,
+    InteractionExecutionResult,
     PopulatedExecutionRun,
     RunClonePayload,
     RunCreatePayload,
-    RunFacetsResponse,
     RunListingFilters,
     RunListingQueryOptions,
     RunSearchPayload,
@@ -17,7 +19,12 @@ import type {
     UserMessagePayload,
 } from '@vertesia/common';
 import type { VertesiaClient } from './client.js';
-import { type EnhancedExecutionRun, enhanceExecutionRun } from './InteractionOutput.js';
+import {
+    type EnhancedExecutionRun,
+    type EnhancedInteractionExecutionResult,
+    enhanceExecutionRun,
+    enhanceInteractionExecutionResult,
+} from './InteractionOutput.js';
 
 export interface FilterOption {
     id: string;
@@ -25,7 +32,7 @@ export interface FilterOption {
     count: number;
 }
 
-export type ComputeRunFacetsResponse = RunFacetsResponse;
+export type { ComputeRunFacetsResponse } from '@vertesia/common';
 
 export class RunsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -48,7 +55,7 @@ export class RunsApi extends ApiTopic {
         return this.get('/', { query: query });
     }
 
-    find(payload: FindPayload): Promise<ExecutionRun[]> {
+    find(payload: FindPayload): Promise<FindRunResult[]> {
         return this.post('/find', {
             payload,
         });
@@ -85,7 +92,7 @@ export class RunsApi extends ApiTopic {
     async create<ResultT = unknown, ParamsT = unknown>(
         payload: RunCreatePayload,
         options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
-    ): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+    ): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
         const sessionTags = (this.client as VertesiaClient).sessionTags;
         if (sessionTags) {
             let tags = Array.isArray(sessionTags) ? sessionTags : [sessionTags];
@@ -96,12 +103,12 @@ export class RunsApi extends ApiTopic {
             }
             payload = { ...payload, tags };
         }
-        const r = await this.post<ExecutionRun<ParamsT>>('/', {
+        const r = await this.post<InteractionExecutionResult<ParamsT>>('/', {
             payload,
             timeoutMs: options?.timeoutMs,
             signal: options?.signal,
         });
-        return enhanceExecutionRun<ResultT, ParamsT>(r);
+        return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
     }
 
     /**

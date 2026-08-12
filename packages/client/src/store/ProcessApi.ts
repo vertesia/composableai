@@ -1,20 +1,17 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateProcessDefinitionPayload,
+    ListProcessDefinitionsQuery as ListProcessDefinitionsWireQuery,
     ProcessDefinition,
     PublishProcessDefinitionPayload,
     RevertProcessDefinitionPayload,
     UpdateProcessDefinitionPayload,
 } from '@vertesia/common';
 
-export interface ListProcessDefinitionsQuery {
-    status?: string;
-    process?: string;
-    limit?: number;
-    offset?: number;
-    /** Include every revision/version instead of only the latest head revision. */
+export type ListProcessDefinitionsQuery = ListProcessDefinitionsWireQuery & {
+    /** @deprecated Use the wire-compatible `all_versions` property. */
     allVersions?: boolean;
-}
+};
 
 export class ProcessApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -27,7 +24,7 @@ export class ProcessApi extends ApiTopic {
         if (query?.process) params.process = query.process;
         if (query?.limit != null) params.limit = String(query.limit);
         if (query?.offset != null) params.offset = String(query.offset);
-        if (query?.allVersions) params.all_versions = 'true';
+        if (query?.all_versions || query?.allVersions) params.all_versions = 'true';
         return this.get('/', { query: params });
     }
 
