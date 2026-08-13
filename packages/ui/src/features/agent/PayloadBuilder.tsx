@@ -321,11 +321,7 @@ export class PayloadBuilder {
         if (interaction?.id !== this._interaction?.id) {
             this._interaction = interaction;
             // trigger the setter to update the onChange state
-            // Catalog resolution can return a lightweight interaction reference without prompts.
-            // Those interactions still remain executable; they simply have no structured input schema.
-            this.interactionParamsSchema = Array.isArray(interaction?.prompts)
-                ? mergeInCodePromptSchemas(interaction.prompts)
-                : undefined;
+            this.interactionParamsSchema = interaction ? mergeInCodePromptSchemas(interaction.prompts) : undefined;
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction && !this._preserveRunValues) {

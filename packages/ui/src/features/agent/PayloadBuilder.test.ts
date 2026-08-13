@@ -1,12 +1,12 @@
 import type { VertesiaClient } from '@vertesia/client';
-import type { CatalogInteractionRef, InCodeInteraction, JSONSchema } from '@vertesia/common';
+import type { InCodeInteraction, JSONSchema } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
 import { PayloadBuilderStore } from './PayloadBuilder';
 
 describe('PayloadBuilder', () => {
-    it('accepts a prompt-less catalog interaction reference', () => {
+    it('accepts a resolved interaction with no prompt segments', () => {
         const store = new PayloadBuilderStore({} as VertesiaClient);
-        const interaction: CatalogInteractionRef = {
+        const interaction: InCodeInteraction = {
             type: 'sys',
             id: 'sys:GeneralAgent',
             name: 'GeneralAgent',
@@ -17,14 +17,15 @@ describe('PayloadBuilder', () => {
                 is_agent: true,
                 request_template: '{{user_prompt}}',
             },
+            prompts: [],
         };
         const listener = vi.fn();
         store.subscribe(listener);
 
-        store.snapshot.setInteraction(interaction as InCodeInteraction);
+        store.snapshot.setInteraction(interaction);
 
         expect(store.snapshot.interaction).toMatchObject(interaction);
-        expect(store.snapshot.interactionParamsSchema).toBeUndefined();
+        expect(store.snapshot.interactionParamsSchema).toBeNull();
         expect(listener).toHaveBeenCalled();
     });
 
