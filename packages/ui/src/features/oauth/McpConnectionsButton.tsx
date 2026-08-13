@@ -176,7 +176,11 @@ export function McpConnectionsInlineList({
                                 showDisconnect
                                 readOnly={readOnly}
                             />
-                        ) : null}
+                        ) : (
+                            <Badge variant="outline" className="h-6 w-32 justify-center px-2 text-xs">
+                                {t('mcpConnections.apiKey')}
+                            </Badge>
+                        )}
                         {onChange && (
                             <div className="flex min-w-24 items-center justify-end gap-2 text-xs">
                                 <span className={active ? 'text-muted' : 'text-attention'}>

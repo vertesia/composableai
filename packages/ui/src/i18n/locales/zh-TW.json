@@ -348,6 +348,7 @@
   "login.terminal.selectAccount": "選擇帳戶",
   "login.terminal.selectProject": "選擇專案",
   "mcpConnections.activateAria": "為此對話啟用 {{name}}",
+  "mcpConnections.apiKey": "API 金鑰",
   "mcpConnections.checkingStatus": "正在檢查狀態",
   "mcpConnections.deactivateAria": "為此對話停用 {{name}}",
   "mcpConnections.disabled": "已停用",

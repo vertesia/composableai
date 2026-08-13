@@ -356,6 +356,7 @@
   "login.terminal.selectAccount": "اختر حساباً",
   "login.terminal.selectProject": "اختر مشروعاً",
   "mcpConnections.activateAria": "تفعيل {{name}} لهذه المحادثة",
+  "mcpConnections.apiKey": "مفتاح API",
   "mcpConnections.checkingStatus": "جارٍ التحقق من الحالة",
   "mcpConnections.deactivateAria": "تعطيل {{name}} لهذه المحادثة",
   "mcpConnections.disabled": "معطل",

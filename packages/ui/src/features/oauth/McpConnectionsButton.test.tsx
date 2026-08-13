@@ -133,6 +133,8 @@ describe('MCP connection controls', () => {
         expect(screen.getByText('Linear')).not.toBeNull();
         expect(screen.getByText('GitHub')).not.toBeNull();
         expect(screen.getByText('API Key Tools')).not.toBeNull();
+        const apiKeyBadge = screen.getByText('API key');
+        expect(apiKeyBadge.className).toContain('w-32');
         expect(screen.queryByText('Connected')).toBeNull();
         expect(screen.getAllByRole('button', { name: 'Disconnect' })).toHaveLength(3);
         const connectButton = screen.getByRole('button', { name: 'Connect' });

@@ -352,6 +352,7 @@
   "login.terminal.selectAccount": "Выберите аккаунт",
   "login.terminal.selectProject": "Выберите проект",
   "mcpConnections.activateAria": "Включить {{name}} для этого разговора",
+  "mcpConnections.apiKey": "Ключ API",
   "mcpConnections.checkingStatus": "Проверка статуса",
   "mcpConnections.deactivateAria": "Отключить {{name}} для этого разговора",
   "mcpConnections.disabled": "Отключено",

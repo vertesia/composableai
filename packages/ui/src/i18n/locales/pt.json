@@ -350,6 +350,7 @@
   "login.terminal.selectAccount": "Selecionar conta",
   "login.terminal.selectProject": "Selecionar projeto",
   "mcpConnections.activateAria": "Ativar {{name}} para esta conversa",
+  "mcpConnections.apiKey": "Chave de API",
   "mcpConnections.checkingStatus": "Verificando status",
   "mcpConnections.deactivateAria": "Desativar {{name}} para esta conversa",
   "mcpConnections.disabled": "Desativado",

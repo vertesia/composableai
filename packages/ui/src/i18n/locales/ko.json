@@ -348,6 +348,7 @@
   "login.terminal.selectAccount": "계정 선택",
   "login.terminal.selectProject": "프로젝트 선택",
   "mcpConnections.activateAria": "이 대화에 {{name}} 활성화",
+  "mcpConnections.apiKey": "API 키",
   "mcpConnections.checkingStatus": "상태 확인 중",
   "mcpConnections.deactivateAria": "이 대화에서 {{name}} 비활성화",
   "mcpConnections.disabled": "사용 중지됨",

@@ -348,6 +348,7 @@
   "login.terminal.selectAccount": "アカウントを選択",
   "login.terminal.selectProject": "プロジェクトを選択",
   "mcpConnections.activateAria": "この会話で {{name}} を有効にする",
+  "mcpConnections.apiKey": "APIキー",
   "mcpConnections.checkingStatus": "状態を確認中",
   "mcpConnections.deactivateAria": "この会話で {{name}} を無効にする",
   "mcpConnections.disabled": "無効",
