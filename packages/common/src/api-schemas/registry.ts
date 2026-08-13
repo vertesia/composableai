@@ -539,6 +539,7 @@ import {
     PromptTemplateUpdatePayloadSchema,
     RateLimitRequestPayloadSchema,
     RateLimitRequestResponseSchema,
+    ResolvedCatalogInteractionSchema,
     ResolvedEnvironmentInfoSchema,
     ResolvedInteractionExecutionInfoSchema,
     ResolvedRuntimeConfigSchema,
@@ -1112,6 +1113,7 @@ const INTERACTION_SCHEMAS = {
     CatalogInteractionRef: CatalogInteractionRefSchema,
     CatalogInteractionRefArray: CatalogInteractionRefArraySchema,
     InCodeInteraction: InCodeInteractionSchema,
+    ResolvedCatalogInteraction: ResolvedCatalogInteractionSchema,
     CatalogTagQuery: CatalogTagQuerySchema,
     StoredCatalogInteractionsQuery: StoredCatalogInteractionsQuerySchema,
     // What `GET /interactions/resolve/:nameOrId` answers with.

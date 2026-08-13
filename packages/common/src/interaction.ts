@@ -56,6 +56,7 @@ import type {
     PromptModalitiesSchema,
     RateLimitRequestPayloadSchema,
     RateLimitRequestResponseSchema,
+    ResolvedCatalogInteractionSchema,
     ResolvedEnvironmentInfoSchema,
     ResolvedInteractionExecutionInfoSchema,
     ResolvedRuntimeConfigSchema,
@@ -128,6 +129,7 @@ export interface ResolveInteractionQuery {
 
 export type InCodePrompt = z.infer<typeof InCodePromptSchema>;
 export type InCodeInteraction = z.infer<typeof InCodeInteractionSchema>;
+export type ResolvedCatalogInteraction = z.infer<typeof ResolvedCatalogInteractionSchema>;
 export type InteractionSpec = Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'>;
 // ---------------------------------------------------------
 

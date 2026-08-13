@@ -1073,8 +1073,16 @@ export const InCodeInteractionSchema = z
     })
     .meta({
         id: 'InCodeInteraction',
-        description: 'A complete resolved interaction definition, including the prompt schemas required by clients.',
+        description: 'An executable interaction definition, including the prompt schemas required by clients.',
     });
+
+export const ResolvedCatalogInteractionSchema = InCodeInteractionSchema.extend({
+    title: z.string().meta({ description: 'Display title, normalized from the interaction name when absent.' }),
+    tags: z.array(z.string()).meta({ description: 'Tags, normalized to an empty array when absent.' }),
+}).meta({
+    id: 'ResolvedCatalogInteraction',
+    description: 'A catalog interaction resolved to its complete executable definition.',
+});
 
 export const RunSearchPayloadSchema = z
     .strictObject({

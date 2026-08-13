@@ -6,6 +6,7 @@ import {
     ComputeRunFacetsResponseSchema,
     FindRunResultSchema,
     InCodeInteractionSchema,
+    ResolvedCatalogInteractionSchema,
 } from './interaction.js';
 
 describe('in-code interaction contract', () => {
@@ -33,6 +34,21 @@ describe('in-code interaction contract', () => {
         expect(interaction.prompts[0]?.schema).toMatchObject({
             properties: { user_prompt: { type: 'string' } },
         });
+    });
+
+    it('requires normalized title and tags only on the resolved response', () => {
+        const authoringShape = {
+            type: 'sys',
+            id: 'sys:Untitled',
+            name: 'Untitled',
+            prompts: [],
+        };
+
+        expect(InCodeInteractionSchema.safeParse(authoringShape).success).toBe(true);
+        expect(ResolvedCatalogInteractionSchema.safeParse(authoringShape).success).toBe(false);
+        expect(
+            ResolvedCatalogInteractionSchema.safeParse({ ...authoringShape, title: 'Untitled', tags: [] }).success,
+        ).toBe(true);
     });
 });
 
