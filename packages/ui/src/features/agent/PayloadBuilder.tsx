@@ -17,6 +17,11 @@ import Ajv, { type ValidateFunction } from 'ajv';
 import type React from 'react';
 import { createContext, useContext, useState, useSyncExternalStore } from 'react';
 
+// Interaction schemas also use `format` as a UI editor hint (for example, `textarea`
+// and `media`). Those values are not validation formats, so do not make AJV inspect them.
+// Reusing one instance also avoids rebuilding AJV's compiler on the Start button click.
+const inputSchemaAjv = new Ajv({ strict: false, validateFormats: false });
+
 export type WorkflowMode = 'start' | 'schedule';
 type ModelOptions = NonNullable<WorkflowInteractionVars['config']['model_options']>;
 
@@ -450,6 +455,11 @@ export class PayloadBuilder {
     setData(data: JSONObject) {
         this.data = data;
     }
+    setDraftData(data: JSONObject) {
+        // Generated form controls manage their own live input state. Publishing an external-store
+        // update here would rerender every PayloadBuilder consumer for each keystroke.
+        this._data = data;
+    }
     setPreserveRunValues(value: boolean) {
         this.preserveRunValues = value;
     }
@@ -545,9 +555,8 @@ export class PayloadBuilder {
 
         // If schema has changed or validator not initialized, recompile
         if (!this._inputValidator || this._inputValidator.schema !== this._interactionParamsSchema) {
-            const ajv = new Ajv({ strict: false });
             this._inputValidator = {
-                validate: ajv.compile(this._interactionParamsSchema),
+                validate: inputSchemaAjv.compile(this._interactionParamsSchema),
                 schema: this._interactionParamsSchema,
             };
         }

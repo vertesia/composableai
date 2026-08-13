@@ -487,6 +487,7 @@ import {
     GenerateTestDataPayloadSchema,
     ImprovePromptPayloadConfigSchema,
     ImprovePromptPayloadSchema,
+    InCodeInteractionSchema,
     InCodePromptSchema,
     InitialToolCallSchema,
     InteractionArraySchema,
@@ -538,6 +539,7 @@ import {
     PromptTemplateUpdatePayloadSchema,
     RateLimitRequestPayloadSchema,
     RateLimitRequestResponseSchema,
+    ResolvedCatalogInteractionSchema,
     ResolvedEnvironmentInfoSchema,
     ResolvedInteractionExecutionInfoSchema,
     ResolvedRuntimeConfigSchema,
@@ -1110,6 +1112,8 @@ const INTERACTION_SCHEMAS = {
     // The catalog — in-code interactions an app or the system provides, alongside stored ones.
     CatalogInteractionRef: CatalogInteractionRefSchema,
     CatalogInteractionRefArray: CatalogInteractionRefArraySchema,
+    InCodeInteraction: InCodeInteractionSchema,
+    ResolvedCatalogInteraction: ResolvedCatalogInteractionSchema,
     CatalogTagQuery: CatalogTagQuerySchema,
     StoredCatalogInteractionsQuery: StoredCatalogInteractionsQuerySchema,
     // What `GET /interactions/resolve/:nameOrId` answers with.

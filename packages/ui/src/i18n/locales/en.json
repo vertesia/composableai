@@ -622,6 +622,7 @@
     "login.terminal.selectAccount": "Select Account",
     "login.terminal.selectProject": "Select Project",
     "mcpConnections.activateAria": "Activate {{name}} for this conversation",
+    "mcpConnections.apiKey": "API key",
     "mcpConnections.checkingStatus": "Checking status",
     "mcpConnections.deactivateAria": "Deactivate {{name}} for this conversation",
     "mcpConnections.disabled": "Disabled",
