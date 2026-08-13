@@ -1047,6 +1047,35 @@ export const CatalogInteractionRefSchema = z
             'Reference to an interaction in the catalog. Used in catalog listing. The id is composed of the namespace and the interaction name. Stored interactions can use `oid:` prefix. If no prefix is used it fallback on `oid:`.',
     });
 
+export const InCodeInteractionSchema = z
+    .strictObject({
+        type: z.enum(['sys', 'app', 'stored', 'draft']).meta({ description: 'The interaction type.' }),
+        id: z.string().meta({ description: 'The executable catalog interaction ID.' }),
+        name: z.string().meta({ description: 'The interaction code name.' }),
+        version: z.number().optional(),
+        published: z.boolean().optional(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        result_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
+        output_modality: ModalitiesSchema.optional(),
+        storage: RunDataStorageLevelSchema.optional(),
+        tags: z.array(z.string()).optional(),
+        agent_runner_options: AgentRunnerOptionsSchema.optional(),
+        model_options: ModelOptionsSchema.optional(),
+        prompts: z.array(InCodePromptSchema),
+        externalId: z.string().optional(),
+        runtime: z
+            .strictObject({
+                environment: z.string().optional(),
+                model: z.string().optional(),
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'InCodeInteraction',
+        description: 'A complete resolved interaction definition, including the prompt schemas required by clients.',
+    });
+
 export const RunSearchPayloadSchema = z
     .strictObject({
         facets: z.array(FacetSpecSchema).optional(),

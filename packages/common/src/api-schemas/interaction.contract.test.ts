@@ -5,7 +5,36 @@ import {
     ComputeRunFacetPayloadSchema,
     ComputeRunFacetsResponseSchema,
     FindRunResultSchema,
+    InCodeInteractionSchema,
 } from './interaction.js';
+
+describe('in-code interaction contract', () => {
+    it('retains prompt schemas when resolving a catalog interaction', () => {
+        const interaction = InCodeInteractionSchema.parse({
+            type: 'sys',
+            id: 'sys:GeneralAgent',
+            name: 'GeneralAgent',
+            title: 'General Agent',
+            tags: ['agent'],
+            agent_runner_options: { is_agent: true, request_template: '{{user_prompt}}' },
+            prompts: [
+                {
+                    role: 'user',
+                    content: '{{user_prompt}}',
+                    content_type: 'handlebars',
+                    schema: {
+                        type: 'object',
+                        properties: { user_prompt: { type: 'string', editor: 'textarea' } },
+                    },
+                },
+            ],
+        });
+
+        expect(interaction.prompts[0]?.schema).toMatchObject({
+            properties: { user_prompt: { type: 'string' } },
+        });
+    });
+});
 
 describe('AsyncConversationExecutionPayload contract', () => {
     it('retains an immutable app-version execution target', () => {

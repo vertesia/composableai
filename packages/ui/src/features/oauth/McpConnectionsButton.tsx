@@ -93,7 +93,7 @@ export function McpConnectionsButton({
 }
 
 /**
- * Inline MCP status list for forms. It shows all available OAuth MCP groups
+ * Inline MCP status list for forms. It shows all available authenticated MCP groups
  * without requiring the user to open the management dialog.
  */
 export function McpConnectionsInlineList({
@@ -165,7 +165,7 @@ export function McpConnectionsInlineList({
                             >
                                 <Spinner className="size-3" />
                             </Button>
-                        ) : (
+                        ) : group.authType === 'oauth' ? (
                             <RemoteMcpConnectionButton
                                 appId={group.appId}
                                 collectionId={group.representativeId}
@@ -176,7 +176,7 @@ export function McpConnectionsInlineList({
                                 showDisconnect
                                 readOnly={readOnly}
                             />
-                        )}
+                        ) : null}
                         {onChange && (
                             <div className="flex min-w-24 items-center justify-end gap-2 text-xs">
                                 <span className={active ? 'text-muted' : 'text-attention'}>
