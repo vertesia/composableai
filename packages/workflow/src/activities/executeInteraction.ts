@@ -138,6 +138,11 @@ export function getInteractionRateLimitFailure(error: unknown, interactionName: 
 }
 
 export interface InteractionExecutionParams {
+    root_workflow?: {
+        workflow_id: string;
+        run_id: string;
+        workflow_type: string;
+    };
     /**
      * Execution configuration shared across workflow-driven interaction calls.
      * Activity-level fields below override this object for backward compatibility.
@@ -363,6 +368,9 @@ export async function executeInteractionFromActivity(
         run_id: execution.runId,
         workflow_id: execution.workflowId,
         activity_type: info.activityType,
+        root_workflow_id: params.root_workflow?.workflow_id,
+        root_workflow_run_id: params.root_workflow?.run_id,
+        root_workflow_type: params.root_workflow?.workflow_type,
     };
 
     let previousStudioExecutionRun: ExecutionRun | undefined;

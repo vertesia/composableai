@@ -38,6 +38,11 @@ export const AUDIT_ACTIONS = [
     'image_generation',
     // Content processing outcomes
     'document_processed',
+    // Interaction execution lifecycle (non-billable)
+    'execution_run_created',
+    'execution_run_completed',
+    'intake_workflow_started',
+    'intake_workflow_completed',
 ] as const;
 
 // `AuditAction` is deliberately NOT inferred from `AuditActionSchema`: the schema is

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RunOriginSchema } from './analytics.js';
 
 // Zod renders a union as `anyOf`, while the published contract uses JSON Schema's compact type
 // array. Runtime enforcement compiles the emitted JSON Schema with AJV, so the metadata is both the
@@ -34,16 +35,29 @@ export const CostAnalyticsQuerySchema = z
         from: timeBoundarySchema.meta({ description: 'Start time (ISO string or epoch ms)' }).optional(),
         to: timeBoundarySchema.meta({ description: 'End time (ISO string or epoch ms)' }).optional(),
         group_by: z
-            .enum(['model', 'environment', 'account', 'project', 'project_tag', 'provider', 'interaction', 'workflow'])
+            .enum([
+                'model',
+                'environment',
+                'account',
+                'project',
+                'project_tag',
+                'provider',
+                'interaction',
+                'workflow',
+                'root_workflow_run',
+                'execution_origin',
+            ])
             .meta({ description: 'Group results by this dimension' })
             .optional(),
         resolution: z.enum(['hour', 'day', 'week', 'month']).meta({ description: 'Time series resolution' }).optional(),
         model: z.string().meta({ description: 'Filter by model pattern' }).optional(),
         environment_id: z.string().meta({ description: 'Filter by environment ID' }).optional(),
         provider: z.string().meta({ description: 'Filter by provider' }).optional(),
+        execution_origin: RunOriginSchema.meta({ description: 'Filter by execution origin' }).optional(),
         project_id: z.string().meta({ description: 'Filter by project ID (optional, for org scope)' }).optional(),
         workflow_id: z.string().meta({ description: 'Filter by workflow / agent run ID' }).optional(),
         workflow_run_id: z.string().meta({ description: 'Filter by Temporal workflow run ID' }).optional(),
+        root_workflow_run_id: z.string().meta({ description: 'Filter by root Temporal workflow run ID' }).optional(),
         run_id: z.string().meta({ description: 'Filter by interaction execution run ID' }).optional(),
         agent_run_id: z.string().meta({ description: 'Filter by agent run ID' }).optional(),
         interaction_id: z
@@ -79,6 +93,7 @@ export const CostRunPriceQuerySchema = z
         agent_run_id: z.string().meta({ description: 'Agent run ID' }).optional(),
         workflow_id: z.string().meta({ description: 'Workflow ID, when known' }).optional(),
         workflow_run_id: z.string().meta({ description: 'Temporal workflow run ID, when known' }).optional(),
+        root_workflow_run_id: z.string().meta({ description: 'Root Temporal workflow run ID, when known' }).optional(),
         from: timeBoundarySchema.meta({ description: 'Optional lower bound for audit events' }).optional(),
         to: timeBoundarySchema.meta({ description: 'Optional upper bound for audit events' }).optional(),
         pricing_source: z

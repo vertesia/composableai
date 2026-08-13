@@ -119,6 +119,13 @@ export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
      */
     ancestors?: WorkflowAncestor[];
 
+    /** Stable root scope used to attribute descendant inference to one workflow invocation. */
+    root_workflow?: {
+        workflow_id: string;
+        run_id: string;
+        workflow_type: string;
+    };
+
     /**
      *  List of enabled processing queues. Managed by the application.
      */

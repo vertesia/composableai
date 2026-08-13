@@ -6,6 +6,10 @@ import type {
 } from '../api-schemas/app-lifecycle.js';
 import type {
     ComplexSearchPayloadSchema,
+    ContentIntakeCostItemSchema,
+    ContentIntakeCostQuerySchema,
+    ContentIntakeCostsResponseSchema,
+    ContentIntakeRunSchema,
     ContentObjectApiResponseSchema,
     ContentObjectApiRevisionSchema,
     ContentObjectApiTypeRefSchema,
@@ -30,9 +34,12 @@ import type {
     GetObjectRenditionQuerySchema,
     GetRenditionResponseSchema,
     InheritedPropertyMetadataSchema,
+    IntakeAttributionCompletenessSchema,
+    IntakeRunStatusSchema,
     ListContentObjectExportsResponseSchema,
     ObjectSearchResponseSchema,
     ProjectedContentObjectApiResponseSchema,
+    RecordContentIntakeRunPayloadSchema,
     RevisionInfoSchema,
     SetObjectEmbeddingsResponseSchema,
     StartContentObjectExportRequestSchema,
@@ -238,6 +245,14 @@ export type ContentObjectApiRevision = z.infer<typeof ContentObjectApiRevisionSc
 export type ContentObjectItemApiResponse = z.infer<typeof ContentObjectItemApiResponseSchema>;
 
 export type ContentObjectApiResponse = z.infer<typeof ContentObjectApiResponseSchema>;
+
+export type ContentIntakeRun = z.infer<typeof ContentIntakeRunSchema>;
+export type IntakeRunStatus = z.infer<typeof IntakeRunStatusSchema>;
+export type IntakeAttributionCompleteness = z.infer<typeof IntakeAttributionCompletenessSchema>;
+export type ContentIntakeCostItem = z.infer<typeof ContentIntakeCostItemSchema>;
+export type RecordContentIntakeRunPayload = z.infer<typeof RecordContentIntakeRunPayloadSchema>;
+export type ContentIntakeCostQuery = z.infer<typeof ContentIntakeCostQuerySchema>;
+export type ContentIntakeCostsResponse = z.infer<typeof ContentIntakeCostsResponseSchema>;
 
 export type ProjectedContentObjectApiResponse = z.infer<typeof ProjectedContentObjectApiResponseSchema>;
 
@@ -489,6 +504,9 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
      * - archived: the object was archived and is no longer available
      */
     status: ContentObjectStatus;
+
+    /** Most recently started intake workflow. Historical intake runs live in the audit trail. */
+    intake_run?: ContentIntakeRun;
 
     /**
      * Object type id.

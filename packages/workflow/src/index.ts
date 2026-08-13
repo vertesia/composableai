@@ -20,6 +20,7 @@ export * from './activities/media/prepareAudio.js';
 export * from './activities/media/prepareVideo.js';
 export * from './activities/notifyWebhook.js';
 export * from './activities/rateLimiter.js';
+export * from './activities/recordContentIntakeRun.js';
 export * from './activities/renditions/generateImageRendition.js';
 export * from './activities/renditions/generateVideoRendition.js';
 export * from './activities/setDocumentStatus.js';

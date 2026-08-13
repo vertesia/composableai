@@ -326,6 +326,9 @@ export const ExecutionRunWorkflowSchema = z
                     'The Temporal Activity Type used for executing this Interaction. Undefined if the interaction was not executed as part of a workflow (such as Agent Runner).',
             })
             .optional(),
+        root_workflow_id: z.string().optional(),
+        root_workflow_run_id: z.string().optional(),
+        root_workflow_type: z.string().optional(),
     })
     .meta({ id: 'ExecutionRunWorkflow' });
 

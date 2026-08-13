@@ -9,6 +9,9 @@ import {
     type ComplexSearchPayload,
     type ComputedFacetResponse,
     type ComputeObjectFacetPayload,
+    type ContentIntakeCostQuery,
+    type ContentIntakeCostsResponse,
+    type ContentIntakeRun,
     type ContentObject,
     ContentObjectApiHeaders,
     type ContentObjectExportArtifactFile,
@@ -38,6 +41,7 @@ import {
     type ObjectSearchQuery,
     type ObjectSearchResponse,
     type ProjectedContentObjectApiResponse,
+    type RecordContentIntakeRunPayload,
     type SetObjectEmbeddingsResponse,
     type StartContentObjectExportRequest,
     type StartContentObjectExportResponse,
@@ -509,6 +513,14 @@ export class ObjectsApi extends ApiTopic {
 
     listWorkflowRuns(documentId: string): Promise<ListWorkflowRunsResponse> {
         return this.get(`/${documentId}/workflow-runs`);
+    }
+
+    recordIntakeRun(documentId: string, run: RecordContentIntakeRunPayload): Promise<ContentIntakeRun> {
+        return this.put(`/${documentId}/intake-runs/${run.root_workflow_run_id}`, { payload: run });
+    }
+
+    getIntakeCosts(documentId: string, query: ContentIntakeCostQuery = {}): Promise<ContentIntakeCostsResponse> {
+        return this.get(`/${documentId}/intake-costs`, { query });
     }
 
     listRenditions(documentId: string): Promise<ContentObjectItem[]> {

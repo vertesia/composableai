@@ -26,6 +26,7 @@ export { transcribeMedia } from './media/transcribeMediaWithGladia.js';
 export { mergeChildArtifacts } from './mergeChildArtifacts.js';
 export { notifyWebhook } from './notifyWebhook.js';
 export { checkRateLimit } from './rateLimiter.js';
+export { recordContentIntakeRun } from './recordContentIntakeRun.js';
 export { generateImageRendition } from './renditions/generateImageRendition.js';
 export { generateVideoRendition } from './renditions/generateVideoRendition.js';
 export type { RemoteActivityInfo, RemoteActivityMap } from './resolveRemoteActivities.js';

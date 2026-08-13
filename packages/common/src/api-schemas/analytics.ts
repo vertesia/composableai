@@ -63,3 +63,100 @@ export const RunAnalyticsResultSchema = z
     .meta({ id: 'RunAnalyticsResult' });
 
 export const RunAnalyticsResultArraySchema = z.array(RunAnalyticsResultSchema).meta({ id: 'RunAnalyticsResultArray' });
+
+export const RunOriginSchema = z.enum(['direct', 'workflow', 'agent', 'unknown']).meta({ id: 'RunOrigin' });
+
+export const RunsAnalyticsFilterQuerySchema = z
+    .strictObject({
+        start: z.string().meta({ format: 'date-time' }).optional(),
+        end: z.string().meta({ format: 'date-time' }).optional(),
+        environment: z.string().optional(),
+        interaction: z.string().optional(),
+        status: z.enum(['created', 'processing', 'completed', 'failed', 'in_progress']).optional(),
+        origin: RunOriginSchema.optional(),
+    })
+    .meta({ id: 'RunsAnalyticsFilterQuery' });
+
+export const EntityStatusCountsSchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string().optional(),
+        version: z.number().optional(),
+        status: z.string().optional(),
+        total: z.number().nullable(),
+        byStatus: z.record(z.string(), z.number().nullable()),
+        hasErrors: z.boolean().optional(),
+    })
+    .meta({ id: 'EntityStatusCounts' });
+
+export const AnalyticsQueryStatsSchema = z
+    .strictObject({ total: z.number(), failed: z.number() })
+    .meta({ id: 'AnalyticsQueryStats' });
+
+export const RunsAnalyticsSummarySchema = z
+    .strictObject({
+        total: z.number().nullable(),
+        byStatus: z.record(z.string(), z.number().nullable()),
+        byEnvironment: z.array(EntityStatusCountsSchema),
+        byInteraction: z.array(EntityStatusCountsSchema),
+        byCodeInteraction: z.array(EntityStatusCountsSchema).optional(),
+        byOrigin: z.array(EntityStatusCountsSchema),
+        queryStats: AnalyticsQueryStatsSchema,
+    })
+    .meta({ id: 'RunsAnalyticsSummary' });
+
+export const RunTimeSeriesPointSchema = z
+    .strictObject({
+        timestamp: z.string().meta({ format: 'date-time' }),
+        count: z.number(),
+    })
+    .meta({ id: 'RunTimeSeriesPoint' });
+
+export const RunTimeSeriesSchema = z.array(RunTimeSeriesPointSchema).meta({ id: 'RunTimeSeries' });
+
+export const TokenUsageByEnvironmentSchema = z
+    .strictObject({
+        environmentId: z.string(),
+        environmentName: z.string(),
+        totalPromptTokens: z.number().nullable(),
+        inputTokens: z.number().nullable(),
+        cachedInputTokens: z.number().nullable(),
+        cacheWriteInputTokens: z.number().nullable(),
+        outputTokens: z.number().nullable(),
+    })
+    .meta({ id: 'TokenUsageByEnvironment' });
+
+export const TokenUsageSummarySchema = z
+    .strictObject({
+        byEnvironment: z.array(TokenUsageByEnvironmentSchema),
+        queryStats: AnalyticsQueryStatsSchema,
+    })
+    .meta({ id: 'TokenUsageSummary' });
+
+export const RunLifecycleReconciliationPayloadSchema = z
+    .strictObject({
+        project_id: z.string().optional(),
+        window_hours: z
+            .number()
+            .int()
+            .min(1)
+            .max(24 * 30)
+            .optional(),
+        settle_lag_minutes: z
+            .number()
+            .int()
+            .min(0)
+            .max(24 * 60)
+            .optional(),
+        dry_run: z.boolean().optional(),
+    })
+    .meta({ id: 'RunLifecycleReconciliationPayload' });
+
+export const RunLifecycleReconciliationResponseSchema = z
+    .strictObject({
+        checked: z.number(),
+        missing: z.number(),
+        mismatched: z.number(),
+        repaired: z.number(),
+    })
+    .meta({ id: 'RunLifecycleReconciliationResponse' });

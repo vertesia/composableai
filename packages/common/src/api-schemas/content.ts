@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { CollectionStatus } from '../store/collections.js';
 import { ContentObjectStatus } from '../store/store.js';
 import { ContentObjectTypeRefSchema } from './app-lifecycle.js';
+import { CostSummarySchema } from './cost-analytics.js';
 import { StringArrayMapSchema } from './dashboard.js';
 import { ComputedFacetResponseSchema, FacetSpecSchema, SortOptionSchema } from './interaction.js';
 import { nullableStringSchema } from './schema-primitives.js';
@@ -66,6 +67,48 @@ export const ContentSourceSchema = z
     .meta({ id: 'ContentSource' });
 
 export const ContentObjectStatusSchema = z.enum(ContentObjectStatus).meta({ id: 'ContentObjectStatus' });
+
+export const IntakeRunStatusSchema = z.enum(['running', 'completed', 'failed']).meta({ id: 'IntakeRunStatus' });
+
+export const IntakeAttributionCompletenessSchema = z
+    .enum(['complete', 'partial', 'unavailable'])
+    .meta({ id: 'IntakeAttributionCompleteness' });
+
+export const ContentIntakeRunSchema = z
+    .strictObject({
+        root_workflow_id: z.string(),
+        root_workflow_run_id: z.string(),
+        root_workflow_type: z.string(),
+        status: IntakeRunStatusSchema,
+        started_at: z.string(),
+        completed_at: z.string().optional(),
+        completeness: IntakeAttributionCompletenessSchema,
+    })
+    .meta({ id: 'ContentIntakeRun' });
+
+export const RecordContentIntakeRunPayloadSchema = ContentIntakeRunSchema.meta({
+    id: 'RecordContentIntakeRunPayload',
+});
+
+export const ContentIntakeCostQuerySchema = z
+    .strictObject({
+        limit: z.coerce.number().int().min(1).max(50).optional(),
+        before: z.string().optional(),
+    })
+    .meta({ id: 'ContentIntakeCostQuery' });
+
+export const ContentIntakeCostItemSchema = ContentIntakeRunSchema.extend({
+    cost: CostSummarySchema.optional(),
+    attribution: IntakeAttributionCompletenessSchema,
+    accruing: z.boolean(),
+}).meta({ id: 'ContentIntakeCostItem' });
+
+export const ContentIntakeCostsResponseSchema = z
+    .strictObject({
+        items: z.array(ContentIntakeCostItemSchema),
+        next_before: z.string().optional(),
+    })
+    .meta({ id: 'ContentIntakeCostsResponse' });
 
 export const InheritedPropertyMetadataSchema = z
     .strictObject({
@@ -810,6 +853,7 @@ export const ContentObjectApiResponseSchema = z
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
             })
             .optional(),
+        intake_run: ContentIntakeRunSchema.optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectApiResponse' });
@@ -878,6 +922,7 @@ export const ContentObjectItemApiResponseSchema = z
         parts: z.array(z.string()).optional(),
         parts_etag: z.string().optional(),
         transcript: z.looseObject({}).optional(),
+        intake_run: ContentIntakeRunSchema.optional(),
         security: StringArrayMapSchema.optional(),
         sensitivity: z.number().nullable().optional(),
         compartments: z.array(z.string()).optional(),
