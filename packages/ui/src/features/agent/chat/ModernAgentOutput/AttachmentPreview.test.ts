@@ -47,18 +47,45 @@ describe('parseUserMessageAttachments', () => {
         expect(parsed.attachments[1].contentType).toBeUndefined();
     });
 
+    // Only the two note shapes the server formatter emits may split a line. Without that
+    // check, a note-less filename carrying its own parens is cut at the last ") (", yielding
+    // a truncated href whose reference never matches — the chip then outlives delivery.
+    it('does not split a note-less filename that contains ") ("', () => {
+        const parsed = parseUserMessageAttachments(
+            'Uploaded artifacts:\n[a (b) (c).pdf](artifact:files/a (b) (c).pdf)',
+        );
+
+        expect(parsed.attachments).toHaveLength(1);
+        expect(parsed.attachments[0].name).toBe('a (b) (c).pdf');
+        expect(parsed.attachments[0].href).toBe('artifact:files/a (b) (c).pdf');
+        expect(parsed.attachments[0].artifactPath).toBe('files/a (b) (c).pdf');
+    });
+
     // The previous regex pair backtracked polynomially on lines packed with ") (" sequences
     // (CodeQL js/polynomial-redos). The scanner must stay linear and still pick the rightmost
     // note split — the same split the greedy regex produced.
     it('handles pathological paren-dense lines in linear time with the rightmost note split', () => {
-        const hostile = `[a](${') ('.repeat(20_000)}x) (note)`;
+        const hostile = `[a](${') ('.repeat(20_000)}x) (image - hostile)`;
         const started = performance.now();
         const parsed = parseUserMessageAttachments(`Uploaded artifacts:\n${hostile}`);
         expect(performance.now() - started).toBeLessThan(200);
 
         expect(parsed.attachments).toHaveLength(1);
         expect(parsed.attachments[0].href).toBe(`${') ('.repeat(20_000)}x`);
-        expect(parsed.attachments[0].contentType).toBeUndefined();
+        expect(parsed.attachments[0].contentType).toBe('image/*');
+    });
+
+    // Every ") (" above is a candidate the scanner must reject (unknown note prefix) before
+    // falling through to the whole-body href. That rejection path is the one a quadratic
+    // implementation would blow up on, so it gets its own budget.
+    it('stays linear when every note candidate is rejected', () => {
+        const hostile = `[a](${') ('.repeat(20_000)}x)`;
+        const started = performance.now();
+        const parsed = parseUserMessageAttachments(`Uploaded artifacts:\n${hostile}`);
+        expect(performance.now() - started).toBeLessThan(200);
+
+        expect(parsed.attachments).toHaveLength(1);
+        expect(parsed.attachments[0].href).toBe(`${') ('.repeat(20_000)}x`);
     });
 
     it('keeps parsing plain links and note-suffixed links without parentheses', () => {

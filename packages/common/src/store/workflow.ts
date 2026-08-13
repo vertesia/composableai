@@ -1235,13 +1235,19 @@ export interface ConversationFileRef {
  * can never trigger delivery while later files are still uploading.
  */
 export interface ConversationFileBatchRef {
-    /** Client-generated batch id. */
+    /** Client-generated batch id. Stable across retries so redelivering the manifest is a no-op. */
     batch_id: string;
     /**
      * Ids (ConversationFileRef.id) of the files successfully uploaded and signaled for this
-     * batch. Files whose upload failed client-side are omitted; empty when every upload failed.
+     * batch. Files whose upload failed client-side are listed in `failed_uploads` instead;
+     * empty when every upload failed.
      */
     file_ids: string[];
+    /**
+     * Files the client could not upload or signal. Without them a 1-of-2 batch would look
+     * complete to the workflow, so the agent would never learn a file is missing.
+     */
+    failed_uploads?: { name: string; error?: string }[];
 }
 
 /**

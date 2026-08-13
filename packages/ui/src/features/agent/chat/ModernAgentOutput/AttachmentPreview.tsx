@@ -382,6 +382,9 @@ const ATTACHMENT_SECTION_RE = /^\s*(?:\*\*)?(attachments|uploaded artifacts):(?:
 
 const SINGLE_WHITESPACE_RE = /\s/;
 
+/** The only note shapes the server-side formatter emits (see processUserMessages). */
+const ATTACHMENT_NOTE_PREFIXES = ['image -', 'text extracted to '];
+
 interface AttachmentLineParts {
     name: string;
     href: string;
@@ -396,8 +399,9 @@ interface AttachmentLineParts {
  * ("(image - ...)", "(text extracted to ...)") that can itself contain parentheses. A regex for
  * that shape needs overlapping greedy captures, which backtrack polynomially on message content
  * (CodeQL js/polynomial-redos) — so the line is split with a linear scan instead: the label runs
- * to the first "]", and the note starts at the rightmost "(" preceded by whitespace and a ")",
- * which is the same split the greedy href capture would have produced.
+ * to the first "]", and the note starts at the rightmost "(" that is preceded by whitespace and
+ * a ")" AND opens one of the known note shapes. Requiring a known prefix is what keeps a
+ * note-less filename such as "a (b) (c).pdf" from being split at its own parentheses.
  */
 function parseAttachmentLine(trimmed: string): AttachmentLineParts | null {
     let text = trimmed;
@@ -416,7 +420,9 @@ function parseAttachmentLine(trimmed: string): AttachmentLineParts | null {
             wsStart--;
         }
         if (wsStart === open || wsStart < 2 || body[wsStart - 1] !== ')') continue;
-        return { name, href: body.slice(0, wsStart - 1), note: body.slice(open + 1) };
+        const note = body.slice(open + 1);
+        if (!ATTACHMENT_NOTE_PREFIXES.some((prefix) => note.startsWith(prefix))) continue;
+        return { name, href: body.slice(0, wsStart - 1), note };
     }
     return body ? { name, href: body } : null;
 }

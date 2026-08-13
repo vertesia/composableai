@@ -1,3 +1,4 @@
+import type { VertesiaClient } from '@vertesia/client';
 import {
     type ActiveWorkstreamEntry,
     type AgentMessage,
@@ -100,6 +101,35 @@ export type StartWorkflowFn = (
 ) => Promise<{ agent_run_id: string } | undefined>;
 
 const EMPTY_STREAMING_MESSAGES = new Map<string, never>();
+
+const BATCH_CLOSE_RETRY_DELAYS_MS = [400, 1200];
+
+/**
+ * Send the staged-upload manifest, retrying with bounded backoff.
+ *
+ * The manifest is the workflow's only notice that the batch is complete: the start message told
+ * the agent to wait for "[Files Ready]", so dropping it leaves the run waiting for a turn that
+ * never comes. Retries reuse the same `batch_id`, which the workflow treats as idempotent.
+ * Returns false once the retries are exhausted so the caller can report the failure.
+ */
+async function closeStagedFileBatch(
+    client: VertesiaClient,
+    agentId: string,
+    batch: ConversationFileBatchRef,
+): Promise<boolean> {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            await client.agents.sendSignal(agentId, 'FileBatchClosed', batch);
+            return true;
+        } catch (err) {
+            if (attempt >= BATCH_CLOSE_RETRY_DELAYS_MS.length) {
+                console.error('Failed to close staged file batch:', err);
+                return false;
+            }
+            await new Promise((resolve) => setTimeout(resolve, BATCH_CLOSE_RETRY_DELAYS_MS[attempt]));
+        }
+    }
+}
 
 function getTimestampMs(timestamp: number | string | undefined): number {
     if (typeof timestamp === 'number') return timestamp;
@@ -941,11 +971,15 @@ function StartWorkflowView({
                 // of what renders next. The closing FileBatchClosed manifest names the batch's
                 // exact membership, so the workflow delivers the "[Files Ready]" turn itself
                 // once — and only once — every listed file has settled, even when a small file
-                // finishes processing while a larger one is still uploading. Delivery does not
-                // depend on this client staying alive.
+                // finishes processing while a larger one is still uploading. Once the manifest
+                // lands, delivery no longer depends on this client: extraction can outlast a
+                // reload. The upload loop below still does — a tab closed mid-loop never closes
+                // the batch, which is why the send is retried and its failure surfaced.
+                let stagedBatchDelivered = true;
                 if (canStageFiles && stagedFiles.length > 0) {
                     const batchId = `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                     const uploadedFileIds: string[] = [];
+                    const failedUploads: { name: string; error?: string }[] = [];
                     for (const file of stagedFiles) {
                         try {
                             const artifactPath = `files/${file.name}`;
@@ -961,31 +995,54 @@ function StartWorkflowView({
                             uploadedFileIds.push(fileId);
                         } catch (uploadErr) {
                             console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
-                            // Continue with other files
+                            // Carried in the manifest: a 1-of-2 batch would otherwise look
+                            // complete to the workflow and the agent would never hear about it.
+                            failedUploads.push({
+                                name: file.name,
+                                error: uploadErr instanceof Error ? uploadErr.message : String(uploadErr),
+                            });
                         }
                     }
-                    try {
-                        // Close the batch even when every upload failed — the workflow then
-                        // tells the agent to stop waiting instead of leaving the run parked.
-                        await client.agents.sendSignal(agentId, 'FileBatchClosed', {
-                            batch_id: batchId,
-                            file_ids: uploadedFileIds,
-                        } as ConversationFileBatchRef);
-                    } catch (batchErr) {
-                        console.error('Failed to close staged file batch:', batchErr);
+                    // Close the batch even when every upload failed — the manifest is what lets
+                    // the workflow report the outcome instead of leaving the agent parked.
+                    stagedBatchDelivered = await closeStagedFileBatch(client, agentId, {
+                        batch_id: batchId,
+                        file_ids: uploadedFileIds,
+                        failed_uploads: failedUploads.length > 0 ? failedUploads : undefined,
+                    });
+                    if (stagedBatchDelivered) {
+                        setStagedFiles([]);
                     }
-                    setStagedFiles([]);
+                    if (failedUploads.length > 0) {
+                        toast({
+                            title: t('agent.stagedFilesUploadFailed'),
+                            status: 'warning',
+                            duration: 6000,
+                            description: failedUploads.map((f) => f.name).join(', '),
+                        });
+                    }
                 }
 
                 // Clear attachments after successful start
                 onAttachmentsSent?.();
                 setStartedAgentRunId(agentId);
                 setInputValue('');
-                toast({
-                    title: t('agent.agentStarted'),
-                    status: 'success',
-                    duration: 3000,
-                });
+                if (stagedBatchDelivered) {
+                    toast({
+                        title: t('agent.agentStarted'),
+                        status: 'success',
+                        duration: 3000,
+                    });
+                } else {
+                    // The run exists, but the agent was told to wait for files it will never be
+                    // told about — reporting success here would hide that.
+                    toast({
+                        title: t('agent.stagedFilesNotDelivered'),
+                        status: 'error',
+                        duration: 8000,
+                        description: t('agent.stagedFilesNotDeliveredDescription'),
+                    });
+                }
             }
         } catch (err: unknown) {
             setPendingStartMessage(null);
