@@ -2470,7 +2470,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectConfiguration',
     'UpdateProjectPayload',
     'UpdateProjectConfigurationPayload',
-    // Every member of the `ModelOptions` union. All twenty-five are published closed today, and
+    // Every member of the `ModelOptions` union is published closed today, and
     // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
     // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union
     // and takes no `additionalProperties`, and neither do the four hoisted enums.
@@ -2500,6 +2500,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OpenAiTextOptions',
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
+    'XAIGrokImageOptions',
     'GroqOptions',
     'MistralTextOptions',
     // The app-manifest leaves. Every object among them is published closed today, the nested `git`

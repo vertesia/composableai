@@ -1216,6 +1216,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/OpenAiGptImageOptions',
                 },
                 {
+                    $ref: '#/$defs/XAIGrokImageOptions',
+                },
+                {
                     $ref: '#/$defs/GroqOptions',
                 },
                 {
@@ -1658,6 +1661,53 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        XAIGrokImageOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'xai-grok-image',
+                },
+                aspect_ratio: {
+                    type: 'string',
+                    enum: [
+                        '1:1',
+                        '16:9',
+                        '9:16',
+                        '4:3',
+                        '3:4',
+                        '3:2',
+                        '2:3',
+                        '2:1',
+                        '1:2',
+                        '19.5:9',
+                        '9:19.5',
+                        '20:9',
+                        '9:20',
+                        'auto',
+                    ],
+                },
+                resolution: {
+                    type: 'string',
+                    enum: ['1k', '2k'],
+                },
+                quality: {
+                    type: 'string',
+                    enum: ['low', 'medium'],
+                },
+                response_format: {
+                    type: 'string',
+                    enum: ['url', 'b64_json'],
+                },
+                n: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 10,
                 },
             },
             required: ['_option_id'],
