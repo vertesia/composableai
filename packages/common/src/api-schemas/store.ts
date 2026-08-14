@@ -463,6 +463,23 @@ const contentTypeFields = {
     status: ContentObjectTypeStatusSchema.optional(),
     intake: ContentTypeIntakePolicySchema.optional(),
     editing: ContentTypeEditingPolicySchema.optional(),
+    /**
+     * Display title, as every OTHER app-contribution shape already publishes it:
+     * `InCodeViewDefinition`, `InCodeProcessDefinition` and `AppDashboardDefinition` all pair the
+     * app-local `name` used for lookup with an optional human-readable `title`. A contributed type
+     * was the one shape missing it, so deployed app packages sent `title` into a `strictObject` that
+     * forbade it and `GET /projects/:projectId/app-types` and `GET /types/catalog` failed their own
+     * response contract on every call.
+     *
+     * Appended last on purpose: property order decides the generated clients' constructor argument
+     * order, so a new field goes on the end rather than next to `name` where it reads better.
+     *
+     * Note this key reaches only the two shapes that spread the whole dictionary —
+     * `InCodeTypeDefinition` and `ContentObjectTypeCatalogEntry`, the two that carry app
+     * contributions. The stored shapes and the create payload list their keys explicitly, so a
+     * stored type still has no `title`.
+     */
+    title: z.string().meta({ description: 'Display title. Defaults to `name` or `id`.' }).optional(),
 };
 
 /**
