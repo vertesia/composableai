@@ -1,7 +1,7 @@
 import { assertType, describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 import { type ViewExperienceConfiguration, viewExperienceRoute } from '../views.js';
-import { ApiSchemaComponents, validateApiRequest } from './registry.js';
+import { ApiSchemaComponents, validateApiRequest, validateApiResponse } from './registry.js';
 import type { ViewExperienceConfigurationSchema } from './view-execution.js';
 
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -68,6 +68,47 @@ describe('ViewExperienceConfiguration', () => {
                 },
             }).valid,
         ).toBe(false);
+    });
+
+    it('accepts View model options that name no driver, while the shared config still requires one', () => {
+        // The regression: a View's `model_options` are authored in the editor and saved before any
+        // driver is resolved, so they carry no `_option_id`. Validating them against the
+        // `ModelOptions` driver union — every branch of which requires that discriminator — meant a
+        // stored View could not satisfy its own response schema, and `GET /views` logged a contract
+        // violation on every call.
+        const authored = { model_options: { temperature: 0.2, max_tokens: 1024 } };
+        expect(validateApiResponse('ViewAgenticExecutionConfiguration', authored).valid).toBe(true);
+
+        // The split is the point: agent runs, events and workflow runs record options a driver
+        // already resolved, so the shared component keeps the union. Asserted on the published
+        // schema because `InteractionExecutionConfiguration` is not itself a response slot — if it
+        // ever stops pointing at `ModelOptions`, the relaxation leaked out of Views.
+        const modelOptions = (name: string) =>
+            (ApiSchemaComponents[name] as { properties: Record<string, unknown> }).properties.model_options;
+        expect(modelOptions('InteractionExecutionConfiguration')).toEqual({
+            $ref: '#/components/schemas/ModelOptions',
+        });
+        expect(modelOptions('ViewAgenticExecutionConfiguration')).toMatchObject({
+            type: 'object',
+            additionalProperties: true,
+        });
+    });
+
+    it('keeps the View config otherwise identical to the shared execution configuration', () => {
+        // Only `model_options` may differ. Anything else diverging means the two drifted apart
+        // rather than the union being deliberately relaxed for authored options.
+        const properties = (name: string) =>
+            (ApiSchemaComponents[name] as { properties: Record<string, unknown> }).properties;
+        const view = properties('ViewAgenticExecutionConfiguration');
+        const shared = properties('InteractionExecutionConfiguration');
+
+        expect(Object.keys(view)).toEqual(Object.keys(shared));
+        for (const key of Object.keys(shared)) {
+            if (key === 'model_options') continue;
+            expect(JSON.stringify(view[key]), `${key} drifted from the shared configuration`).toBe(
+                JSON.stringify(shared[key]),
+            );
+        }
     });
 
     it('builds generic routes for system and app-contributed Views without exposing path material', () => {

@@ -169,6 +169,9 @@ describe('Zeno read-side response contracts', () => {
         expect(
             validateApiResponse('ComputedFacetResponse', { total: 3, status: [{ _id: 'ready', count: 3 }] }).valid,
         ).toBe(true);
+        // `total` is reserved for the match count: buckets belong under the facet's own name. The
+        // server rejects a facet named `total` with a 400, so an array can never reach this field.
+        expect(validateApiResponse('ComputedFacetResponse', { total: [{ _id: 'ready', count: 3 }] }).valid).toBe(false);
         expect(
             validateApiResponse('DataTable', {
                 name: 'invoices',

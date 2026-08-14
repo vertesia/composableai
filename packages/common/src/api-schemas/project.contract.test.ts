@@ -71,6 +71,25 @@ describe('gate 1 — the schema is the single source of truth for the converted 
         assertType<Equals<SerperConfigurationInput['integration'], SupportedIntegrations.serper>>(true);
         expect(true).toBe(true);
     });
+
+    it('accepts an AWS integration that is declared but not configured', () => {
+        // `getIntegrationConfig` reads `integrations?.[integrationId] ?? {}`, so a project that has
+        // never set up AWS answers with the discriminator and `enabled` alone. `s3_role_arn` was
+        // required, which made that answer fail its own response contract on every call.
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.aws,
+                enabled: false,
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.aws,
+                enabled: true,
+                s3_role_arn: 'arn:aws:iam::123456789012:role/vertesia',
+            }).valid,
+        ).toBe(true);
+    });
 });
 
 /**
