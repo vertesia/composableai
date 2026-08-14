@@ -430,7 +430,7 @@ describe('the five content-type shapes are composed, not repeated', () => {
         // Order is contract: it decides the order of the generated clients' constructor arguments and
         // model fields. The five orders differ because they were derived from five different types.
         expect(properties('ContentObjectTypeItem')).toEqual(properties('ContentObjectType'));
-        expect(properties('ContentObjectTypeCatalogEntry').slice(0, 11)).toEqual(properties('InCodeTypeDefinition'));
+        expect(properties('ContentObjectTypeCatalogEntry').slice(0, 12)).toEqual(properties('InCodeTypeDefinition'));
         expect(properties('CreateContentObjectTypePayload')).toEqual([
             'status',
             'is_chunkable',
@@ -465,6 +465,30 @@ describe('the five content-type shapes are composed, not repeated', () => {
                 id: 'sys:Invoice',
                 name: 'Invoice',
                 is_chunkable: false,
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('publishes `title` on the app-contribution shapes and withholds it from the stored ones', () => {
+        // An app package contributes a display title alongside the app-local `name`, exactly as
+        // `InCodeViewDefinition` and `InCodeProcessDefinition` do. Only the two shapes that carry a
+        // contribution get it; a type someone stored through the API has no `title` to publish.
+        for (const shape of ['InCodeTypeDefinition', 'ContentObjectTypeCatalogEntry']) {
+            expect(property(shape, 'title'), `${shape} should publish title`).toBeDefined();
+        }
+        for (const shape of ['ContentObjectTypeItem', 'ContentObjectType', 'CreateContentObjectTypePayload']) {
+            expect(property(shape, 'title'), `${shape} should not publish title`).toBeUndefined();
+        }
+    });
+
+    it('accepts an app-contributed type that carries a title', () => {
+        // The regression: deployed app packages send `title`, the shape was strict and did not
+        // declare it, so every `GET /projects/:projectId/app-types` failed its own response contract.
+        expect(
+            validateApiResponse('InCodeTypeDefinition', {
+                id: 'invoice',
+                name: 'invoice',
+                title: 'Invoice',
             }).valid,
         ).toBe(true);
     });
