@@ -142,6 +142,26 @@ function safeMediaUrl(hit: ViewHit, media: ViewResultMedia): string | undefined 
     }
 }
 
+/**
+ * Resolutions currently in flight, keyed by the media they are resolving.
+ *
+ * Resolving a thumbnail is a network call, and every result tile in a grid makes one. Entries are
+ * dropped as soon as they settle, so nothing is cached across renders — this only collapses the
+ * duplicate concurrent requests that a re-render or a remount of the same tile would otherwise
+ * issue.
+ */
+const inFlightMediaResolutions = new Map<string, Promise<string | undefined>>();
+
+function resolveMediaOnce(key: string, resolve: () => Promise<string | undefined>): Promise<string | undefined> {
+    const pending = inFlightMediaResolutions.get(key);
+    if (pending) return pending;
+    const started = resolve().finally(() => {
+        inFlightMediaResolutions.delete(key);
+    });
+    inFlightMediaResolutions.set(key, started);
+    return started;
+}
+
 function ViewMedia({
     hit,
     media,
@@ -156,14 +176,23 @@ function ViewMedia({
     const directUrl = media ? safeMediaUrl(hit, media) : undefined;
     const [resolvedUrl, setResolvedUrl] = useState<string>();
     const [failed, setFailed] = useState(false);
+    // `hit` and `media` are rebuilt on every parent render, so depending on them by identity
+    // re-ran this effect — and re-issued the request — on each one. Which media to resolve is
+    // fully described by the hit id and the media descriptor's contents.
+    const mediaKey = !directUrl && media ? `${hit.id}|${JSON.stringify(media)}` : undefined;
+    const hitRef = useRef(hit);
+    const mediaRef = useRef(media);
+    hitRef.current = hit;
+    mediaRef.current = media;
 
     useEffect(() => {
         setResolvedUrl(undefined);
         setFailed(false);
-        if (directUrl || !media || !resolveMedia) return;
+        if (!mediaKey || !resolveMedia) return;
 
         let active = true;
-        Promise.resolve(resolveMedia(hit, media))
+        // biome-ignore lint/style/noNonNullAssertion: mediaKey is only set when media is defined
+        resolveMediaOnce(mediaKey, async () => resolveMedia(hitRef.current, mediaRef.current!))
             .then((url) => {
                 if (active) setResolvedUrl(url);
             })
@@ -173,7 +202,7 @@ function ViewMedia({
         return () => {
             active = false;
         };
-    }, [directUrl, hit, media, resolveMedia]);
+    }, [mediaKey, resolveMedia]);
 
     const url = failed ? undefined : (directUrl ?? resolvedUrl);
     const fit = media?.fit === 'contain' ? 'object-contain' : 'object-cover';
