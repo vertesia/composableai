@@ -57,6 +57,7 @@ import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type { StopSignal, UserInputSignal } from './signals.js';
 import type {
     ConversationActivityState,
+    ConversationFileBatchRef,
     ConversationFileRef,
     ConversationFileRemovedRef,
     WorkflowRunEvent,
@@ -307,6 +308,7 @@ export type SignalAgentPayload =
     | StopSignal
     | ConversationFileRef
     | ConversationFileRemovedRef
+    | ConversationFileBatchRef
     | Record<string, unknown>;
 
 export type SignalAgentResponse = z.infer<typeof SignalAgentResponseSchema>;
