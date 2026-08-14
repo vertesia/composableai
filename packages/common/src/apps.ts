@@ -19,6 +19,7 @@ import type {
     AppInstallationProjectsQuerySchema,
     AppInstallationProviderBindingSchema,
     AppInstallationsQuerySchema,
+    AppListScopeSchema,
     AppOAuthCollectionParamsSchema,
     AppOAuthProviderParamsSchema,
     AppRepoBranchSchema,
@@ -32,6 +33,7 @@ import type {
     AppScaffoldModuleSchema,
     AppScaffoldProgressSchema,
     AppScaffoldProgressStatusSchema,
+    AppsQuerySchema,
     AppToolCollectionSchema,
     AppVersionGitRefTypeSchema,
     AppVersionGitSourceSchema,
@@ -163,6 +165,10 @@ export type AppUIConfig = z.infer<typeof AppUIConfigSchema>;
 export type AppInstallationProjectsQuery = z.infer<typeof AppInstallationProjectsQuerySchema>;
 
 export type AppInstallationsQuery = z.infer<typeof AppInstallationsQuerySchema>;
+
+export type AppListScope = z.infer<typeof AppListScopeSchema>;
+
+export type AppsQuery = z.infer<typeof AppsQuerySchema>;
 
 export type ToolCollectionAuthType = z.infer<typeof ToolCollectionAuthTypeSchema>;
 

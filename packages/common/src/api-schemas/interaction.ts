@@ -40,7 +40,11 @@ export const ExecutionRunStatusSchema = z.enum(ExecutionRunStatus).meta({ id: 'E
 
 export const FacetSpecSchema = z
     .strictObject({
-        name: z.string(),
+        name: z.string().meta({
+            description:
+                'Key the buckets are returned under. `total` is reserved for the match count that every facet ' +
+                'response carries, and is rejected with a 400.',
+        }),
         field: z.string(),
     })
     .meta({ id: 'FacetSpec' });
@@ -1047,6 +1051,43 @@ export const CatalogInteractionRefSchema = z
             'Reference to an interaction in the catalog. Used in catalog listing. The id is composed of the namespace and the interaction name. Stored interactions can use `oid:` prefix. If no prefix is used it fallback on `oid:`.',
     });
 
+export const InCodeInteractionSchema = z
+    .strictObject({
+        type: z.enum(['sys', 'app', 'stored', 'draft']).meta({ description: 'The interaction type.' }),
+        id: z.string().meta({ description: 'The executable catalog interaction ID.' }),
+        name: z.string().meta({ description: 'The interaction code name.' }),
+        version: z.number().optional(),
+        published: z.boolean().optional(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        result_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
+        output_modality: ModalitiesSchema.optional(),
+        storage: RunDataStorageLevelSchema.optional(),
+        tags: z.array(z.string()).optional(),
+        agent_runner_options: AgentRunnerOptionsSchema.optional(),
+        model_options: ModelOptionsSchema.optional(),
+        prompts: z.array(InCodePromptSchema),
+        externalId: z.string().optional(),
+        runtime: z
+            .strictObject({
+                environment: z.string().optional(),
+                model: z.string().optional(),
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'InCodeInteraction',
+        description: 'An executable interaction definition, including the prompt schemas required by clients.',
+    });
+
+export const ResolvedCatalogInteractionSchema = InCodeInteractionSchema.extend({
+    title: z.string().meta({ description: 'Display title, normalized from the interaction name when absent.' }),
+    tags: z.array(z.string()).meta({ description: 'Tags, normalized to an empty array when absent.' }),
+}).meta({
+    id: 'ResolvedCatalogInteraction',
+    description: 'A catalog interaction resolved to its complete executable definition.',
+});
+
 export const RunSearchPayloadSchema = z
     .strictObject({
         facets: z.array(FacetSpecSchema).optional(),
@@ -1467,6 +1508,27 @@ export const PopulatedExecutionRunResultSchema = InteractionExecutionResultSchem
 });
 
 /**
+ * Stored run fields returned by the internal `/runs/find` projection endpoint.
+ * Callers choose an arbitrary MongoDB projection, so every field is optional and references remain ids.
+ */
+export const FindRunResultSchema = InteractionExecutionResultSchema.omit({
+    tool_use: true,
+    conversation: true,
+    options: true,
+})
+    .extend({
+        environment: z.string(),
+    })
+    .partial()
+    .meta({
+        id: 'FindRunResult',
+        description:
+            'A caller-selected subset of canonical stored run fields. Internal persistence fields are normalized at the API boundary.',
+    });
+
+export const FindRunResultArraySchema = z.array(FindRunResultSchema).meta({ id: 'FindRunResultArray' });
+
+/**
  * `result` in the shape the pre-`COMPLETION_RESULT_V1` endpoints report it.
  *
  * The legacy conversion collapses the `CompletionResult[]` into whichever single value the parts
@@ -1552,6 +1614,8 @@ export const ExecutionRunRefSchema = z
                 'The Vertesia Workflow related to this Interaction Run.\n\nThis is only set when the interaction is executed as part of a workflow.',
         }).optional(),
         interaction: InteractionRefSchema.optional(),
+        result: z.array(CompletionResultSchema).optional(),
+        parameters: z.unknown().optional(),
     })
     .meta({ id: 'ExecutionRunRef' });
 
@@ -2290,6 +2354,15 @@ export const ResolveInteractionQuerySchema = z
 // a union here would publish `anyOf` on an additionalProperties value, which the generated-client
 // rules rule out for a primitive-or-collection value. The emitted schema is what AJV compiles, so
 // array-or-number is enforced either way.
+// `total` is RESERVED: it is the match count and nothing else. The buckets live beside it under the
+// facet's own name, so the two never need the same slot. `computeFacets` used to seed the count and
+// then write the requested facets over it, so a caller who named a facet `total` got that facet's
+// buckets where the count belonged — an array in a field this schema types as a number. The server
+// now rejects that name with a 400 instead, which is why `total` can stay a plain number here.
+//
+// Widening it to the catchall's `['array', 'number']` is not an option regardless: a NAMED property
+// with a type array makes the Java generator reference a class it never writes (`AnyOfnumber`) and
+// the client stops compiling. The catchall gets away with it by becoming a map value, not a field.
 export const ComputedFacetResponseSchema = z
     .object({
         total: z.number().optional(),
@@ -2340,8 +2413,16 @@ export const ExecutionResponseSchema = z
     })
     .meta({ id: 'ExecutionResponse' });
 
+const RunFacetSpecSchema = z.discriminatedUnion('name', [
+    z.strictObject({ name: z.literal('environments'), field: z.literal('environment') }),
+    z.strictObject({ name: z.literal('interactions'), field: z.literal('interaction') }),
+    z.strictObject({ name: z.literal('models'), field: z.literal('modelId') }),
+    z.strictObject({ name: z.literal('statuses'), field: z.literal('status') }),
+    z.strictObject({ name: z.literal('finish_reason'), field: z.literal('finish_reason') }),
+]);
+
 export const ComputeRunFacetPayloadSchema = z
-    .strictObject({ facets: z.array(FacetSpecSchema), query: RunSearchQuerySchema.optional() })
+    .strictObject({ facets: z.array(RunFacetSpecSchema).max(5), query: RunSearchQuerySchema.optional() })
     .meta({ id: 'ComputeRunFacetPayload' });
 
 export const RunSearchMetaResponseSchema = z
@@ -2355,6 +2436,28 @@ export const RunSearchMetaResponseSchema = z
         ),
     })
     .meta({ id: 'RunSearchMetaResponse' });
+
+const RunFacetBucketSchema = z.strictObject({
+    _id: z.string().nullable(),
+    count: z.number(),
+    name: z.string().optional(),
+    status: InteractionStatusSchema.optional(),
+    version: z.number().optional(),
+});
+
+/**
+ * Response returned by POST /runs/facets.
+ */
+export const ComputeRunFacetsResponseSchema = z
+    .strictObject({
+        environments: z.array(RunFacetBucketSchema).optional(),
+        interactions: z.array(RunFacetBucketSchema).optional(),
+        models: z.array(RunFacetBucketSchema).optional(),
+        statuses: z.array(RunFacetBucketSchema).optional(),
+        finish_reason: z.array(RunFacetBucketSchema).optional(),
+        total: z.number().optional(),
+    })
+    .meta({ id: 'ComputeRunFacetsResponse' });
 
 export const RunClonePayloadSchema = z
     .strictObject({

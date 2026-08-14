@@ -8,8 +8,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * A group of MCP tool collections that share a single OAuth connection.
- * Connection/activation operations act on the whole group.
+ * A group of MCP tool collections that share authentication and activation state.
  */
 export interface McpConnectionGroup {
     key: string;
@@ -17,18 +16,18 @@ export interface McpConnectionGroup {
     appName: string;
     /** Display label: provider display_name, oauth_app name, or individual collection name */
     label: string;
-    /** Representative collection ID used for OAuth operations (all in group share the same OAuth provider) */
+    /** Representative collection ID used for status and, for OAuth groups, connection operations. */
     representativeId: string;
     /** All collection IDs in this group (used for per-conversation activation toggles) */
     memberIds: string[];
     /** Names of all collections in this group (for tooltip when > 1) */
     memberNames: string[];
+    authType: 'oauth' | 'api_key';
     authStatus?: OAuthAuthStatus;
 }
 
 /**
- * Loads the project's installed MCP tool collections that require OAuth, grouped by their
- * shared OAuth provider/app, and resolves each group's current connection status.
+ * Loads the project's installed authenticated MCP tool collections and resolves their status.
  *
  * Shared by the MCP connections button (badge count) and dialog (list) so the data is
  * fetched once and refreshed together after connect/disconnect.
@@ -56,9 +55,11 @@ export function useMcpConnections() {
 
                 if (!inst.manifest.tool_collections) continue;
 
-                const oauthCollections = inst.manifest.tool_collections
+                const mcpCollections = inst.manifest.tool_collections
                     .map((c) => normalizeToolCollection(c))
-                    .filter((c): c is MCPToolCollectionObject => c.type === 'mcp' && oauthIds.includes(c.id));
+                    .filter((c): c is MCPToolCollectionObject => c.type === 'mcp');
+                const oauthCollections = mcpCollections.filter((c) => c.auth !== 'api_key' && oauthIds.includes(c.id));
+                const apiKeyCollections = mcpCollections.filter((c) => c.auth === 'api_key');
 
                 const providerMap = new Map<string, MCPToolCollectionObject[]>();
                 const oauthAppMap = new Map<string, MCPToolCollectionObject[]>();
@@ -87,6 +88,7 @@ export function useMcpConnections() {
                         representativeId: cols[0].id,
                         memberIds: cols.map((c) => c.id),
                         memberNames: cols.map((c) => c.name),
+                        authType: 'oauth',
                     });
                 }
 
@@ -99,6 +101,7 @@ export function useMcpConnections() {
                         representativeId: cols[0].id,
                         memberIds: cols.map((c) => c.id),
                         memberNames: cols.map((c) => c.name),
+                        authType: 'oauth',
                     });
                 }
 
@@ -111,6 +114,20 @@ export function useMcpConnections() {
                         representativeId: col.id,
                         memberIds: [col.id],
                         memberNames: [col.name],
+                        authType: 'oauth',
+                    });
+                }
+
+                for (const col of apiKeyCollections) {
+                    allGroups.push({
+                        key: `${inst.id}:api-key:${col.id}`,
+                        appId: inst.id,
+                        appName: inst.manifest.title || inst.manifest.name,
+                        label: col.name,
+                        representativeId: col.id,
+                        memberIds: [col.id],
+                        memberNames: [col.name],
+                        authType: 'api_key',
                     });
                 }
             }

@@ -13,12 +13,13 @@ import {
     type SerperConfigurationInput,
     SupportedIntegrations,
 } from '../integrations.js';
-import type {
-    ICreateProjectPayload,
-    ModelDefault,
-    Project,
-    ProjectPluginsUpdatePayload,
-    SystemDefaults,
+import {
+    type ICreateProjectPayload,
+    type ModelDefault,
+    type Project,
+    type ProjectPluginsUpdatePayload,
+    SYSTEM_INTERACTION_CATEGORIES,
+    type SystemDefaults,
     SystemInteractionCategory,
 } from '../project.js';
 import type { JsonObject } from './adapter.js';
@@ -69,6 +70,25 @@ describe('gate 1 — the schema is the single source of truth for the converted 
         assertType<Equals<ResendConfigurationInput['integration'], SupportedIntegrations.resend>>(true);
         assertType<Equals<SerperConfigurationInput['integration'], SupportedIntegrations.serper>>(true);
         expect(true).toBe(true);
+    });
+
+    it('accepts an AWS integration that is declared but not configured', () => {
+        // `getIntegrationConfig` reads `integrations?.[integrationId] ?? {}`, so a project that has
+        // never set up AWS answers with the discriminator and `enabled` alone. `s3_role_arn` was
+        // required, which made that answer fail its own response contract on every call.
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.aws,
+                enabled: false,
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.aws,
+                enabled: true,
+                s3_role_arn: 'arn:aws:iam::123456789012:role/vertesia',
+            }).valid,
+        ).toBe(true);
     });
 });
 
@@ -184,6 +204,11 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         assertType<Equals<keyof SystemDefaults, `${SystemInteractionCategory}`>>(true);
         assertType<Equals<SystemDefaults['intake'], ModelDefault | undefined>>(true);
         expect(true).toBe(true);
+    });
+
+    it('uses the analysis model default for both content query planning and reranking', () => {
+        expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchAgent).toBe(SystemInteractionCategory.analysis);
+        expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchReranker).toBe(SystemInteractionCategory.analysis);
     });
 
     it('publishes the property-mapping map without the propertyNames z.record adds', () => {

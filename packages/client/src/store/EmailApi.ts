@@ -1,109 +1,27 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
-import type { EmailRouteData } from '@vertesia/common';
+import type {
+    CreateEmailRouteRequest,
+    CreateEmailRouteResponse,
+    EmailRouteData,
+    EmailRouteResponse,
+    ForwardEmailRequest,
+    ForwardEmailResponse,
+    SendEmailRequest,
+    SendEmailResponse,
+    UpdateEmailRouteRequest,
+    UpdateEmailRouteResponse,
+} from '@vertesia/common';
 
-/**
- * Request payload for sending an email via the agent.
- * Resend configuration is fetched from project settings.
- * From address is constructed as: {project_namespace}+{agent_name}@{email_domain}
- */
-export interface SendEmailRequest {
-    /** Email address to send to */
-    to_email: string;
-    /** Email subject */
-    subject: string;
-    /** Email body in markdown format */
-    body: string;
-    /** Agent/interaction endpoint name (used in from address) */
-    agent_name: string;
-    /** Display name for the sender (overrides project default) */
-    from_name?: string;
-    /** Workflow run ID for routing replies */
-    run_id: string;
-    /** Existing route key (for subsequent emails in same conversation) */
-    route_key?: string;
-    /** Message ID for In-Reply-To header (email threading) */
-    in_reply_to?: string;
-    /** Chain of message IDs for References header */
-    references?: string[];
-}
-
-/**
- * Response from sending an email.
- */
-export interface SendEmailResponse {
-    success: boolean;
-    /** Resend email ID */
-    email_id?: string;
-    /** Message-ID header for threading */
-    message_id?: string;
-    /** Short route key for reply routing */
-    route_key?: string;
-    /** Error message if failed */
-    error?: string;
-}
-
-/**
- * Response from creating an email route.
- */
-export interface CreateRouteResponse {
-    /** The generated route key (8-char alphanumeric) */
-    route_key: string;
-    /** Full reply-to address: r+{route_key}@{email_domain} */
-    reply_to: string;
-    /** The email domain for sending and receiving */
-    email_domain: string;
-}
-
-/**
- * Request to forward an email to a workflow.
- * Used by external services that handle email reception themselves.
- */
-export interface ForwardEmailRequest {
-    /** Email content received by the external service */
-    email: {
-        /** Sender email address */
-        from: string;
-        /** Email subject */
-        subject?: string;
-        /** Plain text body */
-        text: string;
-        /** HTML body (optional) */
-        html?: string;
-        /** Message-ID header for threading */
-        message_id?: string;
-    };
-    /** Custom context data from the external service (e.g., auth tokens, user IDs) */
-    context?: Record<string, unknown>;
-    /** Attachments with download URLs */
-    attachments?: Array<{
-        filename: string;
-        content_type: string;
-        size: number;
-        download_url: string;
-    }>;
-}
-
-/**
- * Response from forwarding an email.
- */
-export interface ForwardEmailResponse {
-    success: boolean;
-    run_id: string;
-    workflow_id: string;
-    route_key: string;
-}
-
-/**
- * Request to create an email route.
- */
-export interface CreateRouteRequest {
-    /** Workflow run ID for routing replies */
-    run_id: string;
-    /** Email address of the user (for context) */
-    user_email: string;
-    /** Subject of the email thread (optional) */
-    thread_subject?: string;
-}
+export type {
+    ForwardEmailRequest,
+    ForwardEmailResponse,
+    SendEmailRequest,
+    SendEmailResponse,
+} from '@vertesia/common';
+/** @deprecated Use CreateEmailRouteRequest from @vertesia/common. */
+export type CreateRouteRequest = CreateEmailRouteRequest;
+/** @deprecated Use CreateEmailRouteResponse from @vertesia/common. */
+export type CreateRouteResponse = CreateEmailRouteResponse;
 
 /**
  * Email API for sending emails from workflows.
@@ -150,21 +68,21 @@ export class EmailApi extends ApiTopic {
      * // Replies will be routed back to the workflow
      * ```
      */
-    createRoute(request: CreateRouteRequest): Promise<CreateRouteResponse> {
+    createRoute(request: CreateEmailRouteRequest): Promise<CreateEmailRouteResponse> {
         return this.post('/routes', { payload: request });
     }
 
     /**
      * Get an email route by key.
      */
-    getRoute(routeKey: string): Promise<EmailRouteData & { route_key: string }> {
+    getRoute(routeKey: string): Promise<EmailRouteResponse> {
         return this.get(`/routes/${routeKey}`);
     }
 
     /**
      * Update an email route (e.g., to update threading info).
      */
-    updateRoute(routeKey: string, updates: Partial<EmailRouteData>): Promise<{ success: boolean; route_key: string }> {
+    updateRoute(routeKey: string, updates: UpdateEmailRouteRequest): Promise<UpdateEmailRouteResponse> {
         return this.put(`/routes/${routeKey}`, { payload: updates });
     }
 

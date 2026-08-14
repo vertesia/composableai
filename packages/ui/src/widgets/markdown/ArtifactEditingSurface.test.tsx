@@ -44,6 +44,7 @@ function renderSurface(props?: {
     onSendChangesToAgent?: () => void;
     hasUnsentChanges?: boolean;
     toolbarStatus?: React.ReactNode;
+    onContentChange?: (content: string, generation?: string) => void;
     flushChangesRef?: React.MutableRefObject<(() => Promise<false | ArtifactEditingSurfaceDocumentEdit>) | null>;
 }) {
     return render(
@@ -61,6 +62,7 @@ function renderSurface(props?: {
                 onSendChangesToAgent={props?.onSendChangesToAgent}
                 hasUnsentChanges={props?.hasUnsentChanges}
                 toolbarStatus={props?.toolbarStatus}
+                onContentChange={props?.onContentChange}
                 flushChangesRef={props?.flushChangesRef}
             />
         </I18nProvider>,
@@ -292,6 +294,7 @@ describe('ArtifactEditingSurface', () => {
 
     it('rebases focused full-document edits over a non-overlapping agent change after 412', async () => {
         const user = userEvent.setup();
+        const onContentChange = vi.fn();
         const baseContent = 'First paragraph.\n\nSecond paragraph.';
         const remoteContent = 'First paragraph updated remotely.\n\nSecond paragraph.';
         mocks.getArtifactContent
@@ -314,16 +317,22 @@ describe('ArtifactEditingSurface', () => {
             .mockRejectedValueOnce({ status: 412 })
             .mockResolvedValueOnce({ path: 'drafts/document.md', generation: 'generation-merged' });
 
-        const view = renderSurface({ viewMode: 'document' });
+        const view = renderSurface({ viewMode: 'document', onContentChange });
         const editor = await screen.findByRole('textbox', { name: 'Markdown document editor' }, LAZY_EDITOR_WAIT);
         await user.click(editor);
 
         view.rerender(
             <I18nProvider lng="en">
-                <ArtifactEditingSurface runId="run-1" path="drafts/document.md" refreshKey={1} viewMode="document" />
+                <ArtifactEditingSurface
+                    runId="run-1"
+                    path="drafts/document.md"
+                    refreshKey={1}
+                    viewMode="document"
+                    onContentChange={onContentChange}
+                />
             </I18nProvider>,
         );
-        await waitFor(() => expect(mocks.getArtifactContent).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(onContentChange).toHaveBeenCalledWith(remoteContent, 'generation-agent'));
 
         editor.focus();
         const secondParagraphText = editor.querySelectorAll('p')[1]?.firstChild;

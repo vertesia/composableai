@@ -269,7 +269,14 @@ export const AwsConfigurationSchema = z
     .strictObject({
         integration: SupportedIntegrations_awsSchema,
         enabled: z.boolean(),
-        s3_role_arn: z.string(),
+        // Optional because "declared but not configured" is a real state, not legacy data:
+        // `getIntegrationConfig` reads `integrations?.[integrationId] ?? {}`, so a project that has
+        // never set up AWS answers `{ integration: 'aws', enabled: false }` with no role ARN at all.
+        // Requiring it here made that answer fail its own response contract. The consumers already
+        // agree it is optional — the server guards on `s3_role_arn` being present before assuming a
+        // role, and every sibling integration marks its config fields optional for the same reason
+        // (`github_app_id`, `url`, ...).
+        s3_role_arn: z.string().optional(),
     })
     .meta({ id: 'AwsConfiguration' });
 

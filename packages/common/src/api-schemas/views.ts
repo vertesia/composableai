@@ -1,5 +1,14 @@
+import { JSONObjectSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
-import { VIEW_EXPERIENCE_SCHEMA_VERSION, VIEW_RESULT_FIELD_FORMATS, VIEW_SEARCH_FIELD_TYPES } from '../views.js';
+import {
+    VIEW_ACTION_PLACEMENTS,
+    VIEW_ACTION_SELECTION_REQUIREMENTS,
+    VIEW_AGENTIC_SEARCH_MODES,
+    VIEW_EXPERIENCE_SCHEMA_VERSION,
+    VIEW_RESULT_FIELD_FORMATS,
+    VIEW_SEARCH_FIELD_TYPES,
+    VIEW_SELECTION_MODES,
+} from '../views.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
 // The view experiences a project publishes: the search, navigation, results and display
@@ -54,17 +63,68 @@ export const ViewTableColumnSchema = z
     })
     .meta({ id: 'ViewTableColumn' });
 
+export const ViewAgenticSearchModeSchema = z.enum(VIEW_AGENTIC_SEARCH_MODES).meta({ id: 'ViewAgenticSearchMode' });
+
+export const AgenticViewRerankConfigurationSchema = z
+    .strictObject({
+        interaction: z
+            .string()
+            .meta({
+                description: 'Interaction used only for candidate reranking. Defaults to sys:ContentSearchReranker.',
+            })
+            .optional(),
+        max_candidates: z
+            .number()
+            .meta({ description: 'Maximum candidates from the current result page sent to the model.' })
+            .optional(),
+        include_why_match: z
+            .boolean()
+            .meta({ description: 'Ask the model for a short per-result explanation. Defaults to true.' })
+            .optional(),
+        timeout_ms: z.number().meta({ description: 'Reranking-stage timeout.' }).optional(),
+    })
+    .meta({ id: 'AgenticViewRerankConfiguration' });
+
+/**
+ * The model configuration a View stores for its agentic search.
+ *
+ * Identical to `InteractionExecutionConfiguration` apart from `model_options`, which is an open
+ * object here rather than the `ModelOptions` driver union. A View's options are authored in the view
+ * editor and saved before any driver is chosen, so they carry no `_option_id`; every branch of the
+ * union requires one, so a stored View could not satisfy it and `GET /views` failed its own response
+ * contract on every call.
+ *
+ * Only the View usage changes. The shared component keeps the strict union because agent runs,
+ * events and workflow runs record options a driver already resolved, and those are in production.
+ */
+export const ViewAgenticExecutionConfigurationSchema = InteractionExecutionConfigurationSchema.extend({
+    model_options: z
+        .looseObject({})
+        .meta({
+            description:
+                'Model options as authored for this View. Open rather than the driver-discriminated ' +
+                '`ModelOptions` union, because a View is saved before a driver is resolved.',
+        })
+        .optional(),
+}).meta({ id: 'ViewAgenticExecutionConfiguration' });
+
 export const AgenticViewSearchConfigurationSchema = z
     .strictObject({
         interaction: z.string().optional(),
-        config: InteractionExecutionConfigurationSchema.optional(),
+        config: ViewAgenticExecutionConfigurationSchema.optional(),
         instructions: z
             .string()
             .meta({ description: 'View-specific guidance for Elasticsearch query planning.' })
             .optional(),
-        mode: z.literal('query').optional(),
+        mode: ViewAgenticSearchModeSchema.meta({
+            description: 'Generate only Elasticsearch DSL, or generate DSL plus a safe ephemeral result presentation.',
+        }).optional(),
         timeout_ms: z.number().optional(),
         minimum_confidence: z.number().optional(),
+        rerank: AgenticViewRerankConfigurationSchema.meta({
+            description:
+                'Optional second stage that reorders an authorized candidate page using the same model configuration.',
+        }).optional(),
     })
     .meta({ id: 'AgenticViewSearchConfiguration' });
 
@@ -357,6 +417,82 @@ export const ViewDisplayConfigurationSchema = z
     ])
     .meta({ id: 'ViewDisplayConfiguration', type: 'object' });
 
+export const ViewSelectionModeSchema = z.enum(VIEW_SELECTION_MODES).meta({ id: 'ViewSelectionMode' });
+
+export const ViewSelectionConfigurationSchema = z
+    .strictObject({
+        mode: ViewSelectionModeSchema,
+        select_all: z
+            .literal('page')
+            .meta({ description: 'Select-all applies to the currently rendered page.' })
+            .optional(),
+    })
+    .meta({
+        id: 'ViewSelectionConfiguration',
+        description: 'Client-side selection behavior for normalized View hits.',
+    });
+
+export const ViewActionPlacementSchema = z.enum(VIEW_ACTION_PLACEMENTS).meta({ id: 'ViewActionPlacement' });
+
+export const ViewActionSelectionRequirementSchema = z
+    .enum(VIEW_ACTION_SELECTION_REQUIREMENTS)
+    .meta({ id: 'ViewActionSelectionRequirement' });
+
+export const ViewActionConfigurationSchema = z
+    .strictObject({
+        id: z.string(),
+        label: z.string(),
+        handler: z.string(),
+        placement: ViewActionPlacementSchema.optional(),
+        requires_selection: ViewActionSelectionRequirementSchema.optional(),
+        destructive: z.boolean().optional(),
+        confirm: z.boolean().optional(),
+        params: JSONObjectSchema.optional(),
+    })
+    .meta({
+        id: 'ViewActionConfiguration',
+        description:
+            'Declarative action exposed by a View. The handler name is resolved by the embedding application; persisted configuration never contains executable code.',
+    });
+
+export const ViewActionsConfigurationSchema = z
+    .strictObject({
+        include_defaults: z
+            .boolean()
+            .meta({
+                description:
+                    'Include the standard content export and delete actions. Defaults to true when selection is enabled.',
+            })
+            .optional(),
+        exclude_defaults: z
+            .array(z.enum(['export', 'delete']))
+            .meta({ description: 'Hide individual standard actions while keeping the remaining defaults.' })
+            .optional(),
+        items: z.array(ViewActionConfigurationSchema).optional(),
+    })
+    .meta({ id: 'ViewActionsConfiguration' });
+
+export const ViewUploadDropParametersSchema = z
+    .strictObject({
+        type_id: z.string().optional(),
+        collection_id: z.string().optional(),
+        location: z.string().optional(),
+        properties: JSONObjectSchema.optional(),
+        allow_folders: z.boolean().optional(),
+    })
+    .meta({ id: 'ViewUploadDropParameters' });
+
+export const ViewDropConfigurationSchema = z
+    .strictObject({
+        handler: z.literal('upload'),
+        accept: z.array(z.literal('files')).optional(),
+        params: ViewUploadDropParametersSchema.optional(),
+    })
+    .meta({
+        id: 'ViewDropConfiguration',
+        description: 'A declarative result-area drop target. Stored JSON supports the built-in upload action only.',
+    });
+
 export const ViewResultsConfigurationSchema = z
     .strictObject({
         default_display: z.string(),
@@ -364,6 +500,9 @@ export const ViewResultsConfigurationSchema = z
         displays: z.array(ViewDisplayConfigurationSchema),
         default_sort: z.string().optional(),
         sort_options: z.array(ViewSortOptionSchema).optional(),
+        selection: ViewSelectionConfigurationSchema.optional(),
+        actions: ViewActionsConfigurationSchema.optional(),
+        drop: ViewDropConfigurationSchema.optional(),
     })
     .meta({ id: 'ViewResultsConfiguration' });
 

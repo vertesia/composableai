@@ -25,7 +25,7 @@ export interface McpConnectionsDialogProps {
 
 /**
  * Dialog to manage the MCP servers available to an agent conversation.
- * Each server can be connected/disconnected (OAuth) and activated/deactivated for this run.
+ * OAuth servers can be connected, and every server can be activated or deactivated for this run.
  */
 export function McpConnectionsDialog({
     isOpen,
@@ -102,7 +102,7 @@ export function McpConnectionsDialog({
                                             >
                                                 <Spinner className="size-3" />
                                             </Button>
-                                        ) : (
+                                        ) : group.authType === 'oauth' ? (
                                             <RemoteMcpConnectionButton
                                                 appId={group.appId}
                                                 collectionId={group.representativeId}
@@ -113,7 +113,7 @@ export function McpConnectionsDialog({
                                                 showDisconnect
                                                 readOnly={readOnly}
                                             />
-                                        )}
+                                        ) : null}
                                         {onChange && (
                                             <Switch
                                                 size="sm"

@@ -19,6 +19,7 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
+    Checkbox,
     SortableTableHeaderCell,
     Table,
     TableHeaderCell,
@@ -28,8 +29,9 @@ import {
 } from '@vertesia/ui/core';
 import { type LocaleFormat, useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { ChevronDown, ChevronsUpDown, ChevronUp, ExternalLink, FileText, ImageIcon } from 'lucide-react';
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import type { ViewMediaResolver, ViewResultsRendererProps } from './types.js';
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import type { ViewMediaResolver, ViewResultsRendererProps, ViewSelectionController } from './types.js';
+import { useViewActions, ViewRowActions } from './ViewActions.js';
 import { resolveViewSort } from './viewState.js';
 
 function nestedValue(root: unknown, path: string): unknown {
@@ -140,6 +142,46 @@ function safeMediaUrl(hit: ViewHit, media: ViewResultMedia): string | undefined 
     }
 }
 
+/**
+ * Resolutions currently in flight, keyed by the resolver and then by the media it is resolving.
+ *
+ * Resolving a thumbnail is a network call, and every result tile in a grid makes one. Entries are
+ * dropped as soon as they settle, so nothing is cached across renders — this only collapses the
+ * duplicate concurrent requests that a re-render or a remount of the same tile would otherwise
+ * issue.
+ *
+ * The outer key is the resolver itself: two views can render the same hit with different
+ * `resolveMedia` implementations, and sharing a promise between them would hand one view a URL
+ * resolved by the other's context.
+ */
+const inFlightMediaResolutions = new WeakMap<ViewMediaResolver, Map<string, Promise<string | undefined>>>();
+
+/** Backoff for a resolution that succeeded but has no URL yet — a rendition still being generated. */
+const MEDIA_RETRY_DELAYS_MS = [2000, 4000, 8000];
+
+function inFlightMediaResolutionsFor(resolver: ViewMediaResolver): Map<string, Promise<string | undefined>> {
+    const existing = inFlightMediaResolutions.get(resolver);
+    if (existing) return existing;
+    const created = new Map<string, Promise<string | undefined>>();
+    inFlightMediaResolutions.set(resolver, created);
+    return created;
+}
+
+function resolveMediaOnce(
+    resolver: ViewMediaResolver,
+    key: string,
+    resolve: () => Promise<string | undefined>,
+): Promise<string | undefined> {
+    const inFlight = inFlightMediaResolutionsFor(resolver);
+    const pending = inFlight.get(key);
+    if (pending) return pending;
+    const started = resolve().finally(() => {
+        inFlight.delete(key);
+    });
+    inFlight.set(key, started);
+    return started;
+}
+
 function ViewMedia({
     hit,
     media,
@@ -154,24 +196,57 @@ function ViewMedia({
     const directUrl = media ? safeMediaUrl(hit, media) : undefined;
     const [resolvedUrl, setResolvedUrl] = useState<string>();
     const [failed, setFailed] = useState(false);
+    // `hit` and `media` are rebuilt on every parent render, so depending on them by identity
+    // re-ran this effect — and re-issued the request — on each one. Which media to resolve is
+    // fully described by the hit id and the media descriptor's contents.
+    const mediaKey = !directUrl && media ? `${hit.id}|${JSON.stringify(media)}` : undefined;
+    const hitRef = useRef(hit);
+    const mediaRef = useRef(media);
+    hitRef.current = hit;
+    mediaRef.current = media;
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: directUrl is deliberately extra; see the dependency array
     useEffect(() => {
         setResolvedUrl(undefined);
         setFailed(false);
-        if (directUrl || !media || !resolveMedia) return;
+        if (!mediaKey || !resolveMedia) return;
 
         let active = true;
-        Promise.resolve(resolveMedia(hit, media))
-            .then((url) => {
-                if (active) setResolvedUrl(url);
-            })
-            .catch(() => {
-                if (active) setFailed(true);
-            });
+        let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+        const attempt = (retry: number) => {
+            // biome-ignore lint/style/noNonNullAssertion: mediaKey is only set when media is defined
+            resolveMediaOnce(resolveMedia, mediaKey, async () => resolveMedia(hitRef.current, mediaRef.current!))
+                .then((url) => {
+                    if (!active) return;
+                    if (url) {
+                        setResolvedUrl(url);
+                        return;
+                    }
+                    // No URL yet. The effect no longer re-runs on every parent render, so a
+                    // rendition that is still generating needs an explicit retry — a bounded one,
+                    // since "no thumbnail" is also the permanent answer for most content.
+                    const delay = MEDIA_RETRY_DELAYS_MS[retry];
+                    if (delay === undefined) return;
+                    retryTimer = setTimeout(() => attempt(retry + 1), delay);
+                })
+                .catch(() => {
+                    // A failed resolution is terminal: retrying is what turned a 500 into a storm.
+                    if (active) setFailed(true);
+                });
+        };
+        attempt(0);
+
         return () => {
             active = false;
+            if (retryTimer) clearTimeout(retryTimer);
         };
-    }, [directUrl, hit, media, resolveMedia]);
+        // `directUrl` earns its place even though the body never reads it: it is what clears a
+        // `failed` left behind by <img onError>. Property-backed media has no mediaKey, so a tile
+        // whose URL 404'd would otherwise stay on the fallback icon forever, even once the hit
+        // carries a fresh, working URL. It is a string, so this costs no extra resolver call —
+        // and when it is set, the early return above means no request either.
+    }, [mediaKey, resolveMedia, directUrl]);
 
     const url = failed ? undefined : (directUrl ?? resolvedUrl);
     const fit = media?.fit === 'contain' ? 'object-contain' : 'object-cover';
@@ -194,6 +269,37 @@ function ViewMedia({
 function Annotation({ hit }: { hit: ViewHit }) {
     const annotation = hit.annotation?.why_match ?? hit.annotation?.answer ?? hit.annotation?.excerpt;
     return annotation ? <p className="text-sm text-info">{annotation}</p> : null;
+}
+
+function HitSelectionCheckbox({
+    hit,
+    page,
+    selection,
+}: {
+    hit: ViewHit;
+    page: ViewHit[];
+    selection?: ViewSelectionController;
+}) {
+    const { t } = useUITranslation();
+    const shiftPressed = useRef(false);
+    if (!selection) return null;
+    return (
+        <Checkbox
+            checked={selection.isSelected(hit.id)}
+            aria-label={t('view.selectResult', { name: hit.document.name })}
+            onClick={(event) => {
+                shiftPressed.current = event.shiftKey;
+                event.stopPropagation();
+            }}
+            onCheckedChange={(checked) => {
+                selection.toggle(hit, checked === true, {
+                    page,
+                    range: selection.mode === 'multiple' && shiftPressed.current,
+                });
+                shiftPressed.current = false;
+            }}
+        />
+    );
 }
 
 function BadgeFields({ hit, fields }: { hit: ViewHit; fields?: ViewResultField[] }) {
@@ -231,16 +337,26 @@ function ListResults({
     hits,
     onOpenHit,
     resolveMedia,
+    selection,
 }: {
     display: ViewListDisplay;
     hits: ViewHit[];
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
 }) {
     return (
         <div className="divide-y divide-border rounded-md border">
             {hits.map((hit) => (
-                <article key={hit.id} className="flex gap-4 p-4">
+                <article
+                    key={hit.id}
+                    className={`flex gap-4 p-4 ${selection?.isSelected(hit.id) ? 'bg-muted/40' : ''}`}
+                >
+                    {selection && (
+                        <div className="pt-1">
+                            <HitSelectionCheckbox hit={hit} page={hits} selection={selection} />
+                        </div>
+                    )}
                     {display.media && (
                         <ViewMedia
                             hit={hit}
@@ -272,6 +388,7 @@ function ListResults({
                     </div>
                     <div className="shrink-0 self-center">
                         <OpenResultButton hit={hit} onOpenHit={onOpenHit} compact />
+                        <ViewRowActions hit={hit} />
                     </div>
                 </article>
             ))}
@@ -287,6 +404,7 @@ function TableResults({
     sortOptions,
     currentSort,
     onSortChange,
+    selection,
 }: {
     display: ViewTableDisplay;
     hits: ViewHit[];
@@ -295,13 +413,31 @@ function TableResults({
     sortOptions?: ViewSortOption[];
     currentSort?: string;
     onSortChange?: (sort: string) => void;
+    selection?: ViewSelectionController;
 }) {
     const { t } = useUITranslation();
+    const actions = useViewActions();
+    const hasRowActions = actions?.actions.some((action) => action.placement === 'row') ?? false;
+    const selectedOnPage = selection ? hits.filter((hit) => selection.isSelected(hit.id)).length : 0;
+    const allOnPageSelected = hits.length > 0 && selectedOnPage === hits.length;
     return (
         <div className="overflow-x-auto rounded-md border">
             <Table className="w-full">
                 <THead>
                     <tr>
+                        {selection && (
+                            <TableHeaderCell className="w-0">
+                                {selection.selectAll && (
+                                    <Checkbox
+                                        checked={
+                                            allOnPageSelected ? true : selectedOnPage > 0 ? 'indeterminate' : false
+                                        }
+                                        aria-label={t('view.selectPage')}
+                                        onCheckedChange={(checked) => selection.togglePage(hits, checked === true)}
+                                    />
+                                )}
+                            </TableHeaderCell>
+                        )}
                         {display.columns.map((column) => {
                             const sortOption = column.sort_option
                                 ? sortOptions?.find((option) => option.id === column.sort_option)
@@ -339,19 +475,26 @@ function TableResults({
                                 </SortableTableHeaderCell>
                             );
                         })}
-                        {onOpenHit && (
+                        {(onOpenHit || hasRowActions) && (
                             <TableHeaderCell className="w-0">
-                                <span className="sr-only">{t('agent.openDocument')}</span>
+                                <span className="sr-only">
+                                    {hasRowActions ? t('view.actions') : t('agent.openDocument')}
+                                </span>
                             </TableHeaderCell>
                         )}
                     </tr>
                 </THead>
                 <TBody
                     isLoading={isLoading && hits.length === 0}
-                    columns={display.columns.length + (onOpenHit ? 1 : 0)}
+                    columns={display.columns.length + (selection ? 1 : 0) + (onOpenHit || hasRowActions ? 1 : 0)}
                 >
                     {hits.map((hit) => (
-                        <tr key={hit.id}>
+                        <tr key={hit.id} className={selection?.isSelected(hit.id) ? 'bg-muted/40' : undefined}>
+                            {selection && (
+                                <td className="w-0">
+                                    <HitSelectionCheckbox hit={hit} page={hits} selection={selection} />
+                                </td>
+                            )}
                             {display.columns.map((column) => (
                                 <td
                                     key={`${hit.id}-${column.field}`}
@@ -360,9 +503,12 @@ function TableResults({
                                     <ViewField hit={hit} field={column} />
                                 </td>
                             ))}
-                            {onOpenHit && (
+                            {(onOpenHit || hasRowActions) && (
                                 <td className="w-0 whitespace-nowrap text-end">
-                                    <OpenResultButton hit={hit} onOpenHit={onOpenHit} compact />
+                                    <div className="flex items-center justify-end gap-1">
+                                        <OpenResultButton hit={hit} onOpenHit={onOpenHit} compact />
+                                        <ViewRowActions hit={hit} />
+                                    </div>
                                 </td>
                             )}
                         </tr>
@@ -386,14 +532,27 @@ function ResultCard({
     configuration,
     onOpenHit,
     resolveMedia,
+    selection,
+    page,
 }: {
     hit: ViewHit;
     configuration: ViewCardsDisplay | ViewBoardCardConfiguration;
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
+    page: ViewHit[];
 }) {
+    const actions = useViewActions();
+    const hasRowActions = actions?.actions.some((action) => action.placement === 'row') ?? false;
     return (
-        <Card className="flex h-full min-w-0 flex-col overflow-hidden">
+        <Card
+            className={`relative flex h-full min-w-0 flex-col overflow-hidden ${selection?.isSelected(hit.id) ? 'ring-2 ring-primary' : ''}`}
+        >
+            {selection && (
+                <div className="absolute start-2 top-2 z-10 rounded bg-background/80 p-1">
+                    <HitSelectionCheckbox hit={hit} page={page} selection={selection} />
+                </div>
+            )}
             {configuration.media && (
                 <ViewMedia
                     hit={hit}
@@ -417,9 +576,10 @@ function ResultCard({
                 <LabeledFields hit={hit} fields={configuration.fields} />
                 <Annotation hit={hit} />
             </CardContent>
-            {onOpenHit && (
+            {(onOpenHit || hasRowActions) && (
                 <CardFooter className="justify-end p-4 pt-0">
                     <OpenResultButton hit={hit} onOpenHit={onOpenHit} />
+                    <ViewRowActions hit={hit} />
                 </CardFooter>
             )}
         </Card>
@@ -431,11 +591,13 @@ function CardsResults({
     hits,
     onOpenHit,
     resolveMedia,
+    selection,
 }: {
     display: ViewCardsDisplay;
     hits: ViewHit[];
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
 }) {
     return (
         <div className={`grid grid-cols-1 gap-4 ${GRID_COLUMNS[display.columns ?? 3]}`}>
@@ -446,6 +608,8 @@ function CardsResults({
                     configuration={display}
                     onOpenHit={onOpenHit}
                     resolveMedia={resolveMedia}
+                    selection={selection}
+                    page={hits}
                 />
             ))}
         </div>
@@ -457,16 +621,26 @@ function GalleryResults({
     hits,
     onOpenHit,
     resolveMedia,
+    selection,
 }: {
     display: ViewGalleryDisplay;
     hits: ViewHit[];
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
 }) {
     return (
         <div className={`grid grid-cols-1 gap-4 ${GRID_COLUMNS[display.columns ?? 4]}`}>
             {hits.map((hit) => (
-                <Card key={hit.id} className="overflow-hidden">
+                <Card
+                    key={hit.id}
+                    className={`relative overflow-hidden ${selection?.isSelected(hit.id) ? 'ring-2 ring-primary' : ''}`}
+                >
+                    {selection && (
+                        <div className="absolute start-2 top-2 z-10 rounded bg-background/80 p-1">
+                            <HitSelectionCheckbox hit={hit} page={hits} selection={selection} />
+                        </div>
+                    )}
                     <ViewMedia
                         hit={hit}
                         media={display.media}
@@ -486,7 +660,10 @@ function GalleryResults({
                                 ))}
                             </div>
                         )}
-                        <OpenResultButton hit={hit} onOpenHit={onOpenHit} />
+                        <div className="flex items-center justify-end gap-1">
+                            <OpenResultButton hit={hit} onOpenHit={onOpenHit} />
+                            <ViewRowActions hit={hit} />
+                        </div>
                     </CardContent>
                 </Card>
             ))}
@@ -499,11 +676,13 @@ function BoardResults({
     hits,
     onOpenHit,
     resolveMedia,
+    selection,
 }: {
     display: Extract<ViewDisplayConfiguration, { type: 'board' }>;
     hits: ViewHit[];
     onOpenHit?: (hit: ViewHit) => void;
     resolveMedia?: ViewMediaResolver;
+    selection?: ViewSelectionController;
 }) {
     const grouped = new Map<string, ViewHit[]>();
     for (const hit of hits) {
@@ -532,6 +711,8 @@ function BoardResults({
                                     configuration={display.card}
                                     onOpenHit={onOpenHit}
                                     resolveMedia={resolveMedia}
+                                    selection={selection}
+                                    page={hits}
                                 />
                             ))}
                         </div>
@@ -551,6 +732,7 @@ function renderResults(
     sortOptions?: ViewSortOption[],
     currentSort?: string,
     onSortChange?: (sort: string) => void,
+    selection?: ViewSelectionController,
 ): ReactNode {
     if (configuration.type === 'table') {
         return (
@@ -562,19 +744,52 @@ function renderResults(
                 sortOptions={sortOptions}
                 currentSort={currentSort}
                 onSortChange={onSortChange}
+                selection={selection}
             />
         );
     }
     if (configuration.type === 'cards') {
-        return <CardsResults display={configuration} hits={hits} onOpenHit={onOpenHit} resolveMedia={resolveMedia} />;
+        return (
+            <CardsResults
+                display={configuration}
+                hits={hits}
+                onOpenHit={onOpenHit}
+                resolveMedia={resolveMedia}
+                selection={selection}
+            />
+        );
     }
     if (configuration.type === 'gallery') {
-        return <GalleryResults display={configuration} hits={hits} onOpenHit={onOpenHit} resolveMedia={resolveMedia} />;
+        return (
+            <GalleryResults
+                display={configuration}
+                hits={hits}
+                onOpenHit={onOpenHit}
+                resolveMedia={resolveMedia}
+                selection={selection}
+            />
+        );
     }
     if (configuration.type === 'board') {
-        return <BoardResults display={configuration} hits={hits} onOpenHit={onOpenHit} resolveMedia={resolveMedia} />;
+        return (
+            <BoardResults
+                display={configuration}
+                hits={hits}
+                onOpenHit={onOpenHit}
+                resolveMedia={resolveMedia}
+                selection={selection}
+            />
+        );
     }
-    return <ListResults display={configuration} hits={hits} onOpenHit={onOpenHit} resolveMedia={resolveMedia} />;
+    return (
+        <ListResults
+            display={configuration}
+            hits={hits}
+            onOpenHit={onOpenHit}
+            resolveMedia={resolveMedia}
+            selection={selection}
+        />
+    );
 }
 
 export function DefaultViewResults({
@@ -586,6 +801,7 @@ export function DefaultViewResults({
     onSortChange,
     onOpenHit,
     resolveMedia,
+    selection,
 }: ViewResultsRendererProps) {
     const { t } = useUITranslation();
     const formatters = useLocaleFormat();
@@ -603,6 +819,7 @@ export function DefaultViewResults({
                 definition.results?.sort_options,
                 resolveViewSort(request, result, definition.results?.default_sort),
                 onSortChange,
+                selection,
             )}
         </ViewValueFormattersContext.Provider>
     );

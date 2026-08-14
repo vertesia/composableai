@@ -81,6 +81,7 @@ import {
 } from './access-control.js';
 import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
 import { findUnprunablePaths, isPlainObject, type JsonObject, pruneToSchema, toOpenApiComponents } from './adapter.js';
+import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as AgentRunSchemas from './agent-runs.js';
 import {
     AnalyticsAxisSchema,
@@ -126,6 +127,7 @@ import {
     AppInstallationProjectsQuerySchema,
     AppInstallationProviderBindingSchema,
     AppInstallationsQuerySchema,
+    AppListScopeSchema,
     AppOAuthCollectionParamsSchema,
     AppOAuthProviderParamsSchema,
     AppPackageScopeSchema,
@@ -140,6 +142,7 @@ import {
     AppScaffoldModuleSchema,
     AppScaffoldProgressSchema,
     AppScaffoldProgressStatusSchema,
+    AppsQuerySchema,
     AppToolCollectionArraySchema,
     AppToolCollectionSchema,
     AppVersionGitRefTypeSchema,
@@ -231,6 +234,7 @@ import {
     RunMigrationResponseSchema,
 } from './commands.js';
 import * as ContentSchemas from './content.js';
+import * as ContentQuerySchemas from './content-query.js';
 import {
     CostAnalyticsQuerySchema,
     CostAnalyticsResponseSchema,
@@ -415,6 +419,7 @@ import {
 } from './files.js';
 import {
     CreateUserGroupPayloadSchema,
+    ListUserGroupsQuerySchema,
     UpdateUserGroupPayloadSchema,
     UserGroupArraySchema,
     UserGroupRefSchema,
@@ -451,6 +456,7 @@ import {
     ComputedFacetResponseSchema,
     ComputeInteractionFacetPayloadSchema,
     ComputeRunFacetPayloadSchema,
+    ComputeRunFacetsResponseSchema,
     ConversationStateSchema,
     ConversationStripOptionsSchema,
     ConversationVisibilitySchema,
@@ -469,6 +475,8 @@ import {
     ExternalizedToolInputRefSchema,
     ExternalizedToolInputRefsSchema,
     FacetSpecSchema,
+    FindRunResultArraySchema,
+    FindRunResultSchema,
     GeneratedInteractionDefinitionArraySchema,
     GeneratedInteractionDefinitionSchema,
     GeneratedInteractionPromptSegmentSchema,
@@ -479,6 +487,7 @@ import {
     GenerateTestDataPayloadSchema,
     ImprovePromptPayloadConfigSchema,
     ImprovePromptPayloadSchema,
+    InCodeInteractionSchema,
     InCodePromptSchema,
     InitialToolCallSchema,
     InteractionArraySchema,
@@ -530,6 +539,7 @@ import {
     PromptTemplateUpdatePayloadSchema,
     RateLimitRequestPayloadSchema,
     RateLimitRequestResponseSchema,
+    ResolvedCatalogInteractionSchema,
     ResolvedEnvironmentInfoSchema,
     ResolvedInteractionExecutionInfoSchema,
     ResolvedRuntimeConfigSchema,
@@ -585,15 +595,27 @@ import {
     UpdateOAuthProviderPayloadSchema,
 } from './oauth.js';
 import {
+    ApproveOAuthAuthorizationRequestPayloadSchema,
     BulkRevokeOAuthGrantsPayloadSchema,
+    CreateOAuthAuthorizationRequestPayloadSchema,
     CreateOAuthClientPayloadSchema,
     ListOAuthGrantsQuerySchema,
+    OAuthAuthorizationDecisionResponseSchema,
+    OAuthAuthorizationRequestSchema,
+    OAuthAuthorizationRequestStatusSchema,
+    OAuthAuthorizationServerMetadataSchema,
+    OAuthAuthorizeQuerySchema,
     OAuthClientArraySchema,
     OAuthClientCreateResponseSchema,
+    OAuthClientDisplayMetadataSchema,
+    OAuthClientRegistrationModeSchema,
     OAuthClientSchema,
     OAuthClientScopeMetadataSchema,
     OAuthClientStatusSchema,
     OAuthClientTypeSchema,
+    OAuthDeviceAuthorizationRequestSchema,
+    OAuthDeviceAuthorizationResponseSchema,
+    OAuthGrantableScopesResponseSchema,
     OAuthGrantListResponseSchema,
     OAuthGrantRevokeResponseSchema,
     OAuthGrantSchema,
@@ -605,6 +627,7 @@ import {
     OAuthRegistrationSourceSchema,
     OAuthResponseTypeSchema,
     OAuthTokenEndpointAuthMethodSchema,
+    OAuthTokenResponseSchema,
     RevokeOAuthGrantQuerySchema,
     UpdateOAuthClientPayloadSchema,
 } from './oauth-server.js';
@@ -703,15 +726,23 @@ import {
 } from './user.js';
 import * as ViewExecutionSchemas from './view-execution.js';
 import {
+    AgenticViewRerankConfigurationSchema,
     AgenticViewSearchConfigurationSchema,
     CreateViewExperienceRequestSchema,
     UpdateViewExperienceRequestSchema,
+    ViewActionConfigurationSchema,
+    ViewActionPlacementSchema,
+    ViewActionSelectionRequirementSchema,
+    ViewActionsConfigurationSchema,
+    ViewAgenticExecutionConfigurationSchema,
+    ViewAgenticSearchModeSchema,
     ViewBoardCardConfigurationSchema,
     ViewBoardColumnSchema,
     ViewBoardDisplaySchema,
     ViewCardsDisplaySchema,
     ViewCollectionNavigationSchema,
     ViewDisplayConfigurationSchema,
+    ViewDropConfigurationSchema,
     ViewElasticsearchQuerySchema,
     ViewExperienceArraySchema,
     ViewExperienceLayoutSchema,
@@ -735,11 +766,14 @@ import {
     ViewSearchConfigurationSchema,
     ViewSearchFieldDefinitionSchema,
     ViewSearchFieldTypeSchema,
+    ViewSelectionConfigurationSchema,
+    ViewSelectionModeSchema,
     ViewSortClauseSchema,
     ViewSortOptionSchema,
     ViewTableColumnSchema,
     ViewTableDisplaySchema,
     ViewTermsNavigationSchema,
+    ViewUploadDropParametersSchema,
 } from './views.js';
 import * as WorkflowRunSchemas from './workflow-runs.js';
 
@@ -793,6 +827,7 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     UserGroupArray: UserGroupArraySchema,
     UserGroupRef: UserGroupRefSchema,
     CreateUserGroupPayload: CreateUserGroupPayloadSchema,
+    ListUserGroupsQuery: ListUserGroupsQuerySchema,
     UpdateUserGroupPayload: UpdateUserGroupPayloadSchema,
     AccessControlEntry: AccessControlEntrySchema,
     AccessControlEntryArray: AccessControlEntryArraySchema,
@@ -841,7 +876,7 @@ const PROJECT_AND_APP_SCHEMAS = {
     BrowserUseProjectConfiguration: BrowserUseProjectConfigurationSchema,
     ProjectIntakeSniffConfiguration: ProjectIntakeSniffConfigurationSchema,
     // Leaves of the Project closure. `ModelOptions` hoists its
-    // twenty-three driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
+    // twenty-five driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
     JSONSchema: JSONSchemaSchema,
     ModelOptions: ModelOptionsSchema,
     HttpTimeoutOptions: HttpTimeoutOptionsSchema,
@@ -899,9 +934,23 @@ const OAUTH_SCHEMAS = {
     OAuthTokenEndpointAuthMethod: OAuthTokenEndpointAuthMethodSchema,
     OAuthGrantType: OAuthGrantTypeSchema,
     OAuthResponseType: OAuthResponseTypeSchema,
+    OAuthAuthorizationRequestStatus: OAuthAuthorizationRequestStatusSchema,
+    OAuthClientRegistrationMode: OAuthClientRegistrationModeSchema,
     OAuthGrantStatus: OAuthGrantStatusSchema,
     OAuthGrantSortField: OAuthGrantSortFieldSchema,
     OAuthGrantSortOrder: OAuthGrantSortOrderSchema,
+    // OAuth authorization-server discovery, consent, device-code, and token contracts.
+    OAuthAuthorizationServerMetadata: OAuthAuthorizationServerMetadataSchema,
+    OAuthClientDisplayMetadata: OAuthClientDisplayMetadataSchema,
+    OAuthAuthorizeQuery: OAuthAuthorizeQuerySchema,
+    CreateOAuthAuthorizationRequestPayload: CreateOAuthAuthorizationRequestPayloadSchema,
+    OAuthAuthorizationRequest: OAuthAuthorizationRequestSchema,
+    ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayloadSchema,
+    OAuthGrantableScopesResponse: OAuthGrantableScopesResponseSchema,
+    OAuthAuthorizationDecisionResponse: OAuthAuthorizationDecisionResponseSchema,
+    OAuthDeviceAuthorizationRequest: OAuthDeviceAuthorizationRequestSchema,
+    OAuthDeviceAuthorizationResponse: OAuthDeviceAuthorizationResponseSchema,
+    OAuthTokenResponse: OAuthTokenResponseSchema,
     // Clients registered against Vertesia's own OAuth server. `OAuthClientData` is composed into
     // `OAuthClient` rather than hoisted, so it has no component of its own — as today.
     OAuthClient: OAuthClientSchema,
@@ -1064,6 +1113,8 @@ const INTERACTION_SCHEMAS = {
     // The catalog — in-code interactions an app or the system provides, alongside stored ones.
     CatalogInteractionRef: CatalogInteractionRefSchema,
     CatalogInteractionRefArray: CatalogInteractionRefArraySchema,
+    InCodeInteraction: InCodeInteractionSchema,
+    ResolvedCatalogInteraction: ResolvedCatalogInteractionSchema,
     CatalogTagQuery: CatalogTagQuerySchema,
     StoredCatalogInteractionsQuery: StoredCatalogInteractionsQuerySchema,
     // What `GET /interactions/resolve/:nameOrId` answers with.
@@ -1155,6 +1206,8 @@ const EXECUTION_RUN_SCHEMAS = {
     InteractionExecutionPayload: InteractionExecutionPayloadSchema,
     NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
     InteractionExecutionResult: InteractionExecutionResultSchema,
+    FindRunResult: FindRunResultSchema,
+    FindRunResultArray: FindRunResultArraySchema,
     // The retrieve variant, and the two pre-versioning result shapes. See the schema module for why
     // the populated interaction cannot share a component with the create path.
     PopulatedExecutionRunResult: PopulatedExecutionRunResultSchema,
@@ -1174,6 +1227,7 @@ const EXECUTION_RUN_SCHEMAS = {
     RateLimitRequestPayload: RateLimitRequestPayloadSchema,
     RateLimitRequestResponse: RateLimitRequestResponseSchema,
     ComputeRunFacetPayload: ComputeRunFacetPayloadSchema,
+    ComputeRunFacetsResponse: ComputeRunFacetsResponseSchema,
     RunSearchMetaResponse: RunSearchMetaResponseSchema,
     ToolResultsPayload: ToolResultsPayloadSchema,
     UserMessagePayload: UserMessagePayloadSchema,
@@ -1746,6 +1800,8 @@ const VIEW_EXECUTION_SCHEMAS = {
     ExecuteViewRequest: ViewExecutionSchemas.ExecuteViewRequestSchema,
     ViewNavigationResult: ViewExecutionSchemas.ViewNavigationResultSchema,
     ViewExecutionQueryPlan: ViewExecutionSchemas.ViewExecutionQueryPlanSchema,
+    ViewRerankFailureCode: ViewExecutionSchemas.ViewRerankFailureCodeSchema,
+    ViewExecutionRerankResult: ViewExecutionSchemas.ViewExecutionRerankResultSchema,
     ViewExecutionSearchConfiguration: ViewExecutionSchemas.ViewExecutionSearchConfigurationSchema,
     ViewNavigationResultMap: ViewExecutionSchemas.ViewNavigationResultMapSchema,
     ViewExecutionSearchResult: ViewExecutionSchemas.ViewExecutionSearchResultSchema,
@@ -1857,6 +1913,9 @@ const VIEW_EXPERIENCE_SCHEMAS = {
     ViewResultFieldFormat: ViewResultFieldFormatSchema,
     ViewBoardColumn: ViewBoardColumnSchema,
     ViewTableColumn: ViewTableColumnSchema,
+    ViewAgenticSearchMode: ViewAgenticSearchModeSchema,
+    AgenticViewRerankConfiguration: AgenticViewRerankConfigurationSchema,
+    ViewAgenticExecutionConfiguration: ViewAgenticExecutionConfigurationSchema,
     AgenticViewSearchConfiguration: AgenticViewSearchConfigurationSchema,
     ViewSearchFieldType: ViewSearchFieldTypeSchema,
     ViewSearchFieldDefinition: ViewSearchFieldDefinitionSchema,
@@ -1882,6 +1941,14 @@ const VIEW_EXPERIENCE_SCHEMAS = {
     ViewCardsDisplay: ViewCardsDisplaySchema,
     ViewGalleryDisplay: ViewGalleryDisplaySchema,
     ViewDisplayConfiguration: ViewDisplayConfigurationSchema,
+    ViewSelectionMode: ViewSelectionModeSchema,
+    ViewSelectionConfiguration: ViewSelectionConfigurationSchema,
+    ViewActionPlacement: ViewActionPlacementSchema,
+    ViewActionSelectionRequirement: ViewActionSelectionRequirementSchema,
+    ViewActionConfiguration: ViewActionConfigurationSchema,
+    ViewActionsConfiguration: ViewActionsConfigurationSchema,
+    ViewUploadDropParameters: ViewUploadDropParametersSchema,
+    ViewDropConfiguration: ViewDropConfigurationSchema,
     ViewResultsConfiguration: ViewResultsConfigurationSchema,
     CreateViewExperienceRequest: CreateViewExperienceRequestSchema,
     ViewExperience: ViewExperienceSchema,
@@ -1966,6 +2033,8 @@ const APP_LIFECYCLE_SCHEMAS = {
     AppToolCollectionArray: AppToolCollectionArraySchema,
     AppInstallationKind: AppInstallationKindSchema,
     AppInstallationsQuery: AppInstallationsQuerySchema,
+    AppListScope: AppListScopeSchema,
+    AppsQuery: AppsQuerySchema,
     AppInstallationProjectsQuery: AppInstallationProjectsQuerySchema,
     SystemPackageQuery: SystemPackageQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
@@ -2099,6 +2168,32 @@ const STS_SCHEMAS = {
     IssueTokenUnavailableResponse: StsSchemas.IssueTokenUnavailableResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const AGENT_COMMUNICATION_SCHEMAS = {
+    EmailRouteData: AgentCommunicationSchemas.EmailRouteDataSchema,
+    SendEmailRequest: AgentCommunicationSchemas.SendEmailRequestSchema,
+    SendEmailResponse: AgentCommunicationSchemas.SendEmailResponseSchema,
+    ResolveEmailRouteRequest: AgentCommunicationSchemas.ResolveEmailRouteRequestSchema,
+    CreateEmailRouteRequest: AgentCommunicationSchemas.CreateEmailRouteRequestSchema,
+    CreateEmailRouteResponse: AgentCommunicationSchemas.CreateEmailRouteResponseSchema,
+    EmailRouteResponse: AgentCommunicationSchemas.EmailRouteResponseSchema,
+    UpdateEmailRouteRequest: AgentCommunicationSchemas.UpdateEmailRouteRequestSchema,
+    UpdateEmailRouteResponse: AgentCommunicationSchemas.UpdateEmailRouteResponseSchema,
+    ForwardEmailRequest: AgentCommunicationSchemas.ForwardEmailRequestSchema,
+    ForwardEmailResponse: AgentCommunicationSchemas.ForwardEmailResponseSchema,
+    PendingAskStatus: AgentCommunicationSchemas.PendingAskStatusSchema,
+    PendingAskData: AgentCommunicationSchemas.PendingAskDataSchema,
+    RegisterPendingAskRequest: AgentCommunicationSchemas.RegisterPendingAskRequestSchema,
+    RegisterPendingAskResponse: AgentCommunicationSchemas.RegisterPendingAskResponseSchema,
+    ResolvePendingAskRequest: AgentCommunicationSchemas.ResolvePendingAskRequestSchema,
+    ResolvePendingAskResponse: AgentCommunicationSchemas.ResolvePendingAskResponseSchema,
+    ListPendingAsksResponse: AgentCommunicationSchemas.ListPendingAsksResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const CONTENT_QUERY_SCHEMAS = {
+    ContentQueryPayload: ContentQuerySchemas.ContentQueryPayloadSchema,
+    ContentQueryResult: ContentQuerySchemas.ContentQueryResultSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const API_SCHEMA_GROUPS = [
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2122,6 +2217,8 @@ const API_SCHEMA_GROUPS = [
     APP_MANIFEST_SCHEMAS,
     APP_INSTALLATION_SCHEMAS,
     STS_SCHEMAS,
+    AGENT_COMMUNICATION_SCHEMAS,
+    CONTENT_QUERY_SCHEMAS,
     FILE_STORAGE_SCHEMAS,
     DURABLE_TASK_SCHEMAS,
     CONTENT_TYPE_CATALOG_SCHEMAS,
@@ -2181,6 +2278,8 @@ type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof APP_MANIFEST_SCHEMAS &
     typeof APP_INSTALLATION_SCHEMAS &
     typeof STS_SCHEMAS &
+    typeof AGENT_COMMUNICATION_SCHEMAS &
+    typeof CONTENT_QUERY_SCHEMAS &
     typeof FILE_STORAGE_SCHEMAS &
     typeof DURABLE_TASK_SCHEMAS &
     typeof CONTENT_TYPE_CATALOG_SCHEMAS &
@@ -2273,6 +2372,27 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'UserGroupRef',
     'CreateUserGroupPayload',
     'UpdateUserGroupPayload',
+    'ListUserGroupsQuery',
+    // Agent communication and content query endpoints.
+    'EmailRouteData',
+    'SendEmailRequest',
+    'SendEmailResponse',
+    'ResolveEmailRouteRequest',
+    'CreateEmailRouteRequest',
+    'CreateEmailRouteResponse',
+    'EmailRouteResponse',
+    'UpdateEmailRouteRequest',
+    'UpdateEmailRouteResponse',
+    'ForwardEmailRequest',
+    'ForwardEmailResponse',
+    'PendingAskData',
+    'RegisterPendingAskRequest',
+    'RegisterPendingAskResponse',
+    'ResolvePendingAskRequest',
+    'ResolvePendingAskResponse',
+    'ListPendingAsksResponse',
+    'ContentQueryPayload',
+    'ContentQueryResult',
     // The roles / access-control closure. `AceConditions` is closed too, and has to be listed by
     // name: it is a hoisted component, so the parent's strict policy does not reach it.
     // `PropertyConditions` is deliberately absent — it is a map whose `additionalProperties` is a
@@ -2352,7 +2472,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ProjectConfiguration',
     'UpdateProjectPayload',
     'UpdateProjectConfigurationPayload',
-    // Every member of the `ModelOptions` union. All twenty-three are published closed today, and
+    // Every member of the `ModelOptions` union is published closed today, and
     // their Zod schemas are `strictObject`, so the published contract, the AJV enforcement and the
     // schema's own parse all reject the same undeclared option. `ModelOptions` itself is a union
     // and takes no `additionalProperties`, and neither do the four hoisted enums.
@@ -2360,6 +2480,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // `JSONSchema` is deliberately absent: it is OPEN by design and by long-standing publication —
     // a JSON Schema carries keywords the type never enumerated. `JSONSchemaProperties` is a map.
     'TextFallbackOptions',
+    'AzureFoundryChatOptions',
     'ImagenOptions',
     'VertexAIClaudeOptions',
     'VertexAIGeminiOptions',
@@ -2381,7 +2502,9 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OpenAiTextOptions',
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
+    'XAIGrokImageOptions',
     'GroqOptions',
+    'MistralTextOptions',
     // The app-manifest leaves. Every object among them is published closed today, the nested `git`
     // block included, and it is spelled `strictObject` so the emission carries it directly. The five
     // enums take no `additionalProperties` at all.
@@ -2592,6 +2715,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ViewResultMedia',
     'ViewBoardColumn',
     'ViewTableColumn',
+    'AgenticViewRerankConfiguration',
+    'ViewAgenticExecutionConfiguration',
     'AgenticViewSearchConfiguration',
     'ViewSearchFieldDefinition',
     'ViewRangeDefinition',
@@ -2693,6 +2818,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'WorkflowRunEvent',
     'ViewNavigationResult',
     'ViewExecutionQueryPlan',
+    'ViewExecutionRerankResult',
     'ViewExecutionSearchConfiguration',
     'DSLRetryPolicy',
     'CreateContentObjectPayload',
@@ -2733,6 +2859,11 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ListEventDeliveriesResponse',
     'ObjectSearchResponse',
     'WorkflowRunWithDetails',
+    'ViewSelectionConfiguration',
+    'ViewActionConfiguration',
+    'ViewActionsConfiguration',
+    'ViewUploadDropParameters',
+    'ViewDropConfiguration',
     'ViewResultsConfiguration',
     'ViewExecutionDefinition',
     'ViewExperienceConfiguration',
@@ -2771,6 +2902,14 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthProviderAuthorizeResponse',
     'OAuthProviderAccessTokenResponse',
     'OAuthProviderExchangePayload',
+    'OAuthClientDisplayMetadata',
+    'OAuthAuthorizeQuery',
+    'CreateOAuthAuthorizationRequestPayload',
+    'OAuthAuthorizationRequest',
+    'ApproveOAuthAuthorizationRequestPayload',
+    'OAuthGrantableScopesResponse',
+    'OAuthAuthorizationDecisionResponse',
+    'OAuthDeviceAuthorizationRequest',
     'OAuthClient',
     'OAuthClientCreateResponse',
     'OAuthClientScopeMetadata',
@@ -3040,6 +3179,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppInstallationPayload',
     'AppDevelopmentTaskDetails',
     'AppInstallationsQuery',
+    'AppsQuery',
     'AppInstallationProjectsQuery',
     'SystemPackageQuery',
     'WebsiteCredentialTotpMetadata',
@@ -3108,7 +3248,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'PricingSyncDayResult',
     'PricingSyncResult',
     'ComputeRunFacetPayload',
+    'FindRunResult',
+    'FindRunResultArray',
     'RunSearchMetaResponse',
+    'ComputeRunFacetsResponse',
     'ToolResultsPayload',
     'UserMessagePayload',
     'ExecutionResponse',

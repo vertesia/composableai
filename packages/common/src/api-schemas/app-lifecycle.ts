@@ -863,6 +863,23 @@ export const AppInstallationKindSchema = z
     .enum(['ui', 'tools', 'all'])
     .meta({ id: 'AppInstallationKind', description: 'Which app contributions an installation listing is for.' });
 
+// `AppListScope` has a TypeScript name and therefore gets a reusable component of its own.
+export const AppListScopeSchema = z.enum(['account', 'project']).meta({
+    id: 'AppListScope',
+    description: 'Which apps an app listing covers.',
+});
+
+export const AppsQuerySchema = z
+    .strictObject({
+        scope: AppListScopeSchema.meta({
+            description:
+                'Restrict the listing to apps that belong to the current project — those installed ' +
+                'into it or that have built versions in it. Defaults to `account`, which lists every ' +
+                'app visible to the account, including the public catalog.',
+        }).optional(),
+    })
+    .meta({ id: 'AppsQuery' });
+
 export const AppInstallationsQuerySchema = z
     .strictObject({
         kind: AppInstallationKindSchema.meta({

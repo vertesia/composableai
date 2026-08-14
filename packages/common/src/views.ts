@@ -5,6 +5,7 @@ import type {
     PreviewViewExperienceRequestSchema,
     ViewExecutionDefinitionSchema,
     ViewExecutionQueryPlanSchema,
+    ViewExecutionRerankResultSchema,
     ViewExecutionResultSchema,
     ViewExecutionSearchConfigurationSchema,
     ViewExecutionSearchResultSchema,
@@ -13,17 +14,25 @@ import type {
     ViewHitAnnotationSchema,
     ViewHitSchema,
     ViewQueryPlanningFailureCodeSchema,
+    ViewRerankFailureCodeSchema,
 } from './api-schemas/view-execution.js';
 import type {
+    AgenticViewRerankConfigurationSchema,
     AgenticViewSearchConfigurationSchema,
     CreateViewExperienceRequestSchema,
     UpdateViewExperienceRequestSchema,
+    ViewActionConfigurationSchema,
+    ViewActionPlacementSchema,
+    ViewActionSelectionRequirementSchema,
+    ViewActionsConfigurationSchema,
+    ViewAgenticExecutionConfigurationSchema,
     ViewBoardCardConfigurationSchema,
     ViewBoardColumnSchema,
     ViewBoardDisplaySchema,
     ViewCardsDisplaySchema,
     ViewCollectionNavigationSchema,
     ViewDisplayConfigurationSchema,
+    ViewDropConfigurationSchema,
     ViewElasticsearchQuerySchema,
     ViewExperienceLayoutSchema,
     ViewExperienceListQuerySchema,
@@ -45,16 +54,24 @@ import type {
     ViewSearchConfigurationSchema,
     ViewSearchFieldDefinitionSchema,
     ViewSearchFieldTypeSchema,
+    ViewSelectionConfigurationSchema,
+    ViewSelectionModeSchema,
     ViewSortClauseSchema,
     ViewSortOptionSchema,
     ViewTableColumnSchema,
     ViewTableDisplaySchema,
     ViewTermsNavigationSchema,
+    ViewUploadDropParametersSchema,
 } from './api-schemas/views.js';
 
 export const VIEW_EXPERIENCE_SCHEMA_VERSION = 1 as const;
 
 export type ViewExperienceSchemaVersion = typeof VIEW_EXPERIENCE_SCHEMA_VERSION;
+
+/** Build the generic reusable client route for a persisted, system, or app-contributed View. */
+export function viewExperienceRoute(id: string): string {
+    return `/view/${encodeURIComponent(id)}`;
+}
 
 /** An author-provided Elasticsearch query subtree validated by the View runtime. */
 export type ViewElasticsearchQuery = z.infer<typeof ViewElasticsearchQuerySchema>;
@@ -101,6 +118,14 @@ export type ViewSearchFieldType = z.infer<typeof ViewSearchFieldTypeSchema>;
  */
 export type ViewSearchFieldDefinition = z.infer<typeof ViewSearchFieldDefinitionSchema>;
 
+export const VIEW_AGENTIC_SEARCH_MODES = ['query', 'query_and_view'] as const;
+
+export type ViewAgenticSearchMode = (typeof VIEW_AGENTIC_SEARCH_MODES)[number];
+
+export type AgenticViewRerankConfiguration = z.infer<typeof AgenticViewRerankConfigurationSchema>;
+
+export type ViewAgenticExecutionConfiguration = z.infer<typeof ViewAgenticExecutionConfigurationSchema>;
+
 export type AgenticViewSearchConfiguration = z.infer<typeof AgenticViewSearchConfigurationSchema>;
 
 export type ViewSearchConfiguration = z.infer<typeof ViewSearchConfigurationSchema>;
@@ -145,6 +170,28 @@ export type ViewDisplayConfiguration = z.infer<typeof ViewDisplayConfigurationSc
 
 export type ViewResultsConfiguration = z.infer<typeof ViewResultsConfigurationSchema>;
 
+export const VIEW_SELECTION_MODES = ['single', 'multiple'] as const;
+
+export type ViewSelectionMode = z.infer<typeof ViewSelectionModeSchema>;
+
+export type ViewSelectionConfiguration = z.infer<typeof ViewSelectionConfigurationSchema>;
+
+export const VIEW_ACTION_PLACEMENTS = ['toolbar', 'row', 'selection'] as const;
+
+export type ViewActionPlacement = z.infer<typeof ViewActionPlacementSchema>;
+
+export const VIEW_ACTION_SELECTION_REQUIREMENTS = ['none', 'single', 'multiple', 'any'] as const;
+
+export type ViewActionSelectionRequirement = z.infer<typeof ViewActionSelectionRequirementSchema>;
+
+export type ViewActionConfiguration = z.infer<typeof ViewActionConfigurationSchema>;
+
+export type ViewActionsConfiguration = z.infer<typeof ViewActionsConfigurationSchema>;
+
+export type ViewUploadDropParameters = z.infer<typeof ViewUploadDropParametersSchema>;
+
+export type ViewDropConfiguration = z.infer<typeof ViewDropConfigurationSchema>;
+
 export type ViewExperienceConfiguration = z.infer<typeof ViewExperienceConfigurationSchema>;
 
 /**
@@ -179,6 +226,10 @@ export type ViewQueryPlanningFailureCode = z.infer<typeof ViewQueryPlanningFailu
 
 export type ViewExecutionQueryPlan = z.infer<typeof ViewExecutionQueryPlanSchema>;
 
+export type ViewRerankFailureCode = z.infer<typeof ViewRerankFailureCodeSchema>;
+
+export type ViewExecutionRerankResult = z.infer<typeof ViewExecutionRerankResultSchema>;
+
 export type ViewHitAnnotation = z.infer<typeof ViewHitAnnotationSchema>;
 
 export type ViewHit = z.infer<typeof ViewHitSchema>;
@@ -197,7 +248,9 @@ export interface ViewNavigationResult {
     id: string;
     selected: string[];
     nodes: ViewNavigationNode[];
-    /** Selected hierarchy path from its root through the current value. */
+    /** Applied server-side node filter, when the navigation source supports it. */
+    query?: string;
+    /** Selected drill-down path from its root through the current value. */
     breadcrumbs?: ViewNavigationNode[];
     truncated?: boolean;
 }

@@ -1,6 +1,10 @@
 import type { z } from 'zod';
 import type {
+    ComputeRunFacetsResponseSchema,
     ExecutionRunDocRefSchema,
+    FindRunResultArraySchema,
+    FindRunResultSchema,
+    PopulatedExecutionRunResultSchema,
     RunClonePayloadSchema,
     RunCreatePayloadSchema,
     RunSearchMetaResponseSchema,
@@ -10,6 +14,9 @@ import type {
  * The run ref is used to identify a run document in the storage
  */
 export type ExecutionRunDocRef = z.infer<typeof ExecutionRunDocRefSchema>;
+export type FindRunResult = z.infer<typeof FindRunResultSchema>;
+export type FindRunResultArray = z.infer<typeof FindRunResultArraySchema>;
+export type PopulatedExecutionRunResult = z.infer<typeof PopulatedExecutionRunResultSchema>;
 
 /**
  * Interaction execution payload for creating a new run
@@ -35,3 +42,4 @@ export interface RangeValue {
 }
 
 export type RunSearchMetaResponse = z.infer<typeof RunSearchMetaResponseSchema>;
+export type ComputeRunFacetsResponse = z.infer<typeof ComputeRunFacetsResponseSchema>;

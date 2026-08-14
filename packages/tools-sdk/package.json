@@ -31,13 +31,13 @@
         "vitest": "^4.1.10"
     },
     "peerDependencies": {
-        "hono": "^4.12.34"
+        "hono": "^4.13.0"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "jose": "^6.2.4",
+        "jose": "^6.2.8",
         "zod": "^4.4.3"
     },
     "repository": {

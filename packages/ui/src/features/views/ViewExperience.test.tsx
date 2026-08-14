@@ -270,4 +270,76 @@ describe('ViewExperience', () => {
             expect(execute).toHaveBeenLastCalledWith(expect.objectContaining({ sort: 'name_asc' }));
         });
     });
+
+    it('passes selected hits to an app-contributed action', async () => {
+        const baseResults = result.definition.results;
+        const baseHit = result.hits[0];
+        if (!baseResults || !baseHit) throw new Error('Expected the View fixture to include results and one hit');
+        const selectableResult = {
+            ...result,
+            definition: {
+                ...result.definition,
+                results: {
+                    ...baseResults,
+                    default_display: 'list',
+                    displays: [{ id: 'list', label: 'List', type: 'list', title: { field: 'name' } }],
+                    selection: { mode: 'multiple', select_all: 'page' },
+                    actions: {
+                        include_defaults: false,
+                        items: [
+                            {
+                                id: 'approve',
+                                label: 'Approve',
+                                handler: 'approve-orders',
+                                placement: 'selection',
+                                requires_selection: 'any',
+                            },
+                        ],
+                    },
+                },
+            },
+            display: 'list',
+            hits: [
+                ...result.hits,
+                {
+                    ...baseHit,
+                    id: 'document-2',
+                    document: {
+                        ...baseHit.document,
+                        id: 'document-2',
+                        name: 'Expansion Agreement',
+                        revision: { root: 'document-2', head: true },
+                    },
+                },
+            ],
+            total: 2,
+        } satisfies ViewExecutionResult;
+        const execute = vi.fn().mockResolvedValue(selectableResult);
+        const approve = vi.fn();
+
+        renderWithProviders(
+            <ViewExperience
+                viewId="selectable-orders"
+                execute={execute}
+                contributions={{ actions: { 'approve-orders': { run: approve } } }}
+                syncUrl={false}
+                showHeader={false}
+            />,
+        );
+
+        fireEvent.click(await screen.findByRole('checkbox', { name: 'Select all results on this page' }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Approve' }));
+
+        await waitFor(() => {
+            expect(approve).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    action: expect.objectContaining({ handler: 'approve-orders' }),
+                    hits: [
+                        expect.objectContaining({ id: 'document-1' }),
+                        expect.objectContaining({ id: 'document-2' }),
+                    ],
+                }),
+            );
+        });
+    });
 });
