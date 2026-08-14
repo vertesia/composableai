@@ -3588,9 +3588,9 @@ function getAjv(): Ajv2020 {
     // `allowUnionTypes` because a few published components declare `type: [...]` on purpose:
     // `DurationValue` is `['string', 'number']` specifically so the generated Java client gets one
     // writable property instead of the unusable `AnyOfnumber` an `anyOf` produces. AJV's
-    // `strictTypes` default of "log" wrote that deliberate choice to its logger on every startup —
-    // and since the logger is `console`, it left on stderr, which serverless-init stamps `error`. So
-    // a healthy design decision was arriving in Datadog as a recurring zeno-server error.
+    // `strictTypes` default of "log" reported that deliberate choice to its logger on every startup.
+    // The default logger is `console`, so the notice left on stderr, where log collectors routinely
+    // classify it as an error — turning a healthy design decision into recurring server error noise.
     const ajv = new Ajv2020({
         strictSchema: false,
         allErrors: true,
