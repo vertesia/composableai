@@ -143,22 +143,42 @@ function safeMediaUrl(hit: ViewHit, media: ViewResultMedia): string | undefined 
 }
 
 /**
- * Resolutions currently in flight, keyed by the media they are resolving.
+ * Resolutions currently in flight, keyed by the resolver and then by the media it is resolving.
  *
  * Resolving a thumbnail is a network call, and every result tile in a grid makes one. Entries are
  * dropped as soon as they settle, so nothing is cached across renders — this only collapses the
  * duplicate concurrent requests that a re-render or a remount of the same tile would otherwise
  * issue.
+ *
+ * The outer key is the resolver itself: two views can render the same hit with different
+ * `resolveMedia` implementations, and sharing a promise between them would hand one view a URL
+ * resolved by the other's context.
  */
-const inFlightMediaResolutions = new Map<string, Promise<string | undefined>>();
+const inFlightMediaResolutions = new WeakMap<ViewMediaResolver, Map<string, Promise<string | undefined>>>();
 
-function resolveMediaOnce(key: string, resolve: () => Promise<string | undefined>): Promise<string | undefined> {
-    const pending = inFlightMediaResolutions.get(key);
+/** Backoff for a resolution that succeeded but has no URL yet — a rendition still being generated. */
+const MEDIA_RETRY_DELAYS_MS = [2000, 4000, 8000];
+
+function inFlightMediaResolutionsFor(resolver: ViewMediaResolver): Map<string, Promise<string | undefined>> {
+    const existing = inFlightMediaResolutions.get(resolver);
+    if (existing) return existing;
+    const created = new Map<string, Promise<string | undefined>>();
+    inFlightMediaResolutions.set(resolver, created);
+    return created;
+}
+
+function resolveMediaOnce(
+    resolver: ViewMediaResolver,
+    key: string,
+    resolve: () => Promise<string | undefined>,
+): Promise<string | undefined> {
+    const inFlight = inFlightMediaResolutionsFor(resolver);
+    const pending = inFlight.get(key);
     if (pending) return pending;
     const started = resolve().finally(() => {
-        inFlightMediaResolutions.delete(key);
+        inFlight.delete(key);
     });
-    inFlightMediaResolutions.set(key, started);
+    inFlight.set(key, started);
     return started;
 }
 
@@ -191,16 +211,34 @@ function ViewMedia({
         if (!mediaKey || !resolveMedia) return;
 
         let active = true;
-        // biome-ignore lint/style/noNonNullAssertion: mediaKey is only set when media is defined
-        resolveMediaOnce(mediaKey, async () => resolveMedia(hitRef.current, mediaRef.current!))
-            .then((url) => {
-                if (active) setResolvedUrl(url);
-            })
-            .catch(() => {
-                if (active) setFailed(true);
-            });
+        let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+        const attempt = (retry: number) => {
+            // biome-ignore lint/style/noNonNullAssertion: mediaKey is only set when media is defined
+            resolveMediaOnce(resolveMedia, mediaKey, async () => resolveMedia(hitRef.current, mediaRef.current!))
+                .then((url) => {
+                    if (!active) return;
+                    if (url) {
+                        setResolvedUrl(url);
+                        return;
+                    }
+                    // No URL yet. The effect no longer re-runs on every parent render, so a
+                    // rendition that is still generating needs an explicit retry — a bounded one,
+                    // since "no thumbnail" is also the permanent answer for most content.
+                    const delay = MEDIA_RETRY_DELAYS_MS[retry];
+                    if (delay === undefined) return;
+                    retryTimer = setTimeout(() => attempt(retry + 1), delay);
+                })
+                .catch(() => {
+                    // A failed resolution is terminal: retrying is what turned a 500 into a storm.
+                    if (active) setFailed(true);
+                });
+        };
+        attempt(0);
+
         return () => {
             active = false;
+            if (retryTimer) clearTimeout(retryTimer);
         };
     }, [mediaKey, resolveMedia]);
 
