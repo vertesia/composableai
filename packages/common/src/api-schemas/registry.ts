@@ -3586,7 +3586,19 @@ function getAjv(): Ajv2020 {
     // from another, and the value under evaluation, which is what a failed union is re-checked
     // against. Both are populated only when validation fails, and both are references rather than
     // copies.
-    const ajv = new Ajv2020({ strictSchema: false, allErrors: true, discriminator: true, verbose: true });
+    // `allowUnionTypes` because a few published components declare `type: [...]` on purpose:
+    // `DurationValue` is `['string', 'number']` specifically so the generated Java client gets one
+    // writable property instead of the unusable `AnyOfnumber` an `anyOf` produces. AJV's
+    // `strictTypes` default of "log" reported that deliberate choice to its logger on every startup.
+    // The default logger is `console`, so the notice left on stderr, where log collectors routinely
+    // classify it as an error — turning a healthy design decision into recurring server error noise.
+    const ajv = new Ajv2020({
+        strictSchema: false,
+        allErrors: true,
+        discriminator: true,
+        verbose: true,
+        allowUnionTypes: true,
+    });
     // Without this, AJV treats `format` as an annotation and ignores it, so a `date-time` property
     // would document a constraint nothing checks — the exact spec/enforcement gap this design is
     // meant to close.
