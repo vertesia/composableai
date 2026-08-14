@@ -90,6 +90,35 @@ describe('gate 1 — the schema is the single source of truth for the converted 
             }).valid,
         ).toBe(true);
     });
+
+    it('accepts an ask_user_webhook integration that is declared but not configured', () => {
+        // Same defect as the AWS case above: `webhook_url` was required on the response, so an
+        // unconfigured project failed its own contract on every GET of this integration.
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.ask_user_webhook,
+                enabled: false,
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.ask_user_webhook,
+                enabled: true,
+                webhook_url: 'https://example.test/hooks/ask-user',
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('still requires webhook_url when the integration is being configured', () => {
+        // The request schema must not follow the response into optionality — you cannot set this
+        // integration up without a URL.
+        expect(
+            validateApiRequest('ProjectIntegrationConfigRequest', {
+                integration: SupportedIntegrations.ask_user_webhook,
+                enabled: true,
+            }).valid,
+        ).toBe(false);
+    });
 });
 
 /**
