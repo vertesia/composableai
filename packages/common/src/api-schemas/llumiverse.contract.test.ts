@@ -5,7 +5,7 @@ import type { JsonObject } from './adapter.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest } from './registry.js';
 
 /**
- * The two llumiverse closures the registry publishes: `ModelOptions` with its twenty-five driver
+ * The two llumiverse closures the registry publishes: `ModelOptions` with its driver
  * option sets and four enums, and `JSONSchema` with its property map.
  *
  * Their schemas live in `@llumiverse/common/schemas` — they describe llumiverse's types, and a copy
@@ -25,6 +25,7 @@ const UNION_MEMBERS = [
     'ImagenOptions',
     'VertexAIClaudeOptions',
     'VertexAIGeminiOptions',
+    'VertexAIGeminiOmniVideoOptions',
     'VertexAIGrokOptions',
     'NovaCanvasOptions',
     'BedrockConverseOptions',

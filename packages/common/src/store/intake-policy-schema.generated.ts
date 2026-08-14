@@ -920,7 +920,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             },
             additionalProperties: false,
             description:
-                "HTTP timeouts applied to a driver's upstream LLM-provider calls.\n\nAll values are in milliseconds. Drivers should map these onto whatever HTTP client their SDK uses; the defaults applied in `@llumiverse/core/createDriverHttpAgent` are:   - headersTimeout:   60_000   - bodyTimeout:      60_000   - connectTimeout:   10_000   - keepAliveTimeout: 30_000\n\nThe defaults are deliberately tighter than Node's undici default (5 minutes for headers/body) so a hung upstream surfaces quickly. Bump `bodyTimeout` for streaming flows that have legitimate silent gaps (e.g. tool-using agents).",
+                "HTTP timeouts applied to a driver's upstream LLM-provider calls.\n\nAll values are in milliseconds. Drivers should map these onto whatever HTTP client their SDK uses; the defaults applied in `@llumiverse/core/createDriverHttpAgent` are:   - headersTimeout:   900_000   - bodyTimeout:      900_000   - connectTimeout:   60_000   - keepAliveTimeout: 300_000\n\nThe response defaults are deliberately longer than the hosting request boundary. Application-level cancellation should end user work first; driver timeouts are bounded-resource safety nets.",
         },
         ImagenMaskMode: {
             type: 'string',
@@ -1160,6 +1160,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 {
                     $ref: '#/$defs/VertexAIGeminiOptions',
+                },
+                {
+                    $ref: '#/$defs/VertexAIGeminiOmniVideoOptions',
                 },
                 {
                     $ref: '#/$defs/VertexAIGrokOptions',
@@ -1546,6 +1549,30 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 cache_ttl: {
                     type: 'string',
                     enum: ['5m', '1h'],
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        VertexAIGeminiOmniVideoOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'vertexai-gemini-omni-video',
+                },
+                task: {
+                    type: 'string',
+                    enum: ['text_to_video', 'image_to_video', 'reference_to_video'],
+                },
+                aspect_ratio: {
+                    type: 'string',
+                    enum: ['16:9', '9:16'],
+                },
+                duration_seconds: {
+                    type: 'integer',
+                    minimum: 3,
+                    maximum: 10,
                 },
             },
             required: ['_option_id'],

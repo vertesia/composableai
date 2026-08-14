@@ -29,6 +29,7 @@ import {
     TextResultSchema,
     ToolDefinitionSchema,
     ToolUseSchema,
+    VideoResultSchema,
 } from '@llumiverse/common/schemas';
 import type { ErrorObject, ValidateFunction } from 'ajv/dist/2020.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
@@ -395,6 +396,8 @@ import {
 } from './environment.js';
 import * as EventSchemas from './events.js';
 import {
+    BucketCreateAccessQuerySchema,
+    BucketCreateAccessStatusResponseSchema,
     BucketReadAccessQuerySchema,
     BucketReadAccessStatusResponseSchema,
     BulkUploadUrlsPayloadSchema,
@@ -402,6 +405,8 @@ import {
     CopyFilePayloadSchema,
     CopyFileResponseSchema,
     DeleteFileResultSchema,
+    EnsureBucketCreateAccessPayloadSchema,
+    EnsureBucketCreateAccessResponseSchema,
     EnsureBucketReadAccessPayloadSchema,
     EnsureBucketReadAccessResponseSchema,
     FileBucketResponseSchema,
@@ -1061,6 +1066,7 @@ const LLM_COMPLETION_SCHEMAS = {
     TextResult: TextResultSchema,
     JsonResult: JsonResultSchema,
     ImageResult: ImageResultSchema,
+    VideoResult: VideoResultSchema,
     CompletionResult: CompletionResultSchema,
     ExecutionTokenUsage: ExecutionTokenUsageSchema,
     // The options a caller may send. `PromptFormatter` is deliberately gone: see the note on
@@ -1257,6 +1263,10 @@ const FILE_STORAGE_SCHEMAS = {
     BucketReadAccessStatusResponse: BucketReadAccessStatusResponseSchema,
     EnsureBucketReadAccessPayload: EnsureBucketReadAccessPayloadSchema,
     EnsureBucketReadAccessResponse: EnsureBucketReadAccessResponseSchema,
+    BucketCreateAccessQuery: BucketCreateAccessQuerySchema,
+    BucketCreateAccessStatusResponse: BucketCreateAccessStatusResponseSchema,
+    EnsureBucketCreateAccessPayload: EnsureBucketCreateAccessPayloadSchema,
+    EnsureBucketCreateAccessResponse: EnsureBucketCreateAccessResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const DURABLE_TASK_SCHEMAS = {
@@ -2484,6 +2494,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ImagenOptions',
     'VertexAIClaudeOptions',
     'VertexAIGeminiOptions',
+    'VertexAIGeminiOmniVideoOptions',
     'VertexAIGrokOptions',
     'NovaCanvasOptions',
     'BedrockConverseOptions',
@@ -2977,6 +2988,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'TextResult',
     'JsonResult',
     'ImageResult',
+    'VideoResult',
     'ExecutionTokenUsage',
     'StatelessExecutionOptions',
     'SchemaRef',
@@ -3241,6 +3253,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'BucketReadAccessStatusResponse',
     'EnsureBucketReadAccessPayload',
     'EnsureBucketReadAccessResponse',
+    'BucketCreateAccessQuery',
+    'BucketCreateAccessStatusResponse',
+    'EnsureBucketCreateAccessPayload',
+    'EnsureBucketCreateAccessResponse',
     'MigrateInteractionsPayload',
     'MigrateInteractionsResult',
     'PricingSyncPayload',

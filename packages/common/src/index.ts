@@ -1,3 +1,4 @@
+export type { VertexAIGeminiOmniVideoOptions, VideoResult } from '@llumiverse/common';
 export * from './access-control.js';
 export * from './analytics.js';
 /**
