@@ -205,6 +205,7 @@ function ViewMedia({
     hitRef.current = hit;
     mediaRef.current = media;
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: directUrl is deliberately extra; see the dependency array
     useEffect(() => {
         setResolvedUrl(undefined);
         setFailed(false);
@@ -240,7 +241,12 @@ function ViewMedia({
             active = false;
             if (retryTimer) clearTimeout(retryTimer);
         };
-    }, [mediaKey, resolveMedia]);
+        // `directUrl` earns its place even though the body never reads it: it is what clears a
+        // `failed` left behind by <img onError>. Property-backed media has no mediaKey, so a tile
+        // whose URL 404'd would otherwise stay on the fallback icon forever, even once the hit
+        // carries a fresh, working URL. It is a string, so this costs no extra resolver call —
+        // and when it is set, the early return above means no request either.
+    }, [mediaKey, resolveMedia, directUrl]);
 
     const url = failed ? undefined : (directUrl ?? resolvedUrl);
     const fit = media?.fit === 'contain' ? 'object-contain' : 'object-cover';

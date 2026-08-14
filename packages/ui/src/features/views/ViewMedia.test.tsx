@@ -1,4 +1,4 @@
-import { cleanup, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import {
     ContentObjectStatus,
     type ExecuteViewRequest,
@@ -67,6 +67,44 @@ function renderResults(resolveMedia: ViewMediaResolver) {
     );
 }
 
+// Property-backed media: the URL comes straight off the hit, so no resolver runs and no mediaKey
+// exists. Rendered through the same DefaultViewResults path with a `thumbnail` property.
+const propertyDisplay: ViewDisplayConfiguration = {
+    ...display,
+    media: { source: 'property', field: 'properties.thumbnail' },
+};
+
+const propertyDefinition: ViewExecutionDefinition = {
+    name: 'Document Library',
+    results: { default_display: 'list', displays: [propertyDisplay] },
+};
+
+function propertyResults(thumbnail: string) {
+    const hit = result.hits[0];
+    const propertyResult: ViewExecutionResult = {
+        ...result,
+        definition: propertyDefinition,
+        hits: [{ ...hit, document: { ...hit.document, properties: { thumbnail } } }],
+    };
+    return (
+        <DefaultViewResults
+            configuration={propertyDisplay}
+            definition={propertyDefinition}
+            request={request}
+            result={propertyResult}
+            isLoading={false}
+        />
+    );
+}
+
+function renderPropertyResults(thumbnail: string) {
+    const rendered = renderWithProviders(propertyResults(thumbnail));
+    return {
+        container: rendered.container,
+        rerenderWith: (next: string) => rendered.rerender(propertyResults(next)),
+    };
+}
+
 describe('ViewMedia resolution', () => {
     beforeEach(() => {
         vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -120,5 +158,23 @@ describe('ViewMedia resolution', () => {
         await waitFor(() => expect(resolveMedia).toHaveBeenCalledTimes(1));
         await vi.advanceTimersByTimeAsync(60_000);
         expect(resolveMedia).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows a refreshed direct URL after the previous one failed to load', async () => {
+        const { container, rerenderWith } = renderPropertyResults('https://cdn.test/stale.png');
+
+        const img = () => container.querySelector('img');
+        expect(img()?.getAttribute('src')).toBe('https://cdn.test/stale.png');
+
+        // The browser cannot fetch it — the tile falls back to the icon.
+        fireEvent.error(img() as HTMLImageElement);
+        await waitFor(() => expect(container.querySelector('img')).toBeNull());
+
+        // A refreshed URL arrives on the same hit. No mediaKey exists for property media, so only
+        // directUrl can tell the effect to clear the failure.
+        rerenderWith('https://cdn.test/fresh.png');
+        await waitFor(() =>
+            expect(container.querySelector('img')?.getAttribute('src')).toBe('https://cdn.test/fresh.png'),
+        );
     });
 });
