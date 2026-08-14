@@ -5,8 +5,8 @@ import type { JsonObject } from './adapter.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest } from './registry.js';
 
 /**
- * The two llumiverse closures the registry publishes: `ModelOptions` with its twenty-five driver
- * option sets and four enums, and `JSONSchema` with its property map.
+ * The two llumiverse closures the registry publishes: `ModelOptions` with its driver option sets
+ * and enums, and `JSONSchema` with its property map.
  *
  * Their schemas live in `@llumiverse/common/schemas` — they describe llumiverse's types, and a copy
  * here would be exactly the drift this migration removes. What is checked HERE is the half that
@@ -43,6 +43,7 @@ const UNION_MEMBERS = [
     'OpenAiTextOptions',
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
+    'XAIGrokImageOptions',
     'GroqOptions',
     'MistralTextOptions',
 ];
@@ -80,6 +81,8 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
         // published byte alone would not catch it.
         expect((ApiSchemaComponents.TextFallbackOptions as JsonObject).additionalProperties).toBe(false);
         expect(validate({ _option_id: 'text-fallback', top_p: 0.9, unknown_option: 1 })).toBe(false);
+        expect((ApiSchemaComponents.XAIGrokImageOptions as JsonObject).additionalProperties).toBe(false);
+        expect(validate({ _option_id: 'xai-grok-image', quality: 'medium', unknown_option: 1 })).toBe(false);
         expect(
             validate({
                 _option_id: 'mistral-text',
