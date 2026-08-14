@@ -369,18 +369,18 @@ export async function executeInteractionFromActivity(
     if (params.include_previous_error) {
         //retrieve last failed run if any
         if (info.attempt > 1) {
-            log.info('Retrying, searching for previous run', { prev_run_id: runId });
+            log.debug('Retrying, searching for previous run', { prev_run_id: runId });
             const payload: RunSearchPayload = {
                 query: { workflow_run_ids: [runId] },
                 limit: 1,
             };
             const previousRun = await client.runs.search(payload).then((res) => {
-                log.info('Search results', { results: res });
+                log.debug('Previous run search completed', { result_count: res?.length ?? 0 });
                 return res ? (res[0] ?? undefined) : undefined;
             });
 
             if (previousRun) {
-                log.info('Found previous run', { previousRun });
+                log.debug('Found previous run', { prev_run_id: previousRun.id });
                 previousStudioExecutionRun = await client.runs.retrieve(previousRun.id);
             }
         }
