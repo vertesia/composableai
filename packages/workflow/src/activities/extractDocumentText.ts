@@ -92,14 +92,14 @@ async function extractFromObject(
         return createResponse(doc, doc.text, TextExtractionStatus.skipped, 'Text already extracted');
     }
 
-    let fileBuffer: Buffer;
-    try {
-        fileBuffer = await fetchBlobAsBuffer(client, doc.content.source);
-    } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : String(e);
-        log.error(`Error reading file: ${e}`);
-        return createResponse(doc, '', TextExtractionStatus.error, message);
-    }
+    // Do NOT catch download failures here. Returning a result (rather than throwing) tells
+    // Temporal the activity succeeded, so it is never retried: intake carries on and marks the
+    // object `completed` with no text at all — a permanently text-less document that looks
+    // healthy. A single transient 502 from the signed-URL path was enough to produce one.
+    // fetchBlobAsStream already classifies the failure for us: not-found/forbidden become a
+    // non-retryable DocumentNotFoundError, and everything else a plain Error the activity's
+    // retry policy will retry. Let that classification through.
+    const fileBuffer = await fetchBlobAsBuffer(client, doc.content.source);
 
     const txt = await extractTextFromBuffer(fileBuffer, doc.content.type);
     if (!txt) {
@@ -135,13 +135,11 @@ async function extractFromFileSource(
 ): Promise<TextExtractionResult> {
     log.info(`Extracting text from ${input_file}`);
 
-    let fileBuffer: Buffer;
-    try {
-        fileBuffer = await fetchBlobAsBuffer(client, input_file.url);
-    } catch (e: unknown) {
-        log.error(`Error reading file: ${e}`);
-        return createFileSourceResult(input_file.url, output_storage_path, null);
-    }
+    // Same reasoning as extractFromObject: swallowing the download failure here is worse still,
+    // because createFileSourceResult reports `status: success` — a failed download was
+    // indistinguishable from a document that legitimately has no text. Let the error propagate so
+    // the retry policy sees it.
+    const fileBuffer = await fetchBlobAsBuffer(client, input_file.url);
 
     const txt = await extractTextFromBuffer(fileBuffer, input_file.mimetype);
 
