@@ -40,7 +40,11 @@ export const ExecutionRunStatusSchema = z.enum(ExecutionRunStatus).meta({ id: 'E
 
 export const FacetSpecSchema = z
     .strictObject({
-        name: z.string(),
+        name: z.string().meta({
+            description:
+                'Key the buckets are returned under. `total` is reserved for the match count that every facet ' +
+                'response carries, and is rejected with a 400.',
+        }),
         field: z.string(),
     })
     .meta({ id: 'FacetSpec' });
@@ -2353,6 +2357,15 @@ export const ResolveInteractionQuerySchema = z
 // a union here would publish `anyOf` on an additionalProperties value, which the generated-client
 // rules rule out for a primitive-or-collection value. The emitted schema is what AJV compiles, so
 // array-or-number is enforced either way.
+// `total` is RESERVED: it is the match count and nothing else. The buckets live beside it under the
+// facet's own name, so the two never need the same slot. `computeFacets` used to seed the count and
+// then write the requested facets over it, so a caller who named a facet `total` got that facet's
+// buckets where the count belonged — an array in a field this schema types as a number. The server
+// now rejects that name with a 400 instead, which is why `total` can stay a plain number here.
+//
+// Widening it to the catchall's `['array', 'number']` is not an option regardless: a NAMED property
+// with a type array makes the Java generator reference a class it never writes (`AnyOfnumber`) and
+// the client stops compiling. The catchall gets away with it by becoming a map value, not a field.
 export const ComputedFacetResponseSchema = z
     .object({
         total: z.number().optional(),
