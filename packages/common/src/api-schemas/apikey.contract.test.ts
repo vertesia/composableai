@@ -85,9 +85,15 @@ describe('gate 1 — the schema is the single source of truth for the public API
         assertType<Equals<CreateApiKeyPayload['role'], ApiKey['role']>>(true);
         assertType<Equals<CreateApiKeyPayload['type'], ApiKey['type'] | undefined>>(true);
         assertType<Equals<CreateApiKeyPayload['expires_at'], ApiKey['expires_at']>>(true);
+        assertType<
+            Equals<CreateApiKeyPayload['can_delegate_security_attributes'], ApiKey['can_delegate_security_attributes']>
+        >(true);
         assertType<Equals<UpdateApiKeyPayload['name'], ApiKey['name'] | undefined>>(true);
         assertType<Equals<UpdateApiKeyPayload['role'], ApiKey['role'] | undefined>>(true);
         assertType<Equals<UpdateApiKeyPayload['enabled'], ApiKey['enabled'] | undefined>>(true);
+        assertType<
+            Equals<UpdateApiKeyPayload['can_delegate_security_attributes'], ApiKey['can_delegate_security_attributes']>
+        >(true);
         // `name` and `role` are required on create and optional on update — the only difference a
         // write payload legitimately introduces.
         assertType<Equals<CreateApiKeyPayload['name'], string>>(true);
@@ -133,6 +139,14 @@ describe('gate 2 — the published components match the closure the types come f
         expect(ApiSchemaComponents.ApiKey.additionalProperties).toBe(false);
         expect((ApiSchemaComponents.ApiKeyWithValue.required as string[]) ?? []).toContain('value');
         expect((ApiSchemaComponents.ApiKeyReadResponse.required as string[]) ?? []).not.toContain('value');
+    });
+
+    it('documents the explicit API-key security-attribute delegation capability', () => {
+        const props = ApiSchemaComponents.ApiKey.properties as Record<string, JsonObject>;
+        expect(props.can_delegate_security_attributes).toEqual({
+            type: 'boolean',
+            description: 'Whether this admin API key may manage security attributes on API keys in the same project',
+        });
     });
 
     it('publishes ProjectRef closed, with the documentation the list endpoints rely on', () => {
@@ -208,6 +222,13 @@ describe('gate 3 — AJV validates the same canonical objects that are published
         expect(validate({ name: 'CI', role: SystemRoles.reader, id: 'x' })).toBe(false);
         expect(validate({ name: 'CI', role: SystemRoles.reader, enabled: true })).toBe(false);
         expect(validate({ name: 'CI', role: SystemRoles.reader, project: VALID_PROJECT_REF })).toBe(false);
+        expect(
+            validate({
+                name: 'CI',
+                role: SystemRoles.admin,
+                can_delegate_security_attributes: true,
+            }),
+        ).toBe(true);
     });
 
     it('accepts a partial update and rejects the fields creation owns', () => {
@@ -215,6 +236,7 @@ describe('gate 3 — AJV validates the same canonical objects that are published
         expect(validate({})).toBe(true);
         expect(validate({ enabled: false })).toBe(true);
         expect(validate({ name: 'CI', role: SystemRoles.reader, enabled: true })).toBe(true);
+        expect(validate({ can_delegate_security_attributes: false })).toBe(true);
         expect(validate({ role: 'superuser' })).toBe(false);
         // Immutable after creation.
         expect(validate({ type: 'sk' })).toBe(false);

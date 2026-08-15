@@ -104,6 +104,13 @@ export const ApiKeySchema = z
             .array(z.string())
             .meta({ description: 'Compartments the key belongs to — restricts access to matching documents' })
             .optional(),
+        can_delegate_security_attributes: z
+            .boolean()
+            .meta({
+                description:
+                    'Whether this admin API key may manage security attributes on API keys in the same project',
+            })
+            .optional(),
     })
     .meta({ id: 'ApiKey' });
 
@@ -138,7 +145,7 @@ export const ApiKeyReadResponseSchema = ApiKeySchema.extend({
  *  - It declared every server-owned field — `id`, `account`, `maskedValue`, `can_retrieve_value`,
  *    the timestamps — all of which the handler has always ignored.
  *
- * `.pick()` rather than a fresh object, so the seven fields keep one declaration; `.partial()` on the
+ * `.pick()` rather than a fresh object, so the eight fields keep one declaration; `.partial()` on the
  * two the server defaults (`type` falls back to `sk`, `expires_at` means "never"). Requiredness is
  * the only thing a write payload legitimately changes about a field it shares.
  */
@@ -150,12 +157,13 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     properties: true,
     clearance: true,
     compartments: true,
+    can_delegate_security_attributes: true,
 })
     .partial({ type: true, expires_at: true })
     .meta({ id: 'CreateApiKeyPayload' });
 
 /**
- * What `PUT /apikeys/:keyId` accepts: the six fields the handler applies, each optional.
+ * What `PUT /apikeys/:keyId` accepts: the seven fields the handler applies, each optional.
  *
  * Narrower than the create payload in both directions — `type` and `expires_at` are immutable after
  * creation, `enabled` is only settable here — which is precisely why one shared component could not
@@ -170,6 +178,7 @@ export const UpdateApiKeyPayloadSchema = ApiKeySchema.pick({
     properties: true,
     clearance: true,
     compartments: true,
+    can_delegate_security_attributes: true,
 })
     .partial()
     .meta({ id: 'UpdateApiKeyPayload' });
