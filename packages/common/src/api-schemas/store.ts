@@ -396,7 +396,10 @@ export const ColumnLayoutSchema = z
                     'The type of the field specifies how the rendering will be done. If not specified the string type will be used. The type may contain additional parameters prepended using a web-like query string syntax: date?LLL',
             })
             .optional(),
-        fallback: z.string().optional(),
+        fallback: z
+            .string()
+            .meta({ description: 'Path of an alternate field to display when the primary field is absent' })
+            .optional(),
         default: z
             .unknown()
             .meta({ description: 'A default value to be used if the field is not present in the object' })
