@@ -34,6 +34,6 @@ export * from './process.js';
 export * from './quota.js';
 export * from './registry.js';
 export * from './secrets.js';
-export { InteractionExecutionConfigurationSchema } from './store.js';
+export { CreateContentObjectTypePayloadSchema, InteractionExecutionConfigurationSchema } from './store.js';
 export * from './view-execution.js';
 export * from './workflow-runs.js';
