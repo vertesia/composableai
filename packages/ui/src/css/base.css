@@ -29,3 +29,81 @@
         scrollbar-width: none; /* Firefox */
     }
 }
+
+/*
+ * Keep this rule unlayered. Autofill must outrank Tailwind's layered background
+ * and focus-shadow utilities, while retaining their ring variables.
+ */
+input[class]:-webkit-autofill,
+input[class]:-webkit-autofill:hover,
+input[class]:-webkit-autofill:focus,
+textarea[class]:-webkit-autofill,
+textarea[class]:-webkit-autofill:hover,
+textarea[class]:-webkit-autofill:focus,
+select[class]:-webkit-autofill,
+select[class]:-webkit-autofill:hover,
+select[class]:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-foreground);
+    -webkit-box-shadow:
+        0 0 0 1000px var(--color-background) inset,
+        var(--tw-inset-shadow, 0 0 #0000),
+        var(--tw-inset-ring-shadow, 0 0 #0000),
+        var(--tw-ring-offset-shadow, 0 0 #0000),
+        var(--tw-ring-shadow, 0 0 #0000),
+        var(--tw-shadow, 0 0 #0000);
+    box-shadow:
+        0 0 0 1000px var(--color-background) inset,
+        var(--tw-inset-shadow, 0 0 #0000),
+        var(--tw-inset-ring-shadow, 0 0 #0000),
+        var(--tw-ring-offset-shadow, 0 0 #0000),
+        var(--tw-ring-shadow, 0 0 #0000),
+        var(--tw-shadow, 0 0 #0000);
+    caret-color: var(--color-foreground);
+    /* biome-ignore lint/complexity/noImportantStyles: Chromium otherwise animates from its autofill preview font. */
+    font-size: var(--autofill-font-size) !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Chromium otherwise animates from its autofill preview line height. */
+    line-height: var(--autofill-line-height) !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Chromium's autofill transition causes a visible typography jump. */
+    transition: none !important;
+}
+
+input.text-xs {
+    --autofill-font-size: var(--text-xs);
+    --autofill-line-height: var(--text-xs--line-height);
+}
+
+input.text-sm {
+    --autofill-font-size: var(--text-sm);
+    --autofill-line-height: var(--text-sm--line-height);
+}
+
+input.text-base {
+    --autofill-font-size: var(--text-base);
+    --autofill-line-height: var(--text-base--line-height);
+}
+
+input.text-lg {
+    --autofill-font-size: var(--text-lg);
+    --autofill-line-height: var(--text-lg--line-height);
+}
+
+/* Chromium paints accepted autocomplete text through a separate first-line style. */
+input.text-xs:-webkit-autofill::first-line {
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+}
+
+input.text-sm:-webkit-autofill::first-line {
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+}
+
+input.text-base:-webkit-autofill::first-line {
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+}
+
+input.text-lg:-webkit-autofill::first-line {
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+}
