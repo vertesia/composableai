@@ -169,14 +169,6 @@
             "types": "./lib/rich-text/index.d.ts",
             "default": "./lib/rich-text/index.js"
         },
-        "./code": {
-            "types": "./lib/code/index.d.ts",
-            "default": "./lib/code/index.js"
-        },
-        "./form": {
-            "types": "./lib/form/index.d.ts",
-            "default": "./lib/form/index.js"
-        },
         "./layout": {
             "types": "./lib/layout/index.d.ts",
             "default": "./lib/layout/index.js"
