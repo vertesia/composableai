@@ -742,8 +742,8 @@ importers:
         specifier: workspace:*
         version: link:../ui
       lucide-react:
-        specifier: ^1.28.0
-        version: 1.28.0(react@19.2.7)
+        specifier: ^1.31.0
+        version: 1.31.0(react@19.2.7)
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.3
@@ -939,8 +939,8 @@ importers:
         specifier: ^4.18.1
         version: 4.18.1
       lucide-react:
-        specifier: ^1.28.0
-        version: 1.28.0(react@19.2.7)
+        specifier: ^1.31.0
+        version: 1.31.0(react@19.2.7)
       mermaid:
         specifier: ^11.16.1
         version: 11.16.1
@@ -1226,8 +1226,8 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       lucide-react:
-        specifier: ^1.28.0
-        version: 1.28.0(react@19.2.7)
+        specifier: ^1.31.0
+        version: 1.31.0(react@19.2.7)
       react-vega:
         specifier: ^8.0.0
         version: 8.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vega-embed@7.1.0(vega-lite@6.4.3(vega@6.3.1))(vega@6.3.1))
@@ -5702,8 +5702,8 @@ packages:
     resolution: {integrity: sha512-4pfM1Ff0x50o0tQwb5ucw/RzNyD0/YJME6IVcStalZuMWxdt3sR3huStTtxz4PUmvZfRguvDejasvQ2kifR11g==}
     engines: {node: 20 || >=22}
 
-  lucide-react@1.28.0:
-    resolution: {integrity: sha512-fARAFJULsGuDDydjp6+6blekG/sBIM29TerzLjc9bQUKAcEfrSc4ZQKb25KRz4OMKd87cZTb5dgq0w/T6KufVg==}
+  lucide-react@1.31.0:
+    resolution: {integrity: sha512-G8u2eEtoHUnUa9f8lbvqDhCiORMnYLdUEo06EEG9MQvHQrInKcX3Pa2TH39MM5qyzRcWETxB0+aOwAPI1g1kEg==}
     peerDependencies:
       react: 19.2.7
 
@@ -11801,7 +11801,7 @@ snapshots:
 
   lru-cache@11.5.2: {}
 
-  lucide-react@1.28.0(react@19.2.7):
+  lucide-react@1.31.0(react@19.2.7):
     dependencies:
       react: 19.2.7
 
