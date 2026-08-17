@@ -448,7 +448,7 @@ export function SelectBox<T = unknown>({
                         variant="link"
                         size="icon"
                         disabled={disabled}
-                        aria-label={clearTitle || 'Clear selection'}
+                        title={clearTitle || 'Clear selection'}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (multiple) {
