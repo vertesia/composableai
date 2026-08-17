@@ -25,6 +25,11 @@ const jsEntries = entries.map((name) => ({
         format: 'es',
         sourcemap: true,
         minify: true,
+        // Each sub-path is published as exactly one file, addressed by the consuming app's import
+        // map, so a dynamic import of an in-package module (e.g. a locale bundle) has nowhere to
+        // emit a chunk. Inline those instead; dynamic imports of *external* packages are
+        // unaffected and still resolve lazily through the import map.
+        codeSplitting: false,
     },
     external: EXTERNALS,
     // Substitute `process.env.NODE_ENV` at build time so the published bundle never
