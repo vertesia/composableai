@@ -5,6 +5,9 @@
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
+    "sideEffects": [
+        "**/*.css"
+    ],
     "files": [
         "lib",
         "src",
@@ -165,14 +168,6 @@
         "./rich-text": {
             "types": "./lib/rich-text/index.d.ts",
             "default": "./lib/rich-text/index.js"
-        },
-        "./code": {
-            "types": "./lib/code/index.d.ts",
-            "default": "./lib/code/index.js"
-        },
-        "./form": {
-            "types": "./lib/form/index.d.ts",
-            "default": "./lib/form/index.js"
         },
         "./layout": {
             "types": "./lib/layout/index.d.ts",
