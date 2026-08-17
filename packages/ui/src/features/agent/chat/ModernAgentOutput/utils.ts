@@ -1,6 +1,6 @@
 import type { VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
-import dayjs from 'dayjs';
+import dayjs from '../../../../core/utils/dayjs.js';
 import { getWorkstreamActivityDetails, getWorkstreamLaunchDetails } from '../workstreams.js';
 
 function getAgentChatDebugParam(hash: string): string | null {

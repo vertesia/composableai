@@ -14,13 +14,10 @@ import {
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import { FolderClosed, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import dayjs from '../../../core/utils/dayjs.js';
 import { CreateCollectionModal } from './CreateCollection';
-
-dayjs.extend(relativeTime);
 
 export function CollectionsTable() {
     const { client } = useUserSession();
