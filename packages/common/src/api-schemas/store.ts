@@ -396,7 +396,10 @@ export const ColumnLayoutSchema = z
                     'The type of the field specifies how the rendering will be done. If not specified the string type will be used. The type may contain additional parameters prepended using a web-like query string syntax: date?LLL',
             })
             .optional(),
-        fallback: z.string().optional(),
+        fallback: z
+            .string()
+            .meta({ description: 'Path of an alternate field to display when the primary field is absent' })
+            .optional(),
         default: z
             .unknown()
             .meta({ description: 'A default value to be used if the field is not present in the object' })
@@ -442,17 +445,22 @@ const contentTypeFields = {
         .looseObject({})
         .meta({
             description:
-                'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+                'JSON Schema for the structured properties extracted into documents of this type. ' +
+                'Only included in ContentObjectTypeItem if explicitly requested; always included in ContentObjectType.',
         })
         .optional(),
     table_layout: z
         .array(ColumnLayoutSchema)
         .meta({
             description:
-                'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+                'Column layout used when listing documents of this type. ' +
+                'Only included in ContentObjectTypeItem if explicitly requested; always included in ContentObjectType.',
         })
         .optional(),
-    is_chunkable: z.boolean().optional(),
+    is_chunkable: z
+        .boolean()
+        .meta({ description: 'Whether documents of this type can be split into chunks' })
+        .optional(),
     strict_mode: z
         .boolean()
         .meta({
