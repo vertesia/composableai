@@ -208,15 +208,17 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
     // DEV_MODE is used by appgen/sandbox previews. Vercel also proxies to the
     // framework dev server over HTTP, so both modes disable HTTPS.
     const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
-    // Build with a RELATIVE base so asset URLs are mount-agnostic (`./assets/x.js`, not `/app/...`).
-    // The serving layer is the only thing that knows the real mount path — which for appgen is a
-    // version-stamped deep path assigned at version-build time (`/tenants/<t>/apps/<a>/versions/<v>/app/`),
-    // unknowable at build time. The app-gateway injects a matching `<base href="<mount>/">` into the
-    // served index.html, so relative asset refs resolve under whatever mount the app is served at
-    // (promoted, version-pinned, or live preview). Dev still serves at `/`.
-    // TODO(appgen): verify this does not break regular non-appgen/Vercel app builds. If it does,
-    // keep `./` only for appgen builds and restore `/app/` for the default plugin template build.
-    const base = command === 'build' ? './' : '/';
+    // A RELATIVE base (`./assets/x.js`) only resolves correctly when the serving layer injects a
+    // matching `<base href="<mount>/">`, because the browser otherwise resolves it against the
+    // current route rather than the app root. Appgen does inject one: it serves the app under a
+    // version-stamped deep path (`/tenants/<t>/apps/<a>/versions/<v>/app/`) that is unknowable at
+    // build time, so it needs the relative form and opts in with VITE_RELATIVE_BASE=1.
+    //
+    // Everything else — `vite preview`, `pnpm start`, Vercel, any plain static host — serves the
+    // app at the origin root and injects no `<base>`. There a relative base breaks the moment the
+    // SPA is on a nested route such as `/app/...`, where every asset resolves to
+    // `/app/assets/...` and 404s. So the default is an absolute base.
+    const base = command === 'build' && process.env.VITE_RELATIVE_BASE === '1' ? './' : '/';
     const isVercelBuild = command === 'build' && process.env.VERCEL === '1';
 
     return {
