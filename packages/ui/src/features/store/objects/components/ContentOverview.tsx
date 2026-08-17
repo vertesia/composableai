@@ -1229,7 +1229,7 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
 
     return (
         <div className="h-full">
-            <UniversalDocumentViewer source={source} className="h-full" />
+            <UniversalDocumentViewer source={source} className="h-full" showHeader={false} />
         </div>
     );
 }
