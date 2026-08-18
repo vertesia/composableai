@@ -100,26 +100,12 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # Use an App distinct from APP_VERTESIA_RENOVATE_AUTOMERGE. GitHub holds
-      # pull_request workflows caused by GITHUB_TOKEN, while an App-created PR starts CI normally;
-      # keeping the author and approver as separate Apps also makes the approval count.
-      - name: Generate composableai write token
-        id: sync-app-token
-        if: ${{ steps.precheck.outputs.skip != 'true' }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
-          private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
       - name: Update Git submodule and lockfile
-        id: update-submodule
+        id: prepare-submodule
         if: ${{ steps.precheck.outputs.skip != 'true' }}
         env:
-          APP_SLUG: ${{ steps.sync-app-token.outputs.app-slug }}
-          GH_TOKEN: ${{ steps.sync-app-token.outputs.token }}
+          APP_SLUG: ${{ steps.checkout-app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.checkout-app-token.outputs.token }}
           SUBMODULE_READ_TOKEN: ${{ steps.checkout-app-token.outputs.token }}
         run: |
           github_auth_header="$(printf 'x-access-token:%s' "$SUBMODULE_READ_TOKEN" | base64 | tr -d '\n')"
@@ -153,6 +139,10 @@ jobs:
           git config --global user.name "${APP_SLUG}[bot]"
           git config --global user.email "${app_user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
 
+          # The fetched submodule controls package lifecycle scripts invoked by pnpm dedupe. Do not
+          # expose even the read-only checkout token to those processes.
+          unset GH_TOKEN SUBMODULE_READ_TOKEN github_auth_header
+
           git checkout -b $TEMP_BRANCH
 
           echo "Updating submodule [llumiverse] to ${TARGET_LLUMIVERSE_SHA::7}..." >&2
@@ -174,6 +164,31 @@ jobs:
             git commit --amend --no-edit
             echo "Lockfile updated" >&2
           fi
+
+      # Mint the write token only after all package lifecycle scripts have completed. Use an App
+      # distinct from APP_VERTESIA_RENOVATE_AUTOMERGE so the PR author and approver remain separate.
+      - name: Generate composableai write token
+        id: sync-app-token
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
+          private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
+          repositories: composableai
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Push branch and open pull request
+        id: update-submodule
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
+        env:
+          GH_TOKEN: ${{ steps.sync-app-token.outputs.token }}
+        run: |
+          TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 "$TARGET_LLUMIVERSE_SHA")"
+          MAYBE_LLUMIVERSE_PR="$(echo "$TARGET_LLUMIVERSE_MSG" | grep -oP '(?<=#)\d+' || true)"
+          TARGET_BRANCH_SLUG="${TARGET_COMPOSABLEAI_BRANCH//\//-}"
+          TEMP_BRANCH="sync-llumiverse-${TARGET_BRANCH_SLUG}-${TARGET_LLUMIVERSE_SHA::7}"
 
           # The dedicated App pushes the branch and opens the PR. Unlike GITHUB_TOKEN, its events
           # are eligible to start the pull_request workflows that build, test, and lint this branch.
