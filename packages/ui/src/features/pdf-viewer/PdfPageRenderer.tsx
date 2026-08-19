@@ -1,9 +1,6 @@
 import { Loader2 } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-
-// Configure PDF.js worker - use CDN for the worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+import { createContext, Suspense, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Document, Page } from './lazyReactPdf';
 
 // Loading spinner component
 function LoadingSpinner({ className, size = 'md' }: { className?: string; size?: 'sm' | 'md' | 'lg' }) {
@@ -65,15 +62,17 @@ export function PdfPageRenderer({
     return (
         <div className={className}>
             {loading && <LoadingSpinner className="py-4" size="md" />}
-            <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} onLoadError={handleError} loading={null}>
-                <Page
-                    pageNumber={pageNumber}
-                    width={width}
-                    renderTextLayer={renderTextLayer}
-                    renderAnnotationLayer={renderAnnotationLayer}
-                    loading={<LoadingSpinner className="py-4" size="sm" />}
-                />
-            </Document>
+            <Suspense fallback={null}>
+                <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} onLoadError={handleError} loading={null}>
+                    <Page
+                        pageNumber={pageNumber}
+                        width={width}
+                        renderTextLayer={renderTextLayer}
+                        renderAnnotationLayer={renderAnnotationLayer}
+                        loading={<LoadingSpinner className="py-4" size="sm" />}
+                    />
+                </Document>
+            </Suspense>
         </div>
     );
 }
@@ -174,14 +173,16 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
     return (
         <SharedPdfContext.Provider value={value}>
             {pdfUrl ? (
-                <Document
-                    file={pdfUrl}
-                    onLoadSuccess={handleLoadSuccess}
-                    onLoadError={handleError}
-                    loading={<LoadingSpinner className="py-4" size="md" />}
-                >
-                    {children(renderPage)}
-                </Document>
+                <Suspense fallback={<LoadingSpinner className="py-4" size="md" />}>
+                    <Document
+                        file={pdfUrl}
+                        onLoadSuccess={handleLoadSuccess}
+                        onLoadError={handleError}
+                        loading={<LoadingSpinner className="py-4" size="md" />}
+                    >
+                        {children(renderPage)}
+                    </Document>
+                </Suspense>
             ) : (
                 <LoadingSpinner className="py-4" size="md" />
             )}
@@ -480,45 +481,47 @@ export function PdfThumbnailList({
 
     return (
         <div ref={containerRef}>
-            <Document
-                file={pdfUrl}
-                onLoadSuccess={handleLoadSuccess}
-                onLoadError={handleError}
-                loading={<LoadingSpinner className="py-4" size="md" />}
-            >
-                {hasAspectRatio ? (
-                    <>
-                        {/* Top spacer for pages above visible window */}
-                        {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
+            <Suspense fallback={<LoadingSpinner className="py-4" size="md" />}>
+                <Document
+                    file={pdfUrl}
+                    onLoadSuccess={handleLoadSuccess}
+                    onLoadError={handleError}
+                    loading={<LoadingSpinner className="py-4" size="md" />}
+                >
+                    {hasAspectRatio ? (
+                        <>
+                            {/* Top spacer for pages above visible window */}
+                            {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
 
-                        {/* Only render pages within the visible window */}
-                        {Array.from({ length: visibleRange.end - visibleRange.start }, (_, index) => {
-                            const pageNumber = visibleRange.start + index + 1;
-                            return (
-                                <div
-                                    key={pageNumber}
-                                    data-page-index={pageNumber - 1}
-                                    style={{ height: itemHeight, overflow: 'hidden' }}
-                                >
-                                    <VirtualizedThumbnail
-                                        pageNumber={pageNumber}
-                                        width={thumbnailWidth}
-                                        isSelected={pageNumber === currentPage}
-                                        onSelect={() => onPageSelect(pageNumber)}
-                                        renderThumbnail={renderThumbnail}
-                                        aspectRatio={effectiveAspectRatio}
-                                    />
-                                </div>
-                            );
-                        })}
+                            {/* Only render pages within the visible window */}
+                            {Array.from({ length: visibleRange.end - visibleRange.start }, (_, index) => {
+                                const pageNumber = visibleRange.start + index + 1;
+                                return (
+                                    <div
+                                        key={pageNumber}
+                                        data-page-index={pageNumber - 1}
+                                        style={{ height: itemHeight, overflow: 'hidden' }}
+                                    >
+                                        <VirtualizedThumbnail
+                                            pageNumber={pageNumber}
+                                            width={thumbnailWidth}
+                                            isSelected={pageNumber === currentPage}
+                                            onSelect={() => onPageSelect(pageNumber)}
+                                            renderThumbnail={renderThumbnail}
+                                            aspectRatio={effectiveAspectRatio}
+                                        />
+                                    </div>
+                                );
+                            })}
 
-                        {/* Bottom spacer for pages below visible window */}
-                        {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
-                    </>
-                ) : (
-                    <LoadingSpinner className="py-4" size="md" />
-                )}
-            </Document>
+                            {/* Bottom spacer for pages below visible window */}
+                            {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
+                        </>
+                    ) : (
+                        <LoadingSpinner className="py-4" size="md" />
+                    )}
+                </Document>
+            </Suspense>
         </div>
     );
 }
@@ -575,16 +578,18 @@ export function PdfDocumentRenderer({
     return (
         <div className={className}>
             {loading && <LoadingSpinner className="py-8" size="lg" />}
-            <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} onLoadError={handleError} loading={null}>
-                <Page
-                    pageNumber={Math.min(pageNumber, numPages || 1)}
-                    width={width}
-                    height={height}
-                    renderTextLayer={renderTextLayer}
-                    renderAnnotationLayer={renderAnnotationLayer}
-                    loading={<LoadingSpinner className="py-8" size="md" />}
-                />
-            </Document>
+            <Suspense fallback={null}>
+                <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} onLoadError={handleError} loading={null}>
+                    <Page
+                        pageNumber={Math.min(pageNumber, numPages || 1)}
+                        width={width}
+                        height={height}
+                        renderTextLayer={renderTextLayer}
+                        renderAnnotationLayer={renderAnnotationLayer}
+                        loading={<LoadingSpinner className="py-8" size="md" />}
+                    />
+                </Document>
+            </Suspense>
         </div>
     );
 }

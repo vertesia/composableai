@@ -48,7 +48,10 @@ export interface ApiServerPluginOptions {
     /**
      * Compiled server module path used in preview mode. Resolved relative to
      * `process.cwd()` (the consuming project's root when running `vite preview`).
-     * @default './lib/server.js'
+     *
+     * Defaults to `entry` with `src/` swapped for `lib/` and the `.ts`
+     * extension dropped, which is where a `rootDir: src` / `outDir: lib`
+     * tsconfig emits it. Set this explicitly for any other output layout.
      */
     compiledEntry?: string;
 
@@ -66,10 +69,18 @@ export interface ApiServerPluginOptions {
     transformers?: readonly string[];
 }
 
+/**
+ * Maps a TypeScript source entry to the JavaScript file tsc emits for it under a
+ * `rootDir: src` / `outDir: lib` layout, so the dev and preview entries cannot drift apart.
+ */
+function compiledEntryFor(entry: string): string {
+    return entry.replace(/(^|\/)src\//, '$1lib/').replace(/\.tsx?$/, '.js');
+}
+
 export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] {
     const {
         entry = './src/tool-server/server.ts',
-        compiledEntry = './lib/server.js',
+        compiledEntry = compiledEntryFor(entry),
         apiPrefix = '/api',
         transformers,
     } = options;
