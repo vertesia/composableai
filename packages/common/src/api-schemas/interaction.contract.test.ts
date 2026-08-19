@@ -4,10 +4,17 @@ import {
     AsyncConversationExecutionPayloadSchema,
     ComputeRunFacetPayloadSchema,
     ComputeRunFacetsResponseSchema,
+    ConversationStateSchema,
     FindRunResultSchema,
     InCodeInteractionSchema,
     ResolvedCatalogInteractionSchema,
 } from './interaction.js';
+
+describe('conversation state contract', () => {
+    it('publishes the tool catalog storage scope used to resolve tool references', () => {
+        expect(ConversationStateSchema.shape.tool_catalog_storage_id.safeParse('process-run-1').success).toBe(true);
+    });
+});
 
 describe('in-code interaction contract', () => {
     it('retains prompt schemas when resolving a catalog interaction', () => {

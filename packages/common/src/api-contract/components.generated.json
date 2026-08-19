@@ -10384,6 +10384,10 @@
         "$ref": "#/components/schemas/ToolReference",
         "description": "Reference to tools stored in GCP instead of embedding full tool definitions"
       },
+      "tool_catalog_storage_id": {
+        "type": "string",
+        "description": "Artifact-storage scope containing the referenced tool catalog."
+      },
       "active_tool_names": {
         "type": "array",
         "items": {
