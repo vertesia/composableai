@@ -79,7 +79,7 @@
         "@vitejs/plugin-react": "^6.0.3",
         "concurrently": "^10.0.4",
         "esbuild": "^0.28.2",
-        "globals": "^17.10.0",
+        "globals": "^17.11.0",
         "react": "catalog:",
         "react-dom": "catalog:",
         "tailwindcss": "^4.3.3",
