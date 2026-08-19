@@ -54,11 +54,11 @@
         "@vertesia/tsconfig": "workspace:*",
         "koa": "^3.2.1",
         "mocha": "^11.8.0",
-        "tsx": "^4.23.7",
+        "tsx": "^4.23.12",
         "typescript": "catalog:"
     },
     "dependencies": {
-        "eventsource-parser": "^3.1.0"
+        "eventsource-parser": "^4.0.0"
     },
     "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
 }

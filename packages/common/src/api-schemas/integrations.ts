@@ -45,7 +45,13 @@ export const AskUserWebhookConfigurationSchema = z
     .strictObject({
         integration: SupportedIntegrations_ask_user_webhookSchema,
         enabled: z.boolean(),
-        webhook_url: z.string().meta({ description: 'Webhook URL to receive ask_user events' }),
+        // Optional on the RESPONSE only — `AskUserWebhookConfigurationInputSchema` still requires it,
+        // because you cannot configure the integration without one. `getIntegrationConfig` reads
+        // `integrations?.[integrationId] ?? {}`, so a project that never set this integration up
+        // legitimately answers with the discriminator and `enabled` alone, and a required
+        // `webhook_url` made that answer fail its own response contract on every call. Same defect
+        // and same fix as `AwsConfiguration.s3_role_arn`.
+        webhook_url: z.string().meta({ description: 'Webhook URL to receive ask_user events' }).optional(),
         has_webhook_secret: z.boolean().optional(),
         webhook_secret_hint: z.string().optional(),
         events: z
@@ -269,7 +275,14 @@ export const AwsConfigurationSchema = z
     .strictObject({
         integration: SupportedIntegrations_awsSchema,
         enabled: z.boolean(),
-        s3_role_arn: z.string(),
+        // Optional because "declared but not configured" is a real state, not legacy data:
+        // `getIntegrationConfig` reads `integrations?.[integrationId] ?? {}`, so a project that has
+        // never set up AWS answers `{ integration: 'aws', enabled: false }` with no role ARN at all.
+        // Requiring it here made that answer fail its own response contract. The consumers already
+        // agree it is optional — the server guards on `s3_role_arn` being present before assuming a
+        // role, and every sibling integration marks its config fields optional for the same reason
+        // (`github_app_id`, `url`, ...).
+        s3_role_arn: z.string().optional(),
     })
     .meta({ id: 'AwsConfiguration' });
 

@@ -141,8 +141,10 @@ jobs:
             and ($commits | all(
               .authors | any(
                 .login == "github-actions[bot]"
+                or .login == "vertesia-submodule-sync[bot]"
                 or .email == "github-actions[bot]@users.noreply.github.com"
                 or .name == "github-actions[bot]"
+                or .name == "vertesia-submodule-sync[bot]"
               )
             ))
           ' <<< "$prs_json" >/dev/null; then
@@ -207,7 +209,7 @@ jobs:
         id: generate-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ vars.APP_VERTESIA_RENOVATE_AUTOMERGE_ID }}
+          client-id: ${{ vars.APP_VERTESIA_RENOVATE_AUTOMERGE_CLIENT_ID }}
           private-key: ${{ secrets.APP_VERTESIA_RENOVATE_AUTOMERGE_PEM }}
           permission-actions: read
           permission-contents: write

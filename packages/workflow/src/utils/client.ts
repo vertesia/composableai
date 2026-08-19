@@ -2,19 +2,47 @@
  * get a zeno client for a given token
  */
 
-import { activityInfo } from '@temporalio/activity';
+import { Context } from '@temporalio/activity';
+import type { FETCH_FN } from '@vertesia/api-fetch-client';
 import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
 import type { WorkflowExecutionBaseParams } from '@vertesia/common';
+import { type Dispatcher, EnvHttpProxyAgent } from 'undici';
 import { WorkflowParamNotFoundError } from '../errors.js';
 
 // Short default timeout for ordinary workflow -> server/store calls (object GETs, status updates,
-// etc.). A stale/dead pooled connection (a server pod scaled down/rolled mid-request) used to hang
-// for the whole 30-minute undici headersTimeout; this bounds it to seconds so it fails fast and the
-// activity is retried. The long path — synchronous interaction execution, which blocks on the model —
-// sets its own long per-request timeout in @vertesia/client (executeInteraction*), overriding this.
+// etc.). A stale/dead pooled connection (a server pod scaled down/rolled mid-request) should fail
+// quickly so the activity can retry. The long path — synchronous interaction execution, which blocks
+// on the model — sets its own long per-request timeout in @vertesia/client, overriding this.
 // Override the default via VERTESIA_WORKFLOW_FETCH_TIMEOUT_MS (0/false disables it).
 const DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS = 60 * 1000;
 const WORKFLOW_FETCH_TIMEOUT_ENV = 'VERTESIA_WORKFLOW_FETCH_TIMEOUT_MS';
+
+// The API client already gives every finite request an explicit AbortSignal deadline. Disable
+// undici's independent five-minute response timeout so it cannot terminate an admitted, cancellable
+// activity request behind the deadline owner's back. One dispatcher is shared for the worker process.
+const workflowDispatcher = new EnvHttpProxyAgent({
+    headersTimeout: 0,
+    bodyTimeout: 0,
+});
+
+type DispatcherRequestInit = RequestInit & { dispatcher: Dispatcher };
+
+function combineSignals(requestSignal: AbortSignal | null, activitySignal?: AbortSignal): AbortSignal | undefined {
+    if (!activitySignal) return requestSignal ?? undefined;
+    if (!requestSignal) return activitySignal;
+    return AbortSignal.any([requestSignal, activitySignal]);
+}
+
+function createWorkflowFetch(activitySignal?: AbortSignal): FETCH_FN {
+    return (input, init) => {
+        const requestSignal = input instanceof Request ? input.signal : (init?.signal ?? null);
+        return globalThis.fetch(input, {
+            ...init,
+            dispatcher: workflowDispatcher,
+            signal: combineSignals(requestSignal, activitySignal),
+        } as DispatcherRequestInit);
+    };
+}
 
 export function getVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>) {
     return new VertesiaClient(getVertesiaClientOptions(payload));
@@ -41,8 +69,11 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
 
     let requestSequence = 0;
     let requestPrefix: string | undefined;
+    let activitySignal: AbortSignal | undefined;
     try {
-        const info = activityInfo();
+        const context = Context.current();
+        const info = context.info;
+        activitySignal = context.cancellationSignal;
         const execution = info.workflowExecution;
         if (execution) {
             requestPrefix = `workflow:${execution.workflowId}:${execution.runId}:${info.activityId}`;
@@ -57,6 +88,7 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
         tokenServerUrl: token.iss,
         apikey: payload.auth_token,
         timeout: parseWorkflowFetchTimeoutMs(),
+        fetch: createWorkflowFetch(activitySignal),
         ...(requestPrefix
             ? {
                   onRequest: (request: Request) => {

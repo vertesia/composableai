@@ -1,7 +1,7 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import ReactCalendar from 'react-calendar';
+import dayjs from '../../../../utils/dayjs.js';
 import { Button } from '../../button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { calendarStyles } from '../filter-styles';
