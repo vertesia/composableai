@@ -167,6 +167,17 @@ export const ToolInspectionSchema = z
         input_schema: JSONSchemaSchema.optional().meta({
             description: 'Exact input schema when the provider supplied one. Omitted rather than fabricated.',
         }),
+        output_schema: JSONSchemaSchema.optional().meta({
+            description:
+                'MCP outputSchema advertised by the provider. It does not describe the process node result transport.',
+        }),
+        output_contract_status: z
+            .enum(['provider_supplied', 'unknown'])
+            .meta({
+                description:
+                    'For app tools, whether the provider advertised output schema metadata. Omitted for builtin and interaction tools.',
+            })
+            .optional(),
         approval_class: AgentToolApprovalClassSchema.optional(),
         annotations: MCPToolAnnotationsSchema.optional(),
         app_install_id: z.string().optional(),

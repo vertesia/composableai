@@ -13619,6 +13619,18 @@
         "$ref": "#/components/schemas/JSONSchema",
         "description": "Exact input schema when the provider supplied one. Omitted rather than fabricated."
       },
+      "output_schema": {
+        "$ref": "#/components/schemas/JSONSchema",
+        "description": "MCP outputSchema advertised by the provider. It does not describe the process node result transport."
+      },
+      "output_contract_status": {
+        "type": "string",
+        "enum": [
+          "provider_supplied",
+          "unknown"
+        ],
+        "description": "For app tools, whether the provider advertised output schema metadata. Omitted for builtin and interaction tools."
+      },
       "approval_class": {
         "$ref": "#/components/schemas/AgentToolApprovalClass"
       },
@@ -16801,6 +16813,11 @@
       "input_schema": {
         "type": "object",
         "additionalProperties": true
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Optional MCP outputSchema advertised by the provider for its structuredContent payload. Execution adapters may expose results differently."
       },
       "url": {
         "type": "string",
