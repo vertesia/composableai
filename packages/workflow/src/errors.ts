@@ -81,6 +81,12 @@ export class InvalidContentTypeError extends ApplicationFailure {
     }
 }
 
+export class ImageConversionError extends ApplicationFailure {
+    constructor(message: string, cause?: Error) {
+        super(message, 'ImageConversionError', true, undefined, cause);
+    }
+}
+
 export class TokenExpiredError extends ApplicationFailure {
     constructor(
         public statusCode: number,
@@ -113,6 +119,7 @@ export const WF_NON_RETRYABLE_ERRORS = [
     'ActivityParamNotFoundError',
     'WorkflowParamNotFoundError',
     'InvalidContentTypeError',
+    'ImageConversionError',
     'TokenExpiredError',
     'ZenoClientNotFoundError',
     'WorkflowExecutionError',
