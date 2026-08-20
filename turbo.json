@@ -18,6 +18,11 @@
     "typecheck:test": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "gen:schemas": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": false
     }
   }
 }

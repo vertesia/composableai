@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Pre-push hook:
+# - Verifies the committed schema artifacts in packages/common are not stale.
+#
+# `@vertesia/common`'s Zod registry is the authored source; the JSON/TS artifacts under
+# src/api-contract and src/store are its emitted output and are committed. When they drift,
+# components.contract.test.ts fails in CI, which is a slow way to learn you forgot
+# `pnpm run gen:schemas`. Catch it before the push instead.
+
+set -euo pipefail
+
+hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$hook_dir/.." && pwd)"
+cd "$repo_root"
+
+# The generator runs through tsx over ../src and reads @llumiverse/common from its built lib,
+# so it needs an installed workspace. A standalone clone without node_modules cannot run it.
+if [ ! -d node_modules ]; then
+    echo "[pre-push] node_modules not found; skipping the schema check."
+    echo "[pre-push] Run 'pnpm install' to enable it, or rely on CI."
+    exit 0
+fi
+
+echo "Checking the committed schemas in packages/common are up to date..."
+if ! pnpm --dir packages/common run check:pre-push; then
+    echo ""
+    echo "ERROR: the committed schema artifacts are stale."
+    echo "The generator has already refreshed them in your working tree; review and commit:"
+    echo "  git add packages/common/src/api-contract/components.generated.json \\"
+    echo "          packages/common/src/store/intake-policy-schema.generated.ts \\"
+    echo "          packages/common/src/store/editing-policy-schema.generated.ts"
+    echo "  git commit -m 'chore: regenerate schemas'"
+    echo ""
+    echo "Push with --no-verify to skip this check."
+    exit 1
+fi
