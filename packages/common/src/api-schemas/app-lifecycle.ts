@@ -442,6 +442,12 @@ export const AgentToolDefinitionSchema = z
         // component publishes `true`. They accept identical values, but the name is still derived
         // through `AppPackage`, so this reproduces the published form exactly.
         input_schema: openObjectSchema,
+        output_schema: openObjectSchema
+            .meta({
+                description:
+                    'Optional MCP outputSchema advertised by the provider for its structuredContent payload. Execution adapters may expose results differently.',
+            })
+            .optional(),
         url: z
             .string()
             .meta({
