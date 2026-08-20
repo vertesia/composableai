@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
     useFileProcessing: vi.fn(),
     getActiveWorkstreams: vi.fn(),
     retrieve: vi.fn(),
+    uploadArtifact: vi.fn(),
 }));
 
 vi.mock('@vertesia/ui/session', () => ({
@@ -32,6 +33,7 @@ vi.mock('@vertesia/ui/session', () => ({
                 sendSignal: mocks.sendSignal,
                 getActiveWorkstreams: mocks.getActiveWorkstreams,
                 retrieve: mocks.retrieve,
+                uploadArtifact: mocks.uploadArtifact,
             },
         },
         project: undefined,
@@ -263,6 +265,10 @@ describe('ModernAgentConversation send handling', () => {
         mocks.sendSignal.mockResolvedValue({});
         mocks.getActiveWorkstreams.mockResolvedValue({ running: [] });
         mocks.retrieve.mockResolvedValue({ disabled_mcp_collections: undefined });
+        mocks.uploadArtifact.mockResolvedValue({
+            path: 'files/report.pdf',
+            url: 'https://example.test/upload',
+        });
         mocks.useAgentPlans.mockReturnValue({
             plans: [],
             activePlanIndex: 0,
@@ -578,6 +584,53 @@ describe('ModernAgentConversation send handling', () => {
                 tool_approval_mode: 'auto_review',
             });
         });
+    });
+
+    it('waits for platform processing instead of declaring staged uploads ready', async () => {
+        const startWorkflow = vi.fn().mockResolvedValue({ agent_run_id: 'new-agent-run' });
+        mockStreamState({
+            messages: [],
+            isCompleted: false,
+            initialHistoryStatus: 'loading',
+            agentRunStatus: 'RUNNING',
+        });
+        const { container } = renderWithProviders(
+            <ModernAgentConversation startWorkflow={startWorkflow} hideHeader initialMessage="" />,
+        );
+        const input = container.querySelector('input[type="file"]');
+        if (!input) {
+            throw new Error('Expected hidden file input to be rendered');
+        }
+
+        fireEvent.change(input, {
+            target: {
+                files: [new File(['statement'], 'statement.pdf', { type: 'application/pdf' })],
+            },
+        });
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Process this statement' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+
+        await waitFor(() => {
+            expect(mocks.uploadArtifact).toHaveBeenCalledWith('new-agent-run', 'files/statement.pdf', expect.any(File));
+            expect(mocks.sendSignal).toHaveBeenCalledWith(
+                'new-agent-run',
+                'FileUploaded',
+                expect.objectContaining({
+                    name: 'statement.pdf',
+                    artifact_path: 'files/statement.pdf',
+                }),
+            );
+        });
+
+        expect(startWorkflow).toHaveBeenCalledWith(
+            expect.stringContaining("Please wait for the platform's file-processing ready notification"),
+            { tool_approval_mode: 'full_control' },
+        );
+        expect(mocks.sendSignal).not.toHaveBeenCalledWith(
+            'new-agent-run',
+            'UserInput',
+            expect.objectContaining({ metadata: expect.objectContaining({ type: 'files_ready' }) }),
+        );
     });
 
     it('collapses staged files in the start composer', () => {
