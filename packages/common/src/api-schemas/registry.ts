@@ -700,7 +700,12 @@ import {
 import {
     AggregatedToolArraySchema,
     AggregatedToolSchema,
+    InspectProjectToolQuerySchema,
     ListProjectToolsQuerySchema,
+    ProcessToolCompatibilityReasonSchema,
+    ProcessToolCompatibilitySchema,
+    ToolInspectionSchema,
+    ToolRuntimeContextSchema,
     ToolSourceSchema,
     ToolValidationResultSchema,
     ValidateToolNamesPayloadSchema,
@@ -1843,12 +1848,17 @@ const PROJECT_TOOL_SCHEMAS = {
     // The unified project-scoped tool registry: what `GET /tools` aggregates across
     // builtins, installed apps and interactions, and what `POST /tools/validate` resolves.
     ToolSource: ToolSourceSchema,
+    ToolRuntimeContext: ToolRuntimeContextSchema,
+    ProcessToolCompatibilityReason: ProcessToolCompatibilityReasonSchema,
+    ProcessToolCompatibility: ProcessToolCompatibilitySchema,
     ValidateToolNamesPayload: ValidateToolNamesPayloadSchema,
     ToolValidationResult: ToolValidationResultSchema,
     AggregatedTool: AggregatedToolSchema,
     ValidateToolNamesResponse: ValidateToolNamesResponseSchema,
     AggregatedToolArray: AggregatedToolArraySchema,
     ListProjectToolsQuery: ListProjectToolsQuerySchema,
+    InspectProjectToolQuery: InspectProjectToolQuerySchema,
+    ToolInspection: ToolInspectionSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const REMOTE_MCP_SCHEMAS = {
@@ -3067,6 +3077,11 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ValidateToolNamesPayload',
     'ToolValidationResult',
     'AggregatedTool',
+    'ToolRuntimeContext',
+    'ProcessToolCompatibilityReason',
+    'ProcessToolCompatibility',
+    'InspectProjectToolQuery',
+    'ToolInspection',
     'ValidateToolNamesResponse',
     'RenderPromptResponse',
     'PromptTemplateInteractionVersion',
