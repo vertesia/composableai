@@ -955,6 +955,7 @@ export const InteractionCreatePayloadSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
             description: 'Deprecated: This is deprecated. Use CompletionResult.type information instead.',
@@ -979,6 +980,7 @@ export const InteractionSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
             description: 'Deprecated: This is deprecated. Use CompletionResult.type information instead.',
@@ -1198,6 +1200,7 @@ export const InteractionUpdatePayloadSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
             description: 'Deprecated: This is deprecated. Use CompletionResult.type information instead.',
@@ -1583,8 +1586,10 @@ export const ExecutionRunRefSchema = z
             })
             .optional(),
         tags: z.array(z.string()).optional(),
-        environment: ExecutionEnvironmentRefSchema.meta({
-            description: 'Environment reference - populated with full object in API responses',
+        environment: z.union([ExecutionEnvironmentRefSchema, z.string(), z.null()]).meta({
+            description:
+                'Environment reference. API responses normally contain the populated environment object; the ' +
+                'stored environment ID or null is retained when the referenced environment no longer exists.',
         }),
         modelId: z.string().optional(),
         result_schema: JSONSchemaSchema.optional(),
@@ -1668,6 +1673,10 @@ export const ConversationStateSchema = z
         tool_reference: ToolReferenceSchema.meta({
             description: 'Reference to tools stored in GCP instead of embedding full tool definitions',
         }).optional(),
+        tool_catalog_storage_id: z
+            .string()
+            .meta({ description: 'Artifact-storage scope containing the referenced tool catalog.' })
+            .optional(),
         active_tool_names: z
             .array(z.string())
             .meta({

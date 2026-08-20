@@ -64,19 +64,16 @@ jobs:
         # once, and cap the step as a whole. `update` only refreshes lists the runner image
         # already ships, so a stalled refresh falls through to install rather than failing.
         #
-        # 90s is measured, not guessed. Sampled over 36 recent CI runs of an identical
-        # imagemagick + mupdf-tools apt install, the distribution is bimodal: a healthy mirror at
-        # 12-40s (median 18s) against a degraded one at 122-296s, with nothing at all in between.
-        # Any cap in the 60-120s band therefore cuts the same runs, and 90s sits in the middle of
-        # that gap. The retry is what makes cutting safe -- the degraded mode is transient, so
-        # attempt two normally lands back in the healthy mode instead of failing the job.
-        timeout-minutes: 5
+        # The first install attempt is deliberately short so a stalled mirror is retried quickly.
+        # The final attempt gets enough time to finish a slow but progressing download; using the
+        # same 90s cap for both attempts can discard progress twice and fail before tests start.
+        timeout-minutes: 9
         run: |
           APT_ACQUIRE="-o Acquire::Retries=3 -o Acquire::http::Timeout=15"
           sudo timeout 90 apt-get update $APT_ACQUIRE ||
             echo "apt-get update timed out or failed; continuing with the runner image's lists"
           sudo timeout 90 apt-get install -y $APT_ACQUIRE imagemagick mupdf-tools ||
-            sudo timeout 90 apt-get install -y $APT_ACQUIRE imagemagick mupdf-tools
+            sudo timeout 300 apt-get install -y $APT_ACQUIRE imagemagick mupdf-tools
         shell: bash
       - name: Install workspace dependencies
         timeout-minutes: 5

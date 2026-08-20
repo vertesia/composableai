@@ -4,10 +4,21 @@ import {
     AsyncConversationExecutionPayloadSchema,
     ComputeRunFacetPayloadSchema,
     ComputeRunFacetsResponseSchema,
+    ConversationStateSchema,
+    ExecutionRunRefSchema,
     FindRunResultSchema,
     InCodeInteractionSchema,
+    InteractionCreatePayloadSchema,
+    InteractionSchema,
+    InteractionUpdatePayloadSchema,
     ResolvedCatalogInteractionSchema,
 } from './interaction.js';
+
+describe('conversation state contract', () => {
+    it('publishes the tool catalog storage scope used to resolve tool references', () => {
+        expect(ConversationStateSchema.shape.tool_catalog_storage_id.safeParse('process-run-1').success).toBe(true);
+    });
+});
 
 describe('in-code interaction contract', () => {
     it('retains prompt schemas when resolving a catalog interaction', () => {
@@ -120,6 +131,11 @@ describe('run facet contracts', () => {
 });
 
 describe('run response contracts', () => {
+    it('retains an environment ID when a run references a deleted environment', () => {
+        expect(ExecutionRunRefSchema.shape.environment.parse('env-deleted')).toBe('env-deleted');
+        expect(ExecutionRunRefSchema.shape.environment.parse(null)).toBeNull();
+    });
+
     it('models the arbitrary stored-field projection returned by /runs/find', () => {
         expect(
             FindRunResultSchema.parse({
@@ -148,5 +164,13 @@ describe('run response contracts', () => {
                 total: 2,
             }),
         ).toMatchObject({ total: 2 });
+    });
+});
+
+describe('interaction contracts', () => {
+    it('accepts the media-result storage setting on interaction payloads and responses', () => {
+        expect(InteractionSchema.shape.store_media_results.parse(true)).toBe(true);
+        expect(InteractionCreatePayloadSchema.shape.store_media_results.parse(false)).toBe(false);
+        expect(InteractionUpdatePayloadSchema.shape.store_media_results.parse(true)).toBe(true);
     });
 });
