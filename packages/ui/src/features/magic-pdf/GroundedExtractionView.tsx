@@ -427,21 +427,19 @@ function GroundedExtractionViewImpl({
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
                         {totalCitations > 0 && (
-                            <button
-                                type="button"
-                                className="cursor-pointer"
+                            <Badge
+                                variant={allVerified ? 'success' : 'attention'}
+                                className="gap-1 text-nowrap cursor-pointer"
                                 onClick={() => setShowDetails((v) => !v)}
                                 aria-expanded={showDetails}
                                 title={t('grounded.confidenceHint')}
                             >
-                                <Badge variant={allVerified ? 'success' : 'attention'} className="gap-1 text-nowrap">
-                                    {allVerified ? <CheckCircle2 className="size-3.5" /> : <Eye className="size-3.5" />}
-                                    {t('grounded.verifiedOf', {
-                                        verified: breakdown.totalVerified,
-                                        total: totalCitations,
-                                    })}
-                                </Badge>
-                            </button>
+                                {allVerified ? <CheckCircle2 className="size-3.5" /> : <Eye className="size-3.5" />}
+                                {t('grounded.verifiedOf', {
+                                    verified: breakdown.totalVerified,
+                                    total: totalCitations,
+                                })}
+                            </Badge>
                         )}
                         <Popover hover>
                             <PopoverTrigger>
