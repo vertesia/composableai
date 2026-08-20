@@ -27,7 +27,6 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { GroundedExtractionAssistantPanel } from './GroundedExtractionAssistantPanel';
 
 const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
 
@@ -173,7 +172,6 @@ export function GroundedExtractionPanel({ objectId, onClose }: GroundedExtractio
         data: extraction,
         error,
         isLoading,
-        refetch,
     } = useFetch<GroundedExtractionFile>(async () => {
         const response = await client.files.getDownloadUrl(
             `${ADVANCED_PROCESSING_PREFIX}/${objectId}/grounded-extraction.json`,
@@ -210,12 +208,7 @@ export function GroundedExtractionPanel({ objectId, onClose }: GroundedExtractio
 
     return (
         <div className="relative h-full">
-            <GroundedExtractionViewImpl
-                extraction={extraction}
-                objectId={objectId}
-                onClose={onClose}
-                onExtractionChanged={refetch}
-            />
+            <GroundedExtractionViewImpl extraction={extraction} objectId={objectId} onClose={onClose} />
         </div>
     );
 }
@@ -235,12 +228,10 @@ function GroundedExtractionViewImpl({
     extraction,
     objectId,
     onClose,
-    onExtractionChanged,
 }: {
     extraction: GroundedExtractionFile;
     objectId: string;
     onClose?: () => void;
-    onExtractionChanged?: () => void;
 }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -265,7 +256,6 @@ function GroundedExtractionViewImpl({
     const [showBreakdown, setShowBreakdown] = useState(false);
     const [showVerdict, setShowVerdict] = useState(false);
     const [pageImageMode, setPageImageMode] = useState<PageImageMode>('original');
-    const [assistantOpen, setAssistantOpen] = useState(false);
 
     const breakdown = useMemo(() => {
         const groups = { digital: 0, ocr: 0, reviewerConfirmed: 0, snapped: 0, imageRead: 0 };
@@ -418,16 +408,6 @@ function GroundedExtractionViewImpl({
                 <div className="flex h-9 items-center justify-between shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
-                        <VTooltip description={t('grounded.assistantTooltip')} placement="bottom" size="xs" asChild>
-                            <Button
-                                variant={assistantOpen ? 'primary' : 'ghost'}
-                                size="xs"
-                                aria-label={t('grounded.assistant')}
-                                onClick={() => setAssistantOpen((v) => !v)}
-                            >
-                                <Sparkles className="size-4" />
-                            </Button>
-                        </VTooltip>
                         {extraction.verdict && (
                             <button
                                 type="button"
@@ -666,19 +646,6 @@ function GroundedExtractionViewImpl({
                     )}
                 </div>
             </ResizablePanel>
-            {assistantOpen && (
-                <>
-                    <ResizableHandle className="w-[4px] bg-border cursor-ew-resize" />
-                    <ResizablePanel defaultSize={30} minSize={20} className="flex flex-col border-s border-border">
-                        <GroundedExtractionAssistantPanel
-                            objectId={objectId}
-                            onExtractionChanged={onExtractionChanged}
-                            selectedField={selectedPath}
-                            onClose={() => setAssistantOpen(false)}
-                        />
-                    </ResizablePanel>
-                </>
-            )}
         </ResizablePanelGroup>
     );
 }
