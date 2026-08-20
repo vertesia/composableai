@@ -270,8 +270,7 @@ function GroundedExtractionViewImpl({
         [t, page],
     );
     const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
-    const [showBreakdown, setShowBreakdown] = useState(false);
-    const [showVerdict, setShowVerdict] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
     const [pageImageMode, setPageImageMode] = useState<PageImageMode>('original');
 
     const breakdown = useMemo(() => {
@@ -321,6 +320,7 @@ function GroundedExtractionViewImpl({
     }, [extraction.citations]);
 
     const totalCitations = extraction.citations.length;
+    const allVerified = breakdown.totalVerified === totalCitations;
 
     const selectPath = (path: string) => {
         setSelectedPath(path);
@@ -425,91 +425,23 @@ function GroundedExtractionViewImpl({
                 <div className="flex h-9 items-center justify-between shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
-                        {extraction.verdict && (
+                        {totalCitations > 0 && (
                             <button
                                 type="button"
                                 className="cursor-pointer"
-                                onClick={() => setShowVerdict((v) => !v)}
-                                aria-expanded={showVerdict}
-                                aria-label={t('grounded.verdictDetails')}
+                                onClick={() => setShowDetails((v) => !v)}
+                                aria-expanded={showDetails}
+                                title={t('grounded.confidenceHint')}
                             >
-                                <Badge variant={extraction.verdict === 'good_to_go' ? 'success' : 'attention'}>
-                                    {extraction.verdict === 'good_to_go'
-                                        ? t('grounded.verdictGoodToGo')
-                                        : t('grounded.verdictNeedsReview')}
+                                <Badge variant={allVerified ? 'success' : 'attention'} className="gap-1 text-nowrap">
+                                    {allVerified ? <CheckCircle2 className="size-3.5" /> : <Eye className="size-3.5" />}
+                                    {t('grounded.verifiedOf', {
+                                        verified: breakdown.totalVerified,
+                                        total: totalCitations,
+                                    })}
                                 </Badge>
                             </button>
                         )}
-                        {typeof extraction.hardness?.score === 'number' && (
-                            <Badge
-                                variant={
-                                    extraction.hardness.score >= 0.5
-                                        ? 'attention'
-                                        : extraction.hardness.score >= 0.2
-                                          ? 'info'
-                                          : 'secondary'
-                                }
-                                title={t('grounded.hardnessHint')}
-                            >
-                                {t('grounded.hardness', {
-                                    percent: Math.round(extraction.hardness.score * 100),
-                                })}
-                                {extraction.hardness.escalated ? ' ↑' : ''}
-                            </Badge>
-                        )}
-                        {extraction.citations.length > 0 &&
-                            (() => {
-                                // Real verification: fraction of values actually confirmed —
-                                // digitally (verbatim/OCR match) OR by the reviewer against the
-                                // image. NOT mean confidence, which scores image-read values high
-                                // even when nothing was verified (e.g. 98% "confidence" on 2/64).
-                                const verifiedPct = Math.round(
-                                    (100 * breakdown.totalVerified) / extraction.citations.length,
-                                );
-                                return (
-                                    <Badge
-                                        variant={
-                                            verifiedPct >= 95
-                                                ? 'success'
-                                                : verifiedPct >= 50
-                                                  ? 'attention'
-                                                  : 'destructive'
-                                        }
-                                        title={t('grounded.confidenceHint')}
-                                    >
-                                        {t('grounded.confidence', { percent: verifiedPct })}
-                                    </Badge>
-                                );
-                            })()}
-                        <button
-                            type="button"
-                            className="flex cursor-pointer items-center gap-1"
-                            onClick={() => setShowBreakdown((v) => !v)}
-                            aria-expanded={showBreakdown}
-                            aria-label={t('grounded.breakdownTitle')}
-                        >
-                            {breakdown.digitallyVerified > 0 && (
-                                <Badge variant="success" title={t('grounded.digitalVerifiedHint')}>
-                                    {t('grounded.digitalVerifiedOf', {
-                                        count: breakdown.digitallyVerified,
-                                        total: totalCitations,
-                                    })}
-                                </Badge>
-                            )}
-                            {breakdown.modelVerified > 0 && (
-                                <Badge variant="success" title={t('grounded.modelVerifiedHint')}>
-                                    {t('grounded.modelVerifiedOf', {
-                                        count: breakdown.modelVerified,
-                                        total: totalCitations,
-                                    })}
-                                </Badge>
-                            )}
-                            {breakdown.groups.imageRead > 0 && (
-                                <Badge variant="attention" title={t('grounded.unverifiedHint')}>
-                                    {t('grounded.unverifiedCount', { count: breakdown.groups.imageRead })}
-                                </Badge>
-                            )}
-                        </button>
                         <Popover hover>
                             <PopoverTrigger>
                                 <Button
@@ -549,47 +481,7 @@ function GroundedExtractionViewImpl({
                         )}
                     </div>
                 </div>
-                {showVerdict && extraction.verdict && (
-                    <div className="shrink-0 border-b border-border bg-background px-3 py-2 text-sm">
-                        <div className="flex items-center gap-2">
-                            <span
-                                className={cn(
-                                    'font-medium',
-                                    extraction.verdict === 'good_to_go' ? 'text-success' : 'text-attention',
-                                )}
-                            >
-                                {extraction.verdict === 'good_to_go'
-                                    ? t('grounded.verdictGoodToGo')
-                                    : t('grounded.verdictNeedsReview')}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                                {extraction.review
-                                    ? t('grounded.verdictByReviewer')
-                                    : t('grounded.verdictByConfidence')}
-                            </span>
-                        </div>
-                        {(extraction.verdict_reason ?? extraction.review?.verdict_reason) && (
-                            <p className="mt-1 text-xs">
-                                {extraction.verdict_reason ?? extraction.review?.verdict_reason}
-                            </p>
-                        )}
-                        {extraction.review?.summary && (
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                <span className="font-medium text-foreground">{t('grounded.reviewSummary')}: </span>
-                                {extraction.review.summary}
-                            </p>
-                        )}
-                        {typeof extraction.review?.corrections_applied === 'number' &&
-                            extraction.review.corrections_applied > 0 && (
-                                <p className="mt-1 text-xs text-info">
-                                    {t('grounded.reviewCorrections', {
-                                        count: extraction.review.corrections_applied,
-                                    })}
-                                </p>
-                            )}
-                    </div>
-                )}
-                {showBreakdown && (
+                {showDetails && (
                     <div className="shrink-0 border-b border-border bg-background px-3 py-2 text-sm max-h-72 overflow-auto">
                         <div className="font-medium mb-1">{t('grounded.breakdownTitle')}</div>
                         <div className="grid grid-cols-2 gap-x-4 text-xs">
@@ -626,6 +518,33 @@ function GroundedExtractionViewImpl({
                             )}
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">{t('grounded.breakdownVerificationHelp')}</p>
+                        {typeof extraction.hardness?.score === 'number' && (
+                            <p className="mt-2 text-xs text-muted-foreground" title={t('grounded.hardnessHint')}>
+                                {t('grounded.hardness', {
+                                    percent: Math.round(extraction.hardness.score * 100),
+                                })}
+                                {extraction.hardness.escalated ? ' ↑' : ''}
+                            </p>
+                        )}
+                        {(extraction.verdict_reason ?? extraction.review?.verdict_reason) && (
+                            <p className="mt-2 text-xs">
+                                {extraction.verdict_reason ?? extraction.review?.verdict_reason}
+                            </p>
+                        )}
+                        {extraction.review?.summary && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                <span className="font-medium text-foreground">{t('grounded.reviewSummary')}: </span>
+                                {extraction.review.summary}
+                            </p>
+                        )}
+                        {typeof extraction.review?.corrections_applied === 'number' &&
+                            extraction.review.corrections_applied > 0 && (
+                                <p className="mt-1 text-xs text-info">
+                                    {t('grounded.reviewCorrections', {
+                                        count: extraction.review.corrections_applied,
+                                    })}
+                                </p>
+                            )}
                         {breakdown.unverified.length > 0 && (
                             <div className="mt-2">
                                 <div className="text-xs font-medium text-muted-foreground mb-1">
@@ -639,7 +558,7 @@ function GroundedExtractionViewImpl({
                                                 className="w-full text-start text-xs rounded px-1 py-0.5 hover:bg-muted cursor-pointer"
                                                 onClick={() => {
                                                     selectPath(c.path);
-                                                    setShowBreakdown(false);
+                                                    setShowDetails(false);
                                                 }}
                                             >
                                                 <span className="text-muted-foreground">{c.path}</span>{' '}
