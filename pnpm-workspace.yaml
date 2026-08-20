@@ -34,12 +34,12 @@ minimumReleaseAgeExclude:
 catalog:
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
-  react: "19.2.7"
-  react-dom: "19.2.7"
+  react: "19.2.8"
+  react-dom: "19.2.8"
   "@types/node": "^24.13.3"
-  "@types/react": "19.2.17"
-  "@types/react-dom": "19.2.3"
-  vite: "8.1.4"
+  "@types/react": "19.2.18"
+  "@types/react-dom": "19.2.4"
+  vite: "8.2.1"
   rolldown: "1.2.4"
 overrides:
   # ============================
