@@ -62,7 +62,7 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
         setUpdating(true);
         store.types
             .update(objectType.id, {
-                expected_edit_revision: objectType.edit_revision ?? 1,
+                ...(objectType.edit_revision === undefined ? {} : { expected_edit_revision: objectType.edit_revision }),
                 table_layout,
             })
             .then((response) => {

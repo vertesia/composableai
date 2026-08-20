@@ -348,7 +348,9 @@ export function IntakePolicyEditor({
                       store.types
                           .update(objectType.id, {
                               intake: next,
-                              expected_edit_revision: objectType.edit_revision ?? 1,
+                              ...(objectType.edit_revision === undefined
+                                  ? {}
+                                  : { expected_edit_revision: objectType.edit_revision }),
                           })
                           .then((response) => {
                               objectType.edit_revision = response.edit_revision;

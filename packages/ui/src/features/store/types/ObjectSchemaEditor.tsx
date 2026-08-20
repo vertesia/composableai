@@ -37,7 +37,7 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
         store.types
             .update(objectType.id, {
                 object_schema: schema.schema,
-                expected_edit_revision: objectType.edit_revision ?? 1,
+                ...(objectType.edit_revision === undefined ? {} : { expected_edit_revision: objectType.edit_revision }),
             })
             .then((response) => {
                 objectType.edit_revision = response.edit_revision;
