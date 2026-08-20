@@ -232,4 +232,42 @@ describe('useFileProcessing', () => {
 
         expect(result.current.processingFiles.has('file-1')).toBe(false);
     });
+
+    it('drops a staged local entry when the server marks that file consumed', async () => {
+        const client = createClient();
+        const toast = vi.fn();
+        const { result, rerender } = renderHook(
+            ({ updates }) => useFileProcessing(client, 'agent-run-1', updates, toast),
+            { initialProps: { updates: new Map<string, ConversationFile>() } },
+        );
+
+        const file = new File(['pdf'], 'report.pdf', { type: 'application/pdf' });
+        await act(async () => {
+            await result.current.handleFileUpload([file]);
+        });
+        const [fileId] = Array.from(result.current.processingFiles.entries())[0];
+        expect(result.current.processingFiles.has(fileId)).toBe(true);
+
+        // The turn was consumed elsewhere (another tab, or an agent-initiated turn), so
+        // clearProcessingFiles() never ran here and the optimistic entry is still staged.
+        // Merging local first means skipping the server update is not enough to hide it.
+        rerender({
+            updates: new Map<string, ConversationFile>([
+                [
+                    fileId,
+                    {
+                        id: fileId,
+                        name: 'report.pdf',
+                        content_type: 'application/pdf',
+                        size: 0,
+                        status: FileProcessingStatus.READY,
+                        started_at: 1_000,
+                        consumed_at: 1_100,
+                    },
+                ],
+            ]),
+        });
+
+        expect(result.current.processingFiles.has(fileId)).toBe(false);
+    });
 });

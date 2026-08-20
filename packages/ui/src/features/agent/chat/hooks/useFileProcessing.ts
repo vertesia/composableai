@@ -113,7 +113,15 @@ export function useFileProcessing(
             // consumed_at is the workflow's authoritative delivered marker. Filter it here in
             // addition to message-history refs: older runs may lack the marker, while some
             // server-originated messages may not preserve the rendered attachment block.
-            if (!removedFileIds.has(id) && !file.consumed_at) {
+            if (file.consumed_at) {
+                // Drop any optimistic local entry as well. clearProcessingFiles() normally
+                // retires it when this client sends the message, but a turn consumed
+                // elsewhere (another tab, or an agent-initiated turn) leaves this session's
+                // chip staged. Skipping the server update alone would keep it visible.
+                merged.delete(id);
+                return;
+            }
+            if (!removedFileIds.has(id)) {
                 // Server updates are authoritative for status, but may omit fields the local
                 // optimistic entry already knows: preview_url is never sent by the server, and
                 // artifact_path/reference can be absent on some updates. Backfill them from local
