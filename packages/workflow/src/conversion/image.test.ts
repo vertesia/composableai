@@ -35,13 +35,30 @@ beforeAll(async () => {
     animatedFixturesDir = fixtureDir.path;
     cleanupAnimatedFixtures = fixtureDir.cleanup;
 
-    const sourceArgs = ['-delay', '10', '-size', '24x12', 'xc:red', '-size', '12x24', 'xc:blue', '-loop', '0'];
+    // Animated WebP requires a consistent canvas size in ImageMagick 6, which is used by CI.
+    const sourceArgs = ['-delay', '10', '-size', '24x12', 'xc:red', 'xc:blue', '-loop', '0'];
 
     await Promise.all(
         animatedRenditionCases.map(({ sourceFile }) =>
             execFileAsync('convert', [...sourceArgs, path.join(animatedFixturesDir, sourceFile)]),
         ),
     );
+    await execFileAsync('convert', [
+        '-size',
+        '10x10',
+        'xc:red',
+        '-set',
+        'page',
+        '40x20+5+5',
+        '-delay',
+        '10',
+        '-size',
+        '40x20',
+        'xc:blue',
+        '-loop',
+        '0',
+        path.join(animatedFixturesDir, 'optimized.gif'),
+    ]);
     await fs.promises.writeFile(path.join(animatedFixturesDir, 'not-an-image.xml'), '<document />');
 });
 
@@ -192,6 +209,38 @@ describe('ImageMagick image resizing', () => {
             expect(parseInt(frameCount, 10)).toBe(1);
         } finally {
             await fs.promises.unlink(resizedImagePath);
+        }
+    });
+
+    test('should render an optimized GIF first frame on its logical canvas', async () => {
+        const resizedImagePath = await imageResizer(path.join(animatedFixturesDir, 'optimized.gif'), 20, 'png');
+
+        try {
+            const { stdout } = await execFileAsync('identify', ['-format', '%w %h %n', resizedImagePath]);
+            expect(stdout.trim()).toBe('20 10 1');
+
+            const { stdout: isRedDominant } = await execFileAsync('convert', [
+                resizedImagePath,
+                '-format',
+                '%[fx:mean.r>mean.b]',
+                'info:',
+            ]);
+            expect(isRedDominant.trim()).toBe('1');
+        } finally {
+            await fs.promises.unlink(resizedImagePath);
+        }
+    });
+
+    test('should preserve a retryable process failure when ImageMagick cannot start', async () => {
+        const originalPath = process.env.PATH;
+        process.env.PATH = animatedFixturesDir;
+
+        try {
+            await expect(imageResizer(path.join(animatedFixturesDir, 'animated.gif'), 16, 'png')).rejects.toMatchObject(
+                { code: 'ENOENT' },
+            );
+        } finally {
+            process.env.PATH = originalPath;
         }
     });
 

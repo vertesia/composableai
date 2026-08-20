@@ -7,6 +7,10 @@ import { ImageConversionError } from '../errors.js';
 
 const execFile = promisify(execFileCallback);
 
+function isCommandExitError(error: unknown): error is Error & { code: number } {
+    return error instanceof Error && 'code' in error && typeof error.code === 'number';
+}
+
 /**
  * Resizes an image to a maximum height or width using ImageMagick
  * with progressive loading when supported and colorspace correction
@@ -47,7 +51,7 @@ export async function imageResizer(
     try {
         // Check if input file exists
         if (!fs.existsSync(inputPath)) {
-            throw new Error(`Input file does not exist: ${inputPath}`);
+            throw new ImageConversionError(`Input file does not exist: ${inputPath}`);
         }
         // Validate max_hw
         if (!Number.isInteger(max_hw) || max_hw <= 0) {
@@ -82,6 +86,9 @@ export async function imageResizer(
         // expand into numbered sibling files while leaving the requested output path empty.
         // Keep the selector after the JPEG shrink-on-load optimization so ImageMagick can apply it while decoding.
         args.push(`${inputPath}[0]`);
+
+        // Expand optimized animation subframes onto their logical canvas before resizing.
+        args.push('-coalesce');
 
         // Apply EXIF orientation to pixels before stripping metadata or resizing.
         args.push('-auto-orient');
@@ -159,18 +166,28 @@ export async function imageResizer(
 
         // Verify output exists and has content
         if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size === 0) {
-            throw new Error(`ImageMagick conversion failed: output file not created or empty`);
+            throw new ImageConversionError(`ImageMagick conversion failed: output file not created or empty`);
         }
 
         return outputPath;
     } catch (error: unknown) {
-        // Clean up the temporary file
-        await cleanup();
+        try {
+            await cleanup();
+        } catch (cleanupError: unknown) {
+            log.warn('Failed to clean temporary image output after conversion failure', { cleanupError });
+        }
+
         const errorMessage = error instanceof Error ? error.message : String(error);
         log.error(`Image conversion failed: ${errorMessage}`);
-        throw new ImageConversionError(
-            `Image conversion failed: ${errorMessage}`,
-            error instanceof Error ? error : undefined,
-        );
+
+        if (error instanceof ImageConversionError) {
+            throw error;
+        }
+
+        if (!isCommandExitError(error)) {
+            throw error;
+        }
+
+        throw new ImageConversionError(`Image conversion failed: ${errorMessage}`, error);
     }
 }

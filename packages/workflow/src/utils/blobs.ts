@@ -55,7 +55,11 @@ export async function saveBlobToTempFile(client: VertesiaClient, blobUri: string
         await saveBlobToFile(client, blobUri, tmpFile.name);
         return tmpFile.name;
     } catch (err: unknown) {
-        tmpFile.removeCallback();
+        try {
+            tmpFile.removeCallback();
+        } catch {
+            // Preserve the download failure, which is the actionable error for the caller.
+        }
         throw err;
     }
 }
