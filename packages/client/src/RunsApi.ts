@@ -1,10 +1,10 @@
 import type { ExecutionResponse } from '@llumiverse/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
-    BatchDispatchResult,
     BatchPollResult,
-    BatchPoolInfo,
     ComputeRunFacetPayload,
+    CreateInferenceBatchPayload,
+    CreateInferenceBatchResult,
     ExecutionRun,
     ExecutionRunDocRef,
     ExecutionRunRef,
@@ -59,11 +59,6 @@ export class RunsApi extends ApiTopic {
         return this.get('/', { query: query });
     }
 
-    /** List the pending batch-accumulator pools (`created` batch runs grouped by env:model). */
-    batchPools(): Promise<BatchPoolInfo[]> {
-        return this.get('/batch-pools');
-    }
-
     /**
      * List submitted inference batches, most recent first, optionally filtered by status.
      * Returns at most `limit` batches (default 200, max 1000); page with `offset`.
@@ -72,9 +67,9 @@ export class RunsApi extends ApiTopic {
         return this.get('/batches', { query });
     }
 
-    /** Explicitly submit all currently pending batch pools to their providers. */
-    dispatchBatches(): Promise<BatchDispatchResult[]> {
-        return this.post('/batch-pools/dispatch');
+    /** Create runs from the given items and submit them as provider batch jobs. */
+    createBatch(payload: CreateInferenceBatchPayload): Promise<CreateInferenceBatchResult> {
+        return this.post('/batches', { payload });
     }
 
     /** Explicitly poll all non-terminal provider batches and finalize completed runs. */

@@ -42,7 +42,7 @@ export const ExecutionRunStatusSchema = z.enum(ExecutionRunStatus).meta({ id: 'E
 
 export const ExecutionModeSchema = z.enum(ExecutionMode).meta({
     id: 'ExecutionMode',
-    description: 'Explicit provider batch routing mode for an interaction execution.',
+    description: 'Whether an interaction execution runs immediately or as part of a provider batch.',
 });
 
 export const InferenceBatchStatusSchema = z.enum(InferenceBatchStatus).meta({ id: 'InferenceBatchStatus' });
@@ -68,40 +68,6 @@ export const InferenceBatchSchema = z
 
 export const InferenceBatchArraySchema = z.array(InferenceBatchSchema).meta({ id: 'InferenceBatchArray' });
 
-export const BatchPoolInfoSchema = z
-    .strictObject({
-        environment: z.string(),
-        model: z.string(),
-        size: z.number().int(),
-        oldest_age_ms: z.number().int(),
-        batch_only: z.number().int(),
-        batch_preferred: z.number().int(),
-    })
-    .meta({ id: 'BatchPoolInfo', description: 'A pending provider batch pool grouped by environment and model.' });
-
-export const BatchPoolInfoArraySchema = z.array(BatchPoolInfoSchema).meta({ id: 'BatchPoolInfoArray' });
-
-export const BatchFlushReasonSchema = z
-    .enum(['volume', 'load', 'max_wait', 'accumulating', 'job_pool_full'])
-    .meta({ id: 'BatchFlushReason' });
-
-export const BatchDispatchResultSchema = z
-    .strictObject({
-        environment: z.string(),
-        model: z.string(),
-        reason: BatchFlushReasonSchema,
-        batched: z.number().int(),
-        synchronous: z.number().int().optional(),
-        batch_id: z.string().optional(),
-        job_id: z.string().optional(),
-        error: z.string().optional(),
-    })
-    .meta({ id: 'BatchDispatchResult' });
-
-export const BatchDispatchResultArraySchema = z
-    .array(BatchDispatchResultSchema)
-    .meta({ id: 'BatchDispatchResultArray' });
-
 export const BatchPollResultSchema = z
     .strictObject({
         batch_id: z.string(),
@@ -126,28 +92,6 @@ export const ListInferenceBatchesQuerySchema = z
         offset: z.number().int().min(0).meta({ description: 'Number of batches to skip.' }).optional(),
     })
     .meta({ id: 'ListInferenceBatchesQuery' });
-
-export const BatchReconcileRequestSchema = z
-    .strictObject({
-        account_id: z.string(),
-        project_id: z.string(),
-        max_pools: z.number().int().min(1).max(100).optional(),
-        max_batches: z.number().int().min(1).max(100).optional(),
-    })
-    .meta({ id: 'BatchReconcileRequest' });
-
-export const BatchReconcileResponseSchema = z
-    .strictObject({
-        dispatched: z.number().int(),
-        synchronous: z.number().int(),
-        polled: z.number().int(),
-        completed: z.number().int(),
-        failed: z.number().int(),
-        errors: z.number().int(),
-        has_more_work: z.boolean(),
-        next_poll_after_ms: z.number().int().optional(),
-    })
-    .meta({ id: 'BatchReconcileResponse' });
 
 export const FacetSpecSchema = z
     .strictObject({
@@ -2008,7 +1952,7 @@ export const NamedInteractionExecutionPayloadSchema = z
         }).optional(),
         execution_mode: ExecutionModeSchema.meta({
             description:
-                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
+                'Omit or set `direct` to execute immediately. Provider batches are submitted with POST /runs/batches.',
         }).optional(),
         interaction: z.string().meta({
             description:
@@ -2058,7 +2002,7 @@ export const InteractionExecutionPayloadSchema = z
         }).optional(),
         execution_mode: ExecutionModeSchema.meta({
             description:
-                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
+                'Omit or set `direct` to execute immediately. Provider batches are submitted with POST /runs/batches.',
         }).optional(),
     })
     .meta({ id: 'InteractionExecutionPayload' });
@@ -2361,7 +2305,7 @@ export const RunCreatePayloadSchema = z
         }).optional(),
         execution_mode: ExecutionModeSchema.meta({
             description:
-                'Explicit batch routing mode. Omit for direct execution; batch modes park the run until batch submission is requested.',
+                'Omit or set `direct` to execute immediately. Provider batches are submitted with POST /runs/batches.',
         }).optional(),
         interaction: z.string().meta({
             description:
@@ -2372,6 +2316,34 @@ export const RunCreatePayloadSchema = z
         id: 'RunCreatePayload',
         description:
             'Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run',
+    });
+
+export const CreateInferenceBatchPayloadSchema = z
+    .strictObject({
+        items: z
+            .array(RunCreatePayloadSchema)
+            .min(1)
+            .max(500)
+            .meta({
+                description:
+                    'Interaction executions to submit as provider batch jobs. Items that resolve to the same environment and model are submitted together; mixed targets produce multiple batches.',
+            }),
+    })
+    .meta({
+        id: 'CreateInferenceBatchPayload',
+        description: 'Submit interaction executions as one or more provider inference batches.',
+    });
+
+export const CreateInferenceBatchResultSchema = z
+    .strictObject({
+        batches: InferenceBatchArraySchema,
+        run_ids: z.array(z.string()).meta({
+            description: 'Created run ids in the same order as `items`.',
+        }),
+    })
+    .meta({
+        id: 'CreateInferenceBatchResult',
+        description: 'Provider batches created from an explicit batch submission, plus the member run ids.',
     });
 
 export const AsyncExecutionPayloadSchema = z

@@ -19,12 +19,9 @@ import type {
     AsyncExecutionPayloadSchema,
     AsyncExecutionResultSchema,
     AsyncInteractionExecutionPayloadSchema,
-    BatchDispatchResultSchema,
-    BatchFlushReasonSchema,
     BatchPollResultSchema,
-    BatchPoolInfoSchema,
-    BatchReconcileRequestSchema,
-    BatchReconcileResponseSchema,
+    CreateInferenceBatchPayloadSchema,
+    CreateInferenceBatchResultSchema,
     CachePolicySchema,
     CatalogInteractionRefSchema,
     ConversationStripOptionsSchema,
@@ -295,16 +292,13 @@ export enum ExecutionRunStatus {
 }
 
 /**
- * How an execution may be routed with respect to provider batch inference.
- * - `direct`: always run synchronously, never batched (real-time / near-line: agent uploads, manual drops).
- * - `batch_preferred`: batch when it pays off (enough volume or the env:model slot is saturated), otherwise sync.
- * - `batch_only`: force batch to guarantee the cost saving, even when alone (flushed after max_wait).
- * Batch requires the environment's provider to support a batch API; otherwise these fall back to sync.
+ * How an execution is sent to the provider.
+ * - `direct`: execute immediately.
+ * - `batch`: submitted as part of a provider batch via POST /runs/batches.
  */
 export enum ExecutionMode {
     direct = 'direct',
-    batch_preferred = 'batch_preferred',
-    batch_only = 'batch_only',
+    batch = 'batch',
 }
 
 /** Status of a submitted provider inference batch. */
@@ -320,17 +314,11 @@ export type InferenceBatch = z.infer<typeof InferenceBatchSchema>;
 
 export type ListInferenceBatchesQuery = z.infer<typeof ListInferenceBatchesQuerySchema>;
 
-export type BatchPoolInfo = z.infer<typeof BatchPoolInfoSchema>;
-
-export type BatchFlushReason = z.infer<typeof BatchFlushReasonSchema>;
-
-export type BatchDispatchResult = z.infer<typeof BatchDispatchResultSchema>;
-
 export type BatchPollResult = z.infer<typeof BatchPollResultSchema>;
 
-export type BatchReconcileRequest = z.infer<typeof BatchReconcileRequestSchema>;
+export type CreateInferenceBatchPayload = z.infer<typeof CreateInferenceBatchPayloadSchema>;
 
-export type BatchReconcileResponse = z.infer<typeof BatchReconcileResponseSchema>;
+export type CreateInferenceBatchResult = z.infer<typeof CreateInferenceBatchResultSchema>;
 /**
  * Schema can be stored or specified as a reference to an external schema.
  * We only support "store:" references for now
@@ -584,7 +572,7 @@ export interface BaseExecutionRun<P = unknown> {
     result_schema?: JSONSchema;
     ttl: number;
     status: ExecutionRunStatus;
-    /** Batch routing mode; when `batch_preferred`/`batch_only` the run is parked in `created` for the accumulator. */
+    /** `batch` when the run was submitted through POST /runs/batches; otherwise direct execution. */
     execution_mode?: ExecutionMode;
     /** Id of the accumulator batch this run was assigned to, once claimed. */
     batch_id?: string;
