@@ -36,12 +36,12 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
         const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', videoPath];
         const { stdout } = await execActivityFile('ffprobe', args);
         const metadata = JSON.parse(stdout.toString()) as {
-            streams?: Array<{ codec_type?: string; width?: number; height?: number }>;
+            streams?: Array<{ codec_type?: string; duration?: string; width?: number; height?: number }>;
             format?: { duration?: string };
         };
 
         const videoStream = metadata.streams?.find((stream) => stream.codec_type === 'video');
-        const duration = parseFloat(metadata.format?.duration ?? '') || 0;
+        const duration = resolveVideoDuration(videoStream?.duration, metadata.format?.duration);
         const width = videoStream?.width || 0;
         const height = videoStream?.height || 0;
 
@@ -62,6 +62,16 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
     }
 }
 
+export function resolveVideoDuration(videoStreamDuration?: string, containerDuration?: string): number {
+    for (const rawDuration of [videoStreamDuration, containerDuration]) {
+        const duration = Number(rawDuration);
+        if (Number.isFinite(duration) && duration > 0) {
+            return duration;
+        }
+    }
+    return 0;
+}
+
 export function calculateThumbnailTimestamps(duration: number, thumbnailCount: number): number[] {
     const startOffset = Math.min(duration * 0.05, 5);
     const endOffset = Math.min(duration * 0.05, 5);
@@ -71,6 +81,18 @@ export function calculateThumbnailTimestamps(duration: number, thumbnailCount: n
         const progress = (index + 1) / (thumbnailCount + 1);
         return startOffset + usableDuration * progress;
     });
+}
+
+export async function generateThumbnailsWithFallback(
+    timestamps: number[],
+    generateAt: (timestamp: number) => Promise<string | undefined>,
+): Promise<Array<string | undefined>> {
+    const thumbnails = await Promise.all(timestamps.map(generateAt));
+    if (thumbnails.some((thumbnail) => thumbnail !== undefined) || timestamps.includes(0)) {
+        return thumbnails;
+    }
+
+    return [...thumbnails, await generateAt(0)];
 }
 
 export function requireGeneratedThumbnails(thumbnails: Array<string | undefined>, objectId: string): string[] {
@@ -211,10 +233,8 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
 
         // Generate thumbnails using command line ffmpeg
         const generatedThumbnails = requireGeneratedThumbnails(
-            await Promise.all(
-                timestamps.map(async (timestamp) => {
-                    return await generateThumbnail(videoFile, outputDir, timestamp, params.max_hw);
-                }),
+            await generateThumbnailsWithFallback(timestamps, (timestamp) =>
+                generateThumbnail(videoFile, outputDir, timestamp, params.max_hw),
             ),
             objectId,
         );
