@@ -427,19 +427,20 @@ function GroundedExtractionViewImpl({
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
                         {totalCitations > 0 && (
-                            <Badge
-                                variant={allVerified ? 'success' : 'attention'}
-                                className="gap-1 text-nowrap cursor-pointer"
-                                onClick={() => setShowDetails((v) => !v)}
-                                aria-expanded={showDetails}
-                                title={t('grounded.confidenceHint')}
-                            >
-                                {allVerified ? <CheckCircle2 className="size-3.5" /> : <Eye className="size-3.5" />}
-                                {t('grounded.verifiedOf', {
-                                    verified: breakdown.totalVerified,
-                                    total: totalCitations,
-                                })}
-                            </Badge>
+                            <VTooltip description={t('grounded.confidenceHint')} placement="bottom" size="xs" asChild>
+                                <Badge
+                                    variant={allVerified ? 'success' : 'attention'}
+                                    className="gap-1 text-nowrap cursor-pointer"
+                                    onClick={() => setShowDetails((v) => !v)}
+                                    aria-expanded={showDetails}
+                                >
+                                    {allVerified ? <CheckCircle2 className="size-3.5" /> : <Eye className="size-3.5" />}
+                                    {t('grounded.verifiedOf', {
+                                        verified: breakdown.totalVerified,
+                                        total: totalCitations,
+                                    })}
+                                </Badge>
+                            </VTooltip>
                         )}
                         <Popover hover>
                             <PopoverTrigger>
@@ -648,33 +649,44 @@ function PageWithOverlay({
                     : `${citation.cells.start}:${citation.cells.end}`
                 : undefined;
             return (
-                <button
+                <VTooltip
                     key={`${citation.path}-${i}`}
-                    type="button"
-                    aria-label={citation.path}
-                    title={`${citation.path}${cellRange ? `\n${cellRange}` : ''}${citation.source_text ? `\n${citation.source_text}` : ''}`}
-                    onClick={() => onSelectPath(normalizeCitationPath(citation.path))}
-                    className={cn(
-                        'absolute cursor-pointer border rounded-[1px] transition-colors',
-                        citation.misaligned && 'border-dashed',
-                        isSelected
-                            ? 'border-2 border-primary bg-primary/20 z-10'
-                            : citation.verified
-                              ? 'border-success/70 hover:bg-success/20'
-                              : citation.reviewed
-                                ? 'border-info/70 hover:bg-info/20'
-                                : 'border-attention/80 hover:bg-attention/20',
-                    )}
-                    style={{
-                        // inline position: the app's button base styles override the
-                        // `absolute` utility class with position: relative
-                        position: 'absolute',
-                        left: `${(box.x / dims.width) * 100}%`,
-                        top: `${(box.y / dims.height) * 100}%`,
-                        width: `${(box.w / dims.width) * 100}%`,
-                        height: `${(box.h / dims.height) * 100}%`,
-                    }}
-                />
+                    description={
+                        <span className="flex flex-col gap-0.5">
+                            <span className="font-medium">{citation.path}</span>
+                            {cellRange && <span className="font-mono">{cellRange}</span>}
+                            {citation.source_text && <span>{citation.source_text}</span>}
+                        </span>
+                    }
+                    size="xs"
+                    asChild
+                >
+                    <button
+                        type="button"
+                        aria-label={citation.path}
+                        onClick={() => onSelectPath(normalizeCitationPath(citation.path))}
+                        className={cn(
+                            'absolute cursor-pointer border rounded-[1px] transition-colors',
+                            citation.misaligned && 'border-dashed',
+                            isSelected
+                                ? 'border-2 border-primary bg-primary/20 z-10'
+                                : citation.verified
+                                  ? 'border-success/70 hover:bg-success/20'
+                                  : citation.reviewed
+                                    ? 'border-info/70 hover:bg-info/20'
+                                    : 'border-attention/80 hover:bg-attention/20',
+                        )}
+                        style={{
+                            // inline position: the app's button base styles override the
+                            // `absolute` utility class with position: relative
+                            position: 'absolute',
+                            left: `${(box.x / dims.width) * 100}%`,
+                            top: `${(box.y / dims.height) * 100}%`,
+                            width: `${(box.w / dims.width) * 100}%`,
+                            height: `${(box.h / dims.height) * 100}%`,
+                        }}
+                    />
+                </VTooltip>
             );
         }),
     );
