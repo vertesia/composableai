@@ -11,6 +11,7 @@
             "!!**/llumiverse",
             "**/package.json",
             "**/*.{js,cjs,mjs,jsx,ts,tsx,css,html}",
+            "packages/ui/src/i18n/locales/*.json",
             "!**/dist/**",
             "!**/lib/**",
             "!**/node_modules/**",

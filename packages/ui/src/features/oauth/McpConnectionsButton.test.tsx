@@ -77,6 +77,14 @@ describe('MCP connection controls', () => {
                             namespace: 'github',
                             url: 'https://github-mcp.example.com',
                         },
+                        {
+                            type: 'mcp',
+                            id: 'api-key-tools',
+                            name: 'API Key Tools',
+                            namespace: 'api_key_tools',
+                            url: 'https://api-key-mcp.example.com',
+                            auth: 'api_key',
+                        },
                     ],
                 },
                 oauth_collection_ids: ['jira', 'miro', 'linear', 'github'],
@@ -107,6 +115,12 @@ describe('MCP connection controls', () => {
                 collection_name: 'GitHub',
                 mcp_server_url: 'https://github-mcp.example.com',
             },
+            {
+                authenticated: true,
+                collection_id: 'api-key-tools',
+                collection_name: 'API Key Tools',
+                mcp_server_url: 'https://api-key-mcp.example.com',
+            },
         ]);
         const onChange = vi.fn();
 
@@ -118,13 +132,16 @@ describe('MCP connection controls', () => {
         expect(screen.getByText('Miro')).not.toBeNull();
         expect(screen.getByText('Linear')).not.toBeNull();
         expect(screen.getByText('GitHub')).not.toBeNull();
+        expect(screen.getByText('API Key Tools')).not.toBeNull();
+        const apiKeyBadge = screen.getByText('API key');
+        expect(apiKeyBadge.className).toContain('w-32');
         expect(screen.queryByText('Connected')).toBeNull();
         expect(screen.getAllByRole('button', { name: 'Disconnect' })).toHaveLength(3);
         const connectButton = screen.getByRole('button', { name: 'Connect' });
         const disconnectButton = screen.getAllByRole('button', { name: 'Disconnect' })[0];
         expect(connectButton.className).toContain('w-32');
         expect(disconnectButton.className).toContain('w-32');
-        expect(screen.getAllByText('Enabled')).toHaveLength(3);
+        expect(screen.getAllByText('Enabled')).toHaveLength(4);
         expect(screen.getByText('Disabled')).not.toBeNull();
     });
 

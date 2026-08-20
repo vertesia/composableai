@@ -1,6 +1,67 @@
 import { describe, expect, it } from 'vitest';
 import type { AsyncConversationExecutionPayload } from '../interaction.js';
-import { AsyncConversationExecutionPayloadSchema } from './interaction.js';
+import {
+    AsyncConversationExecutionPayloadSchema,
+    ComputeRunFacetPayloadSchema,
+    ComputeRunFacetsResponseSchema,
+    ConversationStateSchema,
+    ExecutionRunRefSchema,
+    FindRunResultSchema,
+    InCodeInteractionSchema,
+    InteractionCreatePayloadSchema,
+    InteractionSchema,
+    InteractionUpdatePayloadSchema,
+    ResolvedCatalogInteractionSchema,
+} from './interaction.js';
+
+describe('conversation state contract', () => {
+    it('publishes the tool catalog storage scope used to resolve tool references', () => {
+        expect(ConversationStateSchema.shape.tool_catalog_storage_id.safeParse('process-run-1').success).toBe(true);
+    });
+});
+
+describe('in-code interaction contract', () => {
+    it('retains prompt schemas when resolving a catalog interaction', () => {
+        const interaction = InCodeInteractionSchema.parse({
+            type: 'sys',
+            id: 'sys:GeneralAgent',
+            name: 'GeneralAgent',
+            title: 'General Agent',
+            tags: ['agent'],
+            agent_runner_options: { is_agent: true, request_template: '{{user_prompt}}' },
+            prompts: [
+                {
+                    role: 'user',
+                    content: '{{user_prompt}}',
+                    content_type: 'handlebars',
+                    schema: {
+                        type: 'object',
+                        properties: { user_prompt: { type: 'string', editor: 'textarea' } },
+                    },
+                },
+            ],
+        });
+
+        expect(interaction.prompts[0]?.schema).toMatchObject({
+            properties: { user_prompt: { type: 'string' } },
+        });
+    });
+
+    it('requires normalized title and tags only on the resolved response', () => {
+        const authoringShape = {
+            type: 'sys',
+            id: 'sys:Untitled',
+            name: 'Untitled',
+            prompts: [],
+        };
+
+        expect(InCodeInteractionSchema.safeParse(authoringShape).success).toBe(true);
+        expect(ResolvedCatalogInteractionSchema.safeParse(authoringShape).success).toBe(false);
+        expect(
+            ResolvedCatalogInteractionSchema.safeParse({ ...authoringShape, title: 'Untitled', tags: [] }).success,
+        ).toBe(true);
+    });
+});
 
 describe('AsyncConversationExecutionPayload contract', () => {
     it('retains an immutable app-version execution target', () => {
@@ -23,5 +84,93 @@ describe('AsyncConversationExecutionPayload contract', () => {
                 app_version: 42,
             }),
         ).toThrow();
+    });
+});
+
+describe('run facet contracts', () => {
+    const facets = [
+        { name: 'environments', field: 'environment' },
+        { name: 'interactions', field: 'interaction' },
+        { name: 'models', field: 'modelId' },
+        { name: 'statuses', field: 'status' },
+        { name: 'finish_reason', field: 'finish_reason' },
+    ];
+
+    it('accepts exactly the supported run facet pairs', () => {
+        expect(ComputeRunFacetPayloadSchema.parse({ facets })).toEqual({ facets });
+    });
+
+    it.each(['tags', 'created_by', 'start', 'end'])('rejects the removed %s facet', (field) => {
+        expect(ComputeRunFacetPayloadSchema.safeParse({ facets: [{ name: field, field }] }).success).toBe(false);
+    });
+
+    it('rejects mismatched and additional facet names', () => {
+        expect(ComputeRunFacetPayloadSchema.safeParse({ facets: [{ name: 'models', field: 'status' }] }).success).toBe(
+            false,
+        );
+        expect(ComputeRunFacetPayloadSchema.safeParse({ facets: [{ name: 'custom', field: 'modelId' }] }).success).toBe(
+            false,
+        );
+    });
+
+    it('keeps removed facet fields available as query filters', () => {
+        const query = {
+            tags: ['visible'],
+            created_by: 'user:123',
+            start: '2026-08-01T00:00:00.000Z',
+            end: '2026-08-02T00:00:00.000Z',
+        };
+
+        expect(ComputeRunFacetPayloadSchema.parse({ facets: [], query })).toEqual({ facets: [], query });
+    });
+
+    it('rejects removed and custom response facets', () => {
+        expect(ComputeRunFacetsResponseSchema.safeParse({ tags: [] }).success).toBe(false);
+        expect(ComputeRunFacetsResponseSchema.safeParse({ custom: [] }).success).toBe(false);
+    });
+});
+
+describe('run response contracts', () => {
+    it('retains an environment ID when a run references a deleted environment', () => {
+        expect(ExecutionRunRefSchema.shape.environment.parse('env-deleted')).toBe('env-deleted');
+        expect(ExecutionRunRefSchema.shape.environment.parse(null)).toBeNull();
+    });
+
+    it('models the arbitrary stored-field projection returned by /runs/find', () => {
+        expect(
+            FindRunResultSchema.parse({
+                id: 'run-1',
+                environment: 'env-1',
+                account: 'account-1',
+                project: 'project-1',
+                interaction: 'interaction-1',
+                result: [],
+                parameters: { query: 'test' },
+            }),
+        ).toMatchObject({ environment: 'env-1', account: 'account-1', project: 'project-1' });
+    });
+
+    it('does not publish run persistence-only fields', () => {
+        expect(() => FindRunResultSchema.parse({ interaction_code: 'sys:Example' })).toThrow();
+        expect(() => FindRunResultSchema.parse({ tmp_prompt: [] })).toThrow();
+    });
+
+    it('models enriched supported run facet buckets', () => {
+        expect(
+            ComputeRunFacetsResponseSchema.parse({
+                environments: [{ _id: 'env-1', count: 2, name: 'Default' }],
+                interactions: [{ _id: 'interaction-1', count: 1, name: 'Example', status: 'published', version: 3 }],
+                models: [{ _id: 'gpt', count: 2 }],
+                total: 2,
+            }),
+        ).toMatchObject({ total: 2 });
+    });
+});
+
+describe('interaction contracts', () => {
+    it('accepts the media-result storage setting on interaction payloads and responses', () => {
+        expect(InteractionSchema.shape.store_media_results.parse(true)).toBe(true);
+        expect(InteractionCreatePayloadSchema.shape.store_media_results.parse(false)).toBe(false);
+        expect(InteractionUpdatePayloadSchema.shape.store_media_results.parse(true)).toBe(true);
     });
 });

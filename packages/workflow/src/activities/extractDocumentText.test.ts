@@ -3,6 +3,7 @@ import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type ContentObject, type DSLActivityExecutionPayload } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError } from '../errors.js';
 import { TextExtractionStatus } from '../result-types.js';
 import { fetchBlobAsBuffer } from '../utils/blobs.js';
 import { type ExtractDocumentTextParams, extractDocumentText } from './extractDocumentText.js';
@@ -26,6 +27,8 @@ beforeAll(() => {
 const retrieve = vi.fn();
 const setObjectText = vi.fn();
 const update = vi.fn();
+
+const SOURCE = 'gs://bucket/doc.txt';
 
 beforeEach(async () => {
     vi.clearAllMocks();
@@ -52,7 +55,7 @@ function createDoc(overrides: Partial<ContentObject> = {}): ContentObject {
         id: 'object-1',
         content: {
             type: 'text/plain',
-            source: 'gs://bucket/doc.txt',
+            source: SOURCE,
             etag: 'etag-1',
         },
         ...overrides,
@@ -116,6 +119,34 @@ describe('extractDocumentText', () => {
         await expect(testEnv.run(extractDocumentText, createPayload())).rejects.toMatchObject({
             message: expect.stringContaining('PUT /objects/object-1/text failed'),
         });
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    // Regression: a transient blob-download failure used to be caught and returned as
+    // `status: error`. Because the activity *resolved*, Temporal never retried it, intake
+    // continued, and the object was marked `completed` with no text — permanently text-less
+    // but indistinguishable from a healthy document. It must reject so the retry policy applies.
+    it('rejects on a transient download failure instead of resolving with status error', async () => {
+        retrieve.mockResolvedValue(createDoc());
+        vi.mocked(fetchBlobAsBuffer).mockRejectedValue(new Error(`Failed to download blob ${SOURCE}: Bad Gateway`));
+
+        await expect(testEnv.run(extractDocumentText, createPayload())).rejects.toThrow(/Bad Gateway/);
+
+        // The defining symptom of the old behaviour: the object was still written/completed.
+        expect(setObjectText).not.toHaveBeenCalled();
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    // Not-found/forbidden are classified as non-retryable by fetchBlobAsStream. That
+    // classification must survive too — retrying a deleted blob five times helps nobody.
+    it('propagates a non-retryable DocumentNotFoundError unchanged', async () => {
+        retrieve.mockResolvedValue(createDoc());
+        vi.mocked(fetchBlobAsBuffer).mockRejectedValue(new DocumentNotFoundError(`Not found at ${SOURCE}: not found`, []));
+
+        await expect(testEnv.run(extractDocumentText, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        });
+        expect(setObjectText).not.toHaveBeenCalled();
         expect(update).not.toHaveBeenCalled();
     });
 });

@@ -1,5 +1,6 @@
 export type { Editor } from '@tiptap/core';
 export {
+    DOCUMENT_EDITOR_CHANGE_DEBOUNCE_MS,
     MarkdownComponentEditor,
     type MarkdownComponentEditorProps,
     MarkdownDocumentEditor,

@@ -40,7 +40,7 @@ catalog:
   "@types/react": "19.2.17"
   "@types/react-dom": "19.2.3"
   vite: "8.1.4"
-  rolldown: "1.2.0"
+  rolldown: "1.2.4"
 overrides:
   # ============================
   # Special Overrides
@@ -92,6 +92,9 @@ overrides:
   # vulnerable 5.x. Major-scoped on purpose — a bare `js-yaml@<5.2.2` would drag the 4.x
   # consumers above across a major.
   "js-yaml@>=5.0.0 <5.2.2": 5.2.2
+  # GHSA-2v37-7h3g-55p8: zero-sized custom generators can loop indefinitely.
+  # PostCSS remains on nanoid 3; only vulnerable releases are redirected to the latest 3.x patch.
+  "nanoid@<3.3.17": 3.3.18
   protobufjs@<=7.6.4: 7.6.5
   serialize-javascript@<=7.0.2: ^7.0.3
   serialize-javascript@>=5.0.0 <7.0.5: ^7.0.5

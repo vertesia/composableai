@@ -25,6 +25,7 @@ import type {
     ViewActionPlacementSchema,
     ViewActionSelectionRequirementSchema,
     ViewActionsConfigurationSchema,
+    ViewAgenticExecutionConfigurationSchema,
     ViewBoardCardConfigurationSchema,
     ViewBoardColumnSchema,
     ViewBoardDisplaySchema,
@@ -122,6 +123,8 @@ export const VIEW_AGENTIC_SEARCH_MODES = ['query', 'query_and_view'] as const;
 export type ViewAgenticSearchMode = (typeof VIEW_AGENTIC_SEARCH_MODES)[number];
 
 export type AgenticViewRerankConfiguration = z.infer<typeof AgenticViewRerankConfigurationSchema>;
+
+export type ViewAgenticExecutionConfiguration = z.infer<typeof ViewAgenticExecutionConfigurationSchema>;
 
 export type AgenticViewSearchConfiguration = z.infer<typeof AgenticViewSearchConfigurationSchema>;
 

@@ -10,6 +10,7 @@ describe('InteractionOutput', () => {
         { type: 'json', value: { title: 'Engineer', level: 'Senior' } },
         { type: 'image', value: 'data:image/png;base64,iVBORw0K...' },
         { type: 'image', value: 'https://example.com/image.jpg' },
+        { type: 'video', value: 'gs://project-bucket/runs/run-1/media/video.mp4' },
     ];
 
     describe('text accessors', () => {
@@ -94,6 +95,24 @@ describe('InteractionOutput', () => {
         });
     });
 
+    describe('video accessors', () => {
+        it('should return video results', () => {
+            const output = InteractionOutput.from(sampleResults);
+
+            expect(output.hasVideo()).toBe(true);
+            expect(output.video()).toBe('gs://project-bucket/runs/run-1/media/video.mp4');
+            expect(output.videos()).toEqual(['gs://project-bucket/runs/run-1/media/video.mp4']);
+        });
+
+        it('should throw when no video result exists', () => {
+            const output = InteractionOutput.from([{ type: 'text', value: 'hello' }]);
+
+            expect(output.hasVideo()).toBe(false);
+            expect(output.videos()).toEqual([]);
+            expect(() => output.video()).toThrow('No video result found');
+        });
+    });
+
     describe('utility methods', () => {
         it('should convert to string (concatenated text)', () => {
             const output = InteractionOutput.from(sampleResults);
@@ -115,7 +134,8 @@ describe('InteractionOutput', () => {
                     '{"name":"Alice","age":30}\n' +
                     '{"title":"Engineer","level":"Senior"}\n' +
                     'data:image/png;base64,iVBORw0K...\n' +
-                    'https://example.com/image.jpg',
+                    'https://example.com/image.jpg\n' +
+                    'gs://project-bucket/runs/run-1/media/video.mp4',
             );
         });
 
@@ -163,11 +183,11 @@ describe('InteractionOutput', () => {
             expect(output[1]).toEqual({ type: 'text', value: 'World!' });
 
             // Array properties
-            expect(output.length).toBe(6);
+            expect(output.length).toBe(7);
 
             // Array methods
             const types = output.map((r) => r.type);
-            expect(types).toEqual(['text', 'text', 'json', 'json', 'image', 'image']);
+            expect(types).toEqual(['text', 'text', 'json', 'json', 'image', 'image', 'video']);
 
             const textResults = output.filter((r) => r.type === 'text');
             expect(textResults).toHaveLength(2);
@@ -177,7 +197,7 @@ describe('InteractionOutput', () => {
             const output = InteractionOutput.from<{ name: string; age: number }>(sampleResults);
 
             // Should work as array AND have custom methods
-            expect(output.length).toBe(6);
+            expect(output.length).toBe(7);
             expect(output.text('')).toBe('Hello, World!');
             expect(output.object()).toEqual({ name: 'Alice', age: 30 });
         });
@@ -201,7 +221,7 @@ describe('InteractionOutput', () => {
 
             // Verify it still works correctly
             expect(output2.text()).toBe('Hello, \nWorld!');
-            expect(output2.length).toBe(6);
+            expect(output2.length).toBe(7);
         });
 
         it('should not double-wrap when passing an InteractionOutputArray', () => {

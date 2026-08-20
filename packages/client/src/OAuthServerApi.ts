@@ -44,8 +44,18 @@ export default class OAuthServerApi extends ClientBase {
         return this.parent.getRetryPolicy();
     }
 
-    createAuthorizationRequest(payload: CreateOAuthAuthorizationRequestPayload): Promise<OAuthAuthorizationRequest> {
-        return this.post('/requests', { payload });
+    createAuthorizationRequest(
+        payload: CreateOAuthAuthorizationRequestPayload,
+        authorizationServerPath?: string,
+    ): Promise<OAuthAuthorizationRequest> {
+        if (!authorizationServerPath) {
+            return this.post('/requests', { payload });
+        }
+        if (!/^\/env\/[a-z][a-z0-9-]{1,15}\/dev-[a-z0-9-]+$/.test(authorizationServerPath)) {
+            return Promise.reject(new Error('Invalid OAuth authorization server path'));
+        }
+        const url = new URL(`${authorizationServerPath}/requests`, this.baseUrl).toString();
+        return this.post(url, { payload });
     }
 
     createDeviceAuthorization(payload: OAuthDeviceAuthorizationRequest): Promise<OAuthDeviceAuthorizationResponse> {

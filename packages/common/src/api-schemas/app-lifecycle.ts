@@ -442,6 +442,12 @@ export const AgentToolDefinitionSchema = z
         // component publishes `true`. They accept identical values, but the name is still derived
         // through `AppPackage`, so this reproduces the published form exactly.
         input_schema: openObjectSchema,
+        output_schema: openObjectSchema
+            .meta({
+                description:
+                    'Optional MCP outputSchema advertised by the provider for its structuredContent payload. Execution adapters may expose results differently.',
+            })
+            .optional(),
         url: z
             .string()
             .meta({
@@ -862,6 +868,23 @@ export const AppToolCollectionArraySchema = z.array(AppToolCollectionSchema).met
 export const AppInstallationKindSchema = z
     .enum(['ui', 'tools', 'all'])
     .meta({ id: 'AppInstallationKind', description: 'Which app contributions an installation listing is for.' });
+
+// `AppListScope` has a TypeScript name and therefore gets a reusable component of its own.
+export const AppListScopeSchema = z.enum(['account', 'project']).meta({
+    id: 'AppListScope',
+    description: 'Which apps an app listing covers.',
+});
+
+export const AppsQuerySchema = z
+    .strictObject({
+        scope: AppListScopeSchema.meta({
+            description:
+                'Restrict the listing to apps that belong to the current project — those installed ' +
+                'into it or that have built versions in it. Defaults to `account`, which lists every ' +
+                'app visible to the account, including the public catalog.',
+        }).optional(),
+    })
+    .meta({ id: 'AppsQuery' });
 
 export const AppInstallationsQuerySchema = z
     .strictObject({

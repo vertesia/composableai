@@ -8,7 +8,6 @@ export * from './doc-analyzer.js';
 export * from './dsl-workflow.js';
 export * from './editing-policy-schema.generated.js';
 export * from './grounded-extraction.js';
-export * from './hive-memory.js';
 export * from './intake-policy-schema.generated.js';
 export * from './process.js';
 export * from './rendering.js';

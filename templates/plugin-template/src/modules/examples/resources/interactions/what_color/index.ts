@@ -1,6 +1,6 @@
 import type { InteractionSpec } from '@vertesia/common';
 import PROMPT from './prompt.hbs?prompt';
-import result_schema from './result_schema';
+import result_schema from './result_schema.js';
 
 export default {
     name: 'what_color',

@@ -1,6 +1,6 @@
-import dayjs from 'dayjs';
 import { X } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
+import dayjs from '../../../utils/dayjs.js';
 import { Button } from '../button';
 import { DateCombobox, SelectionCombobox, StringListCombobox, TextCombobox } from './comboBox/comboBox';
 import type { Filter, FilterGroup, FilterOption } from './types';

@@ -1,3 +1,4 @@
+export type { VertexAIGeminiOmniVideoOptions, VideoResult } from '@llumiverse/common';
 export * from './access-control.js';
 export * from './analytics.js';
 /**
@@ -17,8 +18,10 @@ export * from './ask-user.js';
 export * from './audit-trail.js';
 export * from './browser-credentials.js';
 export * from './common.js';
+export * from './content-query.js';
 export * from './cost-analytics.js';
 export * from './data-platform.js';
+export * from './email.js';
 export * from './embeddings.js';
 export * from './environment.js';
 export * from './facets.js';

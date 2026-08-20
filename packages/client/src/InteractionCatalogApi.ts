@@ -1,5 +1,5 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
-import type { CatalogInteractionRef, InCodeInteraction, InteractionStatus } from '@vertesia/common';
+import type { CatalogInteractionRef, InteractionStatus, ResolvedCatalogInteraction } from '@vertesia/common';
 
 export class InteractionCatalogApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -58,10 +58,10 @@ export class InteractionCatalogApi extends ApiTopic {
     }
 
     /**
-     * Resolve an interaction given its id to a InCodeInteraction
+     * Resolve an interaction by ID to its complete executable definition.
      * @param id Interaction id
      */
-    resolve(id: string): Promise<InCodeInteraction> {
+    resolve(id: string): Promise<ResolvedCatalogInteraction> {
         return this.get(`/resolve/${id}`);
     }
 }
