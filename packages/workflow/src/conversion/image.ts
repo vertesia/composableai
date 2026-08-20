@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { promisify } from 'node:util';
 import { log } from '@temporalio/activity';
 import { file } from 'tmp-promise';
+import { ImageConversionError } from '../errors.js';
 
 const execFile = promisify(execFileCallback);
 
@@ -41,10 +42,6 @@ export async function imageResizer(
     }
 
     //check that inputPath exists
-    if (!fs.existsSync(inputPath)) {
-        throw new Error(`Input file does not exist: ${inputPath}`);
-    }
-
     // Create a temporary file
     const { path: outputPath, cleanup } = await file({ postfix: `.${format}` });
     try {
@@ -81,8 +78,10 @@ export async function imageResizer(
         const command = 'convert';
         const args = ['-define', `jpeg:size=${max_hw * 3}x${max_hw * 3}`];
 
-        // Add input after JPEG shrink-on-load optimization so ImageMagick can apply it while decoding.
-        args.push(inputPath);
+        // Renditions are single images. Explicitly select the first frame so animated GIF/WebP inputs do not
+        // expand into numbered sibling files while leaving the requested output path empty.
+        // Keep the selector after the JPEG shrink-on-load optimization so ImageMagick can apply it while decoding.
+        args.push(`${inputPath}[0]`);
 
         // Apply EXIF orientation to pixels before stripping metadata or resizing.
         args.push('-auto-orient');
@@ -164,11 +163,14 @@ export async function imageResizer(
         }
 
         return outputPath;
-    } catch (error) {
+    } catch (error: unknown) {
         // Clean up the temporary file
         await cleanup();
         const errorMessage = error instanceof Error ? error.message : String(error);
         log.error(`Image conversion failed: ${errorMessage}`);
-        throw new Error(`Image conversion failed: ${errorMessage}`);
+        throw new ImageConversionError(
+            `Image conversion failed: ${errorMessage}`,
+            error instanceof Error ? error : undefined,
+        );
     }
 }
