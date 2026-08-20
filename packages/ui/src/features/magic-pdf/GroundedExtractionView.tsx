@@ -32,7 +32,7 @@ import {
     Sparkles,
     X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
 const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
 
@@ -653,7 +653,14 @@ function PageWithOverlay({
                     key={`${citation.path}-${i}`}
                     description={
                         <span className="flex flex-col gap-0.5">
-                            <span className="font-medium">{citation.path}</span>
+                            <span className="flex items-center gap-1 font-medium">
+                                {citationPathLabels(citation.path).map((label, index) => (
+                                    <Fragment key={`${index}:${label}`}>
+                                        {index > 0 && <ChevronRight className="size-3 shrink-0 cn-rtl-flip" />}
+                                        {label}
+                                    </Fragment>
+                                ))}
+                            </span>
                             {cellRange && <span className="font-mono">{cellRange}</span>}
                             {citation.source_text && <span>{citation.source_text}</span>}
                         </span>
@@ -943,6 +950,18 @@ function LeafRow({
                 ))}
         </button>
     );
+}
+
+/**
+ * Friendly trail for a citation path, matching the labels in the data panel:
+ * "line_items[1].unit_price" -> ["Line items", "Unit price"]. The array index is
+ * dropped — the highlighted box already says which row it is.
+ */
+function citationPathLabels(path: string): string[] {
+    return normalizeCitationPath(path)
+        .split('.')
+        .map((segment) => propertyTitle(segment.replace(/\[\d+\]/g, '')))
+        .filter(Boolean);
 }
 
 /** Friendly label for a property key, matching the standard properties view. */
