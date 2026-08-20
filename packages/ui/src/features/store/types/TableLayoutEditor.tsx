@@ -62,9 +62,11 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
         setUpdating(true);
         store.types
             .update(objectType.id, {
+                expected_edit_revision: objectType.edit_revision ?? 1,
                 table_layout,
             })
             .then((response) => {
+                objectType.edit_revision = response.edit_revision;
                 toast({
                     status: 'success',
                     title: t('store.tableLayoutUpdated'),

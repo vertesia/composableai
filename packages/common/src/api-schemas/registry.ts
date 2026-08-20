@@ -1487,6 +1487,9 @@ const PROCESS_DSL_SCHEMAS = {
     WorkflowDefinitionPayload: ProcessSchemas.WorkflowDefinitionPayloadSchema,
     WorkflowDefinitionPayloadWithActivities: ProcessSchemas.WorkflowDefinitionPayloadWithActivitiesSchema,
     WorkflowDefinitionPayloadWithSteps: ProcessSchemas.WorkflowDefinitionPayloadWithStepsSchema,
+    UpdateWorkflowDefinitionPayload: ProcessSchemas.UpdateWorkflowDefinitionPayloadSchema,
+    UpdateWorkflowDefinitionPayloadWithActivities: ProcessSchemas.UpdateWorkflowDefinitionPayloadWithActivitiesSchema,
+    UpdateWorkflowDefinitionPayloadWithSteps: ProcessSchemas.UpdateWorkflowDefinitionPayloadWithStepsSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const AGENT_MESSAGE_SCHEMAS = {
@@ -2141,6 +2144,7 @@ const APP_MANIFEST_SCHEMAS = {
     AppWidgetInfo: AppRuntimeSchemas.AppWidgetInfoSchema,
     AppDashboardDefinition: AppRuntimeSchemas.AppDashboardDefinitionSchema,
     AppManifestData: AppRuntimeSchemas.AppManifestDataSchema,
+    UpdateAppPayload: AppRuntimeSchemas.UpdateAppPayloadSchema,
     AppManifest: AppRuntimeSchemas.AppManifestSchema,
     AppManifestArray: AppRuntimeSchemas.AppManifestArraySchema,
     AppWidgetInfoMap: AppRuntimeSchemas.AppWidgetInfoMapSchema,
@@ -3232,6 +3236,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DeleteSecretResponse',
     'WebsiteCredentialMetadata',
     'AppManifestData',
+    'UpdateAppPayload',
     'WebsiteCredentialMetadataUpdate',
     'AskUserWebhookConfigurationInput',
     'ResendConfigurationInput',

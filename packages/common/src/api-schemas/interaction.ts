@@ -25,6 +25,7 @@ import { ProjectRefSchema } from './apikey.js';
 import { ExecutionEnvironmentRefSchema } from './environment.js';
 import { AccountRefSchema } from './invites.js';
 import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
 /**
@@ -405,6 +406,7 @@ export const PromptTemplateSchema = z
         name: z.string(),
         status: PromptStatusSchema,
         version: z.number(),
+        edit_revision: EditRevisionSchema,
         // The record this one was derived from. On a published version it is the draft it was
         // published from; on a fork it is the prompt that was forked, and the fork is itself a
         // draft. So `parent` alone does not tell you which kind of record this is — read `status`.
@@ -428,7 +430,15 @@ export const PromptTemplateSchema = z
 // The two payloads are projections of `PromptTemplate`, so they are derived from its canonical Zod
 // schema here. Leaving them as TypeScript utility types would give the generator only aliases with
 // no runtime properties to publish.
-const SERVER_OWNED_PROMPT_FIELDS = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'project'] as const;
+const SERVER_OWNED_PROMPT_FIELDS = [
+    'id',
+    'edit_revision',
+    'created_at',
+    'updated_at',
+    'created_by',
+    'updated_by',
+    'project',
+] as const;
 const SERVER_OWNED_PROMPT_FIELD_KEYS = Object.fromEntries(
     SERVER_OWNED_PROMPT_FIELDS.map((field) => [field, true as const]),
 ) as Record<(typeof SERVER_OWNED_PROMPT_FIELDS)[number], true>;
@@ -452,6 +462,7 @@ export const PromptTemplateCreatePayloadSchema = PromptTemplateSchema.pick({
 
 export const PromptTemplateUpdatePayloadSchema = PromptTemplateSchema.omit(SERVER_OWNED_PROMPT_FIELD_KEYS)
     .partial()
+    .extend({ expected_edit_revision: ExpectedEditRevisionSchema })
     .meta({ id: 'PromptTemplateUpdatePayload' });
 
 export const CachePolicySchema = z
@@ -970,6 +981,7 @@ export const InteractionCreatePayloadSchema = z
 export const InteractionSchema = z
     .strictObject({
         id: z.string(),
+        edit_revision: EditRevisionSchema,
         name: z.string(),
         endpoint: z.string(),
         description: z.string().optional(),
@@ -1183,6 +1195,7 @@ export const PromptSegmentRef_PromptTemplateRefSchema = z
 
 export const InteractionUpdatePayloadSchema = z
     .strictObject({
+        expected_edit_revision: ExpectedEditRevisionSchema,
         status: InteractionStatusSchema.optional(),
         parent: z.string().optional(),
         visibility: InteractionVisibilitySchema.optional(),

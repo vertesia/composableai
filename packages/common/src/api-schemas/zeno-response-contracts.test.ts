@@ -264,6 +264,7 @@ describe('Zeno read-side response contracts', () => {
                     id: '64b000000000000000000008',
                     account: '64b000000000000000000003',
                     project: '64b000000000000000000004',
+                    edit_revision: 1,
                     name: 'Legacy process',
                     status: 'draft',
                     version: 1,
