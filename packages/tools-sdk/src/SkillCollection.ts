@@ -119,6 +119,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
                 description,
                 input_schema: skill.input_schema || defaultSchema,
                 tools: skill.tools,
+                ...(skill.context_triggers?.keywords?.length ? { keywords: skill.context_triggers.keywords } : {}),
                 category: this.name,
             };
         });
