@@ -1673,6 +1673,10 @@ export const ConversationStateSchema = z
         tool_reference: ToolReferenceSchema.meta({
             description: 'Reference to tools stored in GCP instead of embedding full tool definitions',
         }).optional(),
+        tool_catalog_storage_id: z
+            .string()
+            .meta({ description: 'Artifact-storage scope containing the referenced tool catalog.' })
+            .optional(),
         active_tool_names: z
             .array(z.string())
             .meta({

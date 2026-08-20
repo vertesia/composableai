@@ -10451,6 +10451,10 @@
         "$ref": "#/components/schemas/ToolReference",
         "description": "Reference to tools stored in GCP instead of embedding full tool definitions"
       },
+      "tool_catalog_storage_id": {
+        "type": "string",
+        "description": "Artifact-storage scope containing the referenced tool catalog."
+      },
       "active_tool_names": {
         "type": "array",
         "items": {
@@ -13408,6 +13412,41 @@
     ],
     "description": "Origin of a tool in the unified project-scoped tool registry.\n\n- `builtin`: anything statically registered on the worker — workflow builtins, studio agent tools, and sys skills\n- `app`: tools contributed by an installed app for the project\n- `interaction`: a project interaction exposed via `tag=tool` / `is_tool=true` / `is_skill=true`\n\nSkill semantics (the tool unlocks others when invoked) are NOT part of the source. They are identified universally by the `learn_` prefix in the tool name. This matches how the runtime registry stores them and avoids splitting one logical origin into two sources."
   },
+  "ToolRuntimeContext": {
+    "type": "string",
+    "enum": [
+      "conversation",
+      "process"
+    ],
+    "description": "The runtime context in which a caller intends to use a tool."
+  },
+  "ProcessToolCompatibilityReason": {
+    "type": "string",
+    "enum": [
+      "skill_not_supported",
+      "interaction_not_supported",
+      "agent_not_supported",
+      "confirmation_not_supported",
+      "control_tool_not_supported",
+      "approval_metadata_unavailable",
+      "ambiguous_name"
+    ]
+  },
+  "ProcessToolCompatibility": {
+    "type": "object",
+    "properties": {
+      "compatible": {
+        "type": "boolean"
+      },
+      "reason": {
+        "$ref": "#/components/schemas/ProcessToolCompatibilityReason"
+      }
+    },
+    "required": [
+      "compatible"
+    ],
+    "additionalProperties": false
+  },
   "ValidateToolNamesPayload": {
     "type": "object",
     "properties": {
@@ -13506,6 +13545,16 @@
     "additionalProperties": false,
     "description": "Metadata hints from MCP tool annotations (per MCP spec)."
   },
+  "AgentToolApprovalClass": {
+    "type": "string",
+    "enum": [
+      "read_only",
+      "side_effecting",
+      "control",
+      "requires_confirmation"
+    ],
+    "description": "Approval behavior class for a tool exposed to agents.\n\n- `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.\n- `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.\n- `control`: affects agent control flow or tool availability, not user data or external systems.\n- `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode."
+  },
   "AggregatedTool": {
     "type": "object",
     "properties": {
@@ -13528,6 +13577,12 @@
       },
       "annotations": {
         "$ref": "#/components/schemas/MCPToolAnnotations"
+      },
+      "approval_class": {
+        "$ref": "#/components/schemas/AgentToolApprovalClass"
+      },
+      "process_compatibility": {
+        "$ref": "#/components/schemas/ProcessToolCompatibility"
       },
       "unlocked_tools": {
         "type": "array",
@@ -13606,8 +13661,78 @@
           "$ref": "#/components/schemas/ToolSource"
         },
         "description": "Drop these sources from the result (and skip their fetch). Applied after `sources`."
+      },
+      "context": {
+        "$ref": "#/components/schemas/ToolRuntimeContext"
       }
     },
+    "additionalProperties": false
+  },
+  "InspectProjectToolQuery": {
+    "type": "object",
+    "properties": {
+      "context": {
+        "$ref": "#/components/schemas/ToolRuntimeContext"
+      }
+    },
+    "additionalProperties": false
+  },
+  "ToolInspection": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ToolSource"
+      },
+      "description": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "input_schema": {
+        "$ref": "#/components/schemas/JSONSchema",
+        "description": "Exact input schema when the provider supplied one. Omitted rather than fabricated."
+      },
+      "output_schema": {
+        "$ref": "#/components/schemas/JSONSchema",
+        "description": "MCP outputSchema advertised by the provider. It does not describe the process node result transport."
+      },
+      "output_contract_status": {
+        "type": "string",
+        "enum": [
+          "provider_supplied",
+          "unknown"
+        ],
+        "description": "For app tools, whether the provider advertised output schema metadata. Omitted for builtin and interaction tools."
+      },
+      "approval_class": {
+        "$ref": "#/components/schemas/AgentToolApprovalClass"
+      },
+      "annotations": {
+        "$ref": "#/components/schemas/MCPToolAnnotations"
+      },
+      "app_install_id": {
+        "type": "string"
+      },
+      "app_name": {
+        "type": "string"
+      },
+      "ready": {
+        "type": "boolean",
+        "description": "True only when an exact input schema was resolved."
+      },
+      "process_compatibility": {
+        "$ref": "#/components/schemas/ProcessToolCompatibility"
+      }
+    },
+    "required": [
+      "name",
+      "source",
+      "ready"
+    ],
     "additionalProperties": false
   },
   "McpOAuthTokenResponse": {
@@ -16089,16 +16214,6 @@
     ],
     "additionalProperties": false
   },
-  "AgentToolApprovalClass": {
-    "type": "string",
-    "enum": [
-      "read_only",
-      "side_effecting",
-      "control",
-      "requires_confirmation"
-    ],
-    "description": "Approval behavior class for a tool exposed to agents.\n\n- `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.\n- `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.\n- `control`: affects agent control flow or tool availability, not user data or external systems.\n- `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode."
-  },
   "AppDevelopmentTask": {
     "type": "object",
     "properties": {
@@ -16775,6 +16890,11 @@
       "input_schema": {
         "type": "object",
         "additionalProperties": true
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Optional MCP outputSchema advertised by the provider for its structuredContent payload. Execution adapters may expose results differently."
       },
       "url": {
         "type": "string",
