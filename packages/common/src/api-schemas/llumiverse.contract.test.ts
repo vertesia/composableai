@@ -25,6 +25,7 @@ const UNION_MEMBERS = [
     'ImagenOptions',
     'VertexAIClaudeOptions',
     'VertexAIGeminiOptions',
+    'VertexAIGeminiOmniVideoOptions',
     'VertexAIGrokOptions',
     'NovaCanvasOptions',
     'BedrockConverseOptions',

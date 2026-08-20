@@ -118,6 +118,15 @@ export interface ConversationState {
     /** Reference to tools stored in GCP instead of embedding full tool definitions */
     tool_reference?: ToolReference;
 
+    /**
+     * Explicit artifact-storage scope that owns `tool_reference`.
+     *
+     * Normally the catalog and conversation artifacts share a scope. Process tool nodes are the
+     * exception: their catalog is persisted once at process-run scope while each node keeps its own
+     * launch-scoped artifacts. Consumers resolving `tool_reference` must prefer this value when set.
+     */
+    tool_catalog_storage_id?: string;
+
     /** Names of currently active tools (base + unlocked). Tool definitions loaded from tool_reference. */
     active_tool_names?: string[];
 

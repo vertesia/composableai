@@ -29,6 +29,7 @@ import {
     TextResultSchema,
     ToolDefinitionSchema,
     ToolUseSchema,
+    VideoResultSchema,
 } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import type {
@@ -392,6 +393,8 @@ import {
 } from './environment.js';
 import * as EventSchemas from './events.js';
 import {
+    BucketCreateAccessQuerySchema,
+    BucketCreateAccessStatusResponseSchema,
     BucketReadAccessQuerySchema,
     BucketReadAccessStatusResponseSchema,
     BulkUploadUrlsPayloadSchema,
@@ -399,6 +402,8 @@ import {
     CopyFilePayloadSchema,
     CopyFileResponseSchema,
     DeleteFileResultSchema,
+    EnsureBucketCreateAccessPayloadSchema,
+    EnsureBucketCreateAccessResponseSchema,
     EnsureBucketReadAccessPayloadSchema,
     EnsureBucketReadAccessResponseSchema,
     FileBucketResponseSchema,
@@ -498,6 +503,8 @@ import {
     InteractionForkPayloadSchema,
     InteractionNameArraySchema,
     InteractionNameSchema,
+    InteractionPromptSegmentInputSchema,
+    InteractionPromptTemplateInputSchema,
     InteractionPublishPayloadSchema,
     InteractionRefArraySchema,
     InteractionRefSchema,
@@ -700,7 +707,12 @@ import {
 import {
     AggregatedToolArraySchema,
     AggregatedToolSchema,
+    InspectProjectToolQuerySchema,
     ListProjectToolsQuerySchema,
+    ProcessToolCompatibilityReasonSchema,
+    ProcessToolCompatibilitySchema,
+    ToolInspectionSchema,
+    ToolRuntimeContextSchema,
     ToolSourceSchema,
     ToolValidationResultSchema,
     ValidateToolNamesPayloadSchema,
@@ -1048,6 +1060,7 @@ const LLM_COMPLETION_SCHEMAS = {
     TextResult: TextResultSchema,
     JsonResult: JsonResultSchema,
     ImageResult: ImageResultSchema,
+    VideoResult: VideoResultSchema,
     CompletionResult: CompletionResultSchema,
     ExecutionTokenUsage: ExecutionTokenUsageSchema,
     // The options a caller may send. `PromptFormatter` is deliberately gone: see the note on
@@ -1066,10 +1079,12 @@ const INTERACTION_SCHEMAS = {
     SchemaRef: SchemaRefSchema,
     CachePolicy: CachePolicySchema,
     PromptTemplate: PromptTemplateSchema,
+    InteractionPromptTemplateInput: InteractionPromptTemplateInputSchema,
     PromptTemplateCreatePayload: PromptTemplateCreatePayloadSchema,
     PromptTemplateUpdatePayload: PromptTemplateUpdatePayloadSchema,
     PromptTemplateRef: PromptTemplateRefSchema,
     PromptSegmentDef: PromptSegmentDefSchema,
+    InteractionPromptSegmentInput: InteractionPromptSegmentInputSchema,
     PromptSegmentRef_PromptTemplateRef: PromptSegmentRef_PromptTemplateRefSchema,
     InCodePrompt: InCodePromptSchema,
     Interaction: InteractionSchema,
@@ -1248,6 +1263,10 @@ const FILE_STORAGE_SCHEMAS = {
     BucketReadAccessStatusResponse: BucketReadAccessStatusResponseSchema,
     EnsureBucketReadAccessPayload: EnsureBucketReadAccessPayloadSchema,
     EnsureBucketReadAccessResponse: EnsureBucketReadAccessResponseSchema,
+    BucketCreateAccessQuery: BucketCreateAccessQuerySchema,
+    BucketCreateAccessStatusResponse: BucketCreateAccessStatusResponseSchema,
+    EnsureBucketCreateAccessPayload: EnsureBucketCreateAccessPayloadSchema,
+    EnsureBucketCreateAccessResponse: EnsureBucketCreateAccessResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const DURABLE_TASK_SCHEMAS = {
@@ -1472,6 +1491,9 @@ const PROCESS_DSL_SCHEMAS = {
     WorkflowDefinitionPayload: ProcessSchemas.WorkflowDefinitionPayloadSchema,
     WorkflowDefinitionPayloadWithActivities: ProcessSchemas.WorkflowDefinitionPayloadWithActivitiesSchema,
     WorkflowDefinitionPayloadWithSteps: ProcessSchemas.WorkflowDefinitionPayloadWithStepsSchema,
+    UpdateWorkflowDefinitionPayload: ProcessSchemas.UpdateWorkflowDefinitionPayloadSchema,
+    UpdateWorkflowDefinitionPayloadWithActivities: ProcessSchemas.UpdateWorkflowDefinitionPayloadWithActivitiesSchema,
+    UpdateWorkflowDefinitionPayloadWithSteps: ProcessSchemas.UpdateWorkflowDefinitionPayloadWithStepsSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const AGENT_MESSAGE_SCHEMAS = {
@@ -1843,12 +1865,17 @@ const PROJECT_TOOL_SCHEMAS = {
     // The unified project-scoped tool registry: what `GET /tools` aggregates across
     // builtins, installed apps and interactions, and what `POST /tools/validate` resolves.
     ToolSource: ToolSourceSchema,
+    ToolRuntimeContext: ToolRuntimeContextSchema,
+    ProcessToolCompatibilityReason: ProcessToolCompatibilityReasonSchema,
+    ProcessToolCompatibility: ProcessToolCompatibilitySchema,
     ValidateToolNamesPayload: ValidateToolNamesPayloadSchema,
     ToolValidationResult: ToolValidationResultSchema,
     AggregatedTool: AggregatedToolSchema,
     ValidateToolNamesResponse: ValidateToolNamesResponseSchema,
     AggregatedToolArray: AggregatedToolArraySchema,
     ListProjectToolsQuery: ListProjectToolsQuerySchema,
+    InspectProjectToolQuery: InspectProjectToolQuerySchema,
+    ToolInspection: ToolInspectionSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const REMOTE_MCP_SCHEMAS = {
@@ -2121,6 +2148,7 @@ const APP_MANIFEST_SCHEMAS = {
     AppWidgetInfo: AppRuntimeSchemas.AppWidgetInfoSchema,
     AppDashboardDefinition: AppRuntimeSchemas.AppDashboardDefinitionSchema,
     AppManifestData: AppRuntimeSchemas.AppManifestDataSchema,
+    UpdateAppPayload: AppRuntimeSchemas.UpdateAppPayloadSchema,
     AppManifest: AppRuntimeSchemas.AppManifestSchema,
     AppManifestArray: AppRuntimeSchemas.AppManifestArraySchema,
     AppWidgetInfoMap: AppRuntimeSchemas.AppWidgetInfoMapSchema,
@@ -2475,6 +2503,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ImagenOptions',
     'VertexAIClaudeOptions',
     'VertexAIGeminiOptions',
+    'VertexAIGeminiOmniVideoOptions',
     'VertexAIGrokOptions',
     'NovaCanvasOptions',
     'BedrockConverseOptions',
@@ -2969,16 +2998,19 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'TextResult',
     'JsonResult',
     'ImageResult',
+    'VideoResult',
     'ExecutionTokenUsage',
     'StatelessExecutionOptions',
     'SchemaRef',
     'CachePolicy',
     'PromptModalities',
     'PromptTemplate',
+    'InteractionPromptTemplateInput',
     'PromptTemplateCreatePayload',
     'PromptTemplateUpdatePayload',
     'PromptTemplateRef',
     'PromptSegmentDef',
+    'InteractionPromptSegmentInput',
     'PromptSegmentRef_PromptTemplateRef',
     'InCodePrompt',
     'Interaction',
@@ -3067,6 +3099,11 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ValidateToolNamesPayload',
     'ToolValidationResult',
     'AggregatedTool',
+    'ToolRuntimeContext',
+    'ProcessToolCompatibilityReason',
+    'ProcessToolCompatibility',
+    'InspectProjectToolQuery',
+    'ToolInspection',
     'ValidateToolNamesResponse',
     'RenderPromptResponse',
     'PromptTemplateInteractionVersion',
@@ -3205,6 +3242,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DeleteSecretResponse',
     'WebsiteCredentialMetadata',
     'AppManifestData',
+    'UpdateAppPayload',
     'WebsiteCredentialMetadataUpdate',
     'AskUserWebhookConfigurationInput',
     'ResendConfigurationInput',
@@ -3233,6 +3271,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'BucketReadAccessStatusResponse',
     'EnsureBucketReadAccessPayload',
     'EnsureBucketReadAccessResponse',
+    'BucketCreateAccessQuery',
+    'BucketCreateAccessStatusResponse',
+    'EnsureBucketCreateAccessPayload',
+    'EnsureBucketCreateAccessResponse',
     'MigrateInteractionsPayload',
     'MigrateInteractionsResult',
     'PricingSyncPayload',
