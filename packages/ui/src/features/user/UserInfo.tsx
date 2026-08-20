@@ -104,16 +104,11 @@ interface ServiceInfoProps extends InfoProps {
 }
 function ServiceAccountAvatar({ accountId, showTitle = false, size = 'md' }: ServiceInfoProps) {
     const { t } = useUITranslation();
-    const _type = accountId.split(':')[0];
-    const _accountId = accountId.split(':')[1];
     const description = (
         <>
             <div>{t('user.serviceAccountDescription')}</div>
             <div className="text-muted text-sm">
-                <span className="font-semibold">Type:</span> {_type}
-            </div>
-            <div className="text-muted text-sm">
-                <span className="font-semibold">ID:</span> {_accountId}
+                <span className="font-semibold">ID:</span> {accountId}
             </div>
         </>
     );
@@ -124,7 +119,7 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = 'md' }: Ser
                 <Avatar src="/cloud.svg" name="SA" color="bg-amber-500" className="px-[5px] text-white" size={size} />
                 {showTitle && (
                     <div className="text-sm font-semibold ps-2 truncate">
-                        {t('user.serviceAccount')} : ~{_accountId.slice(-6)}
+                        {t('user.serviceAccount')} : ~{accountId.slice(-6)}
                     </div>
                 )}
             </div>
