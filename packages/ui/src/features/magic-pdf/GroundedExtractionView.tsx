@@ -17,6 +17,7 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { computeTitleFromName } from '@vertesia/ui/widgets';
 import {
     CheckCircle2,
     ChevronLeft,
@@ -782,11 +783,7 @@ function DataNode({
                         child.every((item) => item !== null && typeof item === 'object');
                     return (
                         <div key={childPath} className="pt-1">
-                            {!rendersOwnLabel && (
-                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                    {key}
-                                </div>
-                            )}
+                            {!rendersOwnLabel && <div className="text-sm font-semibold">{propertyTitle(key)}</div>}
                             <DataNode
                                 value={child}
                                 path={childPath}
@@ -827,8 +824,8 @@ function ArrayTable({
 
     return (
         <div className="pt-1">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {path.split('.').pop()} ({items.length})
+            <div className="text-sm font-semibold">
+                {propertyTitle(path.split('.').pop())} ({items.length})
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -836,7 +833,7 @@ function ArrayTable({
                         <tr className="text-start text-muted-foreground">
                             {columns.map((col) => (
                                 <th key={col} scope="col" className="py-1 pe-2 font-medium">
-                                    {col}
+                                    {propertyTitle(col)}
                                 </th>
                             ))}
                         </tr>
@@ -916,7 +913,7 @@ function LeafRow({
                 !citation && 'cursor-default',
             )}
         >
-            <span className="text-muted-foreground min-w-28 shrink-0">{label}</span>
+            <span className="min-w-28 shrink-0 font-semibold">{propertyTitle(label)}:</span>
             <span className="flex-1 wrap-break-word">{formatValue(value)}</span>
             {citation && typeof citation.confidence === 'number' && (
                 <span
@@ -936,6 +933,11 @@ function LeafRow({
                 ))}
         </button>
     );
+}
+
+/** Friendly label for a property key, matching the standard properties view. */
+function propertyTitle(name: string | undefined): string {
+    return name ? computeTitleFromName(name) : '';
 }
 
 /**
