@@ -232,7 +232,7 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
         const uploaded = await uploadRenditionPages(client, etag, generatedThumbnails, params);
 
         return {
-            uploads: uploaded.map((u) => u),
+            uploads: uploaded,
             format: params.format,
             thumbnailCount: generatedThumbnails.length,
             status: 'success',
