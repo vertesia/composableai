@@ -68,6 +68,16 @@ describe('UserInfo', () => {
         expect(retrieveUser).toHaveBeenCalledTimes(1);
     });
 
+    it('renders a service account title from a ref that has no nested type', async () => {
+        render(
+            <I18nProvider lng="en">
+                <UserInfo userRef="service_account:66b27abd91cf39f93cdc1335" showTitle />
+            </I18nProvider>,
+        );
+
+        expect(await screen.findByText(/~dc1335/)).toBeDefined();
+    });
+
     it('renders a missing group as an unknown principal and caches the 404', async () => {
         const error = Object.assign(new Error('Not Found'), { status: 404 });
         retrieveGroup.mockRejectedValueOnce(error);
