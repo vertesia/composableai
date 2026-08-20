@@ -911,6 +911,13 @@ export const PromptTemplateRefSchema = z
     })
     .meta({ id: 'PromptTemplateRef' });
 
+// Interaction writes may carry a populated prompt copied from an interaction response. New clients
+// preserve its revision while legacy clients never sent one, so the embedded request shape accepts
+// both. The standalone PromptTemplate response keeps the revision required.
+export const InteractionPromptTemplateInputSchema = PromptTemplateSchema.extend({
+    edit_revision: EditRevisionSchema.optional(),
+}).meta({ id: 'InteractionPromptTemplateInput' });
+
 export const RunSourceSchema = z
     .strictObject({
         type: RunSourceTypesSchema,
@@ -929,6 +936,12 @@ export const PromptSegmentDefSchema = z
         configuration: z.unknown().optional(),
     })
     .meta({ id: 'PromptSegmentDef' });
+
+export const InteractionPromptSegmentInputSchema = PromptSegmentDefSchema.extend({
+    template: z
+        .union([z.string(), PromptTemplateSchema, InteractionPromptTemplateInputSchema, PromptTemplateRefSchema])
+        .optional(),
+}).meta({ id: 'InteractionPromptSegmentInput' });
 
 export const InteractionEndpointSchema = z
     .strictObject({
@@ -957,7 +970,7 @@ export const InteractionCreatePayloadSchema = z
         test_data: JSONObjectSchema.optional(),
         interaction_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
         cache_policy: CachePolicySchema.optional(),
-        prompts: z.array(PromptSegmentDefSchema),
+        prompts: z.array(InteractionPromptSegmentInputSchema),
         last_published_at: z.string().meta({ format: 'date-time' }).optional(),
         name: z.string(),
         description: z.string().optional(),
@@ -1203,7 +1216,7 @@ export const InteractionUpdatePayloadSchema = z
         test_data: JSONObjectSchema.optional(),
         interaction_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
         cache_policy: CachePolicySchema.optional(),
-        prompts: z.array(PromptSegmentDefSchema).optional(),
+        prompts: z.array(InteractionPromptSegmentInputSchema).optional(),
         last_published_at: z.string().meta({ format: 'date-time' }).optional(),
         name: z.string().optional(),
         endpoint: z.string().optional(),

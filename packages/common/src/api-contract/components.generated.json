@@ -7967,6 +7967,102 @@
     ],
     "additionalProperties": false
   },
+  "InteractionPromptTemplateInput": {
+    "type": "object",
+    "properties": {
+      "role": {
+        "$ref": "#/components/schemas/PromptRole"
+      },
+      "content": {
+        "type": "string"
+      },
+      "content_type": {
+        "$ref": "#/components/schemas/TemplateType"
+      },
+      "inputSchema": {
+        "$ref": "#/components/schemas/JSONSchema"
+      },
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/PromptStatus"
+      },
+      "version": {
+        "type": "number"
+      },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
+      "parent": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "test_data": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "script": {
+        "type": "string"
+      },
+      "project": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/ProjectRef"
+          }
+        ]
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "last_published_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "role",
+      "content",
+      "content_type",
+      "id",
+      "name",
+      "status",
+      "version",
+      "project",
+      "created_by",
+      "updated_by",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false
+  },
   "PromptTemplateCreatePayload": {
     "type": "object",
     "properties": {
@@ -8137,6 +8233,38 @@
           },
           {
             "$ref": "#/components/schemas/PromptTemplate"
+          },
+          {
+            "$ref": "#/components/schemas/PromptTemplateRef"
+          }
+        ]
+      },
+      "configuration": {}
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "InteractionPromptSegmentInput": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/PromptSegmentDefType"
+      },
+      "template": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/PromptTemplate"
+          },
+          {
+            "$ref": "#/components/schemas/InteractionPromptTemplateInput"
           },
           {
             "$ref": "#/components/schemas/PromptTemplateRef"
@@ -8807,7 +8935,7 @@
       "prompts": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/PromptSegmentDef"
+          "$ref": "#/components/schemas/InteractionPromptSegmentInput"
         }
       },
       "last_published_at": {
@@ -8918,7 +9046,7 @@
       "prompts": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/PromptSegmentDef"
+          "$ref": "#/components/schemas/InteractionPromptSegmentInput"
         }
       },
       "last_published_at": {
