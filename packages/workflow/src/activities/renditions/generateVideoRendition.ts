@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { log } from '@temporalio/activity';
+import { ApplicationFailure, log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, WorkflowParamNotFoundError } from '../../errors.js';
@@ -22,7 +22,7 @@ interface LegacyVideoRenditionParams {
 }
 
 export interface GenerateVideoRendition extends DSLActivitySpec<GenerateVideoRenditionParams> {
-    name: 'generateImageRendition';
+    name: 'generateVideoRendition';
 }
 
 interface VideoMetadata {
@@ -45,12 +45,49 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
         const width = videoStream?.width || 0;
         const height = videoStream?.height || 0;
 
+        if (!videoStream || duration <= 0) {
+            throw ApplicationFailure.nonRetryable('Video has no usable stream or duration');
+        }
+
         return { duration, width, height };
     } catch (error) {
         rethrowIfActivityStopped(error);
         log.error(`Failed to get video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        throw new Error(`Failed to probe video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (error instanceof ApplicationFailure) {
+            throw error;
+        }
+        throw ApplicationFailure.nonRetryable(
+            `Failed to probe video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
     }
+}
+
+export function calculateThumbnailTimestamps(duration: number, thumbnailCount: number): number[] {
+    const startOffset = Math.min(duration * 0.05, 5);
+    const endOffset = Math.min(duration * 0.05, 5);
+    const usableDuration = Math.max(duration - startOffset - endOffset, 0);
+
+    return Array.from({ length: thumbnailCount }, (_, index) => {
+        const progress = (index + 1) / (thumbnailCount + 1);
+        return startOffset + usableDuration * progress;
+    });
+}
+
+export function requireGeneratedThumbnails(thumbnails: Array<string | undefined>, objectId: string): string[] {
+    const generated = thumbnails.filter((thumbnail): thumbnail is string => thumbnail !== undefined);
+    if (generated.length === 0) {
+        throw ApplicationFailure.nonRetryable(`No thumbnails were generated for video ${objectId}`);
+    }
+    return generated;
+}
+
+function calculateThumbnailCount(duration: number): number {
+    if (duration <= 60) return 3;
+    if (duration <= 300) return 5;
+    if (duration <= 600) return 8;
+    if (duration <= 1800) return 12;
+    if (duration <= 3600) return 16;
+    return 20;
 }
 
 async function generateThumbnail(
@@ -148,98 +185,75 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
         throw new DocumentNotFoundError(`Document ${objectId} is not a video: ${inputObject.content.type}`, [objectId]);
     }
 
-    //array of rendition files to upload
-    const renditionPages: string[] = [];
-
     const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
-    const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'video-rendition-'));
+    let tempOutputDir: string | undefined;
 
     try {
+        tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'video-rendition-'));
+        const outputDir = tempOutputDir;
+
         // Get video metadata using command line ffprobe
         const metadata = await getVideoMetadata(videoFile);
         const duration = metadata.duration;
 
-        // Calculate optimal number of thumbnails based on video length
-        const calculateThumbnailCount = (videoDuration: number): number => {
-            if (videoDuration <= 60) return 3; // Short videos: 3 thumbnails
-            if (videoDuration <= 300) return 5; // 5min videos: 5 thumbnails
-            if (videoDuration <= 600) return 8; // 10min videos: 8 thumbnails
-            if (videoDuration <= 1800) return 12; // 30min videos: 12 thumbnails
-            if (videoDuration <= 3600) return 16; // 1hr videos: 16 thumbnails
-            return 20; // Longer videos: max 20 thumbnails
-        };
-
         const thumbnailCount = calculateThumbnailCount(duration);
 
         // Generate evenly spaced timestamps, avoiding very beginning and end
-        const timestamps: number[] = [];
-        const startOffset = Math.min(duration * 0.05, 5); // Skip first 5% or 5 seconds
-        const endOffset = Math.min(duration * 0.05, 5); // Skip last 5% or 5 seconds
-        const usableDuration = duration - startOffset - endOffset;
-
-        for (let i = 0; i < thumbnailCount; i++) {
-            const progress = (i + 1) / (thumbnailCount + 1); // Evenly distribute
-            const timestamp = startOffset + usableDuration * progress;
-            timestamps.push(Math.max(timestamp, 1));
-        }
+        const timestamps = calculateThumbnailTimestamps(duration, thumbnailCount);
 
         log.info(`Generating ${thumbnailCount} thumbnails for ${duration}s video`, {
             objectId,
             duration,
             thumbnailCount,
             timestamps: timestamps.map((t) => Math.round(t)),
-            tempOutputDir,
+            tempOutputDir: outputDir,
         });
 
         // Generate thumbnails using command line ffmpeg
-        const generatedThumbnails = await Promise.all(
-            timestamps.map(async (timestamp) => {
-                return await generateThumbnail(videoFile, tempOutputDir, timestamp, params.max_hw);
-            }),
+        const generatedThumbnails = requireGeneratedThumbnails(
+            await Promise.all(
+                timestamps.map(async (timestamp) => {
+                    return await generateThumbnail(videoFile, outputDir, timestamp, params.max_hw);
+                }),
+            ),
+            objectId,
         );
 
-        if (generatedThumbnails.length === 0) {
-            log.info(`No thumbnails were generated for video ${objectId}`, {
-                objectId,
-                thumbnailCount,
-                tempOutputDir,
-            });
-            throw new Error(`No thumbnails were generated for video ${objectId}`);
-        }
-
-        renditionPages.push(...generatedThumbnails.filter((thumbnail) => thumbnail !== undefined));
         log.info(`Successfully generated ${generatedThumbnails.length} thumbnails for ${objectId}`, {
             objectId,
             generatedCount: generatedThumbnails.length,
             requestedCount: thumbnailCount,
         });
+        if (!inputObject.content?.etag) {
+            log.warn(`Document ${objectId} has no etag, using object id as etag`);
+        }
+        const etag = inputObject.content.etag ?? inputObject.id;
+
+        const uploaded = await uploadRenditionPages(client, etag, generatedThumbnails, params);
+
+        return {
+            uploads: uploaded.map((u) => u),
+            format: params.format,
+            thumbnailCount: generatedThumbnails.length,
+            status: 'success',
+        };
     } catch (error) {
         rethrowIfActivityStopped(error);
         log.error(`Error generating thumbnails for video: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        throw new Error(`Failed to generate thumbnails for video: ${objectId}`);
+        if (error instanceof ApplicationFailure) {
+            throw error;
+        }
+        throw new Error(`Failed to generate thumbnails for video: ${objectId}`, { cause: error });
     } finally {
-        // Clean up temporary video file
-        try {
-            if (fs.existsSync(videoFile)) {
-                fs.unlinkSync(videoFile);
+        for (const temporaryPath of [videoFile, tempOutputDir]) {
+            if (!temporaryPath) {
+                continue;
             }
-        } catch {
-            log.warn(`Failed to cleanup temporary video file: ${videoFile}`);
+            try {
+                fs.rmSync(temporaryPath, { force: true, recursive: true });
+            } catch (error) {
+                log.warn(`Failed to clean up temporary video rendition path`, { error, temporaryPath });
+            }
         }
     }
-
-    if (!inputObject.content?.etag) {
-        log.warn(`Document ${objectId} has no etag, using object id as etag`);
-    }
-    const etag = inputObject.content.etag ?? inputObject.id;
-
-    // Update the final upload call to handle multiple thumbnails
-    const uploaded = await uploadRenditionPages(client, etag, renditionPages, params);
-
-    return {
-        uploads: uploaded.map((u) => u),
-        format: params.format,
-        thumbnailCount: renditionPages.length,
-        status: 'success',
-    };
 }
