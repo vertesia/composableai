@@ -850,7 +850,7 @@ export const AppDevelopmentTaskDetailsSchema = z
         source_commit: z.string().meta({ description: 'Commit currently at the branch head.' }),
         commit_date: z.string().meta({ description: 'Branch-head commit date, when available.' }).optional(),
         agent_run: AgentRunSearchHitSchema.meta({
-            description: 'Latest Studio Assistant run started for this task branch.',
+            description: 'Latest App Builder parent run started for this task branch.',
         }).optional(),
     })
     .meta({

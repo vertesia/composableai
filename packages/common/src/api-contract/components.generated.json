@@ -17941,7 +17941,7 @@
       },
       "agent_run": {
         "$ref": "#/components/schemas/AgentRunSearchHit",
-        "description": "Latest Studio Assistant run started for this task branch."
+        "description": "Latest App Builder parent run started for this task branch."
       }
     },
     "required": [

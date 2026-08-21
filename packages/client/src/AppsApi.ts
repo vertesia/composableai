@@ -251,7 +251,7 @@ export default class AppsApi extends ApiTopic {
         return this.get(`/${encodeURIComponent(appIdOrName)}/development-tasks`);
     }
 
-    /** Get a development task and its latest parent Studio Assistant run, when started. */
+    /** Get a development task and its latest App Builder parent run, when started. */
     getDevelopmentTask(appIdOrName: string, taskId: string): Promise<AppDevelopmentTaskDetails> {
         return this.get(`/${encodeURIComponent(appIdOrName)}/development-tasks/${encodeURIComponent(taskId)}`);
     }
