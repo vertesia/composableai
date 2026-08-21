@@ -442,15 +442,15 @@ function GroundedExtractionViewImpl({
                                 </Button>
                             }
                         >
-                            <MenuItem onClick={() => downloadArtifact('grounded-extraction.json')}>
+                            <MenuItem className="text-xs" onClick={() => downloadArtifact('grounded-extraction.json')}>
                                 <FileJson2 className="size-4" />
                                 {t('grounded.downloadCitations')}
                             </MenuItem>
-                            <MenuItem onClick={() => downloadArtifact(`pages/page-${page}.json`)}>
+                            <MenuItem className="text-xs" onClick={() => downloadArtifact(`pages/page-${page}.json`)}>
                                 <FileText className="size-4" />
                                 {t('grounded.downloadBlocks')}
                             </MenuItem>
-                            <MenuItem onClick={() => downloadArtifact('grounded-annotated.pdf')}>
+                            <MenuItem className="text-xs" onClick={() => downloadArtifact('grounded-annotated.pdf')}>
                                 <FileDown className="size-4" />
                                 {t('grounded.downloadAnnotated')}
                             </MenuItem>
