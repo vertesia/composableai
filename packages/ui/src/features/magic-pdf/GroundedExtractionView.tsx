@@ -2,8 +2,10 @@ import {
     Badge,
     Button,
     cn,
+    Dropdown,
     ErrorBox,
     errorMessage,
+    MenuItem,
     ResizableHandle,
     ResizablePanel,
     ResizablePanelGroup,
@@ -17,6 +19,7 @@ import {
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    Download,
     Eye,
     FileDown,
     FileJson2,
@@ -265,7 +268,6 @@ function GroundedExtractionViewImpl({
     const [showBreakdown, setShowBreakdown] = useState(false);
     const [showVerdict, setShowVerdict] = useState(false);
     const [pageImageMode, setPageImageMode] = useState<PageImageMode>('original');
-    const [assistantOpen, setAssistantOpen] = useState(false);
 
     const breakdown = useMemo(() => {
         const groups = { digital: 0, ocr: 0, reviewerConfirmed: 0, snapped: 0, imageRead: 0 };
@@ -357,7 +359,7 @@ function GroundedExtractionViewImpl({
                         >
                             <ChevronLeft className="size-4" />
                         </Button>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted">
                             {t('pdf.pageOf', { pageNumber: page, totalPages: pageNumbers.length })}
                         </span>
                         <Button
@@ -418,17 +420,7 @@ function GroundedExtractionViewImpl({
                 <div className="flex h-9 items-center justify-between shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
                     <span className="text-sm font-medium">{t('grounded.title')}</span>
                     <div className="flex items-center gap-2">
-                        <VTooltip description={t('grounded.assistantTooltip')} placement="bottom" size="xs" asChild>
-                            <Button
-                                variant={assistantOpen ? 'primary' : 'ghost'}
-                                size="xs"
-                                aria-label={t('grounded.assistant')}
-                                onClick={() => setAssistantOpen((v) => !v)}
-                            >
-                                <Sparkles className="size-4" />
-                            </Button>
-                        </VTooltip>
-                        {extraction.verdict && (
+                        {/* {extraction.verdict && (
                             <button
                                 type="button"
                                 className="cursor-pointer"
@@ -442,7 +434,7 @@ function GroundedExtractionViewImpl({
                                         : t('grounded.verdictNeedsReview')}
                                 </Badge>
                             </button>
-                        )}
+                        )} */}
                         {typeof extraction.hardness?.score === 'number' && (
                             <Badge
                                 variant={
@@ -460,6 +452,17 @@ function GroundedExtractionViewImpl({
                                 {extraction.hardness.escalated ? ' ↑' : ''}
                             </Badge>
                         )}
+                        <Button
+                            variant={showVerdict ? 'primary' : 'ghost'}
+                            size="xs"
+                            aria-label={t('grounded.assistant')}
+                            onClick={() => {
+                                setShowVerdict((v) => !v);
+                                setShowBreakdown((v) => !v);
+                            }}
+                        >
+                            <Sparkles className="size-4" />
+                        </Button>
                         {extraction.citations.length > 0 &&
                             (() => {
                                 // Real verification: fraction of values actually confirmed —
@@ -484,7 +487,18 @@ function GroundedExtractionViewImpl({
                                     </Badge>
                                 );
                             })()}
-                        <button
+                        <Button
+                            variant="ghost"
+                            title="show/hide breakdown"
+                            size="xs"
+                            onClick={() => {
+                                setShowVerdict((v) => !v);
+                                setShowBreakdown((v) => !v);
+                            }}
+                        >
+                            <Sparkles className="size-4" />
+                        </Button>
+                        {/* <button
                             type="button"
                             className="flex cursor-pointer items-center gap-1"
                             onClick={() => setShowBreakdown((v) => !v)}
@@ -512,34 +526,34 @@ function GroundedExtractionViewImpl({
                                     {t('grounded.unverifiedCount', { count: breakdown.groups.imageRead })}
                                 </Badge>
                             )}
-                        </button>
-                        <Button
-                            variant="ghost"
-                            size="xs"
-                            aria-label={t('grounded.downloadCitations')}
-                            title={t('grounded.downloadCitations')}
-                            onClick={() => downloadArtifact('grounded-extraction.json')}
+                        </button> */}
+
+                        <Dropdown
+                            align="right"
+                            trigger={
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    aria-label={t('pdf.download')}
+                                    title={t('pdf.download')}
+                                >
+                                    <Download className="size-4" />
+                                </Button>
+                            }
                         >
-                            <FileJson2 className="size-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="xs"
-                            aria-label={t('grounded.downloadBlocks')}
-                            title={t('grounded.downloadBlocks')}
-                            onClick={() => downloadArtifact(`pages/page-${page}.json`)}
-                        >
-                            <FileText className="size-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="xs"
-                            aria-label={t('grounded.downloadAnnotated')}
-                            title={t('grounded.downloadAnnotated')}
-                            onClick={() => downloadArtifact('grounded-annotated.pdf')}
-                        >
-                            <FileDown className="size-4" />
-                        </Button>
+                            <MenuItem onClick={() => downloadArtifact('grounded-extraction.json')}>
+                                <FileJson2 className="size-4" />
+                                {t('grounded.downloadCitations')}
+                            </MenuItem>
+                            <MenuItem onClick={() => downloadArtifact(`pages/page-${page}.json`)}>
+                                <FileText className="size-4" />
+                                {t('grounded.downloadBlocks')}
+                            </MenuItem>
+                            <MenuItem onClick={() => downloadArtifact('grounded-annotated.pdf')}>
+                                <FileDown className="size-4" />
+                                {t('grounded.downloadAnnotated')}
+                            </MenuItem>
+                        </Dropdown>
                         {!!onClose && (
                             <Button variant="ghost" size="xs" onClick={onClose} aria-label={t('pdf.close')}>
                                 <X className="size-4" />
@@ -560,7 +574,7 @@ function GroundedExtractionViewImpl({
                                     ? t('grounded.verdictGoodToGo')
                                     : t('grounded.verdictNeedsReview')}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted">
                                 {extraction.review
                                     ? t('grounded.verdictByReviewer')
                                     : t('grounded.verdictByConfidence')}
@@ -572,7 +586,7 @@ function GroundedExtractionViewImpl({
                             </p>
                         )}
                         {extraction.review?.summary && (
-                            <p className="mt-2 text-xs text-muted-foreground">
+                            <p className="mt-2 text-xs text-muted">
                                 <span className="font-medium text-foreground">{t('grounded.reviewSummary')}: </span>
                                 {extraction.review.summary}
                             </p>
@@ -597,11 +611,11 @@ function GroundedExtractionViewImpl({
                                     total: totalCitations,
                                 })}
                             </span>
-                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownDigital')}</span>
+                            <span className="ps-2 text-muted">{t('grounded.breakdownDigital')}</span>
                             <span className="text-end text-success">{breakdown.groups.digital}</span>
-                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownOcr')}</span>
+                            <span className="ps-2 text-muted">{t('grounded.breakdownOcr')}</span>
                             <span className="text-end text-success">{breakdown.groups.ocr}</span>
-                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownSnapped')}</span>
+                            <span className="ps-2 text-muted">{t('grounded.breakdownSnapped')}</span>
                             <span className="text-end text-success">{breakdown.groups.snapped}</span>
                             <span className="col-span-2 mt-2 font-medium text-success">
                                 {t('grounded.modelVerifiedOf', {
@@ -609,24 +623,22 @@ function GroundedExtractionViewImpl({
                                     total: totalCitations,
                                 })}
                             </span>
-                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownReviewer')}</span>
+                            <span className="ps-2 text-muted">{t('grounded.breakdownReviewer')}</span>
                             <span className="text-end text-success">{breakdown.groups.reviewerConfirmed}</span>
                             {breakdown.groups.imageRead > 0 && (
                                 <>
                                     <span className="col-span-2 mt-2 font-medium text-attention">
                                         {t('grounded.unverifiedCount', { count: breakdown.groups.imageRead })}
                                     </span>
-                                    <span className="ps-2 text-muted-foreground">
-                                        {t('grounded.breakdownImageRead')}
-                                    </span>
+                                    <span className="ps-2 text-muted">{t('grounded.breakdownImageRead')}</span>
                                     <span className="text-end text-attention">{breakdown.groups.imageRead}</span>
                                 </>
                             )}
                         </div>
-                        <p className="mt-2 text-xs text-muted-foreground">{t('grounded.breakdownVerificationHelp')}</p>
+                        <p className="mt-2 text-xs text-muted">{t('grounded.breakdownVerificationHelp')}</p>
                         {breakdown.unverified.length > 0 && (
                             <div className="mt-2">
-                                <div className="text-xs font-medium text-muted-foreground mb-1">
+                                <div className="text-xs font-medium text-muted mb-1">
                                     {t('grounded.breakdownUnverifiedList')}
                                 </div>
                                 <ul className="space-y-0.5">
@@ -640,7 +652,7 @@ function GroundedExtractionViewImpl({
                                                     setShowBreakdown(false);
                                                 }}
                                             >
-                                                <span className="text-muted-foreground">{c.path}</span>{' '}
+                                                <span className="text-muted">{c.path}</span>{' '}
                                                 <span>{String(c.value ?? '')}</span>
                                             </button>
                                         </li>
@@ -877,9 +889,7 @@ function DataNode({
                     return (
                         <div key={childPath} className="pt-1">
                             {!rendersOwnLabel && (
-                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                    {key}
-                                </div>
+                                <div className="text-xs font-semibold text-muted uppercase tracking-wide">{key}</div>
                             )}
                             <DataNode
                                 value={child}
@@ -921,13 +931,13 @@ function ArrayTable({
 
     return (
         <div className="pt-1">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="text-xs font-semibold text-muted uppercase tracking-wide">
                 {path.split('.').pop()} ({items.length})
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                     <thead>
-                        <tr className="text-start text-muted-foreground">
+                        <tr className="text-start text-muted">
                             {columns.map((col) => (
                                 <th key={col} scope="col" className="py-1 pe-2 font-medium">
                                     {col}
@@ -950,10 +960,10 @@ function ArrayTable({
                                                 className={cn(
                                                     'text-start rounded px-1 w-full',
                                                     isSelected
-                                                        ? 'bg-destructive/15 ring-1 ring-destructive'
+                                                        ? 'bg-secondary ring-1 ring-primary'
                                                         : citation
                                                           ? 'hover:bg-muted cursor-pointer'
-                                                          : 'text-muted-foreground cursor-default',
+                                                          : 'text-muted cursor-default',
                                                 )}
                                             >
                                                 {formatValue(item[col])}
@@ -1010,7 +1020,7 @@ function LeafRow({
                 !citation && 'cursor-default',
             )}
         >
-            <span className="text-muted-foreground min-w-28 shrink-0">{label}</span>
+            <span className="text-muted min-w-28 shrink-0">{label}</span>
             <span className="flex-1 wrap-break-word">{formatValue(value)}</span>
             {citation && typeof citation.confidence === 'number' && (
                 <span
