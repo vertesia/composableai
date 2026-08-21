@@ -30,7 +30,6 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { GroundedExtractionAssistantPanel } from './GroundedExtractionAssistantPanel';
 
 const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
 
@@ -176,7 +175,6 @@ export function GroundedExtractionPanel({ objectId, onClose }: GroundedExtractio
         data: extraction,
         error,
         isLoading,
-        refetch,
     } = useFetch<GroundedExtractionFile>(async () => {
         const response = await client.files.getDownloadUrl(
             `${ADVANCED_PROCESSING_PREFIX}/${objectId}/grounded-extraction.json`,
@@ -213,12 +211,7 @@ export function GroundedExtractionPanel({ objectId, onClose }: GroundedExtractio
 
     return (
         <div className="relative h-full">
-            <GroundedExtractionViewImpl
-                extraction={extraction}
-                objectId={objectId}
-                onClose={onClose}
-                onExtractionChanged={refetch}
-            />
+            <GroundedExtractionViewImpl extraction={extraction} objectId={objectId} onClose={onClose} />
         </div>
     );
 }
@@ -238,12 +231,10 @@ function GroundedExtractionViewImpl({
     extraction,
     objectId,
     onClose,
-    onExtractionChanged,
 }: {
     extraction: GroundedExtractionFile;
     objectId: string;
     onClose?: () => void;
-    onExtractionChanged?: () => void;
 }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -678,19 +669,6 @@ function GroundedExtractionViewImpl({
                     )}
                 </div>
             </ResizablePanel>
-            {assistantOpen && (
-                <>
-                    <ResizableHandle className="w-[4px] bg-border cursor-ew-resize" />
-                    <ResizablePanel defaultSize={30} minSize={20} className="flex flex-col border-s border-border">
-                        <GroundedExtractionAssistantPanel
-                            objectId={objectId}
-                            onExtractionChanged={onExtractionChanged}
-                            selectedField={selectedPath}
-                            onClose={() => setAssistantOpen(false)}
-                        />
-                    </ResizablePanel>
-                </>
-            )}
         </ResizablePanelGroup>
     );
 }
