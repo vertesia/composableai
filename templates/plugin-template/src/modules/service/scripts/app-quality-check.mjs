@@ -138,7 +138,8 @@ function hasDetachedVertesiaClientMethod(text) {
 
 const sourceFiles = (await walk(path.join(cwd, 'src'))).filter(isSourceFile);
 const scriptFiles = (await walk(path.join(cwd, 'scripts'))).filter(isSourceFile);
-const allFiles = [...sourceFiles, ...scriptFiles];
+const rootTestFiles = (await walk(path.join(cwd, 'tests'))).filter(isSourceFile);
+const allFiles = [...sourceFiles, ...scriptFiles, ...rootTestFiles];
 report.scanned_files = allFiles.length;
 
 const shellUiFiles = allFiles.filter((file) => rel(file).startsWith('src/ui/'));
@@ -192,6 +193,10 @@ async function readPackageJson() {
 
 const packageJson = await readPackageJson();
 const packageName = typeof packageJson?.name === 'string' ? packageJson.name : undefined;
+const generatedAppRequiresTests =
+    process.env.APPGEN_REQUIRE_TESTS === '1' &&
+    existsSync(path.join(cwd, 'src/modules/service')) &&
+    packageName !== 'plugin-template';
 // The smoke/integration tests bootstrap this exact template under throwaway
 // package names — both package managers (with an optional `-npm` infix) across
 // the smoke and integration scripts. The `--module dev` leg ships examples on
@@ -209,6 +214,46 @@ function hasDependency(name) {
         const deps = packageJson[section];
         return deps && typeof deps === 'object' && typeof deps[name] === 'string';
     });
+}
+
+if (generatedAppRequiresTests) {
+    const scripts = packageJson?.scripts && typeof packageJson.scripts === 'object' ? packageJson.scripts : {};
+    const unitScript = typeof scripts['test:unit'] === 'string' ? scripts['test:unit'] : '';
+    const e2eScript = typeof scripts['test:e2e'] === 'string' ? scripts['test:e2e'] : '';
+    const repositoryTestFiles = allFiles.filter((file) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file));
+    const classifiedTests = await Promise.all(
+        repositoryTestFiles.map(async (file) => ({ file, text: await readFile(file, 'utf8') })),
+    );
+    const playwrightTests = classifiedTests.filter(({ text }) => /from\s+["']@playwright\/test["']/.test(text));
+    const unitTests = classifiedTests.filter(({ text }) => !/from\s+["']@playwright\/test["']/.test(text));
+
+    if (!unitScript || /no tests|passWithNoTests/i.test(unitScript)) {
+        add('errors', 'unit-tests-required', 'Generated apps require a real test:unit command.', packageJsonPath);
+    }
+    if (!e2eScript || !/\bplaywright\b/i.test(e2eScript)) {
+        add(
+            'errors',
+            'playwright-tests-required',
+            'Generated apps require a Playwright test:e2e command.',
+            packageJsonPath,
+        );
+    }
+    if (unitTests.length === 0) {
+        add(
+            'errors',
+            'unit-tests-required',
+            'Generated apps require at least one focused unit test.',
+            path.join(cwd, 'src'),
+        );
+    }
+    if (playwrightTests.length === 0) {
+        add(
+            'errors',
+            'playwright-tests-required',
+            'Generated apps require at least one committed Playwright primary-flow test.',
+            path.join(cwd, 'tests'),
+        );
+    }
 }
 
 function requireDependency(name, reason) {
@@ -436,7 +481,18 @@ for (const file of serverResourceFiles.filter((item) => item.endsWith('.hbs'))) 
 }
 
 const hasProcessYaml = processFiles.some((file) => /\.(ya?ml)$/.test(file));
-const hasProcessTs = processFiles.some((file) => /\.(ts|tsx)$/.test(file));
+const processTsFiles = processFiles.filter((file) => /\.(ts|tsx)$/.test(file));
+const hasProcessTs = (
+    await Promise.all(
+        processTsFiles.map(async (file) => {
+            const text = await readFile(file, 'utf8');
+            const onlyDeclaresEmptyCollection =
+                /export\s+const\s+processes\s*=\s*\[\s*\]\s+satisfies\s+InCodeProcessDefinition\[\]/.test(text) &&
+                !/\bdefinition\s*:/.test(text);
+            return !onlyDeclaresEmptyCollection;
+        }),
+    )
+).some(Boolean);
 if (hasProcessTs && !hasProcessYaml) {
     add(
         'warnings',
