@@ -486,7 +486,7 @@ function GroundedExtractionViewImpl({
                     <div className="shrink-0 border-b border-border bg-background px-3 py-2 text-sm max-h-72 overflow-auto">
                         <div className="mb-1 flex items-center gap-1">
                             <span className="font-medium">{t('grounded.breakdownTitle')}</span>
-                            <VTooltip description={t('grounded.breakdownVerificationHelp')}>
+                            <VTooltip description={t('grounded.breakdownVerificationHelp')} size="xs">
                                 <Info className="size-3 text-muted" />
                             </VTooltip>
                         </div>
