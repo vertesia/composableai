@@ -40,8 +40,9 @@ fi
 echo "Checking the committed schemas in packages/common are up to date..."
 if ! pnpm --dir packages/common run check:pre-push; then
     echo ""
-    echo "ERROR: the committed schema artifacts are stale."
-    echo "The generator has already refreshed them in your working tree; review and commit:"
+    echo "ERROR: the committed schema artifacts do not match the generator's output."
+    echo "Lines above: ' M' means the commit is stale, '??' means it is missing from the commit."
+    echo "The generator has already written the correct files to your working tree; review and commit:"
     echo "  git add packages/common/src/api-contract/components.generated.json \\"
     echo "          packages/common/src/store/intake-policy-schema.generated.ts \\"
     echo "          packages/common/src/store/editing-policy-schema.generated.ts"
