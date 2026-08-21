@@ -29,6 +29,7 @@ import {
     FileText,
     Grid3X3,
     Image as ImageIcon,
+    Info,
     Sparkles,
     X,
 } from 'lucide-react';
@@ -483,7 +484,12 @@ function GroundedExtractionViewImpl({
                 </div>
                 {showDetails && (
                     <div className="shrink-0 border-b border-border bg-background px-3 py-2 text-sm max-h-72 overflow-auto">
-                        <div className="font-medium mb-1">{t('grounded.breakdownTitle')}</div>
+                        <div className="mb-1 flex items-center gap-1">
+                            <span className="font-medium">{t('grounded.breakdownTitle')}</span>
+                            <VTooltip description={t('grounded.breakdownVerificationHelp')}>
+                                <Info className="size-3 text-muted" />
+                            </VTooltip>
+                        </div>
                         <div className="grid grid-cols-2 gap-x-4 text-xs">
                             <span className="col-span-2 mt-1 font-medium text-success">
                                 {t('grounded.digitalVerifiedOf', {
@@ -517,7 +523,6 @@ function GroundedExtractionViewImpl({
                                 </>
                             )}
                         </div>
-                        <p className="mt-2 text-xs text-muted-foreground">{t('grounded.breakdownVerificationHelp')}</p>
                         {typeof extraction.hardness?.score === 'number' && (
                             <p className="mt-2 text-xs text-muted-foreground" title={t('grounded.hardnessHint')}>
                                 {t('grounded.hardness', {
@@ -883,7 +888,7 @@ function ArrayTable({
                                                             'ms-1 text-[10px]',
                                                             scoreColor(citation.confidence),
                                                         )}
-                                                        title={t('grounded.confidenceHint')}
+                                                        title={t('grounded.scoreHint')}
                                                     >
                                                         {formatScore(citation.confidence)}
                                                     </span>
@@ -935,7 +940,7 @@ function LeafRow({
             {citation && typeof citation.confidence === 'number' && (
                 <span
                     className={cn('text-xs shrink-0', scoreColor(citation.confidence))}
-                    title={t('grounded.confidenceHint')}
+                    title={t('grounded.scoreHint')}
                 >
                     {formatScore(citation.confidence)}
                 </span>
