@@ -9,8 +9,10 @@ import {
     FindRunResultSchema,
     InCodeInteractionSchema,
     InteractionCreatePayloadSchema,
+    InteractionPromptSegmentInputSchema,
     InteractionSchema,
     InteractionUpdatePayloadSchema,
+    PromptSegmentDefSchema,
     ResolvedCatalogInteractionSchema,
 } from './interaction.js';
 
@@ -168,9 +170,48 @@ describe('run response contracts', () => {
 });
 
 describe('interaction contracts', () => {
+    const populatedPrompt = {
+        role: 'user',
+        content: 'Hello',
+        content_type: 'text',
+        id: 'prompt-1',
+        name: 'Greeting',
+        status: 'draft',
+        version: 1,
+        project: 'project-1',
+        created_by: 'user-1',
+        updated_by: 'user-1',
+        created_at: '2026-08-20T00:00:00.000Z',
+        updated_at: '2026-08-20T00:00:00.000Z',
+    };
+
     it('accepts the media-result storage setting on interaction payloads and responses', () => {
         expect(InteractionSchema.shape.store_media_results.parse(true)).toBe(true);
         expect(InteractionCreatePayloadSchema.shape.store_media_results.parse(false)).toBe(false);
         expect(InteractionUpdatePayloadSchema.shape.store_media_results.parse(true)).toBe(true);
+    });
+
+    it('keeps legacy populated prompts valid in interaction write payloads', () => {
+        const segment = { type: 'template', template: populatedPrompt };
+
+        expect(InteractionPromptSegmentInputSchema.safeParse(segment).success).toBe(true);
+        expect(
+            InteractionPromptSegmentInputSchema.safeParse({
+                ...segment,
+                template: { ...populatedPrompt, edit_revision: 3 },
+            }).success,
+        ).toBe(true);
+    });
+
+    it('still requires edit revisions on populated prompts returned by the API', () => {
+        const segment = { type: 'template', template: populatedPrompt };
+
+        expect(PromptSegmentDefSchema.safeParse(segment).success).toBe(false);
+        expect(
+            PromptSegmentDefSchema.safeParse({
+                ...segment,
+                template: { ...populatedPrompt, edit_revision: 3 },
+            }).success,
+        ).toBe(true);
     });
 });

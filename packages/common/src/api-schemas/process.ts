@@ -5,6 +5,7 @@ import type { StringValue } from 'ms';
 import { z } from 'zod';
 import { StringValueMapSchema } from './files.js';
 import { ConversationVisibilitySchema, RunSourceSchema } from './interaction.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { TaskFieldSchema } from './task.js';
 
 export const DurationValueSchema = z
@@ -629,6 +630,7 @@ export const DSLWorkflowDefinitionSchema: z.ZodType = z
         result: z.string().optional(),
         debug_mode: z.boolean().optional(),
         id: z.string().meta({ description: 'Unique identifier for the object' }),
+        edit_revision: EditRevisionSchema,
         updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }),
         created_by: z.string().meta({ description: 'Identifier of the user who created the object' }),
         created_at: z.string().meta({ description: 'ISO timestamp of when the object was created' }),
@@ -649,6 +651,7 @@ export const DSLWorkflowDefinitionResponseSchema: z.ZodType = z
         result: z.string().optional(),
         debug_mode: z.boolean().optional(),
         id: z.string().meta({ description: 'Unique identifier for the object' }),
+        edit_revision: EditRevisionSchema,
         updated_by: z.string().meta({ description: 'Identifier of the user who last modified the object' }),
         created_by: z.string().meta({ description: 'Identifier of the user who created the object' }),
         created_at: z.string().meta({ description: 'ISO timestamp of when the object was created' }),
@@ -757,6 +760,33 @@ export const WorkflowDefinitionPayloadSchema: z.ZodType = z
     ])
     .meta({ id: 'WorkflowDefinitionPayload' });
 
+export const UpdateWorkflowDefinitionPayloadWithActivitiesSchema: z.ZodType = z
+    .strictObject({
+        ...dslWorkflowSpecBaseFields,
+        expected_edit_revision: ExpectedEditRevisionSchema,
+        steps: z.array(z.lazy(() => DSLWorkflowStepSchema)).optional(),
+        activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta),
+        spec_format: z.literal('activities'),
+    })
+    .meta({ id: 'UpdateWorkflowDefinitionPayloadWithActivities' });
+
+export const UpdateWorkflowDefinitionPayloadWithStepsSchema: z.ZodType = z
+    .strictObject({
+        ...dslWorkflowSpecBaseFields,
+        expected_edit_revision: ExpectedEditRevisionSchema,
+        steps: z.array(z.lazy(() => DSLWorkflowStepSchema)),
+        activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta).optional(),
+        spec_format: z.literal('steps'),
+    })
+    .meta({ id: 'UpdateWorkflowDefinitionPayloadWithSteps' });
+
+export const UpdateWorkflowDefinitionPayloadSchema: z.ZodType = z
+    .discriminatedUnion('spec_format', [
+        UpdateWorkflowDefinitionPayloadWithStepsSchema as unknown as z.ZodObject,
+        UpdateWorkflowDefinitionPayloadWithActivitiesSchema as unknown as z.ZodObject,
+    ])
+    .meta({ id: 'UpdateWorkflowDefinitionPayload' });
+
 export const DSLWorkflowStepSchema: z.ZodType = z
     .discriminatedUnion('type', [
         DSLActivityStepSchema,
@@ -842,6 +872,7 @@ export const NodeDefinitionMapSchema: z.ZodType = z
 export const ProcessDefinitionSchema: z.ZodType = z
     .strictObject({
         id: z.string(),
+        edit_revision: EditRevisionSchema,
         account: z.string(),
         project: z.string(),
         name: z.string(),
@@ -878,6 +909,7 @@ export const ProcessDefinitionBodySchema: z.ZodType = z
 
 export const UpdateProcessDefinitionPayloadSchema: z.ZodType = z
     .strictObject({
+        expected_edit_revision: ExpectedEditRevisionSchema,
         name: z.string().optional(),
         description: z.string().optional(),
         status: ProcessDefinitionStatusSchema.meta({

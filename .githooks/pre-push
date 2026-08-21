@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Pre-push hook:
+# - Verifies pnpm-lock.yaml is in sync with the package.json files (without modifying it).
+# - Verifies the committed schema artifacts in packages/common are not stale.
+#
+# `@vertesia/common`'s Zod registry is the authored source; the JSON/TS artifacts under
+# src/api-contract and src/store are its emitted output and are committed. When they drift,
+# components.contract.test.ts fails in CI, which is a slow way to learn you forgot
+# `pnpm run gen:schemas`. Catch it before the push instead.
+
+set -euo pipefail
+
+hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$hook_dir/.." && pwd)"
+cd "$repo_root"
+
+# CI installs with --frozen-lockfile, so a lockfile that drifted from a package.json edit fails
+# every job before it runs anything. --lockfile-only keeps this a verification: it resolves against
+# the manifests without touching node_modules, and --frozen-lockfile makes it report the drift
+# instead of silently writing a new lockfile.
+echo "Checking pnpm-lock.yaml is up to date..."
+if ! pnpm install --lockfile-only --frozen-lockfile; then
+    echo ""
+    echo "ERROR: pnpm-lock.yaml is out of sync with the package.json files."
+    echo "Run: pnpm install && git add pnpm-lock.yaml && git commit -m 'chore: update pnpm-lock.yaml'"
+    echo ""
+    echo "Push with --no-verify to skip this check."
+    exit 1
+fi
+
+# The generator runs through tsx over ./src and reads @llumiverse/common from its built lib, so it
+# needs an installed workspace. A standalone clone without node_modules cannot run it; CI covers
+# that case.
+if [ ! -d node_modules ]; then
+    echo "[pre-push] node_modules not found; skipping the schema check."
+    echo "[pre-push] Run 'pnpm install' to enable it, or rely on CI."
+    exit 0
+fi
+
+echo "Checking the committed schemas in packages/common are up to date..."
+if ! pnpm --dir packages/common run check:pre-push; then
+    echo ""
+    echo "ERROR: the committed schema artifacts do not match the generator's output."
+    echo "Lines above: ' M' means the commit is stale, '??' means it is missing from the commit."
+    echo "The generator has already written the correct files to your working tree; review and commit:"
+    echo "  git add packages/common/src/api-contract/components.generated.json \\"
+    echo "          packages/common/src/store/intake-policy-schema.generated.ts \\"
+    echo "          packages/common/src/store/editing-policy-schema.generated.ts"
+    echo "  git commit -m 'chore: regenerate schemas'"
+    echo ""
+    echo "Push with --no-verify to skip this check."
+    exit 1
+fi

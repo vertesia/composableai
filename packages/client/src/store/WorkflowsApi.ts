@@ -26,7 +26,8 @@ import {
     type ToolParameterAnalyticsResponse,
     type TopPrincipalsAnalyticsResponse,
     toAgentMessage,
-    type UploadWorkflowRulePayload,
+    type UpdateWorkflowDefinitionPayload,
+    type UpdateWorkflowRulePayload,
     type WebSocketClientMessage,
     type WebSocketServerMessage,
     type WorkflowActionPayload,
@@ -741,7 +742,7 @@ export class WorkflowsRulesApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    update(id: string, payload: UploadWorkflowRulePayload): Promise<WorkflowRule> {
+    update(id: string, payload: UpdateWorkflowRulePayload): Promise<WorkflowRule> {
         return this.put(`/${id}`, {
             payload,
         });
@@ -785,7 +786,7 @@ export class WorkflowsDefinitionApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    update(id: string, payload: DSLWorkflowSpec): Promise<DSLWorkflowDefinition> {
+    update(id: string, payload: UpdateWorkflowDefinitionPayload): Promise<DSLWorkflowDefinition> {
         return this.put(`/${id}`, {
             payload,
         });

@@ -1,4 +1,4 @@
-import type { ComputedFacetResponse, FacetBucket } from '@vertesia/common';
+import type { ComputedFacetResponse, FacetBucket, PromptSearchQuery } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     FilterBar,
@@ -8,7 +8,15 @@ import {
     FilterProvider,
 } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import {
+    createSearchQueryKeyGuard,
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+} from './utils/SearchInterface';
+
+const promptFilterNames = ['name', 'role', 'tags'] as const satisfies readonly (keyof PromptSearchQuery)[];
+const isPromptFilterName = createSearchQueryKeyGuard<PromptSearchQuery>(promptFilterNames);
 
 interface PromptsFacetsNavProps {
     /**
@@ -18,7 +26,7 @@ interface PromptsFacetsNavProps {
      * requests and could not describe a caller that asks for a different one.
      */
     facets: ComputedFacetResponse;
-    search: SearchInterface;
+    search: SearchInterface<PromptSearchQuery>;
     /**
      * Optional controlled filter state. When provided, the parent owns the filter list (and is
      * responsible for translating it into the search query via {@link usePromptsFilterHandler}). This
@@ -81,7 +89,7 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
 }
 
 // Hook to create filter change handler for prompts
-export function usePromptsFilterHandler(search: SearchInterface) {
+export function usePromptsFilterHandler(search: SearchInterface<PromptSearchQuery>) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             // Clear filters without applying defaults - user wants to remove all filters
@@ -94,6 +102,9 @@ export function usePromptsFilterHandler(search: SearchInterface) {
 
         newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
+                if (!isPromptFilterName(filter.name)) {
+                    return;
+                }
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
                 setSearchQueryValue(search, filterName, filterValue);
