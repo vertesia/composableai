@@ -2,15 +2,13 @@ import {
     Badge,
     Button,
     cn,
+    Dropdown,
     ErrorBox,
     errorMessage,
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+    MenuItem,
     ResizableHandle,
     ResizablePanel,
     ResizablePanelGroup,
-    SelectList,
     Spinner,
     useFetch,
     VTooltip,
@@ -259,18 +257,6 @@ function GroundedExtractionViewImpl({
             });
     };
     const [page, setPage] = useState(pageNumbers[0] ?? 1);
-    const downloadOptions = useMemo(
-        () => [
-            {
-                label: t('grounded.downloadCitations'),
-                Icon: FileJson2,
-                path: 'grounded-extraction.json',
-            },
-            { label: t('grounded.downloadBlocks'), Icon: FileText, path: `pages/page-${page}.json` },
-            { label: t('grounded.downloadAnnotated'), Icon: FileDown, path: 'grounded-annotated.pdf' },
-        ],
-        [t, page],
-    );
     const [selectedPath, setSelectedPath] = useState<string | undefined>(undefined);
     const [showDetails, setShowDetails] = useState(false);
     const [pageImageMode, setPageImageMode] = useState<PageImageMode>('original');
@@ -443,38 +429,32 @@ function GroundedExtractionViewImpl({
                                 </Badge>
                             </VTooltip>
                         )}
-                        <Popover hover>
-                            <PopoverTrigger>
+                        <Dropdown
+                            align="right"
+                            trigger={
                                 <Button
                                     variant="ghost"
                                     size="xs"
-                                    title={t('pdf.download')}
                                     aria-label={t('pdf.download')}
+                                    title={t('pdf.download')}
                                 >
                                     <Download className="size-4" />
                                 </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="p-0 w-64" align="end" sideOffset={6}>
-                                <div className="rounded-md shadow-md py-2">
-                                    <div className="px-1 text-sm">
-                                        <SelectList
-                                            options={downloadOptions}
-                                            optionLayout={(option) => ({
-                                                label: (
-                                                    <span className="flex items-center gap-2">
-                                                        <option.Icon className="size-4 shrink-0 text-muted" />
-                                                        <span>{option.label}</span>
-                                                    </span>
-                                                ),
-                                                className: 'flex-1 px-2 py-2 hover:bg-accent',
-                                            })}
-                                            onChange={(option) => downloadArtifact(option.path)}
-                                            noCheck
-                                        />
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                            }
+                        >
+                            <MenuItem onClick={() => downloadArtifact('grounded-extraction.json')}>
+                                <FileJson2 className="size-4" />
+                                {t('grounded.downloadCitations')}
+                            </MenuItem>
+                            <MenuItem onClick={() => downloadArtifact(`pages/page-${page}.json`)}>
+                                <FileText className="size-4" />
+                                {t('grounded.downloadBlocks')}
+                            </MenuItem>
+                            <MenuItem onClick={() => downloadArtifact('grounded-annotated.pdf')}>
+                                <FileDown className="size-4" />
+                                {t('grounded.downloadAnnotated')}
+                            </MenuItem>
+                        </Dropdown>
                         {!!onClose && (
                             <Button variant="ghost" size="xs" onClick={onClose} aria-label={t('pdf.close')}>
                                 <X className="size-4" />
