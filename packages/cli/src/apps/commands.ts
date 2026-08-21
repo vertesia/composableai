@@ -147,7 +147,15 @@ export async function updateApp(program: Command, appId: string, options: Manife
         process.exit(1);
     }
 
-    const result = await client.apps.update(appId, manifest);
+    const current = (await client.apps.list()).find((app) => app.id === appId);
+    if (!current) {
+        console.error(`${colors.red('✗')} App not found: ${appId}`);
+        process.exit(1);
+    }
+    const result = await client.apps.update(appId, {
+        ...manifest,
+        expected_edit_revision: current.edit_revision,
+    });
     console.log(`${colors.green('✓')} App updated successfully`);
     console.log(`  ID: ${result.id}`);
     console.log(`  Name: ${result.name}`);

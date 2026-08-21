@@ -170,6 +170,7 @@ export type ProcessDefinitionRevisionInfo = z.infer<typeof ProcessDefinitionRevi
 
 export interface ProcessDefinition {
     id: string;
+    edit_revision: number;
     account: string;
     project: string;
     name: string;
@@ -215,6 +216,7 @@ export interface CreateProcessDefinitionPayload {
 }
 
 export interface UpdateProcessDefinitionPayload {
+    expected_edit_revision?: number;
     name?: string;
     description?: string;
     /**

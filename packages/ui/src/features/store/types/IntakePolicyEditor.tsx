@@ -345,7 +345,17 @@ export function IntakePolicyEditor({
             onSaveProp ??
             (objectType
                 ? (next: ContentTypeIntakePolicy) =>
-                      store.types.update(objectType.id, { intake: next }).then((response) => response.intake)
+                      store.types
+                          .update(objectType.id, {
+                              intake: next,
+                              ...(objectType.edit_revision === undefined
+                                  ? {}
+                                  : { expected_edit_revision: objectType.edit_revision }),
+                          })
+                          .then((response) => {
+                              objectType.edit_revision = response.edit_revision;
+                              return response.intake;
+                          })
                 : undefined);
         if (!persist) {
             return;

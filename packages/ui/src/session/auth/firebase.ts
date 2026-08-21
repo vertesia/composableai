@@ -139,7 +139,7 @@ export async function getFirebaseAuthToken(refresh?: boolean) {
         return user
             .getIdToken(refresh)
             .then((token) => {
-                Env.logger.info('Got Firebase token', {
+                Env.logger.debug('Got Firebase token', {
                     vertesia: {
                         user_email: user.email,
                         user_name: user.displayName,

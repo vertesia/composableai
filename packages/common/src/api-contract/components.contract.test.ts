@@ -15,9 +15,10 @@ import { ApiSchemaComponents } from './index.js';
  *    enough to push a small API process past its memory limit.
  */
 describe('api-contract components artifact', () => {
-    it('matches the Zod registry exactly', () => {
+    it('matches the Zod registry exactly', { timeout: 30_000 }, () => {
         // Fails when an API schema was edited without re-running the generator, and equally when the
         // artifact was regenerated but not committed — a CI checkout then has new Zod against old JSON.
+        // Rebuilding the full registry is CPU-heavy and can exceed Vitest's default timeout under parallel CI.
         expect(
             ApiSchemaComponents,
             'components.generated.json is stale — run `pnpm run gen:schemas` in packages/common',

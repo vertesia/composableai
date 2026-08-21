@@ -1162,6 +1162,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/VertexAIGeminiOptions',
                 },
                 {
+                    $ref: '#/$defs/VertexAIGeminiOmniVideoOptions',
+                },
+                {
                     $ref: '#/$defs/VertexAIGrokOptions',
                 },
                 {
@@ -1549,6 +1552,30 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 cache_ttl: {
                     type: 'string',
                     enum: ['5m', '1h'],
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        VertexAIGeminiOmniVideoOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'vertexai-gemini-omni-video',
+                },
+                task: {
+                    type: 'string',
+                    enum: ['text_to_video', 'image_to_video', 'reference_to_video'],
+                },
+                aspect_ratio: {
+                    type: 'string',
+                    enum: ['16:9', '9:16'],
+                },
+                duration_seconds: {
+                    type: 'integer',
+                    minimum: 3,
+                    maximum: 10,
                 },
             },
             required: ['_option_id'],
