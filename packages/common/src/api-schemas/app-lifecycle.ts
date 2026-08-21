@@ -413,6 +413,18 @@ export const StartAppScaffoldRequestSchema = z
     })
     .meta({ id: 'StartAppScaffoldRequest' });
 
+export const StartAppDevelopmentTaskRequestSchema = z
+    .strictObject({
+        prompt: z.string().min(1).meta({ description: 'Development request passed to the App Builder parent.' }),
+        environment: z.string().min(1).meta({ description: 'Execution environment id for the App Builder run.' }),
+        model: z.string().min(1).meta({ description: 'Model id for the App Builder run.' }),
+        build_version: z
+            .boolean()
+            .meta({ description: 'Create one immutable app version after validation. Defaults to false.' })
+            .optional(),
+    })
+    .meta({ id: 'StartAppDevelopmentTaskRequest' });
+
 export const StartAppBuildRequestSchema = z
     .strictObject({
         source_ref: z
