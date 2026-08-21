@@ -1,4 +1,4 @@
-import type { ComputedFacetResponse } from '@vertesia/common';
+import type { ComputedFacetResponse, InteractionSearchQuery } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     FilterBar,
@@ -8,11 +8,24 @@ import {
     FilterProvider,
 } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import {
+    createSearchQueryKeyGuard,
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+} from './utils/SearchInterface';
+
+const interactionFilterNames = [
+    'name',
+    'prompt',
+    'model',
+    'tags',
+] as const satisfies readonly (keyof InteractionSearchQuery)[];
+const isInteractionFilterName = createSearchQueryKeyGuard<InteractionSearchQuery>(interactionFilterNames);
 
 interface InteractionsFacetsNavProps {
     facets: ComputedFacetResponse;
-    search: SearchInterface;
+    search: SearchInterface<InteractionSearchQuery>;
     env?: string | null;
     /**
      * Optional controlled filter state. When provided, the parent owns the filter list (and is
@@ -69,7 +82,7 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
 }
 
 // Hook to create filter change handler for interactions
-export function useInteractionsFilterHandler(search: SearchInterface) {
+export function useInteractionsFilterHandler(search: SearchInterface<InteractionSearchQuery>) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             search.clearFilters(true, true);
@@ -82,6 +95,9 @@ export function useInteractionsFilterHandler(search: SearchInterface) {
 
         newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
+                if (!isInteractionFilterName(filter.name)) {
+                    return;
+                }
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
                 setSearchQueryValue(search, filterName, filterValue);
