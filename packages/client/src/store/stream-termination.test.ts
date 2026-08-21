@@ -55,4 +55,26 @@ describe('stream termination', () => {
 
         expect(shouldCloseCompactRunStream(message, rootRunId)).toBe(true);
     });
+
+    it('closes the current stream when an interactive root conversation becomes idle', () => {
+        const message: AgentMessage = {
+            type: AgentMessageType.IDLE,
+            timestamp: Date.now(),
+            workflow_run_id: rootRunId,
+            message: 'Waiting for your command...',
+            workstream_id: 'main',
+        };
+
+        expect(shouldCloseAgentRunStream(message, rootRunId)).toBe(true);
+    });
+
+    it('keeps compact streams open when a child workstream becomes idle', () => {
+        const message: CompactMessage = {
+            t: AgentMessageType.IDLE,
+            m: 'Child waiting',
+            w: 'implementation',
+        };
+
+        expect(shouldCloseCompactRunStream(message, rootRunId)).toBe(false);
+    });
 });
