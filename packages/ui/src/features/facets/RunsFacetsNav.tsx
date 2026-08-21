@@ -1,4 +1,4 @@
-import type { ComputeRunFacetsResponse } from '@vertesia/common';
+import type { ComputeRunFacetsResponse, RunSearchQuery } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     Button,
@@ -10,14 +10,34 @@ import {
 } from '@vertesia/ui/core';
 import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import {
+    createSearchQueryKeyGuard,
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+} from './utils/SearchInterface';
 import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 
+const runFilterNames = [
+    'run_ids',
+    'interaction',
+    'environment',
+    'tags',
+    'model',
+    'status',
+    'finish_reason',
+    'start',
+    'end',
+    'workflow_run_ids',
+    'workflow_ids',
+] as const satisfies readonly (keyof RunSearchQuery)[];
+const isRunFilterName = createSearchQueryKeyGuard<RunSearchQuery>(runFilterNames);
+
 interface RunsFacetsNavProps {
     facets: Pick<ComputeRunFacetsResponse, 'interactions' | 'environments' | 'models' | 'statuses' | 'finish_reason'>;
-    search: SearchInterface;
+    search: SearchInterface<RunSearchQuery>;
     actions?: React.ReactNode[];
     selectionCount?: number;
     /**
@@ -62,7 +82,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
     if (facets.environments) {
         const environmentFilterGroup = VEnvironmentFacet({
             buckets: identifiedBuckets(facets.environments),
-            name: 'environments',
+            name: 'environment',
         });
         customFilterGroups.push(environmentFilterGroup);
     }
@@ -142,7 +162,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 }
 
 // Hook to create filter change handler for runs
-export function useRunsFilterHandler(search: SearchInterface) {
+export function useRunsFilterHandler(search: SearchInterface<RunSearchQuery>) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             // Clear filters without applying defaults - user wants to remove all filters
@@ -155,6 +175,9 @@ export function useRunsFilterHandler(search: SearchInterface) {
 
         newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
+                if (!isRunFilterName(filter.name)) {
+                    return;
+                }
                 const filterName = filter.name;
                 let filterValue = filterValueToQueryValue(filter);
 
