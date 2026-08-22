@@ -17,6 +17,7 @@ import {
     AgentResourceReferenceSchema,
     AgentSearchScopeSchema,
     AgentToolApprovalModeSchema,
+    ConversationEnrichmentFields,
     ConversationVisibilitySchema,
     InitialToolCallSchema,
     InteractionRefSchema,
@@ -407,6 +408,14 @@ export const AutonomousRunResponseSchema = z
             .string()
             .meta({ description: 'Conversation topic (longer description from topic analysis)' })
             .optional(),
+        generate_topic: z
+            .boolean()
+            .meta({ description: 'Whether automatic conversation title/topic generation is enabled for this run.' })
+            .optional(),
+        generate_lessons: z
+            .boolean()
+            .meta({ description: 'Whether automatic lessons generation is enabled for this run.' })
+            .optional(),
         lessons_learned: z
             .array(z.string())
             .meta({ description: 'Lessons learned from the conversation (extracted at completion)' })
@@ -547,6 +556,14 @@ export const AgentRunSchema = z
             .string()
             .meta({ description: 'Conversation topic (longer description from topic analysis)' })
             .optional(),
+        generate_topic: z
+            .boolean()
+            .meta({ description: 'Whether automatic conversation title/topic generation is enabled for this run.' })
+            .optional(),
+        generate_lessons: z
+            .boolean()
+            .meta({ description: 'Whether automatic lessons generation is enabled for this run.' })
+            .optional(),
         lessons_learned: z
             .array(z.string())
             .meta({ description: 'Lessons learned from the conversation (extracted at completion)' })
@@ -577,6 +594,7 @@ export const AgentRunSchema = z
 export const CreateAgentRunPayloadSchema = z
     .strictObject({
         interaction: z.string().meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
+        ...ConversationEnrichmentFields,
         data: z.looseObject({}).meta({ description: 'Input parameters, typed per interaction' }).optional(),
         config: InteractionExecutionConfigurationSchema.meta({
             description: 'Execution configuration (environment, model, model_options, etc.)',
@@ -1056,6 +1074,7 @@ export const RecordAgentRunPayloadSchema = z
         first_workflow_run_id: z.string(),
         run_kind: z.literal('agent').optional(),
         interaction: z.string(),
+        ...ConversationEnrichmentFields,
         parent_run_id: z.string().optional(),
         workstream_id: z.string().optional(),
         schedule_id: z.string().optional(),
