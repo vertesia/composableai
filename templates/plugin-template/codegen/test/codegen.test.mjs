@@ -43,6 +43,7 @@ function writePackageJson(tmpRoot) {
 function writeDurableTestFixtures(tmpRoot) {
     const unitPath = path.join(tmpRoot, 'src/modules/app/resources/app-contract.test.ts');
     const e2ePath = path.join(tmpRoot, 'tests/e2e/app.spec.ts');
+    const fixturePath = path.join(tmpRoot, 'tests/e2e/vertesia.ts');
     fs.mkdirSync(path.dirname(unitPath), { recursive: true });
     fs.mkdirSync(path.dirname(e2ePath), { recursive: true });
     fs.writeFileSync(
@@ -51,8 +52,9 @@ function writeDurableTestFixtures(tmpRoot) {
     );
     fs.writeFileSync(
         e2ePath,
-        "import { expect, test } from '@playwright/test';\ntest('primary flow', async ({ page }) => { await page.goto('/'); await expect(page.locator('body')).toBeVisible(); });\n",
+        "import { expect, test } from './vertesia';\ntest('primary flow', async ({ page }) => { await page.goto('/'); await expect(page.locator('body')).toBeVisible(); });\n",
     );
+    fs.writeFileSync(fixturePath, "export { expect, test } from '@playwright/test';\n");
 }
 
 test('Playwright client fixture uses the required non-empty destructured fixture argument', () => {

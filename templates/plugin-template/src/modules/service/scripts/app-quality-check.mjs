@@ -230,8 +230,10 @@ if (generatedAppRequiresTests) {
     const classifiedTests = await Promise.all(
         repositoryTestFiles.map(async (file) => ({ file, text: await readFile(file, 'utf8') })),
     );
-    const playwrightTests = classifiedTests.filter(({ text }) => /from\s+["']@playwright\/test["']/.test(text));
-    const unitTests = classifiedTests.filter(({ text }) => !/from\s+["']@playwright\/test["']/.test(text));
+    const isPlaywrightTest = ({ file, text }) =>
+        rel(file).startsWith('tests/e2e/') || /from\s+["']@playwright\/test["']/.test(text);
+    const playwrightTests = classifiedTests.filter(isPlaywrightTest);
+    const unitTests = classifiedTests.filter((testFile) => !isPlaywrightTest(testFile));
 
     if (!unitScript || /no tests|passWithNoTests/i.test(unitScript)) {
         add('errors', 'unit-tests-required', 'Generated apps require a real test:unit command.', packageJsonPath);
