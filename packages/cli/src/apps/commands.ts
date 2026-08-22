@@ -47,6 +47,20 @@ export type DevelopmentTaskOptions = CliOptions<{
     follow?: boolean;
 }>;
 
+const DEVELOPMENT_TASK_PROGRESS_TYPES = new Set<AgentMessageType>([
+    AgentMessageType.PLAN,
+    AgentMessageType.UPDATE,
+    AgentMessageType.COMPLETE,
+    AgentMessageType.WARNING,
+    AgentMessageType.ERROR,
+    AgentMessageType.ANSWER,
+    AgentMessageType.QUESTION,
+    AgentMessageType.REQUEST_INPUT,
+    AgentMessageType.TERMINATED,
+    AgentMessageType.BATCH_PROGRESS,
+    AgentMessageType.RESTARTING,
+]);
+
 function messageProgress(message: AgentMessage): AppScaffoldProgress | undefined {
     const details = message.details as { app_scaffold_progress?: AppScaffoldProgress } | undefined;
     return details?.app_scaffold_progress;
@@ -111,11 +125,25 @@ export async function startDevelopmentTask(
         model,
         build_version: options.buildVersion ?? false,
     });
-    console.log(JSON.stringify(run, null, 2));
+    console.log(
+        JSON.stringify(
+            {
+                id: run.id,
+                status: run.status,
+                workflow_id: run.workflow_id,
+                run_id: run.first_workflow_run_id,
+                ...('interaction' in run ? { interaction: run.interaction } : {}),
+            },
+            null,
+            2,
+        ),
+    );
     if (options.follow === false) return;
     let inputRequired = false;
     await client.agents.streamMessages(run.id, (message, exit) => {
-        if (message.message) console.log(`[${message.type}] ${message.message}`);
+        if (message.message && DEVELOPMENT_TASK_PROGRESS_TYPES.has(message.type)) {
+            console.log(`[${AgentMessageType[message.type] ?? message.type}] ${message.message}`);
+        }
         if (message.type === AgentMessageType.REQUEST_INPUT) {
             inputRequired = true;
             exit?.({ status: 'input_required', message: message.message });
