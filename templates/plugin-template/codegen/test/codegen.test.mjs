@@ -154,10 +154,27 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/service')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
         const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
+        const serviceEntry = fs.readFileSync(path.join(tmpRoot, 'src/modules/service/ui/AppEntry.tsx'), 'utf8');
         assert.doesNotMatch(appRoutes, /Document Library/);
+        assert.match(serviceEntry, /client\.withAppVersion\(appVersion\)/);
+        assert.doesNotMatch(serviceEntry, /useEffect/);
+        assert.doesNotMatch(serviceEntry, /store\.withAppVersion/);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
+});
+
+test('appgen Playwright support keeps authenticated output safe and transient output ignored', () => {
+    const playwrightConfig = fs.readFileSync(path.join(templateRoot, 'playwright.config.ts'), 'utf8');
+    const playwrightFixture = fs.readFileSync(path.join(templateRoot, 'tests/e2e/vertesia.ts'), 'utf8');
+    const gitignore = fs.readFileSync(path.join(templateRoot, '.gitignore'), 'utf8');
+
+    assert.match(playwrightConfig, /VERTESIA_TOKEN/);
+    assert.match(playwrightConfig, /hasVertesiaAuth \? 'off' : 'retain-on-failure'/);
+    assert.match(playwrightFixture, /__VERTESIA_AUTH_TOKEN__/);
+    assert.match(playwrightFixture, /headers\.authorization = `Bearer \$\{token\}`/);
+    assert.match(gitignore, /test-results\//);
+    assert.match(gitignore, /playwright-report\//);
 });
 
 test('examples module contributes optional UI routes, views, hooks, and subscriptions', () => {
@@ -257,6 +274,38 @@ test('service quality requires app-owned unit and Playwright tests', () => {
         });
         report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
         assert.equal(report.ok, true);
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('service quality does not treat unit-test failure text as an end-user seed control', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['appgen']);
+        const packageJsonPath = path.join(tmpRoot, 'package.json');
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        packageJson.name = 'generated-seed-policy-app';
+        fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+        writeDurableTestFixtures(tmpRoot);
+
+        const uiTestPath = path.join(tmpRoot, 'src/modules/app/ui/seed-contract.test.ts');
+        fs.writeFileSync(
+            uiTestPath,
+            "import { expect, test } from 'vitest';\ntest('rejects stale data', () => expect(() => { throw new Error('stale seed marker'); }).toThrow());\n",
+        );
+
+        execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
+            cwd: tmpRoot,
+            stdio: 'pipe',
+            env: { ...process.env, APPGEN_REQUIRE_TESTS: '1' },
+        });
+        const report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.equal(
+            report.errors.some((error) => error.rule === 'no-end-user-seed-controls'),
+            false,
+        );
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

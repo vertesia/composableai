@@ -24,3 +24,8 @@ lib
 *.sln
 *.sw?
 .vercel
+
+# Browser-test output
+test-results/
+playwright-report/
+blob-report/

@@ -121,6 +121,10 @@ function isCodeFile(file) {
     return /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(file);
 }
 
+function isTestFile(file) {
+    return /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file);
+}
+
 function isTemplateShellEntry(file) {
     return rel(file) === 'src/ui/shell/AppEntry.tsx';
 }
@@ -144,8 +148,10 @@ report.scanned_files = allFiles.length;
 
 const shellUiFiles = allFiles.filter((file) => rel(file).startsWith('src/ui/'));
 const moduleUiFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/ui\//.test(rel(file)));
-const uiFiles = [...shellUiFiles, ...moduleUiFiles];
-const appUiFiles = moduleUiFiles;
+// Tests may intentionally contain failure messages such as "stale seed marker". They are
+// regression fixtures, not customer-visible UI, so UI policy scans must ignore them.
+const uiFiles = [...shellUiFiles, ...moduleUiFiles].filter((file) => !isTestFile(file));
+const appUiFiles = moduleUiFiles.filter((file) => !isTestFile(file));
 const toolServerFiles = allFiles.filter((file) => rel(file).startsWith('src/tool-server/'));
 const moduleResourceFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/resources\//.test(rel(file)));
 const serverResourceFiles = [...toolServerFiles, ...moduleResourceFiles];

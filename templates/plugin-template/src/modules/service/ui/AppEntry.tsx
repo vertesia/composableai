@@ -1,7 +1,7 @@
 import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
-import { type ReactNode, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { setUsePluginAssets } from '../../../ui/assets';
 import { App } from '../../../ui/shell/App';
 import { OrgGate } from '../../../ui/shell/layouts/OrgGate';
@@ -39,13 +39,11 @@ const routes: Route[] = [
 ];
 
 function AppVersionScope({ children }: { children: ReactNode }) {
-    const { client, store } = useUserSession();
+    const { client } = useUserSession();
 
-    useEffect(() => {
-        if (!appVersion) return;
-        client.withAppVersion(appVersion);
-        store.withAppVersion(appVersion);
-    }, [client, store]);
+    // withAppVersion synchronously pins both Studio and Store clients. Do this before returning
+    // request-producing descendants; a passive effect lets their first requests escape unpinned.
+    if (appVersion) client.withAppVersion(appVersion);
 
     return <>{children}</>;
 }
