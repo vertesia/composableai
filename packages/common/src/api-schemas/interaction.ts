@@ -2089,12 +2089,36 @@ export const AsyncInteractionExecutionPayloadSchema = z
     })
     .meta({ id: 'AsyncInteractionExecutionPayload' });
 
+export const ConversationEnrichmentFields = {
+    title: z.string().min(1).meta({ description: 'Caller-provided conversation title.' }).optional(),
+    topic: z
+        .string()
+        .min(1)
+        .meta({ description: 'Caller-provided conversation topic. Suppresses automatic topic generation.' })
+        .optional(),
+    generate_topic: z
+        .boolean()
+        .meta({
+            description:
+                'Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation.',
+        })
+        .optional(),
+    generate_lessons: z
+        .boolean()
+        .meta({
+            description:
+                'Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled.',
+        })
+        .optional(),
+};
+
 export const AsyncConversationExecutionPayloadSchema = z
     .object({
         interaction: z.string().meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
+        ...ConversationEnrichmentFields,
         app_version: z
             .string()
             .meta({

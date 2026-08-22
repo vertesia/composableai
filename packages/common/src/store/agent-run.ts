@@ -242,6 +242,10 @@ export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends 
     /** Workstream this run occupies inside its parent run (the process node id). */
     workstream_id?: string;
     interaction: string;
+    title?: string;
+    topic?: string;
+    generate_topic?: boolean;
+    generate_lessons?: boolean;
     first_workflow_run_id: string;
     schedule_id?: string;
     visibility?: ConversationVisibility;
