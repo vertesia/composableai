@@ -55,6 +55,14 @@ function writeDurableTestFixtures(tmpRoot) {
     );
 }
 
+test('Playwright client fixture uses the required non-empty destructured fixture argument', () => {
+    const fixture = fs.readFileSync(path.join(templateRoot, 'tests/e2e/vertesia.ts'), 'utf8');
+
+    assert.match(fixture, /vertesiaClient:\s*async \(\{ playwright: _playwright \}, use\) =>/);
+    assert.doesNotMatch(fixture, /vertesiaClient:\s*async \(\{\}, use\) =>/);
+    assert.doesNotMatch(fixture, /vertesiaClient:\s*async \(_fixtures, use\) =>/);
+});
+
 test('dev module codegen matches checked-in generated files', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
@@ -133,7 +141,7 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.doesNotMatch(serverModules, /modules\/examples/);
         assert.equal(packageJson.scripts['service:quality'], 'node src/modules/service/scripts/app-quality-check.mjs');
         assert.equal(packageJson.scripts.test, 'pnpm run test:unit');
-        assert.equal(packageJson.scripts['test:unit'], 'vitest run');
+        assert.equal(packageJson.scripts['test:unit'], 'vitest run src');
         assert.equal(packageJson.scripts['test:e2e'], 'playwright test');
         assert.equal(
             packageJson.scripts['service:build:server'],
@@ -176,6 +184,7 @@ test('appgen Playwright support keeps authenticated output safe and transient ou
     assert.match(playwrightFixture, /await VertesiaClient\.fromAuthToken/);
     assert.match(playwrightFixture, /PLAYWRIGHT_APP_VERSION/);
     assert.match(playwrightFixture, /client\.withAppVersion\(version\)/);
+    assert.match(gitignore, /pnpm-lock\.yaml/);
     assert.match(gitignore, /test-results\//);
     assert.match(gitignore, /playwright-report\//);
 });

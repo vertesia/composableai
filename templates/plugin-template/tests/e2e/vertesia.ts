@@ -51,7 +51,7 @@ export const test = base.extend<VertesiaFixtures>({
         },
         { auto: true },
     ],
-    vertesiaClient: async (_fixtures, use) => {
+    vertesiaClient: async ({ playwright: _playwright }, use) => {
         const token = process.env.VERTESIA_TOKEN;
         if (!token) throw new Error('vertesiaClient requires VERTESIA_TOKEN');
 

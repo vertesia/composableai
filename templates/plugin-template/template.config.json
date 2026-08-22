@@ -55,7 +55,7 @@
       },
       "packageScripts": {
         "test": "pnpm run test:unit",
-        "test:unit": "vitest run",
+        "test:unit": "vitest run src",
         "test:e2e": "playwright test",
         "service:quality": "node src/modules/service/scripts/app-quality-check.mjs",
         "service:build:server": "pnpm run service:quality && node src/modules/service/scripts/build-server-esbuild.mjs && node src/modules/service/scripts/write-app-package.mjs",

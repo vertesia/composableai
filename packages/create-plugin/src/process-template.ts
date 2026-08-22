@@ -172,6 +172,23 @@ function replaceInTextFile(content: string, answers: Record<string, unknown>): {
     return { content, modified };
 }
 
+function serializeCodeValue(value: unknown, previousValue: string): string | undefined {
+    if (typeof value === 'string' && previousValue.trimStart().startsWith("'")) {
+        const escaped = value
+            .replaceAll('\\', '\\\\')
+            .replaceAll("'", "\\'")
+            .replaceAll('\b', '\\b')
+            .replaceAll('\f', '\\f')
+            .replaceAll('\n', '\\n')
+            .replaceAll('\r', '\\r')
+            .replaceAll('\t', '\\t')
+            .replaceAll('\u2028', '\\u2028')
+            .replaceAll('\u2029', '\\u2029');
+        return `'${escaped}'`;
+    }
+    return JSON.stringify(value);
+}
+
 /**
  * Replace variables in code files (JavaScript, TypeScript)
  * Supports two patterns:
@@ -187,8 +204,8 @@ function replaceInCodeFile(content: string, answers: Record<string, unknown>): {
         // Replaces only the value, keeps the constant declaration
         const configPattern = new RegExp(`(const\\s+CONFIG__${key}\\s*=\\s*)([^;\\n]+)(\\s*;?\\s*\\n?)`, 'gm');
         if (content.match(configPattern)) {
-            content = content.replace(configPattern, (_match, prefix, _oldValue, suffix) => {
-                return `${prefix}${JSON.stringify(value)}${suffix}`;
+            content = content.replace(configPattern, (_match, prefix, oldValue, suffix) => {
+                return `${prefix}${serializeCodeValue(value, oldValue)}${suffix}`;
             });
             modified = true;
         }
