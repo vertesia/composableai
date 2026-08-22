@@ -1,7 +1,10 @@
 import { test as base, expect } from '@playwright/test';
+import { VertesiaClient } from '@vertesia/client';
 
 type VertesiaFixtures = {
     vertesiaAuth: undefined;
+    /** Version-aware root client for candidate-only Store and runtime checks. */
+    vertesiaClient: VertesiaClient;
 };
 
 function acceptsVertesiaAuth(value: string): boolean {
@@ -48,6 +51,18 @@ export const test = base.extend<VertesiaFixtures>({
         },
         { auto: true },
     ],
+    vertesiaClient: async (_fixtures, use) => {
+        const token = process.env.VERTESIA_TOKEN;
+        if (!token) throw new Error('vertesiaClient requires VERTESIA_TOKEN');
+
+        const studio = process.env.VERTESIA_SERVER_URL;
+        const store = process.env.VERTESIA_STORE_URL;
+        const endpoints = studio && store ? { studio, store } : undefined;
+        const client = await VertesiaClient.fromAuthToken(token, undefined, endpoints);
+        const version = process.env.PLAYWRIGHT_APP_VERSION ?? process.env.VITE_APP_VERSION;
+        if (version) client.withAppVersion(version);
+        await use(client);
+    },
 });
 
 export { expect };

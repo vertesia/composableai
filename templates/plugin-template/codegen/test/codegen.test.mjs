@@ -173,6 +173,9 @@ test('appgen Playwright support keeps authenticated output safe and transient ou
     assert.match(playwrightConfig, /hasVertesiaAuth \? 'off' : 'retain-on-failure'/);
     assert.match(playwrightFixture, /__VERTESIA_AUTH_TOKEN__/);
     assert.match(playwrightFixture, /headers\.authorization = `Bearer \$\{token\}`/);
+    assert.match(playwrightFixture, /await VertesiaClient\.fromAuthToken/);
+    assert.match(playwrightFixture, /PLAYWRIGHT_APP_VERSION/);
+    assert.match(playwrightFixture, /client\.withAppVersion\(version\)/);
     assert.match(gitignore, /test-results\//);
     assert.match(gitignore, /playwright-report\//);
 });
