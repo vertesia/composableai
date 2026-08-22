@@ -131,7 +131,16 @@ export function useArtifacts(
     const fetchIdRef = useRef(0);
 
     const fetchArtifacts = useCallback(async () => {
-        if (!runId) return;
+        if (!runId) {
+            // Leaving the run behind: invalidate any in-flight listing so a late
+            // response cannot repopulate, then clear. Without this, an embedding app
+            // that returns to a start view keeps showing the previous run's files.
+            fetchIdRef.current++;
+            setAllFiles((prev) => (prev.length === 0 ? prev : []));
+            setError(null);
+            setIsLoading(false);
+            return;
+        }
 
         const fetchId = ++fetchIdRef.current;
         setIsLoading(true);

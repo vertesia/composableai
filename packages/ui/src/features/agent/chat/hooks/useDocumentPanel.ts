@@ -58,8 +58,13 @@ function isSameRevisionChain(existing: OpenDocument, incoming: OpenDocument): bo
  * and manages panel open/close, tab selection, and refresh state.
  *
  * Uses incremental processing — only scans new messages.
+ *
+ * Pass `conversationId` (e.g. the agent run id) whenever the panel can outlive a
+ * conversation switch. Scanning is incremental, so without an identity a switch
+ * between two non-empty histories keeps the previous conversation's cursor and
+ * documents: the new history is partly skipped and its documents mix with stale ones.
  */
-export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResult {
+export function useDocumentPanel(messages: AgentMessage[], conversationId?: string): UseDocumentPanelResult {
     const [openDocuments, setOpenDocuments] = useState<OpenDocument[]>([]);
     const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
     const [isDocPanelOpen, setIsDocPanelOpen] = useState(false);
@@ -67,17 +72,22 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
 
     // Incremental processing
     const lastProcessedIndex = useRef<number>(-1);
+    const trackedConversationId = useRef(conversationId);
 
-    // Reset when messages are cleared
+    // Reset when the panel moves to a different conversation, or when messages are
+    // cleared. Declared before the scanning effect below so the cursor is already
+    // rewound when the new conversation's messages are processed in the same commit.
     useEffect(() => {
-        if (messages.length === 0) {
-            setOpenDocuments([]);
-            setActiveDocumentId(null);
-            setIsDocPanelOpen(false);
-            setDocRefreshKey(0);
-            lastProcessedIndex.current = -1;
-        }
-    }, [messages.length]);
+        const conversationChanged = trackedConversationId.current !== conversationId;
+        if (!conversationChanged && messages.length > 0) return;
+
+        trackedConversationId.current = conversationId;
+        setOpenDocuments([]);
+        setActiveDocumentId(null);
+        setIsDocPanelOpen(false);
+        setDocRefreshKey(0);
+        lastProcessedIndex.current = -1;
+    }, [conversationId, messages.length]);
 
     // Process new messages incrementally for document events
     useEffect(() => {
