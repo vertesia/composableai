@@ -1,5 +1,6 @@
 import { Permission, SystemRoles } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
+import { AgentRunRoleNames } from './agent-runs.js';
 import { ContentRoleNames } from './content.js';
 import {
     AbacRole,
@@ -46,20 +47,23 @@ describe('getRoleByName', () => {
 describe('listRoles', () => {
     it('returns every role across all partitions', () => {
         const roles = listRoles();
-        // 16 system roles + 3 content roles
-        expect(roles).toHaveLength(19);
+        // 16 system roles + 3 content roles + 2 agent-run roles
+        expect(roles).toHaveLength(21);
     });
 
     it('lists system roles before content roles (partition registration order)', () => {
         const roles = listRoles();
         const systemCount = roles.filter((r) => r.domain === 'system').length;
         const contentCount = roles.filter((r) => r.domain === 'content').length;
+        const agentRunCount = roles.filter((r) => r.domain === 'agent_runs').length;
         expect(systemCount).toBe(16);
         expect(contentCount).toBe(3);
+        expect(agentRunCount).toBe(2);
 
-        // First 16 are system, next 3 are content
+        // First 16 are system, next 3 are content, final 2 are agent runs
         for (let i = 0; i < 16; i++) expect(roles[i].domain).toBe('system');
         for (let i = 16; i < 19; i++) expect(roles[i].domain).toBe('content');
+        for (let i = 19; i < 21; i++) expect(roles[i].domain).toBe('agent_runs');
     });
 });
 
@@ -74,6 +78,12 @@ describe('listRolesByDomain', () => {
         const roles = listRolesByDomain('content');
         expect(roles).toHaveLength(3);
         expect(roles.every((r) => r.domain === 'content')).toBe(true);
+    });
+
+    it('returns only agent-run roles for "agent_runs"', () => {
+        const roles = listRolesByDomain('agent_runs');
+        expect(roles).toHaveLength(2);
+        expect(roles.every((r) => r.domain === 'agent_runs')).toBe(true);
     });
 
     it('returns empty for an unregistered domain', () => {
@@ -111,6 +121,12 @@ describe('listAbacRolesForScope', () => {
         expect(listAbacRolesForScope('task')).toEqual([]);
     });
 
+    it('returns read and operator roles for "agent_run" scope', () => {
+        const roles = listAbacRolesForScope('agent_run');
+        expect(roles.map((r) => r.name).sort()).toEqual(['agent_runs:operator', 'agent_runs:reader']);
+        expect(roles.every((r) => r.applicableScopes.includes('agent_run'))).toBe(true);
+    });
+
     it('returns AbacRole instances only — no system roles bleed through', () => {
         const roles = listAbacRolesForScope('document');
         expect(roles.every((r) => r instanceof AbacRole)).toBe(true);
@@ -120,9 +136,10 @@ describe('listAbacRolesForScope', () => {
 describe('getAllRoleNames', () => {
     it('returns names of every registered role', () => {
         const names = getAllRoleNames();
-        expect(names).toHaveLength(19);
+        expect(names).toHaveLength(21);
         expect(names).toContain('owner');
         expect(names).toContain('content:reader');
+        expect(names).toContain('agent_runs:reader');
     });
 
     it('produces a flat list suited for mongoose enum constraints', () => {
@@ -182,6 +199,11 @@ describe('Role instances', () => {
     it('AbacRole permissions are bare verbs, not Permission enum values', () => {
         const manager = getRoleByName(ContentRoleNames.content_manager);
         expect(Array.from(manager.permissions).sort()).toEqual(['delete', 'read', 'write']);
+    });
+
+    it('Agent-run operator carries read and control verbs', () => {
+        const operator = getRoleByName(AgentRunRoleNames.agent_run_operator);
+        expect(Array.from(operator.permissions).sort()).toEqual(['control', 'read']);
     });
 });
 
