@@ -40,6 +40,29 @@ function writePackageJson(tmpRoot) {
     );
 }
 
+function writeDurableTestFixtures(tmpRoot) {
+    const unitPath = path.join(tmpRoot, 'src/modules/app/resources/app-contract.test.ts');
+    const e2ePath = path.join(tmpRoot, 'tests/e2e/app.spec.ts');
+    fs.mkdirSync(path.dirname(unitPath), { recursive: true });
+    fs.mkdirSync(path.dirname(e2ePath), { recursive: true });
+    fs.writeFileSync(
+        unitPath,
+        "import { expect, test } from 'vitest';\ntest('app contract', () => expect(true).toBe(true));\n",
+    );
+    fs.writeFileSync(
+        e2ePath,
+        "import { expect, test } from '@playwright/test';\ntest('primary flow', async ({ page }) => { await page.goto('/'); await expect(page.locator('body')).toBeVisible(); });\n",
+    );
+}
+
+test('Playwright client fixture uses the required non-empty destructured fixture argument', () => {
+    const fixture = fs.readFileSync(path.join(templateRoot, 'tests/e2e/vertesia.ts'), 'utf8');
+
+    assert.match(fixture, /vertesiaClient:\s*async \(\{ playwright: _playwright \}, use\) =>/);
+    assert.doesNotMatch(fixture, /vertesiaClient:\s*async \(\{\}, use\) =>/);
+    assert.doesNotMatch(fixture, /vertesiaClient:\s*async \(_fixtures, use\) =>/);
+});
+
 test('dev module codegen matches checked-in generated files', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
@@ -77,7 +100,9 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(packageJson.scripts['codegen:dev'], undefined);
         assert.equal(packageJson.scripts.pretest, undefined);
         assert.equal(packageJson.scripts['test:codegen'], undefined);
-        assert.equal(packageJson.scripts.test, 'echo "(no tests in template scaffold)"');
+        assert.equal(packageJson.scripts.test, undefined);
+        assert.equal(packageJson.scripts['test:unit'], undefined);
+        assert.equal(packageJson.scripts['test:e2e'], undefined);
         assert.equal(packageJson.scripts['seed:content'], undefined);
         assert.equal(packageJson.scripts['exercise:content'], undefined);
         assert.equal(packageJson.scripts['service:quality'], undefined);
@@ -115,6 +140,9 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.doesNotMatch(serverModules, /modules\/examples/);
         assert.equal(packageJson.scripts['service:quality'], 'node src/modules/service/scripts/app-quality-check.mjs');
+        assert.equal(packageJson.scripts.test, 'pnpm run test:unit');
+        assert.equal(packageJson.scripts['test:unit'], 'vitest run src');
+        assert.equal(packageJson.scripts['test:e2e'], 'playwright test');
         assert.equal(
             packageJson.scripts['service:build:server'],
             'pnpm run service:quality && node src/modules/service/scripts/build-server-esbuild.mjs && node src/modules/service/scripts/write-app-package.mjs',
@@ -134,10 +162,31 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/service')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
         const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
+        const serviceEntry = fs.readFileSync(path.join(tmpRoot, 'src/modules/service/ui/AppEntry.tsx'), 'utf8');
         assert.doesNotMatch(appRoutes, /Document Library/);
+        assert.match(serviceEntry, /client\.withAppVersion\(appVersion\)/);
+        assert.doesNotMatch(serviceEntry, /useEffect/);
+        assert.doesNotMatch(serviceEntry, /store\.withAppVersion/);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
+});
+
+test('appgen Playwright support keeps authenticated output safe and transient output ignored', () => {
+    const playwrightConfig = fs.readFileSync(path.join(templateRoot, 'playwright.config.ts'), 'utf8');
+    const playwrightFixture = fs.readFileSync(path.join(templateRoot, 'tests/e2e/vertesia.ts'), 'utf8');
+    const gitignore = fs.readFileSync(path.join(templateRoot, '.gitignore'), 'utf8');
+
+    assert.match(playwrightConfig, /VERTESIA_TOKEN/);
+    assert.match(playwrightConfig, /hasVertesiaAuth \? 'off' : 'retain-on-failure'/);
+    assert.match(playwrightFixture, /__VERTESIA_AUTH_TOKEN__/);
+    assert.match(playwrightFixture, /headers\.authorization = `Bearer \$\{token\}`/);
+    assert.match(playwrightFixture, /await VertesiaClient\.fromAuthToken/);
+    assert.match(playwrightFixture, /PLAYWRIGHT_APP_VERSION/);
+    assert.match(playwrightFixture, /client\.withAppVersion\(version\)/);
+    assert.match(gitignore, /pnpm-lock\.yaml/);
+    assert.match(gitignore, /test-results\//);
+    assert.match(gitignore, /playwright-report\//);
 });
 
 test('examples module contributes optional UI routes, views, hooks, and subscriptions', () => {
@@ -185,6 +234,7 @@ test('service quality accepts an intentionally selected examples module', async 
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
         packageJson.name = 'generated-examples-app';
         fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+        writeDurableTestFixtures(tmpRoot);
 
         const policyPath = path.join(tmpRoot, 'src/modules/service/scripts/template-example-policy.mjs');
         const { shouldRejectTemplateExampleIds } = await import(pathToFileURL(policyPath).href);
@@ -193,7 +243,112 @@ test('service quality accepts an intentionally selected examples module', async 
         execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
             cwd: tmpRoot,
             stdio: 'pipe',
+            env: { ...process.env, APPGEN_REQUIRE_TESTS: '1' },
         });
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('service quality requires app-owned unit and Playwright tests', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['appgen']);
+        const packageJsonPath = path.join(tmpRoot, 'package.json');
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        packageJson.name = 'generated-test-contract-app';
+        fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+
+        const qualityScript = 'src/modules/service/scripts/app-quality-check.mjs';
+        execFileSync(process.execPath, [qualityScript], { cwd: tmpRoot, stdio: 'pipe' });
+        let report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.equal(report.ok, true, 'the pristine scaffold build runs before AppDeveloper can add tests');
+
+        assert.throws(() =>
+            execFileSync(process.execPath, [qualityScript], {
+                cwd: tmpRoot,
+                stdio: 'pipe',
+                env: { ...process.env, APPGEN_REQUIRE_TESTS: '1' },
+            }),
+        );
+        report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.deepEqual([...new Set(report.errors.map((error) => error.rule))].sort(), [
+            'playwright-tests-required',
+            'unit-tests-required',
+        ]);
+
+        writeDurableTestFixtures(tmpRoot);
+        execFileSync(process.execPath, [qualityScript], {
+            cwd: tmpRoot,
+            stdio: 'pipe',
+            env: { ...process.env, APPGEN_REQUIRE_TESTS: '1' },
+        });
+        report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.equal(report.ok, true);
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('service quality does not treat unit-test failure text as an end-user seed control', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['appgen']);
+        const packageJsonPath = path.join(tmpRoot, 'package.json');
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        packageJson.name = 'generated-seed-policy-app';
+        fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+        writeDurableTestFixtures(tmpRoot);
+
+        const uiTestPath = path.join(tmpRoot, 'src/modules/app/ui/seed-contract.test.ts');
+        fs.writeFileSync(
+            uiTestPath,
+            "import { expect, test } from 'vitest';\ntest('rejects stale data', () => expect(() => { throw new Error('stale seed marker'); }).toThrow());\n",
+        );
+
+        execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
+            cwd: tmpRoot,
+            stdio: 'pipe',
+            env: { ...process.env, APPGEN_REQUIRE_TESTS: '1' },
+        });
+        const report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.equal(
+            report.errors.some((error) => error.rule === 'no-end-user-seed-controls'),
+            false,
+        );
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('service quality warns only for an actual TypeScript process definition', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['appgen']);
+
+        const qualityScript = 'src/modules/service/scripts/app-quality-check.mjs';
+        execFileSync(process.execPath, [qualityScript], { cwd: tmpRoot, stdio: 'pipe' });
+        let report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.equal(
+            report.warnings.some((warning) => warning.rule === 'prefer-process-yaml'),
+            false,
+            'the generated empty processes/index.ts is not a process definition',
+        );
+
+        fs.writeFileSync(
+            path.join(tmpRoot, 'src/modules/app/resources/processes/order-review.ts'),
+            'export const OrderReview = { definition: { process: "order_review", nodes: {} } };\n',
+        );
+        execFileSync(process.execPath, [qualityScript], { cwd: tmpRoot, stdio: 'pipe' });
+        report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.equal(
+            report.warnings.some((warning) => warning.rule === 'prefer-process-yaml'),
+            true,
+            'a real TypeScript process definition should still recommend YAML source',
+        );
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

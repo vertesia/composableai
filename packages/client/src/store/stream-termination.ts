@@ -20,7 +20,10 @@ export function shouldCloseAgentRunStream(message: AgentMessage, rootRunId: stri
         return isRootProcessMessage(message.details, rootRunId);
     }
 
-    if (message.type === AgentMessageType.COMPLETE && (message.workstream_id ?? 'main') === 'main') {
+    if (
+        (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) &&
+        (message.workstream_id ?? 'main') === 'main'
+    ) {
         return isRootProcessMessage(message.details, rootRunId);
     }
 
@@ -32,7 +35,10 @@ export function shouldCloseCompactRunStream(message: CompactMessage, rootRunId: 
         return isRootProcessMessage(message.d, rootRunId);
     }
 
-    if (message.t === AgentMessageType.COMPLETE && (message.w ?? 'main') === 'main') {
+    if (
+        (message.t === AgentMessageType.COMPLETE || message.t === AgentMessageType.IDLE) &&
+        (message.w ?? 'main') === 'main'
+    ) {
         return isRootProcessMessage(message.d, rootRunId);
     }
 

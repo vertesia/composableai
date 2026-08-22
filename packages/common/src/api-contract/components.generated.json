@@ -17024,6 +17024,36 @@
     ],
     "additionalProperties": false
   },
+  "StartAppDevelopmentTaskRequest": {
+    "type": "object",
+    "properties": {
+      "prompt": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Development request passed to the App Builder parent."
+      },
+      "environment": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Execution environment id for the App Builder run."
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Model id for the App Builder run."
+      },
+      "build_version": {
+        "type": "boolean",
+        "description": "Create one immutable app version after validation. Defaults to false."
+      }
+    },
+    "required": [
+      "prompt",
+      "environment",
+      "model"
+    ],
+    "additionalProperties": false
+  },
   "StartAppBuildRequest": {
     "type": "object",
     "properties": {
@@ -17941,7 +17971,7 @@
       },
       "agent_run": {
         "$ref": "#/components/schemas/AgentRunSearchHit",
-        "description": "Latest Studio Assistant run started for this task branch."
+        "description": "Latest App Builder parent run started for this task branch."
       }
     },
     "required": [

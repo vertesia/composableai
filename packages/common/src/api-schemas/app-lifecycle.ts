@@ -413,6 +413,18 @@ export const StartAppScaffoldRequestSchema = z
     })
     .meta({ id: 'StartAppScaffoldRequest' });
 
+export const StartAppDevelopmentTaskRequestSchema = z
+    .strictObject({
+        prompt: z.string().min(1).meta({ description: 'Development request passed to the App Builder parent.' }),
+        environment: z.string().min(1).meta({ description: 'Execution environment id for the App Builder run.' }),
+        model: z.string().min(1).meta({ description: 'Model id for the App Builder run.' }),
+        build_version: z
+            .boolean()
+            .meta({ description: 'Create one immutable app version after validation. Defaults to false.' })
+            .optional(),
+    })
+    .meta({ id: 'StartAppDevelopmentTaskRequest' });
+
 export const StartAppBuildRequestSchema = z
     .strictObject({
         source_ref: z
@@ -850,7 +862,7 @@ export const AppDevelopmentTaskDetailsSchema = z
         source_commit: z.string().meta({ description: 'Commit currently at the branch head.' }),
         commit_date: z.string().meta({ description: 'Branch-head commit date, when available.' }).optional(),
         agent_run: AgentRunSearchHitSchema.meta({
-            description: 'Latest Studio Assistant run started for this task branch.',
+            description: 'Latest App Builder parent run started for this task branch.',
         }).optional(),
     })
     .meta({
