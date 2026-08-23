@@ -412,6 +412,7 @@ When creating or searching Store objects, pass the app type code string:
 
 \`\`\`ts
 await client.objects.create({
+  name: 'Supplier review',
   type: CASE_TYPE,
   properties: {
     title: 'Supplier review',
@@ -480,6 +481,8 @@ Use the Vertesia client from \`useUserSession()\` in browser code and the inject
 
 App-owned types are referenced by their **in-code string** \`app:<app-name>:<local>\`, never a resolved ObjectId — pass the string straight to \`search\`/\`create\` and derive it from a single \`APP_NAME\` constant (= package.json name = VITE_APP_NAME = manifest name) so the app stays portable. See \`package-types.md\` for the rule.
 
+Every \`objects.create\` payload requires a top-level \`name\`. A title inside \`properties\` does not satisfy this Store contract. Use a stable human-readable value, normally the record title, and keep it in sync when the product renames the record.
+
 ## Search
 
 \`\`\`ts
@@ -539,6 +542,7 @@ async function seedCase(client: VertesiaClient, record: { external_id: string; t
   }
 
   return client.objects.create({
+    name: record.title,
     type: CASE_TYPE,
     properties: { ...record, seed_marker: SEED_MARKER },
   });
@@ -551,6 +555,7 @@ For document, review, and intake apps, attach realistic source content to repres
 
 \`\`\`ts
 await client.objects.create({
+  name: 'Screening evidence',
   type: \`app:\${APP_NAME}:evidence\`,
   properties: {
     title: 'Screening evidence',
@@ -568,6 +573,35 @@ await client.objects.create({
 \`\`\`
 
 If the exact source attachment API differs in the installed SDK, write the intended create code first, then run \`app_workspace_typecheck\` and fix from compiler diagnostics. Do not spend more than five docs lookups rediscovering the object shape.
+`;
+}
+
+function generateInteractionRuntime() {
+    return `# Interaction Runtime Execution
+
+Use the root \`VertesiaClient\` for app-owned interaction execution. For an immutable candidate, call \`client.withAppVersion(versionId)\` once before any Studio or Store request.
+
+\`executeByName\` accepts the portable app interaction ref and an \`InteractionExecutionPayload\`. Put prompt inputs under \`data\`; the returned result is already enhanced with typed accessors.
+
+\`\`\`ts
+interface StatusBriefingInput {
+  project_id: string;
+  tasks: Array<{ id: string; title: string; status: string }>;
+}
+
+interface StatusBriefingResult {
+  summary: string;
+  evidence: Array<{ id: string; title: string; status: string }>;
+}
+
+const execution = await client.interactions.executeByName<StatusBriefingResult, StatusBriefingInput>(
+  \`app:\${APP_NAME}:main:project-status-briefing\`,
+  { data: input },
+);
+const briefing = execution.result.object();
+\`\`\`
+
+Use \`execution.result.text()\` for text output and \`execution.result.objects()\` for multiple JSON results. Validate the parsed object against the exact durable input snapshot before displaying or persisting it. Do not reimplement \`/api/v1/execute\` with raw \`fetch\`.
 `;
 }
 
@@ -1050,6 +1084,7 @@ async function main() {
     await writeFile(join(DOCS_ROOT, 'package-dashboards.md'), generateAppPackageDashboards(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'tool-server-resource.md'), await generateToolServerResourceReference(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'store-objects.md'), generateStoreObjects(), 'utf8');
+    await writeFile(join(DOCS_ROOT, 'interaction-runtime.md'), generateInteractionRuntime(), 'utf8');
     await mkdir(join(DOCS_ROOT, 'ui'), { recursive: true });
     await writeFile(join(DOCS_ROOT, 'ui', 'llms.txt'), generateUiQuickReference(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'ui-interfaces.d.ts'), await generateUiInterfaces(), 'utf8');

@@ -8,6 +8,7 @@ const expectedDocs = [
     'app-package-patterns.md',
     'frontend-imports.md',
     'handlebars-prompts.md',
+    'interaction-runtime.md',
     'package-dashboards.md',
     'package-processes.md',
     'package-types.md',
@@ -25,4 +26,12 @@ test('ships the generated app-development references', async () => {
     const frontendImports = await readFile(join(appgenDocsRoot, 'frontend-imports.md'), 'utf8');
     assert.match(frontendImports, /## Runtime CDN Imports/);
     assert.match(frontendImports, /documentation synchronizer replaces this section/);
+
+    const storeObjects = await readFile(join(appgenDocsRoot, 'store-objects.md'), 'utf8');
+    assert.match(storeObjects, /Every `objects\.create` payload requires a top-level `name`/);
+    assert.match(storeObjects, /name: record\.title/);
+
+    const interactionRuntime = await readFile(join(appgenDocsRoot, 'interaction-runtime.md'), 'utf8');
+    assert.match(interactionRuntime, /executeByName<StatusBriefingResult, StatusBriefingInput>/);
+    assert.match(interactionRuntime, /execution\.result\.object\(\)/);
 });
