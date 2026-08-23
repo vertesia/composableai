@@ -1,6 +1,6 @@
 // Runtime schemas for the agent runs API domain.
 
-import { ExecutionTokenUsageSchema } from '@llumiverse/common/schemas';
+import { ExecutionTokenUsageSchema, ReasoningEffortSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import type { AgentMessageType, FileProcessingStatus } from '../store/workflow.js';
 import { type AgentEvent, AgentEventType, LlmCallType, TelemetryToolType } from '../workflow-analytics.js';
@@ -1099,6 +1099,8 @@ export const UpdateAgentRunStatusPayloadSchema = z
         content: z.string().optional(),
         disabled_mcp_collections: z.array(z.string()).optional(),
         tool_approval_mode: AgentToolApprovalModeSchema.optional(),
+        model: z.string().min(1).optional(),
+        effort: ReasoningEffortSchema.nullable().optional(),
         archive_state: AgentRunArchiveStateSchema.optional(),
         archived_at: z.string().optional(),
         archive_version: z.number().optional(),

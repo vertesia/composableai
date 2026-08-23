@@ -121,6 +121,17 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(false);
     });
 
+    it('accepts runtime model and effort status updates', () => {
+        expect(
+            validateApiRequest('UpdateAgentRunStatusPayload', {
+                model: 'gpt-5.6-sol',
+                effort: 'xhigh',
+            }).valid,
+        ).toBe(true);
+        expect(validateApiRequest('UpdateAgentRunStatusPayload', { effort: null }).valid).toBe(true);
+        expect(validateApiRequest('UpdateAgentRunStatusPayload', { effort: 'unbounded' }).valid).toBe(false);
+    });
+
     it('accepts normalized autonomous runs and projected refs', () => {
         expect(validateApiResponse('AgentRun', autonomousRun).valid).toBe(true);
         expect(validateApiResponse('AgentRunResponse', autonomousRun).valid).toBe(true);

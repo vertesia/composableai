@@ -32332,6 +32332,20 @@
       "tool_approval_mode": {
         "$ref": "#/components/schemas/AgentToolApprovalMode"
       },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "effort": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ReasoningEffort"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "archive_state": {
         "$ref": "#/components/schemas/AgentRunArchiveState"
       },
