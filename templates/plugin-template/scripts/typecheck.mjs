@@ -116,12 +116,17 @@ function collectDeprecations(tsconfigPaths) {
     return out;
 }
 
-try {
-    const deprecations = collectDeprecations(projects);
-    for (const line of deprecations) console.log(line);
-    if (deprecations.length > 0) {
-        console.log(`[typecheck] ${deprecations.length} deprecation warning(s) — advisory, not blocking.`);
+// TypeScript 7's native package intentionally exposes only version metadata from the root module;
+// it no longer ships the legacy language-service API used by this advisory scan. Detect the API
+// explicitly so generated builds stay quiet instead of printing a misleading exception every time.
+if (ts.sys?.readFile && ts.createLanguageService && ts.createDocumentRegistry) {
+    try {
+        const deprecations = collectDeprecations(projects);
+        for (const line of deprecations) console.log(line);
+        if (deprecations.length > 0) {
+            console.log(`[typecheck] ${deprecations.length} deprecation warning(s) — advisory, not blocking.`);
+        }
+    } catch (err) {
+        console.log(`[typecheck] deprecation scan skipped: ${err?.message ?? err}`);
     }
-} catch (err) {
-    console.log(`[typecheck] deprecation scan skipped: ${err?.message ?? err}`);
 }
