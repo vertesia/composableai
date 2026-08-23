@@ -325,6 +325,41 @@ test('service quality does not treat unit-test failure text as an end-user seed 
     }
 });
 
+test('service quality rejects legacy Store search payloads and accepts ComplexSearchPayload', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        runCodegen(tmpRoot, ['appgen']);
+        const qualityScript = 'src/modules/service/scripts/app-quality-check.mjs';
+        const seedPath = path.join(tmpRoot, 'scripts/seed-and-exercise.ts');
+        fs.mkdirSync(path.dirname(seedPath), { recursive: true });
+        fs.writeFileSync(
+            seedPath,
+            'await client.objects.search({ type: PROJECT_TYPE, query: SEED_PROJECT_NAME, limit: 5 });\n',
+        );
+
+        assert.throws(() => execFileSync(process.execPath, [qualityScript], { cwd: tmpRoot, stdio: 'pipe' }));
+        let report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.equal(
+            report.errors.some((error) => error.rule === 'valid-store-search-payload'),
+            true,
+        );
+
+        fs.writeFileSync(
+            seedPath,
+            'const { results } = await client.objects.search({ query: { type: PROJECT_TYPE, name: SEED_PROJECT_NAME }, limit: 5 });\n',
+        );
+        execFileSync(process.execPath, [qualityScript], { cwd: tmpRoot, stdio: 'pipe' });
+        report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+        assert.equal(
+            report.errors.some((error) => error.rule === 'valid-store-search-payload'),
+            false,
+        );
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
 test('service quality warns only for an actual TypeScript process definition', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {

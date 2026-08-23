@@ -140,6 +140,91 @@ function hasDetachedVertesiaClientMethod(text) {
     return detachedAssignment.test(text) || destructuredTopic.test(text);
 }
 
+function objectSearchPayloadIssues(text) {
+    const issues = [];
+    const callPattern = /\.objects\.search\s*\(/g;
+    for (const call of text.matchAll(callPattern)) {
+        let index = (call.index ?? 0) + call[0].length;
+        while (/\s/.test(text[index] ?? '')) index++;
+        if (text[index] !== '{') continue;
+
+        const properties = new Map();
+        let depth = 0;
+        let quote = '';
+        let lineComment = false;
+        let blockComment = false;
+        let previousSignificant = '';
+        for (; index < text.length; index++) {
+            const char = text[index];
+            const next = text[index + 1];
+            if (lineComment) {
+                if (char === '\n') lineComment = false;
+                continue;
+            }
+            if (blockComment) {
+                if (char === '*' && next === '/') {
+                    blockComment = false;
+                    index++;
+                }
+                continue;
+            }
+            if (quote) {
+                if (char === '\\') index++;
+                else if (char === quote) quote = '';
+                continue;
+            }
+            if (char === '/' && next === '/') {
+                lineComment = true;
+                index++;
+                continue;
+            }
+            if (char === '/' && next === '*') {
+                blockComment = true;
+                index++;
+                continue;
+            }
+            if (char === "'" || char === '"' || char === '`') {
+                quote = char;
+                continue;
+            }
+            if (char === '{') {
+                depth++;
+                previousSignificant = char;
+                continue;
+            }
+            if (char === '}') {
+                depth--;
+                if (depth === 0) break;
+                previousSignificant = char;
+                continue;
+            }
+            if (
+                depth === 1 &&
+                (previousSignificant === '{' || previousSignificant === ',') &&
+                /[A-Za-z_$]/.test(char)
+            ) {
+                const keyStart = index;
+                while (/[A-Za-z0-9_$]/.test(text[index + 1] ?? '')) index++;
+                const key = text.slice(keyStart, index + 1);
+                let cursor = index + 1;
+                while (/\s/.test(text[cursor] ?? '')) cursor++;
+                if (text[cursor] === ':') {
+                    cursor++;
+                    while (/\s/.test(text[cursor] ?? '')) cursor++;
+                    properties.set(key, text[cursor]);
+                }
+            }
+            if (!/\s/.test(char)) previousSignificant = char;
+        }
+
+        if (properties.has('type')) issues.push('`type` must be nested under `query`');
+        if (properties.has('query') && properties.get('query') !== '{') {
+            issues.push('`query` must be an object');
+        }
+    }
+    return [...new Set(issues)];
+}
+
 const sourceFiles = (await walk(path.join(cwd, 'src'))).filter(isSourceFile);
 const scriptFiles = (await walk(path.join(cwd, 'scripts'))).filter(isSourceFile);
 const rootTestFiles = (await walk(path.join(cwd, 'tests'))).filter(isSourceFile);
@@ -313,6 +398,16 @@ for (const file of allFiles.filter(isCodeFile)) {
             'errors',
             'no-detached-vertesia-client-method',
             'Do not assign or destructure Vertesia SDK methods from client topics. Call through the client object, e.g. client.objects.search(...), so the SDK keeps its request context.',
+            file,
+        );
+    }
+
+    const searchIssues = objectSearchPayloadIssues(text);
+    if (searchIssues.length > 0) {
+        add(
+            'errors',
+            'valid-store-search-payload',
+            `client.objects.search requires ComplexSearchPayload: ${searchIssues.join('; ')}. Use { query: { type, name/match }, limit } and consume response.results.`,
             file,
         );
     }
