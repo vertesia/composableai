@@ -12536,6 +12536,24 @@
         "type": "string",
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation title."
+      },
+      "topic": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation topic. Suppresses automatic topic generation."
+      },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
       "app_version": {
         "type": "string",
         "description": "Immutable app-version target inherited by this conversation execution. The workflow applies it to app-owned resource resolution; callers normally set the x-vertesia-app-version header instead of populating this field directly."
@@ -30970,6 +30988,14 @@
         "type": "string",
         "description": "Conversation topic (longer description from topic analysis)"
       },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether automatic conversation title/topic generation is enabled for this run."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether automatic lessons generation is enabled for this run."
+      },
       "lessons_learned": {
         "type": "array",
         "items": {
@@ -31225,6 +31251,14 @@
         "type": "string",
         "description": "Conversation topic (longer description from topic analysis)"
       },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether automatic conversation title/topic generation is enabled for this run."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether automatic lessons generation is enabled for this run."
+      },
       "lessons_learned": {
         "type": "array",
         "items": {
@@ -31273,6 +31307,24 @@
       "interaction": {
         "type": "string",
         "description": "Interaction ID or code (e.g. \"sys:generic_question\")."
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation title."
+      },
+      "topic": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation topic. Suppresses automatic topic generation."
+      },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
       },
       "data": {
         "type": "object",
@@ -32126,6 +32178,24 @@
       "interaction": {
         "type": "string"
       },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation title."
+      },
+      "topic": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation topic. Suppresses automatic topic generation."
+      },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
       "parent_run_id": {
         "type": "string"
       },
@@ -32291,6 +32361,20 @@
       },
       "tool_approval_mode": {
         "$ref": "#/components/schemas/AgentToolApprovalMode"
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "effort": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ReasoningEffort"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "archive_state": {
         "$ref": "#/components/schemas/AgentRunArchiveState"
