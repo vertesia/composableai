@@ -17018,7 +17018,7 @@
     "properties": {
       "app_id": {
         "type": "string",
-        "description": "App id / package name to create. It is normalized to the same slug rules used by"
+        "description": "Package name for the new app to create and scaffold. This is not the id of an existing app."
       },
       "title": {
         "type": "string"

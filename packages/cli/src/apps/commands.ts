@@ -66,14 +66,14 @@ function messageProgress(message: AgentMessage): AppScaffoldProgress | undefined
     return details?.app_scaffold_progress;
 }
 
-export async function scaffoldApp(program: Command, appId: string, options: ScaffoldOptions) {
+export async function scaffoldApp(program: Command, appName: string, options: ScaffoldOptions) {
     const client = await getClient(program);
     const modules = options.modules
         ?.split(',')
         .map((module) => module.trim())
         .filter(Boolean) as AppScaffoldModule[] | undefined;
     const run = await client.apps.startScaffold({
-        app_id: appId,
+        app_id: appName,
         title: options.title,
         description: options.description,
         modules,

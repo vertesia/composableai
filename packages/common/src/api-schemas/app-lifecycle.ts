@@ -398,9 +398,9 @@ export const AppVersionGitSourceSchema = z
 
 export const StartAppScaffoldRequestSchema = z
     .strictObject({
-        app_id: z
-            .string()
-            .meta({ description: 'App id / package name to create. It is normalized to the same slug rules used by' }),
+        app_id: z.string().meta({
+            description: 'Package name for the new app to create and scaffold. This is not the id of an existing app.',
+        }),
         title: z.string().optional(),
         description: z.string().optional(),
         modules: z.array(AppScaffoldModuleSchema).optional(),

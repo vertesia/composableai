@@ -56,14 +56,14 @@ export function registerAppsCommand(program: Command) {
 
     const scaffolds = apps.command('scaffolds').description('Create source-backed App Builder applications');
     scaffolds
-        .command('create <appId>')
-        .description('Scaffold an app and follow workflow progress through the live update stream')
+        .command('create <appName>')
+        .description('Create and scaffold a new app package, then follow workflow progress through the live stream')
         .option('--title <title>', 'App title')
         .option('--description <description>', 'App description')
         .option('--modules <modules>', 'Comma-separated modules: service,assistant,content-app,examples')
         .option('--no-create-version', 'Do not build an initial immutable version')
         .option('--no-follow', 'Return after starting instead of following live progress')
-        .action(async (appId: string, options) => scaffoldApp(program, appId, options));
+        .action(async (appName: string, options) => scaffoldApp(program, appName, options));
 
     const developmentTasks = apps.command('development-tasks').description('Manage App Builder development tasks');
     developmentTasks
