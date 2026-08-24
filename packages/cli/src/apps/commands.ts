@@ -140,15 +140,21 @@ export async function startDevelopmentTask(
     );
     if (options.follow === false) return;
     let inputRequired = false;
-    await client.agents.streamMessages(run.id, (message, exit) => {
-        if (message.message && DEVELOPMENT_TASK_PROGRESS_TYPES.has(message.type)) {
-            console.log(`[${AgentMessageType[message.type] ?? message.type}] ${message.message}`);
-        }
-        if (message.type === AgentMessageType.REQUEST_INPUT) {
-            inputRequired = true;
-            exit?.({ status: 'input_required', message: message.message });
-        }
-    });
+    await client.agents.streamMessages(
+        run.id,
+        (message, exit) => {
+            if (message.message && DEVELOPMENT_TASK_PROGRESS_TYPES.has(message.type)) {
+                console.log(`[${AgentMessageType[message.type] ?? message.type}] ${message.message}`);
+            }
+            if (message.type === AgentMessageType.REQUEST_INPUT) {
+                inputRequired = true;
+                exit?.({ status: 'input_required', message: message.message });
+            }
+        },
+        undefined,
+        undefined,
+        { closeOnIdle: true },
+    );
     if (inputRequired) {
         console.log('The App Builder run is still open. Continue it in Studio to answer the question.');
     }

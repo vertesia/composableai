@@ -15,13 +15,13 @@ function isRootProcessMessage(details: MessageDetails, rootRunId: string): boole
     return !processRunId || processRunId === rootRunId;
 }
 
-export function shouldCloseAgentRunStream(message: AgentMessage, rootRunId: string): boolean {
+export function shouldCloseAgentRunStream(message: AgentMessage, rootRunId: string, closeOnIdle = false): boolean {
     if (message.type === AgentMessageType.TERMINATED) {
         return isRootProcessMessage(message.details, rootRunId);
     }
 
     if (
-        (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) &&
+        (message.type === AgentMessageType.COMPLETE || (closeOnIdle && message.type === AgentMessageType.IDLE)) &&
         (message.workstream_id ?? 'main') === 'main'
     ) {
         return isRootProcessMessage(message.details, rootRunId);
@@ -30,13 +30,13 @@ export function shouldCloseAgentRunStream(message: AgentMessage, rootRunId: stri
     return false;
 }
 
-export function shouldCloseCompactRunStream(message: CompactMessage, rootRunId: string): boolean {
+export function shouldCloseCompactRunStream(message: CompactMessage, rootRunId: string, closeOnIdle = false): boolean {
     if (message.t === AgentMessageType.TERMINATED) {
         return isRootProcessMessage(message.d, rootRunId);
     }
 
     if (
-        (message.t === AgentMessageType.COMPLETE || message.t === AgentMessageType.IDLE) &&
+        (message.t === AgentMessageType.COMPLETE || (closeOnIdle && message.t === AgentMessageType.IDLE)) &&
         (message.w ?? 'main') === 'main'
     ) {
         return isRootProcessMessage(message.d, rootRunId);
