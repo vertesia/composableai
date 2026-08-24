@@ -456,6 +456,9 @@ importers:
       '@vertesia/tsconfig':
         specifier: workspace:*
         version: link:../../libraries/tsconfig
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@24.13.3)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.1.4(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.46.0)(tsx@4.23.12)(yaml@2.9.0))
     optionalDependencies:
       '@napi-rs/keyring':
         specifier: ^1.3.0
