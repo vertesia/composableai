@@ -108,10 +108,11 @@ function loadPayload(file: string, appVersion?: string): SubmitProcessTestRunPay
     if (appVersion !== undefined) {
         // Only an app package has a version to pin, so catch the mismatch here rather than sending
         // a payload the server is bound to reject.
-        if (typeof target.id !== 'string' || !target.id.startsWith('app:')) {
+        const id = 'id' in target ? target.id : undefined;
+        if (typeof id !== 'string' || !id.startsWith('app:')) {
             invalid(
                 `--app-version only applies to an "app:" process, but ${path} targets ` +
-                    `${target.id ? `"${target.id}"` : 'an inline definition'}.`,
+                    `${id ? `"${id}"` : 'an inline definition'}.`,
             );
         }
         target = { ...target, app_version: appVersion };

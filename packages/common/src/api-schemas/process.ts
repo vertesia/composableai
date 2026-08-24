@@ -1120,16 +1120,31 @@ export const ProcessTestSubjectSchema = z
     .meta({ id: 'ProcessTestSubject' });
 
 /**
- * What to test. Exactly one of `id` (an in-code `app:`/`sys:` process) or `definition` (an
- * ephemeral definition body) must be provided. `app_version` pins the app package version for the
- * whole run so it stays reproducible.
+ * Tests an in-code process by id — `app:<app>:<process>` or a built-in `sys:` process.
+ * `app_version` pins the app package version for the whole run so it stays reproducible, and only
+ * applies to an `app:` id.
+ */
+export const ProcessTestTargetByIdSchema = z
+    .strictObject({
+        id: z.string(),
+        app_version: z.string().optional(),
+    })
+    .meta({ id: 'ProcessTestTargetById' });
+
+/** Tests an ephemeral definition body that is not stored or served by an app. */
+export const ProcessTestTargetWithDefinitionSchema = z
+    .strictObject({
+        definition: ProcessDefinitionBodySchema,
+    })
+    .meta({ id: 'ProcessTestTargetWithDefinition' });
+
+/**
+ * What to test: exactly one of an in-code process id or an inline definition body. Modelled as a
+ * union rather than an object of optional properties so the published contract rejects an empty
+ * target, a target carrying both, and `app_version` on an inline definition.
  */
 export const ProcessTestTargetSchema = z
-    .strictObject({
-        id: z.string().optional(),
-        app_version: z.string().optional(),
-        definition: ProcessDefinitionBodySchema.optional(),
-    })
+    .union([ProcessTestTargetByIdSchema, ProcessTestTargetWithDefinitionSchema])
     .meta({ id: 'ProcessTestTarget' });
 
 export const SubmitProcessTestRunPayloadSchema = z

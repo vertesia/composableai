@@ -19,7 +19,11 @@ export class ProcessTestRunApi extends ApiTopic {
      * `client.store.processes.startTestRun()` for stored process definitions and their suites.
      */
     submit(payload: SubmitProcessTestRunPayload): Promise<ProcessTestRun> {
-        return this.post('/', { payload });
+        // Starting a run is not idempotent and the contract carries no request key, so a replay
+        // would create a second run. Opt out of any client-level retry policy explicitly rather
+        // than relying on POST being absent from its method list. Rate-limiter pacing retries are
+        // unaffected: those happen before the request reaches the handler.
+        return this.post('/', { payload, retryPolicy: false });
     }
 
     retrieve(runId: string): Promise<ProcessTestRun> {

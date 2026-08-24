@@ -29911,7 +29911,7 @@
       "kind"
     ]
   },
-  "ProcessTestTarget": {
+  "ProcessTestTargetById": {
     "type": "object",
     "properties": {
       "id": {
@@ -29919,12 +29919,34 @@
       },
       "app_version": {
         "type": "string"
-      },
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestTargetWithDefinition": {
+    "type": "object",
+    "properties": {
       "definition": {
         "$ref": "#/components/schemas/ProcessDefinitionBody"
       }
     },
+    "required": [
+      "definition"
+    ],
     "additionalProperties": false
+  },
+  "ProcessTestTarget": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ProcessTestTargetById"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestTargetWithDefinition"
+      }
+    ]
   },
   "SubmitProcessTestRunPayload": {
     "type": "object",

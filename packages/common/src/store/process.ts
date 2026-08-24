@@ -50,7 +50,8 @@ import type {
     ProcessTestStoredSubjectSchema,
     ProcessTestSubjectSchema,
     ProcessTestSuiteSchema,
-    ProcessTestTargetSchema,
+    ProcessTestTargetByIdSchema,
+    ProcessTestTargetWithDefinitionSchema,
     ProcessTestVirtualActorSchema,
     PublishProcessDefinitionPayloadSchema,
     RetryProcessNodePayloadSchema,
@@ -298,9 +299,14 @@ export type ProcessTestStoredSubject = z.infer<typeof ProcessTestStoredSubjectSc
 export type ProcessTestResolvedSubject = z.infer<typeof ProcessTestResolvedSubjectSchema>;
 export type ProcessTestInlineSubject = z.infer<typeof ProcessTestInlineSubjectSchema>;
 export type ProcessTestSubject = z.infer<typeof ProcessTestSubjectSchema>;
-export type ProcessTestTarget = Omit<z.infer<typeof ProcessTestTargetSchema>, 'definition'> & {
-    definition?: ProcessDefinitionBody;
+export type ProcessTestTargetById = z.infer<typeof ProcessTestTargetByIdSchema>;
+export type ProcessTestTargetWithDefinition = Omit<
+    z.infer<typeof ProcessTestTargetWithDefinitionSchema>,
+    'definition'
+> & {
+    definition: ProcessDefinitionBody;
 };
+export type ProcessTestTarget = ProcessTestTargetById | ProcessTestTargetWithDefinition;
 export type SubmitProcessTestRunPayload = Omit<z.infer<typeof SubmitProcessTestRunPayloadSchema>, 'process'> & {
     process: ProcessTestTarget;
 };
