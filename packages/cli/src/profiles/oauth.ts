@@ -510,6 +510,7 @@ function buildConfigResult(
         id_token: response.id_token,
         refresh_token: response.refresh_token,
         expires_in: response.expires_in,
+        refresh_token_expires_in: response.refresh_token_expires_in,
         oauth_client_id: oauthClientId,
         oauth_resource: oauthResource,
     };

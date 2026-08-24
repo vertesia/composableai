@@ -327,6 +327,18 @@ export interface StreamingData {
     streamingId?: string;
 }
 
+/**
+ * Match live stream ownership to the persisted-message timeline filter. The `all` conversation
+ * view is the main-agent timeline (plus workstream lifecycle markers), not a merged transcript of
+ * every child workstream.
+ */
+export function isStreamingDataVisibleInWorkstream(streaming: StreamingData, activeWorkstream?: string): boolean {
+    if (!activeWorkstream) return true;
+
+    const streamWorkstream = streaming.workstreamId || 'main';
+    return activeWorkstream === 'all' ? streamWorkstream === 'main' : activeWorkstream === streamWorkstream;
+}
+
 function normalizeComparableText(text: unknown): string | undefined {
     if (typeof text !== 'string') return undefined;
     const normalized = text.replace(/\r\n/g, '\n').trim();
@@ -714,11 +726,7 @@ export function groupMessagesWithStreaming(
         if (!data.text) return;
         if (isStreamReplacedByMessage(data, messages)) return;
 
-        // Filter by workstream if specified
-        if (activeWorkstream && activeWorkstream !== 'all') {
-            const streamWorkstream = data.workstreamId || 'main';
-            if (activeWorkstream !== streamWorkstream) return;
-        }
+        if (!isStreamingDataVisibleInWorkstream(data, activeWorkstream)) return;
 
         items.push({
             kind: 'streaming',

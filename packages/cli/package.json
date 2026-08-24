@@ -27,6 +27,8 @@
     ],
     "scripts": {
         "lint": "biome lint src",
+        "test": "vitest run",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "build": "pnpm run clean:lib && tsc -p tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
@@ -64,7 +66,8 @@
     },
     "devDependencies": {
         "@types/jsonwebtoken": "^9.0.10",
-        "@vertesia/tsconfig": "workspace:*"
+        "@vertesia/tsconfig": "workspace:*",
+        "vitest": "^4.1.10"
     },
     "repository": {
         "type": "git",
