@@ -2,6 +2,7 @@ import { HttpTimeoutOptionsSchema, ModelOptionsSchema } from '@llumiverse/common
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 
 /**
  * Runtime API schemas for the content-intake policy tree.
@@ -517,6 +518,9 @@ export const ContentObjectTypeCatalogEntrySchema = z
     .strictObject({
         ...contentTypeFields,
         ...catalogAuditFields,
+        edit_revision: EditRevisionSchema.optional().meta({
+            description: 'Stored-resource revision. Omitted for app-contributed in-code types.',
+        }),
     })
     .meta({ id: 'ContentObjectTypeCatalogEntry' });
 
@@ -534,6 +538,7 @@ export const ContentObjectTypeCatalogEntryArraySchema = z
  */
 const storedContentTypeShape = {
     id: contentTypeFields.id,
+    edit_revision: EditRevisionSchema,
     name: contentTypeFields.name,
     description: contentTypeFields.description,
     tags: contentTypeFields.tags,
@@ -589,12 +594,14 @@ export const CreateContentObjectTypePayloadSchema = z
  * the fields it changes, which is what `.partial()` says and what the handler has always done. The
  * property order is the create payload's, so the generated clients' argument order does not move.
  */
-export const UpdateContentObjectTypePayloadSchema = CreateContentObjectTypePayloadSchema.partial().meta({
-    id: 'UpdateContentObjectTypePayload',
-    description:
-        'Fields to change on a content object type. Every field is optional — only the ones present ' +
-        'are written, and the rest are left as they are.',
-});
+export const UpdateContentObjectTypePayloadSchema = CreateContentObjectTypePayloadSchema.partial()
+    .extend({ expected_edit_revision: ExpectedEditRevisionSchema })
+    .meta({
+        id: 'UpdateContentObjectTypePayload',
+        description:
+            'Fields to change on a content object type. Only fields present are written; ' +
+            'expected_edit_revision prevents overwriting a concurrent edit.',
+    });
 
 export const ContentObjectTypeSchema = z.strictObject(storedContentTypeShape).meta({ id: 'ContentObjectType' });
 

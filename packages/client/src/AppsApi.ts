@@ -38,6 +38,7 @@ import type {
     StartAppScaffoldRequest,
     StartAppScaffoldResponse,
     UpdateAppInstallationToolAllowlistPayload,
+    UpdateAppPayload,
     UpsertAppVersionRequest,
     ValidateUrlRequest,
     ValidateUrlResponse,
@@ -54,7 +55,7 @@ export default class AppsApi extends ApiTopic {
         return this.post('/', { payload: manifest });
     }
 
-    update(id: string, manifest: AppManifestData): Promise<AppManifest> {
+    update(id: string, manifest: UpdateAppPayload): Promise<AppManifest> {
         return this.put(`/${id}`, { payload: manifest });
     }
 

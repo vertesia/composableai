@@ -4,10 +4,23 @@ import {
     AsyncConversationExecutionPayloadSchema,
     ComputeRunFacetPayloadSchema,
     ComputeRunFacetsResponseSchema,
+    ConversationStateSchema,
+    ExecutionRunRefSchema,
     FindRunResultSchema,
     InCodeInteractionSchema,
+    InteractionCreatePayloadSchema,
+    InteractionPromptSegmentInputSchema,
+    InteractionSchema,
+    InteractionUpdatePayloadSchema,
+    PromptSegmentDefSchema,
     ResolvedCatalogInteractionSchema,
 } from './interaction.js';
+
+describe('conversation state contract', () => {
+    it('publishes the tool catalog storage scope used to resolve tool references', () => {
+        expect(ConversationStateSchema.shape.tool_catalog_storage_id.safeParse('process-run-1').success).toBe(true);
+    });
+});
 
 describe('in-code interaction contract', () => {
     it('retains prompt schemas when resolving a catalog interaction', () => {
@@ -53,6 +66,19 @@ describe('in-code interaction contract', () => {
 });
 
 describe('AsyncConversationExecutionPayload contract', () => {
+    it('accepts caller-provided metadata and enrichment controls', () => {
+        const payload: AsyncConversationExecutionPayload = {
+            type: 'conversation',
+            interaction: 'sys:AppTester',
+            title: 'Manual title',
+            topic: 'Manual topic',
+            generate_topic: false,
+            generate_lessons: false,
+        };
+
+        expect(AsyncConversationExecutionPayloadSchema.parse(payload)).toMatchObject(payload);
+    });
+
     it('retains an immutable app-version execution target', () => {
         const payload: AsyncConversationExecutionPayload = {
             type: 'conversation',
@@ -120,6 +146,11 @@ describe('run facet contracts', () => {
 });
 
 describe('run response contracts', () => {
+    it('retains an environment ID when a run references a deleted environment', () => {
+        expect(ExecutionRunRefSchema.shape.environment.parse('env-deleted')).toBe('env-deleted');
+        expect(ExecutionRunRefSchema.shape.environment.parse(null)).toBeNull();
+    });
+
     it('models the arbitrary stored-field projection returned by /runs/find', () => {
         expect(
             FindRunResultSchema.parse({
@@ -148,5 +179,52 @@ describe('run response contracts', () => {
                 total: 2,
             }),
         ).toMatchObject({ total: 2 });
+    });
+});
+
+describe('interaction contracts', () => {
+    const populatedPrompt = {
+        role: 'user',
+        content: 'Hello',
+        content_type: 'text',
+        id: 'prompt-1',
+        name: 'Greeting',
+        status: 'draft',
+        version: 1,
+        project: 'project-1',
+        created_by: 'user-1',
+        updated_by: 'user-1',
+        created_at: '2026-08-20T00:00:00.000Z',
+        updated_at: '2026-08-20T00:00:00.000Z',
+    };
+
+    it('accepts the media-result storage setting on interaction payloads and responses', () => {
+        expect(InteractionSchema.shape.store_media_results.parse(true)).toBe(true);
+        expect(InteractionCreatePayloadSchema.shape.store_media_results.parse(false)).toBe(false);
+        expect(InteractionUpdatePayloadSchema.shape.store_media_results.parse(true)).toBe(true);
+    });
+
+    it('keeps legacy populated prompts valid in interaction write payloads', () => {
+        const segment = { type: 'template', template: populatedPrompt };
+
+        expect(InteractionPromptSegmentInputSchema.safeParse(segment).success).toBe(true);
+        expect(
+            InteractionPromptSegmentInputSchema.safeParse({
+                ...segment,
+                template: { ...populatedPrompt, edit_revision: 3 },
+            }).success,
+        ).toBe(true);
+    });
+
+    it('still requires edit revisions on populated prompts returned by the API', () => {
+        const segment = { type: 'template', template: populatedPrompt };
+
+        expect(PromptSegmentDefSchema.safeParse(segment).success).toBe(false);
+        expect(
+            PromptSegmentDefSchema.safeParse({
+                ...segment,
+                template: { ...populatedPrompt, edit_revision: 3 },
+            }).success,
+        ).toBe(true);
     });
 });

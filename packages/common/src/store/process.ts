@@ -4,9 +4,11 @@ import type {
     AnswerProcessTaskPayloadSchema,
     BranchDefinitionSchema,
     BranchJoinPolicySchema,
+    CreateProcessTestSuitePayloadSchema,
     HumanTaskDefinitionSchema,
     JsonLogicRuleSchema,
     ListProcessDefinitionsQuerySchema,
+    ListProcessTestRunsQuerySchema,
     NodeHistoryEntrySchema,
     ParallelCollectDefinitionSchema,
     ParallelCollectFieldSchema,
@@ -29,11 +31,37 @@ import type {
     ProcessScriptResourceSchema,
     ProcessScriptSourceSchema,
     ProcessStateSchema,
+    ProcessTestActorDecisionSchema,
+    ProcessTestAssertionResultSchema,
+    ProcessTestAssertionsSchema,
+    ProcessTestChildTraceSchema,
+    ProcessTestCoverageSchema,
+    ProcessTestFixtureErrorSchema,
+    ProcessTestFixtureResponseSchema,
+    ProcessTestFixtureResultSchema,
+    ProcessTestHumanActionSchema,
+    ProcessTestInlineSubjectSchema,
+    ProcessTestNodeFixtureSchema,
+    ProcessTestResolvedSubjectSchema,
+    ProcessTestRunSchema,
+    ProcessTestRunStatusSchema,
+    ProcessTestScenarioResultSchema,
+    ProcessTestScenarioSchema,
+    ProcessTestStoredSubjectSchema,
+    ProcessTestSubjectSchema,
+    ProcessTestSuiteSchema,
+    ProcessTestTargetByIdSchema,
+    ProcessTestTargetWithDefinitionSchema,
+    ProcessTestVirtualActorSchema,
     PublishProcessDefinitionPayloadSchema,
     RetryProcessNodePayloadSchema,
     RevertProcessDefinitionPayloadSchema,
+    StartProcessTestRunPayloadSchema,
+    SubmitProcessTestRunPayloadSchema,
     TransitionDefinitionSchema,
     TransitionTriggerSchema,
+    UpdateProcessTestScenarioPayloadSchema,
+    UpdateProcessTestSuitePayloadSchema,
 } from '../api-schemas/process.js';
 import type { JSONSchema } from '../json-schema.js';
 
@@ -41,6 +69,7 @@ export type JsonLogicRule = z.infer<typeof JsonLogicRuleSchema>;
 
 export type ProcessDefinitionStatus = z.infer<typeof ProcessDefinitionStatusSchema>;
 export type ListProcessDefinitionsQuery = z.infer<typeof ListProcessDefinitionsQuerySchema>;
+export type ListProcessTestRunsQuery = z.infer<typeof ListProcessTestRunsQuerySchema>;
 export const PROCESS_DEFINITION_FORMAT_VERSION = 1 as const;
 export type ProcessDefinitionFormatVersion = z.infer<typeof ProcessDefinitionFormatVersionSchema>;
 
@@ -170,6 +199,7 @@ export type ProcessDefinitionRevisionInfo = z.infer<typeof ProcessDefinitionRevi
 
 export interface ProcessDefinition {
     id: string;
+    edit_revision: number;
     account: string;
     project: string;
     name: string;
@@ -215,6 +245,7 @@ export interface CreateProcessDefinitionPayload {
 }
 
 export interface UpdateProcessDefinitionPayload {
+    expected_edit_revision?: number;
     name?: string;
     description?: string;
     /**
@@ -242,3 +273,41 @@ export type RetryProcessNodePayload = z.infer<typeof RetryProcessNodePayloadSche
 export type ProcessContextResponse = z.infer<typeof ProcessContextResponseSchema>;
 
 export type ProcessHistoryResponse = z.infer<typeof ProcessHistoryResponseSchema>;
+
+export type ProcessTestRunStatus = z.infer<typeof ProcessTestRunStatusSchema>;
+export type ProcessTestVirtualActor = z.infer<typeof ProcessTestVirtualActorSchema>;
+export type ProcessTestFixtureResult = z.infer<typeof ProcessTestFixtureResultSchema>;
+export type ProcessTestFixtureError = z.infer<typeof ProcessTestFixtureErrorSchema>;
+export type ProcessTestFixtureResponse = z.infer<typeof ProcessTestFixtureResponseSchema>;
+export type ProcessTestNodeFixture = z.infer<typeof ProcessTestNodeFixtureSchema>;
+export type ProcessTestHumanAction = z.infer<typeof ProcessTestHumanActionSchema>;
+export type ProcessTestAssertions = z.infer<typeof ProcessTestAssertionsSchema>;
+export type ProcessTestScenario = z.infer<typeof ProcessTestScenarioSchema>;
+export type ProcessTestSuite = z.infer<typeof ProcessTestSuiteSchema>;
+export type CreateProcessTestSuitePayload = z.infer<typeof CreateProcessTestSuitePayloadSchema>;
+export type UpdateProcessTestSuitePayload = z.infer<typeof UpdateProcessTestSuitePayloadSchema>;
+export type StartProcessTestRunPayload = z.infer<typeof StartProcessTestRunPayloadSchema>;
+export type ProcessTestAssertionResult = z.infer<typeof ProcessTestAssertionResultSchema>;
+export type ProcessTestActorDecision = z.infer<typeof ProcessTestActorDecisionSchema>;
+export type ProcessTestCoverage = z.infer<typeof ProcessTestCoverageSchema>;
+export type ProcessTestChildTrace = z.infer<typeof ProcessTestChildTraceSchema>;
+export type ProcessTestScenarioResult = z.infer<typeof ProcessTestScenarioResultSchema>;
+export type ProcessTestRun = Omit<z.infer<typeof ProcessTestRunSchema>, 'process_definition_snapshot'> & {
+    process_definition_snapshot: ProcessDefinitionBody;
+};
+export type ProcessTestStoredSubject = z.infer<typeof ProcessTestStoredSubjectSchema>;
+export type ProcessTestResolvedSubject = z.infer<typeof ProcessTestResolvedSubjectSchema>;
+export type ProcessTestInlineSubject = z.infer<typeof ProcessTestInlineSubjectSchema>;
+export type ProcessTestSubject = z.infer<typeof ProcessTestSubjectSchema>;
+export type ProcessTestTargetById = z.infer<typeof ProcessTestTargetByIdSchema>;
+export type ProcessTestTargetWithDefinition = Omit<
+    z.infer<typeof ProcessTestTargetWithDefinitionSchema>,
+    'definition'
+> & {
+    definition: ProcessDefinitionBody;
+};
+export type ProcessTestTarget = ProcessTestTargetById | ProcessTestTargetWithDefinition;
+export type SubmitProcessTestRunPayload = Omit<z.infer<typeof SubmitProcessTestRunPayloadSchema>, 'process'> & {
+    process: ProcessTestTarget;
+};
+export type UpdateProcessTestScenarioPayload = z.infer<typeof UpdateProcessTestScenarioPayloadSchema>;

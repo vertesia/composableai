@@ -253,7 +253,8 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * Send a signal to a running agent.
-     * Signals: "UserInput", "Stop", "FileUploaded", "FileRemoved"
+     * Signals include "UserInput", "Stop", "ModelConfigChanged", "FileUploaded", "FileRemoved", and
+     * "FileBatchClosed".
      */
     sendSignal(id: string, signalName: string, payload?: SignalAgentPayload): Promise<SignalAgentResponse> {
         return this.post(`/${id}/signal/${signalName}`, { payload });

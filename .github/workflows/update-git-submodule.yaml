@@ -100,26 +100,12 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # Use an App distinct from APP_VERTESIA_RENOVATE_AUTOMERGE. GitHub holds
-      # pull_request workflows caused by GITHUB_TOKEN, while an App-created PR starts CI normally;
-      # keeping the author and approver as separate Apps also makes the approval count.
-      - name: Generate composableai write token
-        id: sync-app-token
-        if: ${{ steps.precheck.outputs.skip != 'true' }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
-          private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
       - name: Update Git submodule and lockfile
-        id: update-submodule
+        id: prepare-submodule
         if: ${{ steps.precheck.outputs.skip != 'true' }}
         env:
-          APP_SLUG: ${{ steps.sync-app-token.outputs.app-slug }}
-          GH_TOKEN: ${{ steps.sync-app-token.outputs.token }}
+          APP_SLUG: ${{ steps.checkout-app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.checkout-app-token.outputs.token }}
           SUBMODULE_READ_TOKEN: ${{ steps.checkout-app-token.outputs.token }}
         run: |
           github_auth_header="$(printf 'x-access-token:%s' "$SUBMODULE_READ_TOKEN" | base64 | tr -d '\n')"
@@ -153,6 +139,10 @@ jobs:
           git config --global user.name "${APP_SLUG}[bot]"
           git config --global user.email "${app_user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
 
+          # The fetched submodule controls package lifecycle scripts invoked by pnpm dedupe. Do not
+          # expose even the read-only checkout token to those processes.
+          unset GH_TOKEN SUBMODULE_READ_TOKEN github_auth_header
+
           git checkout -b $TEMP_BRANCH
 
           echo "Updating submodule [llumiverse] to ${TARGET_LLUMIVERSE_SHA::7}..." >&2
@@ -175,6 +165,84 @@ jobs:
             echo "Lockfile updated" >&2
           fi
 
+          # `@vertesia/common`'s Zod registry builds directly on `@llumiverse/common/schemas`, so a
+          # llumiverse change can alter the published components. The generated artifacts are
+          # committed and `components.contract.test.ts` fails when they are stale, which would leave
+          # the sync PR red and unmergeable forever, since automerge waits on a green build.
+          # Regenerate them here so the sync PR carries its own artifact updates.
+          # Keep this list in sync with the generated-artifact allowlist in
+          # .github/workflows/automerge-llumiverse.yaml, which refuses to merge a sync PR that
+          # touches anything else.
+          generated_schema_paths=(
+            packages/common/src/api-contract/components.generated.json
+            packages/common/src/store/intake-policy-schema.generated.ts
+            packages/common/src/store/editing-policy-schema.generated.ts
+          )
+
+          schema_generation_failed=false
+          echo "Installing the updated workspace before regenerating the committed schemas..." >&2
+          if ! pnpm install --frozen-lockfile; then
+            echo "::warning::Workspace installation failed; creating the sync PR without regenerated schemas. PR CI will report the failure."
+            schema_generation_failed=true
+          elif ! pnpm exec turbo run build --filter=@llumiverse/common; then
+            echo "::warning::@llumiverse/common build failed; creating the sync PR so PR CI can report the failure."
+            schema_generation_failed=true
+          elif ! pnpm --dir packages/common run gen:schemas; then
+            echo "::warning::Schema generation failed; creating the sync PR so PR CI can report the failure."
+            schema_generation_failed=true
+          else
+            # Anything modified outside the generated artifacts means the install or the generator
+            # touched a file this sync is not allowed to commit; the automerge allowlist would
+            # reject the PR anyway, so treat it as a generation failure.
+            unexpected_changes="$(git status --porcelain --untracked-files=no -- . ':(exclude)llumiverse' \
+              "${generated_schema_paths[@]/#/:(exclude)}")"
+            if [[ -n "$unexpected_changes" ]]; then
+              echo "::warning::Schema generation left unexpected changes; creating the sync PR without regenerated schemas."
+              echo "$unexpected_changes"
+              schema_generation_failed=true
+            elif git diff --quiet HEAD -- "${generated_schema_paths[@]}"; then
+              echo "No changes to generated schemas: skipping commit" >&2
+            else
+              git add -- "${generated_schema_paths[@]}"
+              git commit --amend --no-edit
+              echo "Generated schemas updated" >&2
+            fi
+          fi
+
+          if [[ "$schema_generation_failed" == "true" ]]; then
+            # Never leave partially generated artifacts on the sync branch.
+            git restore --source=HEAD --staged --worktree -- "${generated_schema_paths[@]}"
+            echo "Schema regeneration failed; the PR was intentionally preserved for CI diagnosis." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "schema_generation_failed=${schema_generation_failed}" >> "$GITHUB_OUTPUT"
+
+      # Mint the write token only after all package lifecycle scripts have completed. Use an App
+      # distinct from APP_VERTESIA_RENOVATE_AUTOMERGE so the PR author and approver remain separate.
+      - name: Generate composableai write token
+        id: sync-app-token
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
+          private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
+          repositories: composableai
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Push branch and open pull request
+        id: update-submodule
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
+        env:
+          GH_TOKEN: ${{ steps.sync-app-token.outputs.token }}
+          SCHEMA_GENERATION_FAILED: ${{ steps.prepare-submodule.outputs.schema_generation_failed }}
+        run: |
+          TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 "$TARGET_LLUMIVERSE_SHA")"
+          MAYBE_LLUMIVERSE_PR="$(echo "$TARGET_LLUMIVERSE_MSG" | grep -oP '(?<=#)\d+' || true)"
+          TARGET_BRANCH_SLUG="${TARGET_COMPOSABLEAI_BRANCH//\//-}"
+          TEMP_BRANCH="sync-llumiverse-${TARGET_BRANCH_SLUG}-${TARGET_LLUMIVERSE_SHA::7}"
+
           # The dedicated App pushes the branch and opens the PR. Unlike GITHUB_TOKEN, its events
           # are eligible to start the pull_request workflows that build, test, and lint this branch.
           gh auth setup-git
@@ -195,6 +263,12 @@ jobs:
             pr_body+="
 
             This update does not correspond to any specific PR in llumiverse."
+          fi
+
+          if [[ "$SCHEMA_GENERATION_FAILED" == "true" ]]; then
+            pr_body+="
+
+            :warning: Schema regeneration failed in the sync workflow. The PR was still created so the build can expose the failure for review."
           fi
 
           # Ensure the dynamic `branch:<target>` label exists; for a new

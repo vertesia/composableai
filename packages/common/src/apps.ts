@@ -87,6 +87,7 @@ import type {
     CompositeAppThemeOverridesSchema,
     CompositeAppUserMenuOverridesSchema,
     PromoteAppVersionResponseSchema,
+    UpdateAppPayloadSchema,
 } from './api-schemas/app-runtime.js';
 import type {
     AppAccessControlSchema,
@@ -347,6 +348,7 @@ export type AppAccessControl = z.infer<typeof AppAccessControlSchema>;
 //
 // Everything this interface REFERENCES converted: the fields below now carry canonical components.
 export type AppManifestData = z.infer<typeof AppManifestDataSchema>;
+export type UpdateAppPayload = z.infer<typeof UpdateAppPayloadSchema>;
 
 export type AppGitSourceConfig = z.infer<typeof AppGitSourceConfigSchema>;
 
