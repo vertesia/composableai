@@ -12,6 +12,7 @@ import {
     getSlidingViewMessageBuckets,
     groupMessagesWithStreaming,
     isInProgress,
+    isStreamingDataVisibleInWorkstream,
     isStreamReplacedByMessage,
     isToolActivityMessage,
     mergeConsecutiveToolGroups,
@@ -1391,6 +1392,33 @@ describe('ModernAgentOutput summary conversation items', () => {
 });
 
 describe('ModernAgentOutput utils - streamed deduplication', () => {
+    it('shows a workstream stream only in its owning workstream', () => {
+        const stream = {
+            text: 'Child work in progress',
+            startTimestamp: 1000,
+            workstreamId: 'research',
+        };
+
+        expect(isStreamingDataVisibleInWorkstream(stream, 'all')).toBe(false);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'main')).toBe(false);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'research')).toBe(true);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'writing')).toBe(false);
+
+        const streams = new Map([['stream-1', stream]]);
+        expect(groupMessagesWithStreaming([], streams, 'all')).toHaveLength(0);
+        expect(groupMessagesWithStreaming([], streams, 'research')).toHaveLength(1);
+    });
+
+    it('keeps main-agent streams in the main conversation', () => {
+        const stream = {
+            text: 'Main response in progress',
+            startTimestamp: 1000,
+        };
+
+        expect(isStreamingDataVisibleInWorkstream(stream, 'all')).toBe(true);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'main')).toBe(true);
+    });
+
     it('skips a stale streaming item once an equivalent streamed answer is persisted', () => {
         const answer = makeMessage({
             timestamp: 2000,

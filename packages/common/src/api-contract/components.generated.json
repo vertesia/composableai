@@ -5913,6 +5913,9 @@
       "refresh_token": {
         "type": "string"
       },
+      "refresh_token_expires_in": {
+        "type": "number"
+      },
       "id_token": {
         "type": "string"
       }
