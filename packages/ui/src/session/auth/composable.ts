@@ -117,8 +117,7 @@ export async function fetchComposableToken(
     ttl?: number,
     retryCount = 0,
 ): Promise<string> {
-    console.log(`Getting/refreshing composable token for account ${accountId} and project ${projectId} `);
-    Env.logger.info('Getting/refreshing composable token', {
+    Env.logger.debug('Getting/refreshing composable token', {
         vertesia: {
             account_id: accountId,
             project_id: projectId,
@@ -128,14 +127,12 @@ export async function fetchComposableToken(
 
     const idToken = await getIdToken(); //get from firebase
     if (!idToken) {
-        console.log('No id token found - using cookie auth');
         throw new Error('No id token found');
     }
 
     // Use STS endpoint - either configured or default to sts.vertesia.io
     const stsEndpoint = Env.endpoints.sts;
-    console.log('Using STS for token generation:', stsEndpoint);
-    Env.logger.info('Using STS for token generation', {
+    Env.logger.debug('Using STS for token generation', {
         vertesia: {
             account_id: accountId,
             project_id: projectId,
@@ -176,8 +173,7 @@ export async function fetchComposableToken(
 
         if (idToken && stsRes?.status === 404) {
             // User not found in token-server - call ensure-user endpoint
-            console.log('404: User not found - calling ensure-user endpoint');
-            Env.logger.info('404: User not found - calling ensure-user endpoint', {
+            Env.logger.debug('404: User not found - calling ensure-user endpoint', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
@@ -195,8 +191,7 @@ export async function fetchComposableToken(
 
             if (ensureResponse.status === 412) {
                 // No invite - trigger signup
-                console.log('412: No invite found - signup required');
-                Env.logger.info('412: No invite found - signup required', {
+                Env.logger.debug('412: No invite found - signup required', {
                     vertesia: {
                         account_id: accountId,
                         project_id: projectId,
@@ -234,8 +229,7 @@ export async function fetchComposableToken(
             }
 
             // User created/exists - retry token generation
-            console.log('User ensured - retrying token generation');
-            Env.logger.info('User ensured - retrying token generation', {
+            Env.logger.debug('User ensured - retrying token generation', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
@@ -245,8 +239,7 @@ export async function fetchComposableToken(
         }
 
         if (idToken && stsRes?.status === 412) {
-            console.log("412: auth succeeded but user doesn't exist - signup required", stsRes?.status);
-            Env.logger.error("412: auth succeeded but user doesn't exist - signup required", {
+            Env.logger.info("412: auth succeeded but user doesn't exist - signup required", {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
@@ -258,7 +251,7 @@ export async function fetchComposableToken(
                 Env.logger.error('No email found in id token');
                 throw new Error('No email found in id token');
             }
-            Env.logger.error('User not found', {
+            Env.logger.info('User not found', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
@@ -354,8 +347,7 @@ export async function fetchComposableToken(
         }
 
         const { token } = await stsRes.json();
-        console.log('Successfully got token from STS');
-        Env.logger.info('Successfully got token from STS');
+        Env.logger.debug('Successfully got token from STS');
         return token;
     } catch (error) {
         if (

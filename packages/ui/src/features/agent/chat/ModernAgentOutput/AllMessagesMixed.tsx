@@ -93,6 +93,7 @@ import {
     getWorkstreamId,
     groupMessagesWithStreaming,
     isInProgress,
+    isStreamingDataVisibleInWorkstream,
     isToolActivityMessage,
     isToolPreambleMessage,
     isUserStoppedMessage,
@@ -2867,11 +2868,7 @@ function AllMessagesMixedComponent({
         const complete = new Map<string, StreamingData>();
         const incomplete: Array<{ id: string; data: StreamingData }> = [];
         streamingMessages.forEach((data, id) => {
-            // Filter by workstream if specified
-            if (activeWorkstream && activeWorkstream !== 'all') {
-                const streamWorkstream = data.workstreamId || 'main';
-                if (activeWorkstream !== streamWorkstream) return;
-            }
+            if (!isStreamingDataVisibleInWorkstream(data, activeWorkstream)) return;
 
             // If a newer persisted message exists, this stream is stale and should be
             // treated as complete for ordering purposes.
@@ -3353,9 +3350,10 @@ function AllMessagesMixedComponent({
             )}
 
             {displayMessages.length === 0 &&
+            incompleteStreaming.length === 0 &&
             !hasRenderableInitialRequest &&
             !(isSummaryView && showActivityFallback) ? (
-                activeWorkstream === 'all' && isAgentWorking && incompleteStreaming.length === 0 ? (
+                activeWorkstream === 'all' && isAgentWorking ? (
                     <div className="flex-1 px-2 py-6 sm:px-4">
                         <InitialRequestWaitingCard
                             label={t('agent.preparing')}

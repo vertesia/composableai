@@ -448,7 +448,7 @@ export function SelectBox<T = unknown>({
                         variant="link"
                         size="icon"
                         disabled={disabled}
-                        aria-label={clearTitle || 'Clear selection'}
+                        title={clearTitle || 'Clear selection'}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (multiple) {
@@ -462,7 +462,7 @@ export function SelectBox<T = unknown>({
                                 e.stopPropagation();
                             }
                         }}
-                        className="absolute end-8 top-1/2 -translate-y-1/2 hover:bg-muted/20 rounded p-1"
+                        className="absolute end-2 top-1/2 -translate-y-1/2 hover:bg-muted/20 rounded p-1"
                     >
                         {clearIcon ? clearIcon : <X className="size-4" />}
                     </Button>
