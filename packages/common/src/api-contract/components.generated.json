@@ -29814,6 +29814,120 @@
     ],
     "additionalProperties": false
   },
+  "ProcessTestStoredSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "stored"
+      },
+      "process_root_id": {
+        "type": "string"
+      },
+      "process_revision_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "process_root_id",
+      "process_revision_id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestResolvedSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "resolved"
+      },
+      "process_id": {
+        "type": "string"
+      },
+      "app_version": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "process_id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestInlineSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "inline"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestSubject": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProcessTestStoredSubject"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestResolvedSubject"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestInlineSubject"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "stored": "#/components/schemas/ProcessTestStoredSubject",
+        "resolved": "#/components/schemas/ProcessTestResolvedSubject",
+        "inline": "#/components/schemas/ProcessTestInlineSubject"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
+  },
+  "ProcessTestTarget": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "app_version": {
+        "type": "string"
+      },
+      "definition": {
+        "$ref": "#/components/schemas/ProcessDefinitionBody"
+      }
+    },
+    "additionalProperties": false
+  },
+  "SubmitProcessTestRunPayload": {
+    "type": "object",
+    "properties": {
+      "process": {
+        "$ref": "#/components/schemas/ProcessTestTarget"
+      },
+      "scenarios": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      }
+    },
+    "required": [
+      "process",
+      "scenarios"
+    ],
+    "additionalProperties": false
+  },
   "ProcessTestAssertionResult": {
     "type": "object",
     "properties": {
@@ -30028,6 +30142,9 @@
       "project": {
         "type": "string"
       },
+      "subject": {
+        "$ref": "#/components/schemas/ProcessTestSubject"
+      },
       "process_root_id": {
         "type": "string"
       },
@@ -30075,9 +30192,7 @@
       "id",
       "account",
       "project",
-      "process_root_id",
-      "process_revision_id",
-      "suite_id",
+      "subject",
       "definition_hash",
       "status",
       "stale",

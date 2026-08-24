@@ -1081,6 +1081,64 @@ export const StartProcessTestRunPayloadSchema = z
     })
     .meta({ id: 'StartProcessTestRunPayload' });
 
+/**
+ * Identifies what a test run was executed against. Stored subjects carry the revision identity
+ * of a persisted process definition; resolved subjects name an in-code process served by an app
+ * package or built into the server; inline subjects carry no external identity at all — the
+ * definition snapshot recorded on the run is the whole subject.
+ */
+export const ProcessTestStoredSubjectSchema = z
+    .strictObject({
+        kind: z.literal('stored'),
+        process_root_id: z.string(),
+        process_revision_id: z.string(),
+    })
+    .meta({ id: 'ProcessTestStoredSubject' });
+
+export const ProcessTestResolvedSubjectSchema = z
+    .strictObject({
+        kind: z.literal('resolved'),
+        /** The in-code process id that was resolved, such as `app:acme:invoice-review`. */
+        process_id: z.string(),
+        /** App package version pinned for the run, when the process came from an app package. */
+        app_version: z.string().optional(),
+    })
+    .meta({ id: 'ProcessTestResolvedSubject' });
+
+export const ProcessTestInlineSubjectSchema = z
+    .strictObject({
+        kind: z.literal('inline'),
+    })
+    .meta({ id: 'ProcessTestInlineSubject' });
+
+export const ProcessTestSubjectSchema = z
+    .discriminatedUnion('kind', [
+        ProcessTestStoredSubjectSchema,
+        ProcessTestResolvedSubjectSchema,
+        ProcessTestInlineSubjectSchema,
+    ])
+    .meta({ id: 'ProcessTestSubject' });
+
+/**
+ * What to test. Exactly one of `id` (an in-code `app:`/`sys:` process) or `definition` (an
+ * ephemeral definition body) must be provided. `app_version` pins the app package version for the
+ * whole run so it stays reproducible.
+ */
+export const ProcessTestTargetSchema = z
+    .strictObject({
+        id: z.string().optional(),
+        app_version: z.string().optional(),
+        definition: ProcessDefinitionBodySchema.optional(),
+    })
+    .meta({ id: 'ProcessTestTarget' });
+
+export const SubmitProcessTestRunPayloadSchema = z
+    .strictObject({
+        process: ProcessTestTargetSchema,
+        scenarios: z.array(ProcessTestScenarioSchema).min(1),
+    })
+    .meta({ id: 'SubmitProcessTestRunPayload' });
+
 export const ProcessTestAssertionResultSchema = z
     .strictObject({
         assertion: z.string(),
@@ -1145,11 +1203,20 @@ export const ProcessTestRunSchema = z
         id: z.string(),
         account: z.string(),
         project: z.string(),
-        process_root_id: z.string(),
-        process_revision_id: z.string(),
-        suite_id: z.string(),
+        subject: ProcessTestSubjectSchema,
+        /** Present only for `stored` subjects. */
+        process_root_id: z.string().optional(),
+        /** Present only for `stored` subjects. */
+        process_revision_id: z.string().optional(),
+        /** Present only for `stored` subjects — runs submitted directly carry their scenarios inline. */
+        suite_id: z.string().optional(),
         definition_hash: z.string(),
         status: ProcessTestRunStatusSchema,
+        /**
+         * Whether the tested definition still matches the current head revision. Always false for
+         * non-stored subjects, which have no later revision to drift from: for those,
+         * `definition_hash` and `subject.app_version` serve reproducibility instead.
+         */
         stale: z.boolean(),
         process_definition_snapshot: ProcessDefinitionBodySchema,
         scenarios: z.array(ProcessTestScenarioResultSchema),

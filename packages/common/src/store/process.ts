@@ -40,17 +40,23 @@ import type {
     ProcessTestFixtureResponseSchema,
     ProcessTestFixtureResultSchema,
     ProcessTestHumanActionSchema,
+    ProcessTestInlineSubjectSchema,
     ProcessTestNodeFixtureSchema,
+    ProcessTestResolvedSubjectSchema,
     ProcessTestRunSchema,
     ProcessTestRunStatusSchema,
     ProcessTestScenarioResultSchema,
     ProcessTestScenarioSchema,
+    ProcessTestStoredSubjectSchema,
+    ProcessTestSubjectSchema,
     ProcessTestSuiteSchema,
+    ProcessTestTargetSchema,
     ProcessTestVirtualActorSchema,
     PublishProcessDefinitionPayloadSchema,
     RetryProcessNodePayloadSchema,
     RevertProcessDefinitionPayloadSchema,
     StartProcessTestRunPayloadSchema,
+    SubmitProcessTestRunPayloadSchema,
     TransitionDefinitionSchema,
     TransitionTriggerSchema,
     UpdateProcessTestScenarioPayloadSchema,
@@ -287,5 +293,15 @@ export type ProcessTestChildTrace = z.infer<typeof ProcessTestChildTraceSchema>;
 export type ProcessTestScenarioResult = z.infer<typeof ProcessTestScenarioResultSchema>;
 export type ProcessTestRun = Omit<z.infer<typeof ProcessTestRunSchema>, 'process_definition_snapshot'> & {
     process_definition_snapshot: ProcessDefinitionBody;
+};
+export type ProcessTestStoredSubject = z.infer<typeof ProcessTestStoredSubjectSchema>;
+export type ProcessTestResolvedSubject = z.infer<typeof ProcessTestResolvedSubjectSchema>;
+export type ProcessTestInlineSubject = z.infer<typeof ProcessTestInlineSubjectSchema>;
+export type ProcessTestSubject = z.infer<typeof ProcessTestSubjectSchema>;
+export type ProcessTestTarget = Omit<z.infer<typeof ProcessTestTargetSchema>, 'definition'> & {
+    definition?: ProcessDefinitionBody;
+};
+export type SubmitProcessTestRunPayload = Omit<z.infer<typeof SubmitProcessTestRunPayloadSchema>, 'process'> & {
+    process: ProcessTestTarget;
 };
 export type UpdateProcessTestScenarioPayload = z.infer<typeof UpdateProcessTestScenarioPayloadSchema>;
