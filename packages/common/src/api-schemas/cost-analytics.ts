@@ -19,6 +19,9 @@ export const PricingSyncDayResultSchema = z
         gcp_list: z.number(),
         gcp_effective: z.number(),
         aws_pricing: z.number(),
+        xai_pricing: z.number(),
+        openrouter_pricing: z.number(),
+        openai_costs: z.number(),
     })
     .meta({ id: 'PricingSyncDayResult' });
 

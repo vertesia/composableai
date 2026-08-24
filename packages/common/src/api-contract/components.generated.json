@@ -37788,13 +37788,25 @@
       },
       "aws_pricing": {
         "type": "number"
+      },
+      "xai_pricing": {
+        "type": "number"
+      },
+      "openrouter_pricing": {
+        "type": "number"
+      },
+      "openai_costs": {
+        "type": "number"
       }
     },
     "required": [
       "date",
       "gcp_list",
       "gcp_effective",
-      "aws_pricing"
+      "aws_pricing",
+      "xai_pricing",
+      "openrouter_pricing",
+      "openai_costs"
     ],
     "additionalProperties": false
   },
