@@ -66,6 +66,19 @@ describe('in-code interaction contract', () => {
 });
 
 describe('AsyncConversationExecutionPayload contract', () => {
+    it('accepts caller-provided metadata and enrichment controls', () => {
+        const payload: AsyncConversationExecutionPayload = {
+            type: 'conversation',
+            interaction: 'sys:AppTester',
+            title: 'Manual title',
+            topic: 'Manual topic',
+            generate_topic: false,
+            generate_lessons: false,
+        };
+
+        expect(AsyncConversationExecutionPayloadSchema.parse(payload)).toMatchObject(payload);
+    });
+
     it('retains an immutable app-version execution target', () => {
         const payload: AsyncConversationExecutionPayload = {
             type: 'conversation',

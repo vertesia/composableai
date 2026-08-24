@@ -50,6 +50,15 @@ export interface NotifyWebhookResult {
 
 const APP_HOOK_TOKEN_REFRESH_THRESHOLD_MS = 5 * 60_000;
 
+export function webhookLogTarget(url: string): string {
+    try {
+        const parsed = new URL(url);
+        return `${parsed.origin}${parsed.pathname === '/' ? '' : parsed.pathname}`;
+    } catch {
+        return '[invalid webhook URL]';
+    }
+}
+
 function validationStatusCode(error: unknown): number | undefined {
     if (typeof error !== 'object' || error === null) {
         return undefined;
@@ -88,6 +97,7 @@ export async function notifyWebhook(
     }
 
     if (!target_url) throw new WorkflowParamNotFoundError('target_url');
+    const logTarget = webhookLogTarget(target_url);
 
     try {
         await client.apps.validateUrl(target_url);
@@ -95,7 +105,7 @@ export async function notifyWebhook(
         const message = err instanceof Error ? err.message : String(err);
         if (!isNonRetryableUrlValidationError(err)) {
             log.warn('URL validation preflight failed; retrying webhook notification', {
-                url: target_url,
+                url: logTarget,
                 workflow_id: params.workflow_id,
                 workflow_run_id: params.workflow_run_id,
                 error: message,
@@ -103,7 +113,7 @@ export async function notifyWebhook(
             throw err;
         }
         log.warn('URL validation blocked webhook endpoint', {
-            url: target_url,
+            url: logTarget,
             workflow_id: params.workflow_id,
             workflow_run_id: params.workflow_run_id,
             error: message,
@@ -127,7 +137,7 @@ export async function notifyWebhook(
     }
     const body = params.body ?? (hasBody ? await createRequestBody(payload, params, version) : undefined);
 
-    log.info(`Notifying webhook at ${target_url}`);
+    log.debug('Notifying webhook', { url: logTarget });
     const timeoutMs = typeof params.timeout_ms === 'number' && params.timeout_ms > 0 ? params.timeout_ms : undefined;
     const controller = timeoutMs ? new AbortController() : undefined;
     const timeout = timeoutMs ? setTimeout(() => controller?.abort(), timeoutMs) : undefined;
@@ -141,7 +151,7 @@ export async function notifyWebhook(
         }).catch((err: unknown) => {
             if (err instanceof URLValidationError) {
                 log.warn('Redirect blocked on webhook endpoint', {
-                    url: target_url,
+                    url: logTarget,
                     workflow_id: params.workflow_id,
                     workflow_run_id: params.workflow_run_id,
                     error: err.message,
@@ -151,7 +161,7 @@ export async function notifyWebhook(
                     nonRetryable: true,
                 });
             }
-            log.error(`An error occurred while notifying webhook at ${target_url}`, { err });
+            log.error('An error occurred while notifying webhook', { url: logTarget, err });
             throw err;
         });
     } finally {
@@ -161,12 +171,12 @@ export async function notifyWebhook(
     }
 
     if (!res.ok) {
-        log.warn(`Webhook endpoint ${target_url} returned an error - ${res.status} ${res.statusText}`, {
-            fetchResponse: res,
+        log.warn(`Webhook endpoint returned an error - ${res.status} ${res.statusText}`, {
+            url: logTarget,
         });
 
         // Try to get response payload for error message
-        let errorMessage = `Webhook Notification to ${target_url} failed with status: ${res.status} ${res.statusText}`;
+        let errorMessage = `Webhook Notification to ${logTarget} failed with status: ${res.status} ${res.statusText}`;
         try {
             const responseText = await res.text();
             if (responseText) {
