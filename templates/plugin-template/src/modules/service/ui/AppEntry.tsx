@@ -13,8 +13,6 @@ setUsePluginAssets(false);
 const appName = import.meta.env.VITE_APP_NAME;
 const appVersion = import.meta.env.VITE_APP_VERSION;
 const devAuthToken = import.meta.env.DEV ? import.meta.env.VITE_VERTESIA_AUTH_TOKEN : undefined;
-const browserAuthToken = (globalThis as { __VERTESIA_AUTH_TOKEN__?: string }).__VERTESIA_AUTH_TOKEN__;
-const appAuthToken = devAuthToken ?? browserAuthToken;
 
 const AppRoot = () => (
     <PluginLayout>
@@ -28,7 +26,7 @@ const ProtectedAppRoot = () => (
     </StandaloneApp>
 );
 
-const GatewayAppRoot = appAuthToken ? AppRoot : ProtectedAppRoot;
+const GatewayAppRoot = devAuthToken ? AppRoot : ProtectedAppRoot;
 
 const routes: Route[] = [
     { path: 'tenants/:tenantId/live/:agentRunId/app/*', Component: GatewayAppRoot },
@@ -50,7 +48,7 @@ function AppVersionScope({ children }: { children: ReactNode }) {
 
 export function AppEntry() {
     return (
-        <VertesiaShell authToken={appAuthToken}>
+        <VertesiaShell authToken={devAuthToken}>
             <AppVersionScope>
                 <OrgGate>
                     <RouterProvider routes={routes} />
