@@ -43,6 +43,24 @@ describe('useAgentStream', () => {
         vi.clearAllMocks();
     });
 
+    it('keeps the stream subscribed while an interactive conversation is idle', async () => {
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(() => new Promise(() => {}));
+        const client = createClient(streamMessages);
+
+        renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => expect(streamMessages).toHaveBeenCalled());
+        expect(streamMessages.mock.calls[0][4]).toMatchObject({ closeOnIdle: false });
+    });
+
     it('marks initial history as empty when the history fetch returns no messages', async () => {
         const streamMessages = vi.fn<
             (

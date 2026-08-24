@@ -473,6 +473,9 @@ export function useAgentStream(
                 since,
                 abortController.signal,
                 {
+                    // Interactive conversations remain RUNNING at IDLE and must keep the
+                    // subscription open so follow-up turns arrive on the same stream.
+                    closeOnIdle: false,
                     onHistoryLoaded: (historical) => {
                         if (abortController.signal.aborted) return;
                         const timelineMessages = historical.filter(shouldStoreTimelineMessage);

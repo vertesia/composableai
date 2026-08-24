@@ -48,6 +48,7 @@ import type {
     OAuthClientCredentialsSchema,
     StartAppBuildRequestSchema,
     StartAppBuildResponseSchema,
+    StartAppDevelopmentTaskRequestSchema,
     StartAppScaffoldRequestSchema,
     StartAppScaffoldResponseSchema,
     UpdateAppInstallationToolAllowlistPayloadSchema,
@@ -315,6 +316,8 @@ export type AppScaffoldModule = z.infer<typeof AppScaffoldModuleSchema>;
 export type StartAppScaffoldRequest = z.infer<typeof StartAppScaffoldRequestSchema>;
 
 export type StartAppScaffoldResponse = z.infer<typeof StartAppScaffoldResponseSchema>;
+
+export type StartAppDevelopmentTaskRequest = z.infer<typeof StartAppDevelopmentTaskRequestSchema>;
 
 export type AppScaffoldProgressStatus = z.infer<typeof AppScaffoldProgressStatusSchema>;
 
