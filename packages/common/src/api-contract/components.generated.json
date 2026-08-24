@@ -30108,6 +30108,9 @@
       "name": {
         "type": "string"
       },
+      "initial_context": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
       "status": {
         "$ref": "#/components/schemas/ProcessTestRunStatus"
       },

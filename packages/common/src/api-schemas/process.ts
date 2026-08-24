@@ -1199,6 +1199,8 @@ export const ProcessTestScenarioResultSchema = z
     .strictObject({
         scenario_id: z.string(),
         name: z.string(),
+        /** Immutable scenario input captured when the run is created. Absent on legacy run documents. */
+        initial_context: JSONObjectSchema.optional(),
         status: ProcessTestRunStatusSchema,
         error: z.string().optional(),
         process_state: ProcessStateSchema.optional(),
