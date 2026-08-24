@@ -3353,7 +3353,7 @@ function AllMessagesMixedComponent({
             incompleteStreaming.length === 0 &&
             !hasRenderableInitialRequest &&
             !(isSummaryView && showActivityFallback) ? (
-                activeWorkstream === 'all' && isAgentWorking && incompleteStreaming.length === 0 ? (
+                activeWorkstream === 'all' && isAgentWorking ? (
                     <div className="flex-1 px-2 py-6 sm:px-4">
                         <InitialRequestWaitingCard
                             label={t('agent.preparing')}

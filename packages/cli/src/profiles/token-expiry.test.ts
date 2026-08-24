@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StoredAuthBundle } from './keyring.js';
 import type { ConfigResult } from './server/index.js';
-import { readResultAccessTokenExpiry, readResultRefreshTokenExpiry } from './token-expiry.js';
+import { readInlineTokenExpiry, readResultAccessTokenExpiry, readResultRefreshTokenExpiry } from './token-expiry.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -20,6 +20,24 @@ function configResult(overrides: Partial<ConfigResult> = {}): ConfigResult {
 function bundle(overrides: Partial<StoredAuthBundle> = {}): StoredAuthBundle {
     return { version: 1, refreshToken: 'vrt_old', ...overrides };
 }
+
+function tokenWithPayload(payload: Record<string, unknown>): string {
+    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    return `eyJhbGciOiJub25lIn0.${encodedPayload}.`;
+}
+
+describe('readInlineTokenExpiry', () => {
+    it('accepts every finite numeric expiry, including the Unix epoch', () => {
+        expect(readInlineTokenExpiry(tokenWithPayload({ exp: 0 }))).toBe(0);
+        expect(readInlineTokenExpiry(tokenWithPayload({ exp: 123 }))).toBe(123_000);
+    });
+
+    it('rejects missing and non-numeric expiry claims', () => {
+        expect(readInlineTokenExpiry(tokenWithPayload({}))).toBeUndefined();
+        expect(readInlineTokenExpiry(tokenWithPayload({ exp: '123' }))).toBeUndefined();
+        expect(readInlineTokenExpiry(tokenWithPayload({ exp: Number.POSITIVE_INFINITY }))).toBeUndefined();
+    });
+});
 
 describe('readResultRefreshTokenExpiry', () => {
     it('dates a rotated refresh token from the lifetime the server reports', () => {

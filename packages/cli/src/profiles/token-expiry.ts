@@ -10,7 +10,7 @@ import type { ConfigResult } from './server/index.js';
  */
 export function readInlineTokenExpiry(token: string): number | undefined {
     const decoded = jwt.decode(token, { json: true });
-    if (!decoded?.exp) {
+    if (typeof decoded?.exp !== 'number' || !Number.isFinite(decoded.exp)) {
         return undefined;
     }
     return decoded.exp * 1000;
