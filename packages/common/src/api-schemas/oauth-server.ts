@@ -172,6 +172,15 @@ export const OAuthTokenResponseSchema = z
         expires_in: z.number(),
         scope: z.string().optional(),
         refresh_token: z.string().optional(),
+        /**
+         * Lifetime in seconds of `refresh_token`, from the moment this response was issued.
+         *
+         * Not an RFC 6749 parameter — refresh tokens there are opaque and undated — but clients that
+         * persist the token need it to report when the stored credential dies. Every refresh token
+         * this server returns is newly minted (the refresh grant rotates), so this is always the full
+         * lifetime and never a remaining one.
+         */
+        refresh_token_expires_in: z.number().optional(),
         id_token: z.string().optional(),
     })
     .meta({ id: 'OAuthTokenResponse' });
