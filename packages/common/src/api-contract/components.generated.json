@@ -29474,6 +29474,902 @@
       "run_kind"
     ]
   },
+  "ProcessTestRunStatus": {
+    "type": "string",
+    "enum": [
+      "pending",
+      "running",
+      "passed",
+      "failed",
+      "cancelled"
+    ]
+  },
+  "ProcessTestVirtualActor": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "label": {
+        "type": "string"
+      },
+      "refs": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "permissions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Permission"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "refs",
+      "permissions"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestFixtureResult": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "result"
+      },
+      "output": {},
+      "context_update": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "transition_to": {
+        "type": "string"
+      },
+      "skip_node": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestFixtureError": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "error"
+      },
+      "message": {
+        "type": "string"
+      },
+      "retry": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "kind",
+      "message",
+      "retry"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestFixtureResponse": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProcessTestFixtureResult"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestFixtureError"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "result": "#/components/schemas/ProcessTestFixtureResult",
+        "error": "#/components/schemas/ProcessTestFixtureError"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
+  },
+  "ProcessTestNodeFixture": {
+    "type": "object",
+    "properties": {
+      "node": {
+        "type": "string"
+      },
+      "workflow_path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "responses": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestFixtureResponse"
+        }
+      },
+      "guard_facts": {
+        "$ref": "#/components/schemas/JSONObject"
+      }
+    },
+    "required": [
+      "node",
+      "responses"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestHumanAction": {
+    "type": "object",
+    "properties": {
+      "node": {
+        "type": "string"
+      },
+      "workflow_path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "actor": {
+        "type": "string"
+      },
+      "result": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "expect": {
+        "type": "string",
+        "enum": [
+          "accepted",
+          "forbidden"
+        ]
+      }
+    },
+    "required": [
+      "node",
+      "actor",
+      "result",
+      "expect"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestAssertions": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "required_nodes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "forbidden_nodes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "context": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "fixture_calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        }
+      },
+      "context_at_nodes": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JSONObject"
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "ProcessTestScenario": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "initial_context": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "actors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestVirtualActor"
+        }
+      },
+      "fixtures": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestNodeFixture"
+        }
+      },
+      "human_actions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestHumanAction"
+        }
+      },
+      "assertions": {
+        "$ref": "#/components/schemas/ProcessTestAssertions"
+      },
+      "timeout_seconds": {
+        "default": 30,
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 300
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "initial_context",
+      "actors",
+      "fixtures",
+      "human_actions",
+      "assertions"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestSuite": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "account": {
+        "type": "string"
+      },
+      "project": {
+        "type": "string"
+      },
+      "process_root_id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "scenarios": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "account",
+      "project",
+      "process_root_id",
+      "name",
+      "scenarios",
+      "created_by",
+      "updated_by",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestSuiteArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ProcessTestSuite"
+    }
+  },
+  "CreateProcessTestSuitePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "scenarios": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      }
+    },
+    "required": [
+      "name",
+      "scenarios"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateProcessTestSuitePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "scenarios": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "StartProcessTestRunPayload": {
+    "type": "object",
+    "properties": {
+      "suite_id": {
+        "type": "string"
+      },
+      "process_revision_id": {
+        "type": "string"
+      },
+      "scenario_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "suite_id",
+      "process_revision_id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestStoredSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "stored"
+      },
+      "process_root_id": {
+        "type": "string"
+      },
+      "process_revision_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "process_root_id",
+      "process_revision_id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestResolvedSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "resolved"
+      },
+      "process_id": {
+        "type": "string"
+      },
+      "app_version": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "process_id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestInlineSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "inline"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestSubject": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProcessTestStoredSubject"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestResolvedSubject"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestInlineSubject"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "stored": "#/components/schemas/ProcessTestStoredSubject",
+        "resolved": "#/components/schemas/ProcessTestResolvedSubject",
+        "inline": "#/components/schemas/ProcessTestInlineSubject"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
+  },
+  "ProcessTestTargetById": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "app_version": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestTargetWithDefinition": {
+    "type": "object",
+    "properties": {
+      "definition": {
+        "$ref": "#/components/schemas/ProcessDefinitionBody"
+      }
+    },
+    "required": [
+      "definition"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestTarget": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ProcessTestTargetById"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestTargetWithDefinition"
+      }
+    ]
+  },
+  "SubmitProcessTestRunPayload": {
+    "type": "object",
+    "properties": {
+      "process": {
+        "$ref": "#/components/schemas/ProcessTestTarget"
+      },
+      "scenarios": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      }
+    },
+    "required": [
+      "process",
+      "scenarios"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestAssertionResult": {
+    "type": "object",
+    "properties": {
+      "assertion": {
+        "type": "string"
+      },
+      "passed": {
+        "type": "boolean"
+      },
+      "expected": {},
+      "actual": {},
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "assertion",
+      "passed"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestActorDecision": {
+    "type": "object",
+    "properties": {
+      "node": {
+        "type": "string"
+      },
+      "actor": {
+        "type": "string"
+      },
+      "decision": {
+        "type": "string",
+        "enum": [
+          "accepted",
+          "forbidden"
+        ]
+      },
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "node",
+      "actor",
+      "decision"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestCoverage": {
+    "type": "object",
+    "properties": {
+      "nodes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "transitions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "node_percent": {
+        "type": "number"
+      },
+      "transition_percent": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "nodes",
+      "transitions",
+      "node_percent",
+      "transition_percent"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestChildTrace": {
+    "type": "object",
+    "properties": {
+      "workflow_path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "status": {
+        "$ref": "#/components/schemas/ProcessTestRunStatus"
+      },
+      "error": {
+        "type": "string"
+      },
+      "process_state": {
+        "$ref": "#/components/schemas/ProcessState"
+      },
+      "node_history": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NodeHistoryEntry"
+        }
+      },
+      "coverage": {
+        "$ref": "#/components/schemas/ProcessTestCoverage"
+      },
+      "fixture_calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        }
+      },
+      "actor_decisions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestActorDecision"
+        }
+      }
+    },
+    "required": [
+      "workflow_path",
+      "status",
+      "node_history",
+      "coverage",
+      "fixture_calls",
+      "actor_decisions"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestScenarioResult": {
+    "type": "object",
+    "properties": {
+      "scenario_id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "initial_context": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ProcessTestRunStatus"
+      },
+      "error": {
+        "type": "string"
+      },
+      "process_state": {
+        "$ref": "#/components/schemas/ProcessState"
+      },
+      "node_history": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NodeHistoryEntry"
+        }
+      },
+      "assertions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestAssertionResult"
+        }
+      },
+      "fixture_calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        }
+      },
+      "actor_decisions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestActorDecision"
+        }
+      },
+      "coverage": {
+        "$ref": "#/components/schemas/ProcessTestCoverage"
+      },
+      "child_traces": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestChildTrace"
+        }
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "scenario_id",
+      "name",
+      "status",
+      "node_history",
+      "assertions",
+      "fixture_calls",
+      "actor_decisions",
+      "coverage",
+      "child_traces",
+      "started_at"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestRun": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "account": {
+        "type": "string"
+      },
+      "project": {
+        "type": "string"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/ProcessTestSubject"
+      },
+      "process_root_id": {
+        "type": "string"
+      },
+      "process_revision_id": {
+        "type": "string"
+      },
+      "suite_id": {
+        "type": "string"
+      },
+      "definition_hash": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ProcessTestRunStatus"
+      },
+      "stale": {
+        "type": "boolean"
+      },
+      "process_definition_snapshot": {
+        "$ref": "#/components/schemas/ProcessDefinitionBody"
+      },
+      "scenarios": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenarioResult"
+        }
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "account",
+      "project",
+      "subject",
+      "definition_hash",
+      "status",
+      "stale",
+      "process_definition_snapshot",
+      "scenarios",
+      "created_by",
+      "created_at"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestRunArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ProcessTestRun"
+    }
+  },
+  "ListProcessTestRunsQuery": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      }
+    },
+    "additionalProperties": false
+  },
+  "UpdateProcessTestScenarioPayload": {
+    "type": "object",
+    "properties": {
+      "checkpoint_token": {
+        "type": "string"
+      },
+      "scenario_id": {
+        "type": "string"
+      },
+      "workflow_path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "status": {
+        "$ref": "#/components/schemas/ProcessTestRunStatus"
+      },
+      "error": {
+        "type": "string"
+      },
+      "process_state": {
+        "$ref": "#/components/schemas/ProcessState"
+      },
+      "node_history": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NodeHistoryEntry"
+        }
+      },
+      "assertions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestAssertionResult"
+        }
+      },
+      "fixture_calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        }
+      },
+      "actor_decisions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestActorDecision"
+        }
+      },
+      "coverage": {
+        "$ref": "#/components/schemas/ProcessTestCoverage"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "checkpoint_token",
+      "scenario_id",
+      "workflow_path",
+      "status",
+      "node_history",
+      "assertions",
+      "fixture_calls",
+      "actor_decisions",
+      "coverage",
+      "started_at"
+    ],
+    "additionalProperties": false
+  },
   "EventDeliveryQueueFailureSummary": {
     "type": "object",
     "properties": {
