@@ -3,6 +3,7 @@
 import { JSONObjectSchema, JSONSchemaSchema } from '@llumiverse/common/schemas';
 import type { StringValue } from 'ms';
 import { z } from 'zod';
+import { PermissionSchema } from './access-control.js';
 import { StringValueMapSchema } from './files.js';
 import { ConversationVisibilitySchema, RunSourceSchema } from './interaction.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
@@ -961,3 +962,310 @@ export const RecordProcessRunPayloadSchema = z
         started_by: z.string().optional(),
     })
     .meta({ id: 'RecordProcessRunPayload' });
+
+export const ProcessTestRunStatusSchema = z
+    .enum(['pending', 'running', 'passed', 'failed', 'cancelled'])
+    .meta({ id: 'ProcessTestRunStatus' });
+
+export const ProcessTestVirtualActorSchema = z
+    .strictObject({
+        id: z.string(),
+        label: z.string().optional(),
+        refs: z.array(z.string()),
+        permissions: z.array(PermissionSchema),
+    })
+    .meta({ id: 'ProcessTestVirtualActor' });
+
+export const ProcessTestFixtureResultSchema = z
+    .strictObject({
+        kind: z.literal('result'),
+        output: z.unknown().optional(),
+        context_update: JSONObjectSchema.optional(),
+        transition_to: z.string().optional(),
+        skip_node: z.boolean().optional(),
+    })
+    .meta({ id: 'ProcessTestFixtureResult' });
+
+export const ProcessTestFixtureErrorSchema = z
+    .strictObject({
+        kind: z.literal('error'),
+        message: z.string(),
+        retry: z.boolean(),
+    })
+    .meta({ id: 'ProcessTestFixtureError' });
+
+export const ProcessTestFixtureResponseSchema = z
+    .discriminatedUnion('kind', [ProcessTestFixtureResultSchema, ProcessTestFixtureErrorSchema])
+    .meta({ id: 'ProcessTestFixtureResponse' });
+
+export const ProcessTestNodeFixtureSchema = z
+    .strictObject({
+        node: z.string(),
+        workflow_path: z.array(z.string()).optional(),
+        responses: z.array(ProcessTestFixtureResponseSchema),
+        guard_facts: JSONObjectSchema.optional(),
+    })
+    .meta({ id: 'ProcessTestNodeFixture' });
+
+export const ProcessTestHumanActionSchema = z
+    .strictObject({
+        node: z.string(),
+        workflow_path: z.array(z.string()).optional(),
+        actor: z.string(),
+        result: JSONObjectSchema,
+        expect: z.enum(['accepted', 'forbidden']),
+    })
+    .meta({ id: 'ProcessTestHumanAction' });
+
+export const ProcessTestAssertionsSchema = z
+    .strictObject({
+        status: z.enum(['completed', 'failed', 'cancelled']).optional(),
+        path: z.array(z.string()).optional(),
+        required_nodes: z.array(z.string()).optional(),
+        forbidden_nodes: z.array(z.string()).optional(),
+        context: JSONObjectSchema.optional(),
+        fixture_calls: z.record(z.string(), z.number()).optional(),
+        context_at_nodes: z.record(z.string(), JSONObjectSchema).optional(),
+    })
+    .meta({ id: 'ProcessTestAssertions' });
+
+export const ProcessTestScenarioSchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        initial_context: JSONObjectSchema,
+        actors: z.array(ProcessTestVirtualActorSchema),
+        fixtures: z.array(ProcessTestNodeFixtureSchema),
+        human_actions: z.array(ProcessTestHumanActionSchema),
+        assertions: ProcessTestAssertionsSchema,
+        timeout_seconds: z.number().int().min(1).max(300).default(30),
+    })
+    .meta({ id: 'ProcessTestScenario' });
+
+export const ProcessTestSuiteSchema = z
+    .strictObject({
+        id: z.string(),
+        account: z.string(),
+        project: z.string(),
+        process_root_id: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        scenarios: z.array(ProcessTestScenarioSchema),
+        created_by: z.string(),
+        updated_by: z.string(),
+        created_at: z.string().meta({ format: 'date-time' }),
+        updated_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'ProcessTestSuite' });
+
+export const ProcessTestSuiteArraySchema = z.array(ProcessTestSuiteSchema).meta({ id: 'ProcessTestSuiteArray' });
+
+export const CreateProcessTestSuitePayloadSchema = z
+    .strictObject({
+        name: z.string(),
+        description: z.string().optional(),
+        scenarios: z.array(ProcessTestScenarioSchema),
+    })
+    .meta({ id: 'CreateProcessTestSuitePayload' });
+
+export const UpdateProcessTestSuitePayloadSchema = CreateProcessTestSuitePayloadSchema.partial().meta({
+    id: 'UpdateProcessTestSuitePayload',
+});
+
+export const StartProcessTestRunPayloadSchema = z
+    .strictObject({
+        suite_id: z.string(),
+        process_revision_id: z.string(),
+        scenario_ids: z.array(z.string()).optional(),
+    })
+    .meta({ id: 'StartProcessTestRunPayload' });
+
+/**
+ * Identifies what a test run was executed against. Stored subjects carry the revision identity
+ * of a persisted process definition; resolved subjects name an in-code process served by an app
+ * package or built into the server; inline subjects carry no external identity at all — the
+ * definition snapshot recorded on the run is the whole subject.
+ */
+export const ProcessTestStoredSubjectSchema = z
+    .strictObject({
+        kind: z.literal('stored'),
+        process_root_id: z.string(),
+        process_revision_id: z.string(),
+    })
+    .meta({ id: 'ProcessTestStoredSubject' });
+
+export const ProcessTestResolvedSubjectSchema = z
+    .strictObject({
+        kind: z.literal('resolved'),
+        /** The in-code process id that was resolved, such as `app:acme:invoice-review`. */
+        process_id: z.string(),
+        /** App package version pinned for the run, when the process came from an app package. */
+        app_version: z.string().optional(),
+    })
+    .meta({ id: 'ProcessTestResolvedSubject' });
+
+export const ProcessTestInlineSubjectSchema = z
+    .strictObject({
+        kind: z.literal('inline'),
+    })
+    .meta({ id: 'ProcessTestInlineSubject' });
+
+export const ProcessTestSubjectSchema = z
+    .discriminatedUnion('kind', [
+        ProcessTestStoredSubjectSchema,
+        ProcessTestResolvedSubjectSchema,
+        ProcessTestInlineSubjectSchema,
+    ])
+    .meta({ id: 'ProcessTestSubject' });
+
+/**
+ * Tests an in-code process by id — `app:<app>:<process>` or a built-in `sys:` process.
+ * `app_version` pins the app package version for the whole run so it stays reproducible, and only
+ * applies to an `app:` id.
+ */
+export const ProcessTestTargetByIdSchema = z
+    .strictObject({
+        id: z.string(),
+        app_version: z.string().optional(),
+    })
+    .meta({ id: 'ProcessTestTargetById' });
+
+/** Tests an ephemeral definition body that is not stored or served by an app. */
+export const ProcessTestTargetWithDefinitionSchema = z
+    .strictObject({
+        definition: ProcessDefinitionBodySchema,
+    })
+    .meta({ id: 'ProcessTestTargetWithDefinition' });
+
+/**
+ * What to test: exactly one of an in-code process id or an inline definition body. Modelled as a
+ * union rather than an object of optional properties so the published contract rejects an empty
+ * target, a target carrying both, and `app_version` on an inline definition.
+ */
+export const ProcessTestTargetSchema = z
+    .union([ProcessTestTargetByIdSchema, ProcessTestTargetWithDefinitionSchema])
+    .meta({ id: 'ProcessTestTarget' });
+
+export const SubmitProcessTestRunPayloadSchema = z
+    .strictObject({
+        process: ProcessTestTargetSchema,
+        scenarios: z.array(ProcessTestScenarioSchema).min(1),
+    })
+    .meta({ id: 'SubmitProcessTestRunPayload' });
+
+export const ProcessTestAssertionResultSchema = z
+    .strictObject({
+        assertion: z.string(),
+        passed: z.boolean(),
+        expected: z.unknown().optional(),
+        actual: z.unknown().optional(),
+        message: z.string().optional(),
+    })
+    .meta({ id: 'ProcessTestAssertionResult' });
+
+export const ProcessTestActorDecisionSchema = z
+    .strictObject({
+        node: z.string(),
+        actor: z.string(),
+        decision: z.enum(['accepted', 'forbidden']),
+        message: z.string().optional(),
+    })
+    .meta({ id: 'ProcessTestActorDecision' });
+
+export const ProcessTestCoverageSchema = z
+    .strictObject({
+        nodes: z.array(z.string()),
+        transitions: z.array(z.string()),
+        node_percent: z.number(),
+        transition_percent: z.number(),
+    })
+    .meta({ id: 'ProcessTestCoverage' });
+
+export const ProcessTestChildTraceSchema = z
+    .strictObject({
+        workflow_path: z.array(z.string()),
+        status: ProcessTestRunStatusSchema,
+        error: z.string().optional(),
+        process_state: ProcessStateSchema.optional(),
+        node_history: z.array(NodeHistoryEntrySchema),
+        coverage: ProcessTestCoverageSchema,
+        fixture_calls: z.record(z.string(), z.number()),
+        actor_decisions: z.array(ProcessTestActorDecisionSchema),
+    })
+    .meta({ id: 'ProcessTestChildTrace' });
+
+export const ProcessTestScenarioResultSchema = z
+    .strictObject({
+        scenario_id: z.string(),
+        name: z.string(),
+        /** Immutable scenario input captured when the run is created. Absent on legacy run documents. */
+        initial_context: JSONObjectSchema.optional(),
+        status: ProcessTestRunStatusSchema,
+        error: z.string().optional(),
+        process_state: ProcessStateSchema.optional(),
+        node_history: z.array(NodeHistoryEntrySchema),
+        assertions: z.array(ProcessTestAssertionResultSchema),
+        fixture_calls: z.record(z.string(), z.number()),
+        actor_decisions: z.array(ProcessTestActorDecisionSchema),
+        coverage: ProcessTestCoverageSchema,
+        child_traces: z.array(ProcessTestChildTraceSchema),
+        started_at: z.string().meta({ format: 'date-time' }),
+        completed_at: z.string().meta({ format: 'date-time' }).optional(),
+    })
+    .meta({ id: 'ProcessTestScenarioResult' });
+
+export const ProcessTestRunSchema = z
+    .strictObject({
+        id: z.string(),
+        account: z.string(),
+        project: z.string(),
+        subject: ProcessTestSubjectSchema,
+        /** Present only for `stored` subjects. */
+        process_root_id: z.string().optional(),
+        /** Present only for `stored` subjects. */
+        process_revision_id: z.string().optional(),
+        /** Present only for `stored` subjects — runs submitted directly carry their scenarios inline. */
+        suite_id: z.string().optional(),
+        definition_hash: z.string(),
+        status: ProcessTestRunStatusSchema,
+        /**
+         * Whether the tested definition still matches the current head revision. Always false for
+         * non-stored subjects, which have no later revision to drift from: for those,
+         * `definition_hash` and `subject.app_version` serve reproducibility instead.
+         */
+        stale: z.boolean(),
+        process_definition_snapshot: ProcessDefinitionBodySchema,
+        scenarios: z.array(ProcessTestScenarioResultSchema),
+        created_by: z.string(),
+        created_at: z.string().meta({ format: 'date-time' }),
+        started_at: z.string().meta({ format: 'date-time' }).optional(),
+        completed_at: z.string().meta({ format: 'date-time' }).optional(),
+    })
+    .meta({ id: 'ProcessTestRun' });
+
+export const ProcessTestRunArraySchema = z.array(ProcessTestRunSchema).meta({ id: 'ProcessTestRunArray' });
+
+export const ListProcessTestRunsQuerySchema = z
+    .strictObject({
+        limit: z.number().int().min(1).max(100).optional(),
+    })
+    .meta({ id: 'ListProcessTestRunsQuery' });
+
+export const UpdateProcessTestScenarioPayloadSchema = z
+    .strictObject({
+        checkpoint_token: z.string(),
+        scenario_id: z.string(),
+        workflow_path: z.array(z.string()),
+        status: ProcessTestRunStatusSchema,
+        error: z.string().optional(),
+        process_state: ProcessStateSchema.optional(),
+        node_history: z.array(NodeHistoryEntrySchema),
+        assertions: z.array(ProcessTestAssertionResultSchema),
+        fixture_calls: z.record(z.string(), z.number()),
+        actor_decisions: z.array(ProcessTestActorDecisionSchema),
+        coverage: ProcessTestCoverageSchema,
+        started_at: z.string().meta({ format: 'date-time' }),
+        completed_at: z.string().meta({ format: 'date-time' }).optional(),
+    })
+    .meta({ id: 'UpdateProcessTestScenarioPayload' });
