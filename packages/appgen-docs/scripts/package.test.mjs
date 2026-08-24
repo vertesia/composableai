@@ -34,4 +34,9 @@ test('ships the generated app-development references', async () => {
     const interactionRuntime = await readFile(join(appgenDocsRoot, 'interaction-runtime.md'), 'utf8');
     assert.match(interactionRuntime, /executeByName<StatusBriefingResult, StatusBriefingInput>/);
     assert.match(interactionRuntime, /execution\.result\.object\(\)/);
+    assert.match(interactionRuntime, /root SDK has no `client\.activities` execution API/);
+    assert.match(interactionRuntime, /client\.agents\.start/);
+    assert.match(interactionRuntime, /client\.agents\.streamMessages/);
+    assert.match(interactionRuntime, /client\.agents\.retrieveProcess/);
+    assert.match(interactionRuntime, /Never invent `client\.activities\.executeByName`/);
 });

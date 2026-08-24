@@ -577,9 +577,11 @@ If the exact source attachment API differs in the installed SDK, write the inten
 }
 
 function generateInteractionRuntime() {
-    return `# Interaction Runtime Execution
+    return `# Installed Capability Runtime Execution
 
 Use the root \`VertesiaClient\` for app-owned interaction execution. For an immutable candidate, call \`client.withAppVersion(versionId)\` once before any Studio or Store request.
+
+## Interactions
 
 \`executeByName\` accepts the portable app interaction ref and an \`InteractionExecutionPayload\`. Put prompt inputs under \`data\`; the returned result is already enhanced with typed accessors.
 
@@ -602,6 +604,26 @@ const briefing = execution.result.object();
 \`\`\`
 
 Use \`execution.result.text()\` for text output and \`execution.result.objects()\` for multiple JSON results. Validate the parsed object against the exact durable input snapshot before displaying or persisting it. Do not reimplement \`/api/v1/execute\` with raw \`fetch\`.
+
+## Processes and activities
+
+Installed app activities are internal process nodes. The root SDK has no \`client.activities\` execution API, so exercise an activity through a packaged process that references it. Start processes through the Store agent API; \`client.processes\` manages definitions and has no \`executeByName\` method.
+
+\`\`\`ts
+const run = await client.agents.start({
+  process_id: \`app:\${APP_NAME}:milestone-transition\`,
+  run_type: 'programmatic',
+  data: { milestone_id, target_status: 'complete' },
+});
+await client.agents.streamMessages(run.id);
+const terminal = await client.agents.retrieveProcess(run.id);
+const { context } = await client.agents.getContext(run.id);
+if (terminal.status !== 'completed') {
+  throw new Error(String(context.error ?? terminal.status));
+}
+\`\`\`
+
+A package summary containing an activity proves registration only, not runtime execution. Unit-test the exact interaction and process call shapes with focused SDK mocks before constructing an immutable candidate. Never invent \`client.activities.executeByName\` or \`client.processes.executeByName\`.
 `;
 }
 
