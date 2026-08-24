@@ -149,11 +149,6 @@ describe('useFileProcessing', () => {
 
         await act(async () => {
             resolveUpload?.({ url: 'https://example.test/upload', path: 'files/wrong.png' });
-            // biome 2.5.6 regression: the nursery rule mis-types `await` on a `Promise | undefined`
-            // variable assigned inside a callback, and its own fix suggests `await await`. It only
-            // fires on Linux CI, not on macOS, so the suppression may read as unused locally.
-            // Drop it once the rule is fixed upstream.
-            // biome-ignore lint/nursery/noFloatingPromises: false positive — already awaited
             await uploadPromise;
         });
 
