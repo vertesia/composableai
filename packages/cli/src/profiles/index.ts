@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, statSync } from 'node:fs';
 import os from 'node:os';
 import { join } from 'node:path';
-import jwt from 'jsonwebtoken';
 import { hasErrorCode } from '../utils/options.js';
 import { readJsonFile, writeJsonFile } from '../utils/stdio.js';
 import type { OnResultCallback } from './commands.js';
@@ -16,6 +15,7 @@ import {
 } from './keyring.js';
 import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from './oauth.js';
 import { type ConfigPayload, type ConfigResult, startConfigSession } from './server/index.js';
+import { readInlineTokenExpiry, readResultAccessTokenExpiry, readResultRefreshTokenExpiry } from './token-expiry.js';
 
 export function getConfigFile(path?: string) {
     const dir = join(os.homedir(), '.vertesia');
@@ -209,7 +209,7 @@ export class ConfigureProfile {
                 accessTokenExpiresAt: readResultAccessTokenExpiry(result),
                 idToken: result.id_token || previousBundle?.idToken,
                 refreshToken: result.refresh_token || previousBundle?.refreshToken,
-                refreshTokenExpiresAt: result.refresh_token_expires_at || previousBundle?.refreshTokenExpiresAt,
+                refreshTokenExpiresAt: readResultRefreshTokenExpiry(result, previousBundle),
                 oauthClientId: result.oauth_client_id || previousBundle?.oauthClientId,
                 oauthResource: result.oauth_resource || previousBundle?.oauthResource,
             });
@@ -497,24 +497,6 @@ export class InvalidConfigUrlError extends Error {
 const config = new Config().load();
 
 export { config };
-
-function readInlineTokenExpiry(token: string): number | undefined {
-    const decoded = jwt.decode(token, { json: true });
-    if (!decoded?.exp) {
-        return undefined;
-    }
-    return decoded.exp * 1000;
-}
-
-function readResultAccessTokenExpiry(result: ConfigResult): number | undefined {
-    if (typeof result.access_token_expires_at === 'number') {
-        return result.access_token_expires_at;
-    }
-    if (typeof result.expires_in === 'number') {
-        return Date.now() + result.expires_in * 1000;
-    }
-    return readInlineTokenExpiry(result.token);
-}
 
 function readKnownServerUrls(
     target: ConfigUrlRef,

@@ -52,24 +52,41 @@ function renderSummary(
     props: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
 ) {
     const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
-
-    return render(
+    const renderConversation = (
+        currentMessages: AgentMessage[],
+        currentIsCompleted: boolean,
+        currentStreamingMessages: Map<string, StreamingData>,
+        currentProps: Partial<React.ComponentProps<typeof AllMessagesMixed>>,
+    ) => (
         <I18nProvider lng="en">
             <ReactRouterContext.Provider value={makeRouterContext()}>
                 <AgentResourceResolverProvider value={testResourceResolver}>
                     <AllMessagesMixed
-                        messages={messages}
+                        messages={currentMessages}
                         bottomRef={bottomRef}
                         viewMode="sliding"
-                        isCompleted={isCompleted}
+                        isCompleted={currentIsCompleted}
                         artifactRunId="run-1"
-                        streamingMessages={streamingMessages}
-                        {...props}
+                        streamingMessages={currentStreamingMessages}
+                        {...currentProps}
                     />
                 </AgentResourceResolverProvider>
             </ReactRouterContext.Provider>
-        </I18nProvider>,
+        </I18nProvider>
     );
+
+    const result = render(renderConversation(messages, isCompleted, streamingMessages, props));
+    return {
+        ...result,
+        rerenderSummary(
+            nextMessages: AgentMessage[],
+            nextIsCompleted = false,
+            nextStreamingMessages = new Map<string, StreamingData>(),
+            nextProps: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
+        ) {
+            result.rerender(renderConversation(nextMessages, nextIsCompleted, nextStreamingMessages, nextProps));
+        },
+    };
 }
 
 function renderStacked(
@@ -764,6 +781,72 @@ describe('AllMessagesMixed summary view', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Back to main agent' }));
 
         expect(screen.getByText('Main agent response.')).not.toBeNull();
+    });
+
+    it('keeps streamed and persisted child output in the owning workstream throughout its lifecycle', () => {
+        const question = makeMessage({
+            timestamp: 1_000,
+            type: AgentMessageType.QUESTION,
+            message: 'Research the launch plan.',
+        });
+        const launch = makeMessage({
+            timestamp: 2_000,
+            type: AgentMessageType.UPDATE,
+            message: 'Research workstream launched',
+            workstream_id: 'research',
+            details: {
+                event_class: 'activity',
+                workstream_event: 'launched',
+                launch_id: 'launch-research',
+                workstream_id: 'research',
+                child_workflow_id: 'workstream:research',
+                child_workflow_run_id: 'run-research',
+            },
+        });
+        const sourceMessages = [question, launch];
+        const streamingMessages = new Map<string, StreamingData>([
+            [
+                'research-stream',
+                {
+                    text: 'Research is still streaming.',
+                    startTimestamp: 3_000,
+                    workstreamId: 'research',
+                },
+            ],
+        ]);
+        const { rerenderSummary } = renderSummary(sourceMessages, false, streamingMessages, {
+            workstreamSourceMessages: sourceMessages,
+            activeWorkstream: 'all',
+        });
+
+        expect(screen.queryByText('Research is still streaming.')).toBeNull();
+
+        rerenderSummary(sourceMessages, false, streamingMessages, {
+            workstreamSourceMessages: sourceMessages,
+            activeWorkstream: 'research',
+        });
+        expect(screen.getByText('Research is still streaming.')).not.toBeNull();
+
+        const persistedChildAnswer = makeMessage({
+            timestamp: 4_000,
+            type: AgentMessageType.ANSWER,
+            message: 'Research is complete.',
+            workstream_id: 'research',
+            details: { streamed: true },
+        });
+        const completedMessages = [...sourceMessages, persistedChildAnswer];
+
+        rerenderSummary(completedMessages, true, new Map(), {
+            workstreamSourceMessages: completedMessages,
+            activeWorkstream: 'research',
+        });
+        expect(screen.getByText('Research is complete.')).not.toBeNull();
+
+        rerenderSummary(completedMessages, true, new Map(), {
+            workstreamSourceMessages: completedMessages,
+            activeWorkstream: 'all',
+        });
+        expect(screen.queryByText('Research is complete.')).toBeNull();
     });
 
     it('renders first child workflow activity as a workstream row when the launch event is missing', () => {
