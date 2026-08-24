@@ -365,7 +365,7 @@ export function isStreamReplacedByMessage(streaming: StreamingData, messages: Ag
         if (streaming.streamingId && messageStreamingId) {
             if (messageStreamingId !== streaming.streamingId) return false;
             if (message.details?.display_role === 'thinking') {
-                return false;
+                return getMessageComparableText(message) === streamingText;
             }
             if (isToolCallMessage(message) || message.details?.tool_status) {
                 return false;
@@ -375,7 +375,7 @@ export function isStreamReplacedByMessage(streaming: StreamingData, messages: Ag
 
         if (streaming.activityId && message.details?.activity_id === streaming.activityId) {
             if (message.details?.display_role === 'thinking') {
-                return false;
+                return getMessageComparableText(message) === streamingText;
             }
             if (isToolCallMessage(message) || message.details?.tool_status) {
                 return false;
@@ -392,8 +392,9 @@ export function isStreamReplacedByMessage(streaming: StreamingData, messages: Ag
             return false;
         }
 
-        if (!message.details?.streamed) return false;
-
+        // Exact persisted prose is authoritative even when an older or alternate producer omitted
+        // streaming correlation metadata. This comparison spans the whole timeline so intervening
+        // tool/workstream activity cannot leave the completed preview rendered a second time.
         return getMessageComparableText(message) === streamingText;
     });
 }

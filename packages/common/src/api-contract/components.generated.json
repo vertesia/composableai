@@ -10713,7 +10713,7 @@
         "items": {
           "type": "string"
         },
-        "description": "Names of skills whose full instructions are already present in the live conversation history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill re-activation idempotent: a repeat call returns a short \"already active\" acknowledgement instead of re-dumping the instructions.\n\nUnlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked), this list is reset when a checkpoint compacts the conversation, because the summary no longer carries the skill instructions and the next call must re-deliver them."
+        "description": "Names of skills whose full instructions are already present in the live conversation history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill re-activation idempotent: a repeat call returns a short \"already active\" acknowledgement instead of re-dumping the instructions.\n\nUnlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked), this list tracks only instructions present in the current compacted conversation. Checkpoints restore active builtin skill bodies and preserve their names; skills that cannot be restored are removed so the next call can re-deliver them."
       },
       "initialization_call_ids": {
         "type": "array",
@@ -17021,7 +17021,7 @@
     "properties": {
       "app_id": {
         "type": "string",
-        "description": "App id / package name to create. It is normalized to the same slug rules used by"
+        "description": "Package name for the new app to create and scaffold. This is not the id of an existing app."
       },
       "title": {
         "type": "string"
@@ -17042,6 +17042,36 @@
     },
     "required": [
       "app_id"
+    ],
+    "additionalProperties": false
+  },
+  "StartAppDevelopmentTaskRequest": {
+    "type": "object",
+    "properties": {
+      "prompt": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Development request passed to the App Builder parent."
+      },
+      "environment": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Execution environment id for the App Builder run."
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Model id for the App Builder run."
+      },
+      "build_version": {
+        "type": "boolean",
+        "description": "Create one immutable app version after validation. Defaults to false."
+      }
+    },
+    "required": [
+      "prompt",
+      "environment",
+      "model"
     ],
     "additionalProperties": false
   },
@@ -17962,7 +17992,7 @@
       },
       "agent_run": {
         "$ref": "#/components/schemas/AgentRunSearchHit",
-        "description": "Latest Studio Assistant run started for this task branch."
+        "description": "Latest App Builder parent run started for this task branch."
       }
     },
     "required": [

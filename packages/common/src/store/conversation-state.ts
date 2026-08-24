@@ -203,8 +203,9 @@ export interface ConversationState {
      * instead of re-dumping the instructions.
      *
      * Unlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked),
-     * this list is reset when a checkpoint compacts the conversation, because the
-     * summary no longer carries the skill instructions and the next call must re-deliver them.
+     * this list tracks only instructions present in the current compacted conversation.
+     * Checkpoints restore active builtin skill bodies and preserve their names; skills
+     * that cannot be restored are removed so the next call can re-deliver them.
      */
     skill_instructions_delivered?: string[];
 
