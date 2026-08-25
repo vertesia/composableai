@@ -63,6 +63,7 @@ use uniquely owned fixtures with cleanup; never rely on mutable shared-project d
 |-------------------------------|------------------------------------------------------|
 | `src/tool-server/config.ts`   | Registers generated module collections               |
 | `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
+| `src/tool-server/ui-nav-items.ts` | Composite App sidebar entries published in the manifest |
 | `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
 | `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
 | `src/ui/shell/App.tsx`        | Shared app runtime (module providers + router)       |
@@ -121,6 +122,26 @@ Rules of thumb:
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files
+
+## Composite App Surface
+
+An app is shown either standalone in the App Portal or as one section of the Vertesia Composite App
+shell. Both surfaces are configured in `src/tool-server/config.ts` under `uiConfig`, and both are
+published in the app manifest — the Composite App reads them from there, so a route that is not
+declared is a route its sidebar cannot offer.
+
+- `available_in` lists the surfaces the UI may appear on: `app_portal`, `composite_app`, or both.
+  Keep both unless the app is genuinely meaningless on one of them.
+- `navigation` (from `src/tool-server/ui-nav-items.ts`) is the app's sidebar entries. **It maps
+  routes that already exist; it does not create them.** Update it in the same change that adds,
+  renames, or removes a user-facing route, or the Composite App will advertise a route that 404s or
+  hide one the app actually has.
+- Sub-items nest with `children`. `topLevel: true` lifts an entry out of its app group into the
+  sidebar root; `preferredSection: "settings" | "footer"` places it in those sections instead.
+- An administrator can rearrange the composite menu afterwards, and their edits are preserved.
+  Studio reconciles the stored menu against this list — new routes are offered, and entries whose
+  route disappeared are flagged as stale — so an accurate list is what makes that reconciliation
+  correct.
 
 ## App Identity And Portable IDs
 

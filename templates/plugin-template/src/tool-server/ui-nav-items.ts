@@ -1,14 +1,15 @@
 import type { AppUINavItem } from '@vertesia/common';
 
 /**
- * Optional App UI Navigation configuration
- * Used to configure the optional navigation subitems that you want to display within the Composite App sidebar
- * Icons can be any of the icons from https://lucide.dev/icons, or an SVG element as a string
- * Route is the subpath to navigate to when the item is clicked, relative to the plugin's base URL
- * If your plugin does not have a UI, or you do not want to add additional navigation items, you can set this to an empty array
- * Note: this does not create the actual UI routes -- it is a map of existing routes you wish to expose as subitems in the Composite App.
+ * Sidebar navigation this app contributes to the Vertesia Composite App shell.
+ *
+ * Published in the app manifest as `ui.navigation`; the Composite App builds its sidebar from it.
+ * This maps routes that already exist -- it does not create them. Every `route` must resolve in the
+ * app's own router, so keep this in sync with `src/modules/app/ui/routes.tsx` (and any other active
+ * UI module) whenever routes are added, renamed, or removed.
+ *
+ * `icon` is a Lucide icon name (https://lucide.dev/icons) or an SVG element as a string; `route` is
+ * relative to the app's base URL. Only `/` exists in every scaffold -- add an entry per user-facing
+ * route as you build it, or use an empty array if the app has no UI.
  */
-export default [
-    { label: 'Home', icon: 'Home', route: '/' },
-    { label: 'Chat', icon: 'MessageSquare', route: '/chat' },
-] satisfies AppUINavItem[];
+export default [{ label: 'Home', icon: 'Home', route: '/' }] satisfies AppUINavItem[];
