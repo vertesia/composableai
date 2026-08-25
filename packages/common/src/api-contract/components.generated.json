@@ -7736,7 +7736,8 @@
     "type": "string",
     "enum": [
       "auto",
-      "off"
+      "off",
+      "required"
     ]
   },
   "StatelessExecutionOptions": {
@@ -7765,13 +7766,13 @@
       },
       "prompt_cache_mode": {
         "$ref": "#/components/schemas/PromptCacheMode",
-        "description": "Controls provider-side explicit caches — cache resources the driver creates and reuses (e.g. Vertex cachedContents). \"auto\" (default) caches the static prefix whenever prompt_cache_key is set; \"off\" never creates or uses a cache resource and leaves the provider payload unchanged. Implicit caching and cache breakpoints are unaffected."
+        "description": "Controls provider-side explicit caches — cache resources the driver creates and reuses (e.g. Vertex cachedContents). \"auto\" (default) caches the static prefix whenever prompt_cache_key is set; \"off\" never creates or uses a cache resource and leaves the provider payload unchanged; \"required\" behaves like auto but surfaces cache preparation failures instead of falling back. Implicit caching and cache breakpoints are unaffected."
       },
       "prompt_cache_ttl_seconds": {
         "type": "integer",
-        "exclusiveMinimum": 0,
+        "minimum": 60,
         "maximum": 9007199254740991,
-        "description": "Lifetime, in seconds, of a provider-side cache resource created for this execution. Defaults to 1800 (30 minutes). Ignored by providers without an explicit cache API."
+        "description": "Lifetime, in seconds, of a provider-side cache resource created for this execution. Defaults to 1800 (30 minutes) and must be at least 60 seconds. Ignored by providers without an explicit cache API."
       },
       "httpTimeout": {
         "$ref": "#/components/schemas/HttpTimeoutOptions",
