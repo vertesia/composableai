@@ -8,6 +8,7 @@ import {
     ExecutionRunRefSchema,
     FindRunResultSchema,
     InCodeInteractionSchema,
+    InCodePromptSchema,
     InteractionCreatePayloadSchema,
     InteractionPromptSegmentInputSchema,
     InteractionSchema,
@@ -23,6 +24,17 @@ describe('conversation state contract', () => {
 });
 
 describe('in-code interaction contract', () => {
+    it('retains prompt segment renderer configuration', () => {
+        expect(
+            InCodePromptSchema.parse({
+                role: 'user',
+                content: 'Stable photo',
+                content_type: 'text',
+                configuration: { cache_control: { type: 'ephemeral' } },
+            }),
+        ).toMatchObject({ configuration: { cache_control: { type: 'ephemeral' } } });
+    });
+
     it('retains prompt schemas when resolving a catalog interaction', () => {
         const interaction = InCodeInteractionSchema.parse({
             type: 'sys',

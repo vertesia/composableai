@@ -7546,6 +7546,20 @@
         "items": {
           "$ref": "#/components/schemas/DataSource"
         }
+      },
+      "cache_control": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "ephemeral"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false,
+        "description": "Marks the end of a reusable prompt prefix. Providers that support explicit cache boundaries may cache this segment and every preceding segment, including supported media."
       }
     },
     "required": [
@@ -8343,6 +8357,9 @@
       },
       "schema": {
         "$ref": "#/components/schemas/JSONSchema"
+      },
+      "configuration": {
+        "description": "Optional renderer configuration for this prompt segment."
       },
       "name": {
         "type": "string",
@@ -10905,6 +10922,13 @@
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991
+      },
+      "provider_code": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+      },
+      "failure_reason": {
+        "$ref": "#/components/schemas/PromptCacheFailureReason"
       }
     },
     "required": [
@@ -10932,6 +10956,18 @@
       "fallback_wait_timeout",
       "minimum_token_rejection",
       "unusable_resource_recreated"
+    ]
+  },
+  "PromptCacheFailureReason": {
+    "type": "string",
+    "enum": [
+      "no_cacheable_prefix",
+      "invalid_cache_boundary",
+      "unsupported_cache_part",
+      "cache_ends_with_model_turn",
+      "request_contents_mismatch",
+      "provider_missing_resource_name",
+      "provider_rejected"
     ]
   },
   "InteractionExecutionError": {
