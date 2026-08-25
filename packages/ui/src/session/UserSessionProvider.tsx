@@ -23,6 +23,19 @@ function clearAuthHash() {
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
 }
 
+export function buildCentralAuthRedirectUrl(centralAuth: string, stsUrl: string, returnUrl: URL, state: string): URL {
+    // Every parameter goes on through `searchParams`, never by concatenating a query string onto
+    // `centralAuth`. The endpoint is configurable now, so it may already carry its own query or a
+    // fragment -- and appending `?sts=...` to one of those folds the parameter into the existing
+    // value or hides it in the fragment, leaving Central Auth with no `sts` at all. `searchParams`
+    // also percent-encodes the values, which the interpolated URLs did not.
+    const url = new URL(centralAuth);
+    url.searchParams.set('sts', stsUrl);
+    url.searchParams.set('redirect_uri', returnUrl.toString());
+    url.searchParams.set('state', state);
+    return url;
+}
+
 export function sanitizeRejectedScopeUrl(
     currentUrl: URL,
     error: RequestedScopeUnavailableError,
@@ -109,12 +122,15 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     };
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const url = new URL(`${centralAuthUrl()}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
         const currentUrl = authReturnUrl();
         if (projectId) currentUrl.searchParams.set('p', projectId);
         if (accountId) currentUrl.searchParams.set('a', accountId);
-        url.searchParams.set('redirect_uri', currentUrl.toString());
-        url.searchParams.set('state', generateState());
+        const url = buildCentralAuthRedirectUrl(
+            centralAuthUrl(),
+            Env.endpoints.sts ?? 'https://sts.vertesia.io',
+            currentUrl,
+            generateState(),
+        );
         location.replace(url.toString());
     };
 
