@@ -101,8 +101,17 @@ function parseHttpOrigin(value: string | null | undefined): URL | undefined {
     }
 }
 
-function hasEmbeddedCredentials(url: URL): boolean {
-    return !!url.username || !!url.password;
+function hasEmbeddedCredentials(value: string | null | undefined): boolean {
+    if (!value) return false;
+    const normalized = value.trim();
+    const schemeEnd = normalized.indexOf('://');
+    if (schemeEnd < 0) return false;
+
+    const authorityStart = schemeEnd + 3;
+    const authoritySuffix = normalized.slice(authorityStart);
+    const authorityEnd = authoritySuffix.search(/[/?#]/);
+    const authority = authorityEnd < 0 ? authoritySuffix : authoritySuffix.slice(0, authorityEnd);
+    return authority.includes('@');
 }
 
 function isVertesiaStudioHost(host: string): boolean {
@@ -120,8 +129,9 @@ function isVertesiaStudioHost(host: string): boolean {
 }
 
 function parseTrustedIframeHostOrigin(value: string | null | undefined): string | undefined {
+    if (hasEmbeddedCredentials(value)) return undefined;
     const url = parseHttpOrigin(value);
-    if (!url || hasEmbeddedCredentials(url)) return undefined;
+    if (!url) return undefined;
 
     const host = url.hostname;
     const isStudioHost = isVertesiaStudioHost(host);
