@@ -101,6 +101,10 @@ function parseHttpOrigin(value: string | null | undefined): URL | undefined {
     }
 }
 
+function hasEmbeddedCredentials(url: URL): boolean {
+    return !!url.username || !!url.password;
+}
+
 function isVertesiaStudioHost(host: string): boolean {
     if (host === 'studio.vertesia.io') return true;
 
@@ -117,7 +121,7 @@ function isVertesiaStudioHost(host: string): boolean {
 
 function parseTrustedIframeHostOrigin(value: string | null | undefined): string | undefined {
     const url = parseHttpOrigin(value);
-    if (!url || url.username || url.password) return undefined;
+    if (!url || hasEmbeddedCredentials(url)) return undefined;
 
     const host = url.hostname;
     const isStudioHost = isVertesiaStudioHost(host);

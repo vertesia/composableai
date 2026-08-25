@@ -70,6 +70,18 @@ describe('iframe host authentication', () => {
         expect(resolveIframeHostOrigin()).toBeUndefined();
     });
 
+    it('rejects an origin containing embedded credentials', () => {
+        const parentWindow = { postMessage: () => undefined } as unknown as Window;
+        Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
+        window.history.replaceState(
+            null,
+            '',
+            `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fuser%3Asecret%40cloud.vertesia.io`,
+        );
+
+        expect(resolveIframeHostOrigin()).toBeUndefined();
+    });
+
     it('accepts a loopback host for a loopback child app', () => {
         const parentWindow = { postMessage: () => undefined } as unknown as Window;
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
