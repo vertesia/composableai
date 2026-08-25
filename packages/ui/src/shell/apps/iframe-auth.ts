@@ -5,8 +5,12 @@ export const IFRAME_AUTH_RESPONSE = 'vertesia:iframe-auth-response';
 export const IFRAME_APP_CONTEXT_REQUEST = 'vertesia:iframe-context-request';
 export const IFRAME_APP_CONTEXT = 'vertesia:iframe-context';
 export const IFRAME_APP_NAVIGATE = 'vertesia:iframe-navigate';
+export const IFRAME_APP_LOCATION_CHANGE = 'vertesia:iframe-location-change';
 export const IFRAME_APP_SLOT_PARAM = '__vertesia_slot';
+export const IFRAME_APP_HOST_ORIGIN_PARAM = '__vertesia_host_origin';
 export const IFRAME_APP_CONTENT_SLOT = 'content';
+
+const IFRAME_APP_HOST_ORIGIN_STORAGE_KEY = 'vertesia:iframe-host-origin';
 
 export interface IframeAuthRequest {
     type: typeof IFRAME_AUTH_REQUEST;
@@ -31,6 +35,11 @@ export interface IframeAppContext {
 
 export interface IframeAppNavigate {
     type: typeof IFRAME_APP_NAVIGATE;
+    url: string;
+}
+
+export interface IframeAppLocationChange {
+    type: typeof IFRAME_APP_LOCATION_CHANGE;
     url: string;
 }
 
@@ -73,41 +82,80 @@ export function isIframeAppNavigate(value: unknown): value is IframeAppNavigate 
     return message.type === IFRAME_APP_NAVIGATE && typeof message.url === 'string' && !!message.url;
 }
 
+export function isIframeAppLocationChange(value: unknown): value is IframeAppLocationChange {
+    if (!value || typeof value !== 'object') return false;
+    const message = value as Partial<IframeAppLocationChange>;
+    return message.type === IFRAME_APP_LOCATION_CHANGE && typeof message.url === 'string' && !!message.url;
+}
+
+function parseHttpOrigin(value: string | null | undefined): string | undefined {
+    if (!value) return undefined;
+    try {
+        const url = new URL(value);
+        const isLoopback = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]';
+        return url.protocol === 'https:' || (url.protocol === 'http:' && isLoopback) ? url.origin : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
 /**
- * Ask an embedding Studio window for its current Vertesia token. The parent origin comes from the
- * iframe referrer and both sides validate the request nonce, source window, and exact origin.
+ * Resolve the embedding Studio origin without relying on referrer surviving a reload or auth redirect.
+ * The value is only used as an exact postMessage target/origin check; event.source must still be window.parent.
+ */
+export function resolveIframeHostOrigin(): string | undefined {
+    if (window.parent === window) return undefined;
+
+    const explicitOrigin = parseHttpOrigin(
+        new URL(window.location.href).searchParams.get(IFRAME_APP_HOST_ORIGIN_PARAM),
+    );
+    if (explicitOrigin) {
+        window.sessionStorage?.setItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY, explicitOrigin);
+        return explicitOrigin;
+    }
+
+    const storedOrigin = parseHttpOrigin(window.sessionStorage?.getItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY));
+    if (storedOrigin) return storedOrigin;
+
+    const referrerOrigin = parseHttpOrigin(document.referrer);
+    if (referrerOrigin) window.sessionStorage?.setItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY, referrerOrigin);
+    return referrerOrigin;
+}
+
+/**
+ * Ask an embedding Studio window for a fresh Vertesia token. Both sides validate the request nonce,
+ * source window, and exact origin. The explicit host-origin parameter survives framed redirects and
+ * hard navigations; referrer remains a compatibility fallback for older hosts.
  * Standalone/top-level apps return undefined and continue through the normal sign-in flow.
  */
 export function requestIframeHostAuthToken(timeoutMs = 5000): Promise<string | undefined> {
-    if (window.parent === window || !document.referrer) return Promise.resolve(undefined);
-
-    let parentOrigin: string;
-    try {
-        parentOrigin = new URL(document.referrer).origin;
-    } catch {
-        return Promise.resolve(undefined);
-    }
+    const parentOrigin = resolveIframeHostOrigin();
+    if (!parentOrigin) return Promise.resolve(undefined);
 
     const requestId = crypto.randomUUID();
     return new Promise((resolve) => {
         let timeout: number;
         let retry: number;
+        let retryDelay = 250;
         const finish = (token?: string) => {
             window.removeEventListener('message', onMessage);
             clearTimeout(timeout);
-            clearInterval(retry);
+            clearTimeout(retry);
             resolve(token);
         };
         const onMessage = (event: MessageEvent<unknown>) => {
             if (event.source !== window.parent || event.origin !== parentOrigin || !isIframeAuthResponse(event.data)) {
                 return;
             }
-            if (event.data.requestId === requestId) finish(event.data.token);
+            if (event.data.requestId === requestId && event.data.token) finish(event.data.token);
         };
         const request = { type: IFRAME_AUTH_REQUEST, requestId } satisfies IframeAuthRequest;
-        const sendRequest = () => window.parent.postMessage(request, parentOrigin);
+        const sendRequest = () => {
+            window.parent.postMessage(request, parentOrigin);
+            retry = window.setTimeout(sendRequest, retryDelay);
+            retryDelay = Math.min(retryDelay * 2, 1000);
+        };
         timeout = window.setTimeout(() => finish(), timeoutMs);
-        retry = window.setInterval(sendRequest, 250);
         window.addEventListener('message', onMessage);
         sendRequest();
     });

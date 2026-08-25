@@ -92,6 +92,9 @@ function isVertesiaIssuedToken(token: string | undefined): token is string {
 
 function canUseVertesiaTokenDirectly(token: string, accountId?: string, projectId?: string): boolean {
     const decoded = decodeToken(token);
+    if (!decoded.exp || decoded.exp <= Date.now() / 1000 + 300) {
+        return false;
+    }
     const hasAuthorizationClaims = Boolean(
         decoded.permissions?.length ||
             decoded.account_roles?.length ||
@@ -452,13 +455,26 @@ export async function getComposableToken(
         if (!devAuthToken && !useInternalAuth && getFirebaseAuth().currentUser) {
             //we have a firebase user, get the token from there
             AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
-        } else if (!devAuthToken && (initToken || AUTH_TOKEN_RAW)) {
-            // we have a token already and no firebase user, refresh it
-            AUTH_TOKEN_RAW = await fetchComposableToken(
-                () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
-                selectedAccount,
-                selectedProject,
-            );
+        } else if (!devAuthToken) {
+            // Embedded apps can reacquire a fresh credential from their host after their cached token expires.
+            const refreshCredential = Env.authTokenProvider
+                ? await Env.authTokenProvider()
+                : (initToken ?? AUTH_TOKEN_RAW);
+            if (
+                refreshCredential &&
+                isVertesiaIssuedToken(refreshCredential) &&
+                canUseVertesiaTokenDirectly(refreshCredential, selectedAccount, selectedProject)
+            ) {
+                AUTH_TOKEN_RAW = refreshCredential;
+            } else if (refreshCredential) {
+                AUTH_TOKEN_RAW = await fetchComposableToken(
+                    () => Promise.resolve(refreshCredential),
+                    selectedAccount,
+                    selectedProject,
+                );
+            } else {
+                AUTH_TOKEN_RAW = undefined;
+            }
         } else if (devAuthToken) {
             AUTH_TOKEN_RAW = devAuthToken;
         }

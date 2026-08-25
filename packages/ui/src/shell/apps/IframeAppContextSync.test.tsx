@@ -1,18 +1,26 @@
 // @vitest-environment jsdom
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider, useTheme } from '../../core/index.js';
 import { LanguageProvider, useLanguage } from '../../i18n/index.js';
 import { IframeAppContextSync } from './IframeAppContextSync.js';
-import { IFRAME_APP_CONTEXT, IFRAME_APP_CONTEXT_REQUEST, IFRAME_APP_NAVIGATE } from './iframe-auth.js';
+import {
+    IFRAME_APP_CONTEXT,
+    IFRAME_APP_CONTEXT_REQUEST,
+    IFRAME_APP_HOST_ORIGIN_PARAM,
+    IFRAME_APP_LOCATION_CHANGE,
+    IFRAME_APP_NAVIGATE,
+} from './iframe-auth.js';
 
 const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
 const originalReferrer = Object.getOwnPropertyDescriptor(document, 'referrer');
 
 afterEach(() => {
+    cleanup();
     window.history.replaceState(null, '', '/');
     localStorage.clear();
+    sessionStorage.clear();
     document.documentElement.classList.remove('light', 'dark');
     if (originalParent) Object.defineProperty(window, 'parent', originalParent);
     else Reflect.deleteProperty(window, 'parent');
@@ -34,12 +42,12 @@ describe('IframeAppContextSync', () => {
             configurable: true,
             value: 'https://studio.example.com/app/sample',
         });
-        localStorage.setItem('vite-ui-theme', 'dark');
-        localStorage.setItem('vertesia-ui-language', 'en');
+        localStorage.setItem('custom-theme', 'dark');
+        localStorage.setItem('custom-language', 'en');
 
         render(
-            <ThemeProvider>
-                <LanguageProvider>
+            <ThemeProvider storageKey="custom-theme">
+                <LanguageProvider storageKey="custom-language">
                     <IframeAppContextSync />
                     <ContextProbe />
                 </LanguageProvider>
@@ -69,8 +77,8 @@ describe('IframeAppContextSync', () => {
         );
 
         await waitFor(() => expect(screen.getByText('light:fr')).toBeTruthy());
-        expect(localStorage.getItem('vite-ui-theme')).toBe('dark');
-        expect(localStorage.getItem('vertesia-ui-language')).toBe('en');
+        expect(localStorage.getItem('custom-theme')).toBe('dark');
+        expect(localStorage.getItem('custom-language')).toBe('en');
     });
 
     it('applies same-origin host navigation without reloading the document', () => {
@@ -116,5 +124,32 @@ describe('IframeAppContextSync', () => {
         expect(window.location.search).toBe('?__vertesia_slot=content');
         expect(popstate).toHaveBeenCalledTimes(1);
         window.removeEventListener('popstate', popstate);
+    });
+
+    it('reports app-initiated history navigation to the embedding Studio', () => {
+        const parentWindow = { postMessage: vi.fn() } as unknown as Window;
+        Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
+        window.history.replaceState(null, '', `/app/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fstudio.example.com`);
+        localStorage.setItem('vite-ui-theme', 'dark');
+        localStorage.setItem('vertesia-ui-language', 'en');
+
+        render(
+            <ThemeProvider>
+                <LanguageProvider>
+                    <IframeAppContextSync />
+                </LanguageProvider>
+            </ThemeProvider>,
+        );
+        parentWindow.postMessage = vi.fn();
+
+        window.history.pushState(null, '', '/app/reports?period=week');
+
+        expect(parentWindow.postMessage).toHaveBeenCalledWith(
+            {
+                type: IFRAME_APP_LOCATION_CHANGE,
+                url: `${window.location.origin}/app/reports?period=week`,
+            },
+            'https://studio.example.com',
+        );
     });
 });

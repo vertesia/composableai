@@ -10,7 +10,7 @@ type LanguageProviderProps = {
 
 type LanguageProviderState = {
     language: SupportedLanguage;
-    setLanguage: (language: SupportedLanguage) => void;
+    setLanguage: (language: SupportedLanguage, options?: { persist?: boolean }) => void;
     isRTL: boolean;
 };
 
@@ -53,8 +53,8 @@ export function LanguageProvider({
         () => ({
             language,
             isRTL: rtl,
-            setLanguage: (next: SupportedLanguage) => {
-                window.localStorage?.setItem(storageKey, next);
+            setLanguage: (next: SupportedLanguage, options?: { persist?: boolean }) => {
+                if (options?.persist !== false) window.localStorage?.setItem(storageKey, next);
                 setLanguage(next);
             },
         }),
