@@ -1,5 +1,9 @@
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../i18n/rtl.js';
+
 export const IFRAME_AUTH_REQUEST = 'vertesia:iframe-auth-request';
 export const IFRAME_AUTH_RESPONSE = 'vertesia:iframe-auth-response';
+export const IFRAME_APP_CONTEXT_REQUEST = 'vertesia:iframe-context-request';
+export const IFRAME_APP_CONTEXT = 'vertesia:iframe-context';
 export const IFRAME_APP_SLOT_PARAM = '__vertesia_slot';
 export const IFRAME_APP_CONTENT_SLOT = 'content';
 
@@ -12,6 +16,16 @@ export interface IframeAuthResponse {
     type: typeof IFRAME_AUTH_RESPONSE;
     requestId: string;
     token?: string;
+}
+
+export interface IframeAppContextRequest {
+    type: typeof IFRAME_APP_CONTEXT_REQUEST;
+}
+
+export interface IframeAppContext {
+    type: typeof IFRAME_APP_CONTEXT;
+    theme: 'dark' | 'light' | 'system';
+    language: SupportedLanguage;
 }
 
 export function isIframeAuthRequest(value: unknown): value is IframeAuthRequest {
@@ -28,6 +42,22 @@ export function isIframeAuthResponse(value: unknown): value is IframeAuthRespons
         typeof message.requestId === 'string' &&
         !!message.requestId &&
         (message.token === undefined || typeof message.token === 'string')
+    );
+}
+
+export function isIframeAppContextRequest(value: unknown): value is IframeAppContextRequest {
+    if (!value || typeof value !== 'object') return false;
+    return (value as Partial<IframeAppContextRequest>).type === IFRAME_APP_CONTEXT_REQUEST;
+}
+
+export function isIframeAppContext(value: unknown): value is IframeAppContext {
+    if (!value || typeof value !== 'object') return false;
+    const message = value as Partial<IframeAppContext>;
+    return (
+        message.type === IFRAME_APP_CONTEXT &&
+        (message.theme === 'dark' || message.theme === 'light' || message.theme === 'system') &&
+        typeof message.language === 'string' &&
+        (SUPPORTED_LANGUAGES as readonly string[]).includes(message.language)
     );
 }
 
