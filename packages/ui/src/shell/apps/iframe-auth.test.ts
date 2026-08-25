@@ -22,26 +22,67 @@ afterEach(() => {
 });
 
 describe('iframe host authentication', () => {
-    it('persists an explicit HTTP host origin across hard-navigation URL changes', () => {
+    it('persists an explicit host origin across hard-navigation URL changes', () => {
         const parentWindow = { postMessage: () => undefined } as unknown as Window;
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
-        window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fstudio.example.com`);
+        window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fcloud.vertesia.io`);
 
-        expect(resolveIframeHostOrigin()).toBe('https://studio.example.com');
+        expect(resolveIframeHostOrigin()).toBe('https://cloud.vertesia.io');
 
         window.history.replaceState(null, '', '/after-auth');
         Object.defineProperty(document, 'referrer', {
             configurable: true,
             value: 'https://apps.example.com/before-auth',
         });
-        expect(resolveIframeHostOrigin()).toBe('https://studio.example.com');
+        expect(resolveIframeHostOrigin()).toBe('https://cloud.vertesia.io');
+    });
+
+    it('accepts a branch Studio UI origin', () => {
+        const parentWindow = { postMessage: () => undefined } as unknown as Window;
+        Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
+        window.history.replaceState(
+            null,
+            '',
+            `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fdev-feat-iframe.ui.dev1.vertesia.io`,
+        );
+
+        expect(resolveIframeHostOrigin()).toBe('https://dev-feat-iframe.ui.dev1.vertesia.io');
+    });
+
+    it('rejects an untrusted embedding origin from every continuity source', () => {
+        const parentWindow = { postMessage: () => undefined } as unknown as Window;
+        Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
+        window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fevil.example.com`);
+        window.sessionStorage.setItem('vertesia:iframe-host-origin', 'https://stored.example.com');
+        Object.defineProperty(document, 'referrer', {
+            configurable: true,
+            value: 'https://referrer.example.com/embed',
+        });
+
+        expect(resolveIframeHostOrigin()).toBeUndefined();
+    });
+
+    it('rejects a shared Vertesia app-gateway origin', () => {
+        const parentWindow = { postMessage: () => undefined } as unknown as Window;
+        Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
+        window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fapps.dev1.vertesia.io`);
+
+        expect(resolveIframeHostOrigin()).toBeUndefined();
+    });
+
+    it('accepts a loopback host for a loopback child app', () => {
+        const parentWindow = { postMessage: () => undefined } as unknown as Window;
+        Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
+        window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=http%3A%2F%2Flocalhost%3A5173`);
+
+        expect(resolveIframeHostOrigin()).toBe('http://localhost:5173');
     });
 
     it('ignores an empty early response and waits for a usable host token', async () => {
         const requests: unknown[] = [];
         const parentWindow = { postMessage: (message: unknown) => requests.push(message) } as unknown as Window;
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
-        window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fstudio.example.com`);
+        window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fcloud.vertesia.io`);
 
         let settled = false;
         const tokenPromise = requestIframeHostAuthToken().then((token) => {
@@ -54,7 +95,7 @@ describe('iframe host authentication', () => {
         window.dispatchEvent(
             new MessageEvent('message', {
                 data: { type: IFRAME_AUTH_RESPONSE, requestId: request.requestId },
-                origin: 'https://studio.example.com',
+                origin: 'https://cloud.vertesia.io',
                 source: parentWindow,
             }),
         );
@@ -64,7 +105,7 @@ describe('iframe host authentication', () => {
         window.dispatchEvent(
             new MessageEvent('message', {
                 data: { type: IFRAME_AUTH_RESPONSE, requestId: request.requestId, token: 'fresh-token' },
-                origin: 'https://studio.example.com',
+                origin: 'https://cloud.vertesia.io',
                 source: parentWindow,
             }),
         );

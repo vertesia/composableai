@@ -88,25 +88,52 @@ export function isIframeAppLocationChange(value: unknown): value is IframeAppLoc
     return message.type === IFRAME_APP_LOCATION_CHANGE && typeof message.url === 'string' && !!message.url;
 }
 
-function parseHttpOrigin(value: string | null | undefined): string | undefined {
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+function parseHttpOrigin(value: string | null | undefined): URL | undefined {
     if (!value) return undefined;
     try {
         const url = new URL(value);
-        const isLoopback = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]';
-        return url.protocol === 'https:' || (url.protocol === 'http:' && isLoopback) ? url.origin : undefined;
+        const isLoopback = LOOPBACK_HOSTS.has(url.hostname);
+        return url.protocol === 'https:' || (url.protocol === 'http:' && isLoopback) ? url : undefined;
     } catch {
         return undefined;
     }
 }
 
+function isVertesiaStudioHost(host: string): boolean {
+    if (host === 'studio.vertesia.io') return true;
+
+    const labels = host.split('.');
+    if (labels.at(-2) !== 'vertesia' || labels.at(-1) !== 'io') return false;
+
+    const platformLabels = labels.slice(0, -2);
+    const cloudIndex = platformLabels.lastIndexOf('cloud');
+    if (cloudIndex >= 0 && platformLabels.length - cloudIndex <= 2) return true;
+
+    const uiIndex = platformLabels.lastIndexOf('ui');
+    return uiIndex >= 0 && platformLabels.length - uiIndex === 2;
+}
+
+function parseTrustedIframeHostOrigin(value: string | null | undefined): string | undefined {
+    const url = parseHttpOrigin(value);
+    if (!url || url.username || url.password) return undefined;
+
+    const host = url.hostname;
+    const isStudioHost = isVertesiaStudioHost(host);
+    const isLocalDevelopment = LOOPBACK_HOSTS.has(host) && LOOPBACK_HOSTS.has(window.location.hostname);
+    return (url.protocol === 'https:' && isStudioHost) || isLocalDevelopment ? url.origin : undefined;
+}
+
 /**
- * Resolve the embedding Studio origin without relying on referrer surviving a reload or auth redirect.
- * The value is only used as an exact postMessage target/origin check; event.source must still be window.parent.
+ * Resolve a trusted embedding Studio origin without relying on referrer surviving a reload or auth redirect.
+ * URL and storage values are continuity hints rather than trust anchors: only Studio UI host patterns are accepted,
+ * and loopback parents are accepted only when the child app is also running on loopback.
  */
 export function resolveIframeHostOrigin(): string | undefined {
     if (window.parent === window) return undefined;
 
-    const explicitOrigin = parseHttpOrigin(
+    const explicitOrigin = parseTrustedIframeHostOrigin(
         new URL(window.location.href).searchParams.get(IFRAME_APP_HOST_ORIGIN_PARAM),
     );
     if (explicitOrigin) {
@@ -115,10 +142,12 @@ export function resolveIframeHostOrigin(): string | undefined {
     }
 
     // Prefer the durable value because referrer can be empty or stale after auth redirects and hard navigations.
-    const storedOrigin = parseHttpOrigin(window.sessionStorage?.getItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY));
+    const storedOrigin = parseTrustedIframeHostOrigin(
+        window.sessionStorage?.getItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY),
+    );
     if (storedOrigin) return storedOrigin;
 
-    const referrerOrigin = parseHttpOrigin(document.referrer);
+    const referrerOrigin = parseTrustedIframeHostOrigin(document.referrer);
     if (referrerOrigin) window.sessionStorage?.setItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY, referrerOrigin);
     return referrerOrigin;
 }

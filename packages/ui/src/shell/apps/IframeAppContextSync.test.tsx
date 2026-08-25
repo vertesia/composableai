@@ -41,7 +41,7 @@ describe('IframeAppContextSync', () => {
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
         Object.defineProperty(document, 'referrer', {
             configurable: true,
-            value: 'https://studio.example.com/app/sample',
+            value: 'https://cloud.vertesia.io/app/sample',
         });
         localStorage.setItem('custom-theme', 'dark');
         localStorage.setItem('custom-language', 'en');
@@ -57,7 +57,7 @@ describe('IframeAppContextSync', () => {
 
         expect(parentWindow.postMessage).toHaveBeenCalledWith(
             { type: IFRAME_APP_CONTEXT_REQUEST },
-            'https://studio.example.com',
+            'https://cloud.vertesia.io',
         );
 
         window.dispatchEvent(
@@ -73,7 +73,7 @@ describe('IframeAppContextSync', () => {
             window.dispatchEvent(
                 new MessageEvent('message', {
                     data: { type: IFRAME_APP_CONTEXT, theme: 'light', language: 'fr' },
-                    origin: 'https://studio.example.com',
+                    origin: 'https://cloud.vertesia.io',
                     source: parentWindow,
                 }),
             );
@@ -92,7 +92,7 @@ describe('IframeAppContextSync', () => {
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
         Object.defineProperty(document, 'referrer', {
             configurable: true,
-            value: 'https://studio.example.com/app/sample',
+            value: 'https://cloud.vertesia.io/app/sample',
         });
         localStorage.setItem('vite-ui-theme', 'dark');
         localStorage.setItem('vertesia-ui-language', 'en');
@@ -111,7 +111,7 @@ describe('IframeAppContextSync', () => {
         window.dispatchEvent(
             new MessageEvent('message', {
                 data: { type: IFRAME_APP_NAVIGATE, url: 'https://attacker.example.com/stolen' },
-                origin: 'https://studio.example.com',
+                origin: 'https://cloud.vertesia.io',
                 source: parentWindow,
             }),
         );
@@ -121,7 +121,7 @@ describe('IframeAppContextSync', () => {
         window.dispatchEvent(
             new MessageEvent('message', {
                 data: { type: IFRAME_APP_NAVIGATE, url: target },
-                origin: 'https://studio.example.com',
+                origin: 'https://cloud.vertesia.io',
                 source: parentWindow,
             }),
         );
@@ -139,7 +139,7 @@ describe('IframeAppContextSync', () => {
         window.history.replaceState(
             null,
             '',
-            `/app/reports?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fstudio.example.com`,
+            `/app/reports?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fcloud.vertesia.io`,
         );
 
         render(
@@ -154,21 +154,21 @@ describe('IframeAppContextSync', () => {
         window.dispatchEvent(
             new MessageEvent('message', {
                 data: { type: IFRAME_APP_NAVIGATE, url: window.location.href },
-                origin: 'https://studio.example.com',
+                origin: 'https://cloud.vertesia.io',
                 source: parentWindow,
             }),
         );
 
         expect(parentWindow.postMessage).toHaveBeenCalledWith(
             { type: IFRAME_APP_LOCATION_CHANGE, url: window.location.href },
-            'https://studio.example.com',
+            'https://cloud.vertesia.io',
         );
     });
 
     it('reports app-initiated history navigation to the embedding Studio', () => {
         const parentWindow = { postMessage: vi.fn() } as unknown as Window;
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
-        window.history.replaceState(null, '', `/app/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fstudio.example.com`);
+        window.history.replaceState(null, '', `/app/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fcloud.vertesia.io`);
         localStorage.setItem('vite-ui-theme', 'dark');
         localStorage.setItem('vertesia-ui-language', 'en');
 
@@ -188,7 +188,7 @@ describe('IframeAppContextSync', () => {
                 type: IFRAME_APP_LOCATION_CHANGE,
                 url: `${window.location.origin}/app/reports?period=week`,
             },
-            'https://studio.example.com',
+            'https://cloud.vertesia.io',
         );
     });
 });
