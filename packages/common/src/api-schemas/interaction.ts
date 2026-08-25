@@ -860,6 +860,10 @@ export const InCodePromptSchema = z
         content: z.string(),
         content_type: TemplateTypeSchema,
         schema: JSONSchemaSchema.optional(),
+        configuration: z
+            .unknown()
+            .meta({ description: 'Optional renderer configuration for this prompt segment.' })
+            .optional(),
         name: z
             .string()
             .meta({ description: 'optional name of the prompt segment. Use kebab case for prompt names' })

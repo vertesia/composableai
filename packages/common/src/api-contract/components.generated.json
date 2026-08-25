@@ -8358,6 +8358,9 @@
       "schema": {
         "$ref": "#/components/schemas/JSONSchema"
       },
+      "configuration": {
+        "description": "Optional renderer configuration for this prompt segment."
+      },
       "name": {
         "type": "string",
         "description": "optional name of the prompt segment. Use kebab case for prompt names"
