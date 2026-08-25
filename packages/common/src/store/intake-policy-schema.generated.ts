@@ -1074,6 +1074,18 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     description: 'Stable provider-side routing key for automatic prompt caching.',
                 },
+                prompt_cache_mode: {
+                    $ref: '#/$defs/PromptCacheMode',
+                    description:
+                        'Controls provider-side explicit caching: auto falls back safely, off disables it, and required surfaces cache preparation failures for diagnostics.',
+                },
+                prompt_cache_ttl_seconds: {
+                    type: 'integer',
+                    minimum: 60,
+                    maximum: 9007199254740991,
+                    description:
+                        'Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; Vertex Gemini requires at least 60 seconds.',
+                },
                 prompt_cache_schema_suffix: {
                     type: 'boolean',
                     description:
@@ -1437,6 +1449,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             },
             required: ['_option_id'],
             additionalProperties: false,
+        },
+        PromptCacheMode: {
+            type: 'string',
+            enum: ['auto', 'off', 'required'],
         },
         ReasoningEffort: {
             type: 'string',
