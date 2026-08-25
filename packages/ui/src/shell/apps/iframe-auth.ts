@@ -10,8 +10,6 @@ export const IFRAME_APP_SLOT_PARAM = '__vertesia_slot';
 export const IFRAME_APP_HOST_ORIGIN_PARAM = '__vertesia_host_origin';
 export const IFRAME_APP_CONTENT_SLOT = 'content';
 
-const IFRAME_APP_HOST_ORIGIN_STORAGE_KEY = 'vertesia:iframe-host-origin';
-
 export interface IframeAuthRequest {
     type: typeof IFRAME_AUTH_REQUEST;
     requestId: string;
@@ -141,8 +139,8 @@ function parseTrustedIframeHostOrigin(value: string | null | undefined): string 
 
 /**
  * Resolve a trusted embedding Studio origin without relying on referrer surviving a reload or auth redirect.
- * URL and storage values are continuity hints rather than trust anchors: only Studio UI host patterns are accepted,
- * and loopback parents are accepted only when the child app is also running on loopback.
+ * The URL value is a continuity hint rather than a trust anchor: only Studio UI host patterns are accepted, and
+ * loopback parents are accepted only when the child app is also running on loopback.
  */
 export function resolveIframeHostOrigin(): string | undefined {
     if (window.parent === window) return undefined;
@@ -150,20 +148,9 @@ export function resolveIframeHostOrigin(): string | undefined {
     const explicitOrigin = parseTrustedIframeHostOrigin(
         new URL(window.location.href).searchParams.get(IFRAME_APP_HOST_ORIGIN_PARAM),
     );
-    if (explicitOrigin) {
-        window.sessionStorage?.setItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY, explicitOrigin);
-        return explicitOrigin;
-    }
+    if (explicitOrigin) return explicitOrigin;
 
-    // Prefer the durable value because referrer can be empty or stale after auth redirects and hard navigations.
-    const storedOrigin = parseTrustedIframeHostOrigin(
-        window.sessionStorage?.getItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY),
-    );
-    if (storedOrigin) return storedOrigin;
-
-    const referrerOrigin = parseTrustedIframeHostOrigin(document.referrer);
-    if (referrerOrigin) window.sessionStorage?.setItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY, referrerOrigin);
-    return referrerOrigin;
+    return parseTrustedIframeHostOrigin(document.referrer);
 }
 
 /**

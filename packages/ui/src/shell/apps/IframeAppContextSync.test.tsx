@@ -186,7 +186,9 @@ describe('IframeAppContextSync', () => {
         expect(parentWindow.postMessage).toHaveBeenCalledWith(
             {
                 type: IFRAME_APP_LOCATION_CHANGE,
-                url: `${window.location.origin}/app/reports?period=week`,
+                url:
+                    `${window.location.origin}/app/reports?period=week&` +
+                    `${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fcloud.vertesia.io`,
             },
             'https://cloud.vertesia.io',
         );

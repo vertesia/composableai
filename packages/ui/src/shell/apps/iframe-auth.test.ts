@@ -22,18 +22,11 @@ afterEach(() => {
 });
 
 describe('iframe host authentication', () => {
-    it('persists an explicit host origin across hard-navigation URL changes', () => {
+    it('resolves an explicit trusted host origin', () => {
         const parentWindow = { postMessage: () => undefined } as unknown as Window;
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
         window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fcloud.vertesia.io`);
 
-        expect(resolveIframeHostOrigin()).toBe('https://cloud.vertesia.io');
-
-        window.history.replaceState(null, '', '/after-auth');
-        Object.defineProperty(document, 'referrer', {
-            configurable: true,
-            value: 'https://apps.example.com/before-auth',
-        });
         expect(resolveIframeHostOrigin()).toBe('https://cloud.vertesia.io');
     });
 
@@ -49,11 +42,10 @@ describe('iframe host authentication', () => {
         expect(resolveIframeHostOrigin()).toBe('https://dev-feat-iframe.ui.dev1.vertesia.io');
     });
 
-    it('rejects an untrusted embedding origin from every continuity source', () => {
+    it('rejects untrusted query and referrer origins', () => {
         const parentWindow = { postMessage: () => undefined } as unknown as Window;
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
         window.history.replaceState(null, '', `/?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fevil.example.com`);
-        window.sessionStorage.setItem('vertesia:iframe-host-origin', 'https://stored.example.com');
         Object.defineProperty(document, 'referrer', {
             configurable: true,
             value: 'https://referrer.example.com/embed',

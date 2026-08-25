@@ -3,6 +3,7 @@ import { useTheme } from '../../core/components/shadcn/theme/ThemeProvider.js';
 import { useLanguage } from '../../i18n/LanguageProvider.js';
 import {
     IFRAME_APP_CONTEXT_REQUEST,
+    IFRAME_APP_HOST_ORIGIN_PARAM,
     IFRAME_APP_LOCATION_CHANGE,
     type IframeAppContextRequest,
     type IframeAppLocationChange,
@@ -10,6 +11,21 @@ import {
     isIframeAppNavigate,
     resolveIframeHostOrigin,
 } from './iframe-auth.js';
+
+function preserveIframeHostOrigin(url: string | URL | null | undefined): string | URL | null | undefined {
+    if (url === null || url === undefined) return url;
+    const hostOrigin = new URL(window.location.href).searchParams.get(IFRAME_APP_HOST_ORIGIN_PARAM);
+    if (!hostOrigin) return url;
+
+    try {
+        const target = new URL(url, window.location.href);
+        if (target.origin !== window.location.origin) return url;
+        target.searchParams.set(IFRAME_APP_HOST_ORIGIN_PARAM, hostOrigin);
+        return target;
+    } catch {
+        return url;
+    }
+}
 
 /** Applies context and navigation supplied by an embedding Studio without changing standalone preferences. */
 export function IframeAppContextSync() {
@@ -31,11 +47,11 @@ export function IframeAppContextSync() {
         const originalPushState = window.history.pushState;
         const originalReplaceState = window.history.replaceState;
         const pushState: History['pushState'] = (data, unused, url) => {
-            originalPushState.call(window.history, data, unused, url);
+            originalPushState.call(window.history, data, unused, preserveIframeHostOrigin(url));
             reportLocation();
         };
         const replaceState: History['replaceState'] = (data, unused, url) => {
-            originalReplaceState.call(window.history, data, unused, url);
+            originalReplaceState.call(window.history, data, unused, preserveIframeHostOrigin(url));
             reportLocation();
         };
         window.history.pushState = pushState;
