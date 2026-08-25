@@ -66,8 +66,9 @@
         "react-dom": "^19.2.7"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.6",
+        "@biomejs/biome": "2.5.10",
         "@hono/vite-dev-server": "^0.26.1",
+        "@playwright/test": "^1.62.1",
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/vite": "^4.3.3",
         "@types/node": "catalog:",
@@ -87,6 +88,7 @@
         "tslib": "^2.8.1",
         "typescript": "catalog:",
         "vite": "catalog:",
+        "vitest": "^4.1.10",
         "vite-plugin-serve-static": "^2.2.0"
     },
     "dependencies": {

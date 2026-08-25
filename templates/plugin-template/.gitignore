@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+# App Builder workspaces install from the platform-resolved package manifest;
+# do not let tool-driven installs add a root lockfile to source checkpoints.
+pnpm-lock.yaml
 dist
 !codegen/dist/
 !codegen/dist/codegen.js
@@ -24,3 +27,8 @@ lib
 *.sln
 *.sw?
 .vercel
+
+# Browser-test output
+test-results/
+playwright-report/
+blob-report/
