@@ -1,7 +1,12 @@
 import { useEffect } from 'react';
 import { useTheme } from '../../core/components/shadcn/theme/ThemeProvider.js';
 import { useLanguage } from '../../i18n/LanguageProvider.js';
-import { IFRAME_APP_CONTEXT_REQUEST, type IframeAppContextRequest, isIframeAppContext } from './iframe-auth.js';
+import {
+    IFRAME_APP_CONTEXT_REQUEST,
+    type IframeAppContextRequest,
+    isIframeAppContext,
+    isIframeAppNavigate,
+} from './iframe-auth.js';
 
 function updateWithoutPersisting(storageKey: string, update: () => void) {
     const previous = localStorage.getItem(storageKey);
@@ -10,7 +15,7 @@ function updateWithoutPersisting(storageKey: string, update: () => void) {
     else localStorage.setItem(storageKey, previous);
 }
 
-/** Applies presentation state supplied by an embedding Studio without changing standalone preferences. */
+/** Applies context and navigation supplied by an embedding Studio without changing standalone preferences. */
 export function IframeAppContextSync() {
     const { setTheme } = useTheme();
     const { setLanguage } = useLanguage();
@@ -26,12 +31,24 @@ export function IframeAppContextSync() {
         }
 
         const onMessage = (event: MessageEvent<unknown>) => {
-            if (event.source !== window.parent || event.origin !== parentOrigin || !isIframeAppContext(event.data)) {
+            if (event.source !== window.parent || event.origin !== parentOrigin) return;
+            if (isIframeAppContext(event.data)) {
+                const context = event.data;
+                updateWithoutPersisting('vite-ui-theme', () => setTheme(context.theme));
+                updateWithoutPersisting('vertesia-ui-language', () => setLanguage(context.language));
                 return;
             }
-            const context = event.data;
-            updateWithoutPersisting('vite-ui-theme', () => setTheme(context.theme));
-            updateWithoutPersisting('vertesia-ui-language', () => setLanguage(context.language));
+            if (isIframeAppNavigate(event.data)) {
+                let target: URL;
+                try {
+                    target = new URL(event.data.url, window.location.href);
+                } catch {
+                    return;
+                }
+                if (target.origin !== window.location.origin || target.href === window.location.href) return;
+                window.history.replaceState(window.history.state, '', target);
+                window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
+            }
         };
         const request = { type: IFRAME_APP_CONTEXT_REQUEST } satisfies IframeAppContextRequest;
         window.addEventListener('message', onMessage);

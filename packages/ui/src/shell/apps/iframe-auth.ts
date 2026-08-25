@@ -4,6 +4,7 @@ export const IFRAME_AUTH_REQUEST = 'vertesia:iframe-auth-request';
 export const IFRAME_AUTH_RESPONSE = 'vertesia:iframe-auth-response';
 export const IFRAME_APP_CONTEXT_REQUEST = 'vertesia:iframe-context-request';
 export const IFRAME_APP_CONTEXT = 'vertesia:iframe-context';
+export const IFRAME_APP_NAVIGATE = 'vertesia:iframe-navigate';
 export const IFRAME_APP_SLOT_PARAM = '__vertesia_slot';
 export const IFRAME_APP_CONTENT_SLOT = 'content';
 
@@ -26,6 +27,11 @@ export interface IframeAppContext {
     type: typeof IFRAME_APP_CONTEXT;
     theme: 'dark' | 'light' | 'system';
     language: SupportedLanguage;
+}
+
+export interface IframeAppNavigate {
+    type: typeof IFRAME_APP_NAVIGATE;
+    url: string;
 }
 
 export function isIframeAuthRequest(value: unknown): value is IframeAuthRequest {
@@ -59,6 +65,12 @@ export function isIframeAppContext(value: unknown): value is IframeAppContext {
         typeof message.language === 'string' &&
         (SUPPORTED_LANGUAGES as readonly string[]).includes(message.language)
     );
+}
+
+export function isIframeAppNavigate(value: unknown): value is IframeAppNavigate {
+    if (!value || typeof value !== 'object') return false;
+    const message = value as Partial<IframeAppNavigate>;
+    return message.type === IFRAME_APP_NAVIGATE && typeof message.url === 'string' && !!message.url;
 }
 
 /**
