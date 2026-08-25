@@ -2477,6 +2477,7 @@ export const ExecutionResponseSchema = z
         result: z.array(CompletionResultSchema),
         token_usage: ExecutionTokenUsageSchema.optional(),
         prompt_cache_diagnostic: PromptCacheDiagnosticSchema.optional(),
+        service_tier: z.string().meta({ description: 'Processing tier actually used by the provider' }).optional(),
         tool_use: z.array(ToolUseSchema).optional(),
         finish_reason: z.string().optional(),
         error: z
