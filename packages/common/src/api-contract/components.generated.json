@@ -3986,6 +3986,16 @@
         "type": "string",
         "description": "Stable provider-side routing key for automatic prompt caching."
       },
+      "prompt_cache_mode": {
+        "$ref": "#/components/schemas/PromptCacheMode",
+        "description": "Controls provider-side explicit caching: auto falls back safely, off disables it, and required surfaces cache preparation failures for diagnostics."
+      },
+      "prompt_cache_ttl_seconds": {
+        "type": "integer",
+        "minimum": 60,
+        "maximum": 9007199254740991,
+        "description": "Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; Vertex Gemini requires at least 60 seconds."
+      },
       "prompt_cache_schema_suffix": {
         "type": "boolean",
         "description": "Put the result schema after the cached prefix; Vertesia still validates the returned JSON against it."
@@ -4011,6 +4021,14 @@
       "RUN_AND_INTERACTION_CONFIG",
       "RUN_CONFIG_ONLY",
       "INTERACTION_CONFIG_ONLY"
+    ]
+  },
+  "PromptCacheMode": {
+    "type": "string",
+    "enum": [
+      "auto",
+      "off",
+      "required"
     ]
   },
   "IntakeVisionDetail": {
@@ -7732,13 +7750,6 @@
     },
     "additionalProperties": false
   },
-  "PromptCacheMode": {
-    "type": "string",
-    "enum": [
-      "auto",
-      "off"
-    ]
-  },
   "StatelessExecutionOptions": {
     "type": "object",
     "properties": {
@@ -7765,13 +7776,13 @@
       },
       "prompt_cache_mode": {
         "$ref": "#/components/schemas/PromptCacheMode",
-        "description": "Controls provider-side explicit caches — cache resources the driver creates and reuses (e.g. Vertex cachedContents). \"auto\" (default) caches the static prefix whenever prompt_cache_key is set; \"off\" never creates or uses a cache resource and leaves the provider payload unchanged. Implicit caching and cache breakpoints are unaffected."
+        "description": "Controls provider-side explicit caches — cache resources the driver creates and reuses (e.g. Vertex cachedContents). \"auto\" (default) caches the static prefix whenever prompt_cache_key is set; \"off\" never creates or uses a cache resource and leaves the provider payload unchanged; \"required\" behaves like auto but surfaces cache preparation failures instead of falling back. Implicit caching and cache breakpoints are unaffected."
       },
       "prompt_cache_ttl_seconds": {
         "type": "integer",
-        "exclusiveMinimum": 0,
+        "minimum": 60,
         "maximum": 9007199254740991,
-        "description": "Lifetime, in seconds, of a provider-side cache resource created for this execution. Defaults to 1800 (30 minutes). Ignored by providers without an explicit cache API."
+        "description": "Lifetime, in seconds, of a provider-side cache resource created for this execution. Defaults to 1800 (30 minutes) and must be at least 60 seconds. Ignored by providers without an explicit cache API."
       },
       "httpTimeout": {
         "$ref": "#/components/schemas/HttpTimeoutOptions",
@@ -10859,6 +10870,70 @@
     "$ref": "#/components/schemas/InteractionRef",
     "description": "Interaction reference. Stored interactions may be populated as full Interaction documents; in-code interactions are represented as refs whose `id` is the namespaced interaction id."
   },
+  "PromptCacheDiagnostic": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "$ref": "#/components/schemas/PromptCachePath"
+      },
+      "explicit_cache_used": {
+        "type": "boolean"
+      },
+      "content_hash_prefix": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "scope": {
+        "type": "string"
+      },
+      "cacheable_part_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "preparation_latency_ms": {
+        "type": "number",
+        "minimum": 0
+      },
+      "wait_latency_ms": {
+        "type": "number",
+        "minimum": 0
+      },
+      "provider_status": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "path",
+      "explicit_cache_used",
+      "model",
+      "preparation_latency_ms"
+    ],
+    "description": "Safe diagnostic for one provider-side explicit prompt-cache attempt. It never contains prompt contents, images, credentials, or full provider resource names."
+  },
+  "PromptCachePath": {
+    "type": "string",
+    "enum": [
+      "disabled",
+      "no_key",
+      "local_memo_hit",
+      "distributed_registry_hit",
+      "provider_list_recovery",
+      "created",
+      "waited_for_creator",
+      "refreshed",
+      "fallback_quota",
+      "fallback_provider_error",
+      "fallback_coordination_unavailable",
+      "fallback_wait_timeout",
+      "minimum_token_rejection",
+      "unusable_resource_recreated"
+    ]
+  },
   "InteractionExecutionError": {
     "type": "object",
     "properties": {
@@ -10955,6 +11030,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -11090,6 +11171,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -11229,6 +11316,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -11864,6 +11957,12 @@
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
       },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
+      },
       "chunks": {
         "type": "number"
       },
@@ -12012,6 +12111,12 @@
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
       },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
+      },
       "chunks": {
         "type": "number"
       },
@@ -12141,6 +12246,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -12289,6 +12400,12 @@
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
       },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
+      },
       "chunks": {
         "type": "number"
       },
@@ -12435,6 +12552,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -13355,6 +13478,9 @@
       "service_tier": {
         "type": "string",
         "description": "Processing tier actually used by the provider"
+      },
+      "prompt_cache_diagnostic": {
+        "$ref": "#/components/schemas/PromptCacheDiagnostic"
       },
       "tool_use": {
         "type": "array",
@@ -14980,6 +15106,16 @@
       "prompt_cache_key": {
         "type": "string",
         "description": "Stable provider-side routing key for automatic prompt caching."
+      },
+      "prompt_cache_mode": {
+        "$ref": "#/components/schemas/PromptCacheMode",
+        "description": "Controls provider-side explicit caching: auto falls back safely, off disables it, and required surfaces cache preparation failures for diagnostics."
+      },
+      "prompt_cache_ttl_seconds": {
+        "type": "integer",
+        "minimum": 60,
+        "maximum": 9007199254740991,
+        "description": "Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; Vertex Gemini requires at least 60 seconds."
       },
       "prompt_cache_schema_suffix": {
         "type": "boolean",

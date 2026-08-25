@@ -1,4 +1,4 @@
-import { HttpTimeoutOptionsSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
+import { HttpTimeoutOptionsSchema, ModelOptionsSchema, PromptCacheModeSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
@@ -88,6 +88,21 @@ export const InteractionExecutionConfigurationSchema = z
             .string()
             .optional()
             .meta({ description: 'Stable provider-side routing key for automatic prompt caching.' }),
+        prompt_cache_mode: PromptCacheModeSchema.optional().meta({
+            description:
+                'Controls provider-side explicit caching: auto falls back safely, off disables it, and required ' +
+                'surfaces cache preparation failures for diagnostics.',
+        }),
+        prompt_cache_ttl_seconds: z
+            .number()
+            .int()
+            .min(60)
+            .optional()
+            .meta({
+                description:
+                    'Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; ' +
+                    'Vertex Gemini requires at least 60 seconds.',
+            }),
         prompt_cache_schema_suffix: z
             .boolean()
             .optional()
