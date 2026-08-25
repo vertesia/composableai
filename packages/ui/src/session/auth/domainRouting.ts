@@ -1,7 +1,23 @@
+import { Env } from '@vertesia/ui/env';
+
 declare global {
     interface Window {
         AUTH_MODE?: 'firebase' | 'central';
     }
+}
+
+/**
+ * The broker this app sends users to for sign-in and logout.
+ *
+ * Hard-coded until now, which meant every consumer of this package reached the same deployment no
+ * matter what was running. It is read from the environment so a single app can be pointed at a
+ * different broker, and it keeps this default so an app that configures nothing is unaffected.
+ */
+export const DEFAULT_CENTRAL_AUTH_URL = 'https://internal-auth.vertesia.app/';
+
+export function centralAuthUrl(): string {
+    const configured = Env.endpoints.auth;
+    return configured ? configured : DEFAULT_CENTRAL_AUTH_URL;
 }
 
 export function shouldUseFirebaseAuth(_hostname?: string) {
