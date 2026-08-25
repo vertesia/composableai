@@ -12,12 +12,10 @@ import {
     resolveAuthSelection,
     UserNotFoundError,
 } from './auth/composable';
-import { authReturnUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
+import { authReturnUrl, centralAuthUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
-
-const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
 
 function clearAuthHash() {
     const url = new URL(window.location.href);
@@ -111,7 +109,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     };
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
+        const url = new URL(`${centralAuthUrl()}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
         const currentUrl = authReturnUrl();
         if (projectId) currentUrl.searchParams.set('p', projectId);
         if (accountId) currentUrl.searchParams.set('a', accountId);

@@ -15,6 +15,14 @@ export interface EnvProps {
         zeno: string;
         studio: string;
         sts: string; // Security Token Service endpoint
+        /**
+         * Central Auth broker that issues the sign-in redirect and hosts `/logout`.
+         *
+         * Optional: when unset the session falls back to the long-standing broker, so an app that
+         * does not set it keeps its current behaviour exactly. Set it to move one environment at a
+         * time onto a different broker.
+         */
+        auth?: string;
         git?: string; // Smart HTTP app source git endpoint
         mcp?: string;
         /** Appgen app-gateway endpoint (serves live development previews and app bundles). */
