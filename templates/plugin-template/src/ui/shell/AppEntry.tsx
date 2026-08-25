@@ -20,7 +20,9 @@ const routes: Route[] = [
         Component: () => (
             <StandaloneApp name={appName} AccessDenied={PluginAccessDenied}>
                 {isCompositeContent ? (
-                    <App />
+                    <div className="h-dvh min-h-0 overflow-hidden">
+                        <App />
+                    </div>
                 ) : (
                     <PluginLayout>
                         <App />

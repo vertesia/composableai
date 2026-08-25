@@ -56,7 +56,12 @@ export function IframeAppContextSync() {
                 } catch {
                     return;
                 }
-                if (target.origin !== window.location.origin || target.href === window.location.href) return;
+                if (target.origin !== window.location.origin) return;
+                if (target.href === window.location.href) {
+                    // Acknowledge no-op navigation so the host does not wait forever and suppress later app routing.
+                    reportLocation();
+                    return;
+                }
                 window.history.replaceState(window.history.state, '', target);
                 window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
             }

@@ -1,5 +1,5 @@
 import { DirectionProvider } from '@radix-ui/react-direction';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { isRTL, resolveLanguage, type SupportedLanguage } from './rtl.js';
 
 type LanguageProviderProps = {
@@ -39,7 +39,9 @@ export function LanguageProvider({
     storageKey = 'vertesia-ui-language',
     ...props
 }: LanguageProviderProps) {
-    const [language, setLanguage] = useState<SupportedLanguage>(() => readInitialLanguage(storageKey, defaultLanguage));
+    const [language, setLanguageState] = useState<SupportedLanguage>(() =>
+        readInitialLanguage(storageKey, defaultLanguage),
+    );
 
     const rtl = isRTL(language);
 
@@ -49,16 +51,21 @@ export function LanguageProvider({
         root.dir = rtl ? 'rtl' : 'ltr';
     }, [language, rtl]);
 
+    const setLanguage = useCallback(
+        (next: SupportedLanguage, options?: { persist?: boolean }) => {
+            if (options?.persist !== false) window.localStorage?.setItem(storageKey, next);
+            setLanguageState(next);
+        },
+        [storageKey],
+    );
+
     const value = useMemo<LanguageProviderState>(
         () => ({
             language,
             isRTL: rtl,
-            setLanguage: (next: SupportedLanguage, options?: { persist?: boolean }) => {
-                if (options?.persist !== false) window.localStorage?.setItem(storageKey, next);
-                setLanguage(next);
-            },
+            setLanguage,
         }),
-        [language, rtl, storageKey],
+        [language, rtl, setLanguage],
     );
 
     return (

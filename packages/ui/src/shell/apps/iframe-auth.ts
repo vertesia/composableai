@@ -114,6 +114,7 @@ export function resolveIframeHostOrigin(): string | undefined {
         return explicitOrigin;
     }
 
+    // Prefer the durable value because referrer can be empty or stale after auth redirects and hard navigations.
     const storedOrigin = parseHttpOrigin(window.sessionStorage?.getItem(IFRAME_APP_HOST_ORIGIN_STORAGE_KEY));
     if (storedOrigin) return storedOrigin;
 

@@ -457,9 +457,7 @@ export async function getComposableToken(
             AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
         } else if (!devAuthToken) {
             // Embedded apps can reacquire a fresh credential from their host after their cached token expires.
-            const refreshCredential = Env.authTokenProvider
-                ? await Env.authTokenProvider()
-                : (initToken ?? AUTH_TOKEN_RAW);
+            const refreshCredential = (await Env.authTokenProvider?.()) ?? initToken ?? AUTH_TOKEN_RAW;
             if (
                 refreshCredential &&
                 isVertesiaIssuedToken(refreshCredential) &&

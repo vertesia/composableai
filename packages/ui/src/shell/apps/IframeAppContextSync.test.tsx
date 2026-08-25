@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider, useTheme } from '../../core/index.js';
 import { LanguageProvider, useLanguage } from '../../i18n/index.js';
@@ -36,7 +36,8 @@ function ContextProbe() {
 
 describe('IframeAppContextSync', () => {
     it('requests and applies host presentation state without overwriting standalone preferences', async () => {
-        const parentWindow = { postMessage: vi.fn() } as unknown as Window;
+        const postMessage = vi.fn();
+        const parentWindow = { postMessage } as unknown as Window;
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
         Object.defineProperty(document, 'referrer', {
             configurable: true,
@@ -68,17 +69,22 @@ describe('IframeAppContextSync', () => {
         );
         expect(screen.getByText('dark:en')).toBeTruthy();
 
-        window.dispatchEvent(
-            new MessageEvent('message', {
-                data: { type: IFRAME_APP_CONTEXT, theme: 'light', language: 'fr' },
-                origin: 'https://studio.example.com',
-                source: parentWindow,
-            }),
-        );
+        act(() => {
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    data: { type: IFRAME_APP_CONTEXT, theme: 'light', language: 'fr' },
+                    origin: 'https://studio.example.com',
+                    source: parentWindow,
+                }),
+            );
+        });
 
         await waitFor(() => expect(screen.getByText('light:fr')).toBeTruthy());
         expect(localStorage.getItem('custom-theme')).toBe('dark');
         expect(localStorage.getItem('custom-language')).toBe('en');
+        expect(postMessage.mock.calls.filter(([message]) => message.type === IFRAME_APP_CONTEXT_REQUEST)).toHaveLength(
+            1,
+        );
     });
 
     it('applies same-origin host navigation without reloading the document', () => {
@@ -124,6 +130,39 @@ describe('IframeAppContextSync', () => {
         expect(window.location.search).toBe('?__vertesia_slot=content');
         expect(popstate).toHaveBeenCalledTimes(1);
         window.removeEventListener('popstate', popstate);
+    });
+
+    it('acknowledges host navigation when the iframe is already at the requested URL', () => {
+        const parentWindow = { postMessage: vi.fn() } as unknown as Window;
+        Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
+        localStorage.setItem('vite-ui-theme', 'dark');
+        window.history.replaceState(
+            null,
+            '',
+            `/app/reports?${IFRAME_APP_HOST_ORIGIN_PARAM}=https%3A%2F%2Fstudio.example.com`,
+        );
+
+        render(
+            <ThemeProvider>
+                <LanguageProvider>
+                    <IframeAppContextSync />
+                </LanguageProvider>
+            </ThemeProvider>,
+        );
+        parentWindow.postMessage = vi.fn();
+
+        window.dispatchEvent(
+            new MessageEvent('message', {
+                data: { type: IFRAME_APP_NAVIGATE, url: window.location.href },
+                origin: 'https://studio.example.com',
+                source: parentWindow,
+            }),
+        );
+
+        expect(parentWindow.postMessage).toHaveBeenCalledWith(
+            { type: IFRAME_APP_LOCATION_CHANGE, url: window.location.href },
+            'https://studio.example.com',
+        );
     });
 
     it('reports app-initiated history navigation to the embedding Studio', () => {
