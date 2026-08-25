@@ -1,5 +1,7 @@
 export const IFRAME_AUTH_REQUEST = 'vertesia:iframe-auth-request';
 export const IFRAME_AUTH_RESPONSE = 'vertesia:iframe-auth-response';
+export const IFRAME_APP_SLOT_PARAM = '__vertesia_slot';
+export const IFRAME_APP_CONTENT_SLOT = 'content';
 
 export interface IframeAuthRequest {
     type: typeof IFRAME_AUTH_REQUEST;

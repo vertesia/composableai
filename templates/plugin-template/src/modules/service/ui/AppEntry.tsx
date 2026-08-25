@@ -1,6 +1,6 @@
 import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
+import { IFRAME_APP_CONTENT_SLOT, IFRAME_APP_SLOT_PARAM, StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
 import type { ReactNode } from 'react';
 import { setUsePluginAssets } from '../../../ui/assets';
 import { App } from '../../../ui/shell/App';
@@ -13,12 +13,17 @@ setUsePluginAssets(false);
 const appName = import.meta.env.VITE_APP_NAME;
 const appVersion = import.meta.env.VITE_APP_VERSION;
 const devAuthToken = import.meta.env.DEV ? import.meta.env.VITE_VERTESIA_AUTH_TOKEN : undefined;
+const isCompositeContent =
+    new URLSearchParams(window.location.search).get(IFRAME_APP_SLOT_PARAM) === IFRAME_APP_CONTENT_SLOT;
 
-const AppRoot = () => (
-    <PluginLayout>
+const AppRoot = () =>
+    isCompositeContent ? (
         <App />
-    </PluginLayout>
-);
+    ) : (
+        <PluginLayout>
+            <App />
+        </PluginLayout>
+    );
 
 const ProtectedAppRoot = () => (
     <StandaloneApp name={appName} AccessDenied={PluginAccessDenied}>
