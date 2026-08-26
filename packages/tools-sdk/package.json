@@ -28,7 +28,7 @@
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "catalog:",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     },
     "peerDependencies": {
         "hono": "^4.13.3"

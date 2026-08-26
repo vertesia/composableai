@@ -47,7 +47,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.11"
     },
     "exports": {
         ".": {
