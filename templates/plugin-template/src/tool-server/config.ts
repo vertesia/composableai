@@ -36,8 +36,8 @@ export const ServerConfig = {
     subscriptions,
     mcpProviders,
     uiConfig: {
-        isolation: 'shadow',
-        src: '/lib/plugin.js',
+        isolation: 'iframe',
+        src: '/app/',
         available_in: ['app_portal', 'composite_app'],
         navigation: uiNavItems, // optional navigation configuration for the Composite App sidebar
     },
