@@ -12,18 +12,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
-
-interface VertesiaRuntimeConfig {
-    authMode: 'firebase';
-    firebase: {
-        apiKey: string;
-        authDomain: string;
-        projectId: string;
-        appId: string;
-    };
-}
-
-interface Window {
-    AUTH_MODE?: 'firebase' | 'central';
-    __VERTESIA_RUNTIME_CONFIG__?: VertesiaRuntimeConfig;
-}
