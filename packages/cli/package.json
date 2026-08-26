@@ -67,7 +67,7 @@
     "devDependencies": {
         "@types/jsonwebtoken": "^9.0.10",
         "@vertesia/tsconfig": "workspace:*",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     },
     "repository": {
         "type": "git",
