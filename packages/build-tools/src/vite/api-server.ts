@@ -35,6 +35,18 @@ interface HonoApp {
     fetch: (request: Request, env?: unknown, executionCtx?: unknown) => Response | Promise<Response>;
 }
 
+const RUNTIME_CONFIG_MARKER = 'vertesia-runtime-config';
+const RUNTIME_CONFIG_VERSION = 'v1';
+
+export function injectRuntimeConfigMarker(html: string): string {
+    const metaTags = html.match(/<meta\b[^>]*>/gi) || [];
+    const markerName = new RegExp(`\\bname\\s*=\\s*(["'])${RUNTIME_CONFIG_MARKER}\\1`, 'i');
+    if (metaTags.some((tag) => markerName.test(tag))) return html;
+
+    const marker = `<meta name="${RUNTIME_CONFIG_MARKER}" content="${RUNTIME_CONFIG_VERSION}" />`;
+    return html.replace(/<\/head>/i, `  ${marker}\n</head>`);
+}
+
 type NextHandleFunction = (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void;
 
 export interface ApiServerPluginOptions {
@@ -90,6 +102,11 @@ export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] 
     const absoluteCompiledEntry = path.resolve(process.cwd(), compiledEntry);
 
     return [
+        {
+            name: 'vertesia-runtime-config-marker',
+            transformIndexHtml: injectRuntimeConfigMarker,
+        },
+
         // Vertesia query-import transformer (skill / raw / prompt / template etc.).
         vertesiaDevServerPlugin(transformers ? { transformers } : undefined),
 
