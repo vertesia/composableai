@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/json",
-    "version": "1.5.0-dev",
+    "version": "1.5.0-dev.20260826.064249Z",
     "description": "JSON utlities",
     "type": "module",
     "main": "./lib/index.js",
@@ -44,5 +44,5 @@
         "traverse",
         "typescript"
     ],
-    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
+    "gitHead": "c0d6426380b6f66657db83017c90de208ee4956a"
 }
