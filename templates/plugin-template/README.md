@@ -411,10 +411,13 @@ Each resource type has an index file under `src/modules/app/resources/` (`tools/
 
 The UI has two build modes:
 
-- **App mode** (`build:ui:app`): standalone web application, deployable independently
-- **Library mode** (`build:ui:lib`): plugin bundle that integrates into the Vertesia platform
+- **App mode** (`build:ui:app`): standalone web application and the default customer-app runtime
+- **Library mode** (`build:ui:lib`): compatibility bundle for legacy host-integrated extensions
 
-In library mode, React and Vertesia dependencies are externalized (provided by the host app).
+Studio embeds app mode in a sandboxed iframe. The app owns React and its dependency graph, and an
+origin-checked in-memory handshake reuses the active Studio session without putting a token in the
+URL. Library mode externalizes React and Vertesia dependencies and should be reserved for extensions
+that intentionally share Studio's JavaScript runtime.
 
 Key files:
 
@@ -489,8 +492,8 @@ vertesia apps update <appId> --manifest '{
   "name": "my-plugin",
   "title": "My Plugin",
   "ui": {
-    "src": "https://your-plugin.vercel.app/lib/plugin.js",
-    "isolation": "shadow"
+    "src": "https://your-plugin.vercel.app/app/",
+    "isolation": "iframe"
   }
 }'
 ```

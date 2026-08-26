@@ -5,7 +5,7 @@ function makeJwt(payload: Record<string, unknown>) {
     return `${encode({ alg: 'ES256', typ: 'JWT' })}.${encode(payload)}.signature`;
 }
 
-async function importComposableAuth() {
+async function importComposableAuth(authTokenProvider?: () => Promise<string | undefined>) {
     vi.resetModules();
     const [{ Env }, composableAuth] = await Promise.all([import('@vertesia/ui/env'), import('./composable')]);
     Env.init({
@@ -19,6 +19,7 @@ async function importComposableAuth() {
             zeno: 'https://zeno-server-dev-feat-appgen.api.dev1.vertesia.io',
             sts: 'https://sts.dev1.vertesia.io',
         },
+        authTokenProvider,
     });
     return composableAuth;
 }
@@ -51,6 +52,65 @@ describe('getComposableToken', () => {
         expect(result.rawToken).toBe(token);
         expect(result.token.iss).toBe('https://sts.dev1.vertesia.io');
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('reacquires a fresh injected token instead of reusing an expired cached credential', async () => {
+        const expiredToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) - 60,
+            account: { id: 'account-id', name: 'Account' },
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+            project_roles: ['developer'],
+        });
+        const freshToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            account: { id: 'account-id', name: 'Account' },
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+            project_roles: ['developer'],
+        });
+        const authTokenProvider = vi.fn(() => Promise.resolve(freshToken));
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth(authTokenProvider);
+        const result = await getComposableToken('account-id', 'project-id', expiredToken, false, true);
+
+        expect(result.rawToken).toBe(freshToken);
+        expect(authTokenProvider).toHaveBeenCalledOnce();
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the cached credential when the injected provider is unavailable', async () => {
+        const expiringToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 60,
+            account: { id: 'account-id', name: 'Account' },
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+            project_roles: ['developer'],
+        });
+        const refreshedToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            account: { id: 'account-id', name: 'Account' },
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+            project_roles: ['developer'],
+        });
+        const authTokenProvider = vi.fn(() => Promise.resolve(undefined));
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ token: refreshedToken }),
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth(authTokenProvider);
+        const result = await getComposableToken('account-id', 'project-id', expiringToken, false, true);
+
+        expect(result.rawToken).toBe(refreshedToken);
+        expect(authTokenProvider).toHaveBeenCalledOnce();
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(fetchMock.mock.calls[0]?.[1]?.headers).toMatchObject({ Authorization: `Bearer ${expiringToken}` });
     });
 
     it('exchanges a bare STS-issued Vertesia token so roles can be hydrated', async () => {
