@@ -41,7 +41,7 @@
         "rolldown": "catalog:",
         "tsx": "^4.23.12",
         "typescript": "catalog:",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",

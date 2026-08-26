@@ -126,7 +126,7 @@
         "jsdom": "^30.0.1",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.10",
+        "vitest": "^4.1.11",
         "vitest-axe": "^0.1.0",
         "wcag-contrast": "^3.0.0"
     },
