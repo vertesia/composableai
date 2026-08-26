@@ -40,7 +40,7 @@
     "dependencies": {
         "chalk": "^6.0.0",
         "commander": "^15.0.0",
-        "degit": "^3.6.6",
+        "degit": "^3.8.0",
         "prompts": "^2.4.2"
     },
     "devDependencies": {

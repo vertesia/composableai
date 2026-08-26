@@ -374,6 +374,11 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
         // carrying an undeclared key there is now rejected at write time.
         expect(ApiSchemaComponents.InteractionExecutionConfiguration.additionalProperties).toBe(false);
         expect(validate({ extraction: { config: { model: 'claude-sonnet-4-5' } } }), errors()).toBe(true);
+        expect(
+            validate({ extraction: { config: { prompt_cache_mode: 'required', prompt_cache_ttl_seconds: 3600 } } }),
+            errors(),
+        ).toBe(true);
+        expect(validate({ extraction: { config: { prompt_cache_ttl_seconds: 59 } } })).toBe(false);
         expect(validate({ extraction: { config: { temperature: 0.5 } } })).toBe(false);
         expect(validate({ extraction: { config: { http_timeout: { socketTimeout: 1000 } } } })).toBe(false);
     });

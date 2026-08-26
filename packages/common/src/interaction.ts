@@ -3,6 +3,7 @@ import type {
     ExecutionTokenUsage,
     JSONSchema,
     Modalities,
+    PromptCacheDiagnostic,
     StatelessExecutionOptions,
     ToolUse,
 } from '@llumiverse/common';
@@ -433,6 +434,7 @@ export interface BaseExecutionRun<P = unknown> {
     finish_reason?: string;
     prompt?: unknown;
     token_use?: ExecutionTokenUsage;
+    prompt_cache_diagnostics?: PromptCacheDiagnostic[];
     chunks?: number;
     execution_time?: number; // ms
     // ISO strings, not `Date`. `ExecutionRunRef` — the shape every run endpoint actually returns —
