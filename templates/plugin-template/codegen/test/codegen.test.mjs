@@ -355,6 +355,33 @@ test('service quality rejects legacy Store search payloads and accepts ComplexSe
             report.errors.some((error) => error.rule === 'valid-store-search-payload'),
             false,
         );
+
+        // A quoted/templated/numeric `query` is the legacy flat payload and must stay rejected.
+        for (const literal of ["'free text'", '`${term}`', '42']) {
+            fs.writeFileSync(seedPath, `await client.objects.search({ query: ${literal}, limit: 5 });\n`);
+            assert.throws(
+                () => execFileSync(process.execPath, [qualityScript], { cwd: tmpRoot, stdio: 'pipe' }),
+                undefined,
+                `expected a literal query (${literal}) to be rejected`,
+            );
+        }
+
+        // `query` built elsewhere is a valid ComplexSearchQuery expression that the source text
+        // cannot judge; tsc already rejects it when it is wrong. Flagging it here failed correct
+        // generated apps whose list views hold the query in state or build it in a helper.
+        for (const expression of ['q', 'state.query', 'buildQuery(filters)', 'on ? a : b']) {
+            fs.writeFileSync(
+                seedPath,
+                `const { results } = await client.objects.search({ query: ${expression}, limit: 5 });\n`,
+            );
+            execFileSync(process.execPath, [qualityScript], { cwd: tmpRoot, stdio: 'pipe' });
+            report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
+            assert.equal(
+                report.errors.some((error) => error.rule === 'valid-store-search-payload'),
+                false,
+                `expected a computed query (${expression}) to be accepted`,
+            );
+        }
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

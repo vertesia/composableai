@@ -218,8 +218,13 @@ function objectSearchPayloadIssues(text) {
         }
 
         if (properties.has('type')) issues.push('`type` must be nested under `query`');
-        if (properties.has('query') && properties.get('query') !== '{') {
-            issues.push('`query` must be an object');
+        // Only a literal value can be judged from source text. `query: buildQuery(filters)`,
+        // `query: state.query` and `query: q` are valid ComplexSearchQuery expressions, and tsc
+        // already rejects them when they are not, so flagging them here fails correct apps.
+        // A string/number literal is the legacy flat payload this rule exists to catch.
+        const queryValue = properties.get('query');
+        if (queryValue && /['"`\d]/.test(queryValue)) {
+            issues.push('`query` must be an object, not a string or number literal');
         }
     }
     return [...new Set(issues)];
