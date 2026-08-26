@@ -2,6 +2,11 @@ import { Env } from '@vertesia/ui/env';
 import { requestIframeHostAuthToken } from '@vertesia/ui/shell';
 
 const CONFIG__PLUGIN_TITLE = 'Ui Plugin Template';
+const runtimeConfig = window.__VERTESIA_RUNTIME_CONFIG__;
+
+if (runtimeConfig?.authMode === 'firebase' && runtimeConfig.firebase) {
+    window.AUTH_MODE = 'firebase';
+}
 
 document.title = CONFIG__PLUGIN_TITLE;
 
@@ -34,5 +39,6 @@ Env.init({
         zeno: requiredEnv('VITE_VERTESIA_ZENO_URL'),
         sts: requiredEnv('VITE_VERTESIA_STS_URL'),
     },
+    firebase: runtimeConfig?.firebase,
     authTokenProvider: requestIframeHostAuthToken,
 });
