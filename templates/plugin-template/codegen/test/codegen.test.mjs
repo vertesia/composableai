@@ -172,6 +172,11 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.match(serviceEntry, /client\.withAppVersion\(appVersion\)/);
         assert.doesNotMatch(serviceEntry, /useEffect/);
         assert.doesNotMatch(serviceEntry, /store\.withAppVersion/);
+        execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
+            cwd: tmpRoot,
+            stdio: 'pipe',
+            env: { ...process.env, APPGEN_REQUIRE_TESTS: '1' },
+        });
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
