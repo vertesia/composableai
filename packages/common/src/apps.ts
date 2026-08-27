@@ -73,6 +73,17 @@ import type {
     CompositeAppConfigPayloadSchema,
     CompositeAppConfigSchema,
     CompositeAppEntrySchema,
+    CompositeAppExportAppRefSchema,
+    CompositeAppExportBrandingSchema,
+    CompositeAppExportNormalizationSchema,
+    CompositeAppExportPrincipalRefSchema,
+    CompositeAppExportReferencesSchema,
+    CompositeAppExportRequestSchema,
+    CompositeAppExportSchema,
+    CompositeAppExportSectionSchema,
+    CompositeAppExportSectionsSchema,
+    CompositeAppExportSidebarSchema,
+    CompositeAppExportSourceSchema,
     CompositeAppHeaderItemKindSchema,
     CompositeAppHeaderItemSchema,
     CompositeAppHeaderItemTargetSchema,
@@ -124,6 +135,14 @@ import type {
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
+
+/**
+ * Format discriminator for an exported composite app configuration.
+ *
+ * Lives here rather than beside its schema so consumers can import it from the package root without
+ * pulling the runtime schema modules into a browser or SDK bundle.
+ */
+export const COMPOSITE_APP_EXPORT_FORMAT = 'vertesia.composite-app.v1';
 
 // The app-manifest closure is declared once, as the Zod schemas in `./api-schemas/apps.ts`, and
 // inferred below. The documentation moved with it: what a published component says about a field now
@@ -735,6 +754,34 @@ export type CompositeAppHeaderItem = z.infer<typeof CompositeAppHeaderItemSchema
 export type CompositeAppConfig = z.infer<typeof CompositeAppConfigSchema>;
 
 export type CompositeAppConfigPayload = z.infer<typeof CompositeAppConfigPayloadSchema>;
+
+/**
+ * A portable composite app configuration.
+ *
+ * Sections are the top-level structure rather than a filter applied afterwards, so a file exported
+ * with two sections cannot silently import four. `references` resolves the project-scoped values an
+ * import has to remap, and `normalization` records what the export had to drop to make a stored
+ * document valid against the published contract.
+ */
+export type CompositeAppExport = z.infer<typeof CompositeAppExportSchema>;
+
+/** One independently exportable section, mirroring the four panels of the settings page. */
+export type CompositeAppExportSection = z.infer<typeof CompositeAppExportSectionSchema>;
+
+export type CompositeAppExportRequest = z.infer<typeof CompositeAppExportRequestSchema>;
+export type CompositeAppExportSections = z.infer<typeof CompositeAppExportSectionsSchema>;
+export type CompositeAppExportBranding = z.infer<typeof CompositeAppExportBrandingSchema>;
+export type CompositeAppExportSidebar = z.infer<typeof CompositeAppExportSidebarSchema>;
+export type CompositeAppExportSource = z.infer<typeof CompositeAppExportSourceSchema>;
+export type CompositeAppExportReferences = z.infer<typeof CompositeAppExportReferencesSchema>;
+
+/** A resolved app reference: enough to tell "not installed here" from "no such manifest anywhere". */
+export type CompositeAppExportAppRef = z.infer<typeof CompositeAppExportAppRefSchema>;
+
+/** A resolved user or group reference taken from a permission gate. */
+export type CompositeAppExportPrincipalRef = z.infer<typeof CompositeAppExportPrincipalRefSchema>;
+
+export type CompositeAppExportNormalization = z.infer<typeof CompositeAppExportNormalizationSchema>;
 
 export type ValidateUrlRequest = z.infer<typeof ValidateUrlRequestSchema>;
 

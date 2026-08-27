@@ -2,6 +2,8 @@ import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch
 import type {
     CompositeAppConfig,
     CompositeAppConfigPayload,
+    CompositeAppExport,
+    CompositeAppExportRequest,
     CountResult,
     DeleteByIdResult,
     ICreateProjectPayload,
@@ -131,6 +133,22 @@ export default class ProjectsApi extends ApiTopic {
         payload: CompositeAppConfigPayload,
     ): Promise<CompositeAppConfig> {
         return this.put(`/${encodeURIComponent(projectId)}/composite-app`, {
+            payload,
+        });
+    }
+
+    /**
+     * Export selected sections of the project's composite app configuration.
+     *
+     * The result is normalized against the published contract rather than copied from storage, and
+     * resolves the project-scoped values the sections reference — app names, and the users and groups
+     * named by permission gates — so an import into another project can remap them.
+     */
+    exportCompositeAppConfiguration(
+        projectId: string,
+        payload: CompositeAppExportRequest,
+    ): Promise<CompositeAppExport> {
+        return this.post(`/${encodeURIComponent(projectId)}/composite-app/export`, {
             payload,
         });
     }
