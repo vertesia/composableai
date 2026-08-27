@@ -573,6 +573,14 @@ export const DSLChildWorkflowStepSchema: z.ZodType = z
     .strictObject({
         type: z.literal('workflow').meta({ description: 'The type fo the step. If not set defaults to "activity"' }),
         name: z.string(),
+        title: z
+            .string()
+            .meta({ description: 'Title of the child workflow to be displayed in the UI workflow builder' })
+            .optional(),
+        description: z
+            .string()
+            .meta({ description: 'Description of the child workflow displayed in the UI workflow builder' })
+            .optional(),
         vars: z
             .looseObject({})
             .meta({
