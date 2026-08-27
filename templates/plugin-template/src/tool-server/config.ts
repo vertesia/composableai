@@ -36,8 +36,8 @@ export const ServerConfig = {
     subscriptions,
     mcpProviders,
     uiConfig: {
-        isolation: 'shadow',
-        src: '/lib/plugin.js',
+        isolation: 'iframe',
+        src: '/app/',
         // Where this app's UI can be shown: the standalone App Portal, the Composite App shell, or both.
         available_in: ['app_portal', 'composite_app'],
         // Sidebar entries contributed to the Composite App shell. Keep in sync with the app's routes.
