@@ -419,7 +419,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
         const review = grounding?.review;
         return (
             <FormSurface>
-                <FormSection title={t('intakePolicy.section.grounding')}>
+                <FormSection
+                    title={t('intakePolicy.section.grounding')}
+                    description={t('intakePolicy.help.section.grounding')}
+                >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <TriStateField
                             label={t('intakePolicy.field.enabled')}
@@ -436,6 +439,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.windowPages')}
+                            description={t('intakePolicy.help.windowPages')}
                             value={grounding?.window_pages}
                             min={1}
                             onChange={(value) => setValue(['extraction', 'grounding', 'window_pages'], value)}
@@ -451,30 +455,35 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <TriStateField
                             label={t('intakePolicy.field.useVision')}
+                            description={t('intakePolicy.help.useVision')}
                             value={grounding?.use_vision}
                             onChange={(value) => setValue(['extraction', 'grounding', 'use_vision'], value)}
                             readonly={readonly}
                         />
                         <TriStateField
                             label={t('intakePolicy.field.forceOcr')}
+                            description={t('intakePolicy.help.forceOcr')}
                             value={grounding?.force_ocr}
                             onChange={(value) => setValue(['extraction', 'grounding', 'force_ocr'], value)}
                             readonly={readonly}
                         />
                         <TriStateField
                             label={t('intakePolicy.field.refreshOcr')}
+                            description={t('intakePolicy.help.refreshOcr')}
                             value={grounding?.refresh_ocr}
                             onChange={(value) => setValue(['extraction', 'grounding', 'refresh_ocr'], value)}
                             readonly={readonly}
                         />
                         <TriStateField
                             label={t('intakePolicy.field.omitBlockBoxes')}
+                            description={t('intakePolicy.help.omitBlockBoxes')}
                             value={grounding?.omit_block_boxes}
                             onChange={(value) => setValue(['extraction', 'grounding', 'omit_block_boxes'], value)}
                             readonly={readonly}
                         />
                         <TriStateField
                             label={t('intakePolicy.field.updateProperties')}
+                            description={t('intakePolicy.help.updateProperties')}
                             value={grounding?.update_properties}
                             onChange={(value) => setValue(['extraction', 'grounding', 'update_properties'], value)}
                             readonly={readonly}
@@ -482,7 +491,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     </div>
                 </FormSection>
 
-                <FormSection title={t('intakePolicy.section.models')}>
+                <FormSection
+                    title={t('intakePolicy.section.models')}
+                    description={t('intakePolicy.help.section.models')}
+                >
                     <ModelConfigFields
                         title={t('intakePolicy.field.primaryModel')}
                         config={grounding?.config}
@@ -498,6 +510,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     <div className="grid gap-4 md:grid-cols-2">
                         <NumberField
                             label={t('intakePolicy.field.hardnessThreshold')}
+                            description={t('intakePolicy.help.hardnessThreshold')}
                             value={grounding?.hardness_threshold}
                             min={0}
                             max={1}
@@ -507,6 +520,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.minCitationDensity')}
+                            description={t('intakePolicy.help.minCitationDensity')}
                             value={grounding?.min_citation_density}
                             min={0}
                             max={1}
@@ -517,7 +531,11 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     </div>
                 </FormSection>
 
-                <FormSection title={t('intakePolicy.section.review')} last>
+                <FormSection
+                    title={t('intakePolicy.section.review')}
+                    description={t('intakePolicy.help.section.review')}
+                    last
+                >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <TriStateField
                             label={t('intakePolicy.field.enabled')}
@@ -527,6 +545,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <TriStateField
                             label={t('intakePolicy.field.forceReview')}
+                            description={t('intakePolicy.help.forceReview')}
                             value={review?.force}
                             onChange={(value) => setValue(['extraction', 'grounding', 'review', 'force'], value)}
                             readonly={readonly}
@@ -542,6 +561,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.coverageThreshold')}
+                            description={t('intakePolicy.help.coverageThreshold')}
                             value={review?.coverage_threshold}
                             min={0}
                             max={1}
@@ -565,7 +585,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
 
     return (
         <FormSurface>
-            <FormSection title={t('intakePolicy.section.rendering')}>
+            <FormSection
+                title={t('intakePolicy.section.rendering')}
+                description={t('intakePolicy.help.section.rendering')}
+            >
                 <TextAreaField
                     label={t('intakePolicy.field.renderingTemplate')}
                     description={t('intakePolicy.help.renderingTemplate')}
@@ -576,7 +599,11 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     minLines={8}
                 />
             </FormSection>
-            <FormSection title={t('intakePolicy.section.embeddings')} last>
+            <FormSection
+                title={t('intakePolicy.section.embeddings')}
+                description={t('intakePolicy.help.section.embeddings')}
+                last
+            >
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <TriStateField
                         label={t('intakePolicy.field.textEmbedding')}
