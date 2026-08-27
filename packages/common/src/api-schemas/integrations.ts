@@ -5,6 +5,11 @@ import { SupportedIntegrations } from '../integrations.js';
 import { StringValueMapSchema } from './files.js';
 import { DSLActivityOptionsSchema } from './process.js';
 
+const agentOnlyDecryptedSecretSchema = z.string().meta({
+    description:
+        'Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status.',
+});
+
 export const SupportedIntegrations_ask_user_webhookSchema = z
     .literal(SupportedIntegrations.ask_user_webhook)
     .meta({ id: 'SupportedIntegrations_ask_user_webhook' });
@@ -54,6 +59,7 @@ export const AskUserWebhookConfigurationSchema = z
         webhook_url: z.string().meta({ description: 'Webhook URL to receive ask_user events' }).optional(),
         has_webhook_secret: z.boolean().optional(),
         webhook_secret_hint: z.string().optional(),
+        webhook_secret: agentOnlyDecryptedSecretSchema.nullable(),
         events: z
             .array(z.enum(['requested', 'resolved']))
             .meta({ description: "Which events to send: ['requested', 'resolved'] or subset (default: both)" })
@@ -74,6 +80,7 @@ export const ResendConfigurationSchema = z
         enabled: z.boolean(),
         has_api_key: z.boolean().optional(),
         api_key_hint: z.string().optional(),
+        api_key: agentOnlyDecryptedSecretSchema.nullable(),
         email_domain: z
             .string()
             .meta({ description: 'Domain for email (both sending and receiving). Must be verified in Resend.' }),
@@ -83,6 +90,7 @@ export const ResendConfigurationSchema = z
             .optional(),
         has_webhook_secret: z.boolean().optional(),
         webhook_secret_hint: z.string().optional(),
+        webhook_secret: agentOnlyDecryptedSecretSchema.nullable(),
         allowed_sender_domains: z
             .array(z.string())
             .meta({ description: 'Domains allowed to send emails TO start agents (for inbound validation)' })
@@ -104,6 +112,7 @@ export const LinkupConfigurationSchema = z
         enabled: z.boolean(),
         has_api_key: z.boolean().optional(),
         api_key_hint: z.string().optional(),
+        api_key: agentOnlyDecryptedSecretSchema.nullable(),
     })
     .meta({ id: 'LinkupConfiguration' });
 
@@ -113,6 +122,7 @@ export const ExaConfigurationSchema = z
         enabled: z.boolean(),
         has_api_key: z.boolean().optional(),
         api_key_hint: z.string().optional(),
+        api_key: agentOnlyDecryptedSecretSchema.nullable(),
     })
     .meta({ id: 'ExaConfiguration' });
 
@@ -122,6 +132,7 @@ export const SerperConfigurationSchema = z
         enabled: z.boolean(),
         has_api_key: z.boolean().optional(),
         api_key_hint: z.string().optional(),
+        api_key: agentOnlyDecryptedSecretSchema.nullable(),
         url: z.string().optional(),
     })
     .meta({ id: 'SerperConfiguration' });
@@ -151,6 +162,7 @@ export const GladiaConfigurationSchema = z
         enabled: z.boolean(),
         has_api_key: z.boolean().optional(),
         api_key_hint: z.string().optional(),
+        api_key: agentOnlyDecryptedSecretSchema.nullable(),
         url: z.string().optional(),
     })
     .meta({ id: 'GladiaConfiguration' });
