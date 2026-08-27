@@ -1052,7 +1052,7 @@
     "intakePolicy.help.section.conversionModel": "ページをテキストに変換するモデルです。抽出用より安価なモデルを使うことが多くあります。",
     "intakePolicy.help.section.customConversion": "組み込みの変換処理の代わりに、独自のインタラクションまたはエージェントを使用します。",
     "intakePolicy.help.section.embeddings": "検索用に索引付けする対象と、目次を生成するかどうかです。",
-    "intakePolicy.help.section.extraction": "このタイプのスキーマプロパティを文書から埋めます。",
+    "intakePolicy.help.section.extraction": "このタイプのスキーマプロパティを文書からどのように埋めるかを設定します。",
     "intakePolicy.help.section.extractionModel": "文書を読み取ってプロパティを埋めるモデルです。",
     "intakePolicy.help.section.grounding": "抽出した各値を、その出典であるページ上のブロックまたは視覚的な位置に結び付けます。",
     "intakePolicy.help.section.locate": "本処理の前に、低コストの画像スキャンで重要なページを見つけます。",

@@ -1052,7 +1052,7 @@
     "intakePolicy.help.section.conversionModel": "负责将页面转为文本的模型，通常比提取模型更便宜。",
     "intakePolicy.help.section.customConversion": "用你自己的交互或智能体替代内置转换器。",
     "intakePolicy.help.section.embeddings": "哪些内容会被编入搜索索引，以及是否生成目录。",
-    "intakePolicy.help.section.extraction": "从文档中填充此类型的架构属性。",
+    "intakePolicy.help.section.extraction": "此类型的架构属性如何从文档中填充。",
     "intakePolicy.help.section.extractionModel": "负责读取文档并填充属性的模型。",
     "intakePolicy.help.section.grounding": "将每个提取值追溯到其来源页面上的区块或视觉位置。",
     "intakePolicy.help.section.locate": "在正式处理前，用低成本的视觉扫描找出重要页面。",

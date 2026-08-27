@@ -1052,7 +1052,7 @@
     "intakePolicy.help.section.conversionModel": "페이지를 텍스트로 변환하는 모델입니다. 보통 추출 모델보다 저렴합니다.",
     "intakePolicy.help.section.customConversion": "기본 변환기 대신 사용할 사용자 상호 작용 또는 에이전트입니다.",
     "intakePolicy.help.section.embeddings": "검색을 위해 색인되는 대상과 목차 생성 여부입니다.",
-    "intakePolicy.help.section.extraction": "이 유형의 스키마 속성을 문서에서 채웁니다.",
+    "intakePolicy.help.section.extraction": "이 유형의 스키마 속성을 문서에서 어떻게 채우는지 설정합니다.",
     "intakePolicy.help.section.extractionModel": "문서를 읽고 속성을 채우는 모델입니다.",
     "intakePolicy.help.section.grounding": "추출된 각 값을 해당 값이 나온 페이지의 블록 또는 시각적 위치에 연결합니다.",
     "intakePolicy.help.section.locate": "본 작업 전에 중요한 페이지를 찾아내는 저비용 시각 스캔입니다.",
