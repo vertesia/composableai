@@ -42,6 +42,7 @@ const UNION_MEMBERS = [
     'BedrockMantleClaudeOptions',
     'OpenAiThinkingOptions',
     'OpenAiTextOptions',
+    'OpenRouterTextOptions',
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
     'XAIGrokImageOptions',
@@ -95,6 +96,14 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
             JSON.stringify(validate.errors),
         ).toBe(true);
         expect(validate({ _option_id: 'not-a-driver' })).toBe(false);
+        expect(
+            validate({
+                _option_id: 'openai-text',
+                extra_body: { provider: { sort: 'throughput' }, baseten: { performance: 'max' } },
+            }),
+            JSON.stringify(validate.errors),
+        ).toBe(true);
+        expect(validate({ _option_id: 'openai-text', extra_body: ['not-an-object'] })).toBe(false);
     });
 });
 
