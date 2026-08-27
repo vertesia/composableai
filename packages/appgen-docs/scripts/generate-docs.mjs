@@ -215,6 +215,106 @@ failed and package availability must be verified before adding a dependency.
 `;
 }
 
+function generateUiComponentsRecipe() {
+    return `# UI Components Recipe
+
+This recipe is generated with the installed \`@vertesia/ui\` version. Use it for common app screens instead of
+searching dependency source. For an API not covered here, search \`appgen/ui-interfaces.d.ts\` once by exact symbol.
+
+## Imports
+
+\`\`\`tsx
+import {
+    Button,
+    Table,
+    TableHeaderCell,
+    TBody,
+    THead,
+    TR,
+    useFetch,
+} from '@vertesia/ui/core';
+\`\`\`
+
+## Loading table with refresh
+
+\`TBody.columns\` is required. It is the number of rendered columns and drives the loading skeleton.
+Use \`TableHeaderCell\` instead of raw \`<th>\` so column scope is accessible by default.
+
+\`\`\`tsx
+const { data = [], error, isLoading, refetch } = useFetch(loadRows, { deps: [projectId], defaultValue: [] });
+
+<Button type="button" onClick={() => void refetch()} isLoading={isLoading}>
+    Refresh
+</Button>
+
+{error ? <p role="alert">{error.message}</p> : null}
+<Table>
+    <THead>
+        <TR>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>Status</TableHeaderCell>
+        </TR>
+    </THead>
+    <TBody columns={2} isLoading={isLoading}>
+        {data.map((row) => (
+            <TR key={row.id}>
+                <td>{row.name}</td>
+                <td>{row.status}</td>
+            </TR>
+        ))}
+    </TBody>
+</Table>
+{!isLoading && !error && data.length === 0 ? <p>No results found.</p> : null}
+\`\`\`
+
+## Stable signatures
+
+- \`useFetch<T>(fetcher, { deps, defaultValue, onSuccess, onError })\` returns
+  \`{ data, isLoading, error, setData, refetch }\`.
+- \`TBody\` accepts \`{ columns: number; isLoading?: boolean; rows?: number; children: ReactNode }\`.
+- \`Button\` accepts normal button props plus \`isLoading\`, \`isDisabled\`, \`variant\`, and \`size\`.
+- Icon-only buttons need \`aria-label\`. Text buttons should keep their visible text in the accessible name.
+- Prefer semantic theme classes and plain HTML for layout. Do not guess private \`@vertesia/ui\` paths.
+`;
+}
+
+function generateClientInteractionsRecipe() {
+    return `# Current-project Interactions Recipe
+
+This recipe is generated with the installed \`@vertesia/client\` and \`@vertesia/common\` versions. Use it instead
+of searching dependency source for the browser client signature.
+
+## List interactions from React
+
+\`\`\`tsx
+import type { InteractionRef } from '@vertesia/common';
+import { useFetch } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+
+export function InteractionCatalog() {
+    const { client } = useUserSession();
+    const { data = [] } = useFetch<InteractionRef[]>(() => client.interactions.list(), {
+        deps: [client],
+        defaultValue: [],
+    });
+
+    return <ul>{data.map((interaction) => <li key={interaction.id}>{interaction.name}</li>)}</ul>;
+}
+\`\`\`
+
+## Stable signatures
+
+- \`client.interactions.list(payload?: InteractionSearchPayload): Promise<InteractionRef[]>\`.
+- Empty input is valid. Use \`client.interactions.list()\` unless the task requires a server-side filter.
+- The useful \`InteractionRef\` fields are \`id\`, \`name\`, \`endpoint\`, \`description?\`, \`status\`, \`version\`,
+  \`tags\`, and \`updated_at\`.
+- Keep SDK methods attached to their topic: call \`client.interactions.list()\`; do not destructure \`list\`.
+- The session client is already scoped to the signed-in user's current project. Do not construct another client in
+  browser code and do not hardcode a project id.
+- For schemas, use \`client.interactions.export({})\`; for the normal catalog, use \`list()\`.
+`;
+}
+
 function generateHandlebarsPrompts() {
     return `# Handlebars Prompts
 
@@ -1099,6 +1199,9 @@ async function main() {
     await mkdir(DOCS_ROOT, { recursive: true });
 
     await writeFile(join(DOCS_ROOT, 'frontend-imports.md'), generateFrontendImports(), 'utf8');
+    await mkdir(join(DOCS_ROOT, 'recipes'), { recursive: true });
+    await writeFile(join(DOCS_ROOT, 'recipes', 'ui-components.md'), generateUiComponentsRecipe(), 'utf8');
+    await writeFile(join(DOCS_ROOT, 'recipes', 'client-interactions.md'), generateClientInteractionsRecipe(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'handlebars-prompts.md'), generateHandlebarsPrompts(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'app-package-patterns.md'), generateAppPackagePatterns(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'package-types.md'), generatePackageTypes(), 'utf8');

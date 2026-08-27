@@ -12,6 +12,8 @@ const expectedDocs = [
     'package-dashboards.md',
     'package-processes.md',
     'package-types.md',
+    'recipes/client-interactions.md',
+    'recipes/ui-components.md',
     'store-objects.md',
     'tool-server-resource.md',
     'ui-interfaces.d.ts',
@@ -26,6 +28,14 @@ test('ships the generated app-development references', async () => {
     const frontendImports = await readFile(join(appgenDocsRoot, 'frontend-imports.md'), 'utf8');
     assert.match(frontendImports, /## Runtime CDN Imports/);
     assert.match(frontendImports, /documentation synchronizer replaces this section/);
+
+    const uiRecipe = await readFile(join(appgenDocsRoot, 'recipes', 'ui-components.md'), 'utf8');
+    assert.match(uiRecipe, /<TBody columns=\{2\} isLoading=\{isLoading\}>/);
+    assert.match(uiRecipe, /TableHeaderCell/);
+
+    const clientRecipe = await readFile(join(appgenDocsRoot, 'recipes', 'client-interactions.md'), 'utf8');
+    assert.match(clientRecipe, /client\.interactions\.list\(\)/);
+    assert.match(clientRecipe, /Promise<InteractionRef\[\]>/);
 
     const storeObjects = await readFile(join(appgenDocsRoot, 'store-objects.md'), 'utf8');
     assert.match(storeObjects, /Every `objects\.create` payload requires a top-level `name`/);
