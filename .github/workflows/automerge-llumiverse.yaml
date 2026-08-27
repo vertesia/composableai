@@ -126,11 +126,13 @@ jobs:
             exit 0
           fi
 
-          # A llumiverse sync PR only ever touches the submodule gitlink and the
-          # lockfile. Anything else means the branch was tampered with.
-          disallowed_files="$(gh pr diff "$pr_url" --repo "$REPO" --name-only | grep -vE '(^|/)(llumiverse|pnpm-lock\.yaml)$' || true)"
+          # A llumiverse sync PR only ever touches the submodule gitlink, the lockfile, and the
+          # @vertesia/common schema artifacts regenerated from that submodule. Anything else means
+          # the branch was tampered with. Keep this list in sync with generated_schema_paths in
+          # .github/workflows/update-git-submodule.yaml.
+          disallowed_files="$(gh pr diff "$pr_url" --repo "$REPO" --name-only | grep -vE '^(llumiverse|pnpm-lock\.yaml|packages/common/src/api-contract/components\.generated\.json|packages/common/src/store/(intake|editing)-policy-schema\.generated\.ts)$' || true)"
           if [[ -n "$disallowed_files" ]]; then
-            echo "Skipping PR #$pr_number: PR changes files outside the llumiverse submodule and lockfile."
+            echo "Skipping PR #$pr_number: PR changes files outside the llumiverse submodule, lockfile, and generated schemas."
             echo "$disallowed_files"
             exit 0
           fi

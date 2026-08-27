@@ -5,6 +5,7 @@ import {
     JSONSchemaSchema,
     ModalitiesSchema,
     ModelOptionsSchema,
+    PromptCacheDiagnosticSchema,
     PromptRoleSchema,
     StatelessExecutionOptionsSchema,
     ToolDefinitionSchema,
@@ -25,6 +26,7 @@ import { ProjectRefSchema } from './apikey.js';
 import { ExecutionEnvironmentRefSchema } from './environment.js';
 import { AccountRefSchema } from './invites.js';
 import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
 /**
@@ -405,6 +407,7 @@ export const PromptTemplateSchema = z
         name: z.string(),
         status: PromptStatusSchema,
         version: z.number(),
+        edit_revision: EditRevisionSchema,
         // The record this one was derived from. On a published version it is the draft it was
         // published from; on a fork it is the prompt that was forked, and the fork is itself a
         // draft. So `parent` alone does not tell you which kind of record this is — read `status`.
@@ -428,7 +431,15 @@ export const PromptTemplateSchema = z
 // The two payloads are projections of `PromptTemplate`, so they are derived from its canonical Zod
 // schema here. Leaving them as TypeScript utility types would give the generator only aliases with
 // no runtime properties to publish.
-const SERVER_OWNED_PROMPT_FIELDS = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'project'] as const;
+const SERVER_OWNED_PROMPT_FIELDS = [
+    'id',
+    'edit_revision',
+    'created_at',
+    'updated_at',
+    'created_by',
+    'updated_by',
+    'project',
+] as const;
 const SERVER_OWNED_PROMPT_FIELD_KEYS = Object.fromEntries(
     SERVER_OWNED_PROMPT_FIELDS.map((field) => [field, true as const]),
 ) as Record<(typeof SERVER_OWNED_PROMPT_FIELDS)[number], true>;
@@ -452,6 +463,7 @@ export const PromptTemplateCreatePayloadSchema = PromptTemplateSchema.pick({
 
 export const PromptTemplateUpdatePayloadSchema = PromptTemplateSchema.omit(SERVER_OWNED_PROMPT_FIELD_KEYS)
     .partial()
+    .extend({ expected_edit_revision: ExpectedEditRevisionSchema })
     .meta({ id: 'PromptTemplateUpdatePayload' });
 
 export const CachePolicySchema = z
@@ -900,6 +912,13 @@ export const PromptTemplateRefSchema = z
     })
     .meta({ id: 'PromptTemplateRef' });
 
+// Interaction writes may carry a populated prompt copied from an interaction response. New clients
+// preserve its revision while legacy clients never sent one, so the embedded request shape accepts
+// both. The standalone PromptTemplate response keeps the revision required.
+export const InteractionPromptTemplateInputSchema = PromptTemplateSchema.extend({
+    edit_revision: EditRevisionSchema.optional(),
+}).meta({ id: 'InteractionPromptTemplateInput' });
+
 export const RunSourceSchema = z
     .strictObject({
         type: RunSourceTypesSchema,
@@ -918,6 +937,12 @@ export const PromptSegmentDefSchema = z
         configuration: z.unknown().optional(),
     })
     .meta({ id: 'PromptSegmentDef' });
+
+export const InteractionPromptSegmentInputSchema = PromptSegmentDefSchema.extend({
+    template: z
+        .union([z.string(), PromptTemplateSchema, InteractionPromptTemplateInputSchema, PromptTemplateRefSchema])
+        .optional(),
+}).meta({ id: 'InteractionPromptSegmentInput' });
 
 export const InteractionEndpointSchema = z
     .strictObject({
@@ -946,7 +971,7 @@ export const InteractionCreatePayloadSchema = z
         test_data: JSONObjectSchema.optional(),
         interaction_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
         cache_policy: CachePolicySchema.optional(),
-        prompts: z.array(PromptSegmentDefSchema),
+        prompts: z.array(InteractionPromptSegmentInputSchema),
         last_published_at: z.string().meta({ format: 'date-time' }).optional(),
         name: z.string(),
         description: z.string().optional(),
@@ -970,6 +995,7 @@ export const InteractionCreatePayloadSchema = z
 export const InteractionSchema = z
     .strictObject({
         id: z.string(),
+        edit_revision: EditRevisionSchema,
         name: z.string(),
         endpoint: z.string(),
         description: z.string().optional(),
@@ -1183,6 +1209,7 @@ export const PromptSegmentRef_PromptTemplateRefSchema = z
 
 export const InteractionUpdatePayloadSchema = z
     .strictObject({
+        expected_edit_revision: ExpectedEditRevisionSchema,
         status: InteractionStatusSchema.optional(),
         parent: z.string().optional(),
         visibility: InteractionVisibilitySchema.optional(),
@@ -1190,7 +1217,7 @@ export const InteractionUpdatePayloadSchema = z
         test_data: JSONObjectSchema.optional(),
         interaction_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
         cache_policy: CachePolicySchema.optional(),
-        prompts: z.array(PromptSegmentDefSchema).optional(),
+        prompts: z.array(InteractionPromptSegmentInputSchema).optional(),
         last_published_at: z.string().meta({ format: 'date-time' }).optional(),
         name: z.string().optional(),
         endpoint: z.string().optional(),
@@ -1408,6 +1435,7 @@ export const ExecutionRunSchema: z.ZodType = z
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
+        prompt_cache_diagnostics: z.array(PromptCacheDiagnosticSchema).optional(),
         chunks: z.number().optional(),
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -1466,6 +1494,7 @@ export const InteractionExecutionResultSchema = z
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
+        prompt_cache_diagnostics: z.array(PromptCacheDiagnosticSchema).optional(),
         chunks: z.number().optional(),
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -1598,6 +1627,7 @@ export const ExecutionRunRefSchema = z
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
+        prompt_cache_diagnostics: z.array(PromptCacheDiagnosticSchema).optional(),
         chunks: z.number().optional(),
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -1760,7 +1790,7 @@ export const ConversationStateSchema = z
             .array(z.string())
             .meta({
                 description:
-                    'Names of skills whose full instructions are already present in the live conversation history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill re-activation idempotent: a repeat call returns a short "already active" acknowledgement instead of re-dumping the instructions.\n\nUnlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked), this list is reset when a checkpoint compacts the conversation, because the summary no longer carries the skill instructions and the next call must re-deliver them.',
+                    'Names of skills whose full instructions are already present in the live conversation history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill re-activation idempotent: a repeat call returns a short "already active" acknowledgement instead of re-dumping the instructions.\n\nUnlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked), this list tracks only instructions present in the current compacted conversation. Checkpoints restore active builtin skill bodies and preserve their names; skills that cannot be restored are removed so the next call can re-deliver them.',
             })
             .optional(),
         initialization_call_ids: z
@@ -1848,6 +1878,7 @@ export const UpdateExecutionRunPayloadSchema = z
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
+        prompt_cache_diagnostics: z.array(PromptCacheDiagnosticSchema).optional(),
         chunks: z.number().optional(),
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }).optional(),
@@ -2063,12 +2094,36 @@ export const AsyncInteractionExecutionPayloadSchema = z
     })
     .meta({ id: 'AsyncInteractionExecutionPayload' });
 
+export const ConversationEnrichmentFields = {
+    title: z.string().min(1).meta({ description: 'Caller-provided conversation title.' }).optional(),
+    topic: z
+        .string()
+        .min(1)
+        .meta({ description: 'Caller-provided conversation topic. Suppresses automatic topic generation.' })
+        .optional(),
+    generate_topic: z
+        .boolean()
+        .meta({
+            description:
+                'Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation.',
+        })
+        .optional(),
+    generate_lessons: z
+        .boolean()
+        .meta({
+            description:
+                'Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled.',
+        })
+        .optional(),
+};
+
 export const AsyncConversationExecutionPayloadSchema = z
     .object({
         interaction: z.string().meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
+        ...ConversationEnrichmentFields,
         app_version: z
             .string()
             .meta({
@@ -2405,6 +2460,8 @@ export const ExecutionResponseSchema = z
     .strictObject({
         result: z.array(CompletionResultSchema),
         token_usage: ExecutionTokenUsageSchema.optional(),
+        service_tier: z.string().meta({ description: 'Processing tier actually used by the provider' }).optional(),
+        prompt_cache_diagnostic: PromptCacheDiagnosticSchema.optional(),
         tool_use: z.array(ToolUseSchema).optional(),
         finish_reason: z.string().optional(),
         error: z

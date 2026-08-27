@@ -79,6 +79,29 @@ const processRun = {
 };
 
 describe('Zeno read-side response contracts', () => {
+    it('accepts conversation metadata and enrichment controls when creating an agent run', () => {
+        expect(
+            validateApiRequest('CreateAgentRunPayload', {
+                interaction: 'sys:generic_question',
+                title: 'Manual title',
+                topic: 'Manual topic',
+                generate_topic: false,
+                generate_lessons: false,
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiRequest('RecordAgentRunPayload', {
+                interaction: 'sys:generic_question',
+                workflow_id: 'workflow-1',
+                first_workflow_run_id: 'run-1',
+                title: 'Manual title',
+                topic: 'Manual topic',
+                generate_topic: false,
+                generate_lessons: false,
+            }).valid,
+        ).toBe(true);
+    });
+
     it('keeps the corresponding write contracts strict', () => {
         expect(
             validateApiRequest('CreateAgentRunPayload', {
@@ -96,6 +119,17 @@ describe('Zeno read-side response contracts', () => {
                 definition: { process: 'Legacy', initial: 'start', context: {}, nodes: {} },
             }).valid,
         ).toBe(false);
+    });
+
+    it('accepts runtime model and effort status updates', () => {
+        expect(
+            validateApiRequest('UpdateAgentRunStatusPayload', {
+                model: 'gpt-5.6-sol',
+                effort: 'xhigh',
+            }).valid,
+        ).toBe(true);
+        expect(validateApiRequest('UpdateAgentRunStatusPayload', { effort: null }).valid).toBe(true);
+        expect(validateApiRequest('UpdateAgentRunStatusPayload', { effort: 'unbounded' }).valid).toBe(false);
     });
 
     it('accepts normalized autonomous runs and projected refs', () => {
@@ -148,6 +182,30 @@ describe('Zeno read-side response contracts', () => {
             validateApiResponse('ObjectSearchResponse', {
                 results: [{ id: contentObject.id, score: 1 }],
                 facets: { total: 1 },
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('accepts display metadata on child-workflow steps', () => {
+        expect(
+            validateApiResponse('DSLWorkflowDefinitionResponse', {
+                id: 'workflow-1',
+                name: 'Parent workflow',
+                edit_revision: 1,
+                created_by: 'user-1',
+                updated_by: 'user-1',
+                created_at: timestamp,
+                updated_at: timestamp,
+                vars: {},
+                spec_format: 'steps',
+                steps: [
+                    {
+                        type: 'workflow',
+                        name: 'childWorkflow',
+                        title: 'Review documents',
+                        description: 'Runs the review child workflow',
+                    },
+                ],
             }).valid,
         ).toBe(true);
     });
@@ -264,6 +322,7 @@ describe('Zeno read-side response contracts', () => {
                     id: '64b000000000000000000008',
                     account: '64b000000000000000000003',
                     project: '64b000000000000000000004',
+                    edit_revision: 1,
                     name: 'Legacy process',
                     status: 'draft',
                     version: 1,

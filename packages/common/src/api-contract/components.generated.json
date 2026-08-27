@@ -3986,6 +3986,16 @@
         "type": "string",
         "description": "Stable provider-side routing key for automatic prompt caching."
       },
+      "prompt_cache_mode": {
+        "$ref": "#/components/schemas/PromptCacheMode",
+        "description": "Controls provider-side explicit caching: auto falls back safely, off disables it, and required surfaces cache preparation failures for diagnostics."
+      },
+      "prompt_cache_ttl_seconds": {
+        "type": "integer",
+        "minimum": 60,
+        "maximum": 9007199254740991,
+        "description": "Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; Vertex Gemini requires at least 60 seconds."
+      },
       "prompt_cache_schema_suffix": {
         "type": "boolean",
         "description": "Put the result schema after the cached prefix; Vertesia still validates the returned JSON against it."
@@ -4011,6 +4021,14 @@
       "RUN_AND_INTERACTION_CONFIG",
       "RUN_CONFIG_ONLY",
       "INTERACTION_CONFIG_ONLY"
+    ]
+  },
+  "PromptCacheMode": {
+    "type": "string",
+    "enum": [
+      "auto",
+      "off",
+      "required"
     ]
   },
   "IntakeVisionDetail": {
@@ -5056,9 +5074,10 @@
         "type": "string",
         "enum": [
           "shadow",
-          "css"
+          "css",
+          "iframe"
         ],
-        "description": "The isolation strategy. If not specified it defaults to shadow.\n- shadow - use Shadow DOM to fully isolate the plugin from the host.\n- css - inject the plugin's styles (minus the preflight) into the host document;   lighter but styles may conflict with the host."
+        "description": "The isolation strategy. If not specified it defaults to shadow.\n- shadow - use Shadow DOM to fully isolate the plugin from the host.\n- css - inject the plugin's styles (minus the preflight) into the host document; lighter but styles may conflict with the host.\n- iframe - load a standalone application in a sandboxed iframe so it owns its JavaScript and dependency graph."
       },
       "css_rebuild": {
         "type": "boolean",
@@ -5912,6 +5931,9 @@
       },
       "refresh_token": {
         "type": "string"
+      },
+      "refresh_token_expires_in": {
+        "type": "number"
       },
       "id_token": {
         "type": "string"
@@ -7753,6 +7775,16 @@
         "type": "string",
         "description": "Stable identity for prompt caching. Providers with cache routing keys receive the value directly; providers with cache breakpoints use its presence to cache the stable prefix before the final dynamic block. Providers with fully implicit caching still require an identical prompt prefix."
       },
+      "prompt_cache_mode": {
+        "$ref": "#/components/schemas/PromptCacheMode",
+        "description": "Controls provider-side explicit caches — cache resources the driver creates and reuses (e.g. Vertex cachedContents). \"auto\" (default) caches the static prefix whenever prompt_cache_key is set; \"off\" never creates or uses a cache resource and leaves the provider payload unchanged; \"required\" behaves like auto but surfaces cache preparation failures instead of falling back. Implicit caching and cache breakpoints are unaffected."
+      },
+      "prompt_cache_ttl_seconds": {
+        "type": "integer",
+        "minimum": 60,
+        "maximum": 9007199254740991,
+        "description": "Lifetime, in seconds, of a provider-side cache resource created for this execution. Defaults to 1800 (30 minutes) and must be at least 60 seconds. Ignored by providers without an explicit cache API."
+      },
       "httpTimeout": {
         "$ref": "#/components/schemas/HttpTimeoutOptions",
         "description": "Per-call HTTP timeouts for upstream LLM-provider calls. These override the driver's default `DriverOptions.httpTimeout` for this execution only."
@@ -7896,6 +7928,109 @@
       },
       "version": {
         "type": "number"
+      },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
+      "parent": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "test_data": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "script": {
+        "type": "string"
+      },
+      "project": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/ProjectRef"
+          }
+        ]
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "last_published_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "role",
+      "content",
+      "content_type",
+      "id",
+      "name",
+      "status",
+      "version",
+      "edit_revision",
+      "project",
+      "created_by",
+      "updated_by",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false
+  },
+  "InteractionPromptTemplateInput": {
+    "type": "object",
+    "properties": {
+      "role": {
+        "$ref": "#/components/schemas/PromptRole"
+      },
+      "content": {
+        "type": "string"
+      },
+      "content_type": {
+        "$ref": "#/components/schemas/TemplateType"
+      },
+      "inputSchema": {
+        "$ref": "#/components/schemas/JSONSchema"
+      },
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/PromptStatus"
+      },
+      "version": {
+        "type": "number"
+      },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
       },
       "parent": {
         "type": "string"
@@ -8054,6 +8189,12 @@
       "last_published_at": {
         "type": "string",
         "format": "date-time"
+      },
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
       }
     },
     "additionalProperties": false
@@ -8124,6 +8265,38 @@
           },
           {
             "$ref": "#/components/schemas/PromptTemplate"
+          },
+          {
+            "$ref": "#/components/schemas/PromptTemplateRef"
+          }
+        ]
+      },
+      "configuration": {}
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "InteractionPromptSegmentInput": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/PromptSegmentDefType"
+      },
+      "template": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/PromptTemplate"
+          },
+          {
+            "$ref": "#/components/schemas/InteractionPromptTemplateInput"
           },
           {
             "$ref": "#/components/schemas/PromptTemplateRef"
@@ -8277,6 +8450,12 @@
       "id": {
         "type": "string"
       },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "name": {
         "type": "string"
       },
@@ -8398,6 +8577,7 @@
     },
     "required": [
       "id",
+      "edit_revision",
       "name",
       "endpoint",
       "project",
@@ -8787,7 +8967,7 @@
       "prompts": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/PromptSegmentDef"
+          "$ref": "#/components/schemas/InteractionPromptSegmentInput"
         }
       },
       "last_published_at": {
@@ -8861,6 +9041,12 @@
   "InteractionUpdatePayload": {
     "type": "object",
     "properties": {
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
+      },
       "status": {
         "$ref": "#/components/schemas/InteractionStatus"
       },
@@ -8892,7 +9078,7 @@
       "prompts": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/PromptSegmentDef"
+          "$ref": "#/components/schemas/InteractionPromptSegmentInput"
         }
       },
       "last_published_at": {
@@ -10539,7 +10725,7 @@
         "items": {
           "type": "string"
         },
-        "description": "Names of skills whose full instructions are already present in the live conversation history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill re-activation idempotent: a repeat call returns a short \"already active\" acknowledgement instead of re-dumping the instructions.\n\nUnlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked), this list is reset when a checkpoint compacts the conversation, because the summary no longer carries the skill instructions and the next call must re-deliver them."
+        "description": "Names of skills whose full instructions are already present in the live conversation history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill re-activation idempotent: a repeat call returns a short \"already active\" acknowledgement instead of re-dumping the instructions.\n\nUnlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked), this list tracks only instructions present in the current compacted conversation. Checkpoints restore active builtin skill bodies and preserve their names; skills that cannot be restored are removed so the next call can re-deliver them."
       },
       "initialization_call_ids": {
         "type": "array",
@@ -10685,6 +10871,70 @@
     "$ref": "#/components/schemas/InteractionRef",
     "description": "Interaction reference. Stored interactions may be populated as full Interaction documents; in-code interactions are represented as refs whose `id` is the namespaced interaction id."
   },
+  "PromptCacheDiagnostic": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "$ref": "#/components/schemas/PromptCachePath"
+      },
+      "explicit_cache_used": {
+        "type": "boolean"
+      },
+      "content_hash_prefix": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "scope": {
+        "type": "string"
+      },
+      "cacheable_part_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "preparation_latency_ms": {
+        "type": "number",
+        "minimum": 0
+      },
+      "wait_latency_ms": {
+        "type": "number",
+        "minimum": 0
+      },
+      "provider_status": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "path",
+      "explicit_cache_used",
+      "model",
+      "preparation_latency_ms"
+    ],
+    "description": "Safe diagnostic for one provider-side explicit prompt-cache attempt. It never contains prompt contents, images, credentials, or full provider resource names."
+  },
+  "PromptCachePath": {
+    "type": "string",
+    "enum": [
+      "disabled",
+      "no_key",
+      "local_memo_hit",
+      "distributed_registry_hit",
+      "provider_list_recovery",
+      "created",
+      "waited_for_creator",
+      "refreshed",
+      "fallback_quota",
+      "fallback_provider_error",
+      "fallback_coordination_unavailable",
+      "fallback_wait_timeout",
+      "minimum_token_rejection",
+      "unusable_resource_recreated"
+    ]
+  },
   "InteractionExecutionError": {
     "type": "object",
     "properties": {
@@ -10781,6 +11031,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -10916,6 +11172,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -11055,6 +11317,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -11690,6 +11958,12 @@
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
       },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
+      },
       "chunks": {
         "type": "number"
       },
@@ -11838,6 +12112,12 @@
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
       },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
+      },
       "chunks": {
         "type": "number"
       },
@@ -11967,6 +12247,12 @@
       "prompt": {},
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
       },
       "chunks": {
         "type": "number"
@@ -12115,6 +12401,12 @@
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
       },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
+      },
       "chunks": {
         "type": "number"
       },
@@ -12262,6 +12554,12 @@
       "token_use": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
       },
+      "prompt_cache_diagnostics": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptCacheDiagnostic"
+        }
+      },
       "chunks": {
         "type": "number"
       },
@@ -12364,6 +12662,24 @@
       "interaction": {
         "type": "string",
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation title."
+      },
+      "topic": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation topic. Suppresses automatic topic generation."
+      },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
       },
       "app_version": {
         "type": "string",
@@ -13159,6 +13475,13 @@
       },
       "token_usage": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
+      },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier actually used by the provider"
+      },
+      "prompt_cache_diagnostic": {
+        "$ref": "#/components/schemas/PromptCacheDiagnostic"
       },
       "tool_use": {
         "type": "array",
@@ -14784,6 +15107,16 @@
       "prompt_cache_key": {
         "type": "string",
         "description": "Stable provider-side routing key for automatic prompt caching."
+      },
+      "prompt_cache_mode": {
+        "$ref": "#/components/schemas/PromptCacheMode",
+        "description": "Controls provider-side explicit caching: auto falls back safely, off disables it, and required surfaces cache preparation failures for diagnostics."
+      },
+      "prompt_cache_ttl_seconds": {
+        "type": "integer",
+        "minimum": 60,
+        "maximum": 9007199254740991,
+        "description": "Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; Vertex Gemini requires at least 60 seconds."
       },
       "prompt_cache_schema_suffix": {
         "type": "boolean",
@@ -16829,7 +17162,7 @@
     "properties": {
       "app_id": {
         "type": "string",
-        "description": "App id / package name to create. It is normalized to the same slug rules used by"
+        "description": "Package name for the new app to create and scaffold. This is not the id of an existing app."
       },
       "title": {
         "type": "string"
@@ -16850,6 +17183,36 @@
     },
     "required": [
       "app_id"
+    ],
+    "additionalProperties": false
+  },
+  "StartAppDevelopmentTaskRequest": {
+    "type": "object",
+    "properties": {
+      "prompt": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Development request passed to the App Builder parent."
+      },
+      "environment": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Execution environment id for the App Builder run."
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Model id for the App Builder run."
+      },
+      "build_version": {
+        "type": "boolean",
+        "description": "Create one immutable app version after validation. Defaults to false."
+      }
+    },
+    "required": [
+      "prompt",
+      "environment",
+      "model"
     ],
     "additionalProperties": false
   },
@@ -17770,7 +18133,7 @@
       },
       "agent_run": {
         "$ref": "#/components/schemas/AgentRunSearchHit",
-        "description": "Latest Studio Assistant run started for this task branch."
+        "description": "Latest App Builder parent run started for this task branch."
       }
     },
     "required": [
@@ -18725,6 +19088,17 @@
       "webhook_secret_hint": {
         "type": "string"
       },
+      "webhook_secret": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "events": {
         "type": "array",
         "items": {
@@ -18743,7 +19117,8 @@
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "webhook_secret"
     ],
     "additionalProperties": false,
     "description": "Configuration for ask_user webhook notifications. Sends webhooks when agents call ask_user and when users respond."
@@ -18763,6 +19138,17 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "email_domain": {
         "type": "string",
         "description": "Domain for email (both sending and receiving). Must be verified in Resend."
@@ -18776,6 +19162,17 @@
       },
       "webhook_secret_hint": {
         "type": "string"
+      },
+      "webhook_secret": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "allowed_sender_domains": {
         "type": "array",
@@ -18796,7 +19193,9 @@
     "required": [
       "integration",
       "enabled",
-      "email_domain"
+      "api_key",
+      "email_domain",
+      "webhook_secret"
     ],
     "additionalProperties": false
   },
@@ -18814,11 +19213,23 @@
       },
       "api_key_hint": {
         "type": "string"
+      },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -18836,11 +19247,23 @@
       },
       "api_key_hint": {
         "type": "string"
+      },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -18859,13 +19282,25 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "url": {
         "type": "string"
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -18915,13 +19350,25 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "url": {
         "type": "string"
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -19736,6 +20183,12 @@
   "CompositeAppConfig": {
     "type": "object",
     "properties": {
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "id": {
         "type": "string",
         "description": "The unique identifier for this CompositeApp configuration Undefined if the configuration doesn't exists yet."
@@ -19814,6 +20267,7 @@
       }
     },
     "required": [
+      "edit_revision",
       "project",
       "apps"
     ],
@@ -19823,6 +20277,12 @@
   "CompositeAppConfigPayload": {
     "type": "object",
     "properties": {
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
+      },
       "card": {
         "$ref": "#/components/schemas/CompositeAppCardOverrides",
         "description": "Card display overrides (includes visibility)"
@@ -20401,9 +20861,151 @@
     ],
     "additionalProperties": false
   },
+  "UpdateAppPayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app)."
+      },
+      "visibility": {
+        "type": "string",
+        "enum": [
+          "public",
+          "private",
+          "vertesia"
+        ],
+        "description": "Visibility level of the app:\n- \"public\": visible to all accounts\n- \"private\": visible only to the owning account\n- \"vertesia\": visible only to Vertesia team members (any project)"
+      },
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "publisher": {
+        "type": "string"
+      },
+      "icon": {
+        "type": "string",
+        "description": "A svg icon for the app."
+      },
+      "color": {
+        "type": "string",
+        "description": "A color name to be used as the color of the app card (e.g. blue, red, green, etc.) If not specified a random color will be picked."
+      },
+      "preview_screenshot": {
+        "type": "object",
+        "properties": {
+          "agent_run_id": {
+            "type": "string",
+            "description": "Agent run id whose artifact storage holds the screenshot."
+          },
+          "artifact": {
+            "type": "string",
+            "description": "Artifact path within that storage, e.g. \"preview-checks/app-preview-<ts>.png\"."
+          }
+        },
+        "required": [
+          "agent_run_id",
+          "artifact"
+        ],
+        "additionalProperties": false,
+        "description": "Optional preview screenshot for the app-management UI, captured by the builder during a build/QA run. Resolved client-side from the owning agent run's artifact storage, so it carries both the run id and the artifact path."
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "beta",
+          "stable",
+          "deprecated"
+        ]
+      },
+      "ui": {
+        "$ref": "#/components/schemas/AppUIConfig",
+        "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "tool_collections": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolCollectionObject"
+        },
+        "description": "A list of tool collections endpoints to be used by this app. Prefer using endpoint over tool_collections."
+      },
+      "oauth_providers": {
+        "$ref": "#/components/schemas/MCPOAuthConfigMap",
+        "description": "Named OAuth providers shared across multiple MCP tool collections. Keys must be kebab-case identifiers. Each value is an MCPOAuthConfig blueprint. Collections reference a provider via MCPToolCollectionObject.oauth_provider. One OAuth provider is created per provider at install time; all referencing collections share that app via AppInstallation.provider_bindings."
+      },
+      "interactions": {
+        "type": "string",
+        "description": "An URL providing interactions definitions in JSON format. The URL must provide 2 endpoints: 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[]) 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction. This feature is for advanced composition of interactions. Prefer using endpoint."
+      },
+      "settings_schema": {
+        "deprecated": true,
+        "x-deprecated-message": "Use endpoint to provide settings_schema instead",
+        "$ref": "#/components/schemas/JSONSchema",
+        "description": "A JSON chema for the app installation settings.\n\nDeprecated: Use endpoint to provide settings_schema instead"
+      },
+      "capabilities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppCapabilities"
+        },
+        "description": "Describe the capabiltities of this app - which kind of contributions it provides."
+      },
+      "endpoint": {
+        "type": "string",
+        "description": "The app endpoint URL This URL should return a JSON object describing the contributions provided by the app. The object shape must satisfies AppPackage interface. The endpoint must support GET method and a `scope` parameter to filter which resources are included in the returned AppPackage: The supported scope values are:\n- ui\n- tools\n- interactions\n- types\n- processes\n- templates\n- dashboards\n- settings\n- all (the default if no scope is provided)  You can also use comma-separated values to combine scopes (e.g. \"ui,tools\").\n\nExample:\n- ?scope=ui,tools - returns only the UI configuration"
+      },
+      "endpoint_overrides": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Optional endpoint overrides keyed by environment name. When resolving the app endpoint, if the current environment name matches a key, the corresponding URL is used instead of the main `endpoint`. Only dev environment names are allowed as keys (starting with \"desktop-\" or \"dev-\")."
+      },
+      "version": {
+        "type": "string",
+        "description": "Optional app version string (e.g. \"1.0.0\") — informational."
+      },
+      "source": {
+        "$ref": "#/components/schemas/AppSourceConfig",
+        "description": "Source repository configuration for apps generated and maintained through AppGen. Branches are mutable development lanes; immutable app versions record their exact source commit in AppVersionRecord.source_commit and AppVersionRecord.storage.source_git."
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Free-form tags used for classification and filtering. Platform apps carry `\"system\"` so UIs can skip install/uninstall/manage-permission controls that don't apply to synthetic installations."
+      },
+      "access_control": {
+        "$ref": "#/components/schemas/AppAccessControl",
+        "description": "Access control policy for the app. Defaults to 'all' (ACE-gated everywhere) when undefined. See  {@link  AppAccessControl }  for semantics. May be overridden on the AppInstallation."
+      },
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
+      }
+    },
+    "required": [
+      "name",
+      "visibility",
+      "title",
+      "description",
+      "publisher",
+      "status"
+    ],
+    "additionalProperties": false
+  },
   "AppManifest": {
     "type": "object",
     "properties": {
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "name": {
         "type": "string",
         "description": "The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app)."
@@ -20535,6 +21137,7 @@
       }
     },
     "required": [
+      "edit_revision",
       "name",
       "visibility",
       "title",
@@ -23502,6 +24105,12 @@
         "type": "string",
         "description": "Unique identifier for the object"
       },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "name": {
         "type": "string",
         "description": "Human-readable name or title"
@@ -23565,6 +24174,7 @@
     },
     "required": [
       "id",
+      "edit_revision",
       "name",
       "updated_by",
       "created_by",
@@ -23645,6 +24255,12 @@
       },
       "updated_at": {
         "type": "string"
+      },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Stored-resource revision. Omitted for app-contributed in-code types."
       }
     },
     "required": [
@@ -23758,10 +24374,16 @@
           "type": "string"
         },
         "description": "Optional array of categorization tags"
+      },
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
       }
     },
     "additionalProperties": false,
-    "description": "Fields to change on a content object type. Every field is optional — only the ones present are written, and the rest are left as they are."
+    "description": "Fields to change on a content object type. Only fields present are written; expected_edit_revision prevents overwriting a concurrent edit."
   },
   "ContentObjectType": {
     "type": "object",
@@ -23769,6 +24391,12 @@
       "id": {
         "type": "string",
         "description": "Unique identifier for the object"
+      },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
       },
       "name": {
         "type": "string",
@@ -23833,6 +24461,7 @@
     },
     "required": [
       "id",
+      "edit_revision",
       "name",
       "updated_by",
       "created_by",
@@ -24077,10 +24706,18 @@
       "type": {
         "type": "string",
         "const": "workflow",
-        "description": "The type fo the step. If not set defaults to \"activity\""
+        "description": "Identifies this step as a child workflow"
       },
       "name": {
         "type": "string"
+      },
+      "title": {
+        "type": "string",
+        "description": "Title of the child workflow to be displayed in the UI workflow builder"
+      },
+      "description": {
+        "type": "string",
+        "description": "Description of the child workflow displayed in the UI workflow builder"
       },
       "vars": {
         "type": "object",
@@ -24438,6 +25075,12 @@
         "type": "string",
         "description": "Unique identifier for the object"
       },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "updated_by": {
         "type": "string",
         "description": "Identifier of the user who last modified the object"
@@ -24463,6 +25106,7 @@
       "name",
       "vars",
       "id",
+      "edit_revision",
       "updated_by",
       "created_by",
       "created_at",
@@ -24517,6 +25161,12 @@
         "type": "string",
         "description": "Unique identifier for the object"
       },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "updated_by": {
         "type": "string",
         "description": "Identifier of the user who last modified the object"
@@ -24549,6 +25199,7 @@
       "name",
       "vars",
       "id",
+      "edit_revision",
       "updated_by",
       "created_by",
       "created_at",
@@ -24705,6 +25356,149 @@
       "mapping": {
         "steps": "#/components/schemas/WorkflowDefinitionPayloadWithSteps",
         "activities": "#/components/schemas/WorkflowDefinitionPayloadWithActivities"
+      }
+    },
+    "type": "object",
+    "required": [
+      "spec_format"
+    ]
+  },
+  "UpdateWorkflowDefinitionPayloadWithSteps": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "vars": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "options": {
+        "$ref": "#/components/schemas/DSLActivityOptions"
+      },
+      "result": {
+        "type": "string"
+      },
+      "debug_mode": {
+        "type": "boolean"
+      },
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
+      },
+      "steps": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DSLWorkflowStep"
+        }
+      },
+      "activities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DSLActivitySpec"
+        },
+        "deprecated": true,
+        "x-deprecated-message": "use steps instead",
+        "description": "Deprecated: use steps instead"
+      },
+      "spec_format": {
+        "type": "string",
+        "const": "steps"
+      }
+    },
+    "required": [
+      "name",
+      "vars",
+      "steps",
+      "spec_format"
+    ]
+  },
+  "UpdateWorkflowDefinitionPayloadWithActivities": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "vars": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "options": {
+        "$ref": "#/components/schemas/DSLActivityOptions"
+      },
+      "result": {
+        "type": "string"
+      },
+      "debug_mode": {
+        "type": "boolean"
+      },
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
+      },
+      "steps": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DSLWorkflowStep"
+        }
+      },
+      "activities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DSLActivitySpec"
+        },
+        "deprecated": true,
+        "x-deprecated-message": "use steps instead",
+        "description": "Deprecated: use steps instead"
+      },
+      "spec_format": {
+        "type": "string",
+        "const": "activities"
+      }
+    },
+    "required": [
+      "name",
+      "vars",
+      "activities",
+      "spec_format"
+    ]
+  },
+  "UpdateWorkflowDefinitionPayload": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/UpdateWorkflowDefinitionPayloadWithSteps"
+      },
+      {
+        "$ref": "#/components/schemas/UpdateWorkflowDefinitionPayloadWithActivities"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "spec_format",
+      "mapping": {
+        "steps": "#/components/schemas/UpdateWorkflowDefinitionPayloadWithSteps",
+        "activities": "#/components/schemas/UpdateWorkflowDefinitionPayloadWithActivities"
       }
     },
     "type": "object",
@@ -25206,6 +26000,12 @@
       "id": {
         "type": "string"
       },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "account": {
         "type": "string"
       },
@@ -25253,6 +26053,7 @@
     },
     "required": [
       "id",
+      "edit_revision",
       "account",
       "project",
       "name",
@@ -25275,6 +26076,12 @@
   "UpdateProcessDefinitionPayload": {
     "type": "object",
     "properties": {
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
+      },
       "name": {
         "type": "string"
       },
@@ -27254,6 +28061,12 @@
         "type": "string",
         "description": "Unique identifier for the object"
       },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "name": {
         "type": "string",
         "description": "Human-readable name or title"
@@ -27294,6 +28107,7 @@
     },
     "required": [
       "id",
+      "edit_revision",
       "name",
       "updated_by",
       "created_by",
@@ -27310,6 +28124,12 @@
       "id": {
         "type": "string",
         "description": "Unique identifier for the object"
+      },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
       },
       "name": {
         "type": "string",
@@ -27386,6 +28206,7 @@
     },
     "required": [
       "id",
+      "edit_revision",
       "name",
       "updated_by",
       "created_by",
@@ -27473,6 +28294,12 @@
   "UpdateWorkflowRulePayload": {
     "type": "object",
     "properties": {
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
+      },
       "match": {
         "type": "object",
         "additionalProperties": true
@@ -28897,6 +29724,902 @@
       "workflow_id",
       "run_kind"
     ]
+  },
+  "ProcessTestRunStatus": {
+    "type": "string",
+    "enum": [
+      "pending",
+      "running",
+      "passed",
+      "failed",
+      "cancelled"
+    ]
+  },
+  "ProcessTestVirtualActor": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "label": {
+        "type": "string"
+      },
+      "refs": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "permissions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Permission"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "refs",
+      "permissions"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestFixtureResult": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "result"
+      },
+      "output": {},
+      "context_update": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "transition_to": {
+        "type": "string"
+      },
+      "skip_node": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestFixtureError": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "error"
+      },
+      "message": {
+        "type": "string"
+      },
+      "retry": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "kind",
+      "message",
+      "retry"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestFixtureResponse": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProcessTestFixtureResult"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestFixtureError"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "result": "#/components/schemas/ProcessTestFixtureResult",
+        "error": "#/components/schemas/ProcessTestFixtureError"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
+  },
+  "ProcessTestNodeFixture": {
+    "type": "object",
+    "properties": {
+      "node": {
+        "type": "string"
+      },
+      "workflow_path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "responses": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestFixtureResponse"
+        }
+      },
+      "guard_facts": {
+        "$ref": "#/components/schemas/JSONObject"
+      }
+    },
+    "required": [
+      "node",
+      "responses"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestHumanAction": {
+    "type": "object",
+    "properties": {
+      "node": {
+        "type": "string"
+      },
+      "workflow_path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "actor": {
+        "type": "string"
+      },
+      "result": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "expect": {
+        "type": "string",
+        "enum": [
+          "accepted",
+          "forbidden"
+        ]
+      }
+    },
+    "required": [
+      "node",
+      "actor",
+      "result",
+      "expect"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestAssertions": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "required_nodes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "forbidden_nodes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "context": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "fixture_calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        }
+      },
+      "context_at_nodes": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/JSONObject"
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "ProcessTestScenario": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "initial_context": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "actors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestVirtualActor"
+        }
+      },
+      "fixtures": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestNodeFixture"
+        }
+      },
+      "human_actions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestHumanAction"
+        }
+      },
+      "assertions": {
+        "$ref": "#/components/schemas/ProcessTestAssertions"
+      },
+      "timeout_seconds": {
+        "default": 30,
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 300
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "initial_context",
+      "actors",
+      "fixtures",
+      "human_actions",
+      "assertions"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestSuite": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "account": {
+        "type": "string"
+      },
+      "project": {
+        "type": "string"
+      },
+      "process_root_id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "scenarios": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "account",
+      "project",
+      "process_root_id",
+      "name",
+      "scenarios",
+      "created_by",
+      "updated_by",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestSuiteArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ProcessTestSuite"
+    }
+  },
+  "CreateProcessTestSuitePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "scenarios": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      }
+    },
+    "required": [
+      "name",
+      "scenarios"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateProcessTestSuitePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "scenarios": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "StartProcessTestRunPayload": {
+    "type": "object",
+    "properties": {
+      "suite_id": {
+        "type": "string"
+      },
+      "process_revision_id": {
+        "type": "string"
+      },
+      "scenario_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "suite_id",
+      "process_revision_id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestStoredSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "stored"
+      },
+      "process_root_id": {
+        "type": "string"
+      },
+      "process_revision_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "process_root_id",
+      "process_revision_id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestResolvedSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "resolved"
+      },
+      "process_id": {
+        "type": "string"
+      },
+      "app_version": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "process_id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestInlineSubject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "inline"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestSubject": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ProcessTestStoredSubject"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestResolvedSubject"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestInlineSubject"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "stored": "#/components/schemas/ProcessTestStoredSubject",
+        "resolved": "#/components/schemas/ProcessTestResolvedSubject",
+        "inline": "#/components/schemas/ProcessTestInlineSubject"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
+  },
+  "ProcessTestTargetById": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "app_version": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestTargetWithDefinition": {
+    "type": "object",
+    "properties": {
+      "definition": {
+        "$ref": "#/components/schemas/ProcessDefinitionBody"
+      }
+    },
+    "required": [
+      "definition"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestTarget": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ProcessTestTargetById"
+      },
+      {
+        "$ref": "#/components/schemas/ProcessTestTargetWithDefinition"
+      }
+    ]
+  },
+  "SubmitProcessTestRunPayload": {
+    "type": "object",
+    "properties": {
+      "process": {
+        "$ref": "#/components/schemas/ProcessTestTarget"
+      },
+      "scenarios": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenario"
+        }
+      }
+    },
+    "required": [
+      "process",
+      "scenarios"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestAssertionResult": {
+    "type": "object",
+    "properties": {
+      "assertion": {
+        "type": "string"
+      },
+      "passed": {
+        "type": "boolean"
+      },
+      "expected": {},
+      "actual": {},
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "assertion",
+      "passed"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestActorDecision": {
+    "type": "object",
+    "properties": {
+      "node": {
+        "type": "string"
+      },
+      "actor": {
+        "type": "string"
+      },
+      "decision": {
+        "type": "string",
+        "enum": [
+          "accepted",
+          "forbidden"
+        ]
+      },
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "node",
+      "actor",
+      "decision"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestCoverage": {
+    "type": "object",
+    "properties": {
+      "nodes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "transitions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "node_percent": {
+        "type": "number"
+      },
+      "transition_percent": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "nodes",
+      "transitions",
+      "node_percent",
+      "transition_percent"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestChildTrace": {
+    "type": "object",
+    "properties": {
+      "workflow_path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "status": {
+        "$ref": "#/components/schemas/ProcessTestRunStatus"
+      },
+      "error": {
+        "type": "string"
+      },
+      "process_state": {
+        "$ref": "#/components/schemas/ProcessState"
+      },
+      "node_history": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NodeHistoryEntry"
+        }
+      },
+      "coverage": {
+        "$ref": "#/components/schemas/ProcessTestCoverage"
+      },
+      "fixture_calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        }
+      },
+      "actor_decisions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestActorDecision"
+        }
+      }
+    },
+    "required": [
+      "workflow_path",
+      "status",
+      "node_history",
+      "coverage",
+      "fixture_calls",
+      "actor_decisions"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestScenarioResult": {
+    "type": "object",
+    "properties": {
+      "scenario_id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "initial_context": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ProcessTestRunStatus"
+      },
+      "error": {
+        "type": "string"
+      },
+      "process_state": {
+        "$ref": "#/components/schemas/ProcessState"
+      },
+      "node_history": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NodeHistoryEntry"
+        }
+      },
+      "assertions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestAssertionResult"
+        }
+      },
+      "fixture_calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        }
+      },
+      "actor_decisions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestActorDecision"
+        }
+      },
+      "coverage": {
+        "$ref": "#/components/schemas/ProcessTestCoverage"
+      },
+      "child_traces": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestChildTrace"
+        }
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "scenario_id",
+      "name",
+      "status",
+      "node_history",
+      "assertions",
+      "fixture_calls",
+      "actor_decisions",
+      "coverage",
+      "child_traces",
+      "started_at"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestRun": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "account": {
+        "type": "string"
+      },
+      "project": {
+        "type": "string"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/ProcessTestSubject"
+      },
+      "process_root_id": {
+        "type": "string"
+      },
+      "process_revision_id": {
+        "type": "string"
+      },
+      "suite_id": {
+        "type": "string"
+      },
+      "definition_hash": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ProcessTestRunStatus"
+      },
+      "stale": {
+        "type": "boolean"
+      },
+      "process_definition_snapshot": {
+        "$ref": "#/components/schemas/ProcessDefinitionBody"
+      },
+      "scenarios": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestScenarioResult"
+        }
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "account",
+      "project",
+      "subject",
+      "definition_hash",
+      "status",
+      "stale",
+      "process_definition_snapshot",
+      "scenarios",
+      "created_by",
+      "created_at"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessTestRunArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ProcessTestRun"
+    }
+  },
+  "ListProcessTestRunsQuery": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      }
+    },
+    "additionalProperties": false
+  },
+  "UpdateProcessTestScenarioPayload": {
+    "type": "object",
+    "properties": {
+      "checkpoint_token": {
+        "type": "string"
+      },
+      "scenario_id": {
+        "type": "string"
+      },
+      "workflow_path": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "status": {
+        "$ref": "#/components/schemas/ProcessTestRunStatus"
+      },
+      "error": {
+        "type": "string"
+      },
+      "process_state": {
+        "$ref": "#/components/schemas/ProcessState"
+      },
+      "node_history": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NodeHistoryEntry"
+        }
+      },
+      "assertions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestAssertionResult"
+        }
+      },
+      "fixture_calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        }
+      },
+      "actor_decisions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessTestActorDecision"
+        }
+      },
+      "coverage": {
+        "$ref": "#/components/schemas/ProcessTestCoverage"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "checkpoint_token",
+      "scenario_id",
+      "workflow_path",
+      "status",
+      "node_history",
+      "assertions",
+      "fixture_calls",
+      "actor_decisions",
+      "coverage",
+      "started_at"
+    ],
+    "additionalProperties": false
   },
   "EventDeliveryQueueFailureSummary": {
     "type": "object",
@@ -30415,6 +32138,14 @@
         "type": "string",
         "description": "Conversation topic (longer description from topic analysis)"
       },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether automatic conversation title/topic generation is enabled for this run."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether automatic lessons generation is enabled for this run."
+      },
       "lessons_learned": {
         "type": "array",
         "items": {
@@ -30670,6 +32401,14 @@
         "type": "string",
         "description": "Conversation topic (longer description from topic analysis)"
       },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether automatic conversation title/topic generation is enabled for this run."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether automatic lessons generation is enabled for this run."
+      },
       "lessons_learned": {
         "type": "array",
         "items": {
@@ -30718,6 +32457,24 @@
       "interaction": {
         "type": "string",
         "description": "Interaction ID or code (e.g. \"sys:generic_question\")."
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation title."
+      },
+      "topic": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation topic. Suppresses automatic topic generation."
+      },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
       },
       "data": {
         "type": "object",
@@ -31571,6 +33328,24 @@
       "interaction": {
         "type": "string"
       },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation title."
+      },
+      "topic": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Caller-provided conversation topic. Suppresses automatic topic generation."
+      },
+      "generate_topic": {
+        "type": "boolean",
+        "description": "Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation."
+      },
+      "generate_lessons": {
+        "type": "boolean",
+        "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
       "parent_run_id": {
         "type": "string"
       },
@@ -31736,6 +33511,20 @@
       },
       "tool_approval_mode": {
         "$ref": "#/components/schemas/AgentToolApprovalMode"
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "effort": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ReasoningEffort"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "archive_state": {
         "$ref": "#/components/schemas/AgentRunArchiveState"
@@ -34400,6 +36189,12 @@
         "type": "string",
         "description": "Unique identifier for the object"
       },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
       "name": {
         "type": "string",
         "description": "Human-readable name or title"
@@ -34470,6 +36265,7 @@
     },
     "required": [
       "id",
+      "edit_revision",
       "name",
       "tags",
       "updated_by",
@@ -34590,6 +36386,12 @@
       "id": {
         "type": "string",
         "description": "Unique identifier for the object"
+      },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
       },
       "name": {
         "type": "string",
@@ -34716,6 +36518,7 @@
     },
     "required": [
       "id",
+      "edit_revision",
       "name",
       "tags",
       "updated_by",
@@ -34804,6 +36607,12 @@
         "type": "object",
         "additionalProperties": true,
         "description": "Complete Vega-Lite specification (use vconcat/hconcat for multiple panels)"
+      },
+      "expected_edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
       },
       "skip_versioning": {
         "type": "boolean",
@@ -36664,6 +38473,7 @@
           "project",
           "project_tag",
           "provider",
+          "service_tier",
           "interaction",
           "workflow"
         ],
@@ -36690,6 +38500,10 @@
       "provider": {
         "type": "string",
         "description": "Filter by provider"
+      },
+      "service_tier": {
+        "type": "string",
+        "description": "Filter by resolved processing tier"
       },
       "project_id": {
         "type": "string",
@@ -36876,6 +38690,10 @@
       "provider_account_id": {
         "type": "string"
       },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier this price applies to"
+      },
       "input_price_per_m_tokens": {
         "type": "number"
       },
@@ -36985,6 +38803,10 @@
       "provider_account_id": {
         "type": "string"
       },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier this price applies to"
+      },
       "list_price_date": {
         "type": "string"
       },
@@ -37039,6 +38861,9 @@
         "type": "string"
       },
       "provider": {
+        "type": "string"
+      },
+      "service_tier": {
         "type": "string"
       },
       "cost": {
@@ -37134,6 +38959,53 @@
           "$ref": "#/components/schemas/ModelPricing"
         }
       },
+      "pricing_coverage": {
+        "type": "object",
+        "properties": {
+          "priced_calls": {
+            "type": "number"
+          },
+          "unpriced_calls": {
+            "type": "number"
+          },
+          "assumed_default_calls": {
+            "type": "number"
+          },
+          "unpriced": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_tier": {
+                  "type": "string"
+                },
+                "calls": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "model",
+                "service_tier",
+                "calls"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "priced_calls",
+          "unpriced_calls",
+          "assumed_default_calls",
+          "unpriced"
+        ],
+        "additionalProperties": false
+      },
       "query_range": {
         "type": "object",
         "properties": {
@@ -37181,6 +39053,53 @@
         "items": {
           "$ref": "#/components/schemas/ModelPricing"
         }
+      },
+      "pricing_coverage": {
+        "type": "object",
+        "properties": {
+          "priced_calls": {
+            "type": "number"
+          },
+          "unpriced_calls": {
+            "type": "number"
+          },
+          "assumed_default_calls": {
+            "type": "number"
+          },
+          "unpriced": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_tier": {
+                  "type": "string"
+                },
+                "calls": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "model",
+                "service_tier",
+                "calls"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "priced_calls",
+          "unpriced_calls",
+          "assumed_default_calls",
+          "unpriced"
+        ],
+        "additionalProperties": false
       },
       "query_range": {
         "type": "object",
@@ -37243,13 +39162,25 @@
       },
       "aws_pricing": {
         "type": "number"
+      },
+      "xai_pricing": {
+        "type": "number"
+      },
+      "openrouter_pricing": {
+        "type": "number"
+      },
+      "openai_costs": {
+        "type": "number"
       }
     },
     "required": [
       "date",
       "gcp_list",
       "gcp_effective",
-      "aws_pricing"
+      "aws_pricing",
+      "xai_pricing",
+      "openrouter_pricing",
+      "openai_costs"
     ],
     "additionalProperties": false
   },

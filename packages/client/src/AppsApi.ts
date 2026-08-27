@@ -1,5 +1,6 @@
 import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch-client';
 import type {
+    AgentRunResponse,
     AppApiKeyCollectionParams,
     AppBuildProgress,
     AppDeleteSummary,
@@ -35,9 +36,11 @@ import type {
     SetMcpApiKeyRequest,
     StartAppBuildRequest,
     StartAppBuildResponse,
+    StartAppDevelopmentTaskRequest,
     StartAppScaffoldRequest,
     StartAppScaffoldResponse,
     UpdateAppInstallationToolAllowlistPayload,
+    UpdateAppPayload,
     UpsertAppVersionRequest,
     ValidateUrlRequest,
     ValidateUrlResponse,
@@ -54,7 +57,7 @@ export default class AppsApi extends ApiTopic {
         return this.post('/', { payload: manifest });
     }
 
-    update(id: string, manifest: AppManifestData): Promise<AppManifest> {
+    update(id: string, manifest: UpdateAppPayload): Promise<AppManifest> {
         return this.put(`/${id}`, { payload: manifest });
     }
 
@@ -250,9 +253,20 @@ export default class AppsApi extends ApiTopic {
         return this.get(`/${encodeURIComponent(appIdOrName)}/development-tasks`);
     }
 
-    /** Get a development task and its latest parent Studio Assistant run, when started. */
+    /** Get a development task and its latest App Builder parent run, when started. */
     getDevelopmentTask(appIdOrName: string, taskId: string): Promise<AppDevelopmentTaskDetails> {
         return this.get(`/${encodeURIComponent(appIdOrName)}/development-tasks/${encodeURIComponent(taskId)}`);
+    }
+
+    /** Start the policy-controlled App Builder parent on an existing development-task branch. */
+    startDevelopmentTask(
+        appIdOrName: string,
+        taskId: string,
+        payload: StartAppDevelopmentTaskRequest,
+    ): Promise<AgentRunResponse> {
+        return this.post(`/${encodeURIComponent(appIdOrName)}/development-tasks/${encodeURIComponent(taskId)}/runs`, {
+            payload,
+        });
     }
 
     /** Create a repository branch from an existing branch, tag, or commit. */

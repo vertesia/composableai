@@ -62,12 +62,13 @@
         "mcp"
     ],
     "peerDependencies": {
-        "react": "^19.2.7",
-        "react-dom": "^19.2.7"
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.6",
+        "@biomejs/biome": "2.5.10",
         "@hono/vite-dev-server": "^0.26.1",
+        "@playwright/test": "^1.62.1",
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/vite": "^4.3.3",
         "@types/node": "catalog:",
@@ -76,8 +77,8 @@
         "@vertesia/build-tools": "workspace:*",
         "@vertesia/plugin-builder": "workspace:*",
         "@vitejs/plugin-basic-ssl": "^2.3.0",
-        "@vitejs/plugin-react": "^6.0.3",
-        "concurrently": "^10.0.4",
+        "@vitejs/plugin-react": "^6.0.5",
+        "concurrently": "^10.0.5",
         "esbuild": "^0.28.2",
         "globals": "^17.11.0",
         "react": "catalog:",
@@ -87,10 +88,11 @@
         "tslib": "^2.8.1",
         "typescript": "catalog:",
         "vite": "catalog:",
+        "vitest": "^4.1.11",
         "vite-plugin-serve-static": "^2.2.0"
     },
     "dependencies": {
-        "@hono/node-server": "^2.1.0",
+        "@hono/node-server": "^2.1.1",
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
@@ -98,12 +100,12 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
-        "hono": "^4.13.1",
+        "hono": "^4.13.3",
         "html-parse-stringify": "^4.0.1",
         "lucide-react": "^1.31.0",
         "react-vega": "^8.0.0",
         "use-sync-external-store": "^1.6.0",
-        "vega": "^6.3.1",
+        "vega": "^6.4.0",
         "vega-embed": "^7.1.0",
         "vega-lite": "^6.4.3"
     }

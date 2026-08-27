@@ -2,8 +2,12 @@ import { readFile } from 'node:fs/promises';
 import {
     AccessControlPrincipalType,
     AccessControlResourceType,
+    type AgentMessage,
+    AgentMessageType,
     type AppInstallationKind,
     type AppManifestData,
+    type AppScaffoldModule,
+    type AppScaffoldProgress,
     SystemRoles,
 } from '@vertesia/common';
 import colors from 'ansi-colors';
@@ -25,6 +29,144 @@ type SettingsOptions = CliOptions<{
 type InstalledAppsOptions = CliOptions<{
     kind?: AppInstallationKind;
 }>;
+
+export type ScaffoldOptions = CliOptions<{
+    title?: string;
+    description?: string;
+    modules?: string;
+    createVersion?: boolean;
+    follow?: boolean;
+}>;
+
+export type DevelopmentTaskOptions = CliOptions<{
+    sourceRef?: string;
+    prompt?: string;
+    env?: string;
+    model?: string;
+    buildVersion?: boolean;
+    follow?: boolean;
+}>;
+
+const DEVELOPMENT_TASK_PROGRESS_TYPES = new Set<AgentMessageType>([
+    AgentMessageType.PLAN,
+    AgentMessageType.UPDATE,
+    AgentMessageType.COMPLETE,
+    AgentMessageType.WARNING,
+    AgentMessageType.ERROR,
+    AgentMessageType.ANSWER,
+    AgentMessageType.QUESTION,
+    AgentMessageType.REQUEST_INPUT,
+    AgentMessageType.TERMINATED,
+    AgentMessageType.BATCH_PROGRESS,
+    AgentMessageType.RESTARTING,
+]);
+
+function messageProgress(message: AgentMessage): AppScaffoldProgress | undefined {
+    const details = message.details as { app_scaffold_progress?: AppScaffoldProgress } | undefined;
+    return details?.app_scaffold_progress;
+}
+
+export async function scaffoldApp(program: Command, appName: string, options: ScaffoldOptions) {
+    const client = await getClient(program);
+    const modules = options.modules
+        ?.split(',')
+        .map((module) => module.trim())
+        .filter(Boolean) as AppScaffoldModule[] | undefined;
+    const run = await client.apps.startScaffold({
+        app_id: appName,
+        title: options.title,
+        description: options.description,
+        modules,
+        create_version: options.createVersion !== false,
+    });
+    console.log(JSON.stringify(run, null, 2));
+    if (options.follow === false) return;
+
+    await client.workflows.streamMessages(run.workflow_id, run.run_id, (message) => {
+        const progress = messageProgress(message);
+        if (progress) console.log(`[${progress.status}] ${progress.step}`);
+    });
+}
+
+export async function createDevelopmentTask(
+    program: Command,
+    appId: string,
+    taskId: string,
+    options: DevelopmentTaskOptions,
+) {
+    const sourceRef = options.sourceRef?.trim();
+    if (!sourceRef) throw new Error('--source-ref is required');
+    const branch = await (await getClient(program)).apps.createRepoBranch(appId, {
+        name: `agent/${taskId}`,
+        source_ref: sourceRef,
+    });
+    console.log(JSON.stringify(branch, null, 2));
+}
+
+export async function startDevelopmentTask(
+    program: Command,
+    appId: string,
+    taskId: string,
+    options: DevelopmentTaskOptions,
+) {
+    const prompt = options.prompt?.trim();
+    const environment = options.env?.trim();
+    const model = options.model?.trim();
+    if (!prompt) throw new Error('--prompt is required');
+    if (!environment) throw new Error('--env is required');
+    if (!model) throw new Error('--model is required');
+    const client = await getClient(program);
+    if (options.sourceRef) {
+        await client.apps.createRepoBranch(appId, { name: `agent/${taskId}`, source_ref: options.sourceRef });
+    }
+    const run = await client.apps.startDevelopmentTask(appId, taskId, {
+        prompt,
+        environment,
+        model,
+        build_version: options.buildVersion ?? false,
+    });
+    console.log(
+        JSON.stringify(
+            {
+                id: run.id,
+                status: run.status,
+                workflow_id: run.workflow_id,
+                run_id: run.first_workflow_run_id,
+                ...('interaction' in run ? { interaction: run.interaction } : {}),
+            },
+            null,
+            2,
+        ),
+    );
+    if (options.follow === false) return;
+    let inputRequired = false;
+    await client.agents.streamMessages(
+        run.id,
+        (message, exit) => {
+            if (message.message && DEVELOPMENT_TASK_PROGRESS_TYPES.has(message.type)) {
+                console.log(`[${AgentMessageType[message.type] ?? message.type}] ${message.message}`);
+            }
+            if (message.type === AgentMessageType.REQUEST_INPUT) {
+                inputRequired = true;
+                exit?.({ status: 'input_required', message: message.message });
+            }
+        },
+        undefined,
+        undefined,
+        { closeOnIdle: true },
+    );
+    if (inputRequired) {
+        console.log('The App Builder run is still open. Continue it in Studio to answer the question.');
+    }
+}
+
+export async function listDevelopmentTasks(program: Command, appId: string) {
+    console.log(JSON.stringify(await (await getClient(program)).apps.listDevelopmentTasks(appId), null, 2));
+}
+
+export async function getDevelopmentTask(program: Command, appId: string, taskId: string) {
+    console.log(JSON.stringify(await (await getClient(program)).apps.getDevelopmentTask(appId, taskId), null, 2));
+}
 
 export async function listApps(program: Command, _options: Record<string, unknown>) {
     const client = await getClient(program);
@@ -147,7 +289,15 @@ export async function updateApp(program: Command, appId: string, options: Manife
         process.exit(1);
     }
 
-    const result = await client.apps.update(appId, manifest);
+    const current = (await client.apps.list()).find((app) => app.id === appId);
+    if (!current) {
+        console.error(`${colors.red('✗')} App not found: ${appId}`);
+        process.exit(1);
+    }
+    const result = await client.apps.update(appId, {
+        ...manifest,
+        expected_edit_revision: current.edit_revision,
+    });
     console.log(`${colors.green('✓')} App updated successfully`);
     console.log(`  ID: ${result.id}`);
     console.log(`  Name: ${result.name}`);

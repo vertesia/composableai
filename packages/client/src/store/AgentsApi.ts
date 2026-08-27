@@ -58,6 +58,8 @@ import { fetchSignedUrl } from './signed-url.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
 export interface AgentRunStreamMessagesOptions {
+    /** Resolve the stream when the root conversation becomes idle. Headless followers should opt in. */
+    closeOnIdle?: boolean;
     onHistoryLoaded?: (messages: AgentMessage[]) => void;
     onHistoryError?: (error: unknown) => void;
 }
@@ -253,7 +255,8 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * Send a signal to a running agent.
-     * Signals: "UserInput", "Stop", "FileUploaded", "FileRemoved"
+     * Signals include "UserInput", "Stop", "ModelConfigChanged", "FileUploaded", "FileRemoved", and
+     * "FileBatchClosed".
      */
     sendSignal(id: string, signalName: string, payload?: SignalAgentPayload): Promise<SignalAgentResponse> {
         return this.post(`/${id}/signal/${signalName}`, { payload });
@@ -421,7 +424,7 @@ export class AgentsApi extends ApiTopic {
                     lastMessageTimestamp = timestamp;
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) return;
-                    if (shouldCloseAgentRunStream(msg, id)) {
+                    if (shouldCloseAgentRunStream(msg, id, options?.closeOnIdle)) {
                         exit(null);
                         return;
                     }
@@ -512,7 +515,8 @@ export class AgentsApi extends ApiTopic {
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) break;
 
-                    shouldCloseAfterHistory = index === historical.length - 1 && shouldCloseAgentRunStream(msg, id);
+                    shouldCloseAfterHistory =
+                        index === historical.length - 1 && shouldCloseAgentRunStream(msg, id, options?.closeOnIdle);
                 }
                 if (shouldCloseAfterHistory) {
                     exit(null);
@@ -598,7 +602,7 @@ export class AgentsApi extends ApiTopic {
                             onMessage(agentMessage, exit);
                         }
 
-                        if (shouldCloseCompactRunStream(compactMessage, id)) {
+                        if (shouldCloseCompactRunStream(compactMessage, id, options?.closeOnIdle)) {
                             exit(null);
                         }
                     } catch (err) {

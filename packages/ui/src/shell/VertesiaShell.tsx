@@ -3,6 +3,7 @@ import { TypeRegistryProvider, UserPermissionProvider } from '@vertesia/ui/featu
 import { LanguageBoundI18nProvider, LanguageProvider, type SupportedLanguage } from '@vertesia/ui/i18n';
 import { DevSessionProvider, UserSessionProvider } from '@vertesia/ui/session';
 import type { ReactNode } from 'react';
+import { IframeAppContextSync } from './apps/IframeAppContextSync.js';
 import { SigninScreen } from './login/SigninScreen';
 import { SplashScreen } from './SplashScreen';
 
@@ -35,6 +36,7 @@ export function VertesiaShell({
             <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
                 <LanguageProvider defaultLanguage={defaultLanguage}>
                     <LanguageBoundI18nProvider>
+                        <IframeAppContextSync />
                         {!authToken && (
                             <>
                                 <SplashScreen icon={loadingIcon} />
