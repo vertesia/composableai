@@ -4,7 +4,17 @@ import type {
     IntakeVisionDetail,
     InteractionExecutionConfiguration,
 } from '@vertesia/common';
-import { Button, FormItem, Input, NumberInput, SelectBox, TagsInput, Textarea, VTooltip } from '@vertesia/ui/core';
+import {
+    Button,
+    FormItem,
+    InfoTip,
+    Input,
+    NumberInput,
+    SelectBox,
+    TagsInput,
+    Textarea,
+    VTooltip,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Plus, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -559,10 +569,24 @@ function FormSurface({ children }: { children: ReactNode }) {
     return <div className="mx-auto w-full max-w-6xl px-1 py-4">{children}</div>;
 }
 
-function FormSection({ title, children, last = false }: { title: string; children: ReactNode; last?: boolean }) {
+function FormSection({
+    title,
+    description,
+    children,
+    last = false,
+}: {
+    title: string;
+    /** Tooltip on an Info icon beside the heading. Hover-only, like every `InfoTip`. */
+    description?: ReactNode;
+    children: ReactNode;
+    last?: boolean;
+}) {
     return (
         <section className={last ? 'pb-3' : 'mb-6 border-b pb-6'}>
-            <h3 className="mb-4 text-sm font-semibold">{title}</h3>
+            <div className="mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-semibold">{title}</h3>
+                <InfoTip description={description} />
+            </div>
             <div className="space-y-4">{children}</div>
         </section>
     );
@@ -621,6 +645,7 @@ function TextAreaField({
 
 function NumberField({
     label,
+    description,
     value,
     onChange,
     readonly,
@@ -629,6 +654,7 @@ function NumberField({
     step,
 }: {
     label: string;
+    description?: string;
     value?: number;
     onChange: (value: number | undefined) => void;
     readonly: boolean;
@@ -637,7 +663,7 @@ function NumberField({
     step?: number;
 }) {
     return (
-        <FormItem label={label}>
+        <FormItem label={label} description={description}>
             <NumberInput
                 value={value}
                 onChange={(value) => onChange(value === undefined || Number.isFinite(value) ? value : undefined)}
@@ -688,11 +714,13 @@ function SelectField<T extends string | number>({
 
 function TriStateField({
     label,
+    description,
     value,
     onChange,
     readonly,
 }: {
     label: string;
+    description?: string;
     value?: boolean;
     onChange: (value: boolean | undefined) => void;
     readonly: boolean;
@@ -705,7 +733,7 @@ function TriStateField({
     ] as const;
     const selectedValue = value === undefined ? 'inherit' : value ? 'enabled' : 'disabled';
     return (
-        <FormItem label={label}>
+        <FormItem label={label} description={description}>
             <SelectBox
                 options={[...choices]}
                 value={choices.find((option) => option.value === selectedValue)}
@@ -719,10 +747,12 @@ function TriStateField({
 }
 
 function VisionDetailsField({
+    description,
     value,
     onChange,
     readonly,
 }: {
+    description?: string;
     value?: IntakeVisionDetail[];
     onChange: (value: IntakeVisionDetail[] | undefined) => void;
     readonly: boolean;
@@ -730,7 +760,7 @@ function VisionDetailsField({
     const { t } = useUITranslation();
     const choices = options(t, ['low', 'standard', 'high'] as const);
     return (
-        <FormItem label={t('intakePolicy.field.allowedDetails')}>
+        <FormItem label={t('intakePolicy.field.allowedDetails')} description={description}>
             <SelectBox<SelectOption<IntakeVisionDetail>>
                 multiple
                 options={choices}
