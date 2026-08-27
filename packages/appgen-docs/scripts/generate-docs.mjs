@@ -275,6 +275,18 @@ const { data = [], error, isLoading, refetch } = useFetch(loadRows, { deps: [pro
 - \`Button\` accepts normal button props plus \`isLoading\`, \`isDisabled\`, \`variant\`, and \`size\`.
 - Icon-only buttons need \`aria-label\`. Text buttons should keep their visible text in the accessible name.
 - Prefer semantic theme classes and plain HTML for layout. Do not guess private \`@vertesia/ui\` paths.
+
+## Generated app tests
+
+- The standard generated app runs Vitest in a Node environment and intentionally does not install jsdom,
+  happy-dom, or Testing Library. Do not search dependency trees or add a DOM-test dependency for a UI-only change.
+- Put loading/error/empty/populated/refresh decisions in a small pure view-state or data helper beside the component and
+  cover that state matrix with focused unit tests. Do not import the real \`@vertesia/ui\` runtime or walk rendered React
+  element internals from a Node-only unit test.
+- Source Playwright specs import \`{ expect, test }\` from \`./vertesia\`. Use \`page.route\` to mock only the real API
+  path involved in the primary flow (interaction listing uses a path containing \`/interactions\`), then exercise the
+  page through accessible roles. Use the declared \`test:e2e\` script and its \`PLAYWRIGHT_BASE_URL\`; do not invent a
+  second browser harness.
 `;
 }
 

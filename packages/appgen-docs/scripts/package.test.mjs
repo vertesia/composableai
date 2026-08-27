@@ -32,6 +32,9 @@ test('ships the generated app-development references', async () => {
     const uiRecipe = await readFile(join(appgenDocsRoot, 'recipes', 'ui-components.md'), 'utf8');
     assert.match(uiRecipe, /<TBody columns=\{2\} isLoading=\{isLoading\}>/);
     assert.match(uiRecipe, /TableHeaderCell/);
+    assert.match(uiRecipe, /Vitest in a Node environment/);
+    assert.match(uiRecipe, /small pure view-state or data helper/);
+    assert.match(uiRecipe, /path containing `\/interactions`/);
 
     const clientRecipe = await readFile(join(appgenDocsRoot, 'recipes', 'client-interactions.md'), 'utf8');
     assert.match(clientRecipe, /client\.interactions\.list\(\)/);
