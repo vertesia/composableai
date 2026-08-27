@@ -326,7 +326,7 @@ export function ContentObjectsView() {
                             size="sm"
                             onClick={() => refetch()}
                             isDisabled={isLoading}
-                            alt={t('objects.refresh')}
+                            aria-label={t('objects.refresh')}
                             className="ms-auto"
                         >
                             <RefreshCw />

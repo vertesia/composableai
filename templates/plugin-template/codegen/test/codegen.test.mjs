@@ -21,6 +21,7 @@ function copyTemplateInputs(targetRoot) {
     fs.copyFileSync(path.join(templateRoot, 'template.config.json'), path.join(targetRoot, 'template.config.json'));
     fs.copyFileSync(path.join(templateRoot, 'package.json'), path.join(targetRoot, 'package.json'));
     fs.cpSync(path.join(templateRoot, 'src/modules'), path.join(targetRoot, 'src/modules'), { recursive: true });
+    fs.cpSync(path.join(templateRoot, 'tests'), path.join(targetRoot, 'tests'), { recursive: true });
 }
 
 function runCodegen(tmpRoot, modules) {
@@ -163,6 +164,8 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/service')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/ui/pages/HomePage.test.tsx')), true);
+        assert.equal(fs.existsSync(path.join(tmpRoot, 'tests/e2e/app.spec.ts')), true);
         const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
         const serviceEntry = fs.readFileSync(path.join(tmpRoot, 'src/modules/service/ui/AppEntry.tsx'), 'utf8');
         assert.doesNotMatch(appRoutes, /Document Library/);
@@ -177,6 +180,7 @@ test('appgen module selects the service entry and cleans inactive modules', () =
 test('appgen Playwright support keeps authenticated output safe and transient output ignored', () => {
     const playwrightConfig = fs.readFileSync(path.join(templateRoot, 'playwright.config.ts'), 'utf8');
     const playwrightFixture = fs.readFileSync(path.join(templateRoot, 'tests/e2e/vertesia.ts'), 'utf8');
+    const serviceEntry = fs.readFileSync(path.join(templateRoot, 'src/modules/service/ui/AppEntry.tsx'), 'utf8');
     const gitignore = fs.readFileSync(path.join(templateRoot, '.gitignore'), 'utf8');
 
     assert.match(playwrightConfig, /VERTESIA_TOKEN/);
@@ -186,6 +190,9 @@ test('appgen Playwright support keeps authenticated output safe and transient ou
     assert.match(playwrightFixture, /await VertesiaClient\.fromAuthToken/);
     assert.match(playwrightFixture, /PLAYWRIGHT_APP_VERSION/);
     assert.match(playwrightFixture, /client\.withAppVersion\(version\)/);
+    assert.match(serviceEntry, /globalValues\.__VERTESIA_AUTH_TOKEN__/);
+    assert.match(serviceEntry, /const runtimeAuthToken = injectedAuthToken \?\? devAuthToken/);
+    assert.match(serviceEntry, /<VertesiaShell authToken=\{runtimeAuthToken\}>/);
     assert.match(gitignore, /pnpm-lock\.yaml/);
     assert.match(gitignore, /test-results\//);
     assert.match(gitignore, /playwright-report\//);
@@ -252,7 +259,7 @@ test('service quality accepts an intentionally selected examples module', async 
     }
 });
 
-test('service quality requires app-owned unit and Playwright tests', () => {
+test('service quality accepts the generated tests and rejects their removal', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
         copyTemplateInputs(tmpRoot);
@@ -263,10 +270,23 @@ test('service quality requires app-owned unit and Playwright tests', () => {
         fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
 
         const qualityScript = 'src/modules/service/scripts/app-quality-check.mjs';
-        execFileSync(process.execPath, [qualityScript], { cwd: tmpRoot, stdio: 'pipe' });
+        execFileSync(process.execPath, [qualityScript], {
+            cwd: tmpRoot,
+            stdio: 'pipe',
+            env: { ...process.env, APPGEN_REQUIRE_TESTS: '1' },
+        });
         let report = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'dist/app-quality-report.json'), 'utf8'));
-        assert.equal(report.ok, true, 'the pristine scaffold build runs before AppDeveloper can add tests');
+        assert.equal(report.ok, true, 'a pristine generated AppGen repository must pass its required-test gate');
+        assert.equal(
+            Object.values(report.artifacts)
+                .flat()
+                .some((artifact) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(artifact)),
+            false,
+            'test files must not be advertised as production artifacts',
+        );
 
+        fs.rmSync(path.join(tmpRoot, 'src/modules/app/ui/pages/HomePage.test.tsx'));
+        fs.rmSync(path.join(tmpRoot, 'tests/e2e/app.spec.ts'));
         assert.throws(() =>
             execFileSync(process.execPath, [qualityScript], {
                 cwd: tmpRoot,

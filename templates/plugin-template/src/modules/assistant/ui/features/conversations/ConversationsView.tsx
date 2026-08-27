@@ -260,7 +260,7 @@ export function ConversationsView() {
                             size="sm"
                             onClick={() => refetch()}
                             isDisabled={isLoading}
-                            alt={t('conversations.refresh')}
+                            aria-label={t('conversations.refresh')}
                             className="ms-auto"
                         >
                             <RefreshCw />
