@@ -65,3 +65,20 @@ export function mountRootUrl(): URL {
     url.search = '';
     return url;
 }
+
+/**
+ * The broker URL a sign-in or renewal round-trip navigates to.
+ *
+ * Every parameter goes on through `searchParams`, never by concatenating a query string onto
+ * `centralAuth`. The endpoint is configurable, so it may already carry its own query or a
+ * fragment -- and appending `?sts=...` to one of those folds the parameter into the existing value
+ * or hides it in the fragment, leaving Central Auth with no `sts` at all. `searchParams` also
+ * percent-encodes the values, which the interpolated URLs did not.
+ */
+export function buildCentralAuthRedirectUrl(centralAuth: string, stsUrl: string, returnUrl: URL, state: string): URL {
+    const url = new URL(centralAuth);
+    url.searchParams.set('sts', stsUrl);
+    url.searchParams.set('redirect_uri', returnUrl.toString());
+    url.searchParams.set('state', state);
+    return url;
+}
