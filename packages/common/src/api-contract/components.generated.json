@@ -24706,7 +24706,7 @@
       "type": {
         "type": "string",
         "const": "workflow",
-        "description": "The type fo the step. If not set defaults to \"activity\""
+        "description": "Identifies this step as a child workflow"
       },
       "name": {
         "type": "string"

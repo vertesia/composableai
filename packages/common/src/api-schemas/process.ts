@@ -571,7 +571,7 @@ export const CreateProcessDefinitionPayloadSchema: z.ZodType = z
 
 export const DSLChildWorkflowStepSchema: z.ZodType = z
     .strictObject({
-        type: z.literal('workflow').meta({ description: 'The type fo the step. If not set defaults to "activity"' }),
+        type: z.literal('workflow').meta({ description: 'Identifies this step as a child workflow' }),
         name: z.string(),
         title: z
             .string()
