@@ -96,6 +96,21 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
         ).toBe(true);
         expect(validate({ _option_id: 'not-a-driver' })).toBe(false);
     });
+
+    it('allows provider-specific objects only inside OpenAI-compatible extra_body', () => {
+        const validate = compile('ModelOptions');
+        expect(
+            validate({
+                _option_id: 'openai-text',
+                extra_body: {
+                    provider: { sort: 'throughput', allow_fallbacks: false },
+                    baseten: { performance: 'max' },
+                },
+            }),
+            JSON.stringify(validate.errors),
+        ).toBe(true);
+        expect(validate({ _option_id: 'openai-text', extra_body: ['invalid'] })).toBe(false);
+    });
 });
 
 describe('the JSONSchema closure is published open, because a JSON Schema is open', () => {

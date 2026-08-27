@@ -1407,6 +1407,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description:
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
+                extra_body: {
+                    type: 'object',
+                    additionalProperties: true,
+                    description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -1445,6 +1450,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     minLength: 1,
                     description:
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
+                extra_body: {
+                    type: 'object',
+                    additionalProperties: true,
+                    description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
                 },
             },
             required: ['_option_id'],
