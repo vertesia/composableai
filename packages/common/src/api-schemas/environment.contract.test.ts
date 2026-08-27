@@ -32,6 +32,9 @@ describe('the provider vocabulary', () => {
         expect(validateApiRequest('ExecutionEnvironmentCreatePayload', { name: 'e', provider: 'openai' }).valid).toBe(
             true,
         );
+        expect(
+            validateApiRequest('ExecutionEnvironmentCreatePayload', { name: 'router', provider: 'openrouter' }).valid,
+        ).toBe(true);
         expect(validateApiRequest('ExecutionEnvironmentCreatePayload', { name: 'e', provider: 'gpt' }).valid).toBe(
             false,
         );

@@ -875,8 +875,8 @@ const PROJECT_AND_APP_SCHEMAS = {
     ProjectConfigurationEmbedding: ProjectConfigurationEmbeddingSchema,
     BrowserUseProjectConfiguration: BrowserUseProjectConfigurationSchema,
     ProjectIntakeSniffConfiguration: ProjectIntakeSniffConfigurationSchema,
-    // Leaves of the Project closure. `ModelOptions` hoists its
-    // twenty-five driver option sets and four enums; `JSONSchema` hoists `JSONSchemaProperties`.
+    // Leaves of the Project closure. `ModelOptions` hoists its driver option sets and shared enums;
+    // `JSONSchema` hoists `JSONSchemaProperties`.
     JSONSchema: JSONSchemaSchema,
     ModelOptions: ModelOptionsSchema,
     HttpTimeoutOptions: HttpTimeoutOptionsSchema,
@@ -2580,6 +2580,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'BedrockMantleClaudeOptions',
     'OpenAiThinkingOptions',
     'OpenAiTextOptions',
+    'OpenRouterTextOptions',
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
     'XAIGrokImageOptions',
