@@ -105,6 +105,10 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
     type: 'workflow';
     // the workflow endpoint to run
     name: string;
+    /** Title displayed for the child workflow in the workflow builder. */
+    title?: string;
+    /** Description displayed for the child workflow in the workflow builder. */
+    description?: string;
     /**
      * The parameters to pass to the child workflow.
      * These parameters will be merged over the parent workflow vars and passed altogether to the child workflow.

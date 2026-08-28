@@ -1225,6 +1225,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/OpenAiTextOptions',
                 },
                 {
+                    $ref: '#/$defs/OpenRouterTextOptions',
+                },
+                {
                     $ref: '#/$defs/OpenAiDalleOptions',
                 },
                 {
@@ -1411,6 +1414,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description:
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
+                extra_body: {
+                    type: 'object',
+                    additionalProperties: true,
+                    description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -1453,6 +1461,121 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     minLength: 1,
                     description:
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
+                extra_body: {
+                    type: 'object',
+                    additionalProperties: true,
+                    description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        OpenRouterTextOptions: {
+            type: 'object',
+            properties: {
+                max_tokens: {
+                    type: 'number',
+                },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
+                },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                reasoning_effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                temperature: {
+                    type: 'number',
+                },
+                top_p: {
+                    type: 'number',
+                },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
+                stop_sequence: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                image_detail: {
+                    type: 'string',
+                    enum: ['low', 'high', 'auto'],
+                },
+                include_thoughts: {
+                    type: 'boolean',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
+                _option_id: {
+                    type: 'string',
+                    const: 'openrouter-text',
+                },
+                provider_sort: {
+                    type: 'string',
+                    enum: ['price', 'throughput', 'latency', 'exacto'],
+                },
+                provider_order: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                provider_only: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                provider_ignore: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                provider_allow_fallbacks: {
+                    type: 'boolean',
+                },
+                provider_require_parameters: {
+                    type: 'boolean',
+                },
+                provider_data_collection: {
+                    type: 'string',
+                    enum: ['allow', 'deny'],
+                },
+                provider_zdr: {
+                    type: 'boolean',
+                },
+                provider_quantizations: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                        enum: [
+                            'int4',
+                            'int8',
+                            'fp4',
+                            'mxfp4',
+                            'nvfp4',
+                            'fp6',
+                            'fp8',
+                            'mxfp8',
+                            'fp16',
+                            'bf16',
+                            'fp32',
+                            'unknown',
+                        ],
+                    },
                 },
             },
             required: ['_option_id'],

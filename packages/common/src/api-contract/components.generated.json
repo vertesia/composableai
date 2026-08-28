@@ -3472,6 +3472,11 @@
         "type": "string",
         "minLength": 1,
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
+      },
+      "extra_body": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
     "required": [
@@ -3549,6 +3554,139 @@
         "type": "string",
         "minLength": 1,
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
+      },
+      "extra_body": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
+      }
+    },
+    "required": [
+      "_option_id"
+    ],
+    "additionalProperties": false
+  },
+  "OpenRouterTextOptions": {
+    "type": "object",
+    "properties": {
+      "max_tokens": {
+        "type": "number"
+      },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
+      "effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "reasoning_effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "temperature": {
+        "type": "number"
+      },
+      "top_p": {
+        "type": "number"
+      },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
+      "stop_sequence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "image_detail": {
+        "type": "string",
+        "enum": [
+          "low",
+          "high",
+          "auto"
+        ]
+      },
+      "include_thoughts": {
+        "type": "boolean"
+      },
+      "service_tier": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
+      },
+      "_option_id": {
+        "type": "string",
+        "const": "openrouter-text"
+      },
+      "provider_sort": {
+        "type": "string",
+        "enum": [
+          "price",
+          "throughput",
+          "latency",
+          "exacto"
+        ]
+      },
+      "provider_order": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "provider_only": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "provider_ignore": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "provider_allow_fallbacks": {
+        "type": "boolean"
+      },
+      "provider_require_parameters": {
+        "type": "boolean"
+      },
+      "provider_data_collection": {
+        "type": "string",
+        "enum": [
+          "allow",
+          "deny"
+        ]
+      },
+      "provider_zdr": {
+        "type": "boolean"
+      },
+      "provider_quantizations": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "int4",
+            "int8",
+            "fp4",
+            "mxfp4",
+            "nvfp4",
+            "fp6",
+            "fp8",
+            "mxfp8",
+            "fp16",
+            "bf16",
+            "fp32",
+            "unknown"
+          ]
+        }
       }
     },
     "required": [
@@ -3888,6 +4026,9 @@
         "$ref": "#/components/schemas/OpenAiTextOptions"
       },
       {
+        "$ref": "#/components/schemas/OpenRouterTextOptions"
+      },
+      {
         "$ref": "#/components/schemas/OpenAiDalleOptions"
       },
       {
@@ -3928,6 +4069,7 @@
         "bedrock-mantle-claude": "#/components/schemas/BedrockMantleClaudeOptions",
         "openai-thinking": "#/components/schemas/OpenAiThinkingOptions",
         "openai-text": "#/components/schemas/OpenAiTextOptions",
+        "openrouter-text": "#/components/schemas/OpenRouterTextOptions",
         "openai-dalle": "#/components/schemas/OpenAiDalleOptions",
         "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
         "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
@@ -5801,6 +5943,10 @@
         "type": "string",
         "description": "Owning account enforced when restrict_to_owner_account is true."
       },
+      "consent_required": {
+        "type": "boolean",
+        "description": "False when the authorization server has determined this client may be approved without showing a consent screen. Absent or true means consent must be collected from the user. Granted scopes are clamped to the user permissions by the server in either case, so this controls only whether the user is prompted."
+      },
       "status": {
         "$ref": "#/components/schemas/OAuthAuthorizationRequestStatus"
       },
@@ -6546,6 +6692,7 @@
       "watsonx",
       "xai",
       "anthropic",
+      "openrouter",
       "virtual_lb",
       "virtual_mediator",
       "test"
@@ -19115,6 +19262,17 @@
       "webhook_secret_hint": {
         "type": "string"
       },
+      "webhook_secret": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "events": {
         "type": "array",
         "items": {
@@ -19133,7 +19291,8 @@
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "webhook_secret"
     ],
     "additionalProperties": false,
     "description": "Configuration for ask_user webhook notifications. Sends webhooks when agents call ask_user and when users respond."
@@ -19153,6 +19312,17 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "email_domain": {
         "type": "string",
         "description": "Domain for email (both sending and receiving). Must be verified in Resend."
@@ -19166,6 +19336,17 @@
       },
       "webhook_secret_hint": {
         "type": "string"
+      },
+      "webhook_secret": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "allowed_sender_domains": {
         "type": "array",
@@ -19186,7 +19367,9 @@
     "required": [
       "integration",
       "enabled",
-      "email_domain"
+      "api_key",
+      "email_domain",
+      "webhook_secret"
     ],
     "additionalProperties": false
   },
@@ -19204,11 +19387,23 @@
       },
       "api_key_hint": {
         "type": "string"
+      },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -19226,11 +19421,23 @@
       },
       "api_key_hint": {
         "type": "string"
+      },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -19249,13 +19456,25 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "url": {
         "type": "string"
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -19305,13 +19524,25 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "url": {
         "type": "string"
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -24649,10 +24880,18 @@
       "type": {
         "type": "string",
         "const": "workflow",
-        "description": "The type fo the step. If not set defaults to \"activity\""
+        "description": "Identifies this step as a child workflow"
       },
       "name": {
         "type": "string"
+      },
+      "title": {
+        "type": "string",
+        "description": "Title of the child workflow to be displayed in the UI workflow builder"
+      },
+      "description": {
+        "type": "string",
+        "description": "Description of the child workflow displayed in the UI workflow builder"
       },
       "vars": {
         "type": "object",
