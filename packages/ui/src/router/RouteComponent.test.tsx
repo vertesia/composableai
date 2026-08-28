@@ -1,6 +1,6 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { RouteComponent } from './RouteComponent';
+import { prefetchLazyRoutes, RouteComponent } from './RouteComponent';
 import { type LazyRouteModule, useNavigate } from './Router';
 import { RouterProvider } from './RouterProvider';
 
@@ -85,5 +85,55 @@ describe('RouteComponent lazy routes', () => {
         await act(async () => pageA.resolve());
         expect(screen.queryByText('Page A')).toBeNull();
         expect(screen.getByText('Page B')).toBeDefined();
+    });
+
+    it('renders a previously resolved lazy route synchronously on revisit', async () => {
+        const pageA = deferredModule('Page A');
+        const pageB = deferredModule('Page B');
+        const routes = [
+            { path: '/a', LazyComponent: () => pageA.promise },
+            { path: '/b', LazyComponent: () => pageB.promise },
+        ];
+        render(
+            <RouterProvider routes={routes}>
+                <CaptureNavigate />
+                <RouteComponent spinner={<div>loading</div>} />
+            </RouterProvider>,
+        );
+        await act(async () => pageA.resolve());
+        await waitFor(() => expect(screen.getByText('Page A')).toBeDefined());
+        await act(async () => navigateFn('/b'));
+        await act(async () => pageB.resolve());
+        await waitFor(() => expect(screen.getByText('Page B')).toBeDefined());
+
+        // Back to /a: its module is cached, so not even one spinner frame may show.
+        act(() => navigateFn('/a'));
+        expect(screen.getByText('Page A')).toBeDefined();
+        expect(screen.queryByText('loading')).toBeNull();
+    });
+
+    it('prefetched lazy routes render without a spinner on first navigation', async () => {
+        const pageA = deferredModule('Page A');
+        const pageB = deferredModule('Page B');
+        const routes = [
+            { path: '/a', LazyComponent: () => pageA.promise },
+            { path: '/b', LazyComponent: () => pageB.promise },
+            { path: '/c', Component: () => <div>Page C</div> },
+        ];
+        pageA.resolve();
+        pageB.resolve();
+        await prefetchLazyRoutes(routes);
+
+        render(
+            <RouterProvider routes={routes}>
+                <CaptureNavigate />
+                <RouteComponent spinner={<div>loading</div>} />
+            </RouterProvider>,
+        );
+        // Even the initial mount renders from the prefetch cache.
+        expect(screen.getByText('Page A')).toBeDefined();
+        act(() => navigateFn('/b'));
+        expect(screen.getByText('Page B')).toBeDefined();
+        expect(screen.queryByText('loading')).toBeNull();
     });
 });
