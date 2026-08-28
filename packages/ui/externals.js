@@ -19,6 +19,14 @@ export const EXTERNALS = [
     // provided by the i18n bundle and read by radix primitives inside core/features — a bundled
     // copy per lib would be a different React context and RTL would silently stop propagating.
     '@radix-ui/react-direction',
+    // These radix internals hold module-level state (dismissable layer stack, focus-scope stack,
+    // focus-guard counter). Several subpath bundles embed Dialog/Popover, so a bundled copy per
+    // lib would give each its own stack: nested overlays across bundles would fight over Escape
+    // handling, focus trapping, and body pointer-events restoration. One shared copy via the
+    // import map keeps them coordinated.
+    '@radix-ui/react-dismissable-layer',
+    '@radix-ui/react-focus-guards',
+    '@radix-ui/react-focus-scope',
     // The scroll-lock family coordinates through module-level singletons; per-lib copies would
     // not see each other and nested overlays across libs could restore body scroll early.
     'aria-hidden',
@@ -92,9 +100,6 @@ const INLINED_DEPS = [
     '@radix-ui/react-radio-group',
     '@radix-ui/react-switch',
     '@radix-ui/react-tooltip',
-    '@radix-ui/react-dismissable-layer',
-    '@radix-ui/react-focus-guards',
-    '@radix-ui/react-focus-scope',
     '@radix-ui/react-portal',
     '@radix-ui/react-dropdown-menu',
     'cmdk',
