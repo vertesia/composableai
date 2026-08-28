@@ -10,10 +10,85 @@ import {
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
+import { generateAuthState } from './authState';
+import {
+    authReturnUrl,
+    buildCentralAuthRedirectUrl,
+    centralAuthUrl,
+    shouldRedirectToCentralAuth,
+} from './domainRouting';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
+
+/**
+ * Whether this tab ever held a token.
+ *
+ * Separates "the session expired" from "there is no session yet". Only the first is renewed from
+ * here; the first load is UserSessionProvider's, and it has the account/project selection that
+ * this layer does not.
+ */
+let HAD_SESSION = false;
+
+/** Session-storage stamp of the last renewal redirect, so the cooldown survives the navigation. */
+const RENEWAL_ATTEMPT_KEY = 'vt.centralAuthRenewalAt';
+const RENEWAL_COOLDOWN_MS = 60_000;
+
+/**
+ * Renew an expired Central Auth session by bouncing through the broker.
+ *
+ * A Central Auth session holds exactly one credential -- the STS JWT, in memory -- and STS refuses
+ * it once it has expired. There is no Firebase user in this browser to mint a replacement from and
+ * no refresh token, so the only way back is the broker, which still has the user's own session and
+ * returns a fresh identity token without prompting. That is precisely what a manual reload does
+ * today; doing it here turns a page that dead-ends on "Cannot acquire a composable token" into a
+ * redirect the user usually does not notice.
+ *
+ * The cooldown is the important part. If the broker returns a credential STS also rejects, an
+ * unguarded redirect bounces the browser between the two forever -- and a redirect loop is a worse
+ * failure than the error page it replaced, because it never comes to rest anywhere the user can
+ * read. One attempt per minute, recorded in sessionStorage because the module state does not
+ * survive the navigation this function starts.
+ *
+ * Returns whether a redirect was started.
+ */
+function renewExpiredCentralAuthSession(): boolean {
+    if (!HAD_SESSION || !shouldRedirectToCentralAuth()) {
+        return false;
+    }
+
+    let lastAttempt = 0;
+    try {
+        lastAttempt = Number(sessionStorage.getItem(RENEWAL_ATTEMPT_KEY) ?? '0');
+    } catch {
+        // sessionStorage unavailable -- treated as "no previous attempt", so the redirect is
+        // allowed once and the failure surfaces normally if it does not stick.
+    }
+    if (Number.isFinite(lastAttempt) && lastAttempt > 0 && Date.now() - lastAttempt < RENEWAL_COOLDOWN_MS) {
+        Env.logger.warn('Central Auth session renewal already attempted; surfacing the failure instead', {
+            vertesia: { last_attempt_ms_ago: Date.now() - lastAttempt },
+        });
+        return false;
+    }
+
+    try {
+        sessionStorage.setItem(RENEWAL_ATTEMPT_KEY, String(Date.now()));
+    } catch {
+        // Without the stamp the cooldown cannot be enforced across the navigation. Still worth
+        // redirecting once: the alternative is a page the user can only fix by reloading manually.
+    }
+
+    Env.logger.info('Renewing an expired Central Auth session through the broker');
+    const url = buildCentralAuthRedirectUrl(
+        centralAuthUrl(),
+        Env.endpoints.sts ?? 'https://sts.vertesia.io',
+        authReturnUrl(),
+        generateAuthState(),
+    );
+    location.replace(url.toString());
+    return true;
+}
 
 function clearRejectedPersistedScope(accountId?: string, projectId?: string) {
     if (!accountId) return;
@@ -434,6 +509,7 @@ export async function getComposableToken(
         cachedTokenMatchesScope &&
         AUTH_TOKEN.exp > Date.now() / 1000 + 300
     ) {
+        HAD_SESSION = true;
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
@@ -447,6 +523,7 @@ export async function getComposableToken(
         if (!AUTH_TOKEN.exp) {
             throw new Error('Invalid composable token');
         }
+        HAD_SESSION = true;
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
@@ -458,7 +535,14 @@ export async function getComposableToken(
         } else if (!devAuthToken) {
             // Embedded apps can reacquire a fresh credential from their host after their cached token expires.
             const refreshCredential = (await Env.authTokenProvider?.()) ?? initToken ?? AUTH_TOKEN_RAW;
+            // `forceRefresh` has to defeat this shortcut, not just the cache above it. A caller
+            // asking for a forced refresh wants claims recomputed -- `refreshAuthToken()` exists so
+            // a stale `apps` claim can be re-read after an ACE change, and STS recomputes it on
+            // every issuance. Adopting the credential we already hold satisfies the check and
+            // returns the very token whose claims were suspect, silently making the call a no-op
+            // for exactly the sessions that have no other credential to fall back on.
             if (
+                !forceRefresh &&
                 refreshCredential &&
                 isVertesiaIssuedToken(refreshCredential) &&
                 canUseVertesiaTokenDirectly(refreshCredential, selectedAccount, selectedProject)
@@ -488,6 +572,13 @@ export async function getComposableToken(
                 clearRejectedPersistedScope(selectedAccount, selectedProject);
             }
         }
+        // An expired Central Auth session presents as a rejected credential: the JWT we sent STS to
+        // renew from is the one that timed out. The broker can still vouch for the user. Only this
+        // error -- a scope or account failure is about who the user is, and the broker would hand
+        // back the same identity and the same refusal.
+        if (error instanceof CredentialError) {
+            renewExpiredCentralAuthSession();
+        }
         throw error;
     }
 
@@ -498,6 +589,10 @@ export async function getComposableToken(
                 project_id: selectedProject,
             },
         });
+        // Reached once the credential has already been discarded -- typically the call after the
+        // one that saw STS reject it. Same remedy, and the cooldown keeps this from redirecting a
+        // second time for the same expiry.
+        renewExpiredCentralAuthSession();
         throw new Error('Cannot acquire a composable token');
     }
 
@@ -514,6 +609,7 @@ export async function getComposableToken(
         throw new Error('Invalid composable token');
     }
 
+    HAD_SESSION = true;
     return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
 }
 

@@ -5907,6 +5907,10 @@
         "type": "string",
         "description": "Owning account enforced when restrict_to_owner_account is true."
       },
+      "consent_required": {
+        "type": "boolean",
+        "description": "False when the authorization server has determined this client may be approved without showing a consent screen. Absent or true means consent must be collected from the user. Granted scopes are clamped to the user permissions by the server in either case, so this controls only whether the user is prompted."
+      },
       "status": {
         "$ref": "#/components/schemas/OAuthAuthorizationRequestStatus"
       },
