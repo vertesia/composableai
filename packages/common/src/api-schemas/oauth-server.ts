@@ -115,6 +115,10 @@ export const OAuthAuthorizationRequestSchema = z
             .string()
             .optional()
             .meta({ description: 'Owning account enforced when restrict_to_owner_account is true.' }),
+        consent_required: z.boolean().optional().meta({
+            description:
+                'False when the authorization server has determined this client may be approved without showing a consent screen. Absent or true means consent must be collected from the user. Granted scopes are clamped to the user permissions by the server in either case, so this controls only whether the user is prompted.',
+        }),
         status: OAuthAuthorizationRequestStatusSchema,
         created_at: z.string(),
         expires_at: z.string(),
