@@ -1370,6 +1370,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 max_tokens: {
                     type: 'number',
                 },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
+                },
                 effort: {
                     $ref: '#/$defs/ReasoningEffort',
                 },
@@ -1421,6 +1425,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 max_tokens: {
                     type: 'number',
                 },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
+                },
                 stop_sequence: {
                     type: 'array',
                     items: {
@@ -1471,6 +1479,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 max_tokens: {
                     type: 'number',
+                },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
                 },
                 temperature: {
                     type: 'number',
