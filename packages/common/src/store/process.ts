@@ -147,6 +147,10 @@ export interface NodeDefinition {
     max_retries?: number;
     transitions?: TransitionDefinition[];
     tools?: string[];
+    /** Builtin system skills activated before the agent node's first model turn. */
+    initial_skills?: string[];
+    /** Execution-time tool denylist for the agent node's child conversation. */
+    excluded_tools?: string[];
     /**
      * Model id override for this node. If unset, falls back to the process
      * run's `config.model`, then to the project's default. Useful when a

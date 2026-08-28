@@ -842,6 +842,14 @@ export const NodeDefinitionSchema: z.ZodType = z
         max_retries: z.number().optional(),
         transitions: z.array(TransitionDefinitionSchema).optional(),
         tools: z.array(z.string()).optional(),
+        initial_skills: z
+            .array(z.string())
+            .meta({ description: "Builtin system skills activated before the agent node's first model turn." })
+            .optional(),
+        excluded_tools: z
+            .array(z.string())
+            .meta({ description: "Execution-time tool denylist for the agent node's child conversation." })
+            .optional(),
         model: z
             .string()
             .meta({

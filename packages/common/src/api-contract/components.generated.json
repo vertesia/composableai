@@ -21715,6 +21715,20 @@
           "type": "string"
         }
       },
+      "initial_skills": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Builtin system skills activated before the agent node's first model turn."
+      },
+      "excluded_tools": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Execution-time tool denylist for the agent node's child conversation."
+      },
       "model": {
         "type": "string",
         "description": "Model id override for this node. If unset, falls back to the process run's `config.model`, then to the project's default. Useful when a specific node needs heavier reasoning (e.g. Opus for legal flagging) while the rest of the process uses a cheaper default."

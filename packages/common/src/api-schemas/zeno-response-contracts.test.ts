@@ -341,4 +341,26 @@ describe('Zeno read-side response contracts', () => {
             ]).valid,
         ).toBe(true);
     });
+
+    it('publishes agent-node skill activation and execution exclusions', () => {
+        expect(
+            validateApiRequest('CreateProcessDefinitionPayload', {
+                name: 'App development process',
+                definition: {
+                    format_version: 1,
+                    process: 'app_development',
+                    initial: 'implement',
+                    context: { schema: {}, initial: {} },
+                    nodes: {
+                        implement: {
+                            type: 'agent',
+                            interaction: 'sys:AppDeveloper',
+                            initial_skills: ['app_quick_fix'],
+                            excluded_tools: ['learn_app_development'],
+                        },
+                    },
+                },
+            }).valid,
+        ).toBe(true);
+    });
 });
