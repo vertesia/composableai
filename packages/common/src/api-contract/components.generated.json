@@ -29646,6 +29646,10 @@
   "ProcessRunConfig": {
     "type": "object",
     "properties": {
+      "environment": {
+        "type": "string",
+        "description": "Execution environment id used by Process LLM nodes and the supervisor."
+      },
       "model": {
         "type": "string"
       },

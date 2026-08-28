@@ -176,6 +176,10 @@ export const ProcessDefinitionRevisionInfoSchema = z
 
 export const ProcessRunConfigSchema = z
     .strictObject({
+        environment: z
+            .string()
+            .meta({ description: 'Execution environment id used by Process LLM nodes and the supervisor.' })
+            .optional(),
         model: z.string().optional(),
         user_message: z
             .string()
