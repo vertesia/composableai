@@ -29653,6 +29653,10 @@
       "model": {
         "type": "string"
       },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions",
+        "description": "Validated model options applied to Process LLM nodes and the supervisor."
+      },
       "user_message": {
         "type": "string",
         "description": "Free-form message from the user when starting a run. Passed to the orchestrator LLM in supervised mode; stored on the run regardless so programmatic runs retain the intent that triggered them."

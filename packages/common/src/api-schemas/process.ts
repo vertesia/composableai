@@ -1,6 +1,6 @@
 // Runtime schemas for the process API domain.
 
-import { JSONObjectSchema, JSONSchemaSchema } from '@llumiverse/common/schemas';
+import { JSONObjectSchema, JSONSchemaSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
 import type { StringValue } from 'ms';
 import { z } from 'zod';
 import { PermissionSchema } from './access-control.js';
@@ -181,6 +181,9 @@ export const ProcessRunConfigSchema = z
             .meta({ description: 'Execution environment id used by Process LLM nodes and the supervisor.' })
             .optional(),
         model: z.string().optional(),
+        model_options: ModelOptionsSchema.meta({
+            description: 'Validated model options applied to Process LLM nodes and the supervisor.',
+        }).optional(),
         user_message: z
             .string()
             .meta({
