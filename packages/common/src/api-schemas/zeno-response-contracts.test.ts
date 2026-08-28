@@ -355,6 +355,7 @@ describe('Zeno read-side response contracts', () => {
                         implement: {
                             type: 'agent',
                             interaction: 'sys:AppDeveloper',
+                            inherit_context: false,
                             initial_skills: ['app_quick_fix'],
                             excluded_tools: ['learn_app_development'],
                         },

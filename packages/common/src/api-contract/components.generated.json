@@ -21677,6 +21677,10 @@
         "type": "object",
         "additionalProperties": true
       },
+      "inherit_context": {
+        "type": "boolean",
+        "description": "Whether interaction and custom-agent nodes receive the complete process context in addition to resolved input. Defaults to true; set false for input-only specialist prompts."
+      },
       "config": {
         "type": "object",
         "additionalProperties": true

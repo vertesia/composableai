@@ -131,6 +131,12 @@ export interface NodeDefinition {
     result_schema?: JSONSchema;
     prompt?: string;
     input?: Record<string, unknown>;
+    /**
+     * Whether interaction and custom-agent nodes receive the complete process
+     * context in addition to resolved `input`. Defaults to true for backward
+     * compatibility. Set false to keep specialist prompts input-only.
+     */
+    inherit_context?: boolean;
     config?: Record<string, unknown>;
     title?: string;
     description?: string;

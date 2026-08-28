@@ -827,6 +827,13 @@ export const NodeDefinitionSchema: z.ZodType = z
         }).optional(),
         prompt: z.string().optional(),
         input: z.looseObject({}).optional(),
+        inherit_context: z
+            .boolean()
+            .meta({
+                description:
+                    'Whether interaction and custom-agent nodes receive the complete process context in addition to resolved input. Defaults to true; set false for input-only specialist prompts.',
+            })
+            .optional(),
         config: z.looseObject({}).optional(),
         title: z.string().optional(),
         description: z.string().optional(),
