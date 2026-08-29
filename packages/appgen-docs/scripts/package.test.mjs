@@ -42,6 +42,10 @@ test('ships the generated app-development references', async () => {
     const clientRecipe = await readFile(join(appgenDocsRoot, 'recipes', 'client-interactions.md'), 'utf8');
     assert.match(clientRecipe, /client\.interactions\.list\(\)/);
     assert.match(clientRecipe, /Promise<InteractionRef\[\]>/);
+    assert.match(clientRecipe, /InteractionRef` deliberately has no `type` field/);
+    assert.match(clientRecipe, /client\.interactions\.catalog\.listStoredInteractions\(\)/);
+    assert.match(clientRecipe, /Promise<CatalogInteractionRef\[\]>/);
+    assert.match(clientRecipe, /combined system, app, and stored catalog/);
 
     const storeObjects = await readFile(join(appgenDocsRoot, 'store-objects.md'), 'utf8');
     assert.match(storeObjects, /Every `objects\.create` payload requires a top-level `name`/);

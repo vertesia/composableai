@@ -327,6 +327,12 @@ export function InteractionCatalog() {
 - Empty input is valid. Use \`client.interactions.list()\` unless the task requires a server-side filter.
 - The useful \`InteractionRef\` fields are \`id\`, \`name\`, \`endpoint\`, \`description?\`, \`status\`, \`version\`,
   \`tags\`, and \`updated_at\`.
+- \`InteractionRef\` deliberately has no \`type\` field. When a current-project catalog must display type, call
+  \`client.interactions.catalog.listStoredInteractions()\`, which returns \`Promise<CatalogInteractionRef[]>\`; do not
+  search generated declarations for \`InteractionRef.type\` or infer it from another field.
+- The useful \`CatalogInteractionRef\` fields are \`type\` (\`'stored'\` for this endpoint), \`id\`, \`name\`, \`title\`,
+  \`description?\`, \`version?\`, and \`tags\`. Use \`client.interactions.catalog.list()\` only when the task explicitly
+  asks for the combined system, app, and stored catalog rather than the current project's stored interactions.
 - Keep SDK methods attached to their topic: call \`client.interactions.list()\`; do not destructure \`list\`.
 - The session client is already scoped to the signed-in user's current project. Do not construct another client in
   browser code and do not hardcode a project id.
