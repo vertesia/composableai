@@ -105,6 +105,7 @@ describe('AsyncConversationExecutionPayload contract', () => {
                 ],
                 action_phase_count: 1,
                 action_phase_max_tokens: 4_096,
+                completion_prompt: 'Return the structured result now.',
             },
         };
 

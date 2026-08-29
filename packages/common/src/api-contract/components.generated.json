@@ -13122,6 +13122,11 @@
         "minimum": 0,
         "maximum": 9007199254740991,
         "description": "Bounded recovery turns allowed per incomplete phase. Defaults to one."
+      },
+      "completion_prompt": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Process-authored instruction appended to the final successful tool result. That turn restores the result schema and requires the agent to return its result without another tool call."
       }
     },
     "required": [

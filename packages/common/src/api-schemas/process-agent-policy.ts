@@ -50,5 +50,13 @@ export const ProcessAgentExecutionPolicySchema = z
             .nonnegative()
             .meta({ description: 'Bounded recovery turns allowed per incomplete phase. Defaults to one.' })
             .optional(),
+        completion_prompt: z
+            .string()
+            .min(1)
+            .meta({
+                description:
+                    'Process-authored instruction appended to the final successful tool result. That turn restores the result schema and requires the agent to return its result without another tool call.',
+            })
+            .optional(),
     })
     .meta({ id: 'ProcessAgentExecutionPolicy' });

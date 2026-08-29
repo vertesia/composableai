@@ -367,6 +367,7 @@ describe('Zeno read-side response contracts', () => {
                                     },
                                 ],
                                 defer_result_schema_until_complete: true,
+                                completion_prompt: 'Return the structured result now.',
                             },
                         },
                     },
