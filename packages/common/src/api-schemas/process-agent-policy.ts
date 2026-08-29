@@ -14,6 +14,14 @@ export const ProcessAgentToolPhaseSchema = z
             .array(z.string().min(1))
             .min(1)
             .meta({ description: 'Any successful tool in this list advances the phase.' }),
+        continuation_tools: z
+            .array(z.string().min(1))
+            .min(1)
+            .meta({
+                description:
+                    'Additional tools authorized while the phase is active. Successful calls do not advance the phase.',
+            })
+            .optional(),
         recovery_tools: z
             .array(z.string().min(1))
             .min(1)

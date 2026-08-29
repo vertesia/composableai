@@ -29,6 +29,7 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                     {
                         id: 'inspect',
                         tools: ['app_workspace_typecheck'],
+                        continuation_tools: ['app_workspace_read'],
                         recovery_tools: ['app_workspace_read', 'app_workspace_edit'],
                         recovery_prompt: 'Inspect source.',
                     },
@@ -39,6 +40,7 @@ describe('ProcessAgentExecutionPolicySchema', () => {
             phases: [
                 {
                     tools: ['app_workspace_typecheck'],
+                    continuation_tools: ['app_workspace_read'],
                     recovery_tools: ['app_workspace_read', 'app_workspace_edit'],
                 },
             ],
