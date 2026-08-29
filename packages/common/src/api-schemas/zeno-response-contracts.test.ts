@@ -363,9 +363,11 @@ describe('Zeno read-side response contracts', () => {
                                     {
                                         id: 'saved',
                                         tools: ['app_workspace_save'],
+                                        tool_input_contains: [{ field: 'mode', contains: 'commit' }],
                                         recovery_prompt: 'Save before finishing.',
                                     },
                                 ],
+                                phase_resets: [{ tools: ['app_workspace_edit'], to_phase: 'saved' }],
                                 defer_result_schema_until_complete: true,
                                 completion_prompt: 'Return the structured result now.',
                             },

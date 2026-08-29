@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+export const ProcessAgentToolInputContainsSchema = z
+    .strictObject({
+        field: z.string().min(1).meta({ description: 'Top-level tool-input field to inspect.' }),
+        contains: z.string().min(1).meta({ description: 'Case-sensitive substring required in the string field.' }),
+    })
+    .meta({ id: 'ProcessAgentToolInputContains' });
+
 export const ProcessAgentToolPhaseSchema = z
     .strictObject({
         id: z.string().min(1),
@@ -7,6 +14,14 @@ export const ProcessAgentToolPhaseSchema = z
             .array(z.string().min(1))
             .min(1)
             .meta({ description: 'Any successful tool in this list advances the phase.' }),
+        tool_input_contains: z
+            .array(ProcessAgentToolInputContainsSchema)
+            .min(1)
+            .meta({
+                description:
+                    'All declared top-level string-field substring checks must match before a successful tool call advances the phase.',
+            })
+            .optional(),
         min_successes: z
             .number()
             .int()
@@ -19,12 +34,35 @@ export const ProcessAgentToolPhaseSchema = z
     })
     .meta({ id: 'ProcessAgentToolPhase' });
 
+export const ProcessAgentPhaseResetSchema = z
+    .strictObject({
+        tools: z
+            .array(z.string().min(1))
+            .min(1)
+            .meta({ description: 'Successful tools that invalidate later phase progress.' }),
+        tool_input_contains: z
+            .array(ProcessAgentToolInputContainsSchema)
+            .min(1)
+            .meta({ description: 'Optional input checks applied to the invalidating tool call.' })
+            .optional(),
+        to_phase: z.string().min(1).meta({ description: 'Phase id that must be completed next after invalidation.' }),
+    })
+    .meta({ id: 'ProcessAgentPhaseReset' });
+
 export const ProcessAgentExecutionPolicySchema = z
     .strictObject({
         phases: z
             .array(ProcessAgentToolPhaseSchema)
             .min(1)
             .meta({ description: 'Ordered successful-tool phases the agent node must complete.' }),
+        phase_resets: z
+            .array(ProcessAgentPhaseResetSchema)
+            .min(1)
+            .meta({
+                description:
+                    'Successful tool calls that invalidate prior progress and reset execution to a declared phase.',
+            })
+            .optional(),
         defer_result_schema_until_complete: z
             .boolean()
             .meta({ description: 'Hide the node result schema from model calls until every declared phase completes.' })

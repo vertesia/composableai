@@ -13072,6 +13072,14 @@
         },
         "description": "Any successful tool in this list advances the phase."
       },
+      "tool_input_contains": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessAgentToolInputContains"
+        },
+        "description": "All declared top-level string-field substring checks must match before a successful tool call advances the phase."
+      },
       "min_successes": {
         "type": "integer",
         "exclusiveMinimum": 0,
@@ -13090,6 +13098,56 @@
       "recovery_prompt"
     ]
   },
+  "ProcessAgentToolInputContains": {
+    "type": "object",
+    "properties": {
+      "field": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Top-level tool-input field to inspect."
+      },
+      "contains": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Case-sensitive substring required in the string field."
+      }
+    },
+    "required": [
+      "field",
+      "contains"
+    ]
+  },
+  "ProcessAgentPhaseReset": {
+    "type": "object",
+    "properties": {
+      "tools": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Successful tools that invalidate later phase progress."
+      },
+      "tool_input_contains": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessAgentToolInputContains"
+        },
+        "description": "Optional input checks applied to the invalidating tool call."
+      },
+      "to_phase": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Phase id that must be completed next after invalidation."
+      }
+    },
+    "required": [
+      "tools",
+      "to_phase"
+    ]
+  },
   "ProcessAgentExecutionPolicy": {
     "type": "object",
     "properties": {
@@ -13100,6 +13158,14 @@
           "$ref": "#/components/schemas/ProcessAgentToolPhase"
         },
         "description": "Ordered successful-tool phases the agent node must complete."
+      },
+      "phase_resets": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessAgentPhaseReset"
+        },
+        "description": "Successful tool calls that invalidate prior progress and reset execution to a declared phase."
       },
       "defer_result_schema_until_complete": {
         "type": "boolean",

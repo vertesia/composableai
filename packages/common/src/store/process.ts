@@ -65,6 +65,8 @@ import type {
 } from '../api-schemas/process.js';
 import type {
     ProcessAgentExecutionPolicySchema,
+    ProcessAgentPhaseResetSchema,
+    ProcessAgentToolInputContainsSchema,
     ProcessAgentToolPhaseSchema,
 } from '../api-schemas/process-agent-policy.js';
 import type { JSONSchema } from '../json-schema.js';
@@ -86,6 +88,8 @@ export type ParallelCollectMode = z.infer<typeof ParallelCollectModeSchema>;
 export type BranchJoinPolicy = z.infer<typeof BranchJoinPolicySchema>;
 export type ProcessDefinitionMetadata = z.infer<typeof ProcessDefinitionMetadataSchema>;
 export type ProcessAgentToolPhase = z.infer<typeof ProcessAgentToolPhaseSchema>;
+export type ProcessAgentToolInputContains = z.infer<typeof ProcessAgentToolInputContainsSchema>;
+export type ProcessAgentPhaseReset = z.infer<typeof ProcessAgentPhaseResetSchema>;
 export type ProcessAgentExecutionPolicy = z.infer<typeof ProcessAgentExecutionPolicySchema>;
 export type ProcessScriptLanguage = z.infer<typeof ProcessScriptLanguageSchema>;
 

@@ -100,9 +100,11 @@ describe('AsyncConversationExecutionPayload contract', () => {
                     {
                         id: 'saved',
                         tools: ['app_workspace_save'],
+                        tool_input_contains: [{ field: 'mode', contains: 'commit' }],
                         recovery_prompt: 'Save before finishing.',
                     },
                 ],
+                phase_resets: [{ tools: ['app_workspace_edit'], to_phase: 'saved' }],
                 action_phase_count: 1,
                 action_phase_max_tokens: 4_096,
                 completion_prompt: 'Return the structured result now.',
