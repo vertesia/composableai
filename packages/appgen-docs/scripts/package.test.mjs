@@ -35,6 +35,9 @@ test('ships the generated app-development references', async () => {
     assert.match(uiRecipe, /Vitest in a Node environment/);
     assert.match(uiRecipe, /small pure view-state or data helper/);
     assert.match(uiRecipe, /path containing `\/interactions`/);
+    assert.match(uiRecipe, /getByRole\('cell', \{ name: interactionName, exact: true \}\)/);
+    assert.match(uiRecipe, /Assert positive horizontal overflow only at the narrow viewport/);
+    assert.match(uiRecipe, /toBeInViewport\(\)/);
 
     const clientRecipe = await readFile(join(appgenDocsRoot, 'recipes', 'client-interactions.md'), 'utf8');
     assert.match(clientRecipe, /client\.interactions\.list\(\)/);

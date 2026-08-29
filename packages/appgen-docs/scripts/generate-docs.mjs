@@ -287,6 +287,13 @@ const { data = [], error, isLoading, refetch } = useFetch(loadRows, { deps: [pro
   path involved in the primary flow (interaction listing uses a path containing \`/interactions\`), then exercise the
   page through accessible roles. Use the declared \`test:e2e\` script and its \`PLAYWRIGHT_BASE_URL\`; do not invent a
   second browser harness.
+- Scope repeated text to its semantic container and request an exact accessible name. For example, use
+  \`table.getByRole('cell', { name: interactionName, exact: true })\` when the same name can also occur in tags or
+  descriptions; an unscoped text or name locator can match several elements and waste a browser retry.
+- For a responsive table, prove document-level overflow is absent and intentional overflow stays on one labeled table
+  region. Assert positive horizontal overflow only at the narrow viewport—a desktop table may fit—and scroll that region
+  before using \`toBeInViewport()\` on the final required column. DOM presence or \`toBeVisible()\` alone does not prove an
+  off-screen mobile column is reachable.
 `;
 }
 
