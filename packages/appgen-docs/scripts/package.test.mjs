@@ -32,6 +32,8 @@ test('ships the generated app-development references', async () => {
     const uiRecipe = await readFile(join(appgenDocsRoot, 'recipes', 'ui-components.md'), 'utf8');
     assert.match(uiRecipe, /<TBody columns=\{2\} isLoading=\{isLoading\}>/);
     assert.match(uiRecipe, /TableHeaderCell/);
+    assert.match(uiRecipe, /this recipe is complete/);
+    assert.match(uiRecipe, /let the first workspace typecheck/);
     assert.match(uiRecipe, /Vitest in a Node environment/);
     assert.match(uiRecipe, /small pure view-state or data helper/);
     assert.match(uiRecipe, /path containing `\/interactions`/);
@@ -45,6 +47,9 @@ test('ships the generated app-development references', async () => {
     assert.match(clientRecipe, /InteractionRef` deliberately has no `type` field/);
     assert.match(clientRecipe, /client\.interactions\.catalog\.listStoredInteractions\(\)/);
     assert.match(clientRecipe, /Promise<CatalogInteractionRef\[\]>/);
+    assert.match(clientRecipe, /GET \/api\/v1\/interactions\/catalog\/stored/);
+    assert.match(clientRecipe, /bare `CatalogInteractionRef\[\]` array/);
+    assert.match(clientRecipe, /Do not probe the live API/);
     assert.match(clientRecipe, /combined system, app, and stored catalog/);
 
     const storeObjects = await readFile(join(appgenDocsRoot, 'store-objects.md'), 'utf8');

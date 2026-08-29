@@ -221,6 +221,11 @@ function generateUiComponentsRecipe() {
 This recipe is generated with the installed \`@vertesia/ui\` version. Use it for common app screens instead of
 searching dependency source. For an API not covered here, search \`appgen/ui-interfaces.d.ts\` once by exact symbol.
 
+For a current-project interaction catalog built with the table, button, and fetch APIs below, this recipe is complete.
+After reading it, do not search generated declarations or dependency source for \`Table\`, \`TBody\`, \`useFetch\`, or
+the interaction catalog merely to reconfirm these signatures. Implement the screen and let the first workspace typecheck
+identify any real version drift; only then search once for the exact symbol named by that diagnostic.
+
 ## Imports
 
 \`\`\`tsx
@@ -330,9 +335,15 @@ export function InteractionCatalog() {
 - \`InteractionRef\` deliberately has no \`type\` field. When a current-project catalog must display type, call
   \`client.interactions.catalog.listStoredInteractions()\`, which returns \`Promise<CatalogInteractionRef[]>\`; do not
   search generated declarations for \`InteractionRef.type\` or infer it from another field.
+- \`listStoredInteractions()\` sends \`GET /api/v1/interactions/catalog/stored\` (plus optional \`status\` or \`tag\`
+  query parameters). Its JSON response is the bare \`CatalogInteractionRef[]\` array, never an \`{ items: [...] }\`
+  wrapper. A focused Playwright mock can route \`**/api/v1/interactions/catalog/stored**\` and fulfill that bare array.
 - The useful \`CatalogInteractionRef\` fields are \`type\` (\`'stored'\` for this endpoint), \`id\`, \`name\`, \`title\`,
   \`description?\`, \`version?\`, and \`tags\`. Use \`client.interactions.catalog.list()\` only when the task explicitly
   asks for the combined system, app, and stored catalog rather than the current project's stored interactions.
+- This recipe fully specifies the method, return type, endpoint, and response shape. Do not probe the live API, inspect
+  \`node_modules\`, or call \`app_docs_grep\`/\`app_docs_read\` to reconfirm them. Treat a concrete workspace typecheck or
+  Playwright failure as the only reason to inspect one exact symbol afterward.
 - Keep SDK methods attached to their topic: call \`client.interactions.list()\`; do not destructure \`list\`.
 - The session client is already scoped to the signed-in user's current project. Do not construct another client in
   browser code and do not hardcode a project id.
