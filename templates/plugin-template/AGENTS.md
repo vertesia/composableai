@@ -48,6 +48,9 @@ workflow. Add or update both proportionally as behavior changes. A source-token 
 placeholder/no-test command is not behavioral coverage. Playwright tests must be deterministic: mock the network boundary or
 use uniquely owned fixtures with cleanup; never rely on mutable shared-project data. Assert user-observable responsive
 behavior rather than a specific layout mechanism; only require horizontal overflow when scrolling is itself a requirement.
+For intentional table scrolling, constrain the full flex/grid ancestor chain (`min-w-0` plus bounded widths), keep document
+overflow at zero, and let only the labeled inner region scroll. Bring each vertically distant control into view immediately
+before asserting it; do not require controls at opposite ends of the page to occupy the viewport simultaneously.
 
 ## Dual Build System
 
