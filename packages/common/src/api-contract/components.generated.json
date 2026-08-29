@@ -13096,7 +13096,7 @@
         "items": {
           "$ref": "#/components/schemas/ProcessAgentToolInputContains"
         },
-        "description": "All declared top-level string-field substring checks must match before a successful tool call advances the phase."
+        "description": "All declared top-level string-field presence, absence, and minimum-length checks must match before a tool call is authorized or advances the phase."
       },
       "min_successes": {
         "type": "integer",
@@ -13128,6 +13128,21 @@
         "type": "string",
         "minLength": 1,
         "description": "Case-sensitive substring required in the string field."
+      },
+      "not_contains": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Case-sensitive substrings forbidden in the same string field."
+      },
+      "min_length": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Minimum string length required for the same field."
       }
     },
     "required": [

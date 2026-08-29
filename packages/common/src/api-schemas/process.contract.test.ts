@@ -31,6 +31,14 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                         tools: ['app_workspace_typecheck'],
                         continuation_tools: ['app_workspace_read'],
                         recovery_tools: ['app_workspace_read', 'app_workspace_edit'],
+                        tool_input_contains: [
+                            {
+                                field: 'command',
+                                contains: 'pnpm run test:unit',
+                                not_contains: ['|'],
+                                min_length: 18,
+                            },
+                        ],
                         recovery_prompt: 'Inspect source.',
                     },
                 ],
@@ -42,6 +50,14 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                     tools: ['app_workspace_typecheck'],
                     continuation_tools: ['app_workspace_read'],
                     recovery_tools: ['app_workspace_read', 'app_workspace_edit'],
+                    tool_input_contains: [
+                        {
+                            field: 'command',
+                            contains: 'pnpm run test:unit',
+                            not_contains: ['|'],
+                            min_length: 18,
+                        },
+                    ],
                 },
             ],
             restrict_to_phase_tools: true,
@@ -51,6 +67,18 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                 phases: [{ id: 'inspect', tools: ['app_workspace_read'], recovery_prompt: 'Inspect source.' }],
                 restrict_to_phase_tools: true,
                 unexpected: true,
+            }),
+        ).toThrow();
+        expect(() =>
+            ProcessAgentExecutionPolicySchema.parse({
+                phases: [
+                    {
+                        id: 'inspect',
+                        tools: ['app_workspace_read'],
+                        tool_input_contains: [{ field: 'path', contains: 'src/', not_contains: [], min_length: -1 }],
+                        recovery_prompt: 'Inspect source.',
+                    },
+                ],
             }),
         ).toThrow();
     });

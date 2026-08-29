@@ -4,6 +4,17 @@ export const ProcessAgentToolInputContainsSchema = z
     .strictObject({
         field: z.string().min(1).meta({ description: 'Top-level tool-input field to inspect.' }),
         contains: z.string().min(1).meta({ description: 'Case-sensitive substring required in the string field.' }),
+        not_contains: z
+            .array(z.string().min(1))
+            .min(1)
+            .meta({ description: 'Case-sensitive substrings forbidden in the same string field.' })
+            .optional(),
+        min_length: z
+            .number()
+            .int()
+            .nonnegative()
+            .meta({ description: 'Minimum string length required for the same field.' })
+            .optional(),
     })
     .meta({ id: 'ProcessAgentToolInputContains' });
 
@@ -35,7 +46,7 @@ export const ProcessAgentToolPhaseSchema = z
             .min(1)
             .meta({
                 description:
-                    'All declared top-level string-field substring checks must match before a successful tool call advances the phase.',
+                    'All declared top-level string-field presence, absence, and minimum-length checks must match before a tool call is authorized or advances the phase.',
             })
             .optional(),
         min_successes: z
