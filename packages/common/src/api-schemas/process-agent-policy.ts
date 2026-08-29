@@ -55,6 +55,12 @@ export const ProcessAgentToolPhaseSchema = z
             .positive()
             .meta({ description: 'Successful matching calls required to advance. Defaults to one.' })
             .optional(),
+        max_tokens: z
+            .number()
+            .int()
+            .positive()
+            .meta({ description: 'Optional output-token ceiling for model turns while this action phase is active.' })
+            .optional(),
         recovery_prompt: z.string().min(1).meta({
             description: 'Process-authored instruction used when the agent tries to finish during this phase.',
         }),
