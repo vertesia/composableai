@@ -13072,6 +13072,15 @@
         },
         "description": "Any successful tool in this list advances the phase."
       },
+      "recovery_tools": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Additional tools authorized only after a matching phase tool fails. Successful calls do not advance the phase."
+      },
       "tool_input_contains": {
         "minItems": 1,
         "type": "array",

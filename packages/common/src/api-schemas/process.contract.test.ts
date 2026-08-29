@@ -25,10 +25,25 @@ describe('ProcessAgentExecutionPolicySchema', () => {
     it('accepts cache-stable phase tool enforcement and retains a strict boundary', () => {
         expect(
             ProcessAgentExecutionPolicySchema.parse({
-                phases: [{ id: 'inspect', tools: ['app_workspace_read'], recovery_prompt: 'Inspect source.' }],
+                phases: [
+                    {
+                        id: 'inspect',
+                        tools: ['app_workspace_typecheck'],
+                        recovery_tools: ['app_workspace_read', 'app_workspace_edit'],
+                        recovery_prompt: 'Inspect source.',
+                    },
+                ],
                 restrict_to_phase_tools: true,
             }),
-        ).toMatchObject({ restrict_to_phase_tools: true });
+        ).toMatchObject({
+            phases: [
+                {
+                    tools: ['app_workspace_typecheck'],
+                    recovery_tools: ['app_workspace_read', 'app_workspace_edit'],
+                },
+            ],
+            restrict_to_phase_tools: true,
+        });
         expect(() =>
             ProcessAgentExecutionPolicySchema.parse({
                 phases: [{ id: 'inspect', tools: ['app_workspace_read'], recovery_prompt: 'Inspect source.' }],
