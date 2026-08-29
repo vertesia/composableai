@@ -316,6 +316,7 @@
     "layout.pageNotFound": "페이지를 찾을 수 없음",
     "layout.search": "검색",
     "layout.searchPlaceholder": "검색...",
+    "layout.toggleNavigationMenu": "탐색 메뉴 전환",
     "login.accept": "수락",
     "login.reject": "거부",
     "login.reviewInvites": "초대 검토",

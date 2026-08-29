@@ -316,6 +316,7 @@
     "layout.pageNotFound": "Sayfa Bulunamadı",
     "layout.search": "Ara",
     "layout.searchPlaceholder": "Ara...",
+    "layout.toggleNavigationMenu": "Gezinme menüsünü aç veya kapat",
     "login.accept": "Kabul Et",
     "login.reject": "Reddet",
     "login.reviewInvites": "Davetleri İncele",

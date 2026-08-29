@@ -591,6 +591,7 @@
     "layout.pageNotFound": "Page Not Found",
     "layout.search": "Search",
     "layout.searchPlaceholder": "Search...",
+    "layout.toggleNavigationMenu": "Toggle navigation menu",
     "login.accept": "Accept",
     "login.reject": "Reject",
     "login.reviewInvites": "Review Invites",

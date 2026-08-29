@@ -320,6 +320,7 @@
     "layout.pageNotFound": "Страница не найдена",
     "layout.search": "Поиск",
     "layout.searchPlaceholder": "Поиск...",
+    "layout.toggleNavigationMenu": "Переключить меню навигации",
     "login.accept": "Принять",
     "login.reject": "Отклонить",
     "login.reviewInvites": "Просмотреть приглашения",

@@ -57,7 +57,8 @@ function SearchBox(_props: SearchBoxProps) {
 }
 
 export function HamburgerButton() {
-    const { toggleDesktop, toggleMobile } = useSidebarToggle();
+    const { isOpen, toggleDesktop, toggleMobile } = useSidebarToggle();
+    const { t } = useUITranslation();
     const toggle = () => {
         if (window.innerWidth < 1024) {
             toggleMobile();
@@ -69,7 +70,9 @@ export function HamburgerButton() {
         <Button
             variant="ghost"
             size="icon"
-            onClick={() => toggle()} //alt='sidebar toggle'
+            aria-expanded={isOpen}
+            aria-label={t('layout.toggleNavigationMenu')}
+            onClick={toggle}
             className="p-2 rounded-full transition-colors w-full text-center "
         >
             <Menu aria-hidden="true" size={24} />

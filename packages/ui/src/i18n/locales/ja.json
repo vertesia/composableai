@@ -316,6 +316,7 @@
     "layout.pageNotFound": "ページが見つかりません",
     "layout.search": "検索",
     "layout.searchPlaceholder": "検索...",
+    "layout.toggleNavigationMenu": "ナビゲーションメニューを切り替え",
     "login.accept": "承認",
     "login.reject": "拒否",
     "login.reviewInvites": "招待を確認",
