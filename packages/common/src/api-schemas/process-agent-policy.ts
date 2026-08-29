@@ -67,6 +67,13 @@ export const ProcessAgentExecutionPolicySchema = z
             .boolean()
             .meta({ description: 'Hide the node result schema from model calls until every declared phase completes.' })
             .optional(),
+        restrict_to_phase_tools: z
+            .boolean()
+            .meta({
+                description:
+                    'Expose one stable union of declared phase tools to the model, and reject tool calls that do not satisfy the current phase. This preserves prompt-cache stability while enforcing ordered execution.',
+            })
+            .optional(),
         action_phase_count: z
             .number()
             .int()

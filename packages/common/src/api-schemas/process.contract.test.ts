@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ProcessRunConfigSchema } from './process.js';
+import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 
 describe('ProcessRunConfigSchema', () => {
     it('accepts validated LLM execution configuration and retains a strict Process boundary', () => {
@@ -16,6 +17,24 @@ describe('ProcessRunConfigSchema', () => {
         });
         expect(() =>
             ProcessRunConfigSchema.parse({ environment: 'openrouter-environment', unexpected: true }),
+        ).toThrow();
+    });
+});
+
+describe('ProcessAgentExecutionPolicySchema', () => {
+    it('accepts cache-stable phase tool enforcement and retains a strict boundary', () => {
+        expect(
+            ProcessAgentExecutionPolicySchema.parse({
+                phases: [{ id: 'inspect', tools: ['app_workspace_read'], recovery_prompt: 'Inspect source.' }],
+                restrict_to_phase_tools: true,
+            }),
+        ).toMatchObject({ restrict_to_phase_tools: true });
+        expect(() =>
+            ProcessAgentExecutionPolicySchema.parse({
+                phases: [{ id: 'inspect', tools: ['app_workspace_read'], recovery_prompt: 'Inspect source.' }],
+                restrict_to_phase_tools: true,
+                unexpected: true,
+            }),
         ).toThrow();
     });
 });

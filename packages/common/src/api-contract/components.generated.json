@@ -13171,6 +13171,10 @@
         "type": "boolean",
         "description": "Hide the node result schema from model calls until every declared phase completes."
       },
+      "restrict_to_phase_tools": {
+        "type": "boolean",
+        "description": "Expose one stable union of declared phase tools to the model, and reject tool calls that do not satisfy the current phase. This preserves prompt-cache stability while enforcing ordered execution."
+      },
       "action_phase_count": {
         "type": "integer",
         "minimum": 0,
