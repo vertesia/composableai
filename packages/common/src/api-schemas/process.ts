@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { PermissionSchema } from './access-control.js';
 import { StringValueMapSchema } from './files.js';
 import { ConversationVisibilitySchema, RunSourceSchema } from './interaction.js';
+import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { TaskFieldSchema } from './task.js';
 
@@ -864,6 +865,10 @@ export const NodeDefinitionSchema: z.ZodType = z
             .array(z.string())
             .meta({ description: "Execution-time tool denylist for the agent node's child conversation." })
             .optional(),
+        agent_policy: ProcessAgentExecutionPolicySchema.meta({
+            description:
+                'Declarative successful-tool phases and completion behavior for this agent node. The Process owns this policy; the child conversation enforces it generically.',
+        }).optional(),
         model: z
             .string()
             .meta({

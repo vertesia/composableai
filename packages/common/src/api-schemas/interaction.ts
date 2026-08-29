@@ -25,6 +25,7 @@ import { LlmCallType } from '../workflow-analytics.js';
 import { ProjectRefSchema } from './apikey.js';
 import { ExecutionEnvironmentRefSchema } from './environment.js';
 import { AccountRefSchema } from './invites.js';
+import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
@@ -2204,6 +2205,10 @@ export const AsyncConversationExecutionPayloadSchema = z
                     'Hard denylist of tool names for this conversation. Excluded tools are never exposed to the model and are refused at execution time, even when a skill or tool refresh would otherwise unlock them. Takes precedence over tool_names, initial_skills, and skill-based tool activation.',
             })
             .optional(),
+        agent_policy: ProcessAgentExecutionPolicySchema.meta({
+            description:
+                'Process-authored successful-tool phases enforced by this child conversation. Ordinary conversation callers should leave this unset.',
+        }).optional(),
         max_iterations: z
             .number()
             .meta({

@@ -342,7 +342,7 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(true);
     });
 
-    it('publishes agent-node skill activation and execution exclusions', () => {
+    it('publishes agent-node launch and execution policy', () => {
         expect(
             validateApiRequest('CreateProcessDefinitionPayload', {
                 name: 'App development process',
@@ -358,6 +358,16 @@ describe('Zeno read-side response contracts', () => {
                             inherit_context: false,
                             initial_skills: ['app_quick_fix'],
                             excluded_tools: ['learn_app_development'],
+                            agent_policy: {
+                                phases: [
+                                    {
+                                        id: 'saved',
+                                        tools: ['app_workspace_save'],
+                                        recovery_prompt: 'Save before finishing.',
+                                    },
+                                ],
+                                defer_result_schema_until_complete: true,
+                            },
                         },
                     },
                 },

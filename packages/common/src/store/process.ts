@@ -63,6 +63,10 @@ import type {
     UpdateProcessTestScenarioPayloadSchema,
     UpdateProcessTestSuitePayloadSchema,
 } from '../api-schemas/process.js';
+import type {
+    ProcessAgentExecutionPolicySchema,
+    ProcessAgentToolPhaseSchema,
+} from '../api-schemas/process-agent-policy.js';
 import type { JSONSchema } from '../json-schema.js';
 
 export type JsonLogicRule = z.infer<typeof JsonLogicRuleSchema>;
@@ -81,6 +85,8 @@ export type ProcessNodeRunType = z.infer<typeof ProcessNodeRunTypeSchema>;
 export type ParallelCollectMode = z.infer<typeof ParallelCollectModeSchema>;
 export type BranchJoinPolicy = z.infer<typeof BranchJoinPolicySchema>;
 export type ProcessDefinitionMetadata = z.infer<typeof ProcessDefinitionMetadataSchema>;
+export type ProcessAgentToolPhase = z.infer<typeof ProcessAgentToolPhaseSchema>;
+export type ProcessAgentExecutionPolicy = z.infer<typeof ProcessAgentExecutionPolicySchema>;
 export type ProcessScriptLanguage = z.infer<typeof ProcessScriptLanguageSchema>;
 
 export type ProcessScriptInlineSource = z.infer<typeof ProcessScriptInlineSourceSchema>;
@@ -157,6 +163,8 @@ export interface NodeDefinition {
     initial_skills?: string[];
     /** Execution-time tool denylist for the agent node's child conversation. */
     excluded_tools?: string[];
+    /** Process-owned successful-tool phases and completion behavior for this agent node. */
+    agent_policy?: ProcessAgentExecutionPolicy;
     /**
      * Model id override for this node. If unset, falls back to the process
      * run's `config.model`, then to the project's default. Useful when a

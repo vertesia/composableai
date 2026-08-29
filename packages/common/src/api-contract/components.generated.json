@@ -12955,6 +12955,10 @@
         },
         "description": "Hard denylist of tool names for this conversation. Excluded tools are never exposed to the model and are refused at execution time, even when a skill or tool refresh would otherwise unlock them. Takes precedence over tool_names, initial_skills, and skill-based tool activation."
       },
+      "agent_policy": {
+        "$ref": "#/components/schemas/ProcessAgentExecutionPolicy",
+        "description": "Process-authored successful-tool phases enforced by this child conversation. Ordinary conversation callers should leave this unset."
+      },
       "max_iterations": {
         "type": "number",
         "description": "The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used."
@@ -13050,6 +13054,78 @@
     "required": [
       "interaction",
       "type"
+    ]
+  },
+  "ProcessAgentToolPhase": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "tools": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Any successful tool in this list advances the phase."
+      },
+      "min_successes": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Successful matching calls required to advance. Defaults to one."
+      },
+      "recovery_prompt": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Process-authored instruction used when the agent tries to finish during this phase."
+      }
+    },
+    "required": [
+      "id",
+      "tools",
+      "recovery_prompt"
+    ]
+  },
+  "ProcessAgentExecutionPolicy": {
+    "type": "object",
+    "properties": {
+      "phases": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessAgentToolPhase"
+        },
+        "description": "Ordered successful-tool phases the agent node must complete."
+      },
+      "defer_result_schema_until_complete": {
+        "type": "boolean",
+        "description": "Hide the node result schema from model calls until every declared phase completes."
+      },
+      "action_phase_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Number of leading phases whose model turns require a tool call. Defaults to zero and cannot exceed phases.length."
+      },
+      "action_phase_max_tokens": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Maximum output tokens while an action phase is active."
+      },
+      "max_recovery_attempts_per_phase": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Bounded recovery turns allowed per incomplete phase. Defaults to one."
+      }
+    },
+    "required": [
+      "phases"
     ]
   },
   "AsyncInteractionExecutionPayload": {
@@ -21732,6 +21808,10 @@
           "type": "string"
         },
         "description": "Execution-time tool denylist for the agent node's child conversation."
+      },
+      "agent_policy": {
+        "$ref": "#/components/schemas/ProcessAgentExecutionPolicy",
+        "description": "Declarative successful-tool phases and completion behavior for this agent node. The Process owns this policy; the child conversation enforces it generically."
       },
       "model": {
         "type": "string",
