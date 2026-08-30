@@ -240,6 +240,9 @@ import {
 } from '@vertesia/ui/core';
 \`\`\`
 
+These are runtime React values, not types. Import \`Table\`, \`TBody\`, \`THead\`, \`TR\`, \`TableHeaderCell\`, \`Button\`,
+and \`useFetch\` with a normal \`import\`; using \`import type\` makes JSX fail with TS1361.
+
 ## Loading table with refresh
 
 \`TBody.columns\` is required. It is the number of rendered columns and drives the loading skeleton.
@@ -279,16 +282,22 @@ const { data = [], error, isLoading, refetch } = useFetch(loadRows, { deps: [pro
 - \`TBody\` accepts \`{ columns: number; isLoading?: boolean; rows?: number; children: ReactNode }\`.
 - \`Button\` accepts normal button props plus \`isLoading\`, \`isDisabled\`, \`variant\`, and \`size\`.
 - Icon-only buttons need \`aria-label\`. Text buttons should keep their visible text in the accessible name.
+- Use a native \`<section aria-label="…">\` for a labeled table/overflow region. Do not put \`role="region"\` on a
+  \`<div>\`; Biome's \`lint/a11y/useSemanticElements\` requires the semantic element.
 - Prefer semantic theme classes and plain HTML for layout. Do not guess private \`@vertesia/ui\` paths.
 
 ## Generated app tests
 
 - The standard generated app runs Vitest in a Node environment and intentionally does not install jsdom,
   happy-dom, or Testing Library. Do not search dependency trees or add a DOM-test dependency for a UI-only change.
-- Put loading/error/empty/populated/refresh decisions in a small pure view-state or data helper beside the component and
-  cover that state matrix with focused unit tests. Do not import the real \`@vertesia/ui\` runtime or walk rendered React
-  element internals from a Node-only unit test.
-- Source Playwright specs import \`{ expect, test }\` from \`./vertesia\`. Use \`page.route\` to mock only the real API
+- Put loading/error/empty/populated/refresh decisions in a separate production \`*.state.ts\` or \`*.model.ts\` module
+  imported and used by the component. Cover that state matrix by importing the pure module directly from the focused unit
+  test. Do not export the helper only from the component's TSX module: importing that file also loads the real
+  \`@vertesia/ui\` runtime, which the standard Node-only Vitest environment cannot execute. Do not copy the helper into
+  the test or walk rendered React element internals; the tested module must remain on the production import path.
+- Source Playwright specs import \`type { Page }\` from \`@playwright/test\` and \`{ expect, test }\` from
+  \`./vertesia\`. Type shared helpers as \`page: Page\`; never hand-write a structural Page or Route type because
+  Playwright's overloaded callbacks will reject narrower substitutes. Use \`page.route\` to mock only the real API
   path involved in the primary flow (interaction listing uses a path containing \`/interactions\`), then exercise the
   page through accessible roles. Use the declared \`test:e2e\` script and its \`PLAYWRIGHT_BASE_URL\`; do not invent a
   second browser harness.

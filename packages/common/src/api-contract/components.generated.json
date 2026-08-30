@@ -13232,6 +13232,12 @@
         "maximum": 9007199254740991,
         "description": "Bounded recovery turns allowed per incomplete phase. Defaults to one."
       },
+      "max_failed_tool_iterations": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Maximum model iterations containing a failed tool result before the agent node stops. Defaults to eight."
+      },
       "completion_prompt": {
         "type": "string",
         "minLength": 1,

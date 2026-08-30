@@ -44,6 +44,7 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                     },
                 ],
                 restrict_to_phase_tools: true,
+                max_failed_tool_iterations: 1,
             }),
         ).toMatchObject({
             phases: [
@@ -63,6 +64,7 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                 },
             ],
             restrict_to_phase_tools: true,
+            max_failed_tool_iterations: 1,
         });
         expect(() =>
             ProcessAgentExecutionPolicySchema.parse({

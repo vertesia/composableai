@@ -34,9 +34,16 @@ test('ships the generated app-development references', async () => {
     assert.match(uiRecipe, /TableHeaderCell/);
     assert.match(uiRecipe, /this recipe is complete/);
     assert.match(uiRecipe, /let the first workspace typecheck/);
+    assert.match(uiRecipe, /using `import type` makes JSX fail with TS1361/);
+    assert.match(uiRecipe, /native `<section aria-label="…">`/);
+    assert.match(uiRecipe, /lint\/a11y\/useSemanticElements/);
     assert.match(uiRecipe, /Vitest in a Node environment/);
-    assert.match(uiRecipe, /small pure view-state or data helper/);
+    assert.match(uiRecipe, /separate production `\*\.state\.ts` or `\*\.model\.ts` module/);
+    assert.match(uiRecipe, /Do not export the helper only from the component's TSX module/);
+    assert.match(uiRecipe, /the tested module must remain on the production import path/);
     assert.match(uiRecipe, /path containing `\/interactions`/);
+    assert.match(uiRecipe, /import `type \{ Page \}` from `@playwright\/test`/);
+    assert.match(uiRecipe, /never hand-write a structural Page or Route type/);
     assert.match(uiRecipe, /getByRole\('cell', \{ name: interactionName, exact: true \}\)/);
     assert.match(uiRecipe, /Assert positive horizontal overflow only at the narrow viewport/);
     assert.match(uiRecipe, /toBeInViewport\(\)/);

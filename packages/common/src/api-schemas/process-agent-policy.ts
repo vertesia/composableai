@@ -128,6 +128,15 @@ export const ProcessAgentExecutionPolicySchema = z
             .nonnegative()
             .meta({ description: 'Bounded recovery turns allowed per incomplete phase. Defaults to one.' })
             .optional(),
+        max_failed_tool_iterations: z
+            .number()
+            .int()
+            .positive()
+            .meta({
+                description:
+                    'Maximum model iterations containing a failed tool result before the agent node stops. Defaults to eight.',
+            })
+            .optional(),
         completion_prompt: z
             .string()
             .min(1)
