@@ -14,49 +14,36 @@ export const EXTERNALS = [
     'firebase/auth',
     'firebase/analytics',
     'jwt-decode',
-    'lucide-react',
     'clsx',
-    '@radix-ui/react-checkbox',
-    '@radix-ui/react-collapsible',
-    '@radix-ui/react-dialog',
+    // Must stay external (single shared copy via the import map): react-direction's context is
+    // provided by the i18n bundle and read by radix primitives inside core/features — a bundled
+    // copy per lib would be a different React context and RTL would silently stop propagating.
     '@radix-ui/react-direction',
-    '@radix-ui/react-label',
-    '@radix-ui/react-popover',
-    '@radix-ui/react-separator',
-    '@radix-ui/react-slider',
-    '@radix-ui/react-slot',
-    '@radix-ui/react-tabs',
-    '@radix-ui/react-radio-group',
-    '@radix-ui/react-switch',
-    '@radix-ui/react-tooltip',
+    // These radix internals hold module-level state (dismissable layer stack, focus-scope stack,
+    // focus-guard counter). Several subpath bundles embed Dialog/Popover, so a bundled copy per
+    // lib would give each its own stack: nested overlays across bundles would fight over Escape
+    // handling, focus trapping, and body pointer-events restoration. One shared copy via the
+    // import map keeps them coordinated.
     '@radix-ui/react-dismissable-layer',
     '@radix-ui/react-focus-guards',
     '@radix-ui/react-focus-scope',
-    '@radix-ui/react-portal',
-    '@radix-ui/react-dropdown-menu',
+    // The scroll-lock family coordinates through module-level singletons; per-lib copies would
+    // not see each other and nested overlays across libs could restore body scroll early.
     'aria-hidden',
     'react-remove-scroll',
     'react-remove-scroll-bar',
     'react-style-singleton',
     'class-variance-authority',
-    'cmdk',
     'lodash-es',
     'papaparse',
     'ts-md5',
-    'react-markdown',
-    'remark-gfm',
-    'remark-math',
+    // rehype-katex is dynamically imported by the markdown renderer so math support stays lazy;
+    // it (and katex, which it drags in) must remain external or the single-file widgets bundle
+    // would inline the dynamic import and make katex a static startup dependency.
     'rehype-katex',
     'katex',
-    'remark-definition-list',
-    'remark-directive',
-    'remark-github-blockquote-alert',
-    'remark-supersub',
-    'unist-util-visit',
     '@monaco-editor/react',
     'monaco-editor',
-    'motion',
-    /^motion\/.*/,
     'tailwind-merge',
     'debounce',
     'fast-xml-parser',
@@ -77,8 +64,6 @@ export const EXTERNALS = [
     '@floating-ui/dom',
     '@floating-ui/react',
     'json-schema',
-    'react-calendar',
-    'framer-motion',
     'react-resizable-panels',
     'react-vega',
     'vega',
@@ -86,7 +71,6 @@ export const EXTERNALS = [
     'vega-lite',
     /^vega\/.*/,
     /^vega-lite\/.*/,
-    /^framer-motion\/.*/,
     'dompurify',
     'i18next',
     'react-i18next',
@@ -97,8 +81,40 @@ export const EXTERNALS = [
     /^pdfjs-dist\/.*/,
 ];
 
-// Put here exceptions - deps that should be inlined
-const INLINED_DEPS = [];
+// Deps deliberately bundled into the consuming subpath bundles instead of loaded via the import
+// map: tree-shaking keeps only what is used (lucide-react's full icon set alone is ~900 KB as an
+// external file), and each bundled package removes a request from the app's startup waterfall.
+// Only safe for packages with no cross-bundle module state — see the react-direction and
+// scroll-lock notes in EXTERNALS above. katex stays external: it is large, shared, and cacheable.
+const INLINED_DEPS = [
+    'lucide-react',
+    '@radix-ui/react-checkbox',
+    '@radix-ui/react-collapsible',
+    '@radix-ui/react-dialog',
+    '@radix-ui/react-label',
+    '@radix-ui/react-popover',
+    '@radix-ui/react-separator',
+    '@radix-ui/react-slider',
+    '@radix-ui/react-slot',
+    '@radix-ui/react-tabs',
+    '@radix-ui/react-radio-group',
+    '@radix-ui/react-switch',
+    '@radix-ui/react-tooltip',
+    '@radix-ui/react-portal',
+    '@radix-ui/react-dropdown-menu',
+    'cmdk',
+    'react-markdown',
+    'remark-gfm',
+    'remark-math',
+    'remark-definition-list',
+    'remark-directive',
+    'remark-github-blockquote-alert',
+    'remark-supersub',
+    'unist-util-visit',
+    'react-calendar',
+    'motion',
+    'framer-motion',
+];
 
 function resolve(path) {
     return new URL(path, import.meta.url).pathname;
