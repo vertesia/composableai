@@ -15,6 +15,7 @@ const expectedDocs = [
     'recipes/client-interactions.md',
     'recipes/ui-components.md',
     'store-objects.md',
+    'symbol-index.json',
     'tool-server-resource.md',
     'ui-interfaces.d.ts',
     'ui/llms.txt',
@@ -71,4 +72,22 @@ test('ships the generated app-development references', async () => {
     assert.match(interactionRuntime, /client\.agents\.streamMessages/);
     assert.match(interactionRuntime, /client\.agents\.retrieveProcess/);
     assert.match(interactionRuntime, /Never invent `client\.activities\.executeByName`/);
+
+    const symbolIndex = JSON.parse(await readFile(join(appgenDocsRoot, 'symbol-index.json'), 'utf8'));
+    assert.equal(symbolIndex.format_version, 1);
+    assert.match(symbolIndex.index_version, /^[a-f0-9]{64}$/);
+    assert.ok(symbolIndex.symbols.length > 100);
+    const useFetchCard = symbolIndex.symbols.find(
+        (card) => card.symbol === 'useFetch' && card.import_from === '@vertesia/ui/core',
+    );
+    assert.equal(useFetchCard.import_kind, 'value');
+    assert.equal(useFetchCard.import_example, "import { useFetch } from '@vertesia/ui/core';");
+    assert.equal(useFetchCard.source_path, 'core/hooks/useFetch.d.ts');
+    assert.match(useFetchCard.source_sha256, /^[a-f0-9]{64}$/);
+
+    const interactionRefCard = symbolIndex.symbols.find(
+        (card) => card.symbol === 'InteractionRef' && card.import_from === '@vertesia/common',
+    );
+    assert.equal(interactionRefCard.import_kind, 'type');
+    assert.equal(interactionRefCard.import_example, "import type { InteractionRef } from '@vertesia/common';");
 });

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +26,12 @@ const TOOL_SERVER_RESOURCE_REFERENCE_PATH = join(
 const UI_TYPES_ROOT = join(REPO_ROOT, 'packages', 'ui', 'lib');
 const CLIENT_TYPES_ROOT = join(REPO_ROOT, 'packages', 'client', 'lib');
 const COMMON_TYPES_ROOT = join(REPO_ROOT, 'packages', 'common', 'lib');
+
+const PACKAGE_MANIFESTS = {
+    '@vertesia/ui': join(REPO_ROOT, 'packages', 'ui', 'package.json'),
+    '@vertesia/client': join(REPO_ROOT, 'packages', 'client', 'package.json'),
+    '@vertesia/common': join(REPO_ROOT, 'packages', 'common', 'package.json'),
+};
 
 const TYPE_FILES = [
     'core/components/index.d.ts',
@@ -134,6 +141,187 @@ function cleanDeclarationContent(content) {
         .filter((line) => !line.startsWith('//# sourceMappingURL='))
         .join('\n')
         .trim();
+}
+
+function sha256(content) {
+    return createHash('sha256').update(content).digest('hex');
+}
+
+function declarationSignature(content, start) {
+    let braces = 0;
+    let brackets = 0;
+    let parentheses = 0;
+    let sawBlock = false;
+    let quote;
+    let escaped = false;
+    for (let index = start; index < content.length; index++) {
+        const char = content[index];
+        if (quote) {
+            if (escaped) escaped = false;
+            else if (char === '\\') escaped = true;
+            else if (char === quote) quote = undefined;
+            continue;
+        }
+        if (char === '"' || char === "'" || char === '`') {
+            quote = char;
+            continue;
+        }
+        if (char === '{') {
+            braces++;
+            sawBlock = true;
+        } else if (char === '}') {
+            braces--;
+            if (sawBlock && braces === 0 && brackets === 0 && parentheses === 0) return content.slice(start, index + 1);
+        } else if (char === '[') brackets++;
+        else if (char === ']') brackets--;
+        else if (char === '(') parentheses++;
+        else if (char === ')') parentheses--;
+        else if (char === ';' && braces === 0 && brackets === 0 && parentheses === 0) {
+            return content.slice(start, index + 1);
+        }
+    }
+    return content.slice(start);
+}
+
+function localDeclarations(content, sourcePath) {
+    const declarations = new Map();
+    const matcher =
+        /^(export\s+)?(?:declare\s+)?(interface|type|class|function|enum|const|let|var)\s+([A-Za-z_$][\w$]*)/gm;
+    for (const match of content.matchAll(matcher)) {
+        const symbol = match[3];
+        const kind = ['const', 'let', 'var'].includes(match[2]) ? 'variable' : match[2];
+        const signature = declarationSignature(content, match.index).trim();
+        const existing = declarations.get(symbol);
+        const card = {
+            symbol,
+            kind,
+            import_kind: kind === 'interface' || kind === 'type' ? 'type' : 'value',
+            signature: existing ? `${existing.signature}\n${signature}` : signature,
+            source_path: sourcePath,
+            source_sha256: sha256(content),
+            directly_exported: Boolean(match[1]),
+        };
+        declarations.set(symbol, card);
+    }
+    return declarations;
+}
+
+async function resolveDeclarationModule(currentPath, specifier) {
+    if (!specifier.startsWith('.')) return undefined;
+    const raw = join(dirname(currentPath), specifier);
+    const withoutRuntimeExtension = raw.replace(/\.(?:js|mjs|cjs)$/, '');
+    for (const candidate of [`${withoutRuntimeExtension}.d.ts`, join(withoutRuntimeExtension, 'index.d.ts'), raw]) {
+        if (await readOptional(candidate)) return candidate;
+    }
+    return undefined;
+}
+
+function parseNamedExports(raw) {
+    return raw
+        .split(',')
+        .map((entry) => entry.trim().replace(/^type\s+/, ''))
+        .filter(Boolean)
+        .map((entry) => {
+            const [source, alias] = entry.split(/\s+as\s+/);
+            return { source: source.trim(), alias: (alias ?? source).trim() };
+        });
+}
+
+async function moduleExports(path, root, memo = new Map(), visiting = new Set()) {
+    if (memo.has(path)) return memo.get(path);
+    if (visiting.has(path)) return new Map();
+    visiting.add(path);
+    const content = await readOptional(path);
+    if (!content) return new Map();
+    const sourcePath = relative(root, path).replaceAll('\\', '/');
+    const locals = localDeclarations(content, sourcePath);
+    const exports = new Map(
+        [...locals].filter(([, card]) => card.directly_exported).map(([name, card]) => [name, { ...card }]),
+    );
+
+    for (const match of content.matchAll(/^export\s+(?:type\s+)?\*\s+from\s+['"]([^'"]+)['"];?/gm)) {
+        const target = await resolveDeclarationModule(path, match[1]);
+        if (!target) continue;
+        for (const [name, card] of await moduleExports(target, root, memo, visiting)) {
+            if (!exports.has(name)) exports.set(name, card);
+        }
+    }
+    for (const match of content.matchAll(/^export\s*\{([^}]+)\}(?:\s+from\s+['"]([^'"]+)['"])?;?/gm)) {
+        const target = match[2] ? await resolveDeclarationModule(path, match[2]) : undefined;
+        const targetExports = target ? await moduleExports(target, root, memo, visiting) : locals;
+        for (const { source, alias } of parseNamedExports(match[1])) {
+            const card = targetExports.get(source);
+            if (card) exports.set(alias, { ...card, symbol: alias });
+        }
+    }
+    visiting.delete(path);
+    memo.set(path, exports);
+    return exports;
+}
+
+async function moduleExportCards({ packageName, packageVersion, root, entryFile, importFrom }) {
+    const exports = await moduleExports(join(root, entryFile), root);
+    return [...exports.values()].map(({ directly_exported: _directlyExported, ...card }) => ({
+        ...card,
+        import_from: importFrom,
+        import_example: `import${card.import_kind === 'type' ? ' type' : ''} { ${card.symbol} } from '${importFrom}';`,
+        package: packageName,
+        package_version: packageVersion,
+    }));
+}
+
+async function generateSymbolIndex() {
+    const packageVersions = Object.fromEntries(
+        await Promise.all(
+            Object.entries(PACKAGE_MANIFESTS).map(async ([name, path]) => {
+                const manifest = JSON.parse(await readText(path));
+                return [name, manifest.version];
+            }),
+        ),
+    );
+    const cards = [
+        ...(
+            await Promise.all(
+                ['core', 'features', 'layout', 'router', 'session', 'widgets'].map((area) =>
+                    moduleExportCards({
+                        packageName: '@vertesia/ui',
+                        packageVersion: packageVersions['@vertesia/ui'],
+                        root: UI_TYPES_ROOT,
+                        entryFile: `${area}/index.d.ts`,
+                        importFrom: `@vertesia/ui/${area}`,
+                    }),
+                ),
+            )
+        ).flat(),
+        ...(await moduleExportCards({
+            packageName: '@vertesia/client',
+            packageVersion: packageVersions['@vertesia/client'],
+            root: CLIENT_TYPES_ROOT,
+            entryFile: 'index.d.ts',
+            importFrom: '@vertesia/client',
+        })),
+        ...(await moduleExportCards({
+            packageName: '@vertesia/common',
+            packageVersion: packageVersions['@vertesia/common'],
+            root: COMMON_TYPES_ROOT,
+            entryFile: 'index.d.ts',
+            importFrom: '@vertesia/common',
+        })),
+    ];
+    const deduplicated = new Map();
+    for (const card of cards) {
+        const key = `${card.import_from}\0${card.symbol}\0${card.kind}`;
+        const existing = deduplicated.get(key);
+        if (!existing || card.signature.length > existing.signature.length) deduplicated.set(key, card);
+    }
+    const symbols = [...deduplicated.values()].sort(
+        (left, right) => left.symbol.localeCompare(right.symbol) || left.import_from.localeCompare(right.import_from),
+    );
+    const source = { format_version: 1, packages: packageVersions, symbols };
+    return {
+        ...source,
+        index_version: sha256(JSON.stringify(source)),
+    };
 }
 
 function generateFrontendImports() {
@@ -1260,6 +1448,11 @@ async function main() {
     await writeFile(join(DOCS_ROOT, 'ui-interfaces.d.ts'), await generateUiInterfaces(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'vertesia-client.d.ts'), await generateClientInterfaces(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'vertesia-common.d.ts'), await generateCommonInterfaces(), 'utf8');
+    await writeFile(
+        join(DOCS_ROOT, 'symbol-index.json'),
+        `${JSON.stringify(await generateSymbolIndex(), null, 2)}\n`,
+        'utf8',
+    );
 
     console.log(`Generated appgen docs in ${relative(REPO_ROOT, DOCS_ROOT)}`);
 }
