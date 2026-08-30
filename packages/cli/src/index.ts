@@ -33,7 +33,7 @@ import { listProjects, useProject } from './projects/index.js';
 import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
-import { getBooleanOption, hasStatus } from './utils/options.js';
+import { errorMessage, getBooleanOption, hasStatus } from './utils/options.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 
 //warnIfNotLatest();
@@ -288,14 +288,16 @@ registerWorkflowsCommand(program);
 registerQuotaCommand(program);
 
 program.parseAsync(process.argv).catch((err) => {
-    console.error(err);
+    // Fetch-client errors may retain a complete Request with authorization headers. Print only
+    // the sanitized human message at the process boundary.
+    console.error(errorMessage(err));
     process.exit(1);
 });
 
 process.on('unhandledRejection', (err: unknown) => {
     if (hasStatus(err, 401)) {
         // token expired?
-        console.error('ERROR', err);
+        console.error('ERROR', errorMessage(err));
         void tryRefreshToken();
     }
 });
