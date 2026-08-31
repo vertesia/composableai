@@ -10,17 +10,20 @@ import {
     TemporalGraph,
     type TemporalGraphSelection,
 } from '@vertesia/ui/widgets';
-import { Network, RefreshCw } from 'lucide-react';
+import { BrainCircuit, Network, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MemoryGraphInspector, type MemorySelection } from './MemoryGraphInspector.js';
+import { MemoryGraphInspector } from './MemoryGraphInspector.js';
 import { MemoryGraphRail } from './MemoryGraphRail.js';
 import { MemoryGraphStatusBar } from './MemoryGraphStatusBar.js';
 import {
     buildMemoryBrainFilter,
     formatModelName,
     type MemoryBrain,
+    type MemoryBrainStatusTone,
+    memoryBrainStatusTone,
     parseMemoryBrains,
     selectMemoryBrain,
+    sortMemoryBrains,
 } from './memoryBrainModel.js';
 import {
     buildMemoryGraphView,
@@ -30,6 +33,7 @@ import {
     computeMemoryMatchIds,
     type MemoryEntity,
     type MemoryGraphData,
+    type MemorySelection,
     parseMemoryEntities,
     parseMemoryEntries,
     parseMemoryRelationships,
@@ -56,6 +60,17 @@ export const DEFAULT_MEMORY_TYPE_NAMES: MemoryGraphTypeNames = {
 export const DEFAULT_MEMORY_POLL_INTERVAL_MS = 15_000;
 
 const BRAIN_PAGE_SIZE = 100;
+
+/** Text color per brain-status tone, so the selector reads like the catalog cards. */
+const BRAIN_STATUS_TEXT: Record<MemoryBrainStatusTone, string> = {
+    success: 'text-success',
+    info: 'text-info',
+    attention: 'text-attention',
+    destructive: 'text-destructive',
+    done: 'text-done',
+    secondary: 'text-muted',
+};
+
 /**
  * The explorer holds a whole brain in memory rather than paging, so this is a safety ceiling, not a
  * page size: {@link mapMemoryQueryHits} throws rather than silently drawing a truncated graph.
@@ -195,7 +210,8 @@ export function MemoryGraphExplorer({
             ]);
             if (generation !== catalogGenRef.current) return;
             setCatalog({
-                brains: parseMemoryBrains(brainResult.results),
+                // Same order as the catalog cards, so the two lists never disagree.
+                brains: sortMemoryBrains(parseMemoryBrains(brainResult.results)),
                 entities: parseMemoryEntities(entityRecords),
                 relationshipTypeId: relationshipType.id,
                 memoryEntryTypeId: memoryEntryType.id,
@@ -368,16 +384,26 @@ export function MemoryGraphExplorer({
             );
         }
         if (catalog && catalog.brains.length === 0) {
+            // Not an error: a project simply has no brain yet. It must not look like a failure.
             return (
                 <div className="flex flex-1 items-center justify-center p-4">
-                    <ErrorBox title={t('memoryGraph.noBrainsTitle')}>{t('memoryGraph.noBrainsDescription')}</ErrorBox>
+                    <div className="max-w-md rounded-lg border border-dashed bg-card p-8 text-center">
+                        <div className="mx-auto w-fit rounded-full bg-muted-background p-3 text-muted">
+                            <BrainCircuit className="size-6" aria-hidden={true} />
+                        </div>
+                        <p className="mt-3 font-medium text-foreground">{t('memoryGraph.noBrainsTitle')}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-muted">
+                            {t('memoryGraph.noBrainsDescription')}
+                        </p>
+                    </div>
                 </div>
             );
         }
         if (isFirstLoad) {
             return (
-                <div className="flex flex-1 items-center justify-center gap-3 text-muted">
-                    <Spinner /> {t('memoryGraph.loading')}
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted">
+                    <Spinner />
+                    <p className="text-sm">{t('memoryGraph.loading')}</p>
                 </div>
             );
         }
@@ -460,14 +486,26 @@ export function MemoryGraphExplorer({
                         options={catalog?.brains ?? []}
                         optionLabel={(brain: MemoryBrain) => (
                             <div className="min-w-0">
-                                <div className="truncate font-medium">{brain.displayName}</div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="min-w-0 flex-1 truncate font-medium">{brain.displayName}</span>
+                                    <span
+                                        className={cn(
+                                            'shrink-0 font-mono text-[10px] uppercase tracking-wide',
+                                            BRAIN_STATUS_TEXT[memoryBrainStatusTone(brain.status)],
+                                        )}
+                                    >
+                                        {brain.status}
+                                    </span>
+                                </div>
                                 <div className="truncate text-xs text-muted">
                                     {formatModelName(brain.model)}
                                     {brain.reasoningEffort ? ` · ${brain.reasoningEffort}` : ''}
                                 </div>
                             </div>
                         )}
-                        filterBy={(brain: MemoryBrain) => `${brain.displayName} ${brain.brainId} ${brain.model}`}
+                        filterBy={(brain: MemoryBrain) =>
+                            `${brain.displayName} ${brain.brainId} ${brain.model} ${brain.status}`
+                        }
                         onChange={handleBrainChange}
                         placeholder={t('memoryGraph.brainPlaceholder')}
                         isLoading={isCatalogLoading}
@@ -501,7 +539,8 @@ export function MemoryGraphExplorer({
                 </MessageBox>
             ) : null}
 
-            <div className="flex min-h-0 flex-1 flex-col px-2">{body()}</div>
+            {/* Below xl the three panes stack, so the page scrolls instead of clipping them. */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 xl:overflow-hidden">{body()}</div>
 
             <MemoryGraphStatusBar
                 brain={selectedBrain}

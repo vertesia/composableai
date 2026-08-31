@@ -1,7 +1,19 @@
 // @vitest-environment node
 import { type ContentObjectItemApiResponse, ContentObjectStatus, type JSONObject } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
-import { buildMemoryBrainFilter, formatModelName, parseMemoryBrains, selectMemoryBrain } from './memoryBrainModel.js';
+import {
+    buildMemoryBrainFilter,
+    formatModelName,
+    type MemoryBrain,
+    memoryBrainStatusTone,
+    parseMemoryBrains,
+    selectMemoryBrain,
+    sortMemoryBrains,
+} from './memoryBrainModel.js';
+
+function brainStub(brainId: string, displayName: string, status: MemoryBrain['status']): MemoryBrain {
+    return { brainId, displayName, status, model: 'provider/model' };
+}
 
 function contentRecord(id: string, name: string, properties: JSONObject): ContentObjectItemApiResponse {
     return {
@@ -103,5 +115,33 @@ describe('Memory brains', () => {
     it('shortens a namespaced model name for the status bar', () => {
         expect(formatModelName('anthropic/claude-opus-5')).toBe('claude-opus-5');
         expect(formatModelName('local-model')).toBe('local-model');
+    });
+
+    it('orders brains by status then display name, without mutating the input', () => {
+        const brains = [
+            brainStub('archived', 'Archived', 'archived'),
+            brainStub('draft-z', 'Zulu', 'draft'),
+            brainStub('active', 'Active', 'active'),
+            brainStub('draft-a', 'Alpha', 'draft'),
+            brainStub('building', 'Building', 'building'),
+        ];
+
+        expect(sortMemoryBrains(brains).map(({ brainId }) => brainId)).toEqual([
+            'active',
+            'building',
+            'draft-a',
+            'draft-z',
+            'archived',
+        ]);
+        expect(brains[0]?.brainId).toBe('archived');
+    });
+
+    it('gives every status a semantic tone the catalog and the selector can share', () => {
+        expect(memoryBrainStatusTone('active')).toBe('success');
+        expect(memoryBrainStatusTone('building')).toBe('info');
+        expect(memoryBrainStatusTone('paused')).toBe('attention');
+        expect(memoryBrainStatusTone('degraded')).toBe('destructive');
+        expect(memoryBrainStatusTone('archived')).toBe('done');
+        expect(memoryBrainStatusTone('draft')).toBe('secondary');
     });
 });

@@ -2,13 +2,16 @@ import { Badge, Button, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { formatQualifiers, isExpiredEdge, type TemporalGraphEdge } from '@vertesia/ui/widgets';
-import { ArrowLeft, ArrowRight, BrainCircuit, ExternalLink, Network, Sparkles } from 'lucide-react';
-import type { MemoryEntity, MemoryEntry, MemoryEvidence, MemoryRelationship } from './memoryGraphModel.js';
-
-export type MemorySelection =
-    | { kind: 'entity'; id: string }
-    | { kind: 'statement'; id: string }
-    | { kind: 'memory'; id: string };
+import { ArrowLeft, ArrowRight, BrainCircuit, ExternalLink, Network, Quote, SearchX, Sparkles } from 'lucide-react';
+import { useMemo } from 'react';
+import {
+    type MemoryEntity,
+    type MemoryEntry,
+    type MemoryEvidence,
+    type MemoryRelationship,
+    type MemorySelection,
+    resolveMemorySelection,
+} from './memoryGraphModel.js';
 
 export interface MemoryGraphInspectorProps {
     selection?: MemorySelection;
@@ -51,45 +54,156 @@ function RecordLink({
     );
 }
 
-function InspectorSection({ title, children }: { title: string; children: React.ReactNode }) {
+/** Panel header: icon, title, and the record id the panel is pinned to. */
+function InspectorHeader({
+    icon,
+    title,
+    subtitle,
+    identity,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    subtitle?: React.ReactNode;
+    identity: string;
+}) {
+    return (
+        <header>
+            <div className="flex items-start gap-2">
+                <span className="mt-0.5 shrink-0 text-info">{icon}</span>
+                <div className="min-w-0 flex-1">
+                    <h2 className="text-sm font-semibold leading-snug text-foreground">{title}</h2>
+                    {subtitle ? <div className="mt-0.5 text-xs text-muted">{subtitle}</div> : null}
+                </div>
+            </div>
+            <div className="mt-2 wrap-break-word font-mono text-[10px] leading-relaxed text-muted">{identity}</div>
+        </header>
+    );
+}
+
+function InspectorSection({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
     return (
         <section>
-            <h3 className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted">{title}</h3>
-            <div className="mt-2">{children}</div>
+            <div className="flex items-baseline justify-between gap-2 border-b pb-1">
+                <h3 className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted">{title}</h3>
+                {count !== undefined ? (
+                    <span className="font-mono text-[10px] tabular-nums text-muted">{count}</span>
+                ) : null}
+            </div>
+            <div className="mt-2.5">{children}</div>
         </section>
     );
 }
 
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
     return (
-        <div className="rounded-md border bg-background px-2.5 py-2">
+        <div className="rounded-md border bg-background px-2.5 py-1.5">
             <div className="font-mono text-[9px] uppercase tracking-widest text-muted">{label}</div>
-            <div className="mt-0.5 tabular-nums text-foreground">{value}</div>
+            <div className="mt-1 truncate text-[13px] font-medium tabular-nums text-foreground">{value}</div>
         </div>
+    );
+}
+
+/** Semantic band for a 0..1 confidence: certain, inferred, or speculative. */
+function confidenceTone(score: number | undefined): 'success' | 'info' | 'attention' {
+    if (score === undefined || score >= 0.9) return 'success';
+    return score >= 0.7 ? 'info' : 'attention';
+}
+
+/** Confidence as a number, a humanized label, and a proportional bar. */
+function ConfidenceMeter({ relationship, label }: { relationship: MemoryRelationship; label: string }) {
+    const score = relationship.confidenceScore;
+    const tone = confidenceTone(score);
+    return (
+        <div className="rounded-md border bg-background px-2.5 py-1.5">
+            <div className="flex items-baseline justify-between gap-2">
+                <span className="font-mono text-[9px] uppercase tracking-widest text-muted">{label}</span>
+                <span className="font-mono text-[10px] text-muted">{relationship.confidence.replaceAll('_', ' ')}</span>
+            </div>
+            <div className="mt-1 text-[13px] font-medium tabular-nums text-foreground">
+                {score !== undefined ? score.toFixed(2) : '—'}
+            </div>
+            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted-background">
+                <div
+                    className={cn(
+                        'h-full rounded-full',
+                        tone === 'success' && 'bg-success',
+                        tone === 'info' && 'bg-info',
+                        tone === 'attention' && 'bg-attention',
+                    )}
+                    style={{ width: `${Math.round((score ?? 0) * 100)}%` }}
+                />
+            </div>
+        </div>
+    );
+}
+
+/** Compact confidence read-out for a dense list row. */
+function ConfidenceTag({ relationship }: { relationship: MemoryRelationship }) {
+    const score = relationship.confidenceScore;
+    const tone = confidenceTone(score);
+    return (
+        <span
+            className={cn(
+                'shrink-0 rounded-sm px-1 py-px font-mono text-[10px] tabular-nums',
+                tone === 'success' && 'text-success',
+                tone === 'info' && 'text-info',
+                tone === 'attention' && 'text-attention',
+            )}
+        >
+            {score !== undefined ? score.toFixed(2) : relationship.confidence.replaceAll('_', ' ')}
+        </span>
     );
 }
 
 function EvidenceCards({ evidence, emptyText }: { evidence: MemoryEvidence[]; emptyText: string }) {
     if (evidence.length === 0) {
-        return <p className="rounded-md border border-dashed p-2 text-xs text-muted">{emptyText}</p>;
+        return <p className="rounded-md border border-dashed px-2.5 py-2 text-xs text-muted">{emptyText}</p>;
     }
     return (
-        <div className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2">
             {evidence.map((item) => (
-                <div
+                <li
                     key={`${item.sourceId}:${item.locator ?? ''}`}
-                    className="rounded-md border border-s-[3px] border-s-attention bg-background p-2.5"
+                    className="rounded-md border border-s-[3px] border-s-attention bg-background px-2.5 py-2"
                 >
-                    <div className="font-mono text-[10.5px] text-attention">{item.sourceId}</div>
-                    {item.locator ? <div className="mt-0.5 text-xs text-muted">{item.locator}</div> : null}
+                    <div className="flex items-baseline gap-2">
+                        <span className="min-w-0 flex-1 truncate font-mono text-[10.5px] font-medium text-attention">
+                            {item.sourceId}
+                        </span>
+                        {item.locator ? (
+                            <span className="shrink-0 font-mono text-[10px] text-muted">{item.locator}</span>
+                        ) : null}
+                    </div>
                     {item.summary ? (
-                        <p className="mt-1.5 border-s-2 ps-2 text-xs italic leading-relaxed text-foreground">
-                            {item.summary}
+                        <p className="mt-2 flex gap-1.5 text-xs italic leading-relaxed text-foreground">
+                            <Quote className="mt-0.5 size-3 shrink-0 text-muted" aria-hidden={true} />
+                            <span className="min-w-0">{item.summary}</span>
                         </p>
                     ) : null}
-                </div>
+                </li>
             ))}
-        </div>
+        </ul>
+    );
+}
+
+/** Validity line, struck through once the statement is out of force at the cutoff. */
+function ValidityLine({
+    relationship,
+    isExpired,
+    className,
+}: {
+    relationship: MemoryRelationship;
+    isExpired: boolean;
+    className?: string;
+}) {
+    const { t } = useUITranslation();
+    return (
+        <span className={cn('font-mono tabular-nums', isExpired && 'line-through', className)}>
+            {t('memoryGraph.validity', {
+                from: relationship.validFrom ?? '…',
+                to: relationship.validTo ?? t('memoryGraph.validityOpenEnd'),
+            })}
+        </span>
     );
 }
 
@@ -113,33 +227,25 @@ function ConnectionRow({
     return (
         <Button
             variant="outline"
-            className={cn(
-                'h-auto w-full justify-start rounded-md p-2 font-mono text-[11px]',
-                isExpired && 'opacity-60',
-            )}
+            className={cn('h-auto w-full justify-start rounded-md px-2.5 py-2 text-start', isExpired && 'opacity-70')}
             onClick={onSelect}
         >
-            <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-center gap-1.5">
                     {isOutgoing ? (
                         <ArrowRight className="size-3 shrink-0 text-muted" aria-hidden={true} />
                     ) : (
                         <ArrowLeft className="size-3 shrink-0 text-muted" aria-hidden={true} />
                     )}
-                    <span className="text-info">{relationship.predicate}</span>
-                    <span className="truncate text-foreground">{otherLabel}</span>
-                    <span className="ms-auto shrink-0 text-[10px] text-muted">
-                        {relationship.confidenceScore?.toFixed(2) ?? relationship.confidence}
-                    </span>
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">{otherLabel}</span>
+                    <ConfidenceTag relationship={relationship} />
                 </div>
-                {qualifiers ? <div className="mt-1 text-[10px] text-muted">{qualifiers}</div> : null}
+                <div className="ps-[18px] font-mono text-[10.5px] text-info">{relationship.predicate}</div>
+                {qualifiers ? <div className="ps-[18px] font-mono text-[10px] text-muted">{qualifiers}</div> : null}
                 {hasValidity ? (
-                    <div className={cn('mt-1 text-[10px] text-muted', isExpired && 'line-through')}>
-                        {t('memoryGraph.validity', {
-                            from: relationship.validFrom ?? '…',
-                            to: relationship.validTo ?? t('memoryGraph.validityOpenEnd'),
-                        })}
-                        {isExpired ? ` · ${t('memoryGraph.noLongerInForce')}` : ''}
+                    <div className="flex flex-wrap items-center gap-1.5 ps-[18px] text-[10px] text-muted">
+                        <ValidityLine relationship={relationship} isExpired={isExpired} />
+                        {isExpired ? <span className="text-attention">{t('memoryGraph.noLongerInForce')}</span> : null}
                     </div>
                 ) : null}
             </div>
@@ -176,15 +282,13 @@ function EntityInspector({
 
     return (
         <div className="flex flex-col gap-5">
-            <div>
-                <div className="flex items-center gap-2">
-                    <Network className="size-4 text-info" aria-hidden={true} />
-                    <h2 className="font-semibold text-foreground">{entity.displayName}</h2>
-                    {entity.ticker ? <span className="font-mono text-xs text-muted">${entity.ticker}</span> : null}
-                </div>
-                <div className="mt-1 font-mono text-[10.5px] text-muted">entity:{entity.entityId}</div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <InspectorHeader
+                icon={<Network className="size-4" aria-hidden={true} />}
+                title={entity.displayName}
+                subtitle={entity.ticker ? <span className="font-mono tabular-nums">${entity.ticker}</span> : undefined}
+                identity={`entity:${entity.entityId}`}
+            />
+            <div className="grid grid-cols-2 gap-2">
                 <Fact label={t('memoryGraph.kind')} value={entity.kind.replaceAll('_', ' ')} />
                 <Fact label={t('memoryGraph.group')} value={(entity.layer ?? entity.kind).replaceAll('_', ' ')} />
                 <Fact label={t('memoryGraph.outgoing')} value={outbound.length} />
@@ -192,9 +296,11 @@ function EntityInspector({
                 <Fact label={t('memoryGraph.firstSeen')} value={firstSeen ?? '—'} />
                 <Fact label={t('memoryGraph.degree')} value={connections.length} />
             </div>
-            <InspectorSection title={t('memoryGraph.connections')}>
+            <InspectorSection title={t('memoryGraph.connections')} count={connections.length}>
                 {connections.length === 0 ? (
-                    <p className="text-xs text-muted">{t('memoryGraph.noConnections')}</p>
+                    <p className="rounded-md border border-dashed px-2.5 py-2 text-xs text-muted">
+                        {t('memoryGraph.noConnections')}
+                    </p>
                 ) : (
                     <div className="flex flex-col gap-1.5">
                         {connections.map((relationship) => {
@@ -250,63 +356,60 @@ function StatementInspector({
 
     return (
         <div className="flex flex-col gap-5">
-            <div>
-                <div className="flex items-center gap-2">
-                    <Sparkles className="size-4 text-info" aria-hidden={true} />
-                    <h2 className="font-semibold text-foreground">{t('memoryGraph.statement')}</h2>
-                </div>
-                <div className="mt-1 font-mono text-[10.5px] text-muted">{relationship.relationshipId}</div>
-            </div>
-            <div className="rounded-lg border bg-background p-3">
+            <InspectorHeader
+                icon={<Sparkles className="size-4" aria-hidden={true} />}
+                title={t('memoryGraph.statement')}
+                subtitle={<span className="font-mono">{relationship.predicate}</span>}
+                identity={relationship.relationshipId}
+            />
+            <div className="rounded-lg border bg-background p-2.5">
                 <Button
                     variant="ghost"
                     size="xs"
-                    className="h-auto p-0 text-sm font-medium"
+                    className="h-auto w-full justify-start p-0 text-start text-[13px] font-medium hover:underline"
                     onClick={() => onSelect({ kind: 'entity', id: relationship.subjectId })}
                 >
-                    {entityLabels.get(relationship.subjectId) ?? relationship.subjectId}
+                    <span className="min-w-0 truncate">
+                        {entityLabels.get(relationship.subjectId) ?? relationship.subjectId}
+                    </span>
                 </Button>
-                <div className="my-2 flex items-center gap-2 font-mono text-xs text-info">
-                    <ArrowRight className="size-3" aria-hidden={true} />
-                    {relationship.predicate}
+                <div className="my-1.5 flex items-center gap-1.5 font-mono text-[11px] text-info">
+                    <ArrowRight className="size-3 shrink-0" aria-hidden={true} />
+                    <span className="min-w-0 truncate">{relationship.predicate}</span>
                 </div>
                 <Button
                     variant="ghost"
                     size="xs"
-                    className="h-auto p-0 text-sm font-medium"
+                    className="h-auto w-full justify-start p-0 text-start text-[13px] font-medium hover:underline"
                     onClick={() => onSelect({ kind: 'entity', id: relationship.objectId })}
                 >
-                    {entityLabels.get(relationship.objectId) ?? relationship.objectId}
+                    <span className="min-w-0 truncate">
+                        {entityLabels.get(relationship.objectId) ?? relationship.objectId}
+                    </span>
                 </Button>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-                <Fact
-                    label={t('memoryGraph.confidence')}
-                    value={relationship.confidenceScore?.toFixed(2) ?? relationship.confidence.replaceAll('_', ' ')}
-                />
+            <div className="grid grid-cols-2 gap-2">
+                <ConfidenceMeter relationship={relationship} label={t('memoryGraph.confidence')} />
                 <Fact label={t('memoryGraph.observed')} value={relationship.observedAt ?? '—'} />
             </div>
             {qualifiers ? (
                 <InspectorSection title={t('memoryGraph.qualifiers')}>
-                    <p className="font-mono text-xs text-muted">{qualifiers}</p>
+                    <p className="font-mono text-xs leading-relaxed text-muted">{qualifiers}</p>
                 </InspectorSection>
             ) : null}
             {hasValidity ? (
                 <InspectorSection title={t('memoryGraph.validityTitle')}>
-                    <p className={cn('font-mono text-xs text-muted', isExpired && 'line-through')}>
-                        {t('memoryGraph.validity', {
-                            from: relationship.validFrom ?? '…',
-                            to: relationship.validTo ?? t('memoryGraph.validityOpenEnd'),
-                        })}
-                    </p>
-                    {isExpired ? (
-                        <Badge variant="outline" className="mt-2">
-                            {t('memoryGraph.noLongerInForce')}
-                        </Badge>
-                    ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <ValidityLine
+                            relationship={relationship}
+                            isExpired={isExpired}
+                            className="text-xs text-muted"
+                        />
+                        {isExpired ? <Badge variant="outline">{t('memoryGraph.noLongerInForce')}</Badge> : null}
+                    </div>
                 </InspectorSection>
             ) : null}
-            <InspectorSection title={t('memoryGraph.evidence')}>
+            <InspectorSection title={t('memoryGraph.evidence')} count={relationship.evidence.length}>
                 <EvidenceCards evidence={relationship.evidence} emptyText={t('memoryGraph.noEvidence')} />
             </InspectorSection>
             {relationship.notes ? (
@@ -333,27 +436,25 @@ function MemoryEntryInspector({
     const { t } = useUITranslation();
     return (
         <div className="flex flex-col gap-5">
-            <div>
-                <div className="flex items-center gap-2">
-                    <BrainCircuit className="size-4 text-info" aria-hidden={true} />
-                    <h2 className="font-semibold text-foreground">{memory.title}</h2>
-                </div>
-                <div className="mt-1 font-mono text-[10.5px] text-muted">{memory.memoryId}</div>
-            </div>
-            <div className="flex flex-wrap gap-2">
+            <InspectorHeader
+                icon={<BrainCircuit className="size-4" aria-hidden={true} />}
+                title={memory.title}
+                identity={memory.memoryId}
+            />
+            <div className="flex flex-wrap gap-1.5">
                 <Badge variant="outline">{memory.kind.replaceAll('_', ' ')}</Badge>
                 <Badge variant={memory.confidence === 'explicit' ? 'success' : 'attention'}>
                     {memory.confidence.replaceAll('_', ' ')}
                 </Badge>
             </div>
-            <p className="text-sm leading-relaxed text-foreground">{memory.summary}</p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <p className="text-[13px] leading-relaxed text-foreground">{memory.summary}</p>
+            <div className="grid grid-cols-2 gap-2">
                 <Fact label={t('memoryGraph.observed')} value={memory.observedAt} />
                 <Fact label={t('memoryGraph.validFrom')} value={memory.validFrom ?? '—'} />
                 {memory.validTo ? <Fact label={t('memoryGraph.validTo')} value={memory.validTo} /> : null}
             </div>
             {memory.entityIds.length > 0 ? (
-                <InspectorSection title={t('memoryGraph.entities')}>
+                <InspectorSection title={t('memoryGraph.entities')} count={memory.entityIds.length}>
                     <div className="flex flex-wrap gap-1.5">
                         {memory.entityIds.map((entityId) => (
                             <Badge key={entityId} variant="outline">
@@ -363,7 +464,7 @@ function MemoryEntryInspector({
                     </div>
                 </InspectorSection>
             ) : null}
-            <InspectorSection title={t('memoryGraph.evidence')}>
+            <InspectorSection title={t('memoryGraph.evidence')} count={memory.evidence.length}>
                 <EvidenceCards evidence={memory.evidence} emptyText={t('memoryGraph.noEvidence')} />
             </InspectorSection>
             {memory.notes ? (
@@ -376,6 +477,47 @@ function MemoryEntryInspector({
                 label={t('memoryGraph.openMemoryRecord')}
                 onOpenRecord={onOpenRecord}
             />
+        </div>
+    );
+}
+
+/**
+ * Shown when a selection points at a record the loaded snapshot does not hold.
+ *
+ * Without it the inspector fell through to the default panel and the click looked like a no-op.
+ */
+function MissingSelectionInspector({ selection, onClear }: { selection: MemorySelection; onClear: () => void }) {
+    const { t } = useUITranslation();
+    const kindLabel =
+        selection.kind === 'entity'
+            ? t('memoryGraph.selectionKindEntity')
+            : selection.kind === 'statement'
+              ? t('memoryGraph.selectionKindStatement')
+              : t('memoryGraph.selectionKindMemory');
+
+    return (
+        <div className="flex flex-col gap-4">
+            <InspectorHeader
+                icon={<SearchX className="size-4 text-attention" aria-hidden={true} />}
+                title={t('memoryGraph.selectionMissingTitle')}
+                subtitle={kindLabel}
+                identity={selection.id}
+            />
+            <p className="text-xs leading-relaxed text-muted">{t('memoryGraph.selectionMissingDescription')}</p>
+            <Button variant="outline" size="sm" className="self-start" onClick={onClear}>
+                {t('memoryGraph.clearSelection')}
+            </Button>
+        </div>
+    );
+}
+
+/** Intentional empty block: an icon, a title, and a line saying what would fill it. */
+function EmptyPanel({ title, description }: { title: string; description: string }) {
+    return (
+        <div className="rounded-md border border-dashed px-3 py-6 text-center">
+            <BrainCircuit className="mx-auto size-5 text-muted" aria-hidden={true} />
+            <p className="mt-2 text-xs font-medium text-foreground">{title}</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted">{description}</p>
         </div>
     );
 }
@@ -407,34 +549,42 @@ function ContentMemoryList({
     return (
         <div>
             <div className="flex items-center gap-2">
-                <BrainCircuit className="size-4 text-info" aria-hidden={true} />
-                <h2 className="font-semibold text-foreground">{t('memoryGraph.contentMemory')}</h2>
-                <Badge variant="outline" className="ms-auto">
+                <BrainCircuit className="size-4 shrink-0 text-info" aria-hidden={true} />
+                <h2 className="text-sm font-semibold text-foreground">{t('memoryGraph.contentMemory')}</h2>
+                <Badge variant="outline" className="ms-auto tabular-nums">
                     {visible.length}
                 </Badge>
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-muted">{t('memoryGraph.contentMemoryHint')}</p>
-            <div className="mt-4 flex flex-col gap-2">
+            <p className="mt-1.5 text-xs leading-relaxed text-muted">{t('memoryGraph.contentMemoryHint')}</p>
+            <div className="mt-4 flex flex-col gap-1.5">
                 {visible.length === 0 ? (
-                    <p className="rounded-md border border-dashed p-3 text-xs text-muted">
-                        {t('memoryGraph.noMemories')}
-                    </p>
+                    memories.length === 0 ? (
+                        <EmptyPanel
+                            title={t('memoryGraph.noMemoriesTitle')}
+                            description={t('memoryGraph.noMemoriesDescription')}
+                        />
+                    ) : (
+                        <EmptyPanel
+                            title={t('memoryGraph.noMatchingMemoriesTitle')}
+                            description={t('memoryGraph.noMatchingMemoriesDescription')}
+                        />
+                    )
                 ) : (
                     visible.map((memory) => (
                         <Button
                             key={memory.memoryId}
                             variant="outline"
-                            className="h-auto w-full justify-start rounded-md p-3 text-start"
+                            className="h-auto w-full justify-start rounded-md px-2.5 py-2 text-start"
                             onClick={() => onSelect(memory.memoryId)}
                         >
-                            <div className="min-w-0">
+                            <div className="flex min-w-0 flex-col gap-1">
                                 <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wide text-muted">
-                                    <span>{memory.kind.replaceAll('_', ' ')}</span>
+                                    <span className="truncate">{memory.kind.replaceAll('_', ' ')}</span>
                                     <span aria-hidden={true}>·</span>
-                                    <span>{memory.observedAt}</span>
+                                    <span className="shrink-0 tabular-nums">{memory.observedAt}</span>
                                 </div>
-                                <div className="mt-1 text-xs font-semibold text-foreground">{memory.title}</div>
-                                <p className="mt-1 line-clamp-3 text-xs font-normal leading-relaxed text-muted">
+                                <div className="text-xs font-semibold leading-snug text-foreground">{memory.title}</div>
+                                <p className="line-clamp-3 text-xs font-normal leading-relaxed text-muted">
                                     {memory.summary}
                                 </p>
                             </div>
@@ -456,37 +606,38 @@ export function MemoryGraphInspector({
     onSelect,
     onOpenRecord,
 }: MemoryGraphInspectorProps) {
-    const entityLabels = new Map(entities.map((entity) => [entity.entityId, entity.displayName]));
-    const entity =
-        selection?.kind === 'entity' ? entities.find((candidate) => candidate.entityId === selection.id) : undefined;
-    const relationship =
-        selection?.kind === 'statement'
-            ? relationships.find((candidate) => candidate.relationshipId === selection.id)
-            : undefined;
-    const memory =
-        selection?.kind === 'memory' ? memories.find((candidate) => candidate.memoryId === selection.id) : undefined;
+    const entityLabels = useMemo(
+        () => new Map(entities.map((entity) => [entity.entityId, entity.displayName])),
+        [entities],
+    );
+    const resolved = useMemo(
+        () => resolveMemorySelection(selection, { entities, relationships, memories }),
+        [selection, entities, relationships, memories],
+    );
 
     return (
-        <aside className="overflow-y-auto rounded-lg border bg-card p-4">
-            {entity ? (
+        <aside className="min-h-0 overflow-y-auto rounded-lg border bg-card p-4">
+            {resolved.status === 'entity' ? (
                 <EntityInspector
-                    entity={entity}
+                    entity={resolved.entity}
                     relationships={relationships}
                     entityLabels={entityLabels}
                     asOf={asOf}
                     onSelect={onSelect}
                     onOpenRecord={onOpenRecord}
                 />
-            ) : relationship ? (
+            ) : resolved.status === 'statement' ? (
                 <StatementInspector
-                    relationship={relationship}
+                    relationship={resolved.relationship}
                     entityLabels={entityLabels}
                     asOf={asOf}
                     onSelect={onSelect}
                     onOpenRecord={onOpenRecord}
                 />
-            ) : memory ? (
-                <MemoryEntryInspector memory={memory} onOpenRecord={onOpenRecord} />
+            ) : resolved.status === 'memory' ? (
+                <MemoryEntryInspector memory={resolved.memory} onOpenRecord={onOpenRecord} />
+            ) : resolved.status === 'missing' ? (
+                <MissingSelectionInspector selection={resolved.selection} onClear={() => onSelect(undefined)} />
             ) : (
                 <ContentMemoryList
                     memories={memories}

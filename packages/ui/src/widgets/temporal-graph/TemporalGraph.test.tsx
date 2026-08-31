@@ -96,6 +96,16 @@ describe('TemporalGraph', () => {
         expect(positions()).toEqual(before);
     });
 
+    it('gives every edge and node a widened, transparent hit target', () => {
+        render(<TemporalGraph nodes={nodes} edges={edges} label="g" />);
+
+        const bands = [...document.querySelectorAll('line.temporal-graph-hit')];
+        expect(bands).toHaveLength(edges.length);
+        expect(bands.every((band) => Number(band.getAttribute('stroke-width')) >= 12)).toBe(true);
+        // One transparent halo per node, wider than the drawn circle.
+        expect(document.querySelectorAll('circle[fill="transparent"]')).toHaveLength(nodes.length);
+    });
+
     it('falls back to the host empty state when there is no node', () => {
         render(<TemporalGraph nodes={[]} edges={[]} emptyState={<p>Nothing reconstructed</p>} label="g" />);
         expect(screen.getByText('Nothing reconstructed')).toBeTruthy();

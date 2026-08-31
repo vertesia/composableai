@@ -66,6 +66,50 @@ export function selectMemoryBrain(brains: MemoryBrain[], requestedBrainId?: stri
     return brains.find((brain) => brain.status === 'active') ?? brains[0];
 }
 
+/**
+ * Presentation order of the brain statuses.
+ *
+ * The catalog cards and the explorer's brain selector share it so the two lists can never disagree
+ * about which brain comes first.
+ */
+export const MEMORY_BRAIN_STATUS_ORDER: Record<MemoryBrainStatus, number> = {
+    active: 0,
+    building: 1,
+    draft: 2,
+    paused: 3,
+    degraded: 4,
+    archived: 5,
+};
+
+/** Semantic tone a brain status renders with. Shared so every surface colors a status alike. */
+export type MemoryBrainStatusTone = 'attention' | 'destructive' | 'done' | 'info' | 'secondary' | 'success';
+
+export function memoryBrainStatusTone(status: MemoryBrainStatus): MemoryBrainStatusTone {
+    switch (status) {
+        case 'active':
+            return 'success';
+        case 'building':
+            return 'info';
+        case 'paused':
+            return 'attention';
+        case 'degraded':
+            return 'destructive';
+        case 'archived':
+            return 'done';
+        default:
+            return 'secondary';
+    }
+}
+
+/** Brains ordered by status, then by display name. Never mutates the input. */
+export function sortMemoryBrains(brains: MemoryBrain[]): MemoryBrain[] {
+    return [...brains].sort(
+        (left, right) =>
+            MEMORY_BRAIN_STATUS_ORDER[left.status] - MEMORY_BRAIN_STATUS_ORDER[right.status] ||
+            left.displayName.localeCompare(right.displayName),
+    );
+}
+
 /** Elasticsearch DSL filter scoping reconstructed records to one brain. */
 export function buildMemoryBrainFilter(brain: Pick<MemoryBrain, 'brainId'>): Record<string, unknown> {
     return {

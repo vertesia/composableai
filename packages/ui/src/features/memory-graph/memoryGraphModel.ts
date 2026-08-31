@@ -184,6 +184,77 @@ export function parseMemoryEntries(records: ContentObjectItemApiResponse[]): Mem
     });
 }
 
+/** What the inspector is pinned to. Ids are graph ids — the same ones the canvas emits. */
+export type MemorySelection =
+    | { kind: 'entity'; id: string }
+    | { kind: 'statement'; id: string }
+    | { kind: 'memory'; id: string };
+
+/**
+ * Outcome of looking a selection up in the loaded snapshot.
+ *
+ * `missing` exists so a click can never be a silent no-op: when the selected record is not in the
+ * arrays the inspector was handed, it says so instead of falling back to the default panel.
+ */
+export type ResolvedMemorySelection =
+    | { status: 'none' }
+    | { status: 'entity'; entity: MemoryEntity }
+    | { status: 'statement'; relationship: MemoryRelationship }
+    | { status: 'memory'; memory: MemoryEntry }
+    | { status: 'missing'; selection: MemorySelection };
+
+export interface MemorySnapshot {
+    entities: MemoryEntity[];
+    relationships: MemoryRelationship[];
+    memories: MemoryEntry[];
+}
+
+/** An entity by its graph id, falling back to its content-store record id. */
+export function findMemoryEntity(entities: MemoryEntity[], id: string): MemoryEntity | undefined {
+    return entities.find((entity) => entity.entityId === id) ?? entities.find((entity) => entity.recordId === id);
+}
+
+/**
+ * A statement by its graph id, falling back to its content-store record id.
+ *
+ * {@link parseMemoryRelationships} derives `relationshipId` from `relationship_id`, then
+ * `external_id`, then the record id, so a statement whose `relationship_id` property is absent is
+ * addressed by one of the fallbacks. Matching the record id as well keeps such a statement
+ * inspectable whichever of the three a caller — a deep link, a stale selection — happens to carry.
+ */
+export function findMemoryRelationship(
+    relationships: MemoryRelationship[],
+    id: string,
+): MemoryRelationship | undefined {
+    return (
+        relationships.find((relationship) => relationship.relationshipId === id) ??
+        relationships.find((relationship) => relationship.recordId === id)
+    );
+}
+
+/** A content memory by its graph id, falling back to its content-store record id. */
+export function findMemoryEntry(memories: MemoryEntry[], id: string): MemoryEntry | undefined {
+    return memories.find((memory) => memory.memoryId === id) ?? memories.find((memory) => memory.recordId === id);
+}
+
+/** Classify a selection against the loaded snapshot. See {@link ResolvedMemorySelection}. */
+export function resolveMemorySelection(
+    selection: MemorySelection | undefined,
+    snapshot: MemorySnapshot,
+): ResolvedMemorySelection {
+    if (!selection) return { status: 'none' };
+    if (selection.kind === 'entity') {
+        const entity = findMemoryEntity(snapshot.entities, selection.id);
+        return entity ? { status: 'entity', entity } : { status: 'missing', selection };
+    }
+    if (selection.kind === 'statement') {
+        const relationship = findMemoryRelationship(snapshot.relationships, selection.id);
+        return relationship ? { status: 'statement', relationship } : { status: 'missing', selection };
+    }
+    const memory = findMemoryEntry(snapshot.memories, selection.id);
+    return memory ? { status: 'memory', memory } : { status: 'missing', selection };
+}
+
 export type MemoryGraphNode = TemporalGraphNode<MemoryEntity>;
 export type MemoryGraphEdge = TemporalGraphEdge<MemoryRelationship>;
 

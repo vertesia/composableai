@@ -15,6 +15,7 @@ import {
     parseMemoryEntities,
     parseMemoryEntries,
     parseMemoryRelationships,
+    resolveMemorySelection,
 } from './memoryGraphModel.js';
 
 function contentRecord(
@@ -549,5 +550,124 @@ describe('rail inputs', () => {
     it('reports evidence coverage as a percentage, or nothing at all when there is no statement', () => {
         expect(computeEvidenceCoverage(relationships)).toBe(33);
         expect(computeEvidenceCoverage([])).toBeUndefined();
+    });
+});
+
+describe('resolveMemorySelection', () => {
+    const entities: MemoryEntity[] = [
+        {
+            recordId: 'entity-record-a',
+            entityId: 'alpha',
+            displayName: 'Alpha',
+            kind: 'organization',
+        },
+    ];
+    const relationships: MemoryRelationship[] = [
+        {
+            recordId: 'relationship-record-1',
+            relationshipId: 'rel-1',
+            subjectId: 'alpha',
+            predicate: 'supplies',
+            objectId: 'beta',
+            confidence: 'explicit',
+            evidence: [],
+        },
+    ];
+    const memories: MemoryEntry[] = [
+        {
+            recordId: 'memory-record-1',
+            memoryId: 'mem-1',
+            kind: 'event',
+            title: 'Deal signed',
+            summary: 'Summary',
+            entityIds: [],
+            confidence: 'explicit',
+            observedAt: '2025-06',
+            evidence: [],
+        },
+    ];
+    const snapshot = { entities, relationships, memories };
+
+    it('reports no selection at all', () => {
+        expect(resolveMemorySelection(undefined, snapshot)).toEqual({ status: 'none' });
+    });
+
+    it('resolves each kind by its graph id', () => {
+        expect(resolveMemorySelection({ kind: 'entity', id: 'alpha' }, snapshot)).toEqual({
+            status: 'entity',
+            entity: entities[0],
+        });
+        expect(resolveMemorySelection({ kind: 'statement', id: 'rel-1' }, snapshot)).toEqual({
+            status: 'statement',
+            relationship: relationships[0],
+        });
+        expect(resolveMemorySelection({ kind: 'memory', id: 'mem-1' }, snapshot)).toEqual({
+            status: 'memory',
+            memory: memories[0],
+        });
+    });
+
+    it('resolves each kind by its content-store record id as well', () => {
+        expect(resolveMemorySelection({ kind: 'entity', id: 'entity-record-a' }, snapshot)).toMatchObject({
+            status: 'entity',
+        });
+        expect(resolveMemorySelection({ kind: 'statement', id: 'relationship-record-1' }, snapshot)).toMatchObject({
+            status: 'statement',
+        });
+        expect(resolveMemorySelection({ kind: 'memory', id: 'memory-record-1' }, snapshot)).toMatchObject({
+            status: 'memory',
+        });
+    });
+
+    it('classifies a selection the snapshot does not hold as missing rather than as nothing', () => {
+        for (const selection of [
+            { kind: 'entity', id: 'ghost' },
+            { kind: 'statement', id: 'ghost' },
+            { kind: 'memory', id: 'ghost' },
+        ] as const) {
+            expect(resolveMemorySelection(selection, snapshot)).toEqual({ status: 'missing', selection });
+        }
+    });
+
+    it('never resolves a kind against another kind index', () => {
+        expect(resolveMemorySelection({ kind: 'entity', id: 'rel-1' }, snapshot)).toMatchObject({ status: 'missing' });
+        expect(resolveMemorySelection({ kind: 'statement', id: 'alpha' }, snapshot)).toMatchObject({
+            status: 'missing',
+        });
+    });
+
+    it('keeps a statement inspectable when its relationship_id property is absent', () => {
+        // The parser falls back to external_id, then to the record id, and the graph edge carries
+        // that fallback: whichever of the three a selection quotes must resolve to the record.
+        const parsed = parseMemoryRelationships([
+            contentRecord(
+                'relationship-record-2',
+                'External id only',
+                { subject_id: 'alpha', predicate: 'supplies', object_id: 'beta' },
+                'external-rel-2',
+            ),
+            contentRecord('relationship-record-3', 'Record id only', {
+                subject_id: 'beta',
+                predicate: 'supplies',
+                object_id: 'alpha',
+            }),
+        ]);
+        const [external, bare] = parsed;
+        expect(external.relationshipId).toBe('external-rel-2');
+        expect(bare.relationshipId).toBe('relationship-record-3');
+
+        const view = buildMemoryGraphView({
+            entities: [
+                ...entities,
+                { recordId: 'entity-record-b', entityId: 'beta', displayName: 'Beta', kind: 'organization' },
+            ],
+            relationships: parsed,
+        });
+        const local = { entities, relationships: parsed, memories };
+        for (const edge of view.edges) {
+            expect(resolveMemorySelection({ kind: 'statement', id: edge.id }, local)).toMatchObject({
+                status: 'statement',
+            });
+        }
     });
 });

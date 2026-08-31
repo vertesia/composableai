@@ -87,6 +87,7 @@ export function TemporalGraph<N = unknown, E = unknown>({
         defaultSelection ?? undefined,
     );
     const [hoveredNodeId, setHoveredNodeId] = useState<string | undefined>();
+    const [hoveredEdgeId, setHoveredEdgeId] = useState<string | undefined>();
     const [viewBox, setViewBox] = useState<TemporalGraphViewBox | undefined>();
 
     const isControlled = selection !== undefined;
@@ -280,8 +281,9 @@ export function TemporalGraph<N = unknown, E = unknown>({
                     const isDimmed =
                         (neighborhood !== undefined && !isIncident) || (matched !== undefined && !matched.has(edge.id));
                     const text = formatEdgeLabel(edge, asOf);
+                    const isHovered = hoveredEdgeId === edge.id;
                     // An expired statement never lights up: it is remembered, not in force.
-                    const isHot = (isSelected || (isIncident && isKnown)) && !isExpired;
+                    const isHot = (isSelected || isHovered || (isIncident && isKnown)) && !isExpired;
                     return (
                         <g
                             key={edge.id}
@@ -305,16 +307,30 @@ export function TemporalGraph<N = unknown, E = unknown>({
                                 event.preventDefault();
                                 select({ type: 'edge', id: edge.id });
                             }}
+                            onPointerEnter={() => setHoveredEdgeId(edge.id)}
+                            onPointerLeave={() =>
+                                setHoveredEdgeId((current) => (current === edge.id ? undefined : current))
+                            }
+                            onFocus={() => setHoveredEdgeId(edge.id)}
+                            onBlur={() => setHoveredEdgeId((current) => (current === edge.id ? undefined : current))}
                         >
                             <title>{text || edge.id}</title>
-                            {/* Invisible until focused: widens the pointer target and doubles as the focus ring. */}
+                            {/*
+                             * A 1.4px line is nearly impossible to hit: this transparent band is the
+                             * real pointer target. It also carries the hover and selected highlight
+                             * and doubles as the focus ring.
+                             */}
                             <line
-                                className="temporal-graph-hit stroke-ring opacity-0"
+                                className={cn(
+                                    'temporal-graph-hit stroke-ring motion-safe:transition-opacity',
+                                    isSelected ? 'opacity-25' : isHovered ? 'opacity-15' : 'opacity-0',
+                                )}
                                 x1={from.x}
                                 y1={from.y}
                                 x2={to.x}
                                 y2={to.y}
-                                strokeWidth={10}
+                                strokeWidth={16}
+                                strokeLinecap="round"
                             />
                             <line
                                 x1={from.x}
@@ -322,7 +338,7 @@ export function TemporalGraph<N = unknown, E = unknown>({
                                 x2={to.x}
                                 y2={to.y}
                                 className={cn(
-                                    'motion-safe:transition-opacity',
+                                    'pointer-events-none motion-safe:transition-opacity',
                                     isHot ? 'stroke-info' : 'stroke-muted',
                                     isExpired
                                         ? '[stroke-dasharray:2_5]'
@@ -330,7 +346,7 @@ export function TemporalGraph<N = unknown, E = unknown>({
                                     isKnown && !isDimmed && isExpired && 'opacity-25',
                                     isKnown && !isDimmed && !isExpired && 'opacity-80',
                                 )}
-                                strokeWidth={isSelected ? 2.6 : isHot ? 2 : 1.4}
+                                strokeWidth={isSelected ? 3 : isHot ? 2.2 : 1.4}
                             />
                             {text ? (
                                 <text
@@ -362,6 +378,7 @@ export function TemporalGraph<N = unknown, E = unknown>({
                     const style = node.group ? groupStyles[node.group] : undefined;
                     const color = style?.color ?? 'currentColor';
                     const isSelected = activeSelection?.type === 'node' && activeSelection.id === node.id;
+                    const isHovered = hoveredNodeId === node.id;
                     const isDimmed =
                         (neighborhood !== undefined && !neighborhood.has(node.id)) ||
                         (matched !== undefined && !matched.has(node.id));
@@ -394,8 +411,13 @@ export function TemporalGraph<N = unknown, E = unknown>({
                             onFocus={() => setHoveredNodeId(node.id)}
                             onBlur={() => setHoveredNodeId((current) => (current === node.id ? undefined : current))}
                         >
+                            <title>{`${node.label}${node.sublabel ? ` ${node.sublabel}` : ''}${
+                                style ? ` · ${style.label}` : ''
+                            }`}</title>
+                            {/* Transparent halo: makes a small node comfortable to hit and to hover. */}
+                            <circle cx={point.x} cy={point.y} r={radius + 10} fill="transparent" stroke="none" />
                             <circle
-                                className="temporal-graph-focus-ring stroke-ring opacity-0"
+                                className="temporal-graph-focus-ring pointer-events-none stroke-ring opacity-0"
                                 cx={point.x}
                                 cy={point.y}
                                 r={radius + 9}
@@ -405,7 +427,7 @@ export function TemporalGraph<N = unknown, E = unknown>({
                             {isSelected ? (
                                 <circle
                                     className={cn(
-                                        'stroke-foreground [stroke-dasharray:3_3]',
+                                        'pointer-events-none stroke-foreground [stroke-dasharray:3_3]',
                                         '[transform-box:fill-box] [transform-origin:center]',
                                         'motion-safe:animate-[spin_14s_linear_infinite]',
                                     )}
@@ -417,19 +439,23 @@ export function TemporalGraph<N = unknown, E = unknown>({
                                 />
                             ) : null}
                             <circle
+                                className="pointer-events-none motion-safe:transition-all"
                                 cx={point.x}
                                 cy={point.y}
                                 r={radius}
-                                fill={`color-mix(in oklch, ${color} 22%, transparent)`}
+                                fill={`color-mix(in oklch, ${color} ${isSelected || isHovered ? 38 : 22}%, transparent)`}
                                 stroke={color}
-                                strokeWidth={1.5}
+                                strokeWidth={isSelected ? 2.5 : isHovered ? 2.2 : 1.5}
                             />
                             <text
                                 x={point.x}
                                 y={point.y + radius + 14}
                                 textAnchor="middle"
                                 fontSize={11}
-                                className="pointer-events-none fill-foreground font-mono"
+                                className={cn(
+                                    'pointer-events-none fill-foreground font-mono',
+                                    (isSelected || isHovered) && 'font-semibold',
+                                )}
                             >
                                 {node.label}
                             </text>
