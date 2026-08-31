@@ -145,7 +145,9 @@ export function parseMemoryRelationships(records: ContentObjectItemApiResponse[]
                 confidenceScore: memoryConfidenceScore(confidence),
                 origin: readString(properties, 'origin'),
                 notes: readString(properties, 'notes'),
-                observedAt: readString(properties, 'observed_at'),
+                // Statements carry business validity; belief time is optional on the record. Fall back to
+                // valid_from so the timeline still places a statement that has no separate observation date.
+                observedAt: readString(properties, 'observed_at') ?? readString(properties, 'valid_from'),
                 validFrom: readString(properties, 'valid_from'),
                 validTo: readString(properties, 'valid_to'),
                 qualifiers: readQualifiers(properties.qualifiers),

@@ -158,6 +158,23 @@ describe('parseMemoryRelationships', () => {
         ]);
     });
 
+    it('places a statement on the timeline by valid_from when it carries no observation date', () => {
+        const records = [
+            contentRecord('relationship-valid-only', 'Validity only', {
+                relationship_id: 'r-valid-only',
+                subject_id: 'nvidia',
+                predicate: 'supplies',
+                object_id: 'iren',
+                valid_from: '2025-05-31',
+            }),
+        ];
+
+        expect(parseMemoryRelationships(records)[0]).toMatchObject({
+            observedAt: '2025-05-31',
+            validFrom: '2025-05-31',
+        });
+    });
+
     it('tolerates a corpus that carries none of the temporal or qualifier fields', () => {
         const records = [
             contentRecord('relationship-record-bare', 'Bare tuple', {
