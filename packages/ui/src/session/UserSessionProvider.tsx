@@ -117,15 +117,13 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         return true;
     };
 
-    const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const currentUrl = authReturnUrl();
-        if (projectId) currentUrl.searchParams.set('p', projectId);
-        if (accountId) currentUrl.searchParams.set('a', accountId);
+    const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
         const url = buildCentralAuthRedirectUrl(
             centralAuthUrl(),
             Env.endpoints.sts ?? 'https://sts.vertesia.io',
-            currentUrl,
+            authReturnUrl(),
             generateState(),
+            selection,
         );
         location.replace(url.toString());
     };
@@ -181,7 +179,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         state: state,
                     },
                 });
-                redirectToCentralAuth();
+                redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
             } else {
                 clearState();
             }
@@ -201,7 +199,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             error: err,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                 });
             return;
         }
@@ -227,7 +225,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             project_id: selectedProject,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                     return; // Don't register onAuthStateChanged listener when redirecting
                 }
 
