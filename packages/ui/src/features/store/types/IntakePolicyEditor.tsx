@@ -516,12 +516,11 @@ export function IntakePolicyEditor({
                     current={activeTab}
                     onTabChange={onTabChange}
                     updateHash={false}
-                    responsive
                     fullHeight
-                    className="px-0"
+                    className="px-0 flex-row!"
                 >
-                    <TabsBar sticky />
-                    <TabsPanel className="min-h-0 flex-1 overflow-auto pt-1" />
+                    <TabsBar className="py-2 w-48 shrink-0" direction="vertical" />
+                    <TabsPanel className="min-h-0 min-w-0 flex-1 overflow-auto pt-1 ps-4" />
                 </Tabs>
             </div>
         </Panel>
