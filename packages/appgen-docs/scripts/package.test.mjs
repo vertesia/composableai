@@ -85,6 +85,11 @@ test('ships the generated app-development references', async () => {
     assert.equal(useFetchCard.source_path, 'core/hooks/useFetch.d.ts');
     assert.match(useFetchCard.source_sha256, /^[a-f0-9]{64}$/);
 
+    const textRebaseResultCard = symbolIndex.symbols.find(
+        (card) => card.symbol === 'TextRebaseResult' && card.import_from === '@vertesia/ui/widgets',
+    );
+    assert.match(textRebaseResultCard.signature, /status: 'conflict'/);
+
     const interactionRefCard = symbolIndex.symbols.find(
         (card) => card.symbol === 'InteractionRef' && card.import_from === '@vertesia/common',
     );

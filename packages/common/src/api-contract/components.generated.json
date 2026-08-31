@@ -35496,6 +35496,12 @@
           "string",
           "null"
         ]
+      },
+      "lastHeartbeatTime": {
+        "type": [
+          "string",
+          "null"
+        ]
       }
     },
     "required": [

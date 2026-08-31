@@ -147,7 +147,7 @@ function sha256(content) {
     return createHash('sha256').update(content).digest('hex');
 }
 
-function declarationSignature(content, start) {
+function declarationSignature(content, start, declarationKind) {
     let braces = 0;
     let brackets = 0;
     let parentheses = 0;
@@ -171,7 +171,15 @@ function declarationSignature(content, start) {
             sawBlock = true;
         } else if (char === '}') {
             braces--;
-            if (sawBlock && braces === 0 && brackets === 0 && parentheses === 0) return content.slice(start, index + 1);
+            if (
+                sawBlock &&
+                ['interface', 'class', 'enum'].includes(declarationKind) &&
+                braces === 0 &&
+                brackets === 0 &&
+                parentheses === 0
+            ) {
+                return content.slice(start, index + 1);
+            }
         } else if (char === '[') brackets++;
         else if (char === ']') brackets--;
         else if (char === '(') parentheses++;
@@ -190,7 +198,7 @@ function localDeclarations(content, sourcePath) {
     for (const match of content.matchAll(matcher)) {
         const symbol = match[3];
         const kind = ['const', 'let', 'var'].includes(match[2]) ? 'variable' : match[2];
-        const signature = declarationSignature(content, match.index).trim();
+        const signature = declarationSignature(content, match.index, match[2]).trim();
         const existing = declarations.get(symbol);
         const card = {
             symbol,
