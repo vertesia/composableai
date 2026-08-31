@@ -6,5 +6,6 @@ export * from './Progress.js';
 export * from './properties/index.js';
 export * from './SvgIcon.js';
 export * from './schema-editor/index.js';
+export * from './temporal-graph/index.js';
 export * from './upload/index.js';
 export * from './xml-viewer/index.js';
