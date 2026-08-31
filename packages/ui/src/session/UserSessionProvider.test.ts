@@ -82,6 +82,18 @@ describe('buildCentralAuthRedirectUrl', () => {
         expect(url.searchParams.get('state')).toBe('state-123');
     });
 
+    it('carries the selected account and project through a gateway-mounted app redirect', () => {
+        const returnUrl = new URL('https://apps.example.test/tenants/t/apps/a/versions/v/app/?view=grid');
+        const url = buildCentralAuthRedirectUrl('https://auth.example.test/', STS, returnUrl, 'state-123', {
+            accountId: 'account-1',
+            projectId: 'project-1',
+        });
+
+        expect(url.searchParams.get('redirect_uri')).toBe(
+            'https://apps.example.test/tenants/t/apps/a/versions/v/app/?view=grid&p=project-1&a=account-1',
+        );
+    });
+
     // The endpoint is configurable, so it can arrive with a query of its own. Concatenating
     // `?sts=...` onto it folds the parameter into the existing value and Central Auth sees no sts.
     it('preserves a query already present on the configured endpoint', () => {

@@ -10,7 +10,6 @@ import {
     hasStoredAccessToken,
     isKeyringAvailable,
     readAuthBundle,
-    readProfileAccessToken,
     writeAuthBundle,
 } from './keyring.js';
 import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from './oauth.js';
@@ -157,10 +156,10 @@ interface ProfilesData {
     profiles: Profile[];
 }
 
-export function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
-    const token = readProfileAccessToken(profile);
+export async function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
+    const bundle = await readAuthBundle(profile.name);
+    const token = bundle?.accessToken || profile.apikey;
     if (token) {
-        const bundle = readAuthBundle(profile.name);
         const expiresAt = bundle?.accessTokenExpiresAt ?? getAccessTokenExpiry(token);
         if (expiresAt) {
             return expiresAt - thresholdInSeconds * 1000 < Date.now();
@@ -194,7 +193,7 @@ export class ConfigureProfile {
             return;
         }
         const oldName = this.data.name;
-        const previousBundle = oldName ? readAuthBundle(oldName) : undefined;
+        const previousBundle = oldName ? await readAuthBundle(oldName) : undefined;
         this.data.name = result.profile;
         this.data.account = result.account;
         this.data.project = result.project;
@@ -204,7 +203,7 @@ export class ConfigureProfile {
             this.data.oauth_server_url = result.oauth_server_url;
         }
         try {
-            writeAuthBundle(result.profile, {
+            await writeAuthBundle(result.profile, {
                 accessToken: result.token,
                 accessTokenExpiresAt: readResultAccessTokenExpiry(result),
                 idToken: result.id_token || previousBundle?.idToken,
@@ -222,7 +221,7 @@ export class ConfigureProfile {
             this.data.apikey = result.token;
         }
         if (oldName && oldName !== result.profile) {
-            deleteAuthBundle(oldName);
+            await deleteAuthBundle(oldName);
         }
         if (oldName) {
             this.config.remove(oldName);
@@ -231,7 +230,7 @@ export class ConfigureProfile {
         if (this.isNew) {
             this.config.use(result.profile);
         }
-        this.config.save();
+        await this.config.save();
         if (this.onResultCallback) {
             await this.onResultCallback(result);
             this.onResultCallback = undefined;
@@ -396,7 +395,7 @@ export class Config {
         }
     }
 
-    save() {
+    async save() {
         const dir = getConfigFile();
         if (!existsSync(dir)) {
             mkdirSync(dir, { recursive: true });
@@ -404,19 +403,21 @@ export class Config {
         const file = getConfigFile('profiles.json');
         writeJsonFile(file, {
             default: this.current?.name,
-            profiles: this.profiles.map((profile) => {
-                if (profile.apikey && !hasStoredAccessToken(profile.name)) {
-                    return profile;
-                }
-                const { apikey, ...safeProfile } = profile;
-                void apikey;
-                return safeProfile;
-            }),
+            profiles: await Promise.all(
+                this.profiles.map(async (profile) => {
+                    if (profile.apikey && !(await hasStoredAccessToken(profile.name))) {
+                        return profile;
+                    }
+                    const { apikey, ...safeProfile } = profile;
+                    void apikey;
+                    return safeProfile;
+                }),
+            ),
         });
         return this;
     }
 
-    load() {
+    async load() {
         try {
             const stats = statSync(getConfigFile('dev'));
             if (stats.isFile()) {
@@ -436,10 +437,10 @@ export class Config {
                     if (!profile.apikey) {
                         continue;
                     }
-                    const existingBundle = readAuthBundle(profile.name);
+                    const existingBundle = await readAuthBundle(profile.name);
                     if (!existingBundle?.accessToken) {
                         try {
-                            writeAuthBundle(profile.name, {
+                            await writeAuthBundle(profile.name, {
                                 accessToken: profile.apikey,
                                 accessTokenExpiresAt: readInlineTokenExpiry(profile.apikey),
                                 refreshToken: existingBundle?.refreshToken,
@@ -462,7 +463,7 @@ export class Config {
                 this.current = undefined;
             }
             if (needsSave) {
-                this.save();
+                await this.save();
             }
         } catch (err: unknown) {
             if (!hasErrorCode(err, 'ENOENT')) {
@@ -494,7 +495,7 @@ export class InvalidConfigUrlError extends Error {
     }
 }
 
-const config = new Config().load();
+const config = await new Config().load();
 
 export { config };
 
