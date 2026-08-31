@@ -240,7 +240,10 @@ async function moduleExports(path, root, memo = new Map(), visiting = new Set())
     if (visiting.has(path)) return new Map();
     visiting.add(path);
     const content = await readOptional(path);
-    if (!content) return new Map();
+    if (!content) {
+        visiting.delete(path);
+        return new Map();
+    }
     const sourcePath = relative(root, path).replaceAll('\\', '/');
     const locals = localDeclarations(content, sourcePath);
     const exports = new Map(
