@@ -10542,7 +10542,9 @@
           "denied",
           "denied_with_feedback",
           "timeout",
-          "reviewer_denied"
+          "reviewer_denied",
+          "user_interrupted_after_tool_execution",
+          "user_stopped_after_tool_execution"
         ]
       },
       "message": {
@@ -10755,7 +10757,7 @@
       },
       "pending_tool_approval_results": {
         "$ref": "#/components/schemas/PendingToolApprovalResults",
-        "description": "Buffered tool results held while approval denial pauses until the next user message."
+        "description": "Buffered tool results held across an interactive pause until the next user message."
       },
       "latest_user_message": {
         "type": "string",
@@ -13236,7 +13238,7 @@
         "type": "integer",
         "exclusiveMinimum": 0,
         "maximum": 9007199254740991,
-        "description": "Maximum model iterations containing a failed tool result before the agent node stops. Defaults to eight."
+        "description": "Run-wide budget of repeated model iterations containing failed tool results before the agent node stops. The first failing iteration establishes model-visible recovery evidence and is not charged; phase transitions do not reset the budget. Defaults to eight."
       },
       "completion_prompt": {
         "type": "string",

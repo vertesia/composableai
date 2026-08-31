@@ -134,7 +134,7 @@ export const ProcessAgentExecutionPolicySchema = z
             .positive()
             .meta({
                 description:
-                    'Maximum model iterations containing a failed tool result before the agent node stops. Defaults to eight.',
+                    'Run-wide budget of repeated model iterations containing failed tool results before the agent node stops. The first failing iteration establishes model-visible recovery evidence and is not charged; phase transitions do not reset the budget. Defaults to eight.',
             })
             .optional(),
         completion_prompt: z

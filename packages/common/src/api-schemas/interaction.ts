@@ -1390,7 +1390,14 @@ export const GeneratedInteractionDefinitionArraySchema = z
 export const PendingToolApprovalResultsSchema = z
     .strictObject({
         results: z.array(ToolResultSchema),
-        reason: z.enum(['denied', 'denied_with_feedback', 'timeout', 'reviewer_denied']),
+        reason: z.enum([
+            'denied',
+            'denied_with_feedback',
+            'timeout',
+            'reviewer_denied',
+            'user_interrupted_after_tool_execution',
+            'user_stopped_after_tool_execution',
+        ]),
         message: z.string(),
         created_at: z.string(),
     })
@@ -1668,7 +1675,7 @@ export const ConversationStateSchema = z
             description: 'Run-scoped, exact-target grants created by "allow this action for this run".',
         }).optional(),
         pending_tool_approval_results: PendingToolApprovalResultsSchema.meta({
-            description: 'Buffered tool results held while approval denial pauses until the next user message.',
+            description: 'Buffered tool results held across an interactive pause until the next user message.',
         }).optional(),
         latest_user_message: z
             .string()
