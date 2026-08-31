@@ -9,8 +9,8 @@ export async function ensureProfileAccessToken(
     profile: Profile,
     onResult?: OnResultCallback,
 ): Promise<string | undefined> {
-    const token = readProfileAccessToken(profile);
-    if (token && !shouldRefreshProfileToken(profile, 30)) {
+    const token = await readProfileAccessToken(profile);
+    if (token && !(await shouldRefreshProfileToken(profile, 30))) {
         return token;
     }
 
@@ -71,7 +71,7 @@ export async function refreshProfileAccessToken(
         projectId?: string;
     } = {},
 ): Promise<ConfigResult | undefined> {
-    const bundle = readAuthBundle(profile.name);
+    const bundle = await readAuthBundle(profile.name);
     if (!bundle?.refreshToken || !canUseOAuthProfile(profile)) {
         return undefined;
     }

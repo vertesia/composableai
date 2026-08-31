@@ -38,33 +38,38 @@ update_package_versions() {
     npm_tag="latest"
   fi
 
-  # Get current version and strip any existing -dev* suffix to get base version
-  current_version=$(npm pkg get version | tr -d '"')
-  base_version=$(echo "$current_version" | sed 's/-dev.*//')
-
-  # Apply bump if needed (for both snapshot and release)
-  if [ "$BUMP_TYPE" = "minor" ]; then
-    # Bump minor version: X.Y.Z -> X.(Y+1).0
-    IFS='.' read -r major minor patch <<< "$base_version"
-    base_version="${major}.$((minor + 1)).0"
-    echo "Bumped minor version to ${base_version}"
-  elif [ "$BUMP_TYPE" = "patch" ]; then
-    # Bump patch version: X.Y.Z -> X.Y.(Z+1)
-    IFS='.' read -r major minor patch <<< "$base_version"
-    base_version="${major}.${minor}.$((patch + 1))"
-    echo "Bumped patch version to ${base_version}"
-  fi
-
-  if [ "$RELEASE_TYPE" = "snapshot" ]; then
-    # Snapshot: create dev version with date/time stamp
-    date_part=$(date -u +"%Y%m%d")
-    time_part=$(date -u +"%H%M%SZ")
-    new_version="${base_version}-dev.${date_part}.${time_part}"
-    echo "Generating new snapshot version ${new_version}"
+  if [ -n "${VERSION_OVERRIDE:-}" ]; then
+    new_version="$VERSION_OVERRIDE"
+    echo "Using prepared package version ${new_version}"
   else
-    # Release: use base version as-is
-    new_version="${base_version}"
-    echo "Updating to release version ${new_version}"
+    # Get current version and strip any existing -dev* suffix to get base version
+    current_version=$(npm pkg get version | tr -d '"')
+    base_version="${current_version%%-dev*}"
+
+    # Apply bump if needed (for both snapshot and release)
+    if [ "$BUMP_TYPE" = "minor" ]; then
+      # Bump minor version: X.Y.Z -> X.(Y+1).0
+      IFS='.' read -r major minor patch <<< "$base_version"
+      base_version="${major}.$((minor + 1)).0"
+      echo "Bumped minor version to ${base_version}"
+    elif [ "$BUMP_TYPE" = "patch" ]; then
+      # Bump patch version: X.Y.Z -> X.Y.(Z+1)
+      IFS='.' read -r major minor patch <<< "$base_version"
+      base_version="${major}.${minor}.$((patch + 1))"
+      echo "Bumped patch version to ${base_version}"
+    fi
+
+    if [ "$RELEASE_TYPE" = "snapshot" ]; then
+      # Snapshot: create dev version with date/time stamp
+      date_part=$(date -u +"%Y%m%d")
+      time_part=$(date -u +"%H%M%SZ")
+      new_version="${base_version}-dev.${date_part}.${time_part}"
+      echo "Generating new snapshot version ${new_version}"
+    else
+      # Release: use base version as-is
+      new_version="${base_version}"
+      echo "Updating to release version ${new_version}"
+    fi
   fi
 
   # Update root package.json
