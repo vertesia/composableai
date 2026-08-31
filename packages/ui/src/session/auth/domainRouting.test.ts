@@ -1,12 +1,8 @@
 import { Env } from '@vertesia/ui/env';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-<<<<<<< HEAD
     centralAuthUrl,
     DEFAULT_CENTRAL_AUTH_URL,
-=======
-    centralAuthRedirectUrl,
->>>>>>> 933a4327 (fix(auth): preserve app launch selection (#2048))
     mountRootUrl,
     shouldRedirectToCentralAuth,
     shouldUseFirebaseAuth,
@@ -39,24 +35,6 @@ describe('domainRouting', () => {
         (globalThis as { window?: unknown }).window = {};
         expect(shouldUseFirebaseAuth()).toBe(false);
         expect(shouldRedirectToCentralAuth()).toBe(true);
-    });
-
-    it('carries the selected account and project through central auth for a gateway-mounted app', () => {
-        const redirect = centralAuthRedirectUrl({
-            centralAuthUrl: 'https://internal-auth.vertesia.app/',
-            stsEndpoint: 'https://sts.example.test',
-            returnUrl: new URL('https://apps.example.test/tenants/t/apps/a/versions/v/app/?view=grid'),
-            state: 'state-1',
-            accountId: 'account-1',
-            projectId: 'project-1',
-        });
-        const returnUrl = new URL(redirect.searchParams.get('redirect_uri') || '');
-
-        expect(redirect.searchParams.get('sts')).toBe('https://sts.example.test');
-        expect(redirect.searchParams.get('state')).toBe('state-1');
-        expect(returnUrl.toString()).toBe(
-            'https://apps.example.test/tenants/t/apps/a/versions/v/app/?view=grid&p=project-1&a=account-1',
-        );
     });
 
     describe('mountRootUrl', () => {

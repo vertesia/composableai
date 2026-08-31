@@ -12,16 +12,12 @@ import {
     resolveAuthSelection,
     UserNotFoundError,
 } from './auth/composable';
-<<<<<<< HEAD
 import {
     authReturnUrl,
     buildCentralAuthRedirectUrl,
     centralAuthUrl,
     shouldRedirectToCentralAuth,
 } from './auth/domainRouting';
-=======
-import { authReturnUrl, centralAuthRedirectUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
->>>>>>> 933a4327 (fix(auth): preserve app launch selection (#2048))
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
@@ -121,27 +117,14 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         return true;
     };
 
-<<<<<<< HEAD
-    const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const currentUrl = authReturnUrl();
-        if (projectId) currentUrl.searchParams.set('p', projectId);
-        if (accountId) currentUrl.searchParams.set('a', accountId);
+    const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
         const url = buildCentralAuthRedirectUrl(
             centralAuthUrl(),
             Env.endpoints.sts ?? 'https://sts.vertesia.io',
-            currentUrl,
+            authReturnUrl(),
             generateState(),
+            selection,
         );
-=======
-    const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
-        const url = centralAuthRedirectUrl({
-            centralAuthUrl: CENTRAL_AUTH_REDIRECT,
-            stsEndpoint: Env.endpoints.sts ?? 'https://sts.vertesia.io',
-            returnUrl: authReturnUrl(),
-            state: generateState(),
-            ...selection,
-        });
->>>>>>> 933a4327 (fix(auth): preserve app launch selection (#2048))
         location.replace(url.toString());
     };
 
