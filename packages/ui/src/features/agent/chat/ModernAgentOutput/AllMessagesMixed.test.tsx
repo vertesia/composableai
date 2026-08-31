@@ -783,6 +783,105 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('Main agent response.')).not.toBeNull();
     });
 
+    it('keeps the existing back action visible for an empty selected workstream', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1_000,
+                type: AgentMessageType.QUESTION,
+                message: 'Implement a type for a contract.',
+            }),
+            makeMessage({
+                timestamp: 2_000,
+                type: AgentMessageType.UPDATE,
+                message: 'Workstream "app_development_process" launched',
+                workstream_id: 'app_development_process',
+                details: {
+                    event_class: 'activity',
+                    workstream_event: 'launched',
+                    launch_id: 'launch-process',
+                    workstream_id: 'app_development_process',
+                    kind: 'process',
+                    process_run_id: 'process-run-1',
+                    process_workflow_id: 'process-wf-1',
+                    process_name: 'App Development Process',
+                },
+            }),
+            makeMessage({
+                timestamp: 3_000,
+                type: AgentMessageType.ANSWER,
+                message: 'Main agent response.',
+            }),
+        ]);
+
+        fireEvent.click(screen.getByRole('button', { name: /App Development Process/ }));
+
+        expect(screen.getByRole('button', { name: 'Back to main agent' })).not.toBeNull();
+        expect(screen.getByText('No messages in this workstream yet...')).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Back to main agent' }));
+
+        expect(screen.getByText('Main agent response.')).not.toBeNull();
+    });
+
+    it('renders relayed Process progress in the selected workstream', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1_000,
+                type: AgentMessageType.QUESTION,
+                message: 'Implement a type for a contract.',
+            }),
+            makeMessage({
+                timestamp: 2_000,
+                type: AgentMessageType.UPDATE,
+                message: 'Workstream "app_development_process" launched',
+                workstream_id: 'app_development_process',
+                details: {
+                    event_class: 'activity',
+                    workstream_event: 'launched',
+                    launch_id: 'launch-process',
+                    workstream_id: 'app_development_process',
+                    kind: 'process',
+                    process_run_id: 'process-run-1',
+                    process_workflow_id: 'process-wf-1',
+                    process_name: 'App Development Process',
+                },
+            }),
+            makeMessage({
+                timestamp: 3_000,
+                type: AgentMessageType.UPDATE,
+                message: 'Process running at implementation (agent, sequence 2).',
+                workstream_id: 'app_development_process',
+                details: {
+                    event_class: 'activity',
+                    process_event: 'progress',
+                    launch_id: 'launch-process',
+                    workstream_id: 'app_development_process',
+                    kind: 'process',
+                    process_run_id: 'process-run-1',
+                    process_workflow_id: 'process-wf-1',
+                    process_name: 'App Development Process',
+                    phase: 'executing_tool',
+                    current_step: 'implementation',
+                    process_status: 'running',
+                    process_current_node: 'implementation',
+                    process_current_node_type: 'agent',
+                    process_sequence: 2,
+                },
+            }),
+            makeMessage({
+                timestamp: 4_000,
+                type: AgentMessageType.ANSWER,
+                message: 'Main agent response.',
+            }),
+        ]);
+
+        fireEvent.click(screen.getByRole('button', { name: /App Development Process/ }));
+
+        expect(screen.getByRole('button', { name: 'Back to main agent' })).not.toBeNull();
+        expect(screen.getByText('Process running at implementation (agent, sequence 2).')).not.toBeNull();
+        expect(screen.queryByText('Main agent response.')).toBeNull();
+    });
+
     it('keeps streamed and persisted child output in the owning workstream throughout its lifecycle', () => {
         const question = makeMessage({
             timestamp: 1_000,

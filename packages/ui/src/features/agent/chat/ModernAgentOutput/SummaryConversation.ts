@@ -133,6 +133,8 @@ export function isSummaryAssistantProseMessage(message: AgentMessage): boolean {
 
     if (message.type === AgentMessageType.ANSWER) return true;
 
+    if (message.details?.process_event === 'progress' && message.details?.kind === 'process') return true;
+
     if (isToolPreambleMessage(message)) return false;
 
     // Streamed thoughts without tool metadata are model-visible prose. They remain
