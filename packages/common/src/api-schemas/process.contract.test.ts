@@ -44,7 +44,9 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                     },
                 ],
                 restrict_to_phase_tools: true,
-                max_failed_tool_iterations: 1,
+                max_failed_tool_iterations: 3,
+                max_failed_tool_iterations_per_phase: 2,
+                max_repeated_tool_failure_iterations: 1,
             }),
         ).toMatchObject({
             phases: [
@@ -64,7 +66,9 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                 },
             ],
             restrict_to_phase_tools: true,
-            max_failed_tool_iterations: 1,
+            max_failed_tool_iterations: 3,
+            max_failed_tool_iterations_per_phase: 2,
+            max_repeated_tool_failure_iterations: 1,
         });
         expect(() =>
             ProcessAgentExecutionPolicySchema.parse({
@@ -83,6 +87,13 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                         recovery_prompt: 'Inspect source.',
                     },
                 ],
+            }),
+        ).toThrow();
+        expect(() =>
+            ProcessAgentExecutionPolicySchema.parse({
+                phases: [{ id: 'inspect', tools: ['app_workspace_read'], recovery_prompt: 'Inspect source.' }],
+                max_failed_tool_iterations_per_phase: 0,
+                max_repeated_tool_failure_iterations: 0,
             }),
         ).toThrow();
     });

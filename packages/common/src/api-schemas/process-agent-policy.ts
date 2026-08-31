@@ -137,6 +137,24 @@ export const ProcessAgentExecutionPolicySchema = z
                     'Run-wide budget of repeated model iterations containing failed tool results before the agent node stops. The first failing iteration establishes model-visible recovery evidence and is not charged; phase transitions do not reset the budget. Defaults to eight.',
             })
             .optional(),
+        max_failed_tool_iterations_per_phase: z
+            .number()
+            .int()
+            .positive()
+            .meta({
+                description:
+                    'Optional per-phase budget of corrective model iterations that still contain failed tool results. The first failure in each phase establishes recovery evidence and is not charged.',
+            })
+            .optional(),
+        max_repeated_tool_failure_iterations: z
+            .number()
+            .int()
+            .positive()
+            .meta({
+                description:
+                    'Optional number of repeated normalized failure fingerprints allowed in one phase before the agent node stops. A value of one stops after the first corrective iteration repeats an already observed cause.',
+            })
+            .optional(),
         completion_prompt: z
             .string()
             .min(1)

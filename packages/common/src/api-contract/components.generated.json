@@ -13240,6 +13240,18 @@
         "maximum": 9007199254740991,
         "description": "Run-wide budget of repeated model iterations containing failed tool results before the agent node stops. The first failing iteration establishes model-visible recovery evidence and is not charged; phase transitions do not reset the budget. Defaults to eight."
       },
+      "max_failed_tool_iterations_per_phase": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Optional per-phase budget of corrective model iterations that still contain failed tool results. The first failure in each phase establishes recovery evidence and is not charged."
+      },
+      "max_repeated_tool_failure_iterations": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Optional number of repeated normalized failure fingerprints allowed in one phase before the agent node stops. A value of one stops after the first corrective iteration repeats an already observed cause."
+      },
       "completion_prompt": {
         "type": "string",
         "minLength": 1,
