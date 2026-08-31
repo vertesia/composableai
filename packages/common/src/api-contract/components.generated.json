@@ -40588,6 +40588,113 @@
     ],
     "additionalProperties": false
   },
+  "DeleteMemoryBrainQuery": {
+    "type": "object",
+    "properties": {
+      "purge_records": {
+        "type": "boolean",
+        "description": "Also delete every record in the Brain namespace, that is every content object in the project whose `properties.brain_id` equals the Brain id. Defaults to false, which deletes only the Brain definition and leaves its records in place."
+      },
+      "brain_type": {
+        "type": "string",
+        "description": "Content type name or id of the Brain definition, used to tell the Brain object apart from the records that carry the same `brain_id`. Defaults to the platform Brain type name."
+      },
+      "relationship_type": {
+        "type": "string",
+        "description": "Content type name or id counted as `relationships` in the deletion summary. Purely a reporting hint: records of an unresolved type are still purged and counted as `other`."
+      },
+      "memory_entry_type": {
+        "type": "string",
+        "description": "Content type name or id counted as `memory_entries` in the deletion summary. Purely a reporting hint: records of an unresolved type are still purged and counted as `other`."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Options controlling how far a Memory Brain deletion cascades."
+  },
+  "MemoryBrainRecordDeletionCounts": {
+    "type": "object",
+    "properties": {
+      "relationships": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Deleted records of the relationship type."
+      },
+      "memory_entries": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Deleted records of the memory entry type."
+      },
+      "other": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Deleted records that carried the Brain id but matched neither reporting type. Purging is driven by `properties.brain_id`, so records of any other type in the namespace land here."
+      }
+    },
+    "required": [
+      "relationships",
+      "memory_entries",
+      "other"
+    ],
+    "additionalProperties": false,
+    "description": "Per-bucket counts of the logical records deleted from a Brain namespace."
+  },
+  "MemoryBrainDeletionError": {
+    "type": "object",
+    "properties": {
+      "object_id": {
+        "type": "string",
+        "description": "Content object that could not be deleted."
+      },
+      "message": {
+        "type": "string",
+        "description": "Why the deletion did not happen."
+      }
+    },
+    "required": [
+      "message"
+    ],
+    "additionalProperties": false,
+    "description": "One partial failure encountered while deleting a Memory Brain namespace."
+  },
+  "DeleteMemoryBrainResponse": {
+    "type": "object",
+    "properties": {
+      "brain_id": {
+        "type": "string",
+        "description": "The Brain namespace that was targeted."
+      },
+      "brain_object_id": {
+        "type": "string",
+        "description": "Content object id of the Brain definition."
+      },
+      "brain_deleted": {
+        "type": "boolean",
+        "description": "Whether the Brain definition itself was deleted."
+      },
+      "records_deleted": {
+        "$ref": "#/components/schemas/MemoryBrainRecordDeletionCounts"
+      },
+      "errors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryBrainDeletionError"
+        },
+        "description": "Partial failures. An empty array means the whole namespace was removed as requested."
+      }
+    },
+    "required": [
+      "brain_id",
+      "brain_object_id",
+      "brain_deleted",
+      "records_deleted",
+      "errors"
+    ],
+    "additionalProperties": false,
+    "description": "Summary of a Memory Brain deletion, including any partially failed cascade."
+  },
   "EmbeddingsStatusResponse": {
     "type": "object",
     "properties": {

@@ -30,6 +30,7 @@ export * from './integrations.js';
 export * from './interaction.js';
 export * from './json.js';
 export * from './json-schema.js';
+export * from './memory.js';
 export * from './meters.js';
 export * from './model_utility.js';
 export * from './oauth.js';

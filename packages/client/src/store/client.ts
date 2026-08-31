@@ -15,6 +15,7 @@ import { EventsApi } from './EventsApi.js';
 import { ZenoClientNotFoundError } from './errors.js';
 import { FilesApi } from './FilesApi.js';
 import { IndexingApi } from './IndexingApi.js';
+import { MemoryApi } from './MemoryApi.js';
 import { ObjectsApi } from './ObjectsApi.js';
 import { PendingAsksApi } from './PendingAsksApi.js';
 import { ProcessApi } from './ProcessApi.js';
@@ -124,6 +125,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     pendingAsks = new PendingAsksApi(this);
     data = new DataApi(this);
     indexing = new IndexingApi(this);
+    memory = new MemoryApi(this);
     query = new QueryApi(this);
     rendering = new RenderingApi(this);
     views = new StoreViewsApi(this);

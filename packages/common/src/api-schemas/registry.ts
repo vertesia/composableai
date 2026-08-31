@@ -589,6 +589,12 @@ import {
     UserInviteTokenArraySchema,
 } from './invites.js';
 import {
+    DeleteMemoryBrainQuerySchema,
+    DeleteMemoryBrainResponseSchema,
+    MemoryBrainDeletionErrorSchema,
+    MemoryBrainRecordDeletionCountsSchema,
+} from './memory.js';
+import {
     CreateOAuthProviderPayloadSchema,
     OAuthProviderAccessTokenResponseSchema,
     OAuthProviderArraySchema,
@@ -1463,6 +1469,13 @@ const INDEXING_SCHEMAS = {
     DriftAnalysisStatusResponse: DriftAnalysisStatusResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const MEMORY_SCHEMAS = {
+    DeleteMemoryBrainQuery: DeleteMemoryBrainQuerySchema,
+    MemoryBrainRecordDeletionCounts: MemoryBrainRecordDeletionCountsSchema,
+    MemoryBrainDeletionError: MemoryBrainDeletionErrorSchema,
+    DeleteMemoryBrainResponse: DeleteMemoryBrainResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const EMBEDDING_ADMIN_SCHEMAS = {
     EmbeddingsStatusResponse: EmbeddingsStatusResponseSchema,
     ProjectConfigurationEmbeddingEnablePayload: ProjectConfigurationEmbeddingEnablePayloadSchema,
@@ -2302,6 +2315,7 @@ const API_SCHEMA_GROUPS = [
     BULK_CONTENT_OPERATION_SCHEMAS,
     DOCUMENT_PROCESSING_SCHEMAS,
     INDEXING_SCHEMAS,
+    MEMORY_SCHEMAS,
     EMBEDDING_ADMIN_SCHEMAS,
     COMMAND_SCHEMAS,
 ];
@@ -2362,6 +2376,7 @@ type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof BULK_CONTENT_OPERATION_SCHEMAS &
     typeof DOCUMENT_PROCESSING_SCHEMAS &
     typeof INDEXING_SCHEMAS &
+    typeof MEMORY_SCHEMAS &
     typeof EMBEDDING_ADMIN_SCHEMAS &
     typeof COMMAND_SCHEMAS;
 
@@ -2622,6 +2637,12 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'FileMetadataQuery',
     'FileListQuery',
     'FileDeleteQuery',
+    // Memory Brain administration. All four are closed; `DeleteMemoryBrainQuery` is expanded into
+    // parameters rather than published, and is listed for the same reason `FileDeleteQuery` is.
+    'DeleteMemoryBrainQuery',
+    'MemoryBrainRecordDeletionCounts',
+    'MemoryBrainDeletionError',
+    'DeleteMemoryBrainResponse',
     'TaskSource',
     'TaskField',
     'Task',
