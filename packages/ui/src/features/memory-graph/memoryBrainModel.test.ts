@@ -1,12 +1,7 @@
 // @vitest-environment node
 import { type ContentObjectItemApiResponse, ContentObjectStatus, type JSONObject } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
-import {
-    buildMemoryRelationshipMatch,
-    formatModelName,
-    parseMemoryBrains,
-    selectMemoryBrain,
-} from './memoryBrainModel.js';
+import { buildMemoryBrainFilter, formatModelName, parseMemoryBrains, selectMemoryBrain } from './memoryBrainModel.js';
 
 function contentRecord(id: string, name: string, properties: JSONObject): ContentObjectItemApiResponse {
     return {
@@ -97,11 +92,11 @@ describe('Memory brains', () => {
         expect(selectMemoryBrain(parseMemoryBrains([opus]))?.brainId).toBe('opus-high');
     });
 
-    it('builds an Elasticsearch match scoped to the selected brain', () => {
+    it('builds an Elasticsearch DSL filter scoped to the selected brain', () => {
         const [brain] = parseMemoryBrains([sol]);
 
-        expect(buildMemoryRelationshipMatch(brain)).toEqual({
-            'properties.brain_id': 'sol-high',
+        expect(buildMemoryBrainFilter(brain)).toEqual({
+            term: { 'properties.brain_id': 'sol-high' },
         });
     });
 

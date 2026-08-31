@@ -66,10 +66,10 @@ export function selectMemoryBrain(brains: MemoryBrain[], requestedBrainId?: stri
     return brains.find((brain) => brain.status === 'active') ?? brains[0];
 }
 
-/** Elasticsearch match scoping reconstructed records to one brain. */
-export function buildMemoryRelationshipMatch(brain: Pick<MemoryBrain, 'brainId'>): Record<string, string> {
+/** Elasticsearch DSL filter scoping reconstructed records to one brain. */
+export function buildMemoryBrainFilter(brain: Pick<MemoryBrain, 'brainId'>): Record<string, unknown> {
     return {
-        'properties.brain_id': brain.brainId,
+        term: { 'properties.brain_id': brain.brainId },
     };
 }
 

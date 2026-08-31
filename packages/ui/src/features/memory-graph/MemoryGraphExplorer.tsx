@@ -1,3 +1,5 @@
+import type { VertesiaClient } from '@vertesia/client';
+import type { ContentObjectItemApiResponse } from '@vertesia/common';
 import { Button, cn, ErrorBox, Input, MessageBox, SelectBox, Spinner, useDebounce } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -14,7 +16,7 @@ import { MemoryGraphInspector, type MemorySelection } from './MemoryGraphInspect
 import { MemoryGraphRail } from './MemoryGraphRail.js';
 import { MemoryGraphStatusBar } from './MemoryGraphStatusBar.js';
 import {
-    buildMemoryRelationshipMatch,
+    buildMemoryBrainFilter,
     formatModelName,
     type MemoryBrain,
     parseMemoryBrains,
@@ -32,6 +34,7 @@ import {
     parseMemoryEntries,
     parseMemoryRelationships,
 } from './memoryGraphModel.js';
+import { mapMemoryQueryHits } from './memoryRecordReaders.js';
 
 /** Content-store type names the corpus is stored under. Every one is overridable per deployment. */
 export interface MemoryGraphTypeNames {
@@ -52,9 +55,47 @@ export const DEFAULT_MEMORY_TYPE_NAMES: MemoryGraphTypeNames = {
 
 export const DEFAULT_MEMORY_POLL_INTERVAL_MS = 15_000;
 
-const ENTITY_PAGE_SIZE = 500;
-const RECORD_PAGE_SIZE = 500;
 const BRAIN_PAGE_SIZE = 100;
+/**
+ * The explorer holds a whole brain in memory rather than paging, so this is a safety ceiling, not a
+ * page size: {@link mapMemoryQueryHits} throws rather than silently drawing a truncated graph.
+ */
+const GRAPH_RECORD_LIMIT = 10_000;
+
+/**
+ * Read the current heads of one content type straight from the index.
+ *
+ * `revision.head` is filtered in the query rather than after the fact, so superseded revisions
+ * never leave Elasticsearch and never count against the record limit.
+ */
+async function queryHeadRecords(
+    client: VertesiaClient,
+    typeId: string,
+    filters: Record<string, unknown>[] = [],
+): Promise<ContentObjectItemApiResponse[]> {
+    const result = await client.store.query.dsl({
+        query: {
+            bool: {
+                filter: [{ term: { 'type.id': typeId } }, { term: { 'revision.head': true } }, ...filters],
+            },
+        },
+        size: GRAPH_RECORD_LIMIT,
+    });
+    return mapMemoryQueryHits(result.hits, result.total, GRAPH_RECORD_LIMIT);
+}
+
+/** Head count for one content type, without transferring a single document. */
+async function countHeadRecords(client: VertesiaClient, typeId: string): Promise<number> {
+    const result = await client.store.query.dsl({
+        query: {
+            bool: {
+                filter: [{ term: { 'type.id': typeId } }, { term: { 'revision.head': true } }],
+            },
+        },
+        size: 0,
+    });
+    return result.total ?? 0;
+}
 
 export interface MemoryGraphExplorerProps {
     /** Brain to open with. The explorer owns the selection from then on. */
@@ -143,30 +184,22 @@ export function MemoryGraphExplorer({
                 client.store.types.getTypeByName(sourceTypeName),
                 client.store.types.getTypeByName(memoryEntryTypeName),
             ]);
-            const [brainResult, entityResult, sourceResult] = await Promise.all([
+            const [brainResult, entityRecords, sourceCount] = await Promise.all([
                 client.store.objects.search({
                     limit: BRAIN_PAGE_SIZE,
                     all_revisions: false,
                     query: { type: brainType.id },
                 }),
-                client.store.objects.search({
-                    limit: ENTITY_PAGE_SIZE,
-                    all_revisions: false,
-                    query: { type: entityType.id },
-                }),
-                client.store.objects.search({
-                    limit: 1,
-                    all_revisions: false,
-                    query: { type: sourceType.id },
-                }),
+                queryHeadRecords(client, entityType.id),
+                countHeadRecords(client, sourceType.id),
             ]);
             if (generation !== catalogGenRef.current) return;
             setCatalog({
                 brains: parseMemoryBrains(brainResult.results),
-                entities: parseMemoryEntities(entityResult.results),
+                entities: parseMemoryEntities(entityRecords),
                 relationshipTypeId: relationshipType.id,
                 memoryEntryTypeId: memoryEntryType.id,
-                sourceCount: sourceResult.facets?.total ?? sourceResult.results.length,
+                sourceCount,
             });
             // A success clears the previous failure: one bad poll must not brick the view.
             setCatalogError(undefined);
@@ -198,24 +231,16 @@ export function MemoryGraphExplorer({
         const generation = ++graphGenRef.current;
         setIsGraphLoading(true);
         try {
-            const match = buildMemoryRelationshipMatch({ brainId });
-            const [relationshipResult, memoryResult] = await Promise.all([
-                client.store.objects.search({
-                    limit: RECORD_PAGE_SIZE,
-                    all_revisions: false,
-                    query: { type: relationshipTypeId, match },
-                }),
-                client.store.objects.search({
-                    limit: RECORD_PAGE_SIZE,
-                    all_revisions: false,
-                    query: { type: memoryEntryTypeId, match },
-                }),
+            const brainFilter = [buildMemoryBrainFilter({ brainId })];
+            const [relationshipRecords, memoryRecords] = await Promise.all([
+                queryHeadRecords(client, relationshipTypeId, brainFilter),
+                queryHeadRecords(client, memoryEntryTypeId, brainFilter),
             ]);
             if (generation !== graphGenRef.current) return;
             setGraph({
                 entities,
-                relationships: parseMemoryRelationships(relationshipResult.results),
-                memories: parseMemoryEntries(memoryResult.results),
+                relationships: parseMemoryRelationships(relationshipRecords),
+                memories: parseMemoryEntries(memoryRecords),
                 sourceCount,
                 loadedAt: new Date().toISOString(),
             });
