@@ -632,6 +632,13 @@ export const WorkflowRunDetailsQuerySchema = z
         include_history: z.boolean().optional(),
         history_format: z.enum(['events', 'tasks', 'agent']).optional(),
         hydrate_payloads: z.boolean().optional(),
+        hydrate_tools: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Restricts payload hydration to the tool calls named here. Only meaningful together with `hydrate_payloads=true`: externalized payloads are then downloaded for tool tasks whose tool name is listed, and every other task keeps its stored artifact reference and placeholder content. Omit to hydrate the whole history, which can reach several megabytes on a long agent run.',
+            })
+            .optional(),
     })
     .meta({ id: 'WorkflowRunDetailsQuery' });
 

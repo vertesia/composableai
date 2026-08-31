@@ -90,6 +90,12 @@ export class WorkflowsApi extends ApiTopic {
             includeHistory?: boolean;
             historyFormat?: 'events' | 'tasks' | 'agent';
             hydratePayloads?: boolean;
+            /**
+             * Restricts hydration to these tool names. Every other task keeps its stored artifact
+             * reference and placeholder content, which is what keeps the response small when the
+             * caller only reads a few tool results. Ignored unless `hydratePayloads` is true.
+             */
+            hydrateTools?: string[];
         },
     ): Promise<WorkflowRunWithDetails> {
         const query: NonNullable<IRequestParams['query']> = {};
@@ -106,6 +112,10 @@ export class WorkflowsApi extends ApiTopic {
 
         if (options?.hydratePayloads !== undefined) {
             query.hydrate_payloads = options.hydratePayloads;
+        }
+
+        if (options?.hydrateTools?.length) {
+            query.hydrate_tools = options.hydrateTools;
         }
 
         return this.get(`/runs/${workflowId}/${runId}`, { query });

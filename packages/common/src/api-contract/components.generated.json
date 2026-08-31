@@ -35411,6 +35411,13 @@
       },
       "hydrate_payloads": {
         "type": "boolean"
+      },
+      "hydrate_tools": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Restricts payload hydration to the tool calls named here. Only meaningful together with `hydrate_payloads=true`: externalized payloads are then downloaded for tool tasks whose tool name is listed, and every other task keeps its stored artifact reference and placeholder content. Omit to hydrate the whole history, which can reach several megabytes on a long agent run."
       }
     }
   },
