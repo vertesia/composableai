@@ -1,7 +1,7 @@
-import { ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
+import { InfoTip } from '../InfoTip';
 import { Button } from './button';
-import { VTooltip } from './tooltip';
 
 interface PanelProps {
     title: string | React.ReactNode;
@@ -47,11 +47,7 @@ export function Panel({
         <>
             <div className="flex items-center gap-2">
                 <div className={`font-semibold ${isSmall ? 'text-sm' : 'text-lg'}`}>{title}</div>
-                {description && (
-                    <VTooltip description={description}>
-                        <Info className="size-4 text-muted" />
-                    </VTooltip>
-                )}
+                <InfoTip description={description} size="md" />
             </div>
             <div className="flex gap-2 items-center">
                 {action}
