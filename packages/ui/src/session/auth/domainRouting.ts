@@ -28,6 +28,11 @@ export function shouldRedirectToCentralAuth(_hostname?: string) {
     return !shouldUseFirebaseAuth();
 }
 
+interface AuthSelection {
+    accountId?: string;
+    projectId?: string;
+}
+
 /**
  * The page URL to return to after a central-auth round-trip (`redirect_uri`).
  *
@@ -75,10 +80,20 @@ export function mountRootUrl(): URL {
  * or hides it in the fragment, leaving Central Auth with no `sts` at all. `searchParams` also
  * percent-encodes the values, which the interpolated URLs did not.
  */
-export function buildCentralAuthRedirectUrl(centralAuth: string, stsUrl: string, returnUrl: URL, state: string): URL {
+export function buildCentralAuthRedirectUrl(
+    centralAuth: string,
+    stsUrl: string,
+    returnUrl: URL,
+    state: string,
+    selection: AuthSelection = {},
+): URL {
+    const selectedReturnUrl = new URL(returnUrl);
+    if (selection.projectId) selectedReturnUrl.searchParams.set('p', selection.projectId);
+    if (selection.accountId) selectedReturnUrl.searchParams.set('a', selection.accountId);
+
     const url = new URL(centralAuth);
     url.searchParams.set('sts', stsUrl);
-    url.searchParams.set('redirect_uri', returnUrl.toString());
+    url.searchParams.set('redirect_uri', selectedReturnUrl.toString());
     url.searchParams.set('state', state);
     return url;
 }

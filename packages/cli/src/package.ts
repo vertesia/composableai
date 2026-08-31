@@ -1,13 +1,9 @@
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import enquirer from 'enquirer';
+import packageMetadata from '../package.json' with { type: 'json' };
 import { getBooleanOption, getStringOption, isRecord } from './utils/options.js';
 
 const { prompt } = enquirer;
-
-const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 
 interface PackageMetadata {
     name: string;
@@ -17,7 +13,7 @@ interface PackageMetadata {
 let _package: PackageMetadata | undefined;
 function getPackage(): PackageMetadata {
     if (_package === undefined) {
-        _package = readPackageMetadata(JSON.parse(readFileSync(`${packageDir}/package.json`, 'utf8')));
+        _package = readPackageMetadata(packageMetadata);
     }
     return _package;
 }
@@ -84,4 +80,4 @@ async function warnIfNotLatest() {
     }
 }
 
-export { getLatestVersion, getPackage, getVersion, packageDir, warnIfNotLatest };
+export { getLatestVersion, getPackage, getVersion, warnIfNotLatest };
