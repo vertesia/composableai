@@ -12,12 +12,16 @@ import {
     resolveAuthSelection,
     UserNotFoundError,
 } from './auth/composable';
+<<<<<<< HEAD
 import {
     authReturnUrl,
     buildCentralAuthRedirectUrl,
     centralAuthUrl,
     shouldRedirectToCentralAuth,
 } from './auth/domainRouting';
+=======
+import { authReturnUrl, centralAuthRedirectUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
+>>>>>>> 933a4327 (fix(auth): preserve app launch selection (#2048))
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
@@ -117,6 +121,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         return true;
     };
 
+<<<<<<< HEAD
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const currentUrl = authReturnUrl();
         if (projectId) currentUrl.searchParams.set('p', projectId);
@@ -127,6 +132,16 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             currentUrl,
             generateState(),
         );
+=======
+    const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
+        const url = centralAuthRedirectUrl({
+            centralAuthUrl: CENTRAL_AUTH_REDIRECT,
+            stsEndpoint: Env.endpoints.sts ?? 'https://sts.vertesia.io',
+            returnUrl: authReturnUrl(),
+            state: generateState(),
+            ...selection,
+        });
+>>>>>>> 933a4327 (fix(auth): preserve app launch selection (#2048))
         location.replace(url.toString());
     };
 
@@ -181,7 +196,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         state: state,
                     },
                 });
-                redirectToCentralAuth();
+                redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
             } else {
                 clearState();
             }
@@ -201,7 +216,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             error: err,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                 });
             return;
         }
@@ -227,7 +242,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             project_id: selectedProject,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                     return; // Don't register onAuthStateChanged listener when redirecting
                 }
 

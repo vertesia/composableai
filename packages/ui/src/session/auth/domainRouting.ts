@@ -28,6 +28,35 @@ export function shouldRedirectToCentralAuth(_hostname?: string) {
     return !shouldUseFirebaseAuth();
 }
 
+interface CentralAuthRedirectOptions {
+    centralAuthUrl: string;
+    stsEndpoint: string;
+    returnUrl: URL;
+    state: string;
+    accountId?: string;
+    projectId?: string;
+}
+
+/** Build a central-auth round trip without losing the app's requested account/project selection. */
+export function centralAuthRedirectUrl({
+    centralAuthUrl,
+    stsEndpoint,
+    returnUrl,
+    state,
+    accountId,
+    projectId,
+}: CentralAuthRedirectOptions): URL {
+    const selectedReturnUrl = new URL(returnUrl);
+    if (projectId) selectedReturnUrl.searchParams.set('p', projectId);
+    if (accountId) selectedReturnUrl.searchParams.set('a', accountId);
+
+    const url = new URL(centralAuthUrl);
+    url.searchParams.set('sts', stsEndpoint);
+    url.searchParams.set('redirect_uri', selectedReturnUrl.toString());
+    url.searchParams.set('state', state);
+    return url;
+}
+
 /**
  * The page URL to return to after a central-auth round-trip (`redirect_uri`).
  *
