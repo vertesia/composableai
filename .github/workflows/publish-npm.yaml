@@ -218,6 +218,10 @@ jobs:
     permissions:
       id-token: write # required for OIDC between GitHub and NPM
       contents: write # required to push version-bump commits for preview
+    outputs:
+      version: ${{ steps.publish.outputs.version }}
+      npm_tag: ${{ steps.publish.outputs.npm_tag }}
+      publish_status: ${{ steps.publish.outputs.publish_status }}
     steps:
       - name: Checkout repository
         # persist-credentials must stay true so the DEPLOY_KEY SSH config survives
@@ -244,6 +248,9 @@ jobs:
       - name: Verify npm version
         run: npm --version
 
+      - name: Test package channel policy
+        run: bash ./.github/bin/lib-package-channel.test.sh
+
       - name: Install workspace dependencies
         timeout-minutes: 5
         run: pnpm install
@@ -257,6 +264,7 @@ jobs:
         run: chmod 755 packages/cli/bin/vertesia-darwin-arm64 packages/cli/bin/vertesia-darwin-x64
 
       - name: Publish all packages
+        id: publish
         timeout-minutes: 15
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
@@ -276,7 +284,11 @@ jobs:
         timeout-minutes: 10
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin"
+        run: >-
+          ./.github/bin/test-template-integration.sh
+          --release-type "${RELEASE_TYPE}"
+          --template "Vertesia Plugin"
+          --branch "${GITHUB_REF_NAME}"
 
   # ============================================================
   # Integration test after real publish (non-dry-run only)
@@ -305,4 +317,11 @@ jobs:
         timeout-minutes: 10
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin" --branch "${GITHUB_REF_NAME}" --wait
+          PACKAGE_VERSION: ${{ needs.publish.outputs.version }}
+        run: >-
+          ./.github/bin/test-template-smoke.sh
+          --release-type "${RELEASE_TYPE}"
+          --template "Vertesia Plugin"
+          --branch "${GITHUB_REF_NAME}"
+          --package-version "${PACKAGE_VERSION}"
+          --wait
