@@ -31,6 +31,7 @@
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "build": "pnpm run clean:lib && tsc -p tsconfig.json",
+        "build:native:macos": "bun build ./src/index.ts --compile --target=bun-darwin-arm64 --outfile ./bin/vertesia-darwin-arm64 && bun build ./src/index.ts --compile --target=bun-darwin-x64 --outfile ./bin/vertesia-darwin-x64",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "dependencies": {
