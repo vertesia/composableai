@@ -7,7 +7,7 @@ set -eo pipefail
 # Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>] [--branch <ref>] [--cli-only]
 #   --release-type: Determines the package track and template ref
 #   --template: Template name to test (default: "Vertesia Plugin")
-#   --cli-only: Install and smoke test the macOS CLI instead of bootstrapping templates
+#   --cli-only: Install and smoke test the CLI instead of bootstrapping templates
 #
 # Prerequisites:
 #   - All packages must be built (run `pnpm build` first)
@@ -268,7 +268,7 @@ if [ "$CLI_ONLY" = "true" ]; then
     CLI_REGISTRY_URL="${VERDACCIO_URL}" \
     CLI_VERSION="${PACKAGE_VERSION}" \
     node packages/cli/scripts/smoke-native-package.mjs
-  echo "macOS CLI Verdaccio smoke test passed!"
+  echo "CLI Verdaccio smoke test passed!"
   exit 0
 fi
 
