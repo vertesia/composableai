@@ -114,8 +114,9 @@ try {
         console.log('Verified that no macOS native package was installed');
         console.log(`Executing JavaScript fallback: ${executable} --version`);
         const actualVersion = runAndCapture(executable, ['--version']);
-        if (actualVersion !== expectedVersion) {
-            throw new Error(`Expected CLI version ${expectedVersion}, got ${actualVersion}`);
+        const expectedJavaScriptVersion = `${expectedVersion} (javascript)`;
+        if (actualVersion !== expectedJavaScriptVersion) {
+            throw new Error(`Expected CLI version ${expectedJavaScriptVersion}, got ${actualVersion}`);
         }
     } else {
         const expectedNativePackage = `cli-darwin-${process.arch}`;
@@ -139,8 +140,9 @@ try {
 
         console.log(`Executing native package binary: ${nativeExecutable} --version`);
         const actualNativeVersion = runAndCapture(nativeExecutable, ['--version']);
-        if (actualNativeVersion !== expectedVersion) {
-            throw new Error(`Expected native CLI version ${expectedVersion}, got ${actualNativeVersion}`);
+        const expectedNativeVersion = `${expectedVersion} (native darwin-${process.arch})`;
+        if (actualNativeVersion !== expectedNativeVersion) {
+            throw new Error(`Expected native CLI version ${expectedNativeVersion}, got ${actualNativeVersion}`);
         }
 
         if (!nativePackageOnly) {
@@ -153,8 +155,8 @@ try {
             );
             console.log(`Executing installed CLI launcher: ${executable} --version`);
             const actualVersion = runAndCapture(executable, ['--version']);
-            if (actualVersion !== expectedVersion) {
-                throw new Error(`Expected CLI version ${expectedVersion}, got ${actualVersion}`);
+            if (actualVersion !== expectedNativeVersion) {
+                throw new Error(`Expected CLI version ${expectedNativeVersion}, got ${actualVersion}`);
             }
         }
     }
