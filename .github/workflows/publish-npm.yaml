@@ -75,8 +75,8 @@ jobs:
     needs: prepare-release
     environment: build
     permissions:
-      contents: read
-      id-token: write
+      contents: read # required to check out the release source
+      id-token: write # required for GCP workload identity federation
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,17 +86,33 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-          cache: "pnpm"
       - name: Install Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
       - name: Install workspace dependencies
         timeout-minutes: 5
         run: pnpm install
+      - name: Save pnpm store cache
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
@@ -121,7 +137,6 @@ jobs:
           keychain_path="${RUNNER_TEMP}/vertesia-signing.keychain-db"
           keychain_password="$(openssl rand -hex 24)"
           p12_password="$(<"${RUNNER_TEMP}/vertesia-developer-id.p12.password")"
-          login_keychain="$(security login-keychain -d user | tr -d '"')"
 
           curl --fail --silent --show-error --location \
               https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer \
@@ -144,7 +159,7 @@ jobs:
               -s \
               -k "${keychain_password}" \
               "${keychain_path}"
-          security list-keychains -d user -s "${keychain_path}" "${login_keychain}"
+          security list-keychains -d user -s "${keychain_path}"
           security find-identity -v -p codesigning "${keychain_path}"
 
       - name: Build and sign macOS executables
