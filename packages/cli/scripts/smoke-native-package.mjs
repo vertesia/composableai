@@ -24,6 +24,7 @@ if (process.platform !== 'darwin' || !['arm64', 'x64'].includes(process.arch)) {
 
 const nativePackageDirectory = path.join(repositoryRoot, 'packages', `cli-darwin-${process.arch}`);
 const cliPackageSpec = process.env.CLI_PACKAGE_SPEC;
+const nativePackageOnly = process.env.CLI_NATIVE_PACKAGE_ONLY === 'true';
 const registryUrl = process.env.CLI_REGISTRY_URL ?? 'https://registry.npmjs.org';
 const temporaryDirectory = mkdtempSync(path.join(tmpdir(), 'vertesia-cli-smoke-'));
 const installDirectory = path.join(temporaryDirectory, 'install');
@@ -70,13 +71,16 @@ try {
         ]);
     } else {
         run(pnpm, ['pack', '--pack-destination', temporaryDirectory], { cwd: nativePackageDirectory });
-        run(pnpm, ['pack', '--pack-destination', temporaryDirectory], { cwd: cliDirectory });
+        if (!nativePackageOnly) {
+            run(pnpm, ['pack', '--pack-destination', temporaryDirectory], { cwd: cliDirectory });
+        }
 
         const tarballs = readdirSync(temporaryDirectory)
             .filter((file) => file.endsWith('.tgz'))
             .map((file) => path.join(temporaryDirectory, file));
-        if (tarballs.length !== 2) {
-            throw new Error(`Expected two package tarballs, found ${tarballs.length}`);
+        const expectedTarballCount = nativePackageOnly ? 1 : 2;
+        if (tarballs.length !== expectedTarballCount) {
+            throw new Error(`Expected ${expectedTarballCount} package tarballs, found ${tarballs.length}`);
         }
         run(npm, [
             'install',
@@ -115,13 +119,15 @@ try {
         throw new Error(`Expected native CLI version ${expectedVersion}, got ${actualNativeVersion}`);
     }
 
-    renameSync(
-        path.join(installedScope, 'cli', 'lib', 'index.js'),
-        path.join(installedScope, 'cli', 'lib', 'index.js.disabled'),
-    );
-    const actualVersion = runAndCapture(executable, ['--version']);
-    if (actualVersion !== expectedVersion) {
-        throw new Error(`Expected CLI version ${expectedVersion}, got ${actualVersion}`);
+    if (!nativePackageOnly) {
+        renameSync(
+            path.join(installedScope, 'cli', 'lib', 'index.js'),
+            path.join(installedScope, 'cli', 'lib', 'index.js.disabled'),
+        );
+        const actualVersion = runAndCapture(executable, ['--version']);
+        if (actualVersion !== expectedVersion) {
+            throw new Error(`Expected CLI version ${expectedVersion}, got ${actualVersion}`);
+        }
     }
 } finally {
     rmSync(temporaryDirectory, { recursive: true, force: true });

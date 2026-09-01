@@ -211,6 +211,9 @@ jobs:
           test "${actual_version}" = "${CLI_VERSION}"
 
       - name: Smoke test packed macOS CLI
+        env:
+          CLI_NATIVE_PACKAGE_ONLY: "true"
+          CLI_VERIFY_CODE_SIGNATURE: "true"
         run: node packages/cli/scripts/smoke-native-package.mjs
 
       - name: Build workspace for Verdaccio
