@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "1.5.0-dev.20260901.044256Z",
+    "version": "1.5.0-dev.20260901.045442Z",
     "type": "module",
     "description": "Vertesia workflow DSL",
     "main": "./lib/index.js",
@@ -111,5 +111,5 @@
         "agents",
         "typescript"
     ],
-    "gitHead": "96b1587659282d517fe75878467b5fd82bbc1ac5"
+    "gitHead": "52481a0537557578febbaf2494b9af5c023ccc70"
 }
