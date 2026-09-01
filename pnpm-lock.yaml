@@ -463,6 +463,16 @@ importers:
       '@napi-rs/keyring':
         specifier: ^1.3.0
         version: 1.3.0
+      '@vertesia/cli-darwin-arm64':
+        specifier: workspace:*
+        version: link:../cli-darwin-arm64
+      '@vertesia/cli-darwin-x64':
+        specifier: workspace:*
+        version: link:../cli-darwin-x64
+
+  packages/cli-darwin-arm64: {}
+
+  packages/cli-darwin-x64: {}
 
   packages/client:
     dependencies:

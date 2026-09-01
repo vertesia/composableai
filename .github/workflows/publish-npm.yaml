@@ -71,7 +71,7 @@ jobs:
   build-macos-cli:
     name: Build and sign macOS CLI
     runs-on: macos-14
-    timeout-minutes: 10
+    timeout-minutes: 20
     needs: prepare-release
     environment: build
     permissions:
@@ -113,6 +113,13 @@ jobs:
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
+      - name: Align package versions
+        env:
+          CLI_VERSION: ${{ needs.prepare-release.outputs.version }}
+        run: |
+          npm version "${CLI_VERSION}" --no-git-tag-version --workspaces=false
+          pnpm -r --filter "./packages/**" --filter "./libraries/jst" \
+              exec npm version "${CLI_VERSION}" --no-git-tag-version
       - name: Build CLI workspace dependencies
         run: pnpm exec turbo run build --filter=@vertesia/cli...
 
@@ -170,7 +177,6 @@ jobs:
         env:
           CLI_VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
-          npm version "${CLI_VERSION}" --no-git-tag-version
           pnpm run build:native:macos
           signing_identity='Developer ID Application: Vertesia, Inc. (658WNHC6ZU)'
           sign_binary() {
@@ -193,23 +199,44 @@ jobs:
                   sleep 5
               done
           }
-          for binary in bin/vertesia-darwin-arm64 bin/vertesia-darwin-x64; do
+          for binary in ../cli-darwin-arm64/bin/vertesia ../cli-darwin-x64/bin/vertesia; do
               sign_binary "${binary}"
               codesign --verify --strict --verbose=2 "${binary}"
           done
           if [ "$(uname -m)" = "arm64" ]; then
-              ./bin/vertesia-darwin-arm64 --version
+              actual_version="$(../cli-darwin-arm64/bin/vertesia --version)"
+              expected_runtime="native darwin-arm64"
           else
-              ./bin/vertesia-darwin-x64 --version
+              actual_version="$(../cli-darwin-x64/bin/vertesia --version)"
+              expected_runtime="native darwin-x64"
           fi
+          test "${actual_version}" = "${CLI_VERSION} (${expected_runtime})"
+
+      - name: Smoke test packed macOS CLI
+        env:
+          CLI_NATIVE_PACKAGE_ONLY: "true"
+          CLI_VERIFY_CODE_SIGNATURE: "true"
+        run: node packages/cli/scripts/smoke-native-package.mjs
+
+      - name: Install and smoke test macOS CLI through Verdaccio
+        if: inputs.dry_run == true
+        timeout-minutes: 10
+        env:
+          CLI_VERIFY_CODE_SIGNATURE: "true"
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: >-
+          ./.github/bin/test-template-integration.sh
+          --release-type "${RELEASE_TYPE}"
+          --branch "${GITHUB_REF_NAME}"
+          --cli-only
 
       - name: Upload signed CLI executables
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: signed-macos-cli
+          name: native-cli-darwin
           path: |
-            packages/cli/bin/vertesia-darwin-arm64
-            packages/cli/bin/vertesia-darwin-x64
+            packages/cli-darwin-arm64/bin/vertesia
+            packages/cli-darwin-x64/bin/vertesia
           if-no-files-found: error
 
       - name: Remove signing material from runner
@@ -284,10 +311,13 @@ jobs:
       - name: Download signed macOS CLI executables
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: signed-macos-cli
-          path: packages/cli/bin
+          name: native-cli-darwin
+          path: packages
       - name: Mark macOS CLI executables as executable
-        run: chmod 755 packages/cli/bin/vertesia-darwin-arm64 packages/cli/bin/vertesia-darwin-x64
+        run: >-
+          chmod 755
+          packages/cli-darwin-arm64/bin/vertesia
+          packages/cli-darwin-x64/bin/vertesia
 
       - name: Publish all packages
         id: publish
@@ -324,16 +354,100 @@ jobs:
           --template "Vertesia Plugin"
           --branch "${GITHUB_REF_NAME}"
 
+      - name: CLI integration test
+        if: inputs.dry_run == true
+        timeout-minutes: 10
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: >-
+          ./.github/bin/test-template-integration.sh
+          --release-type "${RELEASE_TYPE}"
+          --branch "${GITHUB_REF_NAME}"
+          --cli-only
+
+  # npm publish-time scanning can keep a successful publish unavailable for
+  # 15 minutes or more. Wait on an inexpensive runner before starting either
+  # integration test, especially the macOS runner.
+  wait-for-npm:
+    name: Wait for published npm packages
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    needs: publish
+    if: inputs.dry_run == false
+    steps:
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Wait for published CLI dependency closure
+        env:
+          PACKAGE_VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          packages=(
+              @vertesia/api-fetch-client
+              @vertesia/client
+              @vertesia/common
+              @vertesia/workflow
+              @vertesia/cli-darwin-arm64
+              @vertesia/cli-darwin-x64
+              @vertesia/cli
+          )
+          for attempt in $(seq 1 31); do
+              unavailable=()
+              for package in "${packages[@]}"; do
+                  if ! npm view "${package}@${PACKAGE_VERSION}" version --prefer-online >/dev/null 2>&1; then
+                      unavailable+=("${package}")
+                  fi
+              done
+              if [ "${#unavailable[@]}" -eq 0 ]; then
+                  echo "Published CLI dependency closure is available at version ${PACKAGE_VERSION}"
+                  exit 0
+              fi
+              if [ "${attempt}" -eq 31 ]; then
+                  echo "Packages still unavailable after 15 minutes: ${unavailable[*]}" >&2
+                  exit 1
+              fi
+              echo "Attempt ${attempt}/31: waiting for ${unavailable[*]}"
+              sleep 30
+          done
+
   # ============================================================
-  # Integration test after real publish (non-dry-run only)
-  # Verifies published packages work by bootstrapping a template.
+  # macOS CLI integration test after a real publish installs from npm.
   # ============================================================
+
+  macos-cli-integration-test:
+    name: Integration test (published macOS CLI)
+    runs-on: macos-14
+    timeout-minutes: 10
+    needs:
+      - publish
+      - wait-for-npm
+    if: inputs.dry_run == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install and smoke test published CLI
+        env:
+          CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
+          CLI_VERIFY_CODE_SIGNATURE: "true"
+          CLI_VERSION: ${{ needs.publish.outputs.version }}
+        run: node packages/cli/scripts/smoke-native-package.mjs
 
   integration-test:
     name: Integration test (published packages)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: publish
+    needs:
+      - publish
+      - wait-for-npm
     if: inputs.dry_run == false
     steps:
       - name: Checkout repository
@@ -357,6 +471,12 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
+
+      - name: Install and smoke test published CLI fallback
+        env:
+          CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
+          CLI_VERSION: ${{ needs.publish.outputs.version }}
+        run: node packages/cli/scripts/smoke-native-package.mjs
 
       - name: Smoke test - Plugin
         timeout-minutes: 10
