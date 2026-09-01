@@ -61,7 +61,7 @@ function runAndCapture(command, args) {
 try {
     mkdirSync(installDirectory);
     if (cliPackageSpec) {
-        run(npm, [
+        const installArgs = [
             'install',
             '--prefix',
             installDirectory,
@@ -71,7 +71,9 @@ try {
             '--registry',
             registryUrl,
             cliPackageSpec,
-        ]);
+        ];
+        console.log(`Installing CLI from registry with command:\n${npm} ${installArgs.join(' ')}`);
+        run(npm, installArgs);
     } else {
         if (!nativePackageDirectory) {
             throw new Error('Native package directory is unavailable');
