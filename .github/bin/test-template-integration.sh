@@ -4,8 +4,8 @@ set -eo pipefail
 # Script to test template integration using a local verdaccio registry.
 # Publishes all built packages to verdaccio, bootstraps a template, and builds it.
 #
-# Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>]
-#   --release-type: Determines npm tag (dev for snapshot, latest for release) and template ref
+# Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>] [--branch <ref>]
+#   --release-type: Determines the package track and template ref
 #   --template: Template name to test (default: "Vertesia Plugin")
 #
 # Prerequisites:
@@ -167,12 +167,15 @@ align_template_versions_for_verdaccio() {
 const fs = require('fs');
 const pkgPath = 'packages/create-plugin/package.json';
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+const llumiverse = JSON.parse(fs.readFileSync('llumiverse/common/package.json', 'utf8'));
 pkg.templateVersions = {
   ...(pkg.templateVersions || {}),
   '@vertesia': pkg.version,
+  '@llumiverse': llumiverse.version,
 };
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 console.log(`  @vertesia template version: ${pkg.version}`);
+console.log(`  @llumiverse template version: ${llumiverse.version}`);
 NODE
 }
 
@@ -198,6 +201,7 @@ workspace_package_dirs() {
 
 RELEASE_TYPE=""
 TEMPLATE_NAME="Vertesia Plugin"
+TEMPLATE_BRANCH="${GITHUB_REF_NAME:-main}"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -209,15 +213,20 @@ while [[ $# -gt 0 ]]; do
       TEMPLATE_NAME="$2"
       shift 2
       ;;
+    --branch)
+      TEMPLATE_BRANCH="$2"
+      shift 2
+      ;;
     *)
       echo "Error: Unknown argument '$1'"
-      echo "Usage: $0 --release-type <snapshot|release> [--template <name>]"
+      echo "Usage: $0 --release-type <snapshot|release> [--template <name>] [--branch <ref>]"
       exit 1
       ;;
   esac
 done
 
 validate_release_type
+PACKAGE_VERSION="$(node -e "console.log(require(process.argv[1]).version)" "${SCRIPT_DIR}/../../packages/create-plugin/package.json")"
 derive_tag_and_branch
 
 # =============================================================================
