@@ -1561,7 +1561,6 @@ function ModernAgentConversationInner({
         isDocPanelOpen,
         docRefreshKey,
         closeDocPanel: handleCloseDocPanel,
-        closeDocument: handleCloseDocument,
         selectDocument,
         openDocInPanel,
         updateDocumentTitle,
@@ -3062,7 +3061,6 @@ function ModernAgentConversationInner({
                                     openDocuments={openDocuments}
                                     activeDocumentId={activeDocumentId}
                                     onSelectDocument={selectDocument}
-                                    onCloseDocument={handleCloseDocument}
                                     onUpdateDocumentTitle={updateDocumentTitle}
                                     docRefreshKey={docRefreshKey}
                                     runId={agentRunId}
