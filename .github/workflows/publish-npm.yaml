@@ -369,7 +369,7 @@ jobs:
   wait-for-npm:
     name: Wait for published npm packages
     runs-on: ubuntu-slim
-    timeout-minutes: 20
+    timeout-minutes: 10
     needs: publish
     if: inputs.dry_run == false
     steps:
