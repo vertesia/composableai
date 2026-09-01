@@ -109,6 +109,8 @@ try {
         if (installedNativePackages.length !== 0) {
             throw new Error(`Expected no native package, found ${installedNativePackages.join(', ')}`);
         }
+        console.log('Verified that no macOS native package was installed');
+        console.log(`Executing JavaScript fallback: ${executable} --version`);
         const actualVersion = runAndCapture(executable, ['--version']);
         if (actualVersion !== expectedVersion) {
             throw new Error(`Expected CLI version ${expectedVersion}, got ${actualVersion}`);
@@ -120,26 +122,34 @@ try {
                 `Expected only ${expectedNativePackage}, found ${installedNativePackages.join(', ') || 'no native package'}`,
             );
         }
+        console.log(`Verified native package selection: @vertesia/${expectedNativePackage}`);
 
         const nativeExecutable = path.join(installedScope, expectedNativePackage, 'bin', 'vertesia');
         if ((statSync(nativeExecutable).mode & 0o111) === 0) {
             throw new Error(`Packed native executable is not executable: ${nativeExecutable}`);
         }
         accessSync(nativeExecutable, constants.X_OK);
+        console.log(`Verified native executable permission: ${nativeExecutable}`);
         if (process.env.CLI_VERIFY_CODE_SIGNATURE === 'true') {
+            console.log(`Verifying native code signature: ${nativeExecutable}`);
             run('codesign', ['--verify', '--strict', '--verbose=2', nativeExecutable]);
         }
 
+        console.log(`Executing native package binary: ${nativeExecutable} --version`);
         const actualNativeVersion = runAndCapture(nativeExecutable, ['--version']);
         if (actualNativeVersion !== expectedVersion) {
             throw new Error(`Expected native CLI version ${expectedVersion}, got ${actualNativeVersion}`);
         }
 
         if (!nativePackageOnly) {
+            console.log(
+                'Disabling the JavaScript fallback to prove that the installed launcher uses the native binary',
+            );
             renameSync(
                 path.join(installedScope, 'cli', 'lib', 'index.js'),
                 path.join(installedScope, 'cli', 'lib', 'index.js.disabled'),
             );
+            console.log(`Executing installed CLI launcher: ${executable} --version`);
             const actualVersion = runAndCapture(executable, ['--version']);
             if (actualVersion !== expectedVersion) {
                 throw new Error(`Expected CLI version ${expectedVersion}, got ${actualVersion}`);
