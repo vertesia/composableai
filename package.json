@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/packages",
-    "version": "1.5.0-dev.20260901.005903Z",
+    "version": "1.5.0-dev.20260901.045442Z",
     "license": "Apache-2.0",
     "private": true,
     "type": "module",
@@ -33,5 +33,5 @@
         "vite": "catalog:"
     },
     "packageManager": "pnpm@11.20.0",
-    "gitHead": "73de8716696201bda20b5ec0d0134bafd597387e"
+    "gitHead": "52481a0537557578febbaf2494b9af5c023ccc70"
 }

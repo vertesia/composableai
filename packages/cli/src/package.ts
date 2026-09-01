@@ -5,6 +5,8 @@ import { getBooleanOption, getStringOption, isRecord } from './utils/options.js'
 
 const { prompt } = enquirer;
 
+declare const VERTESIA_CLI_RUNTIME: string | undefined;
+
 interface PackageMetadata {
     name: string;
     version: string;
@@ -18,7 +20,8 @@ function getPackage(): PackageMetadata {
     return _package;
 }
 function getVersion() {
-    return getPackage().version;
+    const runtime = typeof VERTESIA_CLI_RUNTIME === 'string' ? VERTESIA_CLI_RUNTIME : 'javascript';
+    return `${getPackage().version} (${runtime})`;
 }
 
 async function getLatestVersion() {
