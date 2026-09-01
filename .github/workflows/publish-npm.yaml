@@ -205,10 +205,12 @@ jobs:
           done
           if [ "$(uname -m)" = "arm64" ]; then
               actual_version="$(../cli-darwin-arm64/bin/vertesia --version)"
+              expected_runtime="native darwin-arm64"
           else
               actual_version="$(../cli-darwin-x64/bin/vertesia --version)"
+              expected_runtime="native darwin-x64"
           fi
-          test "${actual_version}" = "${CLI_VERSION}"
+          test "${actual_version}" = "${CLI_VERSION} (${expected_runtime})"
 
       - name: Smoke test packed macOS CLI
         env:
