@@ -363,6 +363,53 @@ jobs:
           --branch "${GITHUB_REF_NAME}"
           --cli-only
 
+  # npm publish-time scanning can keep a successful publish unavailable for
+  # 15 minutes or more. Wait on an inexpensive runner before starting either
+  # integration test, especially the macOS runner.
+  wait-for-npm:
+    name: Wait for published npm packages
+    runs-on: ubuntu-slim
+    timeout-minutes: 20
+    needs: publish
+    if: inputs.dry_run == false
+    steps:
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Wait for published CLI dependency closure
+        env:
+          PACKAGE_VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          packages=(
+              @vertesia/api-fetch-client
+              @vertesia/client
+              @vertesia/common
+              @vertesia/workflow
+              @vertesia/cli-darwin-arm64
+              @vertesia/cli-darwin-x64
+              @vertesia/cli
+          )
+          for attempt in $(seq 1 31); do
+              unavailable=()
+              for package in "${packages[@]}"; do
+                  if ! npm view "${package}@${PACKAGE_VERSION}" version --prefer-online >/dev/null 2>&1; then
+                      unavailable+=("${package}")
+                  fi
+              done
+              if [ "${#unavailable[@]}" -eq 0 ]; then
+                  echo "Published CLI dependency closure is available at version ${PACKAGE_VERSION}"
+                  exit 0
+              fi
+              if [ "${attempt}" -eq 31 ]; then
+                  echo "Packages still unavailable after 15 minutes: ${unavailable[*]}" >&2
+                  exit 1
+              fi
+              echo "Attempt ${attempt}/31: waiting for ${unavailable[*]}"
+              sleep 30
+          done
+
   # ============================================================
   # macOS CLI integration test after a real publish installs from npm.
   # ============================================================
@@ -370,8 +417,10 @@ jobs:
   macos-cli-integration-test:
     name: Integration test (published macOS CLI)
     runs-on: macos-14
-    timeout-minutes: 25
-    needs: publish
+    timeout-minutes: 10
+    needs:
+      - publish
+      - wait-for-npm
     if: inputs.dry_run == false
     steps:
       - name: Checkout repository
@@ -388,24 +437,15 @@ jobs:
           CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
           CLI_VERIFY_CODE_SIGNATURE: "true"
           CLI_VERSION: ${{ needs.publish.outputs.version }}
-        run: |
-          # npm publish-time scanning can keep a successful publish unavailable for 15 minutes or more.
-          for attempt in $(seq 1 31); do
-              if node packages/cli/scripts/smoke-native-package.mjs; then
-                  exit 0
-              fi
-              if [ "${attempt}" -eq 31 ]; then
-                  exit 1
-              fi
-              echo "Published packages are not available yet (attempt ${attempt}/31); retrying in 30 seconds"
-              sleep 30
-          done
+        run: node packages/cli/scripts/smoke-native-package.mjs
 
   integration-test:
     name: Integration test (published packages)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: publish
+    timeout-minutes: 10
+    needs:
+      - publish
+      - wait-for-npm
     if: inputs.dry_run == false
     steps:
       - name: Checkout repository
@@ -434,18 +474,7 @@ jobs:
         env:
           CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
           CLI_VERSION: ${{ needs.publish.outputs.version }}
-        run: |
-          # npm publish-time scanning can keep a successful publish unavailable for 15 minutes or more.
-          for attempt in $(seq 1 31); do
-              if node packages/cli/scripts/smoke-native-package.mjs; then
-                  exit 0
-              fi
-              if [ "${attempt}" -eq 31 ]; then
-                  exit 1
-              fi
-              echo "Published packages are not available yet (attempt ${attempt}/31); retrying in 30 seconds"
-              sleep 30
-          done
+        run: node packages/cli/scripts/smoke-native-package.mjs
 
       - name: Smoke test - Plugin
         timeout-minutes: 10
