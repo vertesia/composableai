@@ -77,17 +77,28 @@ describe('AgentsApi artifact paths', () => {
         expect(new URL(urls[0]).searchParams.get('url')).toBe('1');
     });
 
+    // The query is appended to the path by string concatenation, so an unencoded delimiter in the
+    // filename swallowed it too: `#` took the whole query into the fragment, and `?` absorbed
+    // `url=1` into a bogus key. Either way the server saw no `url` param and streamed raw bytes
+    // instead of returning the signed-URL JSON the caller expects — so assert the query survives.
     it.each([
+        ['hash', 'files/Design (YYYY-0#).docx'],
         ['question mark', 'files/report?v2.docx'],
         ['percent', 'files/100% done.docx'],
+        ['backslash', 'files/back\\slash.docx'],
         ['plain spaces', 'files/MHA - Client IQ FSD.docx'],
         ['non-ascii whitespace and accents', 'files/café résumé.docx'],
-    ])('getArtifactUrl round-trips %s', async (_label, path) => {
+    ])('getArtifactUrl round-trips %s and keeps the query intact', async (_label, path) => {
         const { client, urls } = clientRecordingUrls();
 
-        await client.agents.getArtifactUrl(RUN_ID, path);
+        await client.agents.getArtifactUrl(RUN_ID, path, 'attachment', 'download-name.docx');
 
+        const url = new URL(urls[0]);
         expect(serverPath(urls[0], 'artifacts')).toBe(path);
+        expect(url.hash).toBe('');
+        expect(url.searchParams.get('url')).toBe('1');
+        expect(url.searchParams.get('disposition')).toBe('attachment');
+        expect(url.searchParams.get('filename')).toBe('download-name.docx');
     });
 
     it('getArtifactContent and updateArtifactContent preserve a path containing #', async () => {
