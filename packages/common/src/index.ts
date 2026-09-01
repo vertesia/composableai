@@ -13,6 +13,7 @@ export type {
     UserRefArrayFromSchema,
 } from './api-schemas/user.js';
 export * from './apikey.js';
+export * from './appgen.js';
 export * from './apps.js';
 export * from './ask-user.js';
 export * from './audit-trail.js';
