@@ -352,8 +352,8 @@ jobs:
           --cli-only
 
   # ============================================================
-  # Integration test after real publish (non-dry-run only)
-  # Verifies the published CLI install and template bootstrap.
+  # macOS CLI integration test after publishing. Dry runs install through
+  # Verdaccio; real publishes install from npm.
   # ============================================================
 
   macos-cli-integration-test:
@@ -361,18 +361,61 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 10
     needs: publish
-    if: inputs.dry_run == false
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          submodules: recursive
           persist-credentials: false
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           package-manager-cache: false
+      - name: Install pnpm
+        if: inputs.dry_run == true
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Install workspace dependencies
+        if: inputs.dry_run == true
+        timeout-minutes: 5
+        run: pnpm install
+      - name: Align package versions
+        if: inputs.dry_run == true
+        env:
+          CLI_VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          npm version "${CLI_VERSION}" --no-git-tag-version --workspaces=false
+          pnpm -r --filter "./packages/**" --filter "./libraries/jst" \
+              exec npm version "${CLI_VERSION}" --no-git-tag-version
+      - name: Download signed macOS CLI executables
+        if: inputs.dry_run == true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: native-cli-darwin
+          path: packages
+      - name: Mark macOS CLI executables as executable
+        if: inputs.dry_run == true
+        run: >-
+          chmod 755
+          packages/cli-darwin-arm64/bin/vertesia
+          packages/cli-darwin-x64/bin/vertesia
+      - name: Build workspace for Verdaccio
+        if: inputs.dry_run == true
+        timeout-minutes: 10
+        run: pnpm build
+      - name: Install and smoke test CLI through Verdaccio
+        if: inputs.dry_run == true
+        timeout-minutes: 10
+        env:
+          CLI_VERIFY_CODE_SIGNATURE: "true"
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: >-
+          ./.github/bin/test-template-integration.sh
+          --release-type "${RELEASE_TYPE}"
+          --branch "${GITHUB_REF_NAME}"
+          --cli-only
       - name: Install and smoke test published CLI
+        if: inputs.dry_run == false
         env:
           CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
           CLI_VERIFY_CODE_SIGNATURE: "true"
