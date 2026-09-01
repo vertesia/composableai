@@ -64,6 +64,15 @@ export interface AgentRunStreamMessagesOptions {
     onHistoryError?: (error: unknown) => void;
 }
 
+/**
+ * Percent-encode an artifact path for use in a URL path. Encoded per segment so the `/`
+ * separators still match the server's `:path+` splat, which decodes each segment. Without this a
+ * `#` in a filename is parsed as the URL fragment and silently truncates the path.
+ */
+export function encodeArtifactPath(path: string): string {
+    return path.split('/').map(encodeURIComponent).join('/');
+}
+
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/agents');
@@ -795,7 +804,7 @@ export class AgentsApi extends ApiTopic {
 
     /** Read a text artifact together with its conditional-write generation token. */
     getArtifactContent(id: string, path: string): Promise<AgentArtifactContentResponse> {
-        return this.get(`/${id}/artifact-content/${path}`);
+        return this.get(`/${id}/artifact-content/${encodeArtifactPath(path)}`);
     }
 
     /** Conditionally replace the text content of an agent artifact. */
@@ -804,7 +813,7 @@ export class AgentsApi extends ApiTopic {
         path: string,
         payload: UpdateAgentArtifactContentPayload,
     ): Promise<UpdateAgentArtifactContentResponse> {
-        return this.put(`/${id}/artifact-content/${path}`, { payload });
+        return this.put(`/${id}/artifact-content/${encodeArtifactPath(path)}`, { payload });
     }
 
     /**
@@ -819,7 +828,7 @@ export class AgentsApi extends ApiTopic {
         const query: Record<string, string> = { url: '1' };
         if (disposition) query.disposition = disposition;
         if (fileName) query.filename = fileName;
-        return this.get(`/${id}/artifacts/${path}`, { query });
+        return this.get(`/${id}/artifacts/${encodeArtifactPath(path)}`, { query });
     }
 
     /**
@@ -840,7 +849,7 @@ export class AgentsApi extends ApiTopic {
         const mimeType = contentType || 'application/octet-stream';
 
         // 1. Get signed upload URL from the agents API
-        const result = (await this.put(`/${id}/artifacts/${path}`, {
+        const result = (await this.put(`/${id}/artifacts/${encodeArtifactPath(path)}`, {
             headers: { 'Content-Type': mimeType },
         })) as AgentArtifactUrlResponse;
 
