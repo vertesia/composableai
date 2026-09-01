@@ -5,7 +5,6 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     computeTimelineMarkers,
-    isEdgeObservedBy,
     resolveGroupStyles,
     TemporalGraph,
     type TemporalGraphSelection,
@@ -27,18 +26,28 @@ import {
 } from './memoryBrainModel.js';
 import {
     buildMemoryGraphView,
+    buildMemorySourceIdFilter,
     collectMemoryPredicates,
+    collectMemorySourceIds,
     collectMemoryTimeline,
     computeEvidenceCoverage,
     computeMemoryMatchIds,
+    DEFAULT_MEMORY_TIME_AXIS,
+    indexMemorySourceRecords,
+    isMemoryInScope,
     type MemoryEntity,
+    type MemoryEntry,
     type MemoryGraphData,
+    type MemoryRelationship,
     type MemorySelection,
+    type MemorySourceIndex,
+    type MemoryTimeAxis,
+    memoryAxisStart,
     parseMemoryEntities,
     parseMemoryEntries,
     parseMemoryRelationships,
 } from './memoryGraphModel.js';
-import { mapMemoryQueryHits } from './memoryRecordReaders.js';
+import { asRecord, mapMemoryQueryHits } from './memoryRecordReaders.js';
 
 /** Content-store type names the corpus is stored under. Every one is overridable per deployment. */
 export interface MemoryGraphTypeNames {
@@ -78,6 +87,14 @@ const BRAIN_STATUS_TEXT: Record<MemoryBrainStatusTone, string> = {
 const GRAPH_RECORD_LIMIT = 10_000;
 
 /**
+ * Ceiling on the source ids resolved to content objects in one batch.
+ *
+ * Evidence links are a convenience, not the view: past this many distinct sources the lookup is
+ * skipped and the ids stay plain text, rather than sending Elasticsearch an unbounded terms clause.
+ */
+const SOURCE_RESOLVE_LIMIT = 2_000;
+
+/**
  * Read the current heads of one content type straight from the index.
  *
  * `revision.head` is filtered in the query rather than after the fact, so superseded revisions
@@ -112,6 +129,43 @@ async function countHeadRecords(client: VertesiaClient, typeId: string): Promise
     return result.total ?? 0;
 }
 
+/**
+ * Resolve the source ids a snapshot's evidence quotes to content-store records, in one request.
+ *
+ * Evidence carries a business id (`sec2y-iren-…-ex-99-1-2`), not an object id, so a link needs a
+ * lookup. Doing it per evidence item would mean a request storm on every selection; instead the
+ * whole snapshot's sources are resolved once per load, and the result is reused for every
+ * selection. A failure here degrades to plain-text source ids — it must never take the graph down.
+ */
+async function resolveMemorySourceIndex(
+    client: VertesiaClient,
+    sourceTypeId: string,
+    data: { relationships: MemoryRelationship[]; memories: MemoryEntry[] },
+): Promise<MemorySourceIndex> {
+    const sourceIds = collectMemorySourceIds(data);
+    if (sourceIds.length === 0 || sourceIds.length > SOURCE_RESOLVE_LIMIT) return new Map();
+    try {
+        const result = await client.store.query.dsl({
+            query: {
+                bool: {
+                    filter: [
+                        { term: { 'type.id': sourceTypeId } },
+                        { term: { 'revision.head': true } },
+                        buildMemorySourceIdFilter(sourceIds),
+                    ],
+                },
+            },
+            size: sourceIds.length,
+        });
+        return indexMemorySourceRecords(
+            (result.hits ?? []).map((hit) => ({ id: hit.id, ...asRecord(hit.source) }) as ContentObjectItemApiResponse),
+        );
+    } catch (err: unknown) {
+        console.warn('Memory graph could not resolve evidence sources to content objects', err);
+        return new Map();
+    }
+}
+
 export interface MemoryGraphExplorerProps {
     /** Brain to open with. The explorer owns the selection from then on. */
     initialBrainId?: string;
@@ -133,6 +187,7 @@ interface MemoryCatalog {
     entities: MemoryEntity[];
     relationshipTypeId: string;
     memoryEntryTypeId: string;
+    sourceTypeId: string;
     sourceCount: number;
 }
 
@@ -178,6 +233,7 @@ export function MemoryGraphExplorer({
     const [searchInput, setSearchInput] = useState('');
     const [activePredicates, setActivePredicates] = useState<string[]>([]);
     const [asOfIndex, setAsOfIndex] = useState<number>();
+    const [timeAxis, setTimeAxis] = useState<MemoryTimeAxis>(DEFAULT_MEMORY_TIME_AXIS);
     const [selection, setSelection] = useState<MemorySelection>();
 
     // Latest-wins guards: a response from a superseded brain or a superseded catalog request must
@@ -185,6 +241,8 @@ export function MemoryGraphExplorer({
     const catalogGenRef = useRef(0);
     const graphGenRef = useRef(0);
     const notifiedBrainRef = useRef<string | undefined>(undefined);
+    // Last resolved evidence-source index, keyed by the source ids it was built from.
+    const sourceIndexRef = useRef<{ key: string; index: MemorySourceIndex }>(undefined);
 
     const search = useDebounce(searchInput, 250);
 
@@ -215,6 +273,7 @@ export function MemoryGraphExplorer({
                 entities: parseMemoryEntities(entityRecords),
                 relationshipTypeId: relationshipType.id,
                 memoryEntryTypeId: memoryEntryType.id,
+                sourceTypeId: sourceType.id,
                 sourceCount,
             });
             // A success clears the previous failure: one bad poll must not brick the view.
@@ -238,12 +297,13 @@ export function MemoryGraphExplorer({
 
     const relationshipTypeId = catalog?.relationshipTypeId;
     const memoryEntryTypeId = catalog?.memoryEntryTypeId;
+    const sourceTypeId = catalog?.sourceTypeId;
     const entities = catalog?.entities;
     const sourceCount = catalog?.sourceCount ?? 0;
     const brainId = selectedBrain?.brainId;
 
     const loadGraph = useCallback(async () => {
-        if (!relationshipTypeId || !memoryEntryTypeId || !brainId || !entities) return;
+        if (!relationshipTypeId || !memoryEntryTypeId || !sourceTypeId || !brainId || !entities) return;
         const generation = ++graphGenRef.current;
         setIsGraphLoading(true);
         try {
@@ -253,11 +313,24 @@ export function MemoryGraphExplorer({
                 queryHeadRecords(client, memoryEntryTypeId, brainFilter),
             ]);
             if (generation !== graphGenRef.current) return;
+            const relationships = parseMemoryRelationships(relationshipRecords);
+            const memories = parseMemoryEntries(memoryRecords);
+            // A poll that brings back the same evidence reuses the resolved index instead of
+            // re-querying the source type every interval.
+            const sourceKey = collectMemorySourceIds({ relationships, memories }).join(' ');
+            const cached = sourceIndexRef.current;
+            const sourceRecordIds =
+                cached?.key === sourceKey
+                    ? cached.index
+                    : await resolveMemorySourceIndex(client, sourceTypeId, { relationships, memories });
+            if (generation !== graphGenRef.current) return;
+            sourceIndexRef.current = { key: sourceKey, index: sourceRecordIds };
             setGraph({
                 entities,
-                relationships: parseMemoryRelationships(relationshipRecords),
-                memories: parseMemoryEntries(memoryRecords),
+                relationships,
+                memories,
                 sourceCount,
+                sourceRecordIds,
                 loadedAt: new Date().toISOString(),
             });
             setGraphError(undefined);
@@ -267,7 +340,7 @@ export function MemoryGraphExplorer({
         } finally {
             if (generation === graphGenRef.current) setIsGraphLoading(false);
         }
-    }, [client, relationshipTypeId, memoryEntryTypeId, entities, sourceCount, brainId]);
+    }, [client, relationshipTypeId, memoryEntryTypeId, sourceTypeId, entities, sourceCount, brainId]);
 
     useEffect(() => {
         void loadGraph();
@@ -297,16 +370,30 @@ export function MemoryGraphExplorer({
         setAsOfIndex(undefined);
     }, []);
 
+    const handleTimeAxisChange = useCallback((axis: MemoryTimeAxis) => {
+        setTimeAxis(axis);
+        // Stops are per-axis, so the current index would point at an unrelated date. Unpinning
+        // returns the scrubber to the latest stop of the axis just chosen.
+        setAsOfIndex(undefined);
+    }, []);
+
     const handleRefresh = useCallback(() => {
         void Promise.all([loadCatalog(), loadGraph()]);
     }, [loadCatalog, loadGraph]);
 
-    const view = useMemo(() => buildMemoryGraphView(graph ?? { entities: [], relationships: [] }), [graph]);
+    const view = useMemo(
+        () => buildMemoryGraphView(graph ?? { entities: [], relationships: [] }, timeAxis),
+        [graph, timeAxis],
+    );
     const groupStyles = useMemo(() => resolveGroupStyles(view.nodes, view.groups), [view]);
     const predicates = useMemo(() => collectMemoryPredicates(graph?.relationships ?? []), [graph]);
     const stops = useMemo(
-        () => collectMemoryTimeline({ relationships: graph?.relationships ?? [], memories: graph?.memories ?? [] }),
-        [graph],
+        () =>
+            collectMemoryTimeline(
+                { relationships: graph?.relationships ?? [], memories: graph?.memories ?? [] },
+                timeAxis,
+            ),
+        [graph, timeAxis],
     );
     const lastStopIndex = Math.max(stops.length - 1, 0);
     // `undefined` pins the scrubber to the latest stop, so a newly reconstructed statement widens
@@ -314,18 +401,18 @@ export function MemoryGraphExplorer({
     const effectiveAsOfIndex = Math.min(asOfIndex ?? lastStopIndex, lastStopIndex);
     const asOf = stops[effectiveAsOfIndex];
 
+    // Episodes are placed on the same axis as the scrubber; one that carries no date for the active
+    // axis has no position on it and is left off the track rather than borrowed from the other one.
     const episodes = useMemo(
         () =>
             computeTimelineMarkers(
                 stops,
-                (graph?.memories ?? []).map((memory) => ({
-                    id: memory.memoryId,
-                    date: memory.observedAt,
-                    label: memory.title,
-                    data: memory,
-                })),
+                (graph?.memories ?? []).flatMap((memory) => {
+                    const date = memoryAxisStart(memory, timeAxis);
+                    return date ? [{ id: memory.memoryId, date, label: memory.title, data: memory }] : [];
+                }),
             ),
-        [stops, graph],
+        [stops, graph, timeAxis],
     );
 
     const matchedIds = useMemo(
@@ -353,9 +440,10 @@ export function MemoryGraphExplorer({
         );
     }, []);
 
+    // Counted over the drawn edges, so the readout always matches what is on the canvas.
     const knownEdgeCount = useMemo(
-        () => view.edges.filter((edge) => isEdgeObservedBy(edge, asOf)).length,
-        [view.edges, asOf],
+        () => view.edges.filter((edge) => !edge.data || isMemoryInScope(edge.data, timeAxis, asOf)).length,
+        [view.edges, timeAxis, asOf],
     );
 
     const isFirstLoad = (isCatalogLoading || isGraphLoading) && !graph;
@@ -412,6 +500,8 @@ export function MemoryGraphExplorer({
                 {showRail ? (
                     <MemoryGraphRail
                         stops={stops}
+                        timeAxis={timeAxis}
+                        onTimeAxisChange={handleTimeAxisChange}
                         asOfIndex={effectiveAsOfIndex}
                         onAsOfIndexChange={setAsOfIndex}
                         episodes={episodes}
@@ -462,6 +552,8 @@ export function MemoryGraphExplorer({
                         entities={graph?.entities ?? []}
                         relationships={graph?.relationships ?? []}
                         memories={graph?.memories ?? []}
+                        sourceRecordIds={graph?.sourceRecordIds}
+                        timeAxis={timeAxis}
                         asOf={asOf}
                         search={search}
                         onSelect={setSelection}

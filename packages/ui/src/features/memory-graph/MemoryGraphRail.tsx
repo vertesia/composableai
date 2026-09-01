@@ -1,12 +1,15 @@
-import { Button, cn, Slider } from '@vertesia/ui/core';
+import { Button, cn, Slider, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import type { TemporalGraphGroup, TemporalTimelineMarker } from '@vertesia/ui/widgets';
 import { CalendarOff, SkipForward } from 'lucide-react';
-import type { MemoryEntry } from './memoryGraphModel.js';
+import type { MemoryEntry, MemoryTimeAxis } from './memoryGraphModel.js';
 
 export interface MemoryGraphRailProps {
-    /** Sorted belief-time stops. Empty when the corpus carries no dated statement. */
+    /** Sorted stops on the active axis. Empty when no record carries a date for it. */
     stops: string[];
+    /** Which time axis the scrubber walks. */
+    timeAxis: MemoryTimeAxis;
+    onTimeAxisChange: (axis: MemoryTimeAxis) => void;
     asOfIndex: number;
     onAsOfIndexChange: (index: number) => void;
     /** Episodic memory entries placed on the scrubber track. */
@@ -34,8 +37,41 @@ function RailSection({ title, count, children }: { title: string; count?: number
     );
 }
 
+/**
+ * Which of the record's two dates the scrubber walks.
+ *
+ * Labelled in plain language, because "bitemporal" is not what a reader is thinking; the field
+ * names an operator debugs against stay one hover away.
+ */
+function TimeAxisToggle({ axis, onChange }: { axis: MemoryTimeAxis; onChange: (axis: MemoryTimeAxis) => void }) {
+    const { t } = useUITranslation();
+    const options: { value: MemoryTimeAxis; label: string; fields: string }[] = [
+        { value: 'valid', label: t('memoryGraph.axisValid'), fields: 'valid_from → valid_to' },
+        { value: 'observed', label: t('memoryGraph.axisObserved'), fields: 'observed_at' },
+    ];
+    return (
+        <fieldset className="mb-2 flex gap-1" aria-label={t('memoryGraph.timeAxisLabel')}>
+            {options.map((option) => (
+                <VTooltip key={option.value} description={option.fields} asChild>
+                    <Button
+                        variant={axis === option.value ? 'secondary' : 'ghost'}
+                        size="xs"
+                        className="flex-1 justify-center"
+                        aria-pressed={axis === option.value}
+                        onClick={() => onChange(option.value)}
+                    >
+                        {option.label}
+                    </Button>
+                </VTooltip>
+            ))}
+        </fieldset>
+    );
+}
+
 export function MemoryGraphRail({
     stops,
+    timeAxis,
+    onTimeAxisChange,
     asOfIndex,
     onAsOfIndexChange,
     episodes,
@@ -59,19 +95,32 @@ export function MemoryGraphRail({
         <aside className="flex min-h-0 flex-col rounded-lg border bg-card">
             <div className="shrink-0 p-3">
                 <RailSection title={t('memoryGraph.timeMachine')}>
+                    {/* Rendered above the empty state too: an axis with no stop is exactly when the
+                        user needs to be able to switch to the other one. */}
+                    <TimeAxisToggle axis={timeAxis} onChange={onTimeAxisChange} />
                     {stops.length === 0 ? (
                         <div className="rounded-lg border border-dashed bg-background px-3 py-4 text-center">
                             <CalendarOff className="mx-auto size-4 text-muted" aria-hidden={true} />
                             <p className="mt-2 text-xs font-medium text-foreground">{t('memoryGraph.noTimeline')}</p>
                             <p className="mt-1 text-[11px] leading-relaxed text-muted">
-                                {t('memoryGraph.noTimelineHint')}
+                                {timeAxis === 'valid'
+                                    ? t('memoryGraph.noTimelineHintValid')
+                                    : t('memoryGraph.noTimelineHintObserved')}
                             </p>
                         </div>
                     ) : (
                         <div className="rounded-lg border bg-background p-2.5">
                             <div className="font-mono text-[15px] tabular-nums text-attention">{asOf}</div>
                             <div className="mt-0.5 font-mono text-[10px] tabular-nums text-muted">
-                                {t('memoryGraph.statementsKnown', { known: knownEdgeCount, total: totalEdgeCount })}
+                                {timeAxis === 'valid'
+                                    ? t('memoryGraph.statementsInForce', {
+                                          known: knownEdgeCount,
+                                          total: totalEdgeCount,
+                                      })
+                                    : t('memoryGraph.statementsKnown', {
+                                          known: knownEdgeCount,
+                                          total: totalEdgeCount,
+                                      })}
                             </div>
                             <Slider
                                 className="mt-3"

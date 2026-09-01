@@ -2,6 +2,15 @@ import type { ContentObjectItemApiResponse } from '@vertesia/common';
 import type { TemporalGraphEdge, TemporalGraphGroup, TemporalGraphNode } from '@vertesia/ui/widgets';
 import { asRecord, readQualifiers, readString, readStringArray } from './memoryRecordReaders.js';
 
+/**
+ * Every property the content record stores, verbatim.
+ *
+ * The curated fields on each model drive the layout; this bag is what the inspector's "all
+ * attributes" section renders, so a field the ontology gains tomorrow shows up without a code
+ * change and nothing stored is invisible in the UI.
+ */
+export type MemoryRawProperties = Record<string, unknown>;
+
 export interface MemoryEntity {
     recordId: string;
     entityId: string;
@@ -10,6 +19,7 @@ export interface MemoryEntity {
     layer?: string;
     ticker?: string;
     publicStatus?: string;
+    raw: MemoryRawProperties;
 }
 
 export interface MemoryEvidence {
@@ -37,6 +47,7 @@ export interface MemoryRelationship {
     validTo?: string;
     qualifiers?: Record<string, string | number>;
     evidence: MemoryEvidence[];
+    raw: MemoryRawProperties;
 }
 
 export interface MemoryEntry {
@@ -52,6 +63,7 @@ export interface MemoryEntry {
     validTo?: string;
     notes?: string;
     evidence: MemoryEvidence[];
+    raw: MemoryRawProperties;
 }
 
 export interface MemoryGraphData {
@@ -59,6 +71,8 @@ export interface MemoryGraphData {
     relationships: MemoryRelationship[];
     memories: MemoryEntry[];
     sourceCount: number;
+    /** Business source id → content-store record id, for the snapshot's evidence. */
+    sourceRecordIds: MemorySourceIndex;
     loadedAt: string;
 }
 
@@ -121,6 +135,7 @@ export function parseMemoryEntities(records: ContentObjectItemApiResponse[]): Me
                 layer: readString(properties, 'layer'),
                 ticker: readString(properties, 'ticker'),
                 publicStatus: readString(properties, 'public_status'),
+                raw: properties,
             },
         ];
     });
@@ -145,13 +160,15 @@ export function parseMemoryRelationships(records: ContentObjectItemApiResponse[]
                 confidenceScore: memoryConfidenceScore(confidence),
                 origin: readString(properties, 'origin'),
                 notes: readString(properties, 'notes'),
-                // Statements carry business validity; belief time is optional on the record. Fall back to
-                // valid_from so the timeline still places a statement that has no separate observation date.
-                observedAt: readString(properties, 'observed_at') ?? readString(properties, 'valid_from'),
+                // Belief time and business validity are separate axes and must never stand in for
+                // one another: a statement with no `observed_at` simply has no place on the belief
+                // timeline. See {@link MemoryTimeAxis}.
+                observedAt: readString(properties, 'observed_at'),
                 validFrom: readString(properties, 'valid_from'),
                 validTo: readString(properties, 'valid_to'),
                 qualifiers: readQualifiers(properties.qualifiers),
                 evidence: parseEvidence(properties.evidence),
+                raw: properties,
             },
         ];
     });
@@ -179,9 +196,114 @@ export function parseMemoryEntries(records: ContentObjectItemApiResponse[]): Mem
                 validTo: readString(properties, 'valid_to'),
                 notes: readString(properties, 'notes'),
                 evidence: parseEvidence(properties.evidence),
+                raw: properties,
             },
         ];
     });
+}
+
+/**
+ * The two time axes the corpus carries, and which one the explorer is scrubbing.
+ *
+ * - `valid` — **business time**: when the statement is actually true, from `valid_from` to
+ *   `valid_to`. This is what a reader means by moving through time, so it is the default.
+ * - `observed` — **belief time**: when Memory learned the statement, `observed_at`, in practice the
+ *   publication date of the source.
+ *
+ * They are genuinely different dates on the same record — an IREN monthly update is *published* on
+ * 2025-06-05 and *true* for 2025-05-01 → 2025-05-31 — so neither may ever stand in for the other.
+ */
+export type MemoryTimeAxis = 'valid' | 'observed';
+
+/** Business time: what "moving through time" means to a reader. */
+export const DEFAULT_MEMORY_TIME_AXIS: MemoryTimeAxis = 'valid';
+
+/** The dated fields shared by statements and content memory entries. */
+export interface MemoryTemporalRecord {
+    observedAt?: string;
+    validFrom?: string;
+    validTo?: string;
+}
+
+/** The date a record enters the timeline on, or `undefined` when it carries none for this axis. */
+export function memoryAxisStart(record: MemoryTemporalRecord, axis: MemoryTimeAxis): string | undefined {
+    return axis === 'valid' ? record.validFrom : record.observedAt;
+}
+
+/**
+ * Whether the record has entered the timeline by the cutoff.
+ *
+ * A record with no date on the active axis is always in: dropping it would hide it at every cutoff,
+ * which reads as data loss rather than as an as-of filter.
+ */
+export function hasMemoryAxisStarted(record: MemoryTemporalRecord, axis: MemoryTimeAxis, asOf?: string): boolean {
+    if (!asOf) return true;
+    const start = memoryAxisStart(record, axis);
+    return !start || start <= asOf;
+}
+
+/**
+ * Whether the record is in scope at the cutoff on the active axis.
+ *
+ * On the business axis that means the validity interval contains the cutoff — a statement is out of
+ * scope both before it takes effect and after `valid_to`. On the belief axis it means the brain
+ * knew it by then; an expired statement is still something it knows, so it stays in scope there.
+ */
+export function isMemoryInScope(record: MemoryTemporalRecord, axis: MemoryTimeAxis, asOf?: string): boolean {
+    if (!asOf) return true;
+    if (!hasMemoryAxisStarted(record, axis, asOf)) return false;
+    if (axis === 'observed') return true;
+    return !record.validTo || record.validTo >= asOf;
+}
+
+/**
+ * Business source id → content-store record id.
+ *
+ * Evidence quotes a source by the id the corpus authored (`sec2y-iren-…-ex-99-1-2`), which is not a
+ * content-object id. This index is what turns those into links.
+ */
+export type MemorySourceIndex = Map<string, string>;
+
+/** Distinct evidence source ids referenced by a snapshot, sorted so the query key is stable. */
+export function collectMemorySourceIds(data: {
+    relationships: MemoryRelationship[];
+    memories: MemoryEntry[];
+}): string[] {
+    const ids = new Set<string>();
+    for (const relationship of data.relationships) {
+        for (const evidence of relationship.evidence) ids.add(evidence.sourceId);
+    }
+    for (const memory of data.memories) {
+        for (const evidence of memory.evidence) ids.add(evidence.sourceId);
+    }
+    return [...ids].sort();
+}
+
+/**
+ * Elasticsearch clause matching source records by the ids evidence quotes.
+ *
+ * The reconstruction resolves a source's business id as `properties.source_id`, falling back to the
+ * record's `external_id`, so both are matched — in one clause, so the whole set of sources a
+ * snapshot references is fetched by a single request rather than one per evidence item.
+ */
+export function buildMemorySourceIdFilter(sourceIds: string[]): Record<string, unknown> {
+    return {
+        bool: {
+            should: [{ terms: { 'properties.source_id': sourceIds } }, { terms: { external_id: sourceIds } }],
+            minimum_should_match: 1,
+        },
+    };
+}
+
+/** Index source records by every id evidence could quote them under. */
+export function indexMemorySourceRecords(records: ContentObjectItemApiResponse[]): MemorySourceIndex {
+    const index: MemorySourceIndex = new Map();
+    for (const record of records) {
+        const sourceId = readString(asRecord(record.properties), 'source_id');
+        if (sourceId) index.set(sourceId, record.id);
+        if (record.external_id) index.set(record.external_id, record.id);
+    }
+    return index;
 }
 
 /** What the inspector is pinned to. Ids are graph ids — the same ones the canvas emits. */
@@ -275,11 +397,19 @@ export function memoryEntityGroup(entity: MemoryEntity): string {
  * Only entities that take part in a relationship become nodes: the entity index is shared across
  * brains and project-wide, so drawing all of it would fill the canvas with records this brain has
  * never reasoned about.
+ *
+ * The edge's `observedAt` is the *active axis*' start date, which is the field the canvas cuts on:
+ * on the business axis a statement therefore appears when it takes effect and — through the
+ * `validTo` the edge also carries — ghosts once it is out of force. Which nodes and edges exist
+ * does not depend on the axis, only the dates on them do, so switching axis cannot move a node.
  */
-export function buildMemoryGraphView(data: {
-    entities: MemoryEntity[];
-    relationships: MemoryRelationship[];
-}): MemoryGraphView {
+export function buildMemoryGraphView(
+    data: {
+        entities: MemoryEntity[];
+        relationships: MemoryRelationship[];
+    },
+    axis: MemoryTimeAxis = DEFAULT_MEMORY_TIME_AXIS,
+): MemoryGraphView {
     const entitiesById = new Map(data.entities.map((entity) => [entity.entityId, entity]));
     const referenced = new Set<string>();
     const edges: MemoryGraphEdge[] = [];
@@ -294,7 +424,7 @@ export function buildMemoryGraphView(data: {
             target: relationship.objectId,
             label: relationship.predicate,
             confidence: relationship.confidenceScore,
-            observedAt: relationship.observedAt,
+            observedAt: memoryAxisStart(relationship, axis),
             validFrom: relationship.validFrom,
             validTo: relationship.validTo,
             qualifiers: relationship.qualifiers,
@@ -382,22 +512,31 @@ export function collectMemoryPredicates(relationships: MemoryRelationship[]): st
 }
 
 /**
- * Stops of the as-of scrubber.
+ * Stops of the as-of scrubber, on the active axis.
  *
- * The scrubber walks *belief* time: every distinct date at which this brain learned something,
- * relationships and episodic memory entries alike. Validity dates are deliberately excluded — a
- * lease that runs to 2028 must not drag the timeline into the future and mark today's statements
- * as expired.
+ * On the belief axis these are the dates at which the brain learned something — `observed_at` only,
+ * so a lease running to 2028 cannot drag the timeline into the future. On the business axis they
+ * are the dates at which something starts or stops being true, `valid_to` included: the end of a
+ * validity window is a real event on that axis, and the scrubber has to be able to land on it.
+ *
+ * A record carrying no date for the active axis contributes no stop, which is the honest answer —
+ * it is not placed anywhere on that axis rather than borrowed from the other one.
  */
-export function collectMemoryTimeline(data: {
-    relationships: MemoryRelationship[];
-    memories: MemoryEntry[];
-}): string[] {
+export function collectMemoryTimeline(
+    data: {
+        relationships: MemoryRelationship[];
+        memories: MemoryEntry[];
+    },
+    axis: MemoryTimeAxis = DEFAULT_MEMORY_TIME_AXIS,
+): string[] {
     const stops = new Set<string>();
-    for (const relationship of data.relationships) {
-        if (relationship.observedAt) stops.add(relationship.observedAt);
+    const add = (value: string | undefined) => {
+        if (value) stops.add(value);
+    };
+    for (const record of [...data.relationships, ...data.memories]) {
+        add(memoryAxisStart(record, axis));
+        if (axis === 'valid') add(record.validTo);
     }
-    for (const memory of data.memories) stops.add(memory.observedAt);
     return [...stops].sort();
 }
 

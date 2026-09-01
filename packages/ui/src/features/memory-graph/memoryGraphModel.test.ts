@@ -3,13 +3,19 @@ import { type ContentObjectItemApiResponse, ContentObjectStatus, type JSONObject
 import { describe, expect, it } from 'vitest';
 import {
     buildMemoryGraphView,
+    buildMemorySourceIdFilter,
     collectMemoryPredicates,
+    collectMemorySourceIds,
     collectMemoryTimeline,
     computeEvidenceCoverage,
     computeMemoryMatchIds,
+    hasMemoryAxisStarted,
+    indexMemorySourceRecords,
+    isMemoryInScope,
     type MemoryEntity,
     type MemoryEntry,
     type MemoryRelationship,
+    memoryAxisStart,
     memoryConfidenceScore,
     memoryEntityGroup,
     parseMemoryEntities,
@@ -41,16 +47,15 @@ function contentRecord(
 
 describe('parseMemoryEntities', () => {
     it('reads every declared entity field', () => {
-        const records = [
-            contentRecord('entity-record-msft', 'Microsoft record', {
-                entity_id: 'microsoft',
-                display_name: 'Microsoft',
-                kind: 'public_company',
-                layer: 'cloud_platform',
-                ticker: 'MSFT',
-                public_status: 'public',
-            }),
-        ];
+        const properties: JSONObject = {
+            entity_id: 'microsoft',
+            display_name: 'Microsoft',
+            kind: 'public_company',
+            layer: 'cloud_platform',
+            ticker: 'MSFT',
+            public_status: 'public',
+        };
+        const records = [contentRecord('entity-record-msft', 'Microsoft record', properties)];
 
         expect(parseMemoryEntities(records)).toEqual([
             {
@@ -61,8 +66,28 @@ describe('parseMemoryEntities', () => {
                 layer: 'cloud_platform',
                 ticker: 'MSFT',
                 publicStatus: 'public',
+                raw: properties,
             } satisfies MemoryEntity,
         ]);
+    });
+
+    it('carries every stored property, including ones no curated field reads', () => {
+        const records = [
+            contentRecord('entity-record-anthropic', 'Anthropic', {
+                entity_id: 'anthropic',
+                display_name: 'Anthropic',
+                // Not part of the curated shape: it must still survive parsing.
+                sector_exposure: ['frontier_models', 'enterprise'],
+                headcount: 1200,
+            }),
+        ];
+
+        expect(parseMemoryEntities(records)[0].raw).toEqual({
+            entity_id: 'anthropic',
+            display_name: 'Anthropic',
+            sector_exposure: ['frontier_models', 'enterprise'],
+            headcount: 1200,
+        });
     });
 
     it('skips records without a usable entity_id', () => {
@@ -87,6 +112,7 @@ describe('parseMemoryEntities', () => {
                 layer: undefined,
                 ticker: undefined,
                 publicStatus: undefined,
+                raw: { entity_id: 'openai' },
             } satisfies MemoryEntity,
         ]);
     });
@@ -113,31 +139,30 @@ describe('memoryConfidenceScore', () => {
 
 describe('parseMemoryRelationships', () => {
     it('reads the tuple, confidence, temporal fields, qualifiers and structured evidence', () => {
-        const records = [
-            contentRecord('relationship-record-1', 'Applied Digital leases to CoreWeave', {
-                relationship_id: 'rel-apld-crwv',
-                subject_id: 'applied_digital',
-                predicate: 'leases_capacity_to',
-                object_id: 'coreweave',
-                confidence: 'explicit',
-                origin: 'reconstruction',
-                notes: 'Ellendale campus',
-                observed_at: '2025-07',
-                valid_from: '2025-07',
-                valid_to: '2026-06',
-                qualifiers: {
-                    commodity: 'datacenter capacity',
-                    megawatts: 250,
-                    nested: { ignored: true },
-                    blank: '  ',
-                },
-                evidence: [
-                    { source_id: 'sec-8k-apld-2025-07', locator: 'Ex. 99.1', summary: '~250MW lease' },
-                    { locator: 'no source id, dropped' },
-                    'not-an-object',
-                ],
-            }),
-        ];
+        const properties: JSONObject = {
+            relationship_id: 'rel-apld-crwv',
+            subject_id: 'applied_digital',
+            predicate: 'leases_capacity_to',
+            object_id: 'coreweave',
+            confidence: 'explicit',
+            origin: 'reconstruction',
+            notes: 'Ellendale campus',
+            observed_at: '2025-07',
+            valid_from: '2025-07',
+            valid_to: '2026-06',
+            qualifiers: {
+                commodity: 'datacenter capacity',
+                megawatts: 250,
+                nested: { ignored: true },
+                blank: '  ',
+            },
+            evidence: [
+                { source_id: 'sec-8k-apld-2025-07', locator: 'Ex. 99.1', summary: '~250MW lease' },
+                { locator: 'no source id, dropped' },
+                'not-an-object',
+            ],
+        };
+        const records = [contentRecord('relationship-record-1', 'Applied Digital leases to CoreWeave', properties)];
 
         expect(parseMemoryRelationships(records)).toEqual([
             {
@@ -155,11 +180,16 @@ describe('parseMemoryRelationships', () => {
                 validTo: '2026-06',
                 qualifiers: { commodity: 'datacenter capacity', megawatts: 250 },
                 evidence: [{ sourceId: 'sec-8k-apld-2025-07', locator: 'Ex. 99.1', summary: '~250MW lease' }],
+                // The curated fields drop a nested qualifier and two malformed evidence items; the
+                // raw bag keeps the record exactly as stored so the inspector can show all of it.
+                raw: properties,
             } satisfies MemoryRelationship,
         ]);
     });
 
-    it('places a statement on the timeline by valid_from when it carries no observation date', () => {
+    it('never lets business validity stand in for belief time', () => {
+        // The two axes answer different questions. A statement with no `observed_at` has no place
+        // on the belief timeline, and borrowing `valid_from` would silently claim it does.
         const records = [
             contentRecord('relationship-valid-only', 'Validity only', {
                 relationship_id: 'r-valid-only',
@@ -171,7 +201,7 @@ describe('parseMemoryRelationships', () => {
         ];
 
         expect(parseMemoryRelationships(records)[0]).toMatchObject({
-            observedAt: '2025-05-31',
+            observedAt: undefined,
             validFrom: '2025-05-31',
         });
     });
@@ -247,26 +277,25 @@ describe('parseMemoryRelationships', () => {
 
 describe('parseMemoryEntries', () => {
     it('reads temporal content memory and structured evidence', () => {
-        const records = [
-            contentRecord('memory-record-1', 'Cerebras and G42 sign MOU', {
-                memory_id: 'memory-cerebras-g42-mou',
-                kind: 'commitment',
-                title: 'Cerebras and G42 sign an AI infrastructure MOU',
-                summary: 'G42 plans to deploy Cerebras systems in its cloud and research operations.',
-                entity_ids: ['cerebras', 'g42', '', 42],
-                confidence: 'explicit',
-                observed_at: '2021-11-22',
-                valid_from: '2021-11-22',
-                notes: 'The MOU describes planned deployment rather than completed installation.',
-                evidence: [
-                    {
-                        source_id: 'cerebras-g42-mou-2021-11-22',
-                        locator: 'paragraph 4',
-                        summary: 'G42 will equip its cloud and research institute with Cerebras systems.',
-                    },
-                ],
-            }),
-        ];
+        const properties: JSONObject = {
+            memory_id: 'memory-cerebras-g42-mou',
+            kind: 'commitment',
+            title: 'Cerebras and G42 sign an AI infrastructure MOU',
+            summary: 'G42 plans to deploy Cerebras systems in its cloud and research operations.',
+            entity_ids: ['cerebras', 'g42', '', 42],
+            confidence: 'explicit',
+            observed_at: '2021-11-22',
+            valid_from: '2021-11-22',
+            notes: 'The MOU describes planned deployment rather than completed installation.',
+            evidence: [
+                {
+                    source_id: 'cerebras-g42-mou-2021-11-22',
+                    locator: 'paragraph 4',
+                    summary: 'G42 will equip its cloud and research institute with Cerebras systems.',
+                },
+            ],
+        };
+        const records = [contentRecord('memory-record-1', 'Cerebras and G42 sign MOU', properties)];
 
         expect(parseMemoryEntries(records)).toEqual([
             {
@@ -288,6 +317,7 @@ describe('parseMemoryEntries', () => {
                         summary: 'G42 will equip its cloud and research institute with Cerebras systems.',
                     },
                 ],
+                raw: properties,
             } satisfies MemoryEntry,
         ]);
     });
@@ -317,6 +347,7 @@ describe('buildMemoryGraphView', () => {
             kind: 'public_company',
             layer: 'cloud_platform',
             ticker: 'MSFT',
+            raw: {},
         },
         {
             recordId: 'entity-record-openai',
@@ -324,6 +355,7 @@ describe('buildMemoryGraphView', () => {
             displayName: 'OpenAI',
             kind: 'private_company',
             layer: 'model_lab',
+            raw: {},
         },
         {
             recordId: 'entity-record-crwv',
@@ -332,6 +364,7 @@ describe('buildMemoryGraphView', () => {
             kind: 'public_company',
             layer: 'compute',
             ticker: 'CRWV',
+            raw: {},
         },
         {
             recordId: 'entity-record-vega',
@@ -339,6 +372,7 @@ describe('buildMemoryGraphView', () => {
             displayName: 'Vega data center',
             kind: 'facility',
             layer: 'datacenter',
+            raw: {},
         },
     ];
 
@@ -353,6 +387,7 @@ describe('buildMemoryGraphView', () => {
             confidenceScore: 1,
             observedAt: '2025-01',
             evidence: [{ sourceId: 'sec-msft-2025q4', locator: 'Item 1A', summary: 'Investment disclosed' }],
+            raw: {},
         },
         {
             recordId: 'relationship-record-2',
@@ -367,6 +402,7 @@ describe('buildMemoryGraphView', () => {
             validTo: '2028-03',
             qualifiers: { workload: 'training' },
             evidence: [],
+            raw: {},
         },
         {
             // `nvidia` has no entity record, so this tuple can never be drawn.
@@ -378,6 +414,7 @@ describe('buildMemoryGraphView', () => {
             confidence: 'explicit',
             confidenceScore: 1,
             evidence: [],
+            raw: {},
         },
     ];
 
@@ -433,9 +470,23 @@ describe('buildMemoryGraphView', () => {
 
 describe('computeMemoryMatchIds', () => {
     const entities: MemoryEntity[] = [
-        { recordId: 'r1', entityId: 'microsoft', displayName: 'Microsoft', kind: 'public_company', layer: 'cloud' },
-        { recordId: 'r2', entityId: 'openai', displayName: 'OpenAI', kind: 'private_company', layer: 'lab' },
-        { recordId: 'r3', entityId: 'coreweave', displayName: 'CoreWeave', kind: 'public_company', layer: 'cloud' },
+        {
+            recordId: 'r1',
+            entityId: 'microsoft',
+            displayName: 'Microsoft',
+            kind: 'public_company',
+            layer: 'cloud',
+            raw: {},
+        },
+        { recordId: 'r2', entityId: 'openai', displayName: 'OpenAI', kind: 'private_company', layer: 'lab', raw: {} },
+        {
+            recordId: 'r3',
+            entityId: 'coreweave',
+            displayName: 'CoreWeave',
+            kind: 'public_company',
+            layer: 'cloud',
+            raw: {},
+        },
     ];
     const relationships: MemoryRelationship[] = [
         {
@@ -446,6 +497,7 @@ describe('computeMemoryMatchIds', () => {
             objectId: 'openai',
             confidence: 'explicit',
             evidence: [{ sourceId: 'sec-msft-2025q4' }],
+            raw: {},
         },
         {
             recordId: 'r5',
@@ -456,6 +508,7 @@ describe('computeMemoryMatchIds', () => {
             confidence: 'explicit',
             qualifiers: { workload: 'training' },
             evidence: [],
+            raw: {},
         },
     ];
     const view = buildMemoryGraphView({ entities, relationships });
@@ -504,6 +557,7 @@ describe('rail inputs', () => {
             observedAt: '2025-04',
             validTo: '2028-01',
             evidence: [{ sourceId: 's1' }],
+            raw: {},
         },
         {
             recordId: 'r2',
@@ -514,6 +568,7 @@ describe('rail inputs', () => {
             confidence: 'explicit',
             observedAt: '2025-01',
             evidence: [],
+            raw: {},
         },
         {
             recordId: 'r3',
@@ -523,6 +578,7 @@ describe('rail inputs', () => {
             objectId: 'a',
             confidence: 'explicit',
             evidence: [],
+            raw: {},
         },
     ];
     const memories: MemoryEntry[] = [
@@ -535,7 +591,9 @@ describe('rail inputs', () => {
             entityIds: [],
             confidence: 'explicit',
             observedAt: '2025-06',
+            validFrom: '2025-05',
             evidence: [],
+            raw: {},
         },
     ];
 
@@ -543,8 +601,25 @@ describe('rail inputs', () => {
         expect(collectMemoryPredicates(relationships)).toEqual(['invested_in', 'supplies']);
     });
 
-    it('builds the scrubber from belief time only, ignoring validity dates', () => {
-        expect(collectMemoryTimeline({ relationships, memories })).toEqual(['2025-01', '2025-04', '2025-06']);
+    it('builds the belief-time scrubber from observation dates only, ignoring validity', () => {
+        expect(collectMemoryTimeline({ relationships, memories }, 'observed')).toEqual([
+            '2025-01',
+            '2025-04',
+            '2025-06',
+        ]);
+    });
+
+    it('builds the business-time scrubber from the validity window, both ends of it', () => {
+        // rel-1 has only a valid_to, mem-1 a valid_from: each contributes the stop it carries, and
+        // a record with no business date at all contributes none.
+        expect(collectMemoryTimeline({ relationships, memories }, 'valid')).toEqual(['2025-05', '2028-01']);
+        expect(collectMemoryTimeline({ relationships: [], memories: [] }, 'valid')).toEqual([]);
+    });
+
+    it('defaults to business time, which is what a reader means by moving through time', () => {
+        expect(collectMemoryTimeline({ relationships, memories })).toEqual(
+            collectMemoryTimeline({ relationships, memories }, 'valid'),
+        );
     });
 
     it('reports evidence coverage as a percentage, or nothing at all when there is no statement', () => {
@@ -560,6 +635,7 @@ describe('resolveMemorySelection', () => {
             entityId: 'alpha',
             displayName: 'Alpha',
             kind: 'organization',
+            raw: {},
         },
     ];
     const relationships: MemoryRelationship[] = [
@@ -571,6 +647,7 @@ describe('resolveMemorySelection', () => {
             objectId: 'beta',
             confidence: 'explicit',
             evidence: [],
+            raw: {},
         },
     ];
     const memories: MemoryEntry[] = [
@@ -584,6 +661,7 @@ describe('resolveMemorySelection', () => {
             confidence: 'explicit',
             observedAt: '2025-06',
             evidence: [],
+            raw: {},
         },
     ];
     const snapshot = { entities, relationships, memories };
@@ -659,7 +737,7 @@ describe('resolveMemorySelection', () => {
         const view = buildMemoryGraphView({
             entities: [
                 ...entities,
-                { recordId: 'entity-record-b', entityId: 'beta', displayName: 'Beta', kind: 'organization' },
+                { recordId: 'entity-record-b', entityId: 'beta', displayName: 'Beta', kind: 'organization', raw: {} },
             ],
             relationships: parsed,
         });
@@ -669,5 +747,147 @@ describe('resolveMemorySelection', () => {
                 status: 'statement',
             });
         }
+    });
+});
+
+describe('evidence source resolution', () => {
+    const relationships: MemoryRelationship[] = [
+        {
+            recordId: 'r1',
+            relationshipId: 'rel-1',
+            subjectId: 'a',
+            predicate: 'supplies',
+            objectId: 'b',
+            confidence: 'explicit',
+            evidence: [{ sourceId: 'sec2y-iren-2025-06-05' }, { sourceId: 'apld-coreweave-lease-2025-06-02' }],
+            raw: {},
+        },
+        {
+            recordId: 'r2',
+            relationshipId: 'rel-2',
+            subjectId: 'b',
+            predicate: 'supplies',
+            objectId: 'c',
+            // The same source backing two statements must be asked for once.
+            evidence: [{ sourceId: 'sec2y-iren-2025-06-05', locator: 'Ex. 99.1' }],
+            confidence: 'explicit',
+            raw: {},
+        },
+    ];
+    const memories: MemoryEntry[] = [
+        {
+            recordId: 'r3',
+            memoryId: 'mem-1',
+            kind: 'event',
+            title: 'Deal signed',
+            summary: 'Summary',
+            entityIds: [],
+            confidence: 'explicit',
+            observedAt: '2025-06',
+            evidence: [{ sourceId: 'cerebras-g42-mou-2021-11-22' }],
+            raw: {},
+        },
+    ];
+
+    it('collects the distinct source ids of a whole snapshot, sorted', () => {
+        expect(collectMemorySourceIds({ relationships, memories })).toEqual([
+            'apld-coreweave-lease-2025-06-02',
+            'cerebras-g42-mou-2021-11-22',
+            'sec2y-iren-2025-06-05',
+        ]);
+        expect(collectMemorySourceIds({ relationships: [], memories: [] })).toEqual([]);
+    });
+
+    it('matches sources on either id the reconstruction may have used', () => {
+        expect(buildMemorySourceIdFilter(['s1', 's2'])).toEqual({
+            bool: {
+                should: [{ terms: { 'properties.source_id': ['s1', 's2'] } }, { terms: { external_id: ['s1', 's2'] } }],
+                minimum_should_match: 1,
+            },
+        });
+    });
+
+    it('indexes source records by their business id and by their external id', () => {
+        const index = indexMemorySourceRecords([
+            contentRecord('source-record-1', 'IREN update', { source_id: 'sec2y-iren-2025-06-05' }),
+            contentRecord('source-record-2', 'Cerebras MOU', {}, 'cerebras-g42-mou-2021-11-22'),
+            contentRecord('source-record-3', 'Unidentifiable', {}),
+        ]);
+
+        expect(index.get('sec2y-iren-2025-06-05')).toBe('source-record-1');
+        expect(index.get('cerebras-g42-mou-2021-11-22')).toBe('source-record-2');
+        expect(index.get('source-record-3')).toBeUndefined();
+    });
+});
+
+describe('time axes', () => {
+    // Published 2025-06-05, true only for May: the two axes place this record in different months.
+    const monthlyUpdate: MemoryRelationship = {
+        recordId: 'r1',
+        relationshipId: 'rel-iren-may',
+        subjectId: 'iren',
+        predicate: 'reports_capacity',
+        objectId: 'nvidia',
+        confidence: 'explicit',
+        observedAt: '2025-06-05',
+        validFrom: '2025-05-01',
+        validTo: '2025-05-31',
+        evidence: [],
+        raw: {},
+    };
+    const undated: MemoryRelationship = {
+        recordId: 'r2',
+        relationshipId: 'rel-undated',
+        subjectId: 'a',
+        predicate: 'supplies',
+        objectId: 'b',
+        confidence: 'explicit',
+        evidence: [],
+        raw: {},
+    };
+
+    it('reads the start date of the active axis', () => {
+        expect(memoryAxisStart(monthlyUpdate, 'valid')).toBe('2025-05-01');
+        expect(memoryAxisStart(monthlyUpdate, 'observed')).toBe('2025-06-05');
+        expect(memoryAxisStart(undated, 'valid')).toBeUndefined();
+    });
+
+    it('scopes a business-time window to the dates it actually covers', () => {
+        expect(isMemoryInScope(monthlyUpdate, 'valid', '2025-04-30')).toBe(false);
+        expect(isMemoryInScope(monthlyUpdate, 'valid', '2025-05-15')).toBe(true);
+        expect(isMemoryInScope(monthlyUpdate, 'valid', '2025-06-15')).toBe(false);
+    });
+
+    it('scopes belief time by what the brain knew, expired or not', () => {
+        expect(isMemoryInScope(monthlyUpdate, 'observed', '2025-05-15')).toBe(false);
+        // Out of force since 2025-05-31, but the brain still knows it — belief time keeps it.
+        expect(isMemoryInScope(monthlyUpdate, 'observed', '2025-06-15')).toBe(true);
+    });
+
+    it('keeps a record with no date on the active axis in scope rather than hiding it', () => {
+        expect(isMemoryInScope(undated, 'valid', '2025-01-01')).toBe(true);
+        expect(isMemoryInScope(undated, 'observed', '2025-01-01')).toBe(true);
+        expect(hasMemoryAxisStarted(undated, 'valid', '2025-01-01')).toBe(true);
+    });
+
+    it('lists a statement that has started but expired, so the inspector can mark it', () => {
+        expect(hasMemoryAxisStarted(monthlyUpdate, 'valid', '2025-06-15')).toBe(true);
+        expect(isMemoryInScope(monthlyUpdate, 'valid', '2025-06-15')).toBe(false);
+    });
+
+    it('cuts the canvas on the active axis without changing which nodes and edges exist', () => {
+        const entities: MemoryEntity[] = [
+            { recordId: 'e1', entityId: 'iren', displayName: 'IREN', kind: 'public_company', raw: {} },
+            { recordId: 'e2', entityId: 'nvidia', displayName: 'Nvidia', kind: 'public_company', raw: {} },
+        ];
+        const valid = buildMemoryGraphView({ entities, relationships: [monthlyUpdate] }, 'valid');
+        const observed = buildMemoryGraphView({ entities, relationships: [monthlyUpdate] }, 'observed');
+
+        expect(valid.nodes.map((node) => node.id)).toEqual(observed.nodes.map((node) => node.id));
+        expect(valid.edges.map((edge) => edge.id)).toEqual(observed.edges.map((edge) => edge.id));
+        // Only the cutoff date the canvas compares against differs between the two axes.
+        expect(valid.edges[0].observedAt).toBe('2025-05-01');
+        expect(observed.edges[0].observedAt).toBe('2025-06-05');
+        expect(valid.edges[0].validTo).toBe('2025-05-31');
     });
 });

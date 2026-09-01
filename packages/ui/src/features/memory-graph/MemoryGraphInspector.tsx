@@ -1,15 +1,33 @@
-import { Badge, Button, cn } from '@vertesia/ui/core';
+import { Badge, Button, Collapsible, CollapsibleContent, CollapsibleTrigger, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
-import { formatQualifiers, isExpiredEdge, type TemporalGraphEdge } from '@vertesia/ui/widgets';
-import { ArrowLeft, ArrowRight, BrainCircuit, ExternalLink, Network, Quote, SearchX, Sparkles } from 'lucide-react';
-import { useMemo } from 'react';
+import { formatQualifiers, isExpiredEdge, JSONCode, type TemporalGraphEdge } from '@vertesia/ui/widgets';
 import {
+    ArrowLeft,
+    ArrowRight,
+    BrainCircuit,
+    ChevronDown,
+    ExternalLink,
+    Network,
+    Quote,
+    SearchX,
+    Sparkles,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+    DEFAULT_MEMORY_TIME_AXIS,
+    hasMemoryAxisStarted,
+    isMemoryInScope,
     type MemoryEntity,
     type MemoryEntry,
     type MemoryEvidence,
+    type MemoryRawProperties,
     type MemoryRelationship,
     type MemorySelection,
+    type MemorySourceIndex,
+    type MemoryTemporalRecord,
+    type MemoryTimeAxis,
+    memoryAxisStart,
     resolveMemorySelection,
 } from './memoryGraphModel.js';
 
@@ -18,13 +36,23 @@ export interface MemoryGraphInspectorProps {
     entities: MemoryEntity[];
     relationships: MemoryRelationship[];
     memories: MemoryEntry[];
-    /** Belief-time cutoff currently on the scrubber; drives "known" and "expired" rendering. */
+    /** Evidence source id → content-store record id. Absent ids stay plain text. */
+    sourceRecordIds?: MemorySourceIndex;
+    /** Which time axis the scrubber walks; decides what `asOf` is compared against. */
+    timeAxis?: MemoryTimeAxis;
+    /** Cutoff currently on the scrubber; drives "in scope" and "expired" rendering. */
     asOf?: string;
     search: string;
     onSelect: (selection: MemorySelection | undefined) => void;
     onOpenRecord?: (recordId: string) => void;
 }
 
+/**
+ * The way out of the graph and into the content store.
+ *
+ * Deliberately a full-width row rather than a footnote link: reaching the underlying record is a
+ * primary action of the inspector, and the record id is part of what an operator came for.
+ */
 function RecordLink({
     recordId,
     label,
@@ -34,23 +62,115 @@ function RecordLink({
     label: string;
     onOpenRecord?: (recordId: string) => void;
 }) {
+    const body = (
+        <>
+            <ExternalLink className="size-3.5 shrink-0" aria-hidden={true} />
+            <span className="min-w-0 flex-1 truncate">{label}</span>
+            <span className="shrink-0 font-mono text-[10px] font-normal text-muted">{recordId}</span>
+        </>
+    );
+    const shared = 'flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-start text-xs font-medium';
     if (onOpenRecord) {
         return (
-            <Button variant="ghost" size="xs" className="px-0 text-info" onClick={() => onOpenRecord(recordId)}>
-                <ExternalLink className="size-3" aria-hidden={true} />
-                {label}
+            <Button variant="outline" className={cn(shared, 'h-auto text-info')} onClick={() => onOpenRecord(recordId)}>
+                {body}
             </Button>
         );
     }
     return (
         <NavLink
-            className="inline-flex items-center gap-1 text-xs text-info hover:underline"
+            className={cn(shared, 'bg-background text-info hover:underline')}
             href={`/store/objects/${recordId}`}
             topLevelNav
         >
-            <ExternalLink className="size-3" aria-hidden={true} />
-            {label}
+            {body}
         </NavLink>
+    );
+}
+
+/** `public_status` → `public status`. The exact key is rendered next to it, never replaced by this. */
+function humanizeAttributeKey(key: string): string {
+    return key.replaceAll('_', ' ').trim() || key;
+}
+
+/**
+ * One stored value.
+ *
+ * Scalars render inline — numbers with `tabular-nums` so a column of them lines up. Anything
+ * structured goes to {@link JSONCode}, which is the smallest thing that does the job: a `<pre>` with
+ * token colouring and its own `overflow-auto`, so a wide array scrolls inside its own box instead of
+ * widening the panel. `JSONDisplay`/`JSONView` were the alternative and are the wrong tool here —
+ * they default to an interactive expand/collapse tree with its own state, inside a `h-full` flex
+ * wrapper meant to fill a pane, which is more chrome than a dense attribute list can carry.
+ */
+function AttributeValue({ value }: { value: unknown }) {
+    if (value === null || value === undefined) return <span className="text-muted">—</span>;
+    if (typeof value === 'string') {
+        return <span className="wrap-break-word">{value}</span>;
+    }
+    if (typeof value === 'number') return <span className="tabular-nums">{String(value)}</span>;
+    if (typeof value === 'boolean') return <span className="font-mono">{String(value)}</span>;
+    // Only the height is capped here: JSONCode already brings the padding, type scale and
+    // horizontal scroll, and overriding those by appending classes would depend on Tailwind's
+    // emission order rather than on anything readable.
+    return <JSONCode data={value} className="max-h-56" />;
+}
+
+/**
+ * Every property the record actually stores, collapsed by default.
+ *
+ * Nothing is filtered: fields the curated layout above already shows appear here too, because this
+ * section answers "what is stored", not "what did we decide to show". A field the ontology gains
+ * tomorrow therefore needs no code change to become visible.
+ */
+function AllAttributesSection({ raw }: { raw: MemoryRawProperties }) {
+    const { t } = useUITranslation();
+    const [isOpen, setIsOpen] = useState(false);
+    const entries = useMemo(() => Object.entries(raw).sort(([left], [right]) => left.localeCompare(right)), [raw]);
+
+    return (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <div className="flex items-baseline justify-between gap-2 border-b pb-1">
+                <CollapsibleTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        className="h-auto gap-1.5 px-0 font-mono text-[10px] font-semibold uppercase tracking-widest text-muted"
+                    >
+                        <ChevronDown
+                            className={cn('size-3 shrink-0 transition-transform', !isOpen && '-rotate-90')}
+                            aria-hidden={true}
+                        />
+                        {t('memoryGraph.allAttributes')}
+                    </Button>
+                </CollapsibleTrigger>
+                <span className="font-mono text-[10px] tabular-nums text-muted">{entries.length}</span>
+            </div>
+            <CollapsibleContent>
+                <p className="mt-2 text-[11px] leading-relaxed text-muted">{t('memoryGraph.allAttributesHint')}</p>
+                {entries.length === 0 ? (
+                    <p className="mt-2 rounded-md border border-dashed px-2.5 py-2 text-xs text-muted">
+                        {t('memoryGraph.noAttributes')}
+                    </p>
+                ) : (
+                    <dl className="mt-2 flex flex-col gap-1.5">
+                        {entries.map(([key, value]) => (
+                            <div key={key} className="min-w-0 rounded-md border bg-background px-2.5 py-1.5">
+                                <dt className="flex items-baseline justify-between gap-2">
+                                    <span className="min-w-0 truncate text-[10px] uppercase tracking-widest text-muted">
+                                        {humanizeAttributeKey(key)}
+                                    </span>
+                                    <span className="shrink-0 font-mono text-[10px] text-muted">{key}</span>
+                                </dt>
+                                <dd className="mt-1 min-w-0 text-xs leading-relaxed text-foreground">
+                                    <AttributeValue value={value} />
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
+                )}
+            </CollapsibleContent>
+        </Collapsible>
     );
 }
 
@@ -155,7 +275,59 @@ function ConfidenceTag({ relationship }: { relationship: MemoryRelationship }) {
     );
 }
 
-function EvidenceCards({ evidence, emptyText }: { evidence: MemoryEvidence[]; emptyText: string }) {
+/**
+ * The source id of one evidence item, as a link when it resolves to a content object.
+ *
+ * The id is a business id the corpus authored, so it only becomes a link once the snapshot's
+ * batched source lookup has mapped it. An unmapped id stays exactly what it was: plain text.
+ */
+function EvidenceSourceId({
+    sourceId,
+    recordId,
+    onOpenRecord,
+}: {
+    sourceId: string;
+    recordId?: string;
+    onOpenRecord?: (recordId: string) => void;
+}) {
+    const { t } = useUITranslation();
+    const className = 'min-w-0 flex-1 truncate font-mono text-[10.5px] font-medium text-attention';
+    if (!recordId) {
+        return <span className={className}>{sourceId}</span>;
+    }
+    if (onOpenRecord) {
+        return (
+            <Button
+                variant="ghost"
+                size="xs"
+                className={cn(className, 'h-auto justify-start px-0 hover:underline')}
+                aria-label={t('memoryGraph.openSourceRecord', { sourceId })}
+                onClick={() => onOpenRecord(recordId)}
+            >
+                {sourceId}
+            </Button>
+        );
+    }
+    // No aria-label here: NavLink does not forward one, and the link text is the source id itself,
+    // which is the name an operator is looking for anyway.
+    return (
+        <NavLink className={cn(className, 'hover:underline')} href={`/store/objects/${recordId}`} topLevelNav>
+            {sourceId}
+        </NavLink>
+    );
+}
+
+function EvidenceCards({
+    evidence,
+    emptyText,
+    sourceRecordIds,
+    onOpenRecord,
+}: {
+    evidence: MemoryEvidence[];
+    emptyText: string;
+    sourceRecordIds?: MemorySourceIndex;
+    onOpenRecord?: (recordId: string) => void;
+}) {
     if (evidence.length === 0) {
         return <p className="rounded-md border border-dashed px-2.5 py-2 text-xs text-muted">{emptyText}</p>;
     }
@@ -167,9 +339,11 @@ function EvidenceCards({ evidence, emptyText }: { evidence: MemoryEvidence[]; em
                     className="rounded-md border border-s-[3px] border-s-attention bg-background px-2.5 py-2"
                 >
                     <div className="flex items-baseline gap-2">
-                        <span className="min-w-0 flex-1 truncate font-mono text-[10.5px] font-medium text-attention">
-                            {item.sourceId}
-                        </span>
+                        <EvidenceSourceId
+                            sourceId={item.sourceId}
+                            recordId={sourceRecordIds?.get(item.sourceId)}
+                            onOpenRecord={onOpenRecord}
+                        />
                         {item.locator ? (
                             <span className="shrink-0 font-mono text-[10px] text-muted">{item.locator}</span>
                         ) : null}
@@ -204,6 +378,57 @@ function ValidityLine({
                 to: relationship.validTo ?? t('memoryGraph.validityOpenEnd'),
             })}
         </span>
+    );
+}
+
+/**
+ * The record's two dates, side by side and labelled.
+ *
+ * A record is dated twice and the two answers differ — an IREN monthly update was *published* on
+ * 2025-06-05 and was *true* for May. Showing only one of them is what made the scrubber ambiguous,
+ * so the inspector states both, with the stored field names next to them for operators.
+ */
+function BitemporalSection({ record, isExpired }: { record: MemoryTemporalRecord; isExpired: boolean }) {
+    const { t } = useUITranslation();
+    const validity =
+        record.validFrom || record.validTo
+            ? t('memoryGraph.validity', {
+                  from: record.validFrom ?? '…',
+                  to: record.validTo ?? t('memoryGraph.validityOpenEnd'),
+              })
+            : '—';
+    const rows = [
+        { field: 'valid_from → valid_to', label: t('memoryGraph.axisValid'), value: validity, struck: isExpired },
+        { field: 'observed_at', label: t('memoryGraph.axisObserved'), value: record.observedAt ?? '—', struck: false },
+    ];
+    return (
+        <InspectorSection title={t('memoryGraph.timeTitle')}>
+            <dl className="flex flex-col gap-1.5">
+                {rows.map((row) => (
+                    <div key={row.field} className="rounded-md border bg-background px-2.5 py-1.5">
+                        <dt className="flex items-baseline justify-between gap-2">
+                            <span className="min-w-0 truncate text-[10px] uppercase tracking-widest text-muted">
+                                {row.label}
+                            </span>
+                            <span className="shrink-0 font-mono text-[10px] text-muted">{row.field}</span>
+                        </dt>
+                        <dd
+                            className={cn(
+                                'mt-1 font-mono text-xs tabular-nums text-foreground',
+                                row.struck && 'line-through',
+                            )}
+                        >
+                            {row.value}
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+            {isExpired ? (
+                <Badge variant="outline" className="mt-2">
+                    {t('memoryGraph.noLongerInForce')}
+                </Badge>
+            ) : null}
+        </InspectorSection>
     );
 }
 
@@ -257,6 +482,7 @@ function EntityInspector({
     entity,
     relationships,
     entityLabels,
+    timeAxis,
     asOf,
     onSelect,
     onOpenRecord,
@@ -264,19 +490,20 @@ function EntityInspector({
     entity: MemoryEntity;
     relationships: MemoryRelationship[];
     entityLabels: Map<string, string>;
+    timeAxis: MemoryTimeAxis;
     asOf?: string;
     onSelect: (selection: MemorySelection) => void;
     onOpenRecord?: (recordId: string) => void;
 }) {
     const { t } = useUITranslation();
-    const known = relationships.filter(
-        (relationship) => !relationship.observedAt || !asOf || relationship.observedAt <= asOf,
-    );
+    // Statements that have started on the active axis, expired ones included: those still belong on
+    // the list, marked "no longer in force", rather than vanishing from the entity's history.
+    const known = relationships.filter((relationship) => hasMemoryAxisStarted(relationship, timeAxis, asOf));
     const outbound = known.filter((relationship) => relationship.subjectId === entity.entityId);
     const inbound = known.filter((relationship) => relationship.objectId === entity.entityId);
     const connections = [...outbound, ...inbound];
     const firstSeen = connections
-        .map((relationship) => relationship.observedAt)
+        .map((relationship) => (timeAxis === 'valid' ? relationship.validFrom : relationship.observedAt))
         .filter((value): value is string => Boolean(value))
         .sort()[0];
 
@@ -287,6 +514,11 @@ function EntityInspector({
                 title={entity.displayName}
                 subtitle={entity.ticker ? <span className="font-mono tabular-nums">${entity.ticker}</span> : undefined}
                 identity={`entity:${entity.entityId}`}
+            />
+            <RecordLink
+                recordId={entity.recordId}
+                label={t('memoryGraph.openEntityRecord')}
+                onOpenRecord={onOpenRecord}
             />
             <div className="grid grid-cols-2 gap-2">
                 <Fact label={t('memoryGraph.kind')} value={entity.kind.replaceAll('_', ' ')} />
@@ -320,11 +552,7 @@ function EntityInspector({
                     </div>
                 )}
             </InspectorSection>
-            <RecordLink
-                recordId={entity.recordId}
-                label={t('memoryGraph.openEntityRecord')}
-                onOpenRecord={onOpenRecord}
-            />
+            <AllAttributesSection raw={entity.raw} />
         </div>
     );
 }
@@ -332,12 +560,14 @@ function EntityInspector({
 function StatementInspector({
     relationship,
     entityLabels,
+    sourceRecordIds,
     asOf,
     onSelect,
     onOpenRecord,
 }: {
     relationship: MemoryRelationship;
     entityLabels: Map<string, string>;
+    sourceRecordIds?: MemorySourceIndex;
     asOf?: string;
     onSelect: (selection: MemorySelection) => void;
     onOpenRecord?: (recordId: string) => void;
@@ -352,7 +582,6 @@ function StatementInspector({
     };
     const isExpired = isExpiredEdge(edge, asOf);
     const qualifiers = formatQualifiers(relationship.qualifiers);
-    const hasValidity = Boolean(relationship.validFrom || relationship.validTo);
 
     return (
         <div className="flex flex-col gap-5">
@@ -361,6 +590,11 @@ function StatementInspector({
                 title={t('memoryGraph.statement')}
                 subtitle={<span className="font-mono">{relationship.predicate}</span>}
                 identity={relationship.relationshipId}
+            />
+            <RecordLink
+                recordId={relationship.recordId}
+                label={t('memoryGraph.openStatementRecord')}
+                onOpenRecord={onOpenRecord}
             />
             <div className="rounded-lg border bg-background p-2.5">
                 <Button
@@ -388,58 +622,55 @@ function StatementInspector({
                     </span>
                 </Button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-                <ConfidenceMeter relationship={relationship} label={t('memoryGraph.confidence')} />
-                <Fact label={t('memoryGraph.observed')} value={relationship.observedAt ?? '—'} />
-            </div>
+            <ConfidenceMeter relationship={relationship} label={t('memoryGraph.confidence')} />
+            <BitemporalSection record={relationship} isExpired={isExpired} />
             {qualifiers ? (
                 <InspectorSection title={t('memoryGraph.qualifiers')}>
                     <p className="font-mono text-xs leading-relaxed text-muted">{qualifiers}</p>
                 </InspectorSection>
             ) : null}
-            {hasValidity ? (
-                <InspectorSection title={t('memoryGraph.validityTitle')}>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <ValidityLine
-                            relationship={relationship}
-                            isExpired={isExpired}
-                            className="text-xs text-muted"
-                        />
-                        {isExpired ? <Badge variant="outline">{t('memoryGraph.noLongerInForce')}</Badge> : null}
-                    </div>
-                </InspectorSection>
-            ) : null}
             <InspectorSection title={t('memoryGraph.evidence')} count={relationship.evidence.length}>
-                <EvidenceCards evidence={relationship.evidence} emptyText={t('memoryGraph.noEvidence')} />
+                <EvidenceCards
+                    evidence={relationship.evidence}
+                    emptyText={t('memoryGraph.noEvidence')}
+                    sourceRecordIds={sourceRecordIds}
+                    onOpenRecord={onOpenRecord}
+                />
             </InspectorSection>
             {relationship.notes ? (
                 <InspectorSection title={t('memoryGraph.notes')}>
                     <p className="text-xs leading-relaxed text-muted">{relationship.notes}</p>
                 </InspectorSection>
             ) : null}
-            <RecordLink
-                recordId={relationship.recordId}
-                label={t('memoryGraph.openStatementRecord')}
-                onOpenRecord={onOpenRecord}
-            />
+            <AllAttributesSection raw={relationship.raw} />
         </div>
     );
 }
 
 function MemoryEntryInspector({
     memory,
+    sourceRecordIds,
+    asOf,
     onOpenRecord,
 }: {
     memory: MemoryEntry;
+    sourceRecordIds?: MemorySourceIndex;
+    asOf?: string;
     onOpenRecord?: (recordId: string) => void;
 }) {
     const { t } = useUITranslation();
+    const isExpired = Boolean(asOf && memory.validTo && memory.validTo < asOf);
     return (
         <div className="flex flex-col gap-5">
             <InspectorHeader
                 icon={<BrainCircuit className="size-4" aria-hidden={true} />}
                 title={memory.title}
                 identity={memory.memoryId}
+            />
+            <RecordLink
+                recordId={memory.recordId}
+                label={t('memoryGraph.openMemoryRecord')}
+                onOpenRecord={onOpenRecord}
             />
             <div className="flex flex-wrap gap-1.5">
                 <Badge variant="outline">{memory.kind.replaceAll('_', ' ')}</Badge>
@@ -448,11 +679,7 @@ function MemoryEntryInspector({
                 </Badge>
             </div>
             <p className="text-[13px] leading-relaxed text-foreground">{memory.summary}</p>
-            <div className="grid grid-cols-2 gap-2">
-                <Fact label={t('memoryGraph.observed')} value={memory.observedAt} />
-                <Fact label={t('memoryGraph.validFrom')} value={memory.validFrom ?? '—'} />
-                {memory.validTo ? <Fact label={t('memoryGraph.validTo')} value={memory.validTo} /> : null}
-            </div>
+            <BitemporalSection record={memory} isExpired={isExpired} />
             {memory.entityIds.length > 0 ? (
                 <InspectorSection title={t('memoryGraph.entities')} count={memory.entityIds.length}>
                     <div className="flex flex-wrap gap-1.5">
@@ -465,18 +692,19 @@ function MemoryEntryInspector({
                 </InspectorSection>
             ) : null}
             <InspectorSection title={t('memoryGraph.evidence')} count={memory.evidence.length}>
-                <EvidenceCards evidence={memory.evidence} emptyText={t('memoryGraph.noEvidence')} />
+                <EvidenceCards
+                    evidence={memory.evidence}
+                    emptyText={t('memoryGraph.noEvidence')}
+                    sourceRecordIds={sourceRecordIds}
+                    onOpenRecord={onOpenRecord}
+                />
             </InspectorSection>
             {memory.notes ? (
                 <InspectorSection title={t('memoryGraph.notes')}>
                     <p className="text-xs leading-relaxed text-muted">{memory.notes}</p>
                 </InspectorSection>
             ) : null}
-            <RecordLink
-                recordId={memory.recordId}
-                label={t('memoryGraph.openMemoryRecord')}
-                onOpenRecord={onOpenRecord}
-            />
+            <AllAttributesSection raw={memory.raw} />
         </div>
     );
 }
@@ -525,18 +753,23 @@ function EmptyPanel({ title, description }: { title: string; description: string
 function ContentMemoryList({
     memories,
     search,
+    timeAxis,
     asOf,
     onSelect,
 }: {
     memories: MemoryEntry[];
     search: string;
+    timeAxis: MemoryTimeAxis;
     asOf?: string;
     onSelect: (memoryId: string) => void;
 }) {
     const { t } = useUITranslation();
     const normalized = search.trim().toLowerCase();
+    // The date the row is stamped and sorted by follows the active axis, falling back to belief
+    // time only for display when the entry carries no business date.
+    const axisDate = (memory: MemoryEntry) => memoryAxisStart(memory, timeAxis) ?? memory.observedAt;
     const visible = memories
-        .filter((memory) => !asOf || memory.observedAt <= asOf)
+        .filter((memory) => isMemoryInScope(memory, timeAxis, asOf))
         .filter(
             (memory) =>
                 !normalized ||
@@ -544,7 +777,7 @@ function ContentMemoryList({
                     value.toLowerCase().includes(normalized),
                 ),
         )
-        .sort((left, right) => right.observedAt.localeCompare(left.observedAt));
+        .sort((left, right) => axisDate(right).localeCompare(axisDate(left)));
 
     return (
         <div>
@@ -581,7 +814,7 @@ function ContentMemoryList({
                                 <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wide text-muted">
                                     <span className="truncate">{memory.kind.replaceAll('_', ' ')}</span>
                                     <span aria-hidden={true}>·</span>
-                                    <span className="shrink-0 tabular-nums">{memory.observedAt}</span>
+                                    <span className="shrink-0 tabular-nums">{axisDate(memory)}</span>
                                 </div>
                                 <div className="text-xs font-semibold leading-snug text-foreground">{memory.title}</div>
                                 <p className="line-clamp-3 text-xs font-normal leading-relaxed text-muted">
@@ -601,6 +834,8 @@ export function MemoryGraphInspector({
     entities,
     relationships,
     memories,
+    sourceRecordIds,
+    timeAxis = DEFAULT_MEMORY_TIME_AXIS,
     asOf,
     search,
     onSelect,
@@ -622,6 +857,7 @@ export function MemoryGraphInspector({
                     entity={resolved.entity}
                     relationships={relationships}
                     entityLabels={entityLabels}
+                    timeAxis={timeAxis}
                     asOf={asOf}
                     onSelect={onSelect}
                     onOpenRecord={onOpenRecord}
@@ -630,18 +866,25 @@ export function MemoryGraphInspector({
                 <StatementInspector
                     relationship={resolved.relationship}
                     entityLabels={entityLabels}
+                    sourceRecordIds={sourceRecordIds}
                     asOf={asOf}
                     onSelect={onSelect}
                     onOpenRecord={onOpenRecord}
                 />
             ) : resolved.status === 'memory' ? (
-                <MemoryEntryInspector memory={resolved.memory} onOpenRecord={onOpenRecord} />
+                <MemoryEntryInspector
+                    memory={resolved.memory}
+                    sourceRecordIds={sourceRecordIds}
+                    asOf={asOf}
+                    onOpenRecord={onOpenRecord}
+                />
             ) : resolved.status === 'missing' ? (
                 <MissingSelectionInspector selection={resolved.selection} onClear={() => onSelect(undefined)} />
             ) : (
                 <ContentMemoryList
                     memories={memories}
                     search={search}
+                    timeAxis={timeAxis}
                     asOf={asOf}
                     onSelect={(memoryId) => onSelect({ kind: 'memory', id: memoryId })}
                 />
