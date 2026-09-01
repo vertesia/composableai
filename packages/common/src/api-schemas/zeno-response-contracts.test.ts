@@ -341,4 +341,40 @@ describe('Zeno read-side response contracts', () => {
             ]).valid,
         ).toBe(true);
     });
+
+    it('publishes agent-node launch and execution policy', () => {
+        expect(
+            validateApiRequest('CreateProcessDefinitionPayload', {
+                name: 'App development process',
+                definition: {
+                    format_version: 1,
+                    process: 'app_development',
+                    initial: 'implement',
+                    context: { schema: {}, initial: {} },
+                    nodes: {
+                        implement: {
+                            type: 'agent',
+                            interaction: 'sys:AppDeveloper',
+                            inherit_context: false,
+                            initial_skills: ['app_quick_fix'],
+                            excluded_tools: ['learn_app_development'],
+                            agent_policy: {
+                                phases: [
+                                    {
+                                        id: 'saved',
+                                        tools: ['app_workspace_save'],
+                                        tool_input_contains: [{ field: 'mode', contains: 'commit' }],
+                                        recovery_prompt: 'Save before finishing.',
+                                    },
+                                ],
+                                phase_resets: [{ tools: ['app_workspace_edit'], to_phase: 'saved' }],
+                                defer_result_schema_until_complete: true,
+                                completion_prompt: 'Return the structured result now.',
+                            },
+                        },
+                    },
+                },
+            }).valid,
+        ).toBe(true);
+    });
 });

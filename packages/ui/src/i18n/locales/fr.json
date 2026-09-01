@@ -318,6 +318,7 @@
     "layout.pageNotFound": "Page non trouvée",
     "layout.search": "Rechercher",
     "layout.searchPlaceholder": "Rechercher...",
+    "layout.toggleNavigationMenu": "Afficher ou masquer le menu de navigation",
     "login.accept": "Accepter",
     "login.reject": "Refuser",
     "login.reviewInvites": "Examiner les invitations",

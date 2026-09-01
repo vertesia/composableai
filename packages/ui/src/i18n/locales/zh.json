@@ -316,6 +316,7 @@
     "layout.pageNotFound": "页面未找到",
     "layout.search": "搜索",
     "layout.searchPlaceholder": "搜索...",
+    "layout.toggleNavigationMenu": "切换导航菜单",
     "login.accept": "接受",
     "login.reject": "拒绝",
     "login.reviewInvites": "查看邀请",

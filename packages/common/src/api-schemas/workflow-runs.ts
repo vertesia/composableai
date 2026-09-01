@@ -223,6 +223,7 @@ export const PendingActivitySchema = z
         maximumAttempts: z.number(),
         lastFailure: z.string().optional(),
         lastStartedTime: nullableStringSchema,
+        lastHeartbeatTime: nullableStringSchema.optional(),
     })
     .meta({ id: 'PendingActivity' });
 

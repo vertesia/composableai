@@ -316,6 +316,7 @@
     "layout.pageNotFound": "Seite nicht gefunden",
     "layout.search": "Suche",
     "layout.searchPlaceholder": "Suchen...",
+    "layout.toggleNavigationMenu": "Navigationsmenü umschalten",
     "login.accept": "Akzeptieren",
     "login.reject": "Ablehnen",
     "login.reviewInvites": "Einladungen überprüfen",

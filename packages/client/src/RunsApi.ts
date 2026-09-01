@@ -1,5 +1,5 @@
 import type { ExecutionResponse } from '@llumiverse/common';
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
 import type {
     ComputeRunFacetPayload,
     ComputeRunFacetsResponse,
@@ -33,6 +33,8 @@ export interface FilterOption {
 }
 
 export type { ComputeRunFacetsResponse } from '@vertesia/common';
+
+type ResumeRequestOptions = Pick<IRequestParams, 'headers' | 'signal' | 'timeoutMs'>;
 
 export class RunsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -116,12 +118,10 @@ export class RunsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    sendToolResults(
-        payload: ToolResultsPayload,
-        options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
-    ): Promise<ExecutionResponse> {
+    sendToolResults(payload: ToolResultsPayload, options?: ResumeRequestOptions): Promise<ExecutionResponse> {
         return this.post(`/tool-results`, {
             payload,
+            headers: options?.headers,
             timeoutMs: options?.timeoutMs,
             signal: options?.signal,
         });
@@ -132,12 +132,10 @@ export class RunsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    sendUserMessage(
-        payload: UserMessagePayload,
-        options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
-    ): Promise<ExecutionResponse> {
+    sendUserMessage(payload: UserMessagePayload, options?: ResumeRequestOptions): Promise<ExecutionResponse> {
         return this.post(`/user-message`, {
             payload,
+            headers: options?.headers,
             timeoutMs: options?.timeoutMs,
             signal: options?.signal,
         });

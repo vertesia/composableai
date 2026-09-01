@@ -91,6 +91,29 @@ describe('AsyncConversationExecutionPayload contract', () => {
         });
     });
 
+    it('accepts Process-authored agent execution policy', () => {
+        const payload: AsyncConversationExecutionPayload = {
+            type: 'conversation',
+            interaction: 'sys:AppDeveloper',
+            agent_policy: {
+                phases: [
+                    {
+                        id: 'saved',
+                        tools: ['app_workspace_save'],
+                        tool_input_contains: [{ field: 'mode', contains: 'commit' }],
+                        recovery_prompt: 'Save before finishing.',
+                    },
+                ],
+                phase_resets: [{ tools: ['app_workspace_edit'], to_phase: 'saved' }],
+                action_phase_count: 1,
+                action_phase_max_tokens: 4_096,
+                completion_prompt: 'Return the structured result now.',
+            },
+        };
+
+        expect(AsyncConversationExecutionPayloadSchema.parse(payload)).toMatchObject(payload);
+    });
+
     it('rejects a non-string app-version target', () => {
         expect(() =>
             AsyncConversationExecutionPayloadSchema.parse({

@@ -1,11 +1,12 @@
 // Runtime schemas for the process API domain.
 
-import { JSONObjectSchema, JSONSchemaSchema } from '@llumiverse/common/schemas';
+import { JSONObjectSchema, JSONSchemaSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
 import type { StringValue } from 'ms';
 import { z } from 'zod';
 import { PermissionSchema } from './access-control.js';
 import { StringValueMapSchema } from './files.js';
 import { ConversationVisibilitySchema, RunSourceSchema } from './interaction.js';
+import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { TaskFieldSchema } from './task.js';
 
@@ -176,7 +177,14 @@ export const ProcessDefinitionRevisionInfoSchema = z
 
 export const ProcessRunConfigSchema = z
     .strictObject({
+        environment: z
+            .string()
+            .meta({ description: 'Execution environment id used by Process LLM nodes and the supervisor.' })
+            .optional(),
         model: z.string().optional(),
+        model_options: ModelOptionsSchema.meta({
+            description: 'Validated model options applied to Process LLM nodes and the supervisor.',
+        }).optional(),
         user_message: z
             .string()
             .meta({
@@ -827,6 +835,13 @@ export const NodeDefinitionSchema: z.ZodType = z
         }).optional(),
         prompt: z.string().optional(),
         input: z.looseObject({}).optional(),
+        inherit_context: z
+            .boolean()
+            .meta({
+                description:
+                    'Whether interaction and custom-agent nodes receive the complete process context in addition to resolved input. Defaults to true; set false for input-only specialist prompts.',
+            })
+            .optional(),
         config: z.looseObject({}).optional(),
         title: z.string().optional(),
         description: z.string().optional(),
@@ -842,6 +857,18 @@ export const NodeDefinitionSchema: z.ZodType = z
         max_retries: z.number().optional(),
         transitions: z.array(TransitionDefinitionSchema).optional(),
         tools: z.array(z.string()).optional(),
+        initial_skills: z
+            .array(z.string())
+            .meta({ description: "Builtin system skills activated before the agent node's first model turn." })
+            .optional(),
+        excluded_tools: z
+            .array(z.string())
+            .meta({ description: "Execution-time tool denylist for the agent node's child conversation." })
+            .optional(),
+        agent_policy: ProcessAgentExecutionPolicySchema.meta({
+            description:
+                'Declarative successful-tool phases and completion behavior for this agent node. The Process owns this policy; the child conversation enforces it generically.',
+        }).optional(),
         model: z
             .string()
             .meta({

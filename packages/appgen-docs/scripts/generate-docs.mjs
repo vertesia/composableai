@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +26,12 @@ const TOOL_SERVER_RESOURCE_REFERENCE_PATH = join(
 const UI_TYPES_ROOT = join(REPO_ROOT, 'packages', 'ui', 'lib');
 const CLIENT_TYPES_ROOT = join(REPO_ROOT, 'packages', 'client', 'lib');
 const COMMON_TYPES_ROOT = join(REPO_ROOT, 'packages', 'common', 'lib');
+
+const PACKAGE_MANIFESTS = {
+    '@vertesia/ui': join(REPO_ROOT, 'packages', 'ui', 'package.json'),
+    '@vertesia/client': join(REPO_ROOT, 'packages', 'client', 'package.json'),
+    '@vertesia/common': join(REPO_ROOT, 'packages', 'common', 'package.json'),
+};
 
 const TYPE_FILES = [
     'core/components/index.d.ts',
@@ -136,6 +143,198 @@ function cleanDeclarationContent(content) {
         .trim();
 }
 
+function sha256(content) {
+    return createHash('sha256').update(content).digest('hex');
+}
+
+function declarationSignature(content, start, declarationKind) {
+    let braces = 0;
+    let brackets = 0;
+    let parentheses = 0;
+    let sawBlock = false;
+    let quote;
+    let escaped = false;
+    for (let index = start; index < content.length; index++) {
+        const char = content[index];
+        if (quote) {
+            if (escaped) escaped = false;
+            else if (char === '\\') escaped = true;
+            else if (char === quote) quote = undefined;
+            continue;
+        }
+        if (char === '"' || char === "'" || char === '`') {
+            quote = char;
+            continue;
+        }
+        if (char === '{') {
+            braces++;
+            sawBlock = true;
+        } else if (char === '}') {
+            braces--;
+            if (
+                sawBlock &&
+                ['interface', 'class', 'enum'].includes(declarationKind) &&
+                braces === 0 &&
+                brackets === 0 &&
+                parentheses === 0
+            ) {
+                return content.slice(start, index + 1);
+            }
+        } else if (char === '[') brackets++;
+        else if (char === ']') brackets--;
+        else if (char === '(') parentheses++;
+        else if (char === ')') parentheses--;
+        else if (char === ';' && braces === 0 && brackets === 0 && parentheses === 0) {
+            return content.slice(start, index + 1);
+        }
+    }
+    return content.slice(start);
+}
+
+function localDeclarations(content, sourcePath) {
+    const declarations = new Map();
+    const matcher =
+        /^(export\s+)?(?:declare\s+)?(interface|type|class|function|enum|const|let|var)\s+([A-Za-z_$][\w$]*)/gm;
+    for (const match of content.matchAll(matcher)) {
+        const symbol = match[3];
+        const kind = ['const', 'let', 'var'].includes(match[2]) ? 'variable' : match[2];
+        const signature = declarationSignature(content, match.index, match[2]).trim();
+        const existing = declarations.get(symbol);
+        const card = {
+            symbol,
+            kind,
+            import_kind: kind === 'interface' || kind === 'type' ? 'type' : 'value',
+            signature: existing ? `${existing.signature}\n${signature}` : signature,
+            source_path: sourcePath,
+            source_sha256: sha256(content),
+            directly_exported: Boolean(match[1]),
+        };
+        declarations.set(symbol, card);
+    }
+    return declarations;
+}
+
+async function resolveDeclarationModule(currentPath, specifier) {
+    if (!specifier.startsWith('.')) return undefined;
+    const raw = join(dirname(currentPath), specifier);
+    const withoutRuntimeExtension = raw.replace(/\.(?:js|mjs|cjs)$/, '');
+    for (const candidate of [`${withoutRuntimeExtension}.d.ts`, join(withoutRuntimeExtension, 'index.d.ts'), raw]) {
+        if (await readOptional(candidate)) return candidate;
+    }
+    return undefined;
+}
+
+function parseNamedExports(raw) {
+    return raw
+        .split(',')
+        .map((entry) => entry.trim().replace(/^type\s+/, ''))
+        .filter(Boolean)
+        .map((entry) => {
+            const [source, alias] = entry.split(/\s+as\s+/);
+            return { source: source.trim(), alias: (alias ?? source).trim() };
+        });
+}
+
+async function moduleExports(path, root, memo = new Map(), visiting = new Set()) {
+    if (memo.has(path)) return memo.get(path);
+    if (visiting.has(path)) return new Map();
+    visiting.add(path);
+    const content = await readOptional(path);
+    if (!content) {
+        visiting.delete(path);
+        return new Map();
+    }
+    const sourcePath = relative(root, path).replaceAll('\\', '/');
+    const locals = localDeclarations(content, sourcePath);
+    const exports = new Map(
+        [...locals].filter(([, card]) => card.directly_exported).map(([name, card]) => [name, { ...card }]),
+    );
+
+    for (const match of content.matchAll(/^export\s+(?:type\s+)?\*\s+from\s+['"]([^'"]+)['"];?/gm)) {
+        const target = await resolveDeclarationModule(path, match[1]);
+        if (!target) continue;
+        for (const [name, card] of await moduleExports(target, root, memo, visiting)) {
+            if (!exports.has(name)) exports.set(name, card);
+        }
+    }
+    for (const match of content.matchAll(/^export\s*\{([^}]+)\}(?:\s+from\s+['"]([^'"]+)['"])?;?/gm)) {
+        const target = match[2] ? await resolveDeclarationModule(path, match[2]) : undefined;
+        const targetExports = target ? await moduleExports(target, root, memo, visiting) : locals;
+        for (const { source, alias } of parseNamedExports(match[1])) {
+            const card = targetExports.get(source);
+            if (card) exports.set(alias, { ...card, symbol: alias });
+        }
+    }
+    visiting.delete(path);
+    memo.set(path, exports);
+    return exports;
+}
+
+async function moduleExportCards({ packageName, packageVersion, root, entryFile, importFrom }) {
+    const exports = await moduleExports(join(root, entryFile), root);
+    return [...exports.values()].map(({ directly_exported: _directlyExported, ...card }) => ({
+        ...card,
+        import_from: importFrom,
+        import_example: `import${card.import_kind === 'type' ? ' type' : ''} { ${card.symbol} } from '${importFrom}';`,
+        package: packageName,
+        package_version: packageVersion,
+    }));
+}
+
+async function generateSymbolIndex() {
+    const packageVersions = Object.fromEntries(
+        await Promise.all(
+            Object.entries(PACKAGE_MANIFESTS).map(async ([name, path]) => {
+                const manifest = JSON.parse(await readText(path));
+                return [name, manifest.version];
+            }),
+        ),
+    );
+    const cards = [
+        ...(
+            await Promise.all(
+                ['core', 'features', 'layout', 'router', 'session', 'widgets'].map((area) =>
+                    moduleExportCards({
+                        packageName: '@vertesia/ui',
+                        packageVersion: packageVersions['@vertesia/ui'],
+                        root: UI_TYPES_ROOT,
+                        entryFile: `${area}/index.d.ts`,
+                        importFrom: `@vertesia/ui/${area}`,
+                    }),
+                ),
+            )
+        ).flat(),
+        ...(await moduleExportCards({
+            packageName: '@vertesia/client',
+            packageVersion: packageVersions['@vertesia/client'],
+            root: CLIENT_TYPES_ROOT,
+            entryFile: 'index.d.ts',
+            importFrom: '@vertesia/client',
+        })),
+        ...(await moduleExportCards({
+            packageName: '@vertesia/common',
+            packageVersion: packageVersions['@vertesia/common'],
+            root: COMMON_TYPES_ROOT,
+            entryFile: 'index.d.ts',
+            importFrom: '@vertesia/common',
+        })),
+    ];
+    const deduplicated = new Map();
+    for (const card of cards) {
+        const key = `${card.import_from}\0${card.symbol}\0${card.kind}`;
+        const existing = deduplicated.get(key);
+        if (!existing || card.signature.length > existing.signature.length) deduplicated.set(key, card);
+    }
+    const symbols = [...deduplicated.values()].sort(
+        (left, right) => left.symbol.localeCompare(right.symbol) || left.import_from.localeCompare(right.import_from),
+    );
+    const source = { format_version: 1, packages: packageVersions, symbols };
+    return {
+        ...source,
+        index_version: sha256(JSON.stringify(source)),
+    };
+}
+
 function generateFrontendImports() {
     return `# App Frontend Imports
 
@@ -212,6 +411,151 @@ Start with:
 The documentation synchronizer replaces this section with the import specifiers exposed by the
 actual Vertesia UI deployment used by the app agent. If no catalog appears below, CDN discovery
 failed and package availability must be verified before adding a dependency.
+`;
+}
+
+function generateUiComponentsRecipe() {
+    return `# UI Components Recipe
+
+This recipe is generated with the installed \`@vertesia/ui\` version. Use it for common app screens instead of
+searching dependency source. For an API not covered here, search \`appgen/ui-interfaces.d.ts\` once by exact symbol.
+
+For a current-project interaction catalog built with the table, button, and fetch APIs below, this recipe is complete.
+After reading it, do not search generated declarations or dependency source for \`Table\`, \`TBody\`, \`useFetch\`, or
+the interaction catalog merely to reconfirm these signatures. Implement the screen and let the first workspace typecheck
+identify any real version drift; only then search once for the exact symbol named by that diagnostic.
+
+## Imports
+
+\`\`\`tsx
+import {
+    Button,
+    Table,
+    TableHeaderCell,
+    TBody,
+    THead,
+    TR,
+    useFetch,
+} from '@vertesia/ui/core';
+\`\`\`
+
+These are runtime React values, not types. Import \`Table\`, \`TBody\`, \`THead\`, \`TR\`, \`TableHeaderCell\`, \`Button\`,
+and \`useFetch\` with a normal \`import\`; using \`import type\` makes JSX fail with TS1361.
+
+## Loading table with refresh
+
+\`TBody.columns\` is required. It is the number of rendered columns and drives the loading skeleton.
+Use \`TableHeaderCell\` instead of raw \`<th>\` so column scope is accessible by default.
+
+\`\`\`tsx
+const { data = [], error, isLoading, refetch } = useFetch(loadRows, { deps: [projectId], defaultValue: [] });
+
+<Button type="button" onClick={() => void refetch()} isLoading={isLoading}>
+    Refresh
+</Button>
+
+{error ? <p role="alert">{error.message}</p> : null}
+<Table>
+    <THead>
+        <TR>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>Status</TableHeaderCell>
+        </TR>
+    </THead>
+    <TBody columns={2} isLoading={isLoading}>
+        {data.map((row) => (
+            <TR key={row.id}>
+                <td>{row.name}</td>
+                <td>{row.status}</td>
+            </TR>
+        ))}
+    </TBody>
+</Table>
+{!isLoading && !error && data.length === 0 ? <p>No results found.</p> : null}
+\`\`\`
+
+## Stable signatures
+
+- \`useFetch<T>(fetcher, { deps, defaultValue, onSuccess, onError })\` returns
+  \`{ data, isLoading, error, setData, refetch }\`.
+- \`TBody\` accepts \`{ columns: number; isLoading?: boolean; rows?: number; children: ReactNode }\`.
+- \`Button\` accepts normal button props plus \`isLoading\`, \`isDisabled\`, \`variant\`, and \`size\`.
+- Icon-only buttons need \`aria-label\`. Text buttons should keep their visible text in the accessible name.
+- Use a native \`<section aria-label="…">\` for a labeled table/overflow region. Do not put \`role="region"\` on a
+  \`<div>\`; Biome's \`lint/a11y/useSemanticElements\` requires the semantic element.
+- Prefer semantic theme classes and plain HTML for layout. Do not guess private \`@vertesia/ui\` paths.
+
+## Generated app tests
+
+- The standard generated app runs Vitest in a Node environment and intentionally does not install jsdom,
+  happy-dom, or Testing Library. Do not search dependency trees or add a DOM-test dependency for a UI-only change.
+- Put loading/error/empty/populated/refresh decisions in a separate production \`*.state.ts\` or \`*.model.ts\` module
+  imported and used by the component. Cover that state matrix by importing the pure module directly from the focused unit
+  test. Do not export the helper only from the component's TSX module: importing that file also loads the real
+  \`@vertesia/ui\` runtime, which the standard Node-only Vitest environment cannot execute. Do not copy the helper into
+  the test or walk rendered React element internals; the tested module must remain on the production import path.
+- Source Playwright specs import \`type { Page }\` from \`@playwright/test\` and \`{ expect, test }\` from
+  \`./vertesia\`. Type shared helpers as \`page: Page\`; never hand-write a structural Page or Route type because
+  Playwright's overloaded callbacks will reject narrower substitutes. Use \`page.route\` to mock only the real API
+  path involved in the primary flow (interaction listing uses a path containing \`/interactions\`), then exercise the
+  page through accessible roles. Use the declared \`test:e2e\` script and its \`PLAYWRIGHT_BASE_URL\`; do not invent a
+  second browser harness.
+- Scope repeated text to its semantic container and request an exact accessible name. For example, use
+  \`table.getByRole('cell', { name: interactionName, exact: true })\` when the same name can also occur in tags or
+  descriptions; an unscoped text or name locator can match several elements and waste a browser retry.
+- For a responsive table, prove document-level overflow is absent and intentional overflow stays on one labeled table
+  region. Assert positive horizontal overflow only at the narrow viewport—a desktop table may fit—and scroll that region
+  before using \`toBeInViewport()\` on the final required column. DOM presence or \`toBeVisible()\` alone does not prove an
+  off-screen mobile column is reachable.
+`;
+}
+
+function generateClientInteractionsRecipe() {
+    return `# Current-project Interactions Recipe
+
+This recipe is generated with the installed \`@vertesia/client\` and \`@vertesia/common\` versions. Use it instead
+of searching dependency source for the browser client signature.
+
+## List interactions from React
+
+\`\`\`tsx
+import type { InteractionRef } from '@vertesia/common';
+import { useFetch } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+
+export function InteractionCatalog() {
+    const { client } = useUserSession();
+    const { data = [] } = useFetch<InteractionRef[]>(() => client.interactions.list(), {
+        deps: [client],
+        defaultValue: [],
+    });
+
+    return <ul>{data.map((interaction) => <li key={interaction.id}>{interaction.name}</li>)}</ul>;
+}
+\`\`\`
+
+## Stable signatures
+
+- \`client.interactions.list(payload?: InteractionSearchPayload): Promise<InteractionRef[]>\`.
+- Empty input is valid. Use \`client.interactions.list()\` unless the task requires a server-side filter.
+- The useful \`InteractionRef\` fields are \`id\`, \`name\`, \`endpoint\`, \`description?\`, \`status\`, \`version\`,
+  \`tags\`, and \`updated_at\`.
+- \`InteractionRef\` deliberately has no \`type\` field. When a current-project catalog must display type, call
+  \`client.interactions.catalog.listStoredInteractions()\`, which returns \`Promise<CatalogInteractionRef[]>\`; do not
+  search generated declarations for \`InteractionRef.type\` or infer it from another field.
+- \`listStoredInteractions()\` sends \`GET /api/v1/interactions/catalog/stored\` (plus optional \`status\` or \`tag\`
+  query parameters). Its JSON response is the bare \`CatalogInteractionRef[]\` array, never an \`{ items: [...] }\`
+  wrapper. A focused Playwright mock can route \`**/api/v1/interactions/catalog/stored**\` and fulfill that bare array.
+- The useful \`CatalogInteractionRef\` fields are \`type\` (\`'stored'\` for this endpoint), \`id\`, \`name\`, \`title\`,
+  \`description?\`, \`version?\`, and \`tags\`. Use \`client.interactions.catalog.list()\` only when the task explicitly
+  asks for the combined system, app, and stored catalog rather than the current project's stored interactions.
+- This recipe fully specifies the method, return type, endpoint, and response shape. Do not probe the live API, inspect
+  \`node_modules\`, or call \`app_docs_grep\`/\`app_docs_read\` to reconfirm them. Treat a concrete workspace typecheck or
+  Playwright failure as the only reason to inspect one exact symbol afterward.
+- Keep SDK methods attached to their topic: call \`client.interactions.list()\`; do not destructure \`list\`.
+- The session client is already scoped to the signed-in user's current project. Do not construct another client in
+  browser code and do not hardcode a project id.
+- For schemas, use \`client.interactions.export({})\`; for the normal catalog, use \`list()\`.
 `;
 }
 
@@ -1099,6 +1443,9 @@ async function main() {
     await mkdir(DOCS_ROOT, { recursive: true });
 
     await writeFile(join(DOCS_ROOT, 'frontend-imports.md'), generateFrontendImports(), 'utf8');
+    await mkdir(join(DOCS_ROOT, 'recipes'), { recursive: true });
+    await writeFile(join(DOCS_ROOT, 'recipes', 'ui-components.md'), generateUiComponentsRecipe(), 'utf8');
+    await writeFile(join(DOCS_ROOT, 'recipes', 'client-interactions.md'), generateClientInteractionsRecipe(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'handlebars-prompts.md'), generateHandlebarsPrompts(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'app-package-patterns.md'), generateAppPackagePatterns(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'package-types.md'), generatePackageTypes(), 'utf8');
@@ -1112,6 +1459,11 @@ async function main() {
     await writeFile(join(DOCS_ROOT, 'ui-interfaces.d.ts'), await generateUiInterfaces(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'vertesia-client.d.ts'), await generateClientInterfaces(), 'utf8');
     await writeFile(join(DOCS_ROOT, 'vertesia-common.d.ts'), await generateCommonInterfaces(), 'utf8');
+    await writeFile(
+        join(DOCS_ROOT, 'symbol-index.json'),
+        `${JSON.stringify(await generateSymbolIndex(), null, 2)}\n`,
+        'utf8',
+    );
 
     console.log(`Generated appgen docs in ${relative(REPO_ROOT, DOCS_ROOT)}`);
 }
