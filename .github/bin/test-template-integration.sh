@@ -194,12 +194,20 @@ NODE
 
 workspace_package_dirs() {
   local repo_root
+  local -a workspace_filters
   repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+  if [ "$CLI_ONLY" = "true" ]; then
+    workspace_filters=(--filter "@vertesia/cli...")
+  else
+    workspace_filters=(--filter "./llumiverse/common" --filter "./libraries/jst" --filter "./packages/**")
+  fi
 
   # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
   # Keep this in sync with publish-all-packages.sh so Verdaccio tests expose the
-  # same package graph as a snapshot publish.
-  pnpm -r --filter "./llumiverse/common" --filter "./libraries/jst" --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
+  # same package graph as a snapshot publish. CLI-only tests only need the CLI's
+  # dependency closure, while still excluding internal workspace-only libraries.
+  pnpm -r "${workspace_filters[@]}" exec pwd | while IFS= read -r pkg_dir; do
     case "$pkg_dir" in
       "${repo_root}"/llumiverse/common|"${repo_root}"/libraries/jst|"${repo_root}"/packages/*)
         [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
