@@ -110,11 +110,14 @@ publish_packages() {
 
 publish_package() {
   local pkg_dir="$1"
-  local pkg_name pkg_version
+  local pkg_name pkg_version package_os package_cpu
+  local -a publish_command publish_args
   pkg_name=$(basename "$pkg_dir")
   cd "$pkg_dir"
 
   pkg_version=$(npm pkg get version | tr -d '"')
+  package_os=$(node -p "require('./package.json').os?.[0] || ''")
+  package_cpu=$(node -p "require('./package.json').cpu?.[0] || ''")
 
   # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
   if [ -z "$npm_tag" ]; then
@@ -128,18 +131,19 @@ publish_package() {
   # trusted-publisher isn't configured yet) abort the whole run and strand the
   # packages after it in the loop. Collect failures and report at the end; the
   # caller fails the run so the gap is visible, but every package is attempted.
+  publish_command=(pnpm publish)
+  if [ -n "$package_os" ] && [ -n "$package_cpu" ]; then
+    publish_command=(pnpm "--config.os=${package_os}" "--config.cpu=${package_cpu}" publish)
+  fi
+  publish_args=(--access public --tag "$npm_tag" --no-git-checks)
   if [ -n "$DRY_RUN_FLAG" ]; then
-    if pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG}; then
-      PUBLISHED_PACKAGES="${PUBLISHED_PACKAGES} @vertesia/${pkg_name}"
-    else
-      PUBLISH_FAILURES="${PUBLISH_FAILURES} @vertesia/${pkg_name}"
-    fi
+    publish_args+=("$DRY_RUN_FLAG")
+  fi
+
+  if "${publish_command[@]}" "${publish_args[@]}"; then
+    PUBLISHED_PACKAGES="${PUBLISHED_PACKAGES} @vertesia/${pkg_name}"
   else
-    if pnpm publish --access public --tag "${npm_tag}" --no-git-checks; then
-      PUBLISHED_PACKAGES="${PUBLISHED_PACKAGES} @vertesia/${pkg_name}"
-    else
-      PUBLISH_FAILURES="${PUBLISH_FAILURES} @vertesia/${pkg_name}"
-    fi
+    PUBLISH_FAILURES="${PUBLISH_FAILURES} @vertesia/${pkg_name}"
   fi
 
   cd "$(git rev-parse --show-toplevel)"
