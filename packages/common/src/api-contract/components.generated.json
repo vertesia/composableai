@@ -2372,6 +2372,15 @@
       "max_tokens": {
         "type": "number"
       },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
       "temperature": {
         "type": "number"
       },
@@ -3427,6 +3436,15 @@
       "max_tokens": {
         "type": "number"
       },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3488,6 +3506,15 @@
       "max_tokens": {
         "type": "number"
       },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
       "effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
       },
@@ -3544,6 +3571,15 @@
     "properties": {
       "max_tokens": {
         "type": "number"
+      },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
       },
       "effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
