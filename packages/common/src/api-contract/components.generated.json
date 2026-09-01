@@ -17314,6 +17314,11 @@
           "$ref": "#/components/schemas/AppScaffoldModule"
         }
       },
+      "appgen_package_spec": {
+        "type": "string",
+        "pattern": "^(?:latest|dev|dev-[0-9]+\\.[0-9]+|snapshot-[0-9a-f]{7}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?)$",
+        "description": "Optional Vertesia SDK version or package track for this scaffold. Overrides the deployment default."
+      },
       "create_version": {
         "type": "boolean",
         "description": "Start an initial app version build after the source has been pushed. Defaults to true."
