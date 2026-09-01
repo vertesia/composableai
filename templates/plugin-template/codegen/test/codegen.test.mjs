@@ -252,6 +252,40 @@ test('service quality accepts an intentionally selected examples module', async 
     }
 });
 
+test('service quality accepts every AppGen module selection', () => {
+    const moduleSelections = [
+        ['service'],
+        ['service', 'assistant'],
+        ['service', 'content-app'],
+        ['service', 'examples'],
+        ['service', 'assistant', 'content-app', 'examples'],
+    ];
+
+    for (const modules of moduleSelections) {
+        const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+        try {
+            copyTemplateInputs(tmpRoot);
+            runCodegen(tmpRoot, modules);
+
+            const packageJsonPath = path.join(tmpRoot, 'package.json');
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+            packageJson.name = `generated-${modules.join('-')}-app`;
+            fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+            writeDurableTestFixtures(tmpRoot);
+
+            execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
+                cwd: tmpRoot,
+                stdio: 'pipe',
+                env: { ...process.env, APPGEN_REQUIRE_TESTS: '1' },
+            });
+        } catch (error) {
+            assert.fail(`quality check failed for modules ${modules.join(', ')}: ${error}`);
+        } finally {
+            fs.rmSync(tmpRoot, { recursive: true, force: true });
+        }
+    }
+});
+
 test('service quality requires app-owned unit and Playwright tests', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
