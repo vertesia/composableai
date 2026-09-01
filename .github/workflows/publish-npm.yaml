@@ -370,7 +370,7 @@ jobs:
   macos-cli-integration-test:
     name: Integration test (published macOS CLI)
     runs-on: macos-14
-    timeout-minutes: 10
+    timeout-minutes: 25
     needs: publish
     if: inputs.dry_run == false
     steps:
@@ -389,21 +389,22 @@ jobs:
           CLI_VERIFY_CODE_SIGNATURE: "true"
           CLI_VERSION: ${{ needs.publish.outputs.version }}
         run: |
-          for attempt in 1 2 3 4 5 6; do
+          # npm publish-time scanning can keep a successful publish unavailable for 15 minutes or more.
+          for attempt in $(seq 1 31); do
               if node packages/cli/scripts/smoke-native-package.mjs; then
                   exit 0
               fi
-              if [ "${attempt}" -eq 6 ]; then
+              if [ "${attempt}" -eq 31 ]; then
                   exit 1
               fi
-              echo "Published packages are not available yet; retrying in 10 seconds"
-              sleep 10
+              echo "Published packages are not available yet (attempt ${attempt}/31); retrying in 30 seconds"
+              sleep 30
           done
 
   integration-test:
     name: Integration test (published packages)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     needs: publish
     if: inputs.dry_run == false
     steps:
@@ -434,15 +435,16 @@ jobs:
           CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
           CLI_VERSION: ${{ needs.publish.outputs.version }}
         run: |
-          for attempt in 1 2 3 4 5 6; do
+          # npm publish-time scanning can keep a successful publish unavailable for 15 minutes or more.
+          for attempt in $(seq 1 31); do
               if node packages/cli/scripts/smoke-native-package.mjs; then
                   exit 0
               fi
-              if [ "${attempt}" -eq 6 ]; then
+              if [ "${attempt}" -eq 31 ]; then
                   exit 1
               fi
-              echo "Published packages are not available yet; retrying in 10 seconds"
-              sleep 10
+              echo "Published packages are not available yet (attempt ${attempt}/31); retrying in 30 seconds"
+              sleep 30
           done
 
       - name: Smoke test - Plugin
