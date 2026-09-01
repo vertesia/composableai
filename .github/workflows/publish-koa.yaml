@@ -36,28 +36,42 @@ jobs:
     environment: build
     permissions:
       id-token: write # required for npm trusted publishing
-      contents: write # required to push the version-bump commit
+      contents: read # required to check out the release source
     outputs:
       version: ${{ steps.publish.outputs.version }}
       npm_tag: ${{ steps.publish.outputs.npm_tag }}
     steps:
       - name: Checkout repository
-        # zizmor: ignore[artipacked] deploy key is scoped to the `build` environment.
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
-          persist-credentials: true
+          persist-credentials: false
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           registry-url: "https://registry.npmjs.org"
-          cache: pnpm
       - name: Install workspace dependencies
         run: pnpm install
+      - name: Save pnpm store cache
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
       - name: Test package channel policy
         run: bash ./.github/bin/lib-package-channel.test.sh
       - name: Publish Koa packages
@@ -66,12 +80,20 @@ jobs:
           RELEASE_TYPE: ${{ inputs.release_type }}
           BUMP_TYPE: ${{ inputs.bump_type }}
           DRY_RUN: ${{ inputs.dry_run }}
-        run: >-
-          ./.github/bin/publish-koa-packages.sh
-          --ref "${GITHUB_REF_NAME}"
-          --release-type "${RELEASE_TYPE}"
-          --bump-type "${BUMP_TYPE}"
-          --dry-run "${DRY_RUN}"
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          deploy_key_path="${RUNNER_TEMP}/publish-deploy-key"
+          umask 077
+          printf '%s\n' "${DEPLOY_KEY}" > "${deploy_key_path}"
+          unset DEPLOY_KEY
+          trap 'rm -f "${deploy_key_path}"' EXIT
+          export GIT_SSH_COMMAND="ssh -i ${deploy_key_path} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git remote set-url origin git@github.com:vertesia/composableai.git
+          ./.github/bin/publish-koa-packages.sh \
+              --ref "${GITHUB_REF_NAME}" \
+              --release-type "${RELEASE_TYPE}" \
+              --bump-type "${BUMP_TYPE}" \
+              --dry-run "${DRY_RUN}"
 
   verify:
     name: Verify published Koa cohort

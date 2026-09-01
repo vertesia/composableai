@@ -71,7 +71,7 @@ jobs:
   build-macos-cli:
     name: Build and sign macOS CLI
     runs-on: macos-14
-    timeout-minutes: 30
+    timeout-minutes: 10
     needs: prepare-release
     environment: build
     permissions:
@@ -113,6 +113,8 @@ jobs:
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
+      - name: Build CLI workspace dependencies
+        run: pnpm exec turbo run build --filter=@vertesia/cli...
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
@@ -223,7 +225,7 @@ jobs:
   publish:
     name: Publish all packages
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     needs:
       - prepare-release
       - build-macos-cli
@@ -232,32 +234,36 @@ jobs:
     environment: build
     permissions:
       id-token: write # required for OIDC between GitHub and NPM
-      contents: write # required to push version-bump commits for preview
+      contents: read # required to check out the release source
     outputs:
       version: ${{ steps.publish.outputs.version }}
       npm_tag: ${{ steps.publish.outputs.npm_tag }}
       publish_status: ${{ steps.publish.outputs.publish_status }}
     steps:
       - name: Checkout repository
-        # persist-credentials must stay true so the DEPLOY_KEY SSH config survives
-        # into the publish step, where the script runs `git push origin "$REF"` to
-        # push the version-bump commit past branch protection. With it false, the
-        # push fails with "git@github.com: Permission denied (publickey)".
-        # zizmor: ignore[artipacked] deploy key is scoped to the `build` environment.
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-          ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
-          cache: "pnpm"
 
       # Node.js 24 ships with npm 11.5.1 or later, as required for trusted publishing.
       - name: Verify npm version
@@ -269,6 +275,12 @@ jobs:
       - name: Install workspace dependencies
         timeout-minutes: 5
         run: pnpm install
+      - name: Save pnpm store cache
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
 
       - name: Download signed macOS CLI executables
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -280,13 +292,21 @@ jobs:
 
       - name: Publish all packages
         id: publish
-        timeout-minutes: 15
+        timeout-minutes: 5
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
           BUMP_TYPE: ${{ inputs.bump_type }}
           DRY_RUN: ${{ inputs.dry_run }}
           VERSION_OVERRIDE: ${{ needs.prepare-release.outputs.version }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
+          deploy_key_path="${RUNNER_TEMP}/publish-deploy-key"
+          umask 077
+          printf '%s\n' "${DEPLOY_KEY}" > "${deploy_key_path}"
+          unset DEPLOY_KEY
+          trap 'rm -f "${deploy_key_path}"' EXIT
+          export GIT_SSH_COMMAND="ssh -i ${deploy_key_path} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git remote set-url origin git@github.com:vertesia/composableai.git
           ./.github/bin/publish-all-packages.sh \
               --ref "${GITHUB_REF_NAME}" \
               --release-type "${RELEASE_TYPE}" \
@@ -313,7 +333,7 @@ jobs:
   integration-test:
     name: Integration test (published packages)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     needs: publish
     if: inputs.dry_run == false
     steps:
@@ -323,6 +343,17 @@ jobs:
           persist-credentials: false
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -340,3 +371,9 @@ jobs:
           --branch "${GITHUB_REF_NAME}"
           --package-version "${PACKAGE_VERSION}"
           --wait
+      - name: Save pnpm store cache
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
