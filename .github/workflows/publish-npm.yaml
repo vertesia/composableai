@@ -461,6 +461,22 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install and smoke test published CLI fallback
+        env:
+          CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
+          CLI_VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+              if node packages/cli/scripts/smoke-native-package.mjs; then
+                  exit 0
+              fi
+              if [ "${attempt}" -eq 6 ]; then
+                  exit 1
+              fi
+              echo "Published packages are not available yet; retrying in 10 seconds"
+              sleep 10
+          done
+
       - name: Smoke test - Plugin
         timeout-minutes: 10
         env:
