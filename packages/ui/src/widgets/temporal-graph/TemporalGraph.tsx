@@ -63,7 +63,11 @@ export interface TemporalGraphProps<N = unknown, E = unknown> {
 const MIN_VIEWBOX_SCALE = 0.25;
 const MAX_VIEWBOX_SCALE = 6;
 /** Pointer travel, in CSS pixels, above which a press is a pan rather than a click. */
-const PAN_THRESHOLD_PX = 3;
+/**
+ * How far the pointer must travel before a press counts as a pan rather than a click. Three pixels
+ * is below normal hand tremor, so ordinary clicks were being read as drags and discarded.
+ */
+const PAN_THRESHOLD_PX = 8;
 
 export function TemporalGraph<N = unknown, E = unknown>({
     nodes,
@@ -181,6 +185,9 @@ export function TemporalGraph<N = unknown, E = unknown>({
 
     const handlePointerDown = useCallback((event: ReactPointerEvent<SVGSVGElement>) => {
         if (event.button !== 0) return;
+        // Each press is judged on its own movement. Without this reset the flag set by a previous
+        // drag survives, and the next click — on a node or an edge — is swallowed instead of selecting.
+        suppressedClickRef.current = false;
         panRef.current = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, moved: false };
         // Pointer capture is optional: jsdom and a few embedded webviews do not implement it on
         // SVG elements, and panning still works without it.

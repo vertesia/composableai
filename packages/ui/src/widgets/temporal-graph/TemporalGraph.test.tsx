@@ -42,6 +42,24 @@ describe('TemporalGraph', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
+    it('still selects on the click that follows a pan', async () => {
+        const onSelect = vi.fn();
+        const user = userEvent.setup();
+        render(<TemporalGraph nodes={nodes} edges={edges} label="Test graph" onSelect={onSelect} />);
+
+        // Drag the pane far enough to count as a pan, which used to leave a sticky flag that
+        // swallowed the next selection click entirely.
+        const pane = screen.getByRole('application', { name: 'Test graph' });
+        await user.pointer([
+            { target: pane, keys: '[MouseLeft>]', coords: { clientX: 10, clientY: 10 } },
+            { target: pane, coords: { clientX: 90, clientY: 90 } },
+            { target: pane, keys: '[/MouseLeft]', coords: { clientX: 90, clientY: 90 } },
+        ]);
+
+        await user.click(screen.getByRole('button', { name: 'CoreWeave, cloud, 2 links' }));
+        expect(onSelect).toHaveBeenCalledWith({ type: 'node', id: 'coreweave' });
+    });
+
     it('selects a node with the keyboard and reports it to the host', async () => {
         const onSelect = vi.fn();
         render(<TemporalGraph nodes={nodes} edges={edges} label="Test graph" onSelect={onSelect} />);
