@@ -4,8 +4,8 @@ set -eo pipefail
 # Script to test template integration using a local verdaccio registry.
 # Publishes all built packages to verdaccio, bootstraps a template, and builds it.
 #
-# Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>]
-#   --release-type: Determines npm tag (dev for snapshot, latest for release) and template ref
+# Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>] [--branch <ref>]
+#   --release-type: Determines the package track and template ref
 #   --template: Template name to test (default: "Vertesia Plugin")
 #
 # Prerequisites:
@@ -100,7 +100,8 @@ packages:
   '**':
     access: $all
     proxy: npmjs
-max_body_size: 20mb
+# The CLI package contains signed executables for both macOS architectures.
+max_body_size: 200mb
 server:
   keepAliveTimeout: 180
 listen: 0.0.0.0:4873
@@ -146,7 +147,10 @@ publish_to_verdaccio() {
     # conflicts with an already-published upstream version. Surface the real
     # error on failure instead of discarding it.
     local output
-    if ! output=$(pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1); then
+    if ! output=$(
+      ACTIONS_ID_TOKEN_REQUEST_URL= ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
+        pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1
+    ); then
       echo "ERROR: failed to publish ${pkg_name}@${pkg_version} to verdaccio:" >&2
       printf '%s\n' "$output" >&2
       cd "${SCRIPT_DIR}/../.."
@@ -167,12 +171,15 @@ align_template_versions_for_verdaccio() {
 const fs = require('fs');
 const pkgPath = 'packages/create-plugin/package.json';
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+const llumiverse = JSON.parse(fs.readFileSync('llumiverse/common/package.json', 'utf8'));
 pkg.templateVersions = {
   ...(pkg.templateVersions || {}),
   '@vertesia': pkg.version,
+  '@llumiverse': llumiverse.version,
 };
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 console.log(`  @vertesia template version: ${pkg.version}`);
+console.log(`  @llumiverse template version: ${llumiverse.version}`);
 NODE
 }
 
@@ -198,6 +205,7 @@ workspace_package_dirs() {
 
 RELEASE_TYPE=""
 TEMPLATE_NAME="Vertesia Plugin"
+TEMPLATE_BRANCH="${GITHUB_REF_NAME:-main}"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -209,15 +217,20 @@ while [[ $# -gt 0 ]]; do
       TEMPLATE_NAME="$2"
       shift 2
       ;;
+    --branch)
+      TEMPLATE_BRANCH="$2"
+      shift 2
+      ;;
     *)
       echo "Error: Unknown argument '$1'"
-      echo "Usage: $0 --release-type <snapshot|release> [--template <name>]"
+      echo "Usage: $0 --release-type <snapshot|release> [--template <name>] [--branch <ref>]"
       exit 1
       ;;
   esac
 done
 
 validate_release_type
+PACKAGE_VERSION="$(node -e "console.log(require(process.argv[1]).version)" "${SCRIPT_DIR}/../../packages/create-plugin/package.json")"
 derive_tag_and_branch
 
 # =============================================================================

@@ -12,7 +12,12 @@ import {
     resolveAuthSelection,
     UserNotFoundError,
 } from './auth/composable';
-import { authReturnUrl, centralAuthUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
+import {
+    authReturnUrl,
+    buildCentralAuthRedirectUrl,
+    centralAuthUrl,
+    shouldRedirectToCentralAuth,
+} from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
@@ -23,18 +28,9 @@ function clearAuthHash() {
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
 }
 
-export function buildCentralAuthRedirectUrl(centralAuth: string, stsUrl: string, returnUrl: URL, state: string): URL {
-    // Every parameter goes on through `searchParams`, never by concatenating a query string onto
-    // `centralAuth`. The endpoint is configurable now, so it may already carry its own query or a
-    // fragment -- and appending `?sts=...` to one of those folds the parameter into the existing
-    // value or hides it in the fragment, leaving Central Auth with no `sts` at all. `searchParams`
-    // also percent-encodes the values, which the interpolated URLs did not.
-    const url = new URL(centralAuth);
-    url.searchParams.set('sts', stsUrl);
-    url.searchParams.set('redirect_uri', returnUrl.toString());
-    url.searchParams.set('state', state);
-    return url;
-}
+// Re-exported from its new home in ./auth/domainRouting, which the token layer can import without
+// a cycle -- it renews an expired Central Auth session through the same URL.
+export { buildCentralAuthRedirectUrl };
 
 export function sanitizeRejectedScopeUrl(
     currentUrl: URL,
@@ -121,15 +117,13 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         return true;
     };
 
-    const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const currentUrl = authReturnUrl();
-        if (projectId) currentUrl.searchParams.set('p', projectId);
-        if (accountId) currentUrl.searchParams.set('a', accountId);
+    const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
         const url = buildCentralAuthRedirectUrl(
             centralAuthUrl(),
             Env.endpoints.sts ?? 'https://sts.vertesia.io',
-            currentUrl,
+            authReturnUrl(),
             generateState(),
+            selection,
         );
         location.replace(url.toString());
     };
@@ -185,7 +179,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         state: state,
                     },
                 });
-                redirectToCentralAuth();
+                redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
             } else {
                 clearState();
             }
@@ -205,7 +199,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             error: err,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                 });
             return;
         }
@@ -231,7 +225,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             project_id: selectedProject,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                     return; // Don't register onAuthStateChanged listener when redirecting
                 }
 

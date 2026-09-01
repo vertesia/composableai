@@ -4,7 +4,17 @@ import type {
     IntakeVisionDetail,
     InteractionExecutionConfiguration,
 } from '@vertesia/common';
-import { Button, FormItem, Input, NumberInput, SelectBox, TagsInput, Textarea, VTooltip } from '@vertesia/ui/core';
+import {
+    Button,
+    FormItem,
+    InfoTip,
+    Input,
+    NumberInput,
+    SelectBox,
+    TagsInput,
+    Textarea,
+    VTooltip,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Plus, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -38,7 +48,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
     if (section === 'overview') {
         return (
             <FormSurface>
-                <FormSection title={t('intakePolicy.section.classification')}>
+                <FormSection
+                    title={t('intakePolicy.section.classification')}
+                    description={t('intakePolicy.help.section.classification')}
+                >
                     <div className="grid gap-4 md:grid-cols-2">
                         <SelectField
                             label={t('intakePolicy.field.mode')}
@@ -65,6 +78,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     />
                     <TextAreaField
                         label={t('intakePolicy.field.distinguishFrom')}
+                        description={t('intakePolicy.help.distinguishFrom')}
                         value={policy.identification?.distinguish_from}
                         onChange={(value) => setValue(['identification', 'distinguish_from'], value)}
                         readonly={readonly}
@@ -86,7 +100,11 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     </FormItem>
                 </FormSection>
 
-                <FormSection title={t('intakePolicy.section.locate')} last>
+                <FormSection
+                    title={t('intakePolicy.section.locate')}
+                    description={t('intakePolicy.help.section.locate')}
+                    last
+                >
                     <TextAreaField
                         label={t('intakePolicy.field.locateInstructions')}
                         description={t('intakePolicy.help.locateInstructions')}
@@ -99,6 +117,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     <div className="grid gap-4 md:grid-cols-2">
                         <SelectField
                             label={t('intakePolicy.field.contactSheetDetail')}
+                            description={t('intakePolicy.help.contactSheetDetail')}
                             value={policy.locate?.detail}
                             options={[
                                 { value: 8, label: t('intakePolicy.option.pagesPerSheet', { count: 8 }) },
@@ -109,6 +128,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.locateMinPages')}
+                            description={t('intakePolicy.help.locateMinPages')}
                             value={policy.locate?.min_pages}
                             min={0}
                             onChange={(value) => setValue(['locate', 'min_pages'], value)}
@@ -123,7 +143,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
     if (section === 'conversion') {
         return (
             <FormSurface>
-                <FormSection title={t('intakePolicy.section.conversion')}>
+                <FormSection
+                    title={t('intakePolicy.section.conversion')}
+                    description={t('intakePolicy.help.section.conversion')}
+                >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <TriStateField
                             label={t('intakePolicy.field.enabled')}
@@ -133,6 +156,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <SelectField
                             label={t('intakePolicy.field.method')}
+                            description={t('intakePolicy.help.method')}
                             value={policy.text_conversion?.method}
                             options={options(t, ['auto', 'basic', 'llm', 'custom'])}
                             onChange={(value) => setValue(['text_conversion', 'method'], value)}
@@ -147,6 +171,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <SelectField
                             label={t('intakePolicy.field.pageScope')}
+                            description={t('intakePolicy.help.pageScope')}
                             value={policy.text_conversion?.scope}
                             options={options(t, ['all', 'located'])}
                             onChange={(value) => setValue(['text_conversion', 'scope'], value)}
@@ -154,6 +179,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.renderDpi')}
+                            description={t('intakePolicy.help.renderDpi')}
                             value={policy.text_conversion?.render_dpi}
                             min={72}
                             onChange={(value) => setValue(['text_conversion', 'render_dpi'], value)}
@@ -168,7 +194,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     />
                 </FormSection>
 
-                <FormSection title={t('intakePolicy.section.conversionModel')}>
+                <FormSection
+                    title={t('intakePolicy.section.conversionModel')}
+                    description={t('intakePolicy.help.section.conversionModel')}
+                >
                     <ModelConfigFields
                         title={t('intakePolicy.field.model')}
                         config={policy.text_conversion?.config}
@@ -178,7 +207,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                 </FormSection>
 
                 {policy.text_conversion?.method === 'custom' && (
-                    <FormSection title={t('intakePolicy.section.customConversion')}>
+                    <FormSection
+                        title={t('intakePolicy.section.customConversion')}
+                        description={t('intakePolicy.help.section.customConversion')}
+                    >
                         <div className="grid gap-4 md:grid-cols-2">
                             <InputField
                                 label={t('intakePolicy.field.interaction')}
@@ -196,7 +228,11 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     </FormSection>
                 )}
 
-                <FormSection title={t('intakePolicy.section.pageRanges')} last>
+                <FormSection
+                    title={t('intakePolicy.section.pageRanges')}
+                    description={t('intakePolicy.help.section.pageRanges')}
+                    last
+                >
                     <PageRangesField
                         value={policy.text_conversion?.page_ranges}
                         onChange={(value) => setValue(['text_conversion', 'page_ranges'], value)}
@@ -210,7 +246,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
     if (section === 'extraction') {
         return (
             <FormSurface>
-                <FormSection title={t('intakePolicy.section.extraction')}>
+                <FormSection
+                    title={t('intakePolicy.section.extraction')}
+                    description={t('intakePolicy.help.section.extraction')}
+                >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <TriStateField
                             label={t('intakePolicy.field.enabled')}
@@ -220,6 +259,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <SelectField
                             label={t('intakePolicy.field.source')}
+                            description={t('intakePolicy.help.extractionSource')}
                             value={policy.extraction?.source}
                             options={options(t, ['auto', 'text', 'vision', 'mixed'])}
                             onChange={(value) => setValue(['extraction', 'source'], value)}
@@ -227,6 +267,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <SelectField
                             label={t('intakePolicy.field.pageScope')}
+                            description={t('intakePolicy.help.pageScope')}
                             value={policy.extraction?.scope}
                             options={options(t, ['all', 'located'])}
                             onChange={(value) => setValue(['extraction', 'scope'], value)}
@@ -234,6 +275,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.maxPages')}
+                            description={t('intakePolicy.help.extractionMaxPages')}
                             value={policy.extraction?.max_pages}
                             min={1}
                             onChange={(value) => setValue(['extraction', 'max_pages'], value)}
@@ -242,6 +284,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     </div>
                     <InputField
                         label={t('intakePolicy.field.interaction')}
+                        description={t('intakePolicy.help.extractionInteraction')}
                         value={policy.extraction?.interaction}
                         onChange={(value) => setValue(['extraction', 'interaction'], value)}
                         readonly={readonly}
@@ -259,7 +302,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     />
                 </FormSection>
 
-                <FormSection title={t('intakePolicy.section.extractionModel')}>
+                <FormSection
+                    title={t('intakePolicy.section.extractionModel')}
+                    description={t('intakePolicy.help.section.extractionModel')}
+                >
                     <ModelConfigFields
                         title={t('intakePolicy.field.model')}
                         config={policy.extraction?.config}
@@ -268,22 +314,28 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     />
                 </FormSection>
 
-                <FormSection title={t('intakePolicy.section.visionBudget')}>
+                <FormSection
+                    title={t('intakePolicy.section.visionBudget')}
+                    description={t('intakePolicy.help.section.visionBudget')}
+                >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <SelectField
                             label={t('intakePolicy.field.defaultDetail')}
+                            description={t('intakePolicy.help.visionDetail')}
                             value={policy.extraction?.vision?.default_detail}
                             options={options(t, ['low', 'standard', 'high'])}
                             onChange={(value) => setValue(['extraction', 'vision', 'default_detail'], value)}
                             readonly={readonly}
                         />
                         <VisionDetailsField
+                            description={t('intakePolicy.help.visionDetail')}
                             value={policy.extraction?.vision?.allowed_details}
                             onChange={(value) => setValue(['extraction', 'vision', 'allowed_details'], value)}
                             readonly={readonly}
                         />
                         <NumberField
                             label={t('intakePolicy.field.maxImageTokens')}
+                            description={t('intakePolicy.help.maxImageTokens')}
                             value={policy.extraction?.vision?.max_image_tokens}
                             min={1}
                             onChange={(value) => setValue(['extraction', 'vision', 'max_image_tokens'], value)}
@@ -291,6 +343,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.maxPayloadMb')}
+                            description={t('intakePolicy.help.maxPayloadMb')}
                             value={policy.extraction?.vision?.max_payload_mb}
                             min={1}
                             onChange={(value) => setValue(['extraction', 'vision', 'max_payload_mb'], value)}
@@ -366,7 +419,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
         const review = grounding?.review;
         return (
             <FormSurface>
-                <FormSection title={t('intakePolicy.section.grounding')}>
+                <FormSection
+                    title={t('intakePolicy.section.grounding')}
+                    description={t('intakePolicy.help.section.grounding')}
+                >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <TriStateField
                             label={t('intakePolicy.field.enabled')}
@@ -383,6 +439,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.windowPages')}
+                            description={t('intakePolicy.help.windowPages')}
                             value={grounding?.window_pages}
                             min={1}
                             onChange={(value) => setValue(['extraction', 'grounding', 'window_pages'], value)}
@@ -398,30 +455,35 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <TriStateField
                             label={t('intakePolicy.field.useVision')}
+                            description={t('intakePolicy.help.useVision')}
                             value={grounding?.use_vision}
                             onChange={(value) => setValue(['extraction', 'grounding', 'use_vision'], value)}
                             readonly={readonly}
                         />
                         <TriStateField
                             label={t('intakePolicy.field.forceOcr')}
+                            description={t('intakePolicy.help.forceOcr')}
                             value={grounding?.force_ocr}
                             onChange={(value) => setValue(['extraction', 'grounding', 'force_ocr'], value)}
                             readonly={readonly}
                         />
                         <TriStateField
                             label={t('intakePolicy.field.refreshOcr')}
+                            description={t('intakePolicy.help.refreshOcr')}
                             value={grounding?.refresh_ocr}
                             onChange={(value) => setValue(['extraction', 'grounding', 'refresh_ocr'], value)}
                             readonly={readonly}
                         />
                         <TriStateField
                             label={t('intakePolicy.field.omitBlockBoxes')}
+                            description={t('intakePolicy.help.omitBlockBoxes')}
                             value={grounding?.omit_block_boxes}
                             onChange={(value) => setValue(['extraction', 'grounding', 'omit_block_boxes'], value)}
                             readonly={readonly}
                         />
                         <TriStateField
                             label={t('intakePolicy.field.updateProperties')}
+                            description={t('intakePolicy.help.updateProperties')}
                             value={grounding?.update_properties}
                             onChange={(value) => setValue(['extraction', 'grounding', 'update_properties'], value)}
                             readonly={readonly}
@@ -429,7 +491,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     </div>
                 </FormSection>
 
-                <FormSection title={t('intakePolicy.section.models')}>
+                <FormSection
+                    title={t('intakePolicy.section.models')}
+                    description={t('intakePolicy.help.section.models')}
+                >
                     <ModelConfigFields
                         title={t('intakePolicy.field.primaryModel')}
                         config={grounding?.config}
@@ -445,6 +510,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     <div className="grid gap-4 md:grid-cols-2">
                         <NumberField
                             label={t('intakePolicy.field.hardnessThreshold')}
+                            description={t('intakePolicy.help.hardnessThreshold')}
                             value={grounding?.hardness_threshold}
                             min={0}
                             max={1}
@@ -454,6 +520,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.minCitationDensity')}
+                            description={t('intakePolicy.help.minCitationDensity')}
                             value={grounding?.min_citation_density}
                             min={0}
                             max={1}
@@ -464,7 +531,11 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     </div>
                 </FormSection>
 
-                <FormSection title={t('intakePolicy.section.review')} last>
+                <FormSection
+                    title={t('intakePolicy.section.review')}
+                    description={t('intakePolicy.help.section.review')}
+                    last
+                >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <TriStateField
                             label={t('intakePolicy.field.enabled')}
@@ -474,6 +545,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <TriStateField
                             label={t('intakePolicy.field.forceReview')}
+                            description={t('intakePolicy.help.forceReview')}
                             value={review?.force}
                             onChange={(value) => setValue(['extraction', 'grounding', 'review', 'force'], value)}
                             readonly={readonly}
@@ -489,6 +561,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                         <NumberField
                             label={t('intakePolicy.field.coverageThreshold')}
+                            description={t('intakePolicy.help.coverageThreshold')}
                             value={review?.coverage_threshold}
                             min={0}
                             max={1}
@@ -512,7 +585,10 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
 
     return (
         <FormSurface>
-            <FormSection title={t('intakePolicy.section.rendering')}>
+            <FormSection
+                title={t('intakePolicy.section.rendering')}
+                description={t('intakePolicy.help.section.rendering')}
+            >
                 <TextAreaField
                     label={t('intakePolicy.field.renderingTemplate')}
                     description={t('intakePolicy.help.renderingTemplate')}
@@ -523,7 +599,11 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     minLines={8}
                 />
             </FormSection>
-            <FormSection title={t('intakePolicy.section.embeddings')} last>
+            <FormSection
+                title={t('intakePolicy.section.embeddings')}
+                description={t('intakePolicy.help.section.embeddings')}
+                last
+            >
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <TriStateField
                         label={t('intakePolicy.field.textEmbedding')}
@@ -559,10 +639,24 @@ function FormSurface({ children }: { children: ReactNode }) {
     return <div className="mx-auto w-full max-w-6xl px-1 py-4">{children}</div>;
 }
 
-function FormSection({ title, children, last = false }: { title: string; children: ReactNode; last?: boolean }) {
+function FormSection({
+    title,
+    description,
+    children,
+    last = false,
+}: {
+    title: string;
+    /** Tooltip on an Info icon beside the heading. Hover-only, like every `InfoTip`. */
+    description?: ReactNode;
+    children: ReactNode;
+    last?: boolean;
+}) {
     return (
         <section className={last ? 'pb-3' : 'mb-6 border-b pb-6'}>
-            <h3 className="mb-4 text-sm font-semibold">{title}</h3>
+            <div className="mb-4 flex items-center gap-2">
+                <h3 className="text-sm font-semibold">{title}</h3>
+                <InfoTip description={description} />
+            </div>
             <div className="space-y-4">{children}</div>
         </section>
     );
@@ -621,6 +715,7 @@ function TextAreaField({
 
 function NumberField({
     label,
+    description,
     value,
     onChange,
     readonly,
@@ -629,6 +724,7 @@ function NumberField({
     step,
 }: {
     label: string;
+    description?: string;
     value?: number;
     onChange: (value: number | undefined) => void;
     readonly: boolean;
@@ -637,7 +733,7 @@ function NumberField({
     step?: number;
 }) {
     return (
-        <FormItem label={label}>
+        <FormItem label={label} description={description}>
             <NumberInput
                 value={value}
                 onChange={(value) => onChange(value === undefined || Number.isFinite(value) ? value : undefined)}
@@ -688,11 +784,13 @@ function SelectField<T extends string | number>({
 
 function TriStateField({
     label,
+    description,
     value,
     onChange,
     readonly,
 }: {
     label: string;
+    description?: string;
     value?: boolean;
     onChange: (value: boolean | undefined) => void;
     readonly: boolean;
@@ -705,7 +803,7 @@ function TriStateField({
     ] as const;
     const selectedValue = value === undefined ? 'inherit' : value ? 'enabled' : 'disabled';
     return (
-        <FormItem label={label}>
+        <FormItem label={label} description={description}>
             <SelectBox
                 options={[...choices]}
                 value={choices.find((option) => option.value === selectedValue)}
@@ -719,10 +817,12 @@ function TriStateField({
 }
 
 function VisionDetailsField({
+    description,
     value,
     onChange,
     readonly,
 }: {
+    description?: string;
     value?: IntakeVisionDetail[];
     onChange: (value: IntakeVisionDetail[] | undefined) => void;
     readonly: boolean;
@@ -730,7 +830,7 @@ function VisionDetailsField({
     const { t } = useUITranslation();
     const choices = options(t, ['low', 'standard', 'high'] as const);
     return (
-        <FormItem label={t('intakePolicy.field.allowedDetails')}>
+        <FormItem label={t('intakePolicy.field.allowedDetails')} description={description}>
             <SelectBox<SelectOption<IntakeVisionDetail>>
                 multiple
                 options={choices}
