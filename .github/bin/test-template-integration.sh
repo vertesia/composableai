@@ -100,7 +100,8 @@ packages:
   '**':
     access: $all
     proxy: npmjs
-max_body_size: 20mb
+# The CLI package contains signed executables for both macOS architectures.
+max_body_size: 200mb
 server:
   keepAliveTimeout: 180
 listen: 0.0.0.0:4873
@@ -146,7 +147,10 @@ publish_to_verdaccio() {
     # conflicts with an already-published upstream version. Surface the real
     # error on failure instead of discarding it.
     local output
-    if ! output=$(pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1); then
+    if ! output=$(
+      ACTIONS_ID_TOKEN_REQUEST_URL= ACTIONS_ID_TOKEN_REQUEST_TOKEN= \
+        pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1
+    ); then
       echo "ERROR: failed to publish ${pkg_name}@${pkg_version} to verdaccio:" >&2
       printf '%s\n' "$output" >&2
       cd "${SCRIPT_DIR}/../.."
