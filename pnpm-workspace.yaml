@@ -66,6 +66,8 @@ overrides:
   # ============================
   "@ungap/structured-clone@<=1.3.0": ^1.3.1 #CWE-502 and package deprecation, won't show as CVE.
   "@hono/node-server@<2.0.5": 2.0.10
+  # GHSA-c83g-rgw3-j3cx + GHSA-73wf-gq98-2v4g (unbounded query cache and unsafe custom stats).
+  "browserslist@<4.28.7": 4.28.8
   # GHSA-8j4g-w8fx-2239 (ReDoS in CORS middleware). Floor so a transitive consumer can never
   # resolve back to a vulnerable version. 4.12.34 needs the minimumReleaseAgeExclude entry above.
   "hono@<4.12.34": 4.12.34
