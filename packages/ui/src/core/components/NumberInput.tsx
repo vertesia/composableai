@@ -60,7 +60,10 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
                 onChange={_onChange}
                 className={clsx(
                     className,
-                    Styles.INPUT,
+                    // Match Input's md size (py-2). Styles.INPUT is py-1.5, which left every
+                    // NumberInput ~4px shorter than the text inputs and selects beside it.
+                    Styles.INPUT_NO_PADDING,
+                    'py-2',
                     { 'no-spinners': noSpinners },
                     noSpinners &&
                         '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
