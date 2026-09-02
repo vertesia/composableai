@@ -53,8 +53,13 @@ export const BOOT_SCREEN_STYLES = `
     background: var(--vb-bg);
   }
   .vboot-spinner {
-    width: 3rem;
-    height: 3rem;
+    width: 2.5rem;
+    min-width: 2.5rem;
+    max-width: none;
+    height: 2.5rem;
+    min-height: 2.5rem;
+    object-fit: contain;
+    flex: none;
     border-radius: 100%;
     animation: vboot-spin 2s linear infinite;
   }
@@ -157,7 +162,7 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
     const loading = document.createElement('div');
     loading.id = 'loading-indicator';
     loading.innerHTML = '<div class="' + bootThemeClass() + ' vboot-overlay" role="status" aria-live="polite">'
-      + '<img class="vboot-spinner" src="' + iconSrc + '" alt="' + loadingLabel + '" />'
+      + '<img class="vboot-spinner" width="40" height="40" src="' + iconSrc + '" alt="' + loadingLabel + '" />'
       + '<div id="loading-slow-notice" class="vboot-slow" style="display: none;">'
       + '<p>Still loading &mdash; this is taking longer than usual.</p>'
       + '<div id="loading-slow-reload" style="display: none;">'
