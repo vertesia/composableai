@@ -65,12 +65,19 @@ export interface AgentRunStreamMessagesOptions {
 }
 
 /**
- * Percent-encode an artifact path for use in a URL path. Encoded per segment so the `/`
- * separators still match the server's `:path+` splat, which decodes each segment. Without this a
- * `#` in a filename is parsed as the URL fragment and silently truncates the path.
+ * Escape the two characters the URL parser treats as structure rather than path content: `#`
+ * opens the fragment and `?` opens the query, so either one silently truncates an artifact path
+ * before the request is built. Every other character is left exactly as it was — the parser
+ * already percent-encodes what a path may not contain (spaces, non-ASCII), and the server decodes
+ * each segment, so the wire form for every other filename is unchanged.
+ *
+ * Deliberately NOT applied to `%`: a literal `%` in a filename is a malformed escape that the
+ * server rejects, and that rejection is the existing behaviour — an immediate, visible upload
+ * error. Encoding it would let the object reach storage and fail much later instead, on a
+ * separate storage-layer defect. Scoped to `#` and `?` so `%` is preserved untouched.
  */
-export function encodeArtifactPath(path: string): string {
-    return path.split('/').map(encodeURIComponent).join('/');
+export function escapeArtifactPathDelimiters(path: string): string {
+    return path.replace(/#/g, '%23').replace(/\?/g, '%3F');
 }
 
 export class AgentsApi extends ApiTopic {
@@ -804,7 +811,7 @@ export class AgentsApi extends ApiTopic {
 
     /** Read a text artifact together with its conditional-write generation token. */
     getArtifactContent(id: string, path: string): Promise<AgentArtifactContentResponse> {
-        return this.get(`/${id}/artifact-content/${encodeArtifactPath(path)}`);
+        return this.get(`/${id}/artifact-content/${escapeArtifactPathDelimiters(path)}`);
     }
 
     /** Conditionally replace the text content of an agent artifact. */
@@ -813,7 +820,7 @@ export class AgentsApi extends ApiTopic {
         path: string,
         payload: UpdateAgentArtifactContentPayload,
     ): Promise<UpdateAgentArtifactContentResponse> {
-        return this.put(`/${id}/artifact-content/${encodeArtifactPath(path)}`, { payload });
+        return this.put(`/${id}/artifact-content/${escapeArtifactPathDelimiters(path)}`, { payload });
     }
 
     /**
@@ -828,7 +835,7 @@ export class AgentsApi extends ApiTopic {
         const query: Record<string, string> = { url: '1' };
         if (disposition) query.disposition = disposition;
         if (fileName) query.filename = fileName;
-        return this.get(`/${id}/artifacts/${encodeArtifactPath(path)}`, { query });
+        return this.get(`/${id}/artifacts/${escapeArtifactPathDelimiters(path)}`, { query });
     }
 
     /**
@@ -849,7 +856,7 @@ export class AgentsApi extends ApiTopic {
         const mimeType = contentType || 'application/octet-stream';
 
         // 1. Get signed upload URL from the agents API
-        const result = (await this.put(`/${id}/artifacts/${encodeArtifactPath(path)}`, {
+        const result = (await this.put(`/${id}/artifacts/${escapeArtifactPathDelimiters(path)}`, {
             headers: { 'Content-Type': mimeType },
         })) as AgentArtifactUrlResponse;
 

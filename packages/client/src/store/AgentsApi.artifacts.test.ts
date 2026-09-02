@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { encodeArtifactPath } from './AgentsApi.js';
+import { escapeArtifactPathDelimiters } from './AgentsApi.js';
 import { ZenoClient } from './client.js';
 
 const SERVER_URL = 'https://store.test';
 const RUN_ID = 'run-1';
 
 /**
- * A client whose injected fetch records the URL of every request it is handed. The URL is read
- * off the Request object, so the assertions see the path after WHATWG URL parsing — which is
- * where an unencoded `#` was being dropped.
+ * A client whose injected fetch records the URL of every request it is handed. The URL is read off
+ * the Request object, so the assertions see the path after WHATWG URL parsing — which is where an
+ * unescaped `#` was being dropped.
  */
 function clientRecordingUrls(body: unknown = { url: 'https://signed', path: 'p' }) {
     const urls: string[] = [];
@@ -32,15 +32,23 @@ function serverPath(url: string, prefix: string): string {
     return tail.split('/').map(decodeURIComponent).join('/');
 }
 
-describe('encodeArtifactPath', () => {
-    it('encodes the URL-significant characters that truncate a path', () => {
-        expect(encodeArtifactPath('files/tpl (YYYY-0#).docx')).toBe('files/tpl%20(YYYY-0%23).docx');
-        expect(encodeArtifactPath('files/report?v2.docx')).toBe('files/report%3Fv2.docx');
-        expect(encodeArtifactPath('files/100% done.docx')).toBe('files/100%25%20done.docx');
+describe('escapeArtifactPathDelimiters', () => {
+    it('escapes the two characters that truncate a path', () => {
+        expect(escapeArtifactPathDelimiters('files/tpl (YYYY-0#).docx')).toBe('files/tpl (YYYY-0%23).docx');
+        expect(escapeArtifactPathDelimiters('files/report?v2.docx')).toBe('files/report%3Fv2.docx');
     });
 
-    it('keeps the segment separators intact so the server splat still matches', () => {
-        expect(encodeArtifactPath('files/nested/a b.txt')).toBe('files/nested/a%20b.txt');
+    // Scope guard. Anything this helper touches changes the bytes on the wire for filenames that
+    // work today, so it must leave everything except `#` and `?` exactly as it found it.
+    it.each([
+        ['percent', 'files/100% done.docx'],
+        ['spaces', 'files/MHA - Client IQ FSD.docx'],
+        ['non-ascii and accents', 'files/café résumé.docx'],
+        ['backslash', 'files/back\\slash.docx'],
+        ['segment separators', 'files/nested/a b.txt'],
+        ['already-encoded sequence', 'files/report%23.md'],
+    ])('leaves %s untouched', (_label, path) => {
+        expect(escapeArtifactPathDelimiters(path)).toBe(path);
     });
 });
 
@@ -67,27 +75,13 @@ describe('AgentsApi artifact paths', () => {
         expect(serverPath(urls[0], 'artifacts')).toBe(path);
     });
 
-    it('getArtifactUrl preserves a path containing #', async () => {
-        const { client, urls } = clientRecordingUrls();
-        const path = 'files/Design Template (YYYY-0#).docx';
-
-        await client.agents.getArtifactUrl(RUN_ID, path);
-
-        expect(serverPath(urls[0], 'artifacts')).toBe(path);
-        expect(new URL(urls[0]).searchParams.get('url')).toBe('1');
-    });
-
-    // The query is appended to the path by string concatenation, so an unencoded delimiter in the
-    // filename swallowed it too: `#` took the whole query into the fragment, and `?` absorbed
-    // `url=1` into a bogus key. Either way the server saw no `url` param and streamed raw bytes
-    // instead of returning the signed-URL JSON the caller expects — so assert the query survives.
+    // The query is appended to the path by string concatenation, so an unescaped delimiter took it
+    // down too: `#` pulled the whole query into the fragment, and `?` absorbed `url=1` into a bogus
+    // key. Either way the server saw no `url` param and streamed raw bytes instead of the
+    // signed-URL JSON the caller expects — so assert the query survives, not just the path.
     it.each([
         ['hash', 'files/Design (YYYY-0#).docx'],
         ['question mark', 'files/report?v2.docx'],
-        ['percent', 'files/100% done.docx'],
-        ['backslash', 'files/back\\slash.docx'],
-        ['plain spaces', 'files/MHA - Client IQ FSD.docx'],
-        ['non-ascii whitespace and accents', 'files/café résumé.docx'],
     ])('getArtifactUrl round-trips %s and keeps the query intact', async (_label, path) => {
         const { client, urls } = clientRecordingUrls();
 
@@ -99,6 +93,23 @@ describe('AgentsApi artifact paths', () => {
         expect(url.searchParams.get('url')).toBe('1');
         expect(url.searchParams.get('disposition')).toBe('attachment');
         expect(url.searchParams.get('filename')).toBe('download-name.docx');
+    });
+
+    /**
+     * `%` is deliberately out of scope. A literal `%` is a malformed escape the server rejects, and
+     * that rejection — an immediate, visible upload error — is the behaviour being preserved.
+     * Escaping it would let the object reach storage and fail much later, on a separate
+     * storage-layer defect. This pins the wire form to what it would be with no escaping at all.
+     */
+    it('sends a path containing % exactly as it did before, unescaped', async () => {
+        const { client, urls } = clientRecordingUrls();
+        const path = 'files/100% done.docx';
+
+        await client.agents.getArtifactUrl(RUN_ID, path);
+
+        const unescaped = new URL(`${SERVER_URL}/api/v1/agents/${RUN_ID}/artifacts/${path}?url=1`);
+        expect(new URL(urls[0]).pathname).toBe(unescaped.pathname);
+        expect(new URL(urls[0]).pathname).toContain('100%%20done.docx');
     });
 
     it('getArtifactContent and updateArtifactContent preserve a path containing #', async () => {
