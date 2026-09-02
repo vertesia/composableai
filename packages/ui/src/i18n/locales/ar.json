@@ -1268,5 +1268,8 @@
     "widgets.schema.extractFromDocumentHint": "عند التعطيل تتجاهل نماذج الاستخراج هذا الحقل (يُحفظ x-extract: false). استخدمه لدرجات المطابقة أو معرّفات ERP أو الحقول المعبأة خارج الاستخراج.",
     "widgets.schema.invalidPropertyDeclaration": "إعلان خاصية غير صالح",
     "widgets.schema.noExtract": "عدم الاستخراج",
-    "widgets.schema.propertyColumn": "الخصائص"
+    "widgets.schema.propertyColumn": "الخصائص",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

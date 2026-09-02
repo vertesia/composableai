@@ -1224,5 +1224,8 @@
     "widgets.schema.extractFromDocumentHint": "オフにすると、抽出モデルはこのフィールドをスキップします（x-extract: falseを保存）。一致スコア、ERP ID、または抽出以外で入力するフィールドに使用します。",
     "widgets.schema.invalidPropertyDeclaration": "無効なプロパティ宣言",
     "widgets.schema.noExtract": "抽出しない",
-    "widgets.schema.propertyColumn": "プロパティ"
+    "widgets.schema.propertyColumn": "プロパティ",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

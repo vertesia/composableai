@@ -1224,5 +1224,8 @@
     "widgets.schema.extractFromDocumentHint": "Wenn deaktiviert, überspringen Extraktionsmodelle dieses Feld (speichert x-extract: false). Für Übereinstimmungswerte, ERP-IDs oder außerhalb der Extraktion befüllte Felder verwenden.",
     "widgets.schema.invalidPropertyDeclaration": "Ungültige Eigenschaftsdeklaration",
     "widgets.schema.noExtract": "nicht extrahieren",
-    "widgets.schema.propertyColumn": "Eigenschaft"
+    "widgets.schema.propertyColumn": "Eigenschaft",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

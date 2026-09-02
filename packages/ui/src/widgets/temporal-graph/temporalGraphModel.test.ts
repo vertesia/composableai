@@ -143,6 +143,20 @@ describe('resolveGroupStyles', () => {
 });
 
 describe('layoutTemporalGraph', () => {
+
+    it('keeps every node inside the canvas even when no edge holds it', () => {
+        // A sparse graph is mostly isolated nodes; unclamped they drift out and stretch the fitted
+        // viewBox until the connected core renders as unclickable specks.
+        const many = Array.from({ length: 12 }, (_, i) => ({ id: `n${i}`, label: `N${i}` }));
+        const sparse = [{ id: 'e1', source: 'n0', target: 'n1' }];
+        const positions = layoutTemporalGraph(many, sparse, { width: 1000, height: 640 });
+        for (const [, point] of positions) {
+            expect(point.x).toBeGreaterThanOrEqual(0);
+            expect(point.x).toBeLessThanOrEqual(1000);
+            expect(point.y).toBeGreaterThanOrEqual(0);
+            expect(point.y).toBeLessThanOrEqual(640);
+        }
+    });
     it('is deterministic for the same input', () => {
         const first = layoutTemporalGraph(nodes, edges);
         const second = layoutTemporalGraph(nodes, edges);

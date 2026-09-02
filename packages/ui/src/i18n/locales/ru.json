@@ -1246,5 +1246,8 @@
     "widgets.schema.extractFromDocumentHint": "Если отключено, модели извлечения пропускают это поле (сохраняется x-extract: false). Используйте для оценок совпадения, ID ERP и полей, заполняемых вне извлечения.",
     "widgets.schema.invalidPropertyDeclaration": "Недопустимое объявление свойства",
     "widgets.schema.noExtract": "не извлекать",
-    "widgets.schema.propertyColumn": "Свойства"
+    "widgets.schema.propertyColumn": "Свойства",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

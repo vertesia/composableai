@@ -326,13 +326,20 @@ export function layoutTemporalGraph(
         // Linear cooling: large early moves, sub-pixel ones at the end.
         const temperature = (width / 10) * (1 - step / iterations);
         for (let a = 0; a < points.length; a++) {
-            // Gentle gravity keeps disconnected components from being pushed off the canvas.
-            displacementX[a] += (centerX - points[a].x) * 0.012;
-            displacementY[a] += (centerY - points[a].y) * 0.012;
+            // Gravity holds disconnected components near the graph. It has to be strong enough to
+            // beat repulsion on a node no edge pulls back: a sparse graph is mostly isolated nodes,
+            // and at 0.012 they drifted to the bounds and left the connected core unreadably small.
+            displacementX[a] += (centerX - points[a].x) * 0.06;
+            displacementY[a] += (centerY - points[a].y) * 0.06;
             const distance = Math.max(Math.hypot(displacementX[a], displacementY[a]), 0.01);
             const limited = Math.min(distance, temperature);
             points[a].x += (displacementX[a] / distance) * limited;
             points[a].y += (displacementY[a] / distance) * limited;
+            // Hard bounds. Gravity alone does not hold a node that no edge pulls back, and one
+            // escaped node stretches the fitted viewBox until the rest of the graph renders as
+            // specks too small to see or click.
+            points[a].x = Math.min(Math.max(points[a].x, 0), width);
+            points[a].y = Math.min(Math.max(points[a].y, 0), height);
         }
     }
 

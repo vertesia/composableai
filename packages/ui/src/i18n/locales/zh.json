@@ -1224,5 +1224,8 @@
     "widgets.schema.extractFromDocumentHint": "关闭后，提取模型将跳过此字段（存储 x-extract: false）。适用于匹配分数、ERP ID 或在提取流程外填写的字段。",
     "widgets.schema.invalidPropertyDeclaration": "无效的属性声明",
     "widgets.schema.noExtract": "不提取",
-    "widgets.schema.propertyColumn": "属性"
+    "widgets.schema.propertyColumn": "属性",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

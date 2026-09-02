@@ -1224,5 +1224,8 @@
     "widgets.schema.extractFromDocumentHint": "Kapalı olduğunda çıkarma modelleri bu alanı atlar (x-extract: false kaydedilir). Eşleşme puanları, ERP kimlikleri veya çıkarma dışında doldurulan alanlarda kullanın.",
     "widgets.schema.invalidPropertyDeclaration": "Geçersiz özellik bildirimi",
     "widgets.schema.noExtract": "çıkarma",
-    "widgets.schema.propertyColumn": "Özellikler"
+    "widgets.schema.propertyColumn": "Özellikler",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

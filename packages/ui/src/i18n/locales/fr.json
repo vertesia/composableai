@@ -1235,5 +1235,8 @@
     "widgets.schema.extractFromDocumentHint": "Lorsque cette option est désactivée, les modèles d’extraction ignorent ce champ (enregistre x-extract: false). À utiliser pour les scores de correspondance, les identifiants ERP ou les champs remplis hors extraction.",
     "widgets.schema.invalidPropertyDeclaration": "Déclaration de propriété invalide",
     "widgets.schema.noExtract": "ne pas extraire",
-    "widgets.schema.propertyColumn": "Propriété"
+    "widgets.schema.propertyColumn": "Propriété",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

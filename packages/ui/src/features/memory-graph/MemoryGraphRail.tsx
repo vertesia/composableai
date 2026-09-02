@@ -2,6 +2,7 @@ import { Button, cn, Slider, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import type { TemporalGraphGroup, TemporalTimelineMarker } from '@vertesia/ui/widgets';
 import { CalendarOff, SkipForward } from 'lucide-react';
+import { useMemo } from 'react';
 import type { MemoryEntry, MemoryTimeAxis } from './memoryGraphModel.js';
 
 export interface MemoryGraphRailProps {
@@ -87,6 +88,29 @@ export function MemoryGraphRail({
     const lastIndex = Math.max(stops.length - 1, 0);
     const asOf = stops[asOfIndex];
     const knownEpisodes = asOf ? episodes.filter((episode) => episode.date <= asOf).length : episodes.length;
+
+    // Many episodes share a week, and one diamond each stacked them into an unreadable pile that
+    // overflowed the track. Collapse to one marker per timeline stop, sized by how many land there.
+    const episodeStops = useMemo(() => {
+        const byStop = new Map<number, { stopIndex: number; ratio: number; date: string; labels: string[] }>();
+        for (const episode of episodes) {
+            const existing = byStop.get(episode.stopIndex);
+            if (existing) {
+                existing.labels.push(episode.label);
+                if (episode.date < existing.date) existing.date = episode.date;
+                continue;
+            }
+            byStop.set(episode.stopIndex, {
+                stopIndex: episode.stopIndex,
+                ratio: episode.ratio,
+                date: episode.date,
+                labels: [episode.label],
+            });
+        }
+        return [...byStop.values()]
+            .sort((left, right) => left.stopIndex - right.stopIndex)
+            .map((stop) => ({ ...stop, count: stop.labels.length }));
+    }, [episodes]);
     const groupEntries = Object.entries(groups);
 
     return (
@@ -131,29 +155,33 @@ export function MemoryGraphRail({
                                 value={[Math.min(asOfIndex, lastIndex)]}
                                 onValueChange={([next]) => onAsOfIndexChange(next ?? lastIndex)}
                             />
-                            {episodes.length > 0 ? (
-                                <div className="relative mt-2 h-4">
-                                    {episodes.map((episode) => (
+                            {episodeStops.length > 0 ? (
+                                <div className="relative mt-2 h-5">
+                                    {episodeStops.map((stop) => (
                                         <button
-                                            // Not a <Button>: this is a 8px diamond positioned on the
+                                            // Not a <Button>: this is a small diamond positioned on the
                                             // scrubber track, and the variant paddings would swallow it.
                                             type="button"
-                                            key={episode.id}
+                                            key={stop.stopIndex}
                                             aria-label={t('memoryGraph.episodeAria', {
-                                                date: episode.date,
-                                                title: episode.label,
+                                                date: stop.date,
+                                                title:
+                                                    stop.count === 1
+                                                        ? stop.labels[0]
+                                                        : t('memoryGraph.episodeStopSummary', { count: stop.count }),
                                             })}
-                                            title={`${episode.date} · ${episode.label}`}
-                                            onClick={() => onAsOfIndexChange(episode.stopIndex)}
+                                            title={`${stop.date} · ${stop.count === 1 ? stop.labels[0] : t('memoryGraph.episodeStopSummary', { count: stop.count })}${stop.count > 1 ? `\n- ${stop.labels.join('\n- ')}` : ''}`}
+                                            onClick={() => onAsOfIndexChange(stop.stopIndex)}
                                             className={cn(
-                                                'absolute top-1 size-2 cursor-pointer border transition-colors',
+                                                'absolute top-1 cursor-pointer border transition-colors',
                                                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring',
-                                                asOf && episode.date <= asOf
+                                                stop.count > 2 ? 'size-3' : 'size-2',
+                                                asOf && stop.date <= asOf
                                                     ? 'border-attention bg-attention'
                                                     : 'border-muted bg-transparent hover:border-attention',
                                             )}
                                             style={{
-                                                insetInlineStart: `${episode.ratio * 100}%`,
+                                                insetInlineStart: `${stop.ratio * 100}%`,
                                                 transform: 'translateX(-50%) rotate(45deg)',
                                             }}
                                         />

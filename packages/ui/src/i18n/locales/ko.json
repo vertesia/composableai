@@ -1224,5 +1224,8 @@
     "widgets.schema.extractFromDocumentHint": "끄면 추출 모델이 이 필드를 건너뜁니다(x-extract: false 저장). 일치 점수, ERP ID 또는 추출 외부에서 채우는 필드에 사용하세요.",
     "widgets.schema.invalidPropertyDeclaration": "유효하지 않은 속성 선언",
     "widgets.schema.noExtract": "추출 안 함",
-    "widgets.schema.propertyColumn": "속성"
+    "widgets.schema.propertyColumn": "속성",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

@@ -1235,5 +1235,8 @@
     "widgets.schema.extractFromDocumentHint": "Al desactivarlo, los modelos de extracción omiten este campo (guarda x-extract: false). Úselo para puntuaciones de coincidencia, ID de ERP o campos rellenados fuera de la extracción.",
     "widgets.schema.invalidPropertyDeclaration": "Declaración de propiedad inválida",
     "widgets.schema.noExtract": "no extraer",
-    "widgets.schema.propertyColumn": "Propiedad"
+    "widgets.schema.propertyColumn": "Propiedad",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }

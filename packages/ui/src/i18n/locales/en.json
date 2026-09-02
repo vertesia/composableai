@@ -1224,5 +1224,8 @@
     "widgets.schema.extractFromDocumentHint": "When off, extraction models skip this field (stores x-extract: false). Use for match scores, ERP ids, or fields filled outside extraction.",
     "widgets.schema.invalidPropertyDeclaration": "Invalid property declaration",
     "widgets.schema.noExtract": "no extract",
-    "widgets.schema.propertyColumn": "Property"
+    "widgets.schema.propertyColumn": "Property",
+    "memoryGraph": {
+        "episodeStopSummary": "{{count}} episodes"
+    }
 }
