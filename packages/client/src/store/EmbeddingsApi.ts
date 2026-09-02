@@ -1,8 +1,14 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    EmbeddingBatchApplyRequest,
+    EmbeddingBatchApplyResponse,
+    EmbeddingBatchPrepareRequest,
+    EmbeddingBatchPrepareResponse,
+    EmbeddingBatchUpdateRequest,
     EmbeddingsStatusResponse,
     GenericCommandResponse,
     ProjectConfigurationEmbeddingEnablePayload,
+    RecalculateEmbeddingsQuery,
     SupportedEmbeddingTypes,
 } from '@vertesia/common';
 
@@ -33,7 +39,22 @@ export class EmbeddingsApi extends ApiTopic {
         return this.post(`${type}/disable`);
     }
 
-    async recalculate(type: SupportedEmbeddingTypes): Promise<GenericCommandResponse> {
-        return this.post(`${type}/recalculate`);
+    async recalculate(
+        type: SupportedEmbeddingTypes,
+        query: RecalculateEmbeddingsQuery = {},
+    ): Promise<GenericCommandResponse> {
+        return query.mode ? this.post(`${type}/recalculate`, { query }) : this.post(`${type}/recalculate`);
+    }
+
+    async prepareBatch(payload: EmbeddingBatchPrepareRequest): Promise<EmbeddingBatchPrepareResponse> {
+        return this.post('/batch/prepare', { payload });
+    }
+
+    async updateBatch(payload: EmbeddingBatchUpdateRequest): Promise<GenericCommandResponse> {
+        return this.post('/batch/update', { payload });
+    }
+
+    async applyBatch(payload: EmbeddingBatchApplyRequest): Promise<EmbeddingBatchApplyResponse> {
+        return this.post('/batch/apply', { payload });
     }
 }

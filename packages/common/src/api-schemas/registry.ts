@@ -364,6 +364,13 @@ import {
     WorkflowExecutionStatusSchema,
 } from './document-processing.js';
 import {
+    EmbeddingBatchApplyRequestSchema,
+    EmbeddingBatchApplyResponseSchema,
+    EmbeddingBatchPrepareRequestSchema,
+    EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchRunStateSchema,
+    EmbeddingBatchSubjobSchema,
+    EmbeddingBatchUpdateRequestSchema,
     EmbeddingsApiAudioInputSchema,
     EmbeddingsApiImageInputSchema,
     EmbeddingsApiInputSchema,
@@ -373,6 +380,13 @@ import {
     EmbeddingsApiVideoInputSchema,
     EmbeddingsStatusResponseSchema,
     ProjectConfigurationEmbeddingEnablePayloadSchema,
+    RecalculateEmbeddingsQuerySchema,
+    VertexEmbeddingBatchCapabilityRequestSchema,
+    VertexEmbeddingBatchCapabilityResponseSchema,
+    VertexEmbeddingBatchCreateRequestSchema,
+    VertexEmbeddingBatchJobRequestSchema,
+    VertexEmbeddingBatchJobResponseSchema,
+    VertexEmbeddingBatchStateSchema,
 } from './embeddings.js';
 import {
     EnableEnvironmentModelPayloadSchema,
@@ -1463,7 +1477,21 @@ const INDEXING_SCHEMAS = {
 
 const EMBEDDING_ADMIN_SCHEMAS = {
     EmbeddingsStatusResponse: EmbeddingsStatusResponseSchema,
+    RecalculateEmbeddingsQuery: RecalculateEmbeddingsQuerySchema,
     ProjectConfigurationEmbeddingEnablePayload: ProjectConfigurationEmbeddingEnablePayloadSchema,
+    VertexEmbeddingBatchState: VertexEmbeddingBatchStateSchema,
+    VertexEmbeddingBatchCapabilityRequest: VertexEmbeddingBatchCapabilityRequestSchema,
+    VertexEmbeddingBatchCapabilityResponse: VertexEmbeddingBatchCapabilityResponseSchema,
+    VertexEmbeddingBatchCreateRequest: VertexEmbeddingBatchCreateRequestSchema,
+    VertexEmbeddingBatchJobRequest: VertexEmbeddingBatchJobRequestSchema,
+    VertexEmbeddingBatchJobResponse: VertexEmbeddingBatchJobResponseSchema,
+    EmbeddingBatchRunState: EmbeddingBatchRunStateSchema,
+    EmbeddingBatchSubjob: EmbeddingBatchSubjobSchema,
+    EmbeddingBatchPrepareRequest: EmbeddingBatchPrepareRequestSchema,
+    EmbeddingBatchPrepareResponse: EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchUpdateRequest: EmbeddingBatchUpdateRequestSchema,
+    EmbeddingBatchApplyRequest: EmbeddingBatchApplyRequestSchema,
+    EmbeddingBatchApplyResponse: EmbeddingBatchApplyResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const COMMAND_SCHEMAS = {
@@ -2752,6 +2780,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DriftAnalysisResult',
     'DriftAnalysisProgress',
     'EmbeddingsStatusResponse',
+    'RecalculateEmbeddingsQuery',
     'ProjectConfigurationEmbeddingEnablePayload',
     'GenericCommandResponse',
     'DriftAnalysisStatusResponse',

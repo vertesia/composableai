@@ -74,6 +74,7 @@ export const BulkUploadUrlsPayloadSchema = z
 export const FileBucketResponseSchema = z
     .strictObject({
         bucket: z.string(),
+        location: z.string().optional(),
     })
     .meta({ id: 'FileBucketResponse' });
 

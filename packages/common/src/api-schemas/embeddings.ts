@@ -117,6 +117,18 @@ export const EmbeddingsStatusResponseSchema = z
     })
     .meta({ id: 'EmbeddingsStatusResponse' });
 
+export const RecalculateEmbeddingsQuerySchema = z
+    .strictObject({
+        mode: z
+            .literal('sync')
+            .meta({
+                description:
+                    'Force synchronous per-object recalculation. When omitted, batch inference is used when supported.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'RecalculateEmbeddingsQuery' });
+
 export const ProjectConfigurationEmbeddingEnablePayloadSchema = z
     .strictObject({
         environment: z.string(),
@@ -124,3 +136,121 @@ export const ProjectConfigurationEmbeddingEnablePayloadSchema = z
         model: z.string().optional(),
     })
     .meta({ id: 'ProjectConfigurationEmbeddingEnablePayload' });
+
+export const VertexEmbeddingBatchStateSchema = z.enum([
+    'pending',
+    'running',
+    'succeeded',
+    'failed',
+    'cancelled',
+    'paused',
+]);
+
+export const VertexEmbeddingBatchCapabilityRequestSchema = z
+    .strictObject({ embedding_type: SupportedEmbeddingTypesSchema })
+    .meta({ id: 'VertexEmbeddingBatchCapabilityRequest' });
+
+export const VertexEmbeddingBatchCapabilityResponseSchema = z
+    .strictObject({
+        eligible: z.boolean(),
+        reason: z.string().optional(),
+        environment: z.string().optional(),
+        provider: z.string().optional(),
+        model: z.string().optional(),
+        dimensions: z.number().int().positive().optional(),
+        max_tokens: z.number().int().positive().optional(),
+        location: z.string().optional(),
+        schema: z.enum(['gemini', 'legacy']).optional(),
+        max_rows: z.number().int().positive().optional(),
+        bucket_uri: z.string().optional(),
+    })
+    .meta({ id: 'VertexEmbeddingBatchCapabilityResponse' });
+
+export const VertexEmbeddingBatchCreateRequestSchema = z
+    .strictObject({
+        embedding_type: SupportedEmbeddingTypesSchema,
+        model: z.string(),
+        dimensions: z.number().int().positive(),
+        display_name: z.string(),
+        input_uri: z.string(),
+        output_uri: z.string(),
+    })
+    .meta({ id: 'VertexEmbeddingBatchCreateRequest' });
+
+export const VertexEmbeddingBatchJobRequestSchema = z
+    .strictObject({ embedding_type: SupportedEmbeddingTypesSchema, model: z.string(), name: z.string() })
+    .meta({ id: 'VertexEmbeddingBatchJobRequest' });
+
+export const VertexEmbeddingBatchJobResponseSchema = z
+    .strictObject({
+        name: z.string(),
+        display_name: z.string().optional(),
+        state: VertexEmbeddingBatchStateSchema,
+        model: z.string().optional(),
+        input_uri: z.string().optional(),
+        output_uri: z.string().optional(),
+        error_message: z.string().optional(),
+    })
+    .meta({ id: 'VertexEmbeddingBatchJobResponse' });
+
+export const EmbeddingBatchRunStateSchema = z.enum([
+    'preparing',
+    'submitted',
+    'running',
+    'applying',
+    'completed',
+    'completed_with_errors',
+    'cancelled',
+    'stale',
+    'failed',
+]);
+
+export const EmbeddingBatchPrepareRequestSchema = z
+    .strictObject({
+        run_id: z.string(),
+        embedding_type: SupportedEmbeddingTypesSchema,
+        capability: VertexEmbeddingBatchCapabilityResponseSchema,
+    })
+    .meta({ id: 'EmbeddingBatchPrepareRequest' });
+
+export const EmbeddingBatchSubjobSchema = z.strictObject({
+    index: z.number().int().nonnegative(),
+    display_name: z.string(),
+    input_uri: z.string(),
+    output_uri: z.string(),
+    row_count: z.number().int().nonnegative(),
+    provider_name: z.string().optional(),
+    state: VertexEmbeddingBatchStateSchema.optional(),
+});
+
+export const EmbeddingBatchPrepareResponseSchema = z
+    .strictObject({
+        run_id: z.string(),
+        row_count: z.number().int().nonnegative(),
+        subjobs: z.array(EmbeddingBatchSubjobSchema),
+    })
+    .meta({ id: 'EmbeddingBatchPrepareResponse' });
+
+export const EmbeddingBatchUpdateRequestSchema = z
+    .strictObject({
+        run_id: z.string(),
+        state: EmbeddingBatchRunStateSchema,
+        subjobs: z.array(EmbeddingBatchSubjobSchema).optional(),
+        error_code: z.string().optional(),
+        error_message: z.string().optional(),
+    })
+    .meta({ id: 'EmbeddingBatchUpdateRequest' });
+
+export const EmbeddingBatchApplyRequestSchema = z
+    .strictObject({ run_id: z.string() })
+    .meta({ id: 'EmbeddingBatchApplyRequest' });
+
+export const EmbeddingBatchApplyResponseSchema = z
+    .strictObject({
+        state: EmbeddingBatchRunStateSchema,
+        succeeded: z.number().int().nonnegative(),
+        failed: z.number().int().nonnegative(),
+        stale: z.number().int().nonnegative(),
+        applied: z.number().int().nonnegative(),
+    })
+    .meta({ id: 'EmbeddingBatchApplyResponse' });

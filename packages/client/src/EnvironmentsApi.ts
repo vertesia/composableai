@@ -10,6 +10,11 @@ import type {
     ExecutionEnvironmentUpdatePayload,
     MigrateInteractionsPayload,
     MigrateInteractionsResult,
+    VertexEmbeddingBatchCapabilityRequest,
+    VertexEmbeddingBatchCapabilityResponse,
+    VertexEmbeddingBatchCreateRequest,
+    VertexEmbeddingBatchJobRequest,
+    VertexEmbeddingBatchJobResponse,
 } from '@vertesia/common';
 
 export default class EnvironmentsApi extends ApiTopic {
@@ -82,6 +87,38 @@ export default class EnvironmentsApi extends ApiTopic {
         return this.post(`/${id}/embeddings`, {
             payload,
         });
+    }
+
+    embeddingBatchCapability(
+        id: string,
+        payload: VertexEmbeddingBatchCapabilityRequest,
+    ): Promise<VertexEmbeddingBatchCapabilityResponse> {
+        return this.post(`/${id}/embedding-batches/capability`, { payload });
+    }
+
+    createEmbeddingBatch(
+        id: string,
+        payload: VertexEmbeddingBatchCreateRequest,
+    ): Promise<VertexEmbeddingBatchJobResponse> {
+        return this.post(`/${id}/embedding-batches`, { payload });
+    }
+
+    getEmbeddingBatch(id: string, payload: VertexEmbeddingBatchJobRequest): Promise<VertexEmbeddingBatchJobResponse> {
+        return this.post(`/${id}/embedding-batches/get`, { payload });
+    }
+
+    cancelEmbeddingBatch(
+        id: string,
+        payload: VertexEmbeddingBatchJobRequest,
+    ): Promise<VertexEmbeddingBatchJobResponse> {
+        return this.post(`/${id}/embedding-batches/cancel`, { payload });
+    }
+
+    deleteEmbeddingBatch(
+        id: string,
+        payload: VertexEmbeddingBatchJobRequest,
+    ): Promise<VertexEmbeddingBatchJobResponse> {
+        return this.post(`/${id}/embedding-batches/delete`, { payload });
     }
 
     /**

@@ -31,3 +31,12 @@ export { generateVideoRendition } from './renditions/generateVideoRendition.js';
 export type { RemoteActivityInfo, RemoteActivityMap } from './resolveRemoteActivities.js';
 export { resolveRemoteActivities } from './resolveRemoteActivities.js';
 export { setDocumentStatus } from './setDocumentStatus.js';
+export {
+    applyVertexEmbeddingBatch,
+    cancelVertexEmbeddingBatchJob,
+    createVertexEmbeddingBatchJob,
+    deleteVertexEmbeddingBatchJob,
+    getVertexEmbeddingBatchJob,
+    prepareVertexEmbeddingBatch,
+    updateVertexEmbeddingBatch,
+} from './vertexEmbeddingBatch.js';
