@@ -17,12 +17,6 @@ import { countTokens } from '../utils/tokens.js';
 
 export interface GenerateEmbeddingsParams {
     /**
-     * The model to use for embedding generation
-     * If not set, the default model for the project will be used
-     */
-    model?: string;
-
-    /**
      * The environment to use for embedding generation
      * If not set, the default environment for the project will be used
      */
