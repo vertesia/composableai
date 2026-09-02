@@ -305,7 +305,7 @@ export function IntakePolicyEditor({
     const [validationMessage, setValidationMessage] = useState<string | undefined>(undefined);
     // Open on the first leading tab when a consumer supplies one (settings opens on General);
     // otherwise the policy sections start at their first tab.
-    const [activeTab, setActiveTab] = useState<string>(leadingTabs?.[0]?.name ?? 'overview');
+    const [activeTab, setActiveTab] = useState<string>(leadingTabs?.[0]?.name ?? 'classification');
 
     const isDirty = editorValue !== savedValue;
     const currentPolicy = useMemo(() => {
@@ -433,7 +433,7 @@ export function IntakePolicyEditor({
         setEditorValue(value);
         editorRef.current?.setValue(value);
         setValidationMessage(undefined);
-        setActiveTab('overview');
+        setActiveTab('classification');
     };
 
     const onFormChange = (policy: ContentTypeIntakePolicy) => {
@@ -582,7 +582,7 @@ function createEditorTabs(
     });
 
     return [
-        formTab('overview', t('intakePolicy.tab.overview')),
+        formTab('classification', t('intakePolicy.tab.classification')),
         formTab('conversion', t('intakePolicy.tab.conversion')),
         formTab('extraction', t('intakePolicy.tab.extraction')),
         formTab('grounding', t('intakePolicy.tab.grounding')),

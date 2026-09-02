@@ -27,7 +27,7 @@ import {
     updateIntakePolicy,
 } from './intake-policy-editor.logic.js';
 
-export type IntakePolicyFormSection = 'overview' | 'conversion' | 'extraction' | 'grounding' | 'output';
+export type IntakePolicyFormSection = 'classification' | 'conversion' | 'extraction' | 'grounding' | 'output';
 
 interface IntakePolicyFormProps {
     policy: ContentTypeIntakePolicy;
@@ -45,7 +45,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
     const { t } = useUITranslation();
     const setValue = (path: IntakePolicyPath, value: unknown) => onChange(updateIntakePolicy(policy, path, value));
 
-    if (section === 'overview') {
+    if (section === 'classification') {
         return (
             <FormSurface>
                 <FormSection
