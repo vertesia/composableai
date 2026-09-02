@@ -218,18 +218,20 @@ export function renderBootScreenInitializer(): string {
     return `<script>window.__vertesiaBoot.ensureLoadingIndicator(); window.__vertesiaBoot.hideLoadingIndicatorOnFirstRender();</script>`;
 }
 
-export function createBootScreenVitePlugin(options: BootScreenOptions = {}): BootScreenHtmlPlugin {
+export function injectBootScreenHtml(html: string, options: BootScreenOptions = {}): string {
     const normalized = normalizedOptions(options);
+    const head = renderBootScreenHead(normalized);
+    const charset = /(<meta\s+charset=[^>]+>)/i;
+    const withHead = charset.test(html)
+        ? html.replace(charset, (match) => `${match}\n${head}`)
+        : html.replace(/<head([^>]*)>/i, (match) => `${match}\n${head}`);
+    if (!normalized.autoStart) return withHead;
+    return withHead.replace(/<\/body>/i, (match) => `${renderBootScreenInitializer()}\n${match}`);
+}
+
+export function createBootScreenVitePlugin(options: BootScreenOptions = {}): BootScreenHtmlPlugin {
     return {
         name: 'vertesia-boot-screen',
-        transformIndexHtml: (html) => {
-            const head = renderBootScreenHead(normalized);
-            const charset = /(<meta\s+charset=[^>]+>)/i;
-            const withHead = charset.test(html)
-                ? html.replace(charset, (match) => `${match}\n${head}`)
-                : html.replace(/<head([^>]*)>/i, (match) => `${match}\n${head}`);
-            if (!normalized.autoStart) return withHead;
-            return withHead.replace(/<\/body>/i, (match) => `${renderBootScreenInitializer()}\n${match}`);
-        },
+        transformIndexHtml: (html) => injectBootScreenHtml(html, options),
     };
 }

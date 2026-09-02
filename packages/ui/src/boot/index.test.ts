@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     BOOT_SCREEN_STYLES,
     createBootScreenVitePlugin,
+    injectBootScreenHtml,
     renderBootScreenHead,
     renderBootScreenRuntime,
 } from './index.js';
@@ -54,6 +55,18 @@ describe('boot screen HTML integration', () => {
         expect(html).toContain('id="vertesia-boot-styles"');
         expect(html).toContain('window.__vertesiaBoot');
         expect(html).toContain('vite-ui-theme');
+    });
+
+    it('injects the bootstrap before scripts in a document without a charset meta tag', () => {
+        const html = injectBootScreenHtml(
+            '<!doctype html><html><head><script src="handler.js"></script></head><body></body></html>',
+            { storageKey: 'auth-ui-theme', iconSrc: '/auth-icon.svg' },
+        );
+
+        expect(html.indexOf('id="vertesia-boot-styles"')).toBeLessThan(html.indexOf('src="handler.js"'));
+        expect(html).toContain('auth-ui-theme');
+        expect(html).toContain('/auth-icon.svg');
+        expect(html).toContain('window.__vertesiaBoot.ensureLoadingIndicator()');
     });
 });
 
