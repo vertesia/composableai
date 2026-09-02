@@ -10,7 +10,6 @@ export {
     applyEmbeddingBatch,
     cancelEmbeddingBatchJob,
     createEmbeddingBatchJob,
-    deleteEmbeddingBatchJob,
     getEmbeddingBatchJob,
     prepareEmbeddingBatch,
     updateEmbeddingBatch,

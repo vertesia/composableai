@@ -1,20 +1,14 @@
 import type {
     DSLActivityExecutionPayload,
     EmbeddingBatchApplyResponse,
-    EmbeddingBatchCapabilityResponse,
     EmbeddingBatchJobResponse,
     EmbeddingBatchPrepareResponse,
     EmbeddingBatchRunState,
     EmbeddingBatchSubjob,
-    SupportedEmbeddingTypes,
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import type { EmbeddingBatchParams } from '../embeddingBatch.js';
 
-export interface EmbeddingBatchParams {
-    run_id: string;
-    type: SupportedEmbeddingTypes;
-    capability: EmbeddingBatchCapabilityResponse;
-}
 type JobParams = EmbeddingBatchParams & { subjob: EmbeddingBatchSubjob };
 type NamedJobParams = EmbeddingBatchParams & { name: string };
 type UpdateParams = {
@@ -70,16 +64,6 @@ export async function cancelEmbeddingBatchJob(payload: DSLActivityExecutionPaylo
     const { client, params } = await setupActivity(payload);
     const capability = requiredCapability(params);
     return client.environments.cancelEmbeddingBatch(capability.environment, {
-        embedding_type: params.type,
-        model: capability.model,
-        name: params.name,
-    });
-}
-
-export async function deleteEmbeddingBatchJob(payload: DSLActivityExecutionPayload<NamedJobParams>) {
-    const { client, params } = await setupActivity(payload);
-    const capability = requiredCapability(params);
-    return client.environments.deleteEmbeddingBatch(capability.environment, {
         embedding_type: params.type,
         model: capability.model,
         name: params.name,

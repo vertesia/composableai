@@ -6,7 +6,6 @@ const activities = vi.hoisted(() => ({
     createEmbeddingBatchJob: vi.fn(),
     getEmbeddingBatchJob: vi.fn(),
     cancelEmbeddingBatchJob: vi.fn(),
-    deleteEmbeddingBatchJob: vi.fn(),
     updateEmbeddingBatch: vi.fn(),
     applyEmbeddingBatch: vi.fn(),
     ensureFreshAuthToken: vi.fn(),
@@ -23,6 +22,7 @@ const temporal = vi.hoisted(() => ({
 
 vi.mock('../dsl/dslProxyActivities.js', () => ({ dslProxyActivities: () => activities }));
 vi.mock('@temporalio/workflow', () => ({
+    ActivityCancellationType: { TRY_CANCEL: 'TRY_CANCEL' },
     sleep: temporal.sleep,
     isCancellation: () => workflowState.cancellation,
     CancellationScope: { nonCancellable: (fn: () => unknown) => fn() },
@@ -58,7 +58,6 @@ describe('embeddingBatchWorkflow', () => {
         });
         temporal.executeChild.mockResolvedValue({ status: 'completed' });
         activities.updateEmbeddingBatch.mockResolvedValue(undefined);
-        activities.deleteEmbeddingBatchJob.mockResolvedValue({ name: 'deleted', state: 'cancelled' });
         activities.cancelEmbeddingBatchJob.mockResolvedValue({ name: 'cancelled', state: 'cancelled' });
         activities.ensureFreshAuthToken.mockResolvedValue({ refreshed: false });
         payload.auth_token = 'old-token';
@@ -109,7 +108,6 @@ describe('embeddingBatchWorkflow', () => {
         await expect(embeddingBatchWorkflow(payload)).resolves.toMatchObject({ state: 'completed', applied: 2 });
         expect(activities.createEmbeddingBatchJob).toHaveBeenCalledTimes(2);
         expect(activities.getEmbeddingBatchJob).toHaveBeenCalledTimes(2);
-        expect(activities.deleteEmbeddingBatchJob).not.toHaveBeenCalled();
     });
 
     it('ensures image renditions in a bounded child workflow before preparing provider input', async () => {
@@ -253,6 +251,37 @@ describe('embeddingBatchWorkflow', () => {
             applied: 1,
         });
         expect(activities.applyEmbeddingBatch).toHaveBeenCalledOnce();
+    });
+
+    it('cancels accepted jobs and applies partial output when a later submission fails', async () => {
+        const subjobs = [0, 1].map((index) => ({
+            index,
+            display_name: `job-${index}`,
+            input_uri: `gs://b/input-${index}`,
+            output_uri: `gs://b/output-${index}/`,
+            row_count: 1,
+        }));
+        activities.prepareEmbeddingBatch.mockResolvedValue({ run_id: 'run', row_count: 2, subjobs });
+        activities.createEmbeddingBatchJob
+            .mockResolvedValueOnce({ name: 'provider/0', state: 'running' })
+            .mockRejectedValueOnce(new Error('second submission failed'));
+        activities.cancelEmbeddingBatchJob.mockResolvedValue({ name: 'provider/0', state: 'cancelled' });
+        activities.applyEmbeddingBatch.mockResolvedValue({
+            state: 'completed_with_errors',
+            succeeded: 1,
+            failed: 1,
+            stale: 0,
+            applied: 1,
+        });
+
+        await expect(embeddingBatchWorkflow(payload)).rejects.toThrow('second submission failed');
+
+        expect(activities.cancelEmbeddingBatchJob).toHaveBeenCalledOnce();
+        expect(activities.applyEmbeddingBatch).toHaveBeenCalledOnce();
+        expect(activities.updateEmbeddingBatch).toHaveBeenCalledWith(
+            payload,
+            expect.objectContaining({ state: 'applying', error: { message: 'second submission failed' } }),
+        );
     });
 
     it('cancels submitted provider jobs and applies their terminal partial output', async () => {
