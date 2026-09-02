@@ -303,7 +303,9 @@ export function IntakePolicyEditor({
     const [editorValue, setEditorValue] = useState(() => stringifyPolicy(initialPolicy));
     const [savedValue, setSavedValue] = useState(() => stringifyPolicy(initialPolicy));
     const [validationMessage, setValidationMessage] = useState<string | undefined>(undefined);
-    const [activeTab, setActiveTab] = useState<string>('overview');
+    // Open on the first leading tab when a consumer supplies one (settings opens on General);
+    // otherwise the policy sections start at their first tab.
+    const [activeTab, setActiveTab] = useState<string>(leadingTabs?.[0]?.name ?? 'overview');
 
     const isDirty = editorValue !== savedValue;
     const currentPolicy = useMemo(() => {
