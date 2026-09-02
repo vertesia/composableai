@@ -29,7 +29,7 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "eventsource": "^5.1.0"
+        "eventsource": "^5.1.1"
     },
     "exports": {
         ".": {

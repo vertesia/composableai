@@ -40,7 +40,7 @@ catalog:
   "@types/react": "19.2.18"
   "@types/react-dom": "19.2.4"
   vite: "8.2.1"
-  rolldown: "1.2.4"
+  rolldown: "1.2.5"
 overrides:
   # ============================
   # Special Overrides
