@@ -46,15 +46,21 @@ export class EmbeddingsApi extends ApiTopic {
         return query.mode ? this.post(`${type}/recalculate`, { query }) : this.post(`${type}/recalculate`);
     }
 
-    async prepareBatch(payload: EmbeddingBatchPrepareRequest): Promise<EmbeddingBatchPrepareResponse> {
-        return this.post('/batch/prepare', { payload });
+    async prepareBatch(
+        payload: EmbeddingBatchPrepareRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<EmbeddingBatchPrepareResponse> {
+        return this.post('/batch/prepare', { payload, timeoutMs });
     }
 
     async updateBatch(payload: EmbeddingBatchUpdateRequest): Promise<GenericCommandResponse> {
         return this.post('/batch/update', { payload });
     }
 
-    async applyBatch(payload: EmbeddingBatchApplyRequest): Promise<EmbeddingBatchApplyResponse> {
-        return this.post('/batch/apply', { payload });
+    async applyBatch(
+        payload: EmbeddingBatchApplyRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<EmbeddingBatchApplyResponse> {
+        return this.post('/batch/apply', { payload, timeoutMs });
     }
 }

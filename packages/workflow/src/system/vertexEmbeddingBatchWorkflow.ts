@@ -9,6 +9,11 @@ const batch = dslProxyActivities<typeof activities>('vertexEmbeddingBatchWorkflo
     retry: { initialInterval: '5s', backoffCoefficient: 2, maximumAttempts: 8, maximumInterval: '1 minute' },
 });
 
+const longBatch = dslProxyActivities<typeof activities>('vertexEmbeddingBatchWorkflow', {
+    startToCloseTimeout: '4 hours',
+    retry: { initialInterval: '15s', backoffCoefficient: 2, maximumAttempts: 4, maximumInterval: '2 minutes' },
+});
+
 const TERMINAL = new Set(['succeeded', 'failed', 'cancelled', 'paused']);
 const INITIAL_POLL_DELAY_MS = 30_000;
 const MAX_POLL_DELAY_MS = 10 * 60_000;
@@ -22,11 +27,11 @@ export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPay
     if (!params?.run_id || !params.capability?.eligible) throw new Error('Missing Vertex embedding batch parameters');
     let subjobs: EmbeddingBatchSubjob[] = [];
     try {
-        const prepared = await batch.prepareVertexEmbeddingBatch(payload, params);
+        const prepared = await longBatch.prepareVertexEmbeddingBatch(payload, params);
         subjobs = prepared.subjobs;
         if (subjobs.length === 0) {
-            await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'completed', subjobs: [] });
-            return { state: 'completed', applied: 0 };
+            await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'applying', subjobs: [] });
+            return longBatch.applyVertexEmbeddingBatch(payload, { run_id: params.run_id });
         }
         for (const subjob of subjobs) {
             const job = await batch.createVertexEmbeddingBatchJob(payload, { ...params, subjob });
@@ -46,7 +51,7 @@ export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPay
             pollDelayMs = nextPollDelay(pollDelayMs);
         }
         await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'applying', subjobs });
-        return batch.applyVertexEmbeddingBatch(payload, { run_id: params.run_id });
+        return longBatch.applyVertexEmbeddingBatch(payload, { run_id: params.run_id });
     } catch (error) {
         if (!isCancellation(error)) {
             await CancellationScope.nonCancellable(() =>
@@ -60,6 +65,10 @@ export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPay
             throw error;
         }
         await CancellationScope.nonCancellable(async () => {
+            if (subjobs.length === 0) {
+                await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'cancelled', subjobs });
+                return;
+            }
             for (const subjob of subjobs)
                 if (subjob.provider_name && (!subjob.state || !TERMINAL.has(subjob.state))) {
                     const job = await batch
@@ -82,7 +91,7 @@ export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPay
             }
             await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'applying', subjobs });
             try {
-                await batch.applyVertexEmbeddingBatch(payload, { run_id: params.run_id });
+                await longBatch.applyVertexEmbeddingBatch(payload, { run_id: params.run_id });
                 await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'cancelled', subjobs });
             } catch (applyError) {
                 await batch.updateVertexEmbeddingBatch(payload, {

@@ -107,8 +107,16 @@ describe('vertexEmbeddingBatchWorkflow', () => {
 
     it('completes without provider jobs when preparation produces no valid rows', async () => {
         activities.prepareVertexEmbeddingBatch.mockResolvedValue({ run_id: 'run', row_count: 0, subjobs: [] });
-        await expect(vertexEmbeddingBatchWorkflow(payload)).resolves.toEqual({ state: 'completed', applied: 0 });
+        activities.applyVertexEmbeddingBatch.mockResolvedValue({
+            state: 'completed',
+            succeeded: 0,
+            failed: 0,
+            stale: 0,
+            applied: 0,
+        });
+        await expect(vertexEmbeddingBatchWorkflow(payload)).resolves.toMatchObject({ state: 'completed', applied: 0 });
         expect(activities.createVertexEmbeddingBatchJob).not.toHaveBeenCalled();
+        expect(activities.applyVertexEmbeddingBatch).toHaveBeenCalledOnce();
     });
 
     it('applies partial output from a failed provider subjob', async () => {
