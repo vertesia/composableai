@@ -94,7 +94,9 @@ describe('boot screen runtime', () => {
         bootApi().ensureLoadingIndicator();
         bootApi().hideLoadingIndicatorOnFirstRender();
 
-        expect(document.getElementById('loading-indicator')).not.toBeNull();
+        const loadingIndicator = document.getElementById('loading-indicator');
+        expect(loadingIndicator).not.toBeNull();
+        expect(loadingIndicator?.parentElement).toBe(document.documentElement);
         document.getElementById('root')?.append(document.createElement('main'));
         await vi.waitFor(() => expect(document.getElementById('loading-indicator')?.style.display).toBe('none'));
 

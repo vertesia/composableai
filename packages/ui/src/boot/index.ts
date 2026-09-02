@@ -42,26 +42,45 @@ export const BOOT_SCREEN_STYLES = `
     to { transform: rotate(360deg); }
   }
   .vboot-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-    background: var(--vb-bg);
+    position: absolute !important;
+    inset: 0 !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 1.5rem !important;
+    transform: none !important;
+    background: var(--vb-bg) !important;
+  }
+  #loading-indicator {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483647 !important;
+    box-sizing: border-box !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
   }
   .vboot-spinner {
-    width: 2.5rem;
-    min-width: 2.5rem;
-    max-width: none;
-    height: 2.5rem;
-    min-height: 2.5rem;
-    object-fit: contain;
-    flex: none;
-    border-radius: 100%;
-    animation: vboot-spin 2s linear infinite;
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    max-width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-height: 2.5rem !important;
+    max-height: 2.5rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    object-fit: contain !important;
+    flex: none !important;
+    border-radius: 100% !important;
+    animation: vboot-spin 2s linear infinite !important;
   }
   .vboot-slow {
     text-align: center;
@@ -168,7 +187,7 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
       + '<div id="loading-slow-reload" style="display: none;">'
       + '<button type="button" class="vboot-btn" onclick="window.location.reload()">Reload page</button>'
       + '</div></div></div>';
-    document.body.appendChild(loading);
+    document.documentElement.appendChild(loading);
   };
   const hideLoadingIndicator = () => {
     const loading = document.getElementById('loading-indicator');
