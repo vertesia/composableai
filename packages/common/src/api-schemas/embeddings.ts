@@ -89,7 +89,14 @@ export const EmbeddingsApiRequestSchema = z
                 'Logical project embedding type. This distinguishes properties embeddings from text inputs when ' +
                 'the server resolves an omitted model from project settings.',
         }).optional(),
-        model: z.string().optional(),
+        model: z
+            .string()
+            .meta({
+                description:
+                    'Explicit model override intended for validating a configuration before it is saved. Normal ' +
+                    'callers should omit this field and provide embedding_type so the project model is resolved.',
+            })
+            .optional(),
         task_type: EmbeddingTaskTypeSchema.optional(),
         dimensions: z.number().optional(),
     })

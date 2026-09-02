@@ -182,7 +182,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
         };
     }
 
-    const { environment, model } = config;
+    const { environment } = config;
     if (!environment) {
         throw new Error(
             'No environment found in project configuration. Set environment in project configuration to generate embeddings.',
@@ -222,7 +222,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     } else {
         log.debug(`Generating ${type} embeddings for document`);
 
-        const res = await generateEmbeddingsFromStudio(sourceText, environment, type, client, model);
+        const res = await generateEmbeddingsFromStudio(sourceText, environment, type, client);
         const values = res?.results?.[0]?.outputs?.[0]?.values;
         if (!values) {
             return {
@@ -278,7 +278,7 @@ async function generateImageEmbeddings({ document, client, type, config, force }
         };
     }
 
-    const { environment, model } = config;
+    const { environment } = config;
     if (!environment) {
         throw new Error(
             'No environment found in project configuration. Set environment in project configuration to generate embeddings.',
@@ -316,9 +316,7 @@ async function generateImageEmbeddings({ document, client, type, config, force }
                     source: { base64: image, mime_type: 'image/jpeg' },
                 },
             ],
-            model,
         })
-        .then((res) => res)
         .catch((e) => {
             log.error('Error generating embeddings for image', { error: e });
             throw e;
@@ -352,20 +350,17 @@ async function generateEmbeddingsFromStudio(
     env: string,
     type: SupportedEmbeddingTypes.text | SupportedEmbeddingTypes.properties,
     client: VertesiaClient,
-    model?: string,
 ): Promise<EmbeddingsApiResult> {
     log.debug(`Generating embeddings for text of ${text.length} chars with environment ${env}`);
 
     // TODO(task_type): Document embedding task — add task_type: "document" once task_type support is validated end-to-end.
     return client.environments
         .embeddings(env, {
-            // Properties are transported as text, so always send the logical type. Use the model from
-            // project settings when available; otherwise studio-server resolves it from those settings.
+            // Properties are transported as text, so the API needs the logical type to resolve the
+            // authoritative model from project settings.
             embedding_type: type,
             inputs: [{ type: 'text', text }],
-            model,
         })
-        .then((res) => res)
         .catch((e) => {
             log.error('Error generating embeddings for text', { error: e });
             throw e;
