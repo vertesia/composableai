@@ -100,7 +100,7 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
-        "hono": "^4.13.4",
+        "hono": "^4.13.5",
         "html-parse-stringify": "^4.0.1",
         "lucide-react": "^1.34.0",
         "react-vega": "^8.0.0",
