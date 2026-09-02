@@ -513,7 +513,6 @@ export function IntakePolicyEditor({
     const withPolicyPanel = (content: ReactNode) => (
         <Panel title={title} className="bg-background! h-full" action={action}>
             <div className="flex h-full min-h-0 flex-col gap-3">
-                <IntakeSummary policy={summaryPolicy} />
                 {validationMessage && (
                     <div className="rounded-sm border border-destructive bg-mixer-destructive/10 px-3 py-2 text-sm whitespace-pre-line text-destructive">
                         {validationMessage}
@@ -543,17 +542,20 @@ export function IntakePolicyEditor({
     );
 
     return (
-        <Tabs
-            tabs={leadingTabs ? [...leadingTabs, ...policyTabs] : policyTabs}
-            current={activeTab}
-            onTabChange={onTabChange}
-            updateHash={false}
-            fullHeight
-            className="px-0 flex-row!"
-        >
-            <TabsBar className="py-2 w-48 shrink-0" direction="vertical" />
-            <TabsPanel className="min-h-0 min-w-0 flex-1 overflow-auto ps-4" />
-        </Tabs>
+        <div className="flex h-full min-h-0 w-full flex-col gap-3">
+            <IntakeSummary policy={summaryPolicy} />
+            <Tabs
+                tabs={leadingTabs ? [...leadingTabs, ...policyTabs] : policyTabs}
+                current={activeTab}
+                onTabChange={onTabChange}
+                updateHash={false}
+                fullHeight
+                className="px-0 min-h-0 flex-1 flex-row!"
+            >
+                <TabsBar className="py-2 w-48 shrink-0" direction="vertical" />
+                <TabsPanel className="min-h-0 min-w-0 flex-1 overflow-auto ps-4" />
+            </Tabs>
+        </div>
     );
 }
 
