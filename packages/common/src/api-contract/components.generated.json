@@ -7506,6 +7506,14 @@
     ],
     "additionalProperties": false
   },
+  "SupportedEmbeddingTypes": {
+    "type": "string",
+    "enum": [
+      "text",
+      "image",
+      "properties"
+    ]
+  },
   "EmbeddingsApiInput": {
     "oneOf": [
       {
@@ -7545,8 +7553,13 @@
           "$ref": "#/components/schemas/EmbeddingsApiInput"
         }
       },
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes",
+        "description": "Logical project embedding type. This distinguishes properties embeddings from text inputs when the server resolves an omitted model from project settings."
+      },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Explicit model override intended for validating a configuration before it is saved. Normal callers should omit this field and provide embedding_type so the project model is resolved."
       },
       "task_type": {
         "$ref": "#/components/schemas/EmbeddingTaskType"
@@ -27996,14 +28009,6 @@
       "path"
     ],
     "additionalProperties": false
-  },
-  "SupportedEmbeddingTypes": {
-    "type": "string",
-    "enum": [
-      "text",
-      "image",
-      "properties"
-    ]
   },
   "StartContentObjectExportRequest": {
     "type": "object",

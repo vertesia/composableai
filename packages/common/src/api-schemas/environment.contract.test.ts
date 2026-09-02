@@ -168,6 +168,21 @@ describe('the embeddings request', () => {
         // adding the constraint would newly reject a request the document has always described.
         expect(validateApiRequest('EmbeddingsApiRequest', { inputs: [] }).valid).toBe(true);
     });
+
+    it('accepts the logical project embedding type and rejects unknown types', () => {
+        expect(
+            validateApiRequest('EmbeddingsApiRequest', {
+                embedding_type: 'properties',
+                inputs: [{ type: 'text', text: '{}' }],
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiRequest('EmbeddingsApiRequest', {
+                embedding_type: 'audio',
+                inputs: [{ type: 'audio', source: { url: 'gs://b/o' } }],
+            }).valid,
+        ).toBe(false);
+    });
 });
 
 function enumOf(component: 'SupportedProviders'): string[] {
