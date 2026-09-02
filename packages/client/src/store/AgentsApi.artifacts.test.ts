@@ -75,10 +75,7 @@ describe('AgentsApi artifact paths', () => {
         expect(serverPath(urls[0], 'artifacts')).toBe(path);
     });
 
-    // The query is appended to the path by string concatenation, so an unescaped delimiter took it
-    // down too: `#` pulled the whole query into the fragment, and `?` absorbed `url=1` into a bogus
-    // key. Either way the server saw no `url` param and streamed raw bytes instead of the
-    // signed-URL JSON the caller expects — so assert the query survives, not just the path.
+    // The query is concatenated onto the path, so an unescaped delimiter took it down too.
     it.each([
         ['hash', 'files/Design (YYYY-0#).docx'],
         ['question mark', 'files/report?v2.docx'],
@@ -95,12 +92,7 @@ describe('AgentsApi artifact paths', () => {
         expect(url.searchParams.get('filename')).toBe('download-name.docx');
     });
 
-    /**
-     * `%` is deliberately out of scope. A literal `%` is a malformed escape the server rejects, and
-     * that rejection — an immediate, visible upload error — is the behaviour being preserved.
-     * Escaping it would let the object reach storage and fail much later, on a separate
-     * storage-layer defect. This pins the wire form to what it would be with no escaping at all.
-     */
+    // Pins the scope boundary: `%` must go on the wire exactly as it does with no escaping at all.
     it('sends a path containing % exactly as it did before, unescaped', async () => {
         const { client, urls } = clientRecordingUrls();
         const path = 'files/100% done.docx';

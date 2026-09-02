@@ -65,16 +65,8 @@ export interface AgentRunStreamMessagesOptions {
 }
 
 /**
- * Escape the two characters the URL parser treats as structure rather than path content: `#`
- * opens the fragment and `?` opens the query, so either one silently truncates an artifact path
- * before the request is built. Every other character is left exactly as it was — the parser
- * already percent-encodes what a path may not contain (spaces, non-ASCII), and the server decodes
- * each segment, so the wire form for every other filename is unchanged.
- *
- * Deliberately NOT applied to `%`: a literal `%` in a filename is a malformed escape that the
- * server rejects, and that rejection is the existing behaviour — an immediate, visible upload
- * error. Encoding it would let the object reach storage and fail much later instead, on a
- * separate storage-layer defect. Scoped to `#` and `?` so `%` is preserved untouched.
+ * `#` and `?` are URL delimiters, not path content: either one truncates the path before the
+ * request is built. Nothing else is escaped — `%` keeps its existing rejection at upload.
  */
 export function escapeArtifactPathDelimiters(path: string): string {
     return path.replace(/#/g, '%23').replace(/\?/g, '%3F');
