@@ -5,6 +5,8 @@ import type {
     EmbeddingBatchApplyResponseSchema,
     EmbeddingBatchPrepareRequestSchema,
     EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchRenditionPageRequestSchema,
+    EmbeddingBatchRenditionPageResponseSchema,
     EmbeddingBatchRunStateSchema,
     EmbeddingBatchSubjobSchema,
     EmbeddingBatchUpdateRequestSchema,
@@ -59,6 +61,8 @@ export type EmbeddingBatchRunState = z.infer<typeof EmbeddingBatchRunStateSchema
 export type EmbeddingBatchSubjob = z.infer<typeof EmbeddingBatchSubjobSchema>;
 export type EmbeddingBatchPrepareRequest = z.infer<typeof EmbeddingBatchPrepareRequestSchema>;
 export type EmbeddingBatchPrepareResponse = z.infer<typeof EmbeddingBatchPrepareResponseSchema>;
+export type EmbeddingBatchRenditionPageRequest = z.infer<typeof EmbeddingBatchRenditionPageRequestSchema>;
+export type EmbeddingBatchRenditionPageResponse = z.infer<typeof EmbeddingBatchRenditionPageResponseSchema>;
 export type EmbeddingBatchUpdateRequest = z.infer<typeof EmbeddingBatchUpdateRequestSchema>;
 export type EmbeddingBatchApplyRequest = z.infer<typeof EmbeddingBatchApplyRequestSchema>;
 export type EmbeddingBatchApplyResponse = z.infer<typeof EmbeddingBatchApplyResponseSchema>;

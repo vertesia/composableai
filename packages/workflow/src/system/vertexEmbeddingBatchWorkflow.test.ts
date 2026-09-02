@@ -11,13 +11,18 @@ const activities = vi.hoisted(() => ({
     applyVertexEmbeddingBatch: vi.fn(),
 }));
 const workflowState = vi.hoisted(() => ({ cancellation: false }));
-const temporal = vi.hoisted(() => ({ sleep: vi.fn().mockResolvedValue(undefined) }));
+const temporal = vi.hoisted(() => ({
+    executeChild: vi.fn().mockResolvedValue({ status: 'completed' }),
+    sleep: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock('../dsl/dslProxyActivities.js', () => ({ dslProxyActivities: () => activities }));
 vi.mock('@temporalio/workflow', () => ({
     sleep: temporal.sleep,
     isCancellation: () => workflowState.cancellation,
     CancellationScope: { nonCancellable: (fn: () => unknown) => fn() },
+    executeChild: temporal.executeChild,
+    ParentClosePolicy: { REQUEST_CANCEL: 'REQUEST_CANCEL' },
 }));
 
 import { vertexEmbeddingBatchWorkflow } from './vertexEmbeddingBatchWorkflow.js';
@@ -70,6 +75,41 @@ describe('vertexEmbeddingBatchWorkflow', () => {
         expect(activities.createVertexEmbeddingBatchJob).toHaveBeenCalledTimes(2);
         expect(activities.getVertexEmbeddingBatchJob).toHaveBeenCalledTimes(2);
         expect(activities.deleteVertexEmbeddingBatchJob).not.toHaveBeenCalled();
+    });
+
+    it('ensures image renditions in a bounded child workflow before preparing provider input', async () => {
+        const imagePayload = {
+            ...payload,
+            vars: {
+                vertex_embedding_batch: {
+                    ...(payload.vars?.vertex_embedding_batch as object),
+                    type: 'image',
+                },
+            },
+        } as unknown as WorkflowExecutionPayload;
+        activities.prepareVertexEmbeddingBatch.mockResolvedValue({ run_id: 'run', row_count: 0, subjobs: [] });
+        activities.applyVertexEmbeddingBatch.mockResolvedValue({
+            state: 'completed',
+            succeeded: 0,
+            failed: 0,
+            stale: 0,
+            applied: 0,
+        });
+
+        await vertexEmbeddingBatchWorkflow(imagePayload);
+
+        expect(temporal.executeChild).toHaveBeenCalledWith(
+            'EnsureEmbeddingBatchRenditionsWorkflow',
+            expect.objectContaining({
+                args: [imagePayload],
+                workflowId: 'embedding-batch-renditions-run',
+                cancellationType: 'WAIT_CANCELLATION_COMPLETED',
+                parentClosePolicy: 'REQUEST_CANCEL',
+            }),
+        );
+        expect(activities.prepareVertexEmbeddingBatch.mock.invocationCallOrder[0]).toBeGreaterThan(
+            temporal.executeChild.mock.invocationCallOrder[0],
+        );
     });
 
     it('backs off provider polling to a ten-minute limit', async () => {

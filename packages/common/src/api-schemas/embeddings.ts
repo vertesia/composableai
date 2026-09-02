@@ -231,6 +231,22 @@ export const EmbeddingBatchPrepareResponseSchema = z
     })
     .meta({ id: 'EmbeddingBatchPrepareResponse' });
 
+export const EmbeddingBatchRenditionPageRequestSchema = z
+    .strictObject({ run_id: z.string() })
+    .meta({ id: 'EmbeddingBatchRenditionPageRequest' });
+
+export const EmbeddingBatchRenditionPageResponseSchema = z
+    .strictObject({
+        status: z.enum(['running', 'page_completed', 'completed']),
+        page_index: z.number().int().nonnegative(),
+        page_scanned: z.number().int().nonnegative(),
+        page_ready: z.number().int().nonnegative(),
+        page_generated: z.number().int().nonnegative(),
+        page_failed: z.number().int().nonnegative(),
+        running: z.number().int().nonnegative(),
+    })
+    .meta({ id: 'EmbeddingBatchRenditionPageResponse' });
+
 export const EmbeddingBatchUpdateRequestSchema = z
     .strictObject({
         run_id: z.string(),

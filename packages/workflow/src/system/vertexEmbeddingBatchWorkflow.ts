@@ -1,4 +1,4 @@
-import { CancellationScope, isCancellation, sleep } from '@temporalio/workflow';
+import { CancellationScope, executeChild, isCancellation, ParentClosePolicy, sleep } from '@temporalio/workflow';
 import type { EmbeddingBatchSubjob, WorkflowExecutionPayload } from '@vertesia/common';
 import type * as activities from '../activities/index-dsl.js';
 import type { VertexEmbeddingBatchParams } from '../activities/vertexEmbeddingBatch.js';
@@ -27,6 +27,15 @@ export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPay
     if (!params?.run_id || !params.capability?.eligible) throw new Error('Missing Vertex embedding batch parameters');
     let subjobs: EmbeddingBatchSubjob[] = [];
     try {
+        if (params.type === 'image') {
+            await executeChild('EnsureEmbeddingBatchRenditionsWorkflow', {
+                args: [payload],
+                workflowId: `embedding-batch-renditions-${params.run_id}`,
+                cancellationType: 'WAIT_CANCELLATION_COMPLETED',
+                parentClosePolicy: ParentClosePolicy.REQUEST_CANCEL,
+                workflowExecutionTimeout: '30 days',
+            });
+        }
         const prepared = await longBatch.prepareVertexEmbeddingBatch(payload, params);
         subjobs = prepared.subjobs;
         if (subjobs.length === 0) {

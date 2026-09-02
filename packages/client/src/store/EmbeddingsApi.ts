@@ -4,6 +4,8 @@ import type {
     EmbeddingBatchApplyResponse,
     EmbeddingBatchPrepareRequest,
     EmbeddingBatchPrepareResponse,
+    EmbeddingBatchRenditionPageRequest,
+    EmbeddingBatchRenditionPageResponse,
     EmbeddingBatchUpdateRequest,
     EmbeddingsStatusResponse,
     GenericCommandResponse,
@@ -55,6 +57,22 @@ export class EmbeddingsApi extends ApiTopic {
 
     async updateBatch(payload: EmbeddingBatchUpdateRequest): Promise<GenericCommandResponse> {
         return this.post('/batch/update', { payload });
+    }
+
+    async prepareBatchRenditionPage(
+        payload: EmbeddingBatchRenditionPageRequest,
+    ): Promise<EmbeddingBatchRenditionPageResponse> {
+        return this.post('/batch/renditions/prepare', { payload });
+    }
+
+    async pollBatchRenditionPage(
+        payload: EmbeddingBatchRenditionPageRequest,
+    ): Promise<EmbeddingBatchRenditionPageResponse> {
+        return this.post('/batch/renditions/status', { payload });
+    }
+
+    async cancelBatchRenditionPage(payload: EmbeddingBatchRenditionPageRequest): Promise<GenericCommandResponse> {
+        return this.post('/batch/renditions/cancel', { payload });
     }
 
     async applyBatch(
