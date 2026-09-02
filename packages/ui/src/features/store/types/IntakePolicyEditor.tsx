@@ -466,7 +466,7 @@ export function IntakePolicyEditor({
             <Dropdown
                 align="right"
                 trigger={
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="md">
                         <WandSparkles className="size-4" />
                         {t('intakePolicy.action.examples')}
                     </Button>
@@ -488,21 +488,21 @@ export function IntakePolicyEditor({
             </Dropdown>
             {activeTab === 'json' && (
                 <>
-                    <Button variant="outline" size="sm" onClick={onFormat}>
+                    <Button variant="outline" size="md" onClick={onFormat}>
                         <Braces className="size-4" />
                         {t('intakePolicy.action.format')}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={onValidate}>
+                    <Button variant="outline" size="md" onClick={onValidate}>
                         <CheckCircle2 className="size-4" />
                         {t('intakePolicy.action.validate')}
                     </Button>
                 </>
             )}
-            <Button variant="outline" size="sm" onClick={onRevert} disabled={!isDirty}>
+            <Button variant="outline" size="md" onClick={onRevert} disabled={!isDirty}>
                 <RotateCcw className="size-4" />
                 {t('intakePolicy.action.revert')}
             </Button>
-            <Button isLoading={isUpdating} size="sm" onClick={onSave} disabled={!isDirty}>
+            <Button isLoading={isUpdating} size="md" onClick={onSave} disabled={!isDirty}>
                 <Save className="size-4" />
                 {t('intakePolicy.action.save')}
             </Button>
