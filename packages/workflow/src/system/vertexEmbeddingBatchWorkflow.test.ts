@@ -11,10 +11,11 @@ const activities = vi.hoisted(() => ({
     applyVertexEmbeddingBatch: vi.fn(),
 }));
 const workflowState = vi.hoisted(() => ({ cancellation: false }));
+const temporal = vi.hoisted(() => ({ sleep: vi.fn().mockResolvedValue(undefined) }));
 
 vi.mock('../dsl/dslProxyActivities.js', () => ({ dslProxyActivities: () => activities }));
 vi.mock('@temporalio/workflow', () => ({
-    sleep: vi.fn().mockResolvedValue(undefined),
+    sleep: temporal.sleep,
     isCancellation: () => workflowState.cancellation,
     CancellationScope: { nonCancellable: (fn: () => unknown) => fn() },
 }));
@@ -44,7 +45,7 @@ describe('vertexEmbeddingBatchWorkflow', () => {
         activities.cancelVertexEmbeddingBatchJob.mockResolvedValue({ name: 'cancelled', state: 'cancelled' });
     });
 
-    it('submits multiple subjobs, polls to terminal state, applies, and deletes metadata', async () => {
+    it('submits multiple subjobs, polls to terminal state, applies, and retains provider metadata', async () => {
         const subjobs = [0, 1].map((index) => ({
             index,
             display_name: `job-${index}`,
@@ -68,7 +69,40 @@ describe('vertexEmbeddingBatchWorkflow', () => {
         await expect(vertexEmbeddingBatchWorkflow(payload)).resolves.toMatchObject({ state: 'completed', applied: 2 });
         expect(activities.createVertexEmbeddingBatchJob).toHaveBeenCalledTimes(2);
         expect(activities.getVertexEmbeddingBatchJob).toHaveBeenCalledTimes(2);
-        expect(activities.deleteVertexEmbeddingBatchJob).toHaveBeenCalledTimes(2);
+        expect(activities.deleteVertexEmbeddingBatchJob).not.toHaveBeenCalled();
+    });
+
+    it('backs off provider polling to a ten-minute limit', async () => {
+        const subjob = {
+            index: 0,
+            display_name: 'job',
+            input_uri: 'gs://b/input',
+            output_uri: 'gs://b/output/',
+            row_count: 1,
+        };
+        activities.prepareVertexEmbeddingBatch.mockResolvedValue({ run_id: 'run', row_count: 1, subjobs: [subjob] });
+        activities.createVertexEmbeddingBatchJob.mockResolvedValue({ name: 'provider/0', state: 'pending' });
+        activities.getVertexEmbeddingBatchJob
+            .mockResolvedValueOnce({ name: 'provider/0', state: 'pending' })
+            .mockResolvedValueOnce({ name: 'provider/0', state: 'pending' })
+            .mockResolvedValueOnce({ name: 'provider/0', state: 'pending' })
+            .mockResolvedValueOnce({ name: 'provider/0', state: 'pending' })
+            .mockResolvedValueOnce({ name: 'provider/0', state: 'pending' })
+            .mockResolvedValueOnce({ name: 'provider/0', state: 'pending' })
+            .mockResolvedValueOnce({ name: 'provider/0', state: 'succeeded' });
+        activities.applyVertexEmbeddingBatch.mockResolvedValue({
+            state: 'completed',
+            succeeded: 1,
+            failed: 0,
+            stale: 0,
+            applied: 1,
+        });
+
+        await vertexEmbeddingBatchWorkflow(payload);
+
+        expect(temporal.sleep.mock.calls.map(([delay]) => delay)).toEqual([
+            30_000, 60_000, 120_000, 240_000, 480_000, 600_000, 600_000,
+        ]);
     });
 
     it('completes without provider jobs when preparation produces no valid rows', async () => {

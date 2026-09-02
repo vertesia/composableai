@@ -10,6 +10,12 @@ const batch = dslProxyActivities<typeof activities>('vertexEmbeddingBatchWorkflo
 });
 
 const TERMINAL = new Set(['succeeded', 'failed', 'cancelled', 'paused']);
+const INITIAL_POLL_DELAY_MS = 30_000;
+const MAX_POLL_DELAY_MS = 10 * 60_000;
+
+function nextPollDelay(delayMs: number): number {
+    return Math.min(delayMs * 2, MAX_POLL_DELAY_MS);
+}
 
 export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPayload) {
     const params = payload.vars?.vertex_embedding_batch as unknown as VertexEmbeddingBatchParams;
@@ -28,24 +34,19 @@ export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPay
             subjob.state = job.state;
         }
         await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'submitted', subjobs });
+        let pollDelayMs = INITIAL_POLL_DELAY_MS;
         while (subjobs.some((job) => !job.state || !TERMINAL.has(job.state))) {
-            await sleep('30 seconds');
+            await sleep(pollDelayMs);
             for (const subjob of subjobs) {
                 if (!subjob.provider_name || (subjob.state && TERMINAL.has(subjob.state))) continue;
                 const job = await batch.getVertexEmbeddingBatchJob(payload, { ...params, name: subjob.provider_name });
                 subjob.state = job.state;
             }
             await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'running', subjobs });
+            pollDelayMs = nextPollDelay(pollDelayMs);
         }
         await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'applying', subjobs });
-        const result = await batch.applyVertexEmbeddingBatch(payload, { run_id: params.run_id });
-        for (const subjob of subjobs)
-            if (subjob.provider_name) {
-                await batch
-                    .deleteVertexEmbeddingBatchJob(payload, { ...params, name: subjob.provider_name })
-                    .catch(() => undefined);
-            }
-        return result;
+        return batch.applyVertexEmbeddingBatch(payload, { run_id: params.run_id });
     } catch (error) {
         if (!isCancellation(error)) {
             await CancellationScope.nonCancellable(() =>
@@ -66,8 +67,9 @@ export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPay
                         .catch(() => undefined);
                     if (job) subjob.state = job.state;
                 }
+            let pollDelayMs = INITIAL_POLL_DELAY_MS;
             while (subjobs.some((job) => job.provider_name && (!job.state || !TERMINAL.has(job.state)))) {
-                await sleep('30 seconds');
+                await sleep(pollDelayMs);
                 for (const subjob of subjobs) {
                     if (!subjob.provider_name || (subjob.state && TERMINAL.has(subjob.state))) continue;
                     const job = await batch.getVertexEmbeddingBatchJob(payload, {
@@ -76,6 +78,7 @@ export async function vertexEmbeddingBatchWorkflow(payload: WorkflowExecutionPay
                     });
                     subjob.state = job.state;
                 }
+                pollDelayMs = nextPollDelay(pollDelayMs);
             }
             await batch.updateVertexEmbeddingBatch(payload, { run_id: params.run_id, state: 'applying', subjobs });
             try {
