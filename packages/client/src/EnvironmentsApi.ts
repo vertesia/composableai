@@ -1,6 +1,11 @@
 import type { AIModel, ModelSearchPayload } from '@llumiverse/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    EmbeddingBatchCapabilityRequest,
+    EmbeddingBatchCapabilityResponse,
+    EmbeddingBatchCreateRequest,
+    EmbeddingBatchJobRequest,
+    EmbeddingBatchJobResponse,
     EmbeddingsApiRequest,
     EmbeddingsApiResult,
     EnableEnvironmentModelPayload,
@@ -10,11 +15,6 @@ import type {
     ExecutionEnvironmentUpdatePayload,
     MigrateInteractionsPayload,
     MigrateInteractionsResult,
-    VertexEmbeddingBatchCapabilityRequest,
-    VertexEmbeddingBatchCapabilityResponse,
-    VertexEmbeddingBatchCreateRequest,
-    VertexEmbeddingBatchJobRequest,
-    VertexEmbeddingBatchJobResponse,
 } from '@vertesia/common';
 
 export default class EnvironmentsApi extends ApiTopic {
@@ -91,33 +91,24 @@ export default class EnvironmentsApi extends ApiTopic {
 
     embeddingBatchCapability(
         id: string,
-        payload: VertexEmbeddingBatchCapabilityRequest,
-    ): Promise<VertexEmbeddingBatchCapabilityResponse> {
+        payload: EmbeddingBatchCapabilityRequest,
+    ): Promise<EmbeddingBatchCapabilityResponse> {
         return this.post(`/${id}/embedding-batches/capability`, { payload });
     }
 
-    createEmbeddingBatch(
-        id: string,
-        payload: VertexEmbeddingBatchCreateRequest,
-    ): Promise<VertexEmbeddingBatchJobResponse> {
+    createEmbeddingBatch(id: string, payload: EmbeddingBatchCreateRequest): Promise<EmbeddingBatchJobResponse> {
         return this.post(`/${id}/embedding-batches`, { payload });
     }
 
-    getEmbeddingBatch(id: string, payload: VertexEmbeddingBatchJobRequest): Promise<VertexEmbeddingBatchJobResponse> {
+    getEmbeddingBatch(id: string, payload: EmbeddingBatchJobRequest): Promise<EmbeddingBatchJobResponse> {
         return this.post(`/${id}/embedding-batches/get`, { payload });
     }
 
-    cancelEmbeddingBatch(
-        id: string,
-        payload: VertexEmbeddingBatchJobRequest,
-    ): Promise<VertexEmbeddingBatchJobResponse> {
+    cancelEmbeddingBatch(id: string, payload: EmbeddingBatchJobRequest): Promise<EmbeddingBatchJobResponse> {
         return this.post(`/${id}/embedding-batches/cancel`, { payload });
     }
 
-    deleteEmbeddingBatch(
-        id: string,
-        payload: VertexEmbeddingBatchJobRequest,
-    ): Promise<VertexEmbeddingBatchJobResponse> {
+    deleteEmbeddingBatch(id: string, payload: EmbeddingBatchJobRequest): Promise<EmbeddingBatchJobResponse> {
         return this.post(`/${id}/embedding-batches/delete`, { payload });
     }
 

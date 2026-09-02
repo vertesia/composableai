@@ -40408,7 +40408,7 @@
     ],
     "additionalProperties": false
   },
-  "VertexEmbeddingBatchState": {
+  "EmbeddingBatchProviderState": {
     "type": "string",
     "enum": [
       "pending",
@@ -40419,7 +40419,7 @@
       "paused"
     ]
   },
-  "VertexEmbeddingBatchCapabilityRequest": {
+  "EmbeddingBatchCapabilityRequest": {
     "type": "object",
     "properties": {
       "embedding_type": {
@@ -40430,7 +40430,7 @@
       "embedding_type"
     ]
   },
-  "VertexEmbeddingBatchCapabilityResponse": {
+  "EmbeddingBatchCapabilityResponse": {
     "type": "object",
     "properties": {
       "eligible": {
@@ -40461,19 +40461,15 @@
       "location": {
         "type": "string"
       },
-      "schema": {
-        "type": "string",
-        "enum": [
-          "gemini",
-          "legacy"
-        ]
+      "input_format": {
+        "type": "string"
       },
       "max_rows": {
         "type": "integer",
         "exclusiveMinimum": 0,
         "maximum": 9007199254740991
       },
-      "bucket_uri": {
+      "artifact_uri": {
         "type": "string"
       }
     },
@@ -40481,7 +40477,7 @@
       "eligible"
     ]
   },
-  "VertexEmbeddingBatchCreateRequest": {
+  "EmbeddingBatchCreateRequest": {
     "type": "object",
     "properties": {
       "embedding_type": {
@@ -40514,7 +40510,7 @@
       "output_uri"
     ]
   },
-  "VertexEmbeddingBatchJobRequest": {
+  "EmbeddingBatchJobRequest": {
     "type": "object",
     "properties": {
       "embedding_type": {
@@ -40533,7 +40529,7 @@
       "name"
     ]
   },
-  "VertexEmbeddingBatchJobResponse": {
+  "EmbeddingBatchJobResponse": {
     "type": "object",
     "properties": {
       "name": {
@@ -40640,7 +40636,7 @@
         "$ref": "#/components/schemas/SupportedEmbeddingTypes"
       },
       "capability": {
-        "$ref": "#/components/schemas/VertexEmbeddingBatchCapabilityResponse"
+        "$ref": "#/components/schemas/EmbeddingBatchCapabilityResponse"
       }
     },
     "required": [

@@ -6,6 +6,15 @@ export { updateDocumentFromInteractionRun } from './advanced/updateDocumentFromI
 export { chunkDocument } from './chunkDocument.js';
 export { createPdfDocumentFromSource } from './createDocumentFromOther.js';
 export { detectDocumentLanguage } from './detectDocumentLanguage.js';
+export {
+    applyEmbeddingBatch,
+    cancelEmbeddingBatchJob,
+    createEmbeddingBatchJob,
+    deleteEmbeddingBatchJob,
+    getEmbeddingBatchJob,
+    prepareEmbeddingBatch,
+    updateEmbeddingBatch,
+} from './embeddingBatch.js';
 export { executeInteraction } from './executeInteraction.js';
 export { executeRemoteActivity } from './executeRemoteActivity.js';
 export { extractDocumentText } from './extractDocumentText.js';
@@ -31,12 +40,3 @@ export { generateVideoRendition } from './renditions/generateVideoRendition.js';
 export type { RemoteActivityInfo, RemoteActivityMap } from './resolveRemoteActivities.js';
 export { resolveRemoteActivities } from './resolveRemoteActivities.js';
 export { setDocumentStatus } from './setDocumentStatus.js';
-export {
-    applyVertexEmbeddingBatch,
-    cancelVertexEmbeddingBatchJob,
-    createVertexEmbeddingBatchJob,
-    deleteVertexEmbeddingBatchJob,
-    getVertexEmbeddingBatchJob,
-    prepareVertexEmbeddingBatch,
-    updateVertexEmbeddingBatch,
-} from './vertexEmbeddingBatch.js';

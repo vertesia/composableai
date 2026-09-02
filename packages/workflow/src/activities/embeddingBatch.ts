@@ -1,22 +1,22 @@
 import type {
     DSLActivityExecutionPayload,
     EmbeddingBatchApplyResponse,
+    EmbeddingBatchCapabilityResponse,
+    EmbeddingBatchJobResponse,
     EmbeddingBatchPrepareResponse,
     EmbeddingBatchRunState,
     EmbeddingBatchSubjob,
     SupportedEmbeddingTypes,
-    VertexEmbeddingBatchCapabilityResponse,
-    VertexEmbeddingBatchJobResponse,
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 
-export interface VertexEmbeddingBatchParams {
+export interface EmbeddingBatchParams {
     run_id: string;
     type: SupportedEmbeddingTypes;
-    capability: VertexEmbeddingBatchCapabilityResponse;
+    capability: EmbeddingBatchCapabilityResponse;
 }
-type JobParams = VertexEmbeddingBatchParams & { subjob: EmbeddingBatchSubjob };
-type NamedJobParams = VertexEmbeddingBatchParams & { name: string };
+type JobParams = EmbeddingBatchParams & { subjob: EmbeddingBatchSubjob };
+type NamedJobParams = EmbeddingBatchParams & { name: string };
 type UpdateParams = {
     run_id: string;
     state: EmbeddingBatchRunState;
@@ -24,14 +24,14 @@ type UpdateParams = {
     error?: { code?: string; message?: string };
 };
 
-function requiredCapability(params: VertexEmbeddingBatchParams) {
+function requiredCapability(params: EmbeddingBatchParams) {
     const { environment, model, dimensions } = params.capability;
-    if (!environment || !model || !dimensions) throw new Error('Incomplete Vertex embedding batch capability');
+    if (!environment || !model || !dimensions) throw new Error('Incomplete embedding batch capability');
     return { environment, model, dimensions };
 }
 
-export async function prepareVertexEmbeddingBatch(
-    payload: DSLActivityExecutionPayload<VertexEmbeddingBatchParams>,
+export async function prepareEmbeddingBatch(
+    payload: DSLActivityExecutionPayload<EmbeddingBatchParams>,
 ): Promise<EmbeddingBatchPrepareResponse> {
     const { client, params } = await setupActivity(payload);
     return client.store.embeddings.prepareBatch({
@@ -41,9 +41,9 @@ export async function prepareVertexEmbeddingBatch(
     });
 }
 
-export async function createVertexEmbeddingBatchJob(
+export async function createEmbeddingBatchJob(
     payload: DSLActivityExecutionPayload<JobParams>,
-): Promise<VertexEmbeddingBatchJobResponse> {
+): Promise<EmbeddingBatchJobResponse> {
     const { client, params } = await setupActivity(payload);
     const capability = requiredCapability(params);
     return client.environments.createEmbeddingBatch(capability.environment, {
@@ -56,7 +56,7 @@ export async function createVertexEmbeddingBatchJob(
     });
 }
 
-export async function getVertexEmbeddingBatchJob(payload: DSLActivityExecutionPayload<NamedJobParams>) {
+export async function getEmbeddingBatchJob(payload: DSLActivityExecutionPayload<NamedJobParams>) {
     const { client, params } = await setupActivity(payload);
     const capability = requiredCapability(params);
     return client.environments.getEmbeddingBatch(capability.environment, {
@@ -66,7 +66,7 @@ export async function getVertexEmbeddingBatchJob(payload: DSLActivityExecutionPa
     });
 }
 
-export async function cancelVertexEmbeddingBatchJob(payload: DSLActivityExecutionPayload<NamedJobParams>) {
+export async function cancelEmbeddingBatchJob(payload: DSLActivityExecutionPayload<NamedJobParams>) {
     const { client, params } = await setupActivity(payload);
     const capability = requiredCapability(params);
     return client.environments.cancelEmbeddingBatch(capability.environment, {
@@ -76,7 +76,7 @@ export async function cancelVertexEmbeddingBatchJob(payload: DSLActivityExecutio
     });
 }
 
-export async function deleteVertexEmbeddingBatchJob(payload: DSLActivityExecutionPayload<NamedJobParams>) {
+export async function deleteEmbeddingBatchJob(payload: DSLActivityExecutionPayload<NamedJobParams>) {
     const { client, params } = await setupActivity(payload);
     const capability = requiredCapability(params);
     return client.environments.deleteEmbeddingBatch(capability.environment, {
@@ -86,7 +86,7 @@ export async function deleteVertexEmbeddingBatchJob(payload: DSLActivityExecutio
     });
 }
 
-export async function updateVertexEmbeddingBatch(payload: DSLActivityExecutionPayload<UpdateParams>): Promise<void> {
+export async function updateEmbeddingBatch(payload: DSLActivityExecutionPayload<UpdateParams>): Promise<void> {
     const { client, params } = await setupActivity(payload);
     await client.store.embeddings.updateBatch({
         run_id: params.run_id,
@@ -97,7 +97,7 @@ export async function updateVertexEmbeddingBatch(payload: DSLActivityExecutionPa
     });
 }
 
-export async function applyVertexEmbeddingBatch(
+export async function applyEmbeddingBatch(
     payload: DSLActivityExecutionPayload<{ run_id: string }>,
 ): Promise<EmbeddingBatchApplyResponse> {
     const { client, params } = await setupActivity(payload);

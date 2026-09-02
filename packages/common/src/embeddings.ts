@@ -3,8 +3,14 @@ import type { z } from 'zod';
 import type {
     EmbeddingBatchApplyRequestSchema,
     EmbeddingBatchApplyResponseSchema,
+    EmbeddingBatchCapabilityRequestSchema,
+    EmbeddingBatchCapabilityResponseSchema,
+    EmbeddingBatchCreateRequestSchema,
+    EmbeddingBatchJobRequestSchema,
+    EmbeddingBatchJobResponseSchema,
     EmbeddingBatchPrepareRequestSchema,
     EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchProviderStateSchema,
     EmbeddingBatchRenditionPageRequestSchema,
     EmbeddingBatchRenditionPageResponseSchema,
     EmbeddingBatchRunStateSchema,
@@ -18,11 +24,6 @@ import type {
     EmbeddingsApiTextInputSchema,
     EmbeddingsApiVideoInputSchema,
     RecalculateEmbeddingsQuerySchema,
-    VertexEmbeddingBatchCapabilityRequestSchema,
-    VertexEmbeddingBatchCapabilityResponseSchema,
-    VertexEmbeddingBatchCreateRequestSchema,
-    VertexEmbeddingBatchJobRequestSchema,
-    VertexEmbeddingBatchJobResponseSchema,
 } from './api-schemas/embeddings.js';
 
 /**
@@ -52,11 +53,12 @@ export type EmbeddingsApiRequest = z.infer<typeof EmbeddingsApiRequestSchema>;
  */
 export type EmbeddingsApiResult = EmbeddingsResult;
 export type RecalculateEmbeddingsQuery = z.infer<typeof RecalculateEmbeddingsQuerySchema>;
-export type VertexEmbeddingBatchCapabilityRequest = z.infer<typeof VertexEmbeddingBatchCapabilityRequestSchema>;
-export type VertexEmbeddingBatchCapabilityResponse = z.infer<typeof VertexEmbeddingBatchCapabilityResponseSchema>;
-export type VertexEmbeddingBatchCreateRequest = z.infer<typeof VertexEmbeddingBatchCreateRequestSchema>;
-export type VertexEmbeddingBatchJobRequest = z.infer<typeof VertexEmbeddingBatchJobRequestSchema>;
-export type VertexEmbeddingBatchJobResponse = z.infer<typeof VertexEmbeddingBatchJobResponseSchema>;
+export type EmbeddingBatchCapabilityRequest = z.infer<typeof EmbeddingBatchCapabilityRequestSchema>;
+export type EmbeddingBatchCapabilityResponse = z.infer<typeof EmbeddingBatchCapabilityResponseSchema>;
+export type EmbeddingBatchCreateRequest = z.infer<typeof EmbeddingBatchCreateRequestSchema>;
+export type EmbeddingBatchJobRequest = z.infer<typeof EmbeddingBatchJobRequestSchema>;
+export type EmbeddingBatchJobResponse = z.infer<typeof EmbeddingBatchJobResponseSchema>;
+export type EmbeddingBatchProviderState = z.infer<typeof EmbeddingBatchProviderStateSchema>;
 export type EmbeddingBatchRunState = z.infer<typeof EmbeddingBatchRunStateSchema>;
 export type EmbeddingBatchSubjob = z.infer<typeof EmbeddingBatchSubjobSchema>;
 export type EmbeddingBatchPrepareRequest = z.infer<typeof EmbeddingBatchPrepareRequestSchema>;
