@@ -636,7 +636,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
 }
 
 function FormSurface({ children }: { children: ReactNode }) {
-    return <div className="mx-auto w-full max-w-6xl px-1 py-4">{children}</div>;
+    return <div className="w-full px-1 py-4">{children}</div>;
 }
 
 function FormSection({
