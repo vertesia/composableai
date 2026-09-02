@@ -187,7 +187,10 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
       + '<div id="loading-slow-reload" style="display: none;">'
       + '<button type="button" class="vboot-btn" onclick="window.location.reload()">Reload page</button>'
       + '</div></div></div>';
-    document.documentElement.appendChild(loading);
+    const loadingParent = typeof document.documentElement.appendChild === 'function'
+      ? document.documentElement
+      : document.body;
+    loadingParent.appendChild(loading);
   };
   const hideLoadingIndicator = () => {
     const loading = document.getElementById('loading-indicator');
