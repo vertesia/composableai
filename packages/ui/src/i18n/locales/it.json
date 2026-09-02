@@ -1142,7 +1142,7 @@
     "intakePolicy.tab.grounding": "Fondamento",
     "intakePolicy.tab.json": "JSON",
     "intakePolicy.tab.output": "Risultato",
-    "intakePolicy.tab.overview": "Panoramica",
+    "intakePolicy.tab.overview": "Classificazione",
     "intakePolicy.title": "Criteri di acquisizione",
     "intakePolicy.toast.invalid": "Criteri di acquisizione non validi",
     "intakePolicy.toast.saved": "I criteri di acquisizione sono stati salvati.",

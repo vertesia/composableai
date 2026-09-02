@@ -1131,7 +1131,7 @@
     "intakePolicy.tab.grounding": "Belegung",
     "intakePolicy.tab.json": "JSON",
     "intakePolicy.tab.output": "Ausgabe",
-    "intakePolicy.tab.overview": "Übersicht",
+    "intakePolicy.tab.overview": "Klassifizierung",
     "intakePolicy.title": "Aufnahmerichtlinie",
     "intakePolicy.toast.invalid": "Ungültige Aufnahmerichtlinie",
     "intakePolicy.toast.saved": "Die Aufnahmerichtlinie wurde gespeichert.",

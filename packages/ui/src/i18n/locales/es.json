@@ -1142,7 +1142,7 @@
     "intakePolicy.tab.grounding": "Fundamentación",
     "intakePolicy.tab.json": "JSON",
     "intakePolicy.tab.output": "Salida",
-    "intakePolicy.tab.overview": "Resumen",
+    "intakePolicy.tab.overview": "Clasificación",
     "intakePolicy.title": "Política de ingesta",
     "intakePolicy.toast.invalid": "Política de ingesta no válida",
     "intakePolicy.toast.saved": "La política de ingesta se ha guardado.",

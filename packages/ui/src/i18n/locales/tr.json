@@ -1131,7 +1131,7 @@
     "intakePolicy.tab.grounding": "Temellendirme",
     "intakePolicy.tab.json": "JSON",
     "intakePolicy.tab.output": "Çıktı",
-    "intakePolicy.tab.overview": "Genel bakış",
+    "intakePolicy.tab.overview": "Sınıflandırma",
     "intakePolicy.title": "Alım ilkesi",
     "intakePolicy.toast.invalid": "Geçersiz alım ilkesi",
     "intakePolicy.toast.saved": "Alım ilkesi kaydedildi.",

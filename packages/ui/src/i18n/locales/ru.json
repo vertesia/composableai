@@ -1155,7 +1155,7 @@
     "intakePolicy.tab.grounding": "Обоснование",
     "intakePolicy.tab.json": "JSON",
     "intakePolicy.tab.output": "Вывод",
-    "intakePolicy.tab.overview": "Обзор",
+    "intakePolicy.tab.overview": "Классификация",
     "intakePolicy.title": "Политика приёма",
     "intakePolicy.toast.invalid": "Недопустимая политика приёма",
     "intakePolicy.toast.saved": "Политика приёма сохранена.",

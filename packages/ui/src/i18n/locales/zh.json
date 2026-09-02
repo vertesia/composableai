@@ -1130,7 +1130,7 @@
     "intakePolicy.tab.grounding": "依据",
     "intakePolicy.tab.json": "JSON",
     "intakePolicy.tab.output": "输出",
-    "intakePolicy.tab.overview": "概览",
+    "intakePolicy.tab.overview": "分类",
     "intakePolicy.title": "采集策略",
     "intakePolicy.toast.invalid": "采集策略无效",
     "intakePolicy.toast.saved": "采集策略已保存。",

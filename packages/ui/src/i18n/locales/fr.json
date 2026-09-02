@@ -1142,7 +1142,7 @@
     "intakePolicy.tab.grounding": "Ancrage",
     "intakePolicy.tab.json": "JSON",
     "intakePolicy.tab.output": "Sortie",
-    "intakePolicy.tab.overview": "Vue d’ensemble",
+    "intakePolicy.tab.overview": "Classification",
     "intakePolicy.title": "Politique d’ingestion",
     "intakePolicy.toast.invalid": "Politique d’ingestion non valide",
     "intakePolicy.toast.saved": "La politique d’ingestion a été enregistrée.",

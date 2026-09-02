@@ -1130,7 +1130,7 @@
     "intakePolicy.tab.grounding": "根拠付け",
     "intakePolicy.tab.json": "JSON",
     "intakePolicy.tab.output": "出力",
-    "intakePolicy.tab.overview": "概要",
+    "intakePolicy.tab.overview": "分類",
     "intakePolicy.title": "取り込みポリシー",
     "intakePolicy.toast.invalid": "取り込みポリシーが無効です",
     "intakePolicy.toast.saved": "取り込みポリシーを保存しました。",
