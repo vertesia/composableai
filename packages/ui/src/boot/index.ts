@@ -240,15 +240,59 @@ export function renderBootScreenInitializer(): string {
     return `<script>window.__vertesiaBoot.ensureLoadingIndicator(); window.__vertesiaBoot.hideLoadingIndicatorOnFirstRender();</script>`;
 }
 
+function isHtmlWhitespace(character: string | undefined): boolean {
+    return character === ' ' || character === '\t' || character === '\n' || character === '\r' || character === '\f';
+}
+
+function hasAttribute(openingTag: string, attributeName: string): boolean {
+    const lowerTag = openingTag.toLowerCase();
+    let searchFrom = 0;
+    while (searchFrom < lowerTag.length) {
+        const attributeIndex = lowerTag.indexOf(attributeName, searchFrom);
+        if (attributeIndex === -1) return false;
+
+        const before = lowerTag[attributeIndex - 1];
+        let afterIndex = attributeIndex + attributeName.length;
+        while (isHtmlWhitespace(lowerTag[afterIndex])) afterIndex += 1;
+        if (isHtmlWhitespace(before) && lowerTag[afterIndex] === '=') return true;
+        searchFrom = attributeIndex + attributeName.length;
+    }
+    return false;
+}
+
+function findOpeningTagEnd(html: string, tagName: string, attributeName?: string): number | undefined {
+    const lowerHtml = html.toLowerCase();
+    const tagStart = `<${tagName}`;
+    let searchFrom = 0;
+    while (searchFrom < lowerHtml.length) {
+        const start = lowerHtml.indexOf(tagStart, searchFrom);
+        if (start === -1) return undefined;
+
+        const boundary = lowerHtml[start + tagStart.length];
+        if (boundary === '>' || isHtmlWhitespace(boundary)) {
+            const end = lowerHtml.indexOf('>', start + tagStart.length);
+            if (end === -1) return undefined;
+            if (!attributeName || hasAttribute(lowerHtml.slice(start, end + 1), attributeName)) return end + 1;
+            searchFrom = end + 1;
+        } else {
+            searchFrom = start + tagStart.length;
+        }
+    }
+    return undefined;
+}
+
+function insertAt(html: string, index: number, content: string): string {
+    return `${html.slice(0, index)}${content}${html.slice(index)}`;
+}
+
 export function injectBootScreenHtml(html: string, options: BootScreenOptions = {}): string {
     const normalized = normalizedOptions(options);
     const head = renderBootScreenHead(normalized);
-    const charset = /(<meta\s+charset=[^>]+>)/i;
-    const withHead = charset.test(html)
-        ? html.replace(charset, (match) => `${match}\n${head}`)
-        : html.replace(/<head([^>]*)>/i, (match) => `${match}\n${head}`);
+    const insertionPoint = findOpeningTagEnd(html, 'meta', 'charset') ?? findOpeningTagEnd(html, 'head');
+    const withHead = insertionPoint === undefined ? html : insertAt(html, insertionPoint, `\n${head}`);
     if (!normalized.autoStart) return withHead;
-    return withHead.replace(/<\/body>/i, (match) => `${renderBootScreenInitializer()}\n${match}`);
+    const bodyEnd = withHead.toLowerCase().indexOf('</body>');
+    return bodyEnd === -1 ? withHead : insertAt(withHead, bodyEnd, `${renderBootScreenInitializer()}\n`);
 }
 
 export function createBootScreenVitePlugin(options: BootScreenOptions = {}): BootScreenHtmlPlugin {

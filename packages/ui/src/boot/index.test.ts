@@ -68,6 +68,26 @@ describe('boot screen HTML integration', () => {
         expect(html).toContain('/auth-icon.svg');
         expect(html).toContain('window.__vertesiaBoot.ensureLoadingIndicator()');
     });
+
+    it('handles tag and attribute casing without regular expressions', () => {
+        const html = injectBootScreenHtml(
+            '<!doctype html><HTML><HEAD><META CHARSET = "UTF-8"><script src="handler.js"></script></HEAD><BODY></BODY></HTML>',
+        );
+
+        expect(html.indexOf('<META CHARSET = "UTF-8">')).toBeLessThan(html.indexOf('id="vertesia-boot-styles"'));
+        expect(html.indexOf('id="vertesia-boot-styles"')).toBeLessThan(html.indexOf('src="handler.js"'));
+        expect(html.indexOf('window.__vertesiaBoot.ensureLoadingIndicator()')).toBeLessThan(html.indexOf('</BODY>'));
+    });
+
+    it('scans repeated malformed tag prefixes in linear time', () => {
+        const malformedPrefixes = '<metadata>'.repeat(10_000);
+        const html = `<!doctype html><html><head>${malformedPrefixes}<script src="handler.js"></script></head><body></body></html>`;
+
+        const injected = injectBootScreenHtml(html);
+
+        expect(injected.indexOf('id="vertesia-boot-styles"')).toBeLessThan(injected.indexOf(malformedPrefixes));
+        expect(injected).toContain('window.__vertesiaBoot.ensureLoadingIndicator()');
+    });
 });
 
 describe('boot screen runtime', () => {
