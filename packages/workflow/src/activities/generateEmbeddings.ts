@@ -182,7 +182,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
         };
     }
 
-    const { environment } = config;
+    const { environment, model } = config;
     if (!environment) {
         throw new Error(
             'No environment found in project configuration. Set environment in project configuration to generate embeddings.',
@@ -222,7 +222,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     } else {
         log.debug(`Generating ${type} embeddings for document`);
 
-        const res = await generateEmbeddingsFromStudio(sourceText, environment, client);
+        const res = await generateEmbeddingsFromStudio(sourceText, environment, type, client, model);
         const values = res?.results?.[0]?.outputs?.[0]?.values;
         if (!values) {
             return {
@@ -309,6 +309,7 @@ async function generateImageEmbeddings({ document, client, type, config, force }
     // Revisit if task_type support is added to ImageEmbeddingInput in a later PR.
     const res = await client.environments
         .embeddings(environment, {
+            embedding_type: type,
             inputs: [
                 {
                     type: 'image',
@@ -349,6 +350,7 @@ async function generateImageEmbeddings({ document, client, type, config, force }
 async function generateEmbeddingsFromStudio(
     text: string,
     env: string,
+    type: SupportedEmbeddingTypes.text | SupportedEmbeddingTypes.properties,
     client: VertesiaClient,
     model?: string,
 ): Promise<EmbeddingsApiResult> {
@@ -357,6 +359,9 @@ async function generateEmbeddingsFromStudio(
     // TODO(task_type): Document embedding task — add task_type: "document" once task_type support is validated end-to-end.
     return client.environments
         .embeddings(env, {
+            // Properties are transported as text, so always send the logical type. Use the model from
+            // project settings when available; otherwise studio-server resolves it from those settings.
+            embedding_type: type,
             inputs: [{ type: 'text', text }],
             model,
         })

@@ -1,5 +1,6 @@
 import { EmbeddingTaskTypeSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
+import { SupportedEmbeddingTypesSchema } from './content.js';
 
 /**
  * The request half of `POST /environments/:envId/embeddings`.
@@ -83,6 +84,11 @@ export const EmbeddingsApiInputSchema = z
 export const EmbeddingsApiRequestSchema = z
     .strictObject({
         inputs: z.array(EmbeddingsApiInputSchema),
+        embedding_type: SupportedEmbeddingTypesSchema.meta({
+            description:
+                'Logical project embedding type. This distinguishes properties embeddings from text inputs when ' +
+                'the server resolves an omitted model from project settings.',
+        }).optional(),
         model: z.string().optional(),
         task_type: EmbeddingTaskTypeSchema.optional(),
         dimensions: z.number().optional(),
