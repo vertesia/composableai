@@ -366,6 +366,7 @@
     "mcpConnections.enabled": "Activé",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "Gérer les connexions MCP",
+    "mcpConnections.managedByApp": "Géré par l’application",
     "mcpConnections.settings": "Paramètres",
     "mcpConnections.subtitle": "Gérez les serveurs MCP disponibles pour cette conversation.",
     "mcpConnections.title": "MCP",
