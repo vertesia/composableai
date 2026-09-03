@@ -78,7 +78,9 @@ overrides:
   "brace-expansion@>=3.0.0 <5.0.9": 5.0.9
   diff@>=6.0.0 <8.0.3: ^8.0.3
   dompurify@<=3.4.12: ^3.4.13
-  "fast-uri@>=3.0.0 <3.1.5": 3.1.5
+  # GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc,
+  # GHSA-fph4-wmhf-6fwf, and GHSA-jqff-g426-hqxp (host-confusion and SSRF flaws).
+  "fast-uri@>=3.0.0 <3.1.6": 3.1.6
   # Tilde (not caret) so @firebase/firestore stays on its ~1.9 line and @temporalio/* on 1.14.
   "@grpc/grpc-js@<1.9.16": ~1.9.16
   "@grpc/grpc-js@>=1.14.0 <1.14.4": ~1.14.4
@@ -96,6 +98,8 @@ overrides:
   # PostCSS remains on nanoid 3; only vulnerable releases are redirected to the latest 3.x patch.
   "nanoid@<3.3.17": 3.3.18
   protobufjs@<=7.6.4: 7.6.5
+  # GHSA-x5fp-wj9c-mxmx and GHSA-4mjr-xmp4-gh2g (resource exhaustion and DoS).
+  "qs@<6.16.0": 6.16.0
   serialize-javascript@<=7.0.2: ^7.0.3
   serialize-javascript@>=5.0.0 <7.0.5: ^7.0.5
   shell-quote@<=1.8.4: 1.9.0
