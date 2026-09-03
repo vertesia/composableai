@@ -329,6 +329,7 @@ describe('MCP connection controls', () => {
         expect(screen.getByText('Service Account')).not.toBeNull();
         expect(screen.getByText('Service Calendar')).not.toBeNull();
         expect(screen.queryByText('Service Account OAuth')).toBeNull();
+        expect(screen.getAllByText('Managed by app')).toHaveLength(2);
         expect(screen.getAllByRole('button', { name: 'Disconnect' })).toHaveLength(1);
         expect(screen.getAllByRole('button', { name: 'Connect' })).toHaveLength(1);
     });

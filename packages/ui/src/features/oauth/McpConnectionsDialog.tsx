@@ -1,6 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Link2, Link2Off } from 'lucide-react';
-import { Button, Modal, ModalBody, ModalTitle, Spinner, Switch, VTooltip } from '../../core/index.js';
+import { Badge, Button, Modal, ModalBody, ModalTitle, Spinner, Switch, VTooltip } from '../../core/index.js';
 import { RemoteMcpConnectionButton } from './RemoteMcpConnectionButton.js';
 import { isGroupDisabled, type McpConnectionGroup, toggleGroupDisabled } from './useMcpConnections.js';
 
@@ -115,6 +115,10 @@ export function McpConnectionsDialog({
                                                 showDisconnect
                                                 readOnly={readOnly}
                                             />
+                                        ) : group.authType === 'oauth' ? (
+                                            <Badge variant="outline" className="h-6 w-32 justify-center px-2 text-xs">
+                                                {t('mcpConnections.managedByApp')}
+                                            </Badge>
                                         ) : null}
                                         {onChange && (
                                             <Switch
