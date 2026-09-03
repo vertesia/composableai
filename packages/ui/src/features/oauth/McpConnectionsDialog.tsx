@@ -62,6 +62,8 @@ export function McpConnectionsDialog({
                         {groups.map((group) => {
                             const active = !isGroupDisabled(group, disabledCollections);
                             const connected = group.authStatus?.authenticated === true;
+                            const interactiveOAuth =
+                                group.authType === 'oauth' && group.oauthGrantType !== 'client_credentials';
                             const StatusIcon = connected ? Link2 : Link2Off;
                             return (
                                 <div key={group.key} className="flex items-center justify-between gap-3 py-3">
@@ -92,7 +94,7 @@ export function McpConnectionsDialog({
                                         </VTooltip>
                                     </div>
                                     <div className="flex shrink-0 items-center gap-3">
-                                        {statusLoading && !group.authStatus ? (
+                                        {interactiveOAuth && statusLoading && !group.authStatus ? (
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -102,7 +104,7 @@ export function McpConnectionsDialog({
                                             >
                                                 <Spinner className="size-3" />
                                             </Button>
-                                        ) : group.authType === 'oauth' ? (
+                                        ) : interactiveOAuth ? (
                                             <RemoteMcpConnectionButton
                                                 appId={group.appId}
                                                 collectionId={group.representativeId}

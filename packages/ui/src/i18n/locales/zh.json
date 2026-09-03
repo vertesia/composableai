@@ -364,6 +364,7 @@
     "mcpConnections.enabled": "已启用",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "管理 MCP 连接",
+    "mcpConnections.managedByApp": "由应用管理",
     "mcpConnections.settings": "设置",
     "mcpConnections.subtitle": "管理可用于此对话的 MCP 服务器。",
     "mcpConnections.title": "MCP",
