@@ -3349,6 +3349,27 @@ function AllMessagesMixedComponent({
                 </div>
             )}
 
+            {isSummaryView && activeWorkstream !== 'all' && activeWorkstreamName && (
+                <div className="sticky top-0 z-20 -mx-2 bg-background/95 px-2 pb-2 pt-1 backdrop-blur sm:-mx-4 sm:px-4">
+                    <div className="mx-auto flex w-full max-w-3xl items-center gap-2 border-b border-border/70 pb-3">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 shrink-0 text-muted hover:text-foreground"
+                            title={t('agent.backToMainAgent')}
+                            aria-label={t('agent.backToMainAgent')}
+                            onClick={handleShowMainAgentChat}
+                        >
+                            <ArrowLeft className="size-4" aria-hidden="true" />
+                        </Button>
+                        <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                            {activeWorkstreamName}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {displayMessages.length === 0 &&
             incompleteStreaming.length === 0 &&
             !hasRenderableInitialRequest &&
@@ -3378,26 +3399,6 @@ function AllMessagesMixedComponent({
                         messageListClassName,
                     )}
                 >
-                    {isSummaryView && activeWorkstream !== 'all' && activeWorkstreamName && (
-                        <div className="sticky top-0 z-20 -mx-2 bg-background/95 px-2 pb-2 pt-1 backdrop-blur sm:-mx-4 sm:px-4">
-                            <div className="mx-auto flex w-full max-w-3xl items-center gap-2 border-b border-border/70 pb-3">
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 shrink-0 text-muted hover:text-foreground"
-                                    title={t('agent.backToMainAgent')}
-                                    onClick={handleShowMainAgentChat}
-                                >
-                                    <ArrowLeft className="size-4" aria-hidden="true" />
-                                </Button>
-                                <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                                    {activeWorkstreamName}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
                     {shouldRenderInitialRequest && (
                         <InitialRequestMessage

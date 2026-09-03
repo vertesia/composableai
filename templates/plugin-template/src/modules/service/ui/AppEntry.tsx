@@ -12,7 +12,13 @@ setUsePluginAssets(false);
 
 const appName = import.meta.env.VITE_APP_NAME;
 const appVersion = import.meta.env.VITE_APP_VERSION;
+const globalValues = globalThis as Record<string, unknown>;
+const injectedAuthToken =
+    typeof globalValues.__VERTESIA_AUTH_TOKEN__ === 'string' ? globalValues.__VERTESIA_AUTH_TOKEN__ : undefined;
 const devAuthToken = import.meta.env.DEV ? import.meta.env.VITE_VERTESIA_AUTH_TOKEN : undefined;
+// Candidate validation injects a short-lived token before the application bundle loads. Prefer it
+// over a build-time development token so reloads and deployed Playwright runs use the current run.
+const runtimeAuthToken = injectedAuthToken ?? devAuthToken;
 const isCompositeContent =
     new URLSearchParams(window.location.search).get(IFRAME_APP_SLOT_PARAM) === IFRAME_APP_CONTENT_SLOT;
 
@@ -33,7 +39,7 @@ const ProtectedAppRoot = () => (
     </StandaloneApp>
 );
 
-const GatewayAppRoot = devAuthToken ? AppRoot : ProtectedAppRoot;
+const GatewayAppRoot = runtimeAuthToken ? AppRoot : ProtectedAppRoot;
 
 const routes: Route[] = [
     { path: 'tenants/:tenantId/live/:agentRunId/app/*', Component: GatewayAppRoot },
@@ -55,7 +61,7 @@ function AppVersionScope({ children }: { children: ReactNode }) {
 
 export function AppEntry() {
     return (
-        <VertesiaShell authToken={devAuthToken}>
+        <VertesiaShell authToken={runtimeAuthToken}>
             <AppVersionScope>
                 <OrgGate>
                     <RouterProvider routes={routes} />

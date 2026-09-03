@@ -231,16 +231,21 @@ const rootTestFiles = (await walk(path.join(cwd, 'tests'))).filter(isSourceFile)
 const allFiles = [...sourceFiles, ...scriptFiles, ...rootTestFiles];
 report.scanned_files = allFiles.length;
 
+// Keep tests in allFiles so policy and required-test checks still validate them, but do not
+// advertise test fixtures as production artifacts in the summary consumed by AppGen agents.
+const productionSourceFiles = sourceFiles.filter((file) => !isTestFile(file));
+const productionScriptFiles = scriptFiles.filter((file) => !isTestFile(file));
+
 const shellUiFiles = allFiles.filter((file) => rel(file).startsWith('src/ui/'));
 const moduleUiFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/ui\//.test(rel(file)));
 // Tests may intentionally contain failure messages such as "stale seed marker". They are
 // regression fixtures, not customer-visible UI, so UI policy scans must ignore them.
 const uiFiles = [...shellUiFiles, ...moduleUiFiles].filter((file) => !isTestFile(file));
 const appUiFiles = moduleUiFiles.filter((file) => !isTestFile(file));
-const toolServerFiles = allFiles.filter((file) => rel(file).startsWith('src/tool-server/'));
-const moduleResourceFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/resources\//.test(rel(file)));
+const toolServerFiles = productionSourceFiles.filter((file) => rel(file).startsWith('src/tool-server/'));
+const moduleResourceFiles = productionSourceFiles.filter((file) => /^src\/modules\/[^/]+\/resources\//.test(rel(file)));
 const serverResourceFiles = [...toolServerFiles, ...moduleResourceFiles];
-const packageWriterFiles = scriptFiles.filter(
+const packageWriterFiles = productionScriptFiles.filter(
     (file) => rel(file) === 'src/modules/service/scripts/write-app-package.mjs',
 );
 const interactionFiles = serverResourceFiles.filter((file) => rel(file).includes('/interactions/'));
@@ -261,14 +266,14 @@ report.artifacts = {
     hooks: namesFromResourceFiles(serverResourceFiles, 'hooks'),
     subscriptions: namesFromResourceFiles(serverResourceFiles, 'subscriptions'),
     widgets: [
-        ...directFiles(sourceFiles, 'src/widgets/', ['.ts', '.tsx']),
+        ...directFiles(productionSourceFiles, 'src/widgets/', ['.ts', '.tsx']),
         ...directResourceFiles(serverResourceFiles, 'skills', ['.tsx']),
     ],
-    ui_routes: moduleUiFiles
+    ui_routes: appUiFiles
         .map((file) => rel(file))
         .filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'))
         .sort(),
-    seed_scripts: scriptFiles
+    seed_scripts: productionScriptFiles
         .map((file) => rel(file))
         .filter((file) => file.startsWith('scripts/') && /seed/i.test(file))
         .sort(),

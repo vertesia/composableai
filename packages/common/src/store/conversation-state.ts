@@ -66,7 +66,7 @@ export interface ConversationState {
     /** Run-scoped, exact-target grants created by "allow this action for this run". */
     tool_approval_grants?: Record<string, ToolApprovalGrant>;
 
-    /** Buffered tool results held while approval denial pauses until the next user message. */
+    /** Buffered tool results held across an interactive pause until the next user message. */
     pending_tool_approval_results?: PendingToolApprovalResults;
 
     /** Compact, redacted latest user intent for reviewer-style system interactions. */

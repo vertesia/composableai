@@ -1,3 +1,4 @@
+import type { IRequestParams } from '@vertesia/api-fetch-client';
 import {
     type AsyncExecutionPayload,
     type AsyncExecutionResult,
@@ -87,16 +88,18 @@ export async function executeInteractionByName<P = unknown>(
     interaction: string,
     payload: InteractionExecutionPayload = {},
     onChunk?: (chunk: string) => void,
+    requestOptions?: IRequestParams,
 ): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
     const response = await client.post<InteractionExecutionResult<P>>('/api/v1/execute', {
+        ...requestOptions,
         payload: {
             ...payload,
             interaction,
             stream,
         } as NamedInteractionExecutionPayload,
         // Synchronous interaction execution blocks on the model; keep a long client timeout.
-        timeoutMs: stream ? undefined : INTERACTION_EXECUTION_TIMEOUT_MS,
+        timeoutMs: requestOptions?.timeoutMs ?? (stream ? undefined : INTERACTION_EXECUTION_TIMEOUT_MS),
     });
     if (stream) {
         if (response.status === ExecutionRunStatus.failed) {

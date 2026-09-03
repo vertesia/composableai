@@ -17,12 +17,12 @@
     "devDependencies": {
         "@biomejs/biome": "2.5.10",
         "@tsconfig/node-lts": "^24.0.1",
-        "@types/bun": "^1.3.14",
+        "@types/bun": "^1.4.0",
         "globals": "^17.11.0",
         "typescript": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-iam": "^3.1114.0",
+        "@aws-sdk/client-iam": "^3.1119.0",
         "@vertesia/client": "1.4.1",
         "@vertesia/common": "1.4.1",
         "commander": "^15.0.0",

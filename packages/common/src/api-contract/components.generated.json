@@ -2384,6 +2384,15 @@
       "max_tokens": {
         "type": "number"
       },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
       "temperature": {
         "type": "number"
       },
@@ -3439,6 +3448,15 @@
       "max_tokens": {
         "type": "number"
       },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3500,6 +3518,15 @@
       "max_tokens": {
         "type": "number"
       },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
       "effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
       },
@@ -3556,6 +3583,15 @@
     "properties": {
       "max_tokens": {
         "type": "number"
+      },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
       },
       "effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
@@ -7490,6 +7526,14 @@
     ],
     "additionalProperties": false
   },
+  "SupportedEmbeddingTypes": {
+    "type": "string",
+    "enum": [
+      "text",
+      "image",
+      "properties"
+    ]
+  },
   "EmbeddingsApiInput": {
     "oneOf": [
       {
@@ -7529,8 +7573,13 @@
           "$ref": "#/components/schemas/EmbeddingsApiInput"
         }
       },
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes",
+        "description": "Logical project embedding type. This distinguishes properties embeddings from text inputs when the server resolves an omitted model from project settings."
+      },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Explicit model override intended for validating a configuration before it is saved. Normal callers should omit this field and provide embedding_type so the project model is resolved."
       },
       "task_type": {
         "$ref": "#/components/schemas/EmbeddingTaskType"
@@ -10526,7 +10575,9 @@
           "denied",
           "denied_with_feedback",
           "timeout",
-          "reviewer_denied"
+          "reviewer_denied",
+          "user_interrupted_after_tool_execution",
+          "user_stopped_after_tool_execution"
         ]
       },
       "message": {
@@ -10739,7 +10790,7 @@
       },
       "pending_tool_approval_results": {
         "$ref": "#/components/schemas/PendingToolApprovalResults",
-        "description": "Buffered tool results held while approval denial pauses until the next user message."
+        "description": "Buffered tool results held across an interactive pause until the next user message."
       },
       "latest_user_message": {
         "type": "string",
@@ -12939,6 +12990,10 @@
         },
         "description": "Hard denylist of tool names for this conversation. Excluded tools are never exposed to the model and are refused at execution time, even when a skill or tool refresh would otherwise unlock them. Takes precedence over tool_names, initial_skills, and skill-based tool activation."
       },
+      "agent_policy": {
+        "$ref": "#/components/schemas/ProcessAgentExecutionPolicy",
+        "description": "Process-authored successful-tool phases enforced by this child conversation. Ordinary conversation callers should leave this unset."
+      },
       "max_iterations": {
         "type": "number",
         "description": "The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used."
@@ -13034,6 +13089,210 @@
     "required": [
       "interaction",
       "type"
+    ]
+  },
+  "ProcessAgentToolPhase": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "tools": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Any successful tool in this list advances the phase."
+      },
+      "continuation_tools": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Additional tools authorized while the phase is active. Successful calls do not advance the phase."
+      },
+      "recovery_tools": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Additional tools authorized only after a matching phase tool fails. Successful calls do not advance the phase."
+      },
+      "tool_input_contains": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessAgentToolInputContains"
+        },
+        "description": "All declared top-level string-field presence, absence, and minimum-length checks must match before a tool call is authorized or advances the phase."
+      },
+      "min_successes": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Successful matching calls required to advance. Defaults to one."
+      },
+      "max_tokens": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Optional output-token ceiling for model turns while this action phase is active."
+      },
+      "recovery_prompt": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Process-authored instruction used when the agent tries to finish during this phase."
+      }
+    },
+    "required": [
+      "id",
+      "tools",
+      "recovery_prompt"
+    ]
+  },
+  "ProcessAgentToolInputContains": {
+    "type": "object",
+    "properties": {
+      "field": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Top-level tool-input field to inspect."
+      },
+      "contains": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Case-sensitive substring required in the string field."
+      },
+      "not_contains": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Case-sensitive substrings forbidden in the same string field."
+      },
+      "min_length": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Minimum string length required for the same field."
+      }
+    },
+    "required": [
+      "field",
+      "contains"
+    ]
+  },
+  "ProcessAgentPhaseReset": {
+    "type": "object",
+    "properties": {
+      "tools": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Successful tools that invalidate later phase progress."
+      },
+      "tool_input_contains": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessAgentToolInputContains"
+        },
+        "description": "Optional input checks applied to the invalidating tool call."
+      },
+      "to_phase": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Phase id that must be completed next after invalidation."
+      }
+    },
+    "required": [
+      "tools",
+      "to_phase"
+    ]
+  },
+  "ProcessAgentExecutionPolicy": {
+    "type": "object",
+    "properties": {
+      "phases": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessAgentToolPhase"
+        },
+        "description": "Ordered successful-tool phases the agent node must complete."
+      },
+      "phase_resets": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessAgentPhaseReset"
+        },
+        "description": "Successful tool calls that invalidate prior progress and reset execution to a declared phase."
+      },
+      "defer_result_schema_until_complete": {
+        "type": "boolean",
+        "description": "Hide the node result schema from model calls until every declared phase completes."
+      },
+      "restrict_to_phase_tools": {
+        "type": "boolean",
+        "description": "Expose one stable union of declared phase tools to the model, and reject tool calls that do not satisfy the current phase. This preserves prompt-cache stability while enforcing ordered execution."
+      },
+      "action_phase_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Number of leading phases whose model turns require a tool call. Defaults to zero and cannot exceed phases.length."
+      },
+      "action_phase_max_tokens": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Maximum output tokens while an action phase is active."
+      },
+      "max_recovery_attempts_per_phase": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Bounded recovery turns allowed per incomplete phase. Defaults to one."
+      },
+      "max_failed_tool_iterations": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Run-wide budget of repeated model iterations containing failed tool results before the agent node stops. The first failing iteration establishes model-visible recovery evidence and is not charged; phase transitions do not reset the budget. Defaults to eight."
+      },
+      "max_failed_tool_iterations_per_phase": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Optional per-phase budget of corrective model iterations that still contain failed tool results. The first failure in each phase establishes recovery evidence and is not charged."
+      },
+      "max_repeated_tool_failure_iterations": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Optional number of repeated normalized failure fingerprints allowed in one phase before the agent node stops. A value of one stops after the first corrective iteration repeats an already observed cause."
+      },
+      "completion_prompt": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Process-authored instruction appended to the final successful tool result. That turn restores the result schema and requires the agent to return its result without another tool call."
+      }
+    },
+    "required": [
+      "phases"
     ]
   },
   "AsyncInteractionExecutionPayload": {
@@ -17333,6 +17592,11 @@
         "items": {
           "$ref": "#/components/schemas/AppScaffoldModule"
         }
+      },
+      "appgen_package_spec": {
+        "type": "string",
+        "pattern": "^(?:latest|dev|dev-[0-9]+\\.[0-9]+|snapshot-[0-9a-f]{7}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?)$",
+        "description": "Optional Vertesia SDK version or package track for this scaffold. Overrides the deployment default."
       },
       "create_version": {
         "type": "boolean",
@@ -21661,6 +21925,10 @@
         "type": "object",
         "additionalProperties": true
       },
+      "inherit_context": {
+        "type": "boolean",
+        "description": "Whether interaction and custom-agent nodes receive the complete process context in addition to resolved input. Defaults to true; set false for input-only specialist prompts."
+      },
       "config": {
         "type": "object",
         "additionalProperties": true
@@ -21698,6 +21966,24 @@
         "items": {
           "type": "string"
         }
+      },
+      "initial_skills": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Builtin system skills activated before the agent node's first model turn."
+      },
+      "excluded_tools": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Execution-time tool denylist for the agent node's child conversation."
+      },
+      "agent_policy": {
+        "$ref": "#/components/schemas/ProcessAgentExecutionPolicy",
+        "description": "Declarative successful-tool phases and completion behavior for this agent node. The Process owns this policy; the child conversation enforces it generically."
       },
       "model": {
         "type": "string",
@@ -27744,14 +28030,6 @@
     ],
     "additionalProperties": false
   },
-  "SupportedEmbeddingTypes": {
-    "type": "string",
-    "enum": [
-      "text",
-      "image",
-      "properties"
-    ]
-  },
   "StartContentObjectExportRequest": {
     "type": "object",
     "properties": {
@@ -29612,8 +29890,16 @@
   "ProcessRunConfig": {
     "type": "object",
     "properties": {
+      "environment": {
+        "type": "string",
+        "description": "Execution environment id used by Process LLM nodes and the supervisor."
+      },
       "model": {
         "type": "string"
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions",
+        "description": "Validated model options applied to Process LLM nodes and the supervisor."
       },
       "user_message": {
         "type": "string",
@@ -35250,6 +35536,12 @@
         "type": "string"
       },
       "lastStartedTime": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "lastHeartbeatTime": {
         "type": [
           "string",
           "null"

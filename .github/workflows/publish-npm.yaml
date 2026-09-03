@@ -71,12 +71,12 @@ jobs:
   build-macos-cli:
     name: Build and sign macOS CLI
     runs-on: macos-14
-    timeout-minutes: 30
+    timeout-minutes: 20
     needs: prepare-release
     environment: build
     permissions:
-      contents: read
-      id-token: write
+      contents: read # required to check out the release source
+      id-token: write # required for GCP workload identity federation
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,17 +86,42 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-          cache: "pnpm"
       - name: Install Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
       - name: Install workspace dependencies
         timeout-minutes: 5
         run: pnpm install
+      - name: Save pnpm store cache
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
+      - name: Align package versions
+        env:
+          CLI_VERSION: ${{ needs.prepare-release.outputs.version }}
+        run: |
+          npm version "${CLI_VERSION}" --no-git-tag-version --workspaces=false
+          pnpm -r --filter "./packages/**" --filter "./libraries/jst" \
+              exec npm version "${CLI_VERSION}" --no-git-tag-version
+      - name: Build CLI workspace dependencies
+        run: pnpm exec turbo run build --filter=@vertesia/cli...
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
@@ -121,7 +146,6 @@ jobs:
           keychain_path="${RUNNER_TEMP}/vertesia-signing.keychain-db"
           keychain_password="$(openssl rand -hex 24)"
           p12_password="$(<"${RUNNER_TEMP}/vertesia-developer-id.p12.password")"
-          login_keychain="$(security login-keychain -d user | tr -d '"')"
 
           curl --fail --silent --show-error --location \
               https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer \
@@ -144,7 +168,7 @@ jobs:
               -s \
               -k "${keychain_password}" \
               "${keychain_path}"
-          security list-keychains -d user -s "${keychain_path}" "${login_keychain}"
+          security list-keychains -d user -s "${keychain_path}"
           security find-identity -v -p codesigning "${keychain_path}"
 
       - name: Build and sign macOS executables
@@ -153,7 +177,6 @@ jobs:
         env:
           CLI_VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
-          npm version "${CLI_VERSION}" --no-git-tag-version
           pnpm run build:native:macos
           signing_identity='Developer ID Application: Vertesia, Inc. (658WNHC6ZU)'
           sign_binary() {
@@ -176,23 +199,44 @@ jobs:
                   sleep 5
               done
           }
-          for binary in bin/vertesia-darwin-arm64 bin/vertesia-darwin-x64; do
+          for binary in ../cli-darwin-arm64/bin/vertesia ../cli-darwin-x64/bin/vertesia; do
               sign_binary "${binary}"
               codesign --verify --strict --verbose=2 "${binary}"
           done
           if [ "$(uname -m)" = "arm64" ]; then
-              ./bin/vertesia-darwin-arm64 --version
+              actual_version="$(../cli-darwin-arm64/bin/vertesia --version)"
+              expected_runtime="native darwin-arm64"
           else
-              ./bin/vertesia-darwin-x64 --version
+              actual_version="$(../cli-darwin-x64/bin/vertesia --version)"
+              expected_runtime="native darwin-x64"
           fi
+          test "${actual_version}" = "${CLI_VERSION} (${expected_runtime})"
+
+      - name: Smoke test packed macOS CLI
+        env:
+          CLI_NATIVE_PACKAGE_ONLY: "true"
+          CLI_VERIFY_CODE_SIGNATURE: "true"
+        run: node packages/cli/scripts/smoke-native-package.mjs
+
+      - name: Install and smoke test macOS CLI through Verdaccio
+        if: inputs.dry_run == true
+        timeout-minutes: 10
+        env:
+          CLI_VERIFY_CODE_SIGNATURE: "true"
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: >-
+          ./.github/bin/test-template-integration.sh
+          --release-type "${RELEASE_TYPE}"
+          --branch "${GITHUB_REF_NAME}"
+          --cli-only
 
       - name: Upload signed CLI executables
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: signed-macos-cli
+          name: native-cli-darwin
           path: |
-            packages/cli/bin/vertesia-darwin-arm64
-            packages/cli/bin/vertesia-darwin-x64
+            packages/cli-darwin-arm64/bin/vertesia
+            packages/cli-darwin-x64/bin/vertesia
           if-no-files-found: error
 
       - name: Remove signing material from runner
@@ -208,7 +252,7 @@ jobs:
   publish:
     name: Publish all packages
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     needs:
       - prepare-release
       - build-macos-cli
@@ -217,53 +261,81 @@ jobs:
     environment: build
     permissions:
       id-token: write # required for OIDC between GitHub and NPM
-      contents: write # required to push version-bump commits for preview
+      contents: read # required to check out the release source
+    outputs:
+      version: ${{ steps.publish.outputs.version }}
+      npm_tag: ${{ steps.publish.outputs.npm_tag }}
+      publish_status: ${{ steps.publish.outputs.publish_status }}
     steps:
       - name: Checkout repository
-        # persist-credentials must stay true so the DEPLOY_KEY SSH config survives
-        # into the publish step, where the script runs `git push origin "$REF"` to
-        # push the version-bump commit past branch protection. With it false, the
-        # push fails with "git@github.com: Permission denied (publickey)".
-        # zizmor: ignore[artipacked] deploy key is scoped to the `build` environment.
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-          ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-          registry-url: "https://registry.npmjs.org"
-          cache: "pnpm"
 
       # Node.js 24 ships with npm 11.5.1 or later, as required for trusted publishing.
       - name: Verify npm version
         run: npm --version
 
+      - name: Test package channel policy
+        run: bash ./.github/bin/lib-package-channel.test.sh
+
       - name: Install workspace dependencies
         timeout-minutes: 5
         run: pnpm install
+      - name: Save pnpm store cache
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
 
       - name: Download signed macOS CLI executables
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: signed-macos-cli
-          path: packages/cli/bin
+          name: native-cli-darwin
+          path: packages
       - name: Mark macOS CLI executables as executable
-        run: chmod 755 packages/cli/bin/vertesia-darwin-arm64 packages/cli/bin/vertesia-darwin-x64
+        run: >-
+          chmod 755
+          packages/cli-darwin-arm64/bin/vertesia
+          packages/cli-darwin-x64/bin/vertesia
 
       - name: Publish all packages
-        timeout-minutes: 15
+        id: publish
+        timeout-minutes: 5
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
           BUMP_TYPE: ${{ inputs.bump_type }}
           DRY_RUN: ${{ inputs.dry_run }}
           VERSION_OVERRIDE: ${{ needs.prepare-release.outputs.version }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
+          deploy_key_path="${RUNNER_TEMP}/publish-deploy-key"
+          umask 077
+          printf '%s\n' "${DEPLOY_KEY}" > "${deploy_key_path}"
+          unset DEPLOY_KEY
+          trap 'rm -f "${deploy_key_path}"' EXIT
+          export GIT_SSH_COMMAND="ssh -i ${deploy_key_path} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git remote set-url origin git@github.com:vertesia/composableai.git
           ./.github/bin/publish-all-packages.sh \
               --ref "${GITHUB_REF_NAME}" \
               --release-type "${RELEASE_TYPE}" \
@@ -276,18 +348,106 @@ jobs:
         timeout-minutes: 10
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin"
+        run: >-
+          ./.github/bin/test-template-integration.sh
+          --release-type "${RELEASE_TYPE}"
+          --template "Vertesia Plugin"
+          --branch "${GITHUB_REF_NAME}"
+
+      - name: CLI integration test
+        if: inputs.dry_run == true
+        timeout-minutes: 10
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: >-
+          ./.github/bin/test-template-integration.sh
+          --release-type "${RELEASE_TYPE}"
+          --branch "${GITHUB_REF_NAME}"
+          --cli-only
+
+  # npm publish-time scanning can keep a successful publish unavailable for
+  # 15 minutes or more. Wait on an inexpensive runner before starting either
+  # integration test, especially the macOS runner.
+  wait-for-npm:
+    name: Wait for published npm packages
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    needs: publish
+    if: inputs.dry_run == false
+    steps:
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Wait for published CLI dependency closure
+        env:
+          PACKAGE_VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          packages=(
+              @vertesia/api-fetch-client
+              @vertesia/client
+              @vertesia/common
+              @vertesia/workflow
+              @vertesia/cli-darwin-arm64
+              @vertesia/cli-darwin-x64
+              @vertesia/cli
+          )
+          for attempt in $(seq 1 31); do
+              unavailable=()
+              for package in "${packages[@]}"; do
+                  if ! npm view "${package}@${PACKAGE_VERSION}" version --prefer-online >/dev/null 2>&1; then
+                      unavailable+=("${package}")
+                  fi
+              done
+              if [ "${#unavailable[@]}" -eq 0 ]; then
+                  echo "Published CLI dependency closure is available at version ${PACKAGE_VERSION}"
+                  exit 0
+              fi
+              if [ "${attempt}" -eq 31 ]; then
+                  echo "Packages still unavailable after 15 minutes: ${unavailable[*]}" >&2
+                  exit 1
+              fi
+              echo "Attempt ${attempt}/31: waiting for ${unavailable[*]}"
+              sleep 30
+          done
 
   # ============================================================
-  # Integration test after real publish (non-dry-run only)
-  # Verifies published packages work by bootstrapping a template.
+  # macOS CLI integration test after a real publish installs from npm.
   # ============================================================
+
+  macos-cli-integration-test:
+    name: Integration test (published macOS CLI)
+    runs-on: macos-14
+    timeout-minutes: 10
+    needs:
+      - publish
+      - wait-for-npm
+    if: inputs.dry_run == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install and smoke test published CLI
+        env:
+          CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
+          CLI_VERIFY_CODE_SIGNATURE: "true"
+          CLI_VERSION: ${{ needs.publish.outputs.version }}
+        run: node packages/cli/scripts/smoke-native-package.mjs
 
   integration-test:
     name: Integration test (published packages)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: publish
+    timeout-minutes: 10
+    needs:
+      - publish
+      - wait-for-npm
     if: inputs.dry_run == false
     steps:
       - name: Checkout repository
@@ -296,13 +456,43 @@ jobs:
           persist-credentials: false
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
 
+      - name: Install and smoke test published CLI fallback
+        env:
+          CLI_PACKAGE_SPEC: "@vertesia/cli@${{ needs.publish.outputs.version }}"
+          CLI_VERSION: ${{ needs.publish.outputs.version }}
+        run: node packages/cli/scripts/smoke-native-package.mjs
+
       - name: Smoke test - Plugin
         timeout-minutes: 10
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin" --branch "${GITHUB_REF_NAME}" --wait
+          PACKAGE_VERSION: ${{ needs.publish.outputs.version }}
+        run: >-
+          ./.github/bin/test-template-smoke.sh
+          --release-type "${RELEASE_TYPE}"
+          --template "Vertesia Plugin"
+          --branch "${GITHUB_REF_NAME}"
+          --package-version "${PACKAGE_VERSION}"
+          --wait
+      - name: Save pnpm store cache
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}

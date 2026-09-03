@@ -133,6 +133,8 @@ jobs:
       - name: Build workspace
         timeout-minutes: 10
         run: pnpm build
+      - name: Test package channel policy
+        run: bash ./.github/bin/lib-package-channel.test.sh
       - name: Template integration test - Plugin
         timeout-minutes: 10
         run: ./.github/bin/test-template-integration.sh --release-type snapshot --template "Vertesia Plugin"

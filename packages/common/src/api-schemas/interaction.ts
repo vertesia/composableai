@@ -25,6 +25,7 @@ import { LlmCallType } from '../workflow-analytics.js';
 import { ProjectRefSchema } from './apikey.js';
 import { ExecutionEnvironmentRefSchema } from './environment.js';
 import { AccountRefSchema } from './invites.js';
+import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
@@ -1389,7 +1390,14 @@ export const GeneratedInteractionDefinitionArraySchema = z
 export const PendingToolApprovalResultsSchema = z
     .strictObject({
         results: z.array(ToolResultSchema),
-        reason: z.enum(['denied', 'denied_with_feedback', 'timeout', 'reviewer_denied']),
+        reason: z.enum([
+            'denied',
+            'denied_with_feedback',
+            'timeout',
+            'reviewer_denied',
+            'user_interrupted_after_tool_execution',
+            'user_stopped_after_tool_execution',
+        ]),
         message: z.string(),
         created_at: z.string(),
     })
@@ -1667,7 +1675,7 @@ export const ConversationStateSchema = z
             description: 'Run-scoped, exact-target grants created by "allow this action for this run".',
         }).optional(),
         pending_tool_approval_results: PendingToolApprovalResultsSchema.meta({
-            description: 'Buffered tool results held while approval denial pauses until the next user message.',
+            description: 'Buffered tool results held across an interactive pause until the next user message.',
         }).optional(),
         latest_user_message: z
             .string()
@@ -2204,6 +2212,10 @@ export const AsyncConversationExecutionPayloadSchema = z
                     'Hard denylist of tool names for this conversation. Excluded tools are never exposed to the model and are refused at execution time, even when a skill or tool refresh would otherwise unlock them. Takes precedence over tool_names, initial_skills, and skill-based tool activation.',
             })
             .optional(),
+        agent_policy: ProcessAgentExecutionPolicySchema.meta({
+            description:
+                'Process-authored successful-tool phases enforced by this child conversation. Ordinary conversation callers should leave this unset.',
+        }).optional(),
         max_iterations: z
             .number()
             .meta({

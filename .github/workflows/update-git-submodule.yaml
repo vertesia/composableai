@@ -82,10 +82,20 @@ jobs:
             submodule update --init --recursive --depth=1
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-          cache: pnpm
 
       - name: Check if submodule update is needed
         id: precheck
@@ -216,6 +226,22 @@ jobs:
           fi
 
           echo "schema_generation_failed=${schema_generation_failed}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve updated pnpm cache key
+        id: updated-pnpm-cache
+        if: steps.precheck.outputs.skip != 'true'
+        shell: bash
+        env:
+          CACHE_KEY: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+        run: echo "key=${CACHE_KEY}" >> "${GITHUB_OUTPUT}"
+      - name: Save pnpm store cache
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.updated-pnpm-cache.outputs.key != steps.pnpm-cache.outputs.cache-matched-key
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.updated-pnpm-cache.outputs.key }}
 
       # Mint the write token only after all package lifecycle scripts have completed. Use an App
       # distinct from APP_VERTESIA_RENOVATE_AUTOMERGE so the PR author and approver remain separate.

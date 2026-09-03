@@ -32,6 +32,7 @@ export * from './memory.js';
 export * from './oauth-server.js';
 export * from './parameters.js';
 export * from './process.js';
+export * from './process-agent-policy.js';
 export * from './quota.js';
 export * from './registry.js';
 export * from './secrets.js';

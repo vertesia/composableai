@@ -58,7 +58,7 @@
         "typescript": "catalog:"
     },
     "dependencies": {
-        "eventsource-parser": "^4.0.0"
+        "eventsource-parser": "^4.1.0"
     },
     "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
 }

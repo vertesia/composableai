@@ -43,7 +43,7 @@ const createPayload = (params: GenerateEmbeddingsParams): DSLActivityExecutionPa
 };
 
 describe('generateEmbeddings', () => {
-    it('should generate property embeddings for an object without content', async () => {
+    it('should generate property embeddings using the logical project type', async () => {
         const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
         const document = {
             id: 'properties-only-object',
@@ -82,6 +82,7 @@ describe('generateEmbeddings', () => {
                         [SupportedEmbeddingTypes.properties]: {
                             enabled: true,
                             environment: 'test-environment',
+                            model: 'properties-embedding-model',
                             max_tokens: 8000,
                         },
                     },
@@ -102,8 +103,8 @@ describe('generateEmbeddings', () => {
             '+text +parts +embeddings +tokens +properties',
         );
         expect(client.environments.embeddings).toHaveBeenCalledWith('test-environment', {
+            embedding_type: SupportedEmbeddingTypes.properties,
             inputs: [{ type: 'text', text: JSON.stringify(document.properties) }],
-            model: undefined,
         });
         expect(client.objects.setEmbedding).toHaveBeenCalledWith(document.id, SupportedEmbeddingTypes.properties, {
             values: embeddingResponse.results[0].outputs[0].values,
