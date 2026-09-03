@@ -674,6 +674,7 @@
     "mcpConnections.enabled": "Enabled",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "Manage MCP connections",
+    "mcpConnections.managedByApp": "Managed by app",
     "mcpConnections.settings": "Settings",
     "mcpConnections.subtitle": "Manage the MCP servers available to this conversation.",
     "mcpConnections.title": "MCP",
