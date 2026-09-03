@@ -260,6 +260,10 @@ export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
     sensitivity?: number;
     /** Compartments — set directly or inherited from collections (union across collections). */
     compartments?: string[];
+    /** When true, the document is in its project shared space, readable by non-members via matching
+     * shared-content ABAC rules. Set directly or inherited from a shared collection (overwritten by
+     * collections like `security`). */
+    shared?: boolean;
 
     /**
      * Inherited properties metadata - tracks which properties were inherited from parent collections.

@@ -338,6 +338,13 @@ const collectionPayloadFields = {
         .optional(),
     sensitivity: z.number().meta({ description: 'BLP sensitivity level for member documents' }).optional(),
     compartments: z.array(z.string()).meta({ description: 'Compartments for member documents' }).optional(),
+    shared: z
+        .boolean()
+        .meta({
+            description:
+                'When true, the collection is in its project shared space; member documents inherit shared=true.',
+        })
+        .optional(),
 };
 
 export const CreateCollectionPayloadSchema = z
@@ -492,6 +499,13 @@ export const CollectionSchema = z
             .array(z.string())
             .meta({ description: 'Compartments — propagated to member documents (union across collections)' })
             .optional(),
+        shared: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, the collection is in its project shared space (listable/readable by non-members via matching shared-content ABAC rules); member documents inherit shared=true.',
+            })
+            .optional(),
         shared_properties: z
             .array(z.string())
             .meta({
@@ -546,6 +560,13 @@ export const CreateContentObjectPayloadSchema = z
             .array(z.string())
             .meta({
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
+            })
+            .optional(),
+        shared: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection.',
             })
             .optional(),
         inherited_properties: z
@@ -646,6 +667,13 @@ export const UpdateContentObjectPayloadSchema = z
             .array(z.string())
             .meta({
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
+            })
+            .optional(),
+        shared: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection.',
             })
             .optional(),
         inherited_properties: z
@@ -842,6 +870,13 @@ export const ContentObjectApiResponseSchema = z
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
             })
             .optional(),
+        shared: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection.',
+            })
+            .optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectApiResponse' });
@@ -913,6 +948,7 @@ export const ContentObjectItemApiResponseSchema = z
         security: StringArrayMapSchema.optional(),
         sensitivity: z.number().nullable().optional(),
         compartments: z.array(z.string()).optional(),
+        shared: z.boolean().optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectItemApiResponse' });
