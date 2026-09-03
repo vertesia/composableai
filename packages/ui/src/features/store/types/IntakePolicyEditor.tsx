@@ -458,7 +458,7 @@ export function IntakePolicyEditor({
 
     const title = (
         <div className="flex items-center gap-2">
-            <div className="text-base font-semibold">{t('intakePolicy.title')}</div>
+            <div>{t('intakePolicy.title')}</div>
             {isDirty && <Badge variant="attention">{t('intakePolicy.status.unsaved')}</Badge>}
         </div>
     );
