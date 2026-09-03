@@ -360,6 +360,7 @@
     "mcpConnections.enabled": "Aktiviert",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "MCP-Verbindungen verwalten",
+    "mcpConnections.managedByApp": "Von der App verwaltet",
     "mcpConnections.settings": "Einstellungen",
     "mcpConnections.subtitle": "Verwalten Sie die für diese Unterhaltung verfügbaren MCP-Server.",
     "mcpConnections.title": "MCP",

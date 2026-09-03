@@ -360,6 +360,7 @@
     "mcpConnections.enabled": "사용 설정됨",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "MCP 연결 관리",
+    "mcpConnections.managedByApp": "앱에서 관리",
     "mcpConnections.settings": "설정",
     "mcpConnections.subtitle": "이 대화에서 사용할 수 있는 MCP 서버를 관리합니다.",
     "mcpConnections.title": "MCP",

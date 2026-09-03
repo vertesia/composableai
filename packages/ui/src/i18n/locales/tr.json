@@ -360,6 +360,7 @@
     "mcpConnections.enabled": "Etkin",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "MCP bağlantılarını yönet",
+    "mcpConnections.managedByApp": "Uygulama tarafından yönetiliyor",
     "mcpConnections.settings": "Ayarlar",
     "mcpConnections.subtitle": "Bu konuşma için kullanılabilen MCP sunucularını yönetin.",
     "mcpConnections.title": "MCP",
