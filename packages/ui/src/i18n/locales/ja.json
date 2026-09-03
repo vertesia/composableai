@@ -360,6 +360,7 @@
     "mcpConnections.enabled": "有効",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "MCP 接続を管理",
+    "mcpConnections.managedByApp": "アプリによる管理",
     "mcpConnections.settings": "設定",
     "mcpConnections.subtitle": "この会話で利用できる MCP サーバーを管理します。",
     "mcpConnections.title": "MCP",

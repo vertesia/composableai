@@ -360,6 +360,7 @@
     "mcpConnections.enabled": "已啟用",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "管理 MCP 連線",
+    "mcpConnections.managedByApp": "由應用程式管理",
     "mcpConnections.settings": "設定",
     "mcpConnections.subtitle": "管理可用於此對話的 MCP 伺服器。",
     "mcpConnections.title": "MCP",

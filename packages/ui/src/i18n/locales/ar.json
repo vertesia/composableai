@@ -368,6 +368,7 @@
     "mcpConnections.enabled": "مفعل",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "إدارة اتصالات MCP",
+    "mcpConnections.managedByApp": "يُدار بواسطة التطبيق",
     "mcpConnections.settings": "الإعدادات",
     "mcpConnections.subtitle": "إدارة خوادم MCP المتاحة لهذه المحادثة.",
     "mcpConnections.title": "MCP",

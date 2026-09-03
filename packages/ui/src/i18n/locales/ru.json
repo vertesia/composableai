@@ -364,6 +364,7 @@
     "mcpConnections.enabled": "Включено",
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "Управление подключениями MCP",
+    "mcpConnections.managedByApp": "Управляется приложением",
     "mcpConnections.settings": "Настройки",
     "mcpConnections.subtitle": "Управляйте серверами MCP, доступными для этого разговора.",
     "mcpConnections.title": "MCP",
