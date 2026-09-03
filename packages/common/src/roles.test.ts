@@ -27,6 +27,6 @@ describe('shared role vocabulary', () => {
     });
 
     test('exports ABAC scopes used by role wire types', () => {
-        expect(AbacScopes).toEqual(['document', 'collection', 'task']);
+        expect(AbacScopes).toEqual(['document', 'collection', 'shared_content', 'task']);
     });
 });
