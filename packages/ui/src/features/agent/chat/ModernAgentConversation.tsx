@@ -1565,7 +1565,7 @@ function ModernAgentConversationInner({
         selectDocument,
         openDocInPanel,
         updateDocumentTitle,
-    } = useDocumentPanel(messages);
+    } = useDocumentPanel(messages, agentRunId);
 
     const deliveredArtifactRefs = useMemo(() => collectDeliveredArtifactRefs(messages), [messages]);
     const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles } =
