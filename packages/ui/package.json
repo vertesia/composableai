@@ -145,6 +145,10 @@
         "./css/typography.css": "./src/css/typography.css",
         "./css/custom-tooltips.css": "./src/css/custom-tooltips.css",
         "./css/base.css": "./src/css/base.css",
+        "./boot": {
+            "types": "./lib/boot/index.d.ts",
+            "default": "./lib/boot/index.js"
+        },
         "./router": {
             "types": "./lib/router/index.d.ts",
             "default": "./lib/router/index.js"
