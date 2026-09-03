@@ -29,7 +29,7 @@
         "formidable": "^3.5.4",
         "inflation": "^2.1.0",
         "koa": "^3.2.1",
-        "qs": "^6.15.3",
+        "qs": "^6.16.0",
         "raw-body": "^4.0.0"
     },
     "devDependencies": {
