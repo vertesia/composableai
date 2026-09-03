@@ -23,7 +23,7 @@ import { type EditorApi, type Monaco, MonacoEditor } from '@vertesia/ui/widgets'
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import type { TFunction } from 'i18next';
-import { Braces, CheckCircle2, FileText, RotateCcw, Save, WandSparkles } from 'lucide-react';
+import { Braces, CheckCircle2, FileText, RotateCcw, WandSparkles } from 'lucide-react';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { IntakePolicyForm, type IntakePolicyFormSection } from './IntakePolicyForm.js';
 
@@ -505,7 +505,6 @@ export function IntakePolicyEditor({
                 {t('intakePolicy.action.revert')}
             </Button>
             <Button isLoading={isUpdating} size="md" onClick={onSave} disabled={!isDirty}>
-                <Save className="size-4" />
                 {t('intakePolicy.action.save')}
             </Button>
         </>
