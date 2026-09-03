@@ -26691,6 +26691,24 @@
     },
     "additionalProperties": false
   },
+  "SetObjectTextPayload": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "description": "The extracted text to store for the object."
+      },
+      "etag": {
+        "type": "string",
+        "description": "The etag of the content the text was extracted from. When provided, the server records it as the object text_etag so extraction can be skipped while the content is unchanged."
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "additionalProperties": false,
+    "description": "Payload for storing the extracted text of a content object as a text artifact."
+  },
   "DeleteContentObjectResult": {
     "type": "object",
     "properties": {
@@ -40416,6 +40434,11 @@
       },
       "bulk_concurrency": {
         "type": "number"
+      },
+      "modified_since": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When set, reindex only documents whose updated_at is at or after this RFC3339/ISO-8601 datetime. Writes in-place into the live index (no new versioned target, no alias swap). Omit for a full reindex into a fresh versioned target."
       }
     },
     "additionalProperties": false

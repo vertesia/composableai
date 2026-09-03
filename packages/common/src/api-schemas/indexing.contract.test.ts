@@ -45,6 +45,12 @@ describe('indexing and embedding API contracts', () => {
         expect(validateApiRequest('StartProjectReindexPayload', undefined).valid).toBe(false);
         expect(validateApiRequest('StartProjectReindexPayload', {}).valid).toBe(true);
         expect(validateApiRequest('StartProjectReindexPayload', { unexpected: true }).valid).toBe(false);
+        expect(validateApiRequest('StartProjectReindexPayload', { modified_since: '2026-08-01T00:00:00Z' }).valid).toBe(
+            true,
+        );
+        // The registry validator registers ajv-formats, so `format: date-time` is enforced, not
+        // just documented.
+        expect(validateApiRequest('StartProjectReindexPayload', { modified_since: 'last week' }).valid).toBe(false);
         expect(validateApiRequest('ReindexAgentRunsPayload', {}).valid).toBe(true);
         expect(validateApiRequest('ReindexAgentRunsPayload', { recreate_index: true, unexpected: true }).valid).toBe(
             false,
