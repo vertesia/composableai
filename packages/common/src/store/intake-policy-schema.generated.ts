@@ -1717,7 +1717,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 task: {
                     type: 'string',
-                    enum: ['text_to_video', 'image_to_video', 'reference_to_video'],
+                    enum: ['text_to_video', 'image_to_video', 'reference_to_video', 'edit', 'extend'],
                 },
                 aspect_ratio: {
                     type: 'string',
@@ -1727,6 +1727,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'integer',
                     minimum: 3,
                     maximum: 10,
+                },
+                resolution: {
+                    type: 'string',
+                    enum: ['360p', '720p', '1080p', '4k'],
                 },
             },
             required: ['_option_id'],
