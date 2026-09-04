@@ -1,6 +1,8 @@
 import { APP_VERSION_HEADER } from '@vertesia/common';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { isTokenExpired, VertesiaClient } from './client.js';
+import { decodeJWT, isTokenExpired, VertesiaClient, type VertesiaClientProps } from './client.js';
+import { ZenoClient, type ZenoClientProps } from './store/client.js';
+import { resetUnknownOptionWarnings } from './unknown-options.js';
 
 describe('Test Vertesia Client', () => {
     test('Initialization with studio and zeno URLs', () => {
@@ -215,5 +217,103 @@ describe('isTokenExpired', () => {
         // exp is exactly REFRESH_WINDOW_MS in the future — should already trigger refresh
         const exp = Math.floor((NOW_MS + REFRESH_WINDOW_MS) / 1000);
         expect(isTokenExpired(makeToken(exp))).toBe(true);
+    });
+});
+
+describe('unknown constructor options', () => {
+    // Model the real escape hatch rather than a cast: TypeScript's excess-property check only fires
+    // on an object literal, so a spread of a wider config object reaches the constructor unchecked.
+    function optionsWith(extra: Record<string, unknown>): VertesiaClientProps {
+        return {
+            serverUrl: 'https://api.vertesia.io',
+            storeUrl: 'https://api.vertesia.io',
+            ...extra,
+        } as VertesiaClientProps;
+    }
+
+    beforeEach(() => {
+        resetUnknownOptionWarnings();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    // The option names below are deliberately spelled the way the SDK does NOT accept them. Passing
+    // them used to produce a client that looked fine and then failed every request with
+    // `401 Unauthorized: Authorization token is required`, with nothing pointing at the constructor.
+    test('names the option and what the caller meant', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        new VertesiaClient(optionsWith({ token: 'jwt' }));
+
+        expect(warn).toHaveBeenCalledTimes(1);
+        const message = warn.mock.calls[0][0] as string;
+        expect(message).toContain('[VertesiaClient]');
+        expect(message).toContain('token');
+        expect(message).toContain('`apikey`');
+    });
+
+    test('reports each unknown option once, not once per client', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const opts = optionsWith({ appVersion: 'v1' });
+
+        new VertesiaClient(opts);
+        new VertesiaClient(opts);
+
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn.mock.calls[0][0]).toContain('withAppVersion');
+    });
+
+    test('stays silent for a fully valid options object', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        new VertesiaClient({
+            serverUrl: 'https://api.vertesia.io',
+            storeUrl: 'https://api.vertesia.io',
+            tokenServerUrl: 'https://sts.vertesia.io',
+            apikey: 'sk-1234',
+            sessionTags: 'test',
+            timeout: 1000,
+        });
+
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    test('covers the store client too', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        new ZenoClient({
+            serverUrl: 'https://api.vertesia.io',
+            ...{ apiKey: 'sk-1234' },
+        } as ZenoClientProps);
+
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn.mock.calls[0][0]).toContain('[ZenoClient]');
+        expect(warn.mock.calls[0][0]).toContain('apikey');
+    });
+});
+
+describe('decodeJWT', () => {
+    // An empty or non-JWT credential used to reach `''.split('.')[1]` and die inside the base64
+    // decoder with a TypeError naming neither the token nor the caller.
+    test.each([
+        ['an empty string', ''],
+        ['an API key', 'sk-abcdef'],
+        ['a two-segment string', 'header.payload'],
+    ])('names the failure for %s', (_label, value) => {
+        expect(() => decodeJWT(value)).toThrowError(/Invalid auth token: expected a JWT/);
+    });
+
+    test('names a payload that is not JSON', () => {
+        expect(() => decodeJWT('aGVhZGVy.bm90LWpzb24.sig')).toThrowError(
+            'Invalid auth token: payload segment is not JSON',
+        );
+    });
+
+    test('rejects an empty token before decoding it', async () => {
+        await expect(VertesiaClient.fromAuthToken('   ')).rejects.toThrowError(
+            'VertesiaClient.fromAuthToken requires a non-empty auth token',
+        );
     });
 });
