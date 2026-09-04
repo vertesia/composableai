@@ -13476,6 +13476,13 @@
       },
       "message": {
         "type": "string"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolResult"
+        },
+        "description": "Tool results owed to the model, delivered with this message."
       }
     },
     "required": [
