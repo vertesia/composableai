@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.scripts.tsbuildinfo",
+    "target": "ES2024",
+    "lib": [
+      "ES2024",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    /* App-owned Node scripts are TypeScript and run directly (`node scripts/x.ts`); Node strips the
+       types, so there is still no build step. checkJs is the backstop: a script written as .mjs
+       anyway stays inside this gate instead of escaping type-checking entirely. */
+    "allowJs": true,
+    "checkJs": true,
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    /* These files are executed by Node's type stripper, which can only erase types — an `enum`,
+       `namespace`, or constructor parameter property would fail at runtime. Reject them here
+       instead, unlike the bundled projects which can afford them. */
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": [
+    "scripts/**/*.mjs",
+    "scripts/**/*.ts",
+    "tests/**/*.mjs",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "scripts/typecheck.mjs"
+  ]
+}

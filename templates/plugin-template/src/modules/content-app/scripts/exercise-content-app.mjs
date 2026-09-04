@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
-import { VertesiaClient } from '@vertesia/client';
+import { createVertesiaClient } from '../../../../scripts/vertesia-client.ts';
 import { seedContentApp } from './seed-content-app.mjs';
 
 const packageJson = JSON.parse(readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8'));
@@ -10,28 +10,9 @@ const GUIDE_TYPE = `app:${APP_NAME}:guide`;
 const GUIDE_SUMMARIZER_INTERACTION = `app:${APP_NAME}:main:guide_summarizer`;
 const GUIDE_REVIEW_PROCESS = `app:${APP_NAME}:guide-review`;
 
-function resolveEndpoints() {
-    if (!process.env.VERTESIA_SERVER_URL || !process.env.VERTESIA_STORE_URL) return undefined;
-    return {
-        studio: process.env.VERTESIA_SERVER_URL,
-        store: process.env.VERTESIA_STORE_URL,
-        token: process.env.VERTESIA_TOKEN_SERVER_URL,
-    };
-}
-
-async function getClient() {
-    const token = process.env.VERTESIA_TOKEN;
-    if (!token) {
-        throw new Error(
-            'VERTESIA_TOKEN is required. Use `VERTESIA_TOKEN="$(vertesia auth token)" pnpm exercise:content`.',
-        );
-    }
-    return await VertesiaClient.fromAuthToken(token, undefined, resolveEndpoints());
-}
-
 async function main() {
     const seed = await seedContentApp();
-    const client = await getClient();
+    const client = await createVertesiaClient();
     const guides = await client.objects.search({
         query: {
             type: GUIDE_TYPE,

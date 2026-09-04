@@ -34,6 +34,22 @@ function hasFileMatching(dir, predicate) {
 
 const projects = ['tsconfig.ui.json', 'tsconfig.tool-server.json', 'tsconfig.node.json'];
 
+// tsconfig.scripts.json type-checks the app's own Node-side code — top-level `scripts/` and the
+// Playwright suite under `tests/` — including `.mjs` via checkJs. Those files sit outside every
+// other project, so without this a seed/exercise script can call the SDK with options it does not
+// have (`token`/`appVersion` instead of `apikey`/`withAppVersion()`), build a silently
+// unauthenticated client, and only fail at runtime with a 401 after a candidate is already built.
+// Skipped when the app ships neither directory, so `tsc` cannot fail with TS18003 (no inputs).
+const scriptedSources = (name) => name.endsWith('.ts') || name.endsWith('.mjs');
+if (
+    hasFileMatching(join(cwd, 'scripts'), (name) => scriptedSources(name) && name !== 'typecheck.mjs') ||
+    hasFileMatching(join(cwd, 'tests'), scriptedSources)
+) {
+    projects.push('tsconfig.scripts.json');
+} else {
+    console.log('[typecheck] no app-owned scripts/ or tests/ sources found, skipping tsconfig.scripts.json');
+}
+
 const legacyWidgetsRoot = join(cwd, 'src', 'tool-server', 'skills');
 const modulesRoot = join(cwd, 'src', 'modules');
 const hasWidgets =
