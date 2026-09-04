@@ -2780,7 +2780,9 @@
         "enum": [
           "text_to_video",
           "image_to_video",
-          "reference_to_video"
+          "reference_to_video",
+          "edit",
+          "extend"
         ]
       },
       "aspect_ratio": {
@@ -2794,6 +2796,15 @@
         "type": "integer",
         "minimum": 3,
         "maximum": 10
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "360p",
+          "720p",
+          "1080p",
+          "4k"
+        ]
       }
     },
     "required": [
