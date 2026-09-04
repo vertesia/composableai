@@ -280,6 +280,19 @@ describe('unknown constructor options', () => {
         expect(warn).not.toHaveBeenCalled();
     });
 
+    // `key in known` would treat these as known options, because every object inherits them.
+    test.each(['toString', 'constructor', 'valueOf', 'hasOwnProperty'])(
+        'reports %s, which is inherited from Object.prototype',
+        (key) => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            new VertesiaClient(optionsWith({ [key]: 'whatever' }));
+
+            expect(warn).toHaveBeenCalledTimes(1);
+            expect(warn.mock.calls[0][0]).toContain(key);
+        },
+    );
+
     test('covers the store client too', () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

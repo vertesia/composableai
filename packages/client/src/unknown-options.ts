@@ -34,14 +34,16 @@ const warned = new Set<string>();
  * @param known the options the constructor actually reads
  */
 export function warnUnknownOptions(clientName: string, opts: object, known: Record<string, true>): void {
-    const unknown = Object.keys(opts).filter((key) => !(key in known) && !warned.has(key));
+    // `Object.hasOwn`, not `in`: `in` walks the prototype chain, so options named `toString`,
+    // `constructor` or `valueOf` would look like known options and go unreported.
+    const unknown = Object.keys(opts).filter((key) => !Object.hasOwn(known, key) && !warned.has(key));
     if (unknown.length === 0) {
         return;
     }
     for (const key of unknown) {
         warned.add(key);
     }
-    const details = unknown.map((key) => (OPTION_HINTS[key] ? `${key} (${OPTION_HINTS[key]})` : key));
+    const details = unknown.map((key) => (Object.hasOwn(OPTION_HINTS, key) ? `${key} (${OPTION_HINTS[key]})` : key));
     console.warn(
         `[${clientName}] Ignoring unknown constructor option(s): ${details.join('; ')}. ` +
             'Unknown options have no effect.',
