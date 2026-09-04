@@ -1,5 +1,6 @@
 import { test as base, expect } from '@playwright/test';
-import { VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
+import { createVertesiaClient } from '../../scripts/vertesia-client.ts';
 
 type VertesiaFixtures = {
     vertesiaAuth: undefined;
@@ -52,15 +53,11 @@ export const test = base.extend<VertesiaFixtures>({
         { auto: true },
     ],
     vertesiaClient: async ({ playwright: _playwright }, use) => {
-        const token = process.env.VERTESIA_TOKEN;
-        if (!token) throw new Error('vertesiaClient requires VERTESIA_TOKEN');
-
-        const studio = process.env.VERTESIA_SERVER_URL;
-        const store = process.env.VERTESIA_STORE_URL;
-        const endpoints = studio && store ? { studio, store } : undefined;
-        const client = await VertesiaClient.fromAuthToken(token, undefined, endpoints);
-        const version = process.env.PLAYWRIGHT_APP_VERSION ?? process.env.VITE_APP_VERSION;
-        if (version) client.withAppVersion(version);
+        // Shared with the app's Node-side seed/exercise scripts so both authenticate and pin the
+        // app version exactly one way. See scripts/vertesia-client.ts.
+        const client = await createVertesiaClient({
+            appVersion: process.env.PLAYWRIGHT_APP_VERSION ?? process.env.VITE_APP_VERSION,
+        });
         await use(client);
     },
 });
