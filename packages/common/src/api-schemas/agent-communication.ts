@@ -139,6 +139,12 @@ export const RegisterPendingAskRequestSchema = z
         timeoutHours: z.number().optional(),
         userChannels: z.array(UserChannelSchema),
         taskFields: z.array(TaskFieldSchema).optional(),
+        /**
+         * Id of the REQUEST_INPUT message carrying this ask (the `ask_user` tool-use id), so a
+         * notified client can open the exact prompt. Optional: workers built before this field
+         * still validate against the component.
+         */
+        requestId: z.string().optional(),
     })
     .meta({ id: 'RegisterPendingAskRequest' });
 
