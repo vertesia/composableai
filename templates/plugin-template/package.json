@@ -22,15 +22,15 @@
         "build:ui:lib": "vite build --mode lib",
         "build:ui": "vite build --mode app && vite build --mode lib",
         "build": "npm run build:server && npm run build:ui",
-        "preview": "npm run build:server && vite preview",
-        "start": "npm run build:server && vite preview",
+        "preview": "npm run build && vite preview",
+        "start": "npm run build && vite preview",
         "start:vercel": "vercel dev",
         "pretest": "pnpm test:codegen",
         "test": "echo \"(no tests in template scaffold)\"",
         "codegen:dev": "node codegen/dist/codegen.js --context codegen/dev-codegen-context.json",
         "test:codegen": "node --test codegen/test/*.test.mjs",
-        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
-        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts",
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts"
     },
     "vertesia-build": {
         "libDir": "./lib",
@@ -62,12 +62,13 @@
         "mcp"
     ],
     "peerDependencies": {
-        "react": "^19.2.7",
-        "react-dom": "^19.2.7"
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.6",
+        "@biomejs/biome": "2.5.10",
         "@hono/vite-dev-server": "^0.26.1",
+        "@playwright/test": "^1.62.1",
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/vite": "^4.3.3",
         "@types/node": "catalog:",
@@ -76,10 +77,10 @@
         "@vertesia/build-tools": "workspace:*",
         "@vertesia/plugin-builder": "workspace:*",
         "@vitejs/plugin-basic-ssl": "^2.3.0",
-        "@vitejs/plugin-react": "^6.0.3",
-        "concurrently": "^10.0.4",
-        "esbuild": "^0.28.1",
-        "globals": "^17.9.0",
+        "@vitejs/plugin-react": "^6.1.0",
+        "concurrently": "^10.0.5",
+        "esbuild": "^0.28.2",
+        "globals": "^17.11.0",
         "react": "catalog:",
         "react-dom": "catalog:",
         "tailwindcss": "^4.3.3",
@@ -87,10 +88,11 @@
         "tslib": "^2.8.1",
         "typescript": "catalog:",
         "vite": "catalog:",
+        "vitest": "^4.1.11",
         "vite-plugin-serve-static": "^2.2.0"
     },
     "dependencies": {
-        "@hono/node-server": "^2.1.0",
+        "@hono/node-server": "^2.1.1",
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
@@ -98,12 +100,12 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
-        "hono": "^4.13.0",
+        "hono": "^4.13.5",
         "html-parse-stringify": "^4.0.1",
-        "lucide-react": "^1.28.0",
+        "lucide-react": "^1.34.0",
         "react-vega": "^8.0.0",
         "use-sync-external-store": "^1.6.0",
-        "vega": "^6.3.1",
+        "vega": "^6.4.0",
         "vega-embed": "^7.1.0",
         "vega-lite": "^6.4.3"
     }

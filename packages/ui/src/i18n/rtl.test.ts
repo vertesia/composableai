@@ -1,6 +1,9 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import i18next from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { i18nInstance, NAMESPACE } from './instance.js';
+import { AVAILABLE_LOCALES, NAMESPACE } from './instance.js';
 import { isRTL, RTL_LANGUAGES, resolveLanguage, SUPPORTED_LANGUAGES } from './rtl.js';
 
 describe('isRTL', () => {
@@ -67,10 +70,10 @@ describe('RTL_LANGUAGES set', () => {
 });
 
 describe('SUPPORTED_LANGUAGES divergence guard', () => {
-    it('matches exactly the locales registered in i18nInstance.options.resources', () => {
-        const registered = Object.keys(i18nInstance.options.resources ?? {}).sort();
+    it('matches exactly the locales the i18n instance can serve', () => {
+        const available = [...AVAILABLE_LOCALES].sort();
         const supported = [...SUPPORTED_LANGUAGES].sort();
-        expect(registered).toEqual(supported);
+        expect(available).toEqual(supported);
     });
 });
 
@@ -95,8 +98,10 @@ describe('empty translation fallback', () => {
         expect(t('test.emptyTranslationFallback')).toBe('English fallback');
     });
 
+    // Reads the locale files rather than `i18nInstance.options.resources`: only the `en` fallback is
+    // bundled there now, the rest are fetched on demand.
     it('does not ship parser-created empty locale entries', () => {
-        const resources = i18nInstance.options.resources ?? {};
+        const localesDir = join(dirname(fileURLToPath(import.meta.url)), 'locales');
         const emptyEntries: string[] = [];
 
         const collectEmptyEntries = (value: unknown, path: string[]) => {
@@ -121,8 +126,12 @@ describe('empty translation fallback', () => {
             }
         };
 
-        for (const [locale, resource] of Object.entries(resources)) {
-            collectEmptyEntries(resource, [locale]);
+        const localeFiles = readdirSync(localesDir).filter((name) => name.endsWith('.json'));
+        expect(localeFiles.length).toBe(SUPPORTED_LANGUAGES.length);
+
+        for (const file of localeFiles) {
+            const resource: unknown = JSON.parse(readFileSync(join(localesDir, file), 'utf-8'));
+            collectEmptyEntries(resource, [file.replace(/\.json$/, '')]);
         }
 
         expect(emptyEntries).toEqual([]);

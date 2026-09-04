@@ -1,3 +1,4 @@
+import type { VertesiaClient } from '@vertesia/client';
 import {
     type ActiveWorkstreamEntry,
     type AgentMessage,
@@ -6,6 +7,7 @@ import {
     type AgentToolApprovalMode,
     type CompletedWorkstreamEntry,
     type ConversationFile,
+    type ConversationFileBatchRef,
     type ConversationFileRef,
     FileProcessingStatus,
     type McpConnectUxConfig,
@@ -118,6 +120,35 @@ export type SendAgentMessageFn = (message: string, inputMetadata?: Record<string
 
 const EMPTY_STREAMING_MESSAGES = new Map<string, never>();
 const COLLAPSED_STAGED_FILE_COUNT = 3;
+
+const BATCH_CLOSE_RETRY_DELAYS_MS = [400, 1200];
+
+/**
+ * Send the staged-upload manifest, retrying with bounded backoff.
+ *
+ * The manifest is the workflow's only notice that the batch is complete: the start message told
+ * the agent to wait for "[Files Ready]", so dropping it leaves the run waiting for a turn that
+ * never comes. Retries reuse the same `batch_id`, which the workflow treats as idempotent.
+ * Returns false once the retries are exhausted so the caller can report the failure.
+ */
+async function closeStagedFileBatch(
+    client: VertesiaClient,
+    agentId: string,
+    batch: ConversationFileBatchRef,
+): Promise<boolean> {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            await client.agents.sendSignal(agentId, 'FileBatchClosed', batch);
+            return true;
+        } catch (err) {
+            if (attempt >= BATCH_CLOSE_RETRY_DELAYS_MS.length) {
+                console.error('Failed to close staged file batch:', err);
+                return false;
+            }
+            await new Promise((resolve) => setTimeout(resolve, BATCH_CLOSE_RETRY_DELAYS_MS[attempt]));
+        }
+    }
+}
 
 function getTimestampMs(timestamp: number | string | undefined): number {
     if (typeof timestamp === 'number') return timestamp;
@@ -1020,56 +1051,85 @@ function StartWorkflowView({
 
             const agentId = newRun.agent_run_id;
 
-            // Upload staged files to the new run's artifact space and signal agent
-            const uploadedFiles: string[] = [];
+            // Upload the staged files inline, NOT via the conversation view: consumers like
+            // StudioAssistantPanel feed the new agentRunId straight back as a prop, which
+            // switches ModernAgentConversation to its agentRunId branch and unmounts this
+            // view — any state handoff dies with it. Inline client calls survive regardless
+            // of what renders next. The closing FileBatchClosed manifest names the batch's
+            // exact membership, so the workflow delivers the "[Files Ready]" turn itself
+            // once — and only once — every listed file has settled, even when a small file
+            // finishes processing while a larger one is still uploading. Once the manifest
+            // lands, delivery no longer depends on this client: extraction can outlast a
+            // reload. The upload loop below still does — a tab closed mid-loop never closes
+            // the batch, which is why the send is retried and its failure surfaced.
+            let stagedBatchDelivered = true;
             if (canStageFiles && stagedFiles.length > 0) {
+                const batchId = `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const uploadedFileIds: string[] = [];
+                const failedUploads: { name: string; error?: string }[] = [];
                 for (const file of stagedFiles) {
                     try {
                         const artifactPath = `files/${file.name}`;
                         await client.agents.uploadArtifact(agentId, artifactPath, file);
-
-                        // Signal agent that file was uploaded
+                        const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                         await client.agents.sendSignal(agentId, 'FileUploaded', {
-                            id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            id: fileId,
                             name: file.name,
                             content_type: file.type || 'application/octet-stream',
                             reference: `artifact:${artifactPath}`,
                             artifact_path: artifactPath,
                         } as ConversationFileRef);
-                        uploadedFiles.push(file.name);
+                        uploadedFileIds.push(fileId);
                     } catch (uploadErr) {
                         console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
-                        // Continue with other files
+                        // Carried in the manifest: a 1-of-2 batch would otherwise look
+                        // complete to the workflow and the agent would never hear about it.
+                        failedUploads.push({
+                            name: file.name,
+                            error: uploadErr instanceof Error ? uploadErr.message : String(uploadErr),
+                        });
                     }
                 }
-
-                // Send a follow-up message to notify the agent that all files are ready
-                if (uploadedFiles.length > 0) {
-                    try {
-                        await client.agents.sendSignal(agentId, 'UserInput', {
-                            message: `[Files Ready] All ${uploadedFiles.length} file(s) have been uploaded and are now available: ${uploadedFiles.join(', ')}. You can now process them.`,
-                            metadata: {
-                                type: 'files_ready',
-                                files: uploadedFiles,
-                            },
-                        } as UserInputSignal);
-                    } catch (signalErr) {
-                        console.error('Failed to send files ready signal:', signalErr);
-                    }
+                // Close the batch even when every upload failed — the manifest is what lets
+                // the workflow report the outcome instead of leaving the agent parked.
+                stagedBatchDelivered = await closeStagedFileBatch(client, agentId, {
+                    batch_id: batchId,
+                    file_ids: uploadedFileIds,
+                    failed_uploads: failedUploads.length > 0 ? failedUploads : undefined,
+                });
+                if (stagedBatchDelivered) {
+                    setStagedFiles([]);
                 }
-
-                setStagedFiles([]);
+                if (failedUploads.length > 0) {
+                    toast({
+                        title: t('agent.stagedFilesUploadFailed'),
+                        status: 'warning',
+                        duration: 6000,
+                        description: failedUploads.map((f) => f.name).join(', '),
+                    });
+                }
             }
 
             // Clear attachments after successful start
             onAttachmentsSent?.();
             setStartedAgentRunId(agentId);
             setInputValue('');
-            toast({
-                title: t('agent.agentStarted'),
-                status: 'success',
-                duration: 3000,
-            });
+            if (stagedBatchDelivered) {
+                toast({
+                    title: t('agent.agentStarted'),
+                    status: 'success',
+                    duration: 3000,
+                });
+            } else {
+                // The run exists, but the agent was told to wait for files it will never be
+                // told about — reporting success here would hide that.
+                toast({
+                    title: t('agent.stagedFilesNotDelivered'),
+                    status: 'error',
+                    duration: 8000,
+                    description: t('agent.stagedFilesNotDeliveredDescription'),
+                });
+            }
         } catch (err: unknown) {
             setPendingStartMessage(null);
             setPendingStartTimestamp(null);
@@ -1306,8 +1366,11 @@ function StartWorkflowView({
                             disabled={isSending}
                             rows={2}
                             className={cn(
-                                'min-h-[72px] resize-none overflow-hidden border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
-                                isExpandedStartComposer && 'min-h-0 flex-1',
+                                'min-h-[72px] resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
+                                // The expanded composer is a fixed-height flex box (adjustTextareaHeight
+                                // pins it to 100%), so it has to scroll its own overflow. The auto-growing
+                                // variant hides overflow because it resizes to fit instead.
+                                isExpandedStartComposer ? 'min-h-0 flex-1 overflow-y-auto' : 'overflow-hidden',
                                 inputClassName,
                             )}
                             style={
@@ -1498,7 +1561,6 @@ function ModernAgentConversationInner({
         isDocPanelOpen,
         docRefreshKey,
         closeDocPanel: handleCloseDocPanel,
-        closeDocument: handleCloseDocument,
         selectDocument,
         openDocInPanel,
         updateDocumentTitle,
@@ -2999,7 +3061,6 @@ function ModernAgentConversationInner({
                                     openDocuments={openDocuments}
                                     activeDocumentId={activeDocumentId}
                                     onSelectDocument={selectDocument}
-                                    onCloseDocument={handleCloseDocument}
                                     onUpdateDocumentTitle={updateDocumentTitle}
                                     docRefreshKey={docRefreshKey}
                                     runId={agentRunId}

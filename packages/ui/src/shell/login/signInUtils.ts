@@ -82,6 +82,35 @@ export function clearPendingSignin(): void {
 }
 
 /**
+ * Promotes the pending sign-in record to the last-successful-login entry, stamping the
+ * authenticated user's display name.
+ *
+ * The returning-user step reads the record this writes, so a host that never calls it never
+ * remembers anyone. No-op when no sign-in is pending, which is the normal case for a page load
+ * that did not come back from an identity provider.
+ */
+export function finalizeSuccessfulLogin(name?: string): void {
+    const pending = readPendingSignin();
+    if (!pending) return;
+    writeLastSuccessfulLogin({
+        email: pending.email,
+        lastProvider: pending.provider,
+        tenantName: pending.tenantName,
+        name: name || undefined,
+    });
+    clearPendingSignin();
+}
+
+/** Drops the Firebase session. Best-effort: no active session, or auth not initialized. */
+export async function signOutOfFirebase(): Promise<void> {
+    try {
+        await firebaseSignOut(getFirebaseAuth());
+    } catch {
+        // best-effort: no active session, or auth not initialized
+    }
+}
+
+/**
  * Clears the persisted sign-in records (last-successful-login and pending) and
  * signs out of Firebase. Best-effort: sign-out errors (e.g. no active session)
  * are swallowed.
@@ -89,11 +118,7 @@ export function clearPendingSignin(): void {
 export async function resetSignInState(): Promise<void> {
     clearLastSuccessfulLogin();
     clearPendingSignin();
-    try {
-        await firebaseSignOut(getFirebaseAuth());
-    } catch {
-        // best-effort: no active session, or auth not initialized
-    }
+    await signOutOfFirebase();
 }
 
 function buildRedirectPath(redirectTo?: string): string {

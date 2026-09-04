@@ -369,18 +369,22 @@ export async function executeInteractionFromActivity(
     if (params.include_previous_error) {
         //retrieve last failed run if any
         if (info.attempt > 1) {
-            log.info('Retrying, searching for previous run', { prev_run_id: runId });
+            log.debug('Retrying, searching for previous run', { prev_run_id: runId });
             const payload: RunSearchPayload = {
                 query: { workflow_run_ids: [runId] },
                 limit: 1,
             };
-            const previousRun = await client.runs.search(payload).then((res) => {
-                log.info('Search results', { results: res });
-                return res ? (res[0] ?? undefined) : undefined;
-            });
+            const previousRuns = await client.runs.search(payload);
+            log.debug('Previous run search completed', { result_count: previousRuns?.length ?? 0 });
+            // `?.[0]` covers both an absent body and an empty array, matching what the previous
+            // `res ? (res[0] ?? undefined) : undefined` did. The optional chaining is kept
+            // deliberately: `search` is *typed* to return an array, but the value comes straight off
+            // an HTTP response, so the type is a claim about the contract rather than a runtime
+            // guarantee — and dropping the guard here would be a behaviour change, not a cleanup.
+            const previousRun = previousRuns?.[0];
 
             if (previousRun) {
-                log.info('Found previous run', { previousRun });
+                log.debug('Found previous run', { prev_run_id: previousRun.id });
                 previousStudioExecutionRun = await client.runs.retrieve(previousRun.id);
             }
         }

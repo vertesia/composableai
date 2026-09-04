@@ -25,7 +25,7 @@ export type GladiaConfigurationInput = z.infer<typeof GladiaConfigurationInputSc
 export type GladiaConfiguration = z.infer<typeof GladiaConfigurationSchema>;
 
 export interface GladiaConfigurationWithSecrets extends GladiaConfiguration {
-    api_key?: string;
+    api_key: string | null;
 }
 
 export type GithubConfigurationInput = z.infer<typeof GithubConfigurationInputSchema>;

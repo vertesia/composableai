@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-plugin",
-    "version": "1.5.0-dev.20260807.073259Z",
+    "version": "1.6.0-dev",
     "description": "CLI to create Vertesia plugins: UI plugins or tool servers",
     "type": "module",
     "bin": {
@@ -40,7 +40,7 @@
     "dependencies": {
         "chalk": "^6.0.0",
         "commander": "^15.0.0",
-        "degit": "^3.6.6",
+        "degit": "^3.8.0",
         "prompts": "^2.4.2"
     },
     "devDependencies": {

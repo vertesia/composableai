@@ -94,10 +94,23 @@ export async function createOrUpdateDocumentFromInteractionRun(
     const nameValue = jsonResult?.name || jsonResult?.title || inputData.name || params.fallback_name || undefined;
     const name = typeof nameValue === 'string' ? nameValue : undefined;
 
-    const docPayload = {
+    // An interaction with no result schema returns prose, which belongs in `text`. Sending
+    // `properties: {}` in that case is not a no-op: the store treats a present `properties` as a
+    // full replacement, so it would erase whatever the object already carried (and clear the
+    // derived embeddings with it). Omit the field entirely unless the run produced JSON.
+    const target: 'properties' | 'text' = jsonResult ? 'properties' : 'text';
+    const docPayload: {
+        name?: string;
+        parent?: string;
+        properties?: JSONObject;
+        text?: string;
+        type?: string;
+        status: ContentObjectStatus;
+        generation_run_info: { id: string; date: string; model: string; target: string };
+    } = {
         name,
         parent: params.parent ?? undefined,
-        properties: jsonResult ? jsonResult : {},
+        properties: jsonResult ?? undefined,
         text: !jsonResult ? result.text() : undefined,
         type: type?.id,
         status: ContentObjectStatus.completed,
@@ -105,12 +118,12 @@ export async function createOrUpdateDocumentFromInteractionRun(
             id: run.id,
             date: new Date().toISOString(),
             model: run.modelId ?? '',
-            target: jsonResult ? 'properties' : 'text',
+            target,
         },
     };
 
     if (params.update_text_from_property) {
-        const text = docPayload.properties[params.update_text_from_property];
+        const text = docPayload.properties?.[params.update_text_from_property];
         if (typeof text === 'string') {
             docPayload.text = text;
         }
@@ -129,5 +142,7 @@ export async function createOrUpdateDocumentFromInteractionRun(
     }
 
     log.debug(`Document ${`${objectTypeName} `}${doc.id}(${doc.name}) ${newDoc ? 'created' : 'updated'}`);
-    return { id: doc.id, isNew: newDoc, type: name };
+    // `target` tells the caller which field the run actually populated. Media intake needs it to know
+    // whether properties were written or whether it still has to run its own extraction pass.
+    return { id: doc.id, isNew: newDoc, type: name, target };
 }

@@ -1,5 +1,12 @@
+import { Env } from '@vertesia/ui/env';
 import { afterEach, describe, expect, it } from 'vitest';
-import { mountRootUrl, shouldRedirectToCentralAuth, shouldUseFirebaseAuth } from './domainRouting';
+import {
+    centralAuthUrl,
+    DEFAULT_CENTRAL_AUTH_URL,
+    mountRootUrl,
+    shouldRedirectToCentralAuth,
+    shouldUseFirebaseAuth,
+} from './domainRouting';
 
 // Stub document.baseURI to simulate the served `<base href>` (deep gateway mount) or its absence.
 function setBaseURI(baseURI: string) {
@@ -49,5 +56,36 @@ describe('domainRouting', () => {
             setBaseURI('https://studio.vertesia.io/');
             expect(mountRootUrl().toString()).toBe('https://studio.vertesia.io/');
         });
+    });
+});
+
+describe('centralAuthUrl', () => {
+    function initEnv(auth?: string) {
+        Env.init({
+            name: 'test',
+            version: '0',
+            isLocalDev: true,
+            isDocker: false,
+            type: 'development',
+            endpoints: { studio: 'https://studio.test', zeno: 'https://zeno.test', sts: 'https://sts.test', auth },
+        });
+    }
+
+    it('falls back to the default broker when no auth endpoint is configured', () => {
+        initEnv(undefined);
+        expect(centralAuthUrl()).toBe(DEFAULT_CENTRAL_AUTH_URL);
+        expect(DEFAULT_CENTRAL_AUTH_URL).toBe('https://internal-auth.vertesia.app/');
+    });
+
+    it('uses the configured auth endpoint when one is set', () => {
+        initEnv('https://auth.vertesia.io/');
+        expect(centralAuthUrl()).toBe('https://auth.vertesia.io/');
+    });
+
+    // An empty string is what an unset VITE_* override collapses to; it must not become the broker
+    // URL, or the app would redirect to its own origin instead of a login page.
+    it('treats an empty auth endpoint as unconfigured', () => {
+        initEnv('');
+        expect(centralAuthUrl()).toBe(DEFAULT_CENTRAL_AUTH_URL);
     });
 });

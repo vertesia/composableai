@@ -1,7 +1,9 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     AggregatedTool,
+    InspectProjectToolQuery,
     ListProjectToolsQuery,
+    ToolInspection,
     ValidateToolNamesPayload,
     ValidateToolNamesResponse,
 } from '@vertesia/common';
@@ -37,7 +39,15 @@ export default class ToolsApi extends ApiTopic {
         const params: Record<string, string> = {};
         if (query?.sources?.length) params.sources = query.sources.join(',');
         if (query?.exclude?.length) params.exclude = query.exclude.join(',');
+        if (query?.context) params.context = query.context;
         return this.get('/', { query: Object.keys(params).length > 0 ? params : undefined });
+    }
+
+    inspect(name: string, query?: InspectProjectToolQuery): Promise<ToolInspection> {
+        if (!name.trim()) throw new Error('Tool name must not be empty');
+        return this.get(`/${encodeURIComponent(name)}`, {
+            query: query?.context ? { context: query.context } : undefined,
+        });
     }
 
     /**

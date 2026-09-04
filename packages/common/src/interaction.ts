@@ -3,7 +3,7 @@ import type {
     ExecutionTokenUsage,
     JSONSchema,
     Modalities,
-    ModelOptions,
+    PromptCacheDiagnostic,
     StatelessExecutionOptions,
     ToolUse,
 } from '@llumiverse/common';
@@ -34,6 +34,7 @@ import type {
     GenerateTestDataPayloadSchema,
     ImprovePromptPayloadConfigSchema,
     ImprovePromptPayloadSchema,
+    InCodeInteractionSchema,
     InCodePromptSchema,
     InitialToolCallSchema,
     InteractionCreatePayloadSchema,
@@ -56,6 +57,7 @@ import type {
     PromptModalitiesSchema,
     RateLimitRequestPayloadSchema,
     RateLimitRequestResponseSchema,
+    ResolvedCatalogInteractionSchema,
     ResolvedEnvironmentInfoSchema,
     ResolvedInteractionExecutionInfoSchema,
     ResolvedRuntimeConfigSchema,
@@ -84,8 +86,6 @@ import type { AccountRef } from './user.js';
  * working.
  */
 export * from './interaction-values.js';
-
-import type { RunDataStorageLevel } from './interaction-values.js';
 
 export type InteractionExecutionError = z.infer<typeof InteractionExecutionErrorSchema>;
 
@@ -129,117 +129,9 @@ export interface ResolveInteractionQuery {
 }
 
 export type InCodePrompt = z.infer<typeof InCodePromptSchema>;
-export interface InCodeInteraction {
-    /**
-     * The interaction type.
-     */
-    type: 'sys' | 'app' | 'stored' | 'draft';
-
-    /**
-     * The id of the interaction. Required.
-     * The id is a unique identifier for the interaction.
-     * It is recommended to use a URL safe string and not include spaces.
-     * The id is composed of some namespace or prefix and the interaction name.
-     * Example: sys:generic_question, app:review_contract, tmp:my_temp_interaction
-     */
-    id: string;
-
-    /**
-     * The interaction code name. Required.
-     * Should be a URL safe string and not include spaces. It is recommended to use kebab-case or camel-case.
-     * The endpoints must satisfy the following regexp: /^[a-zA-Z0-9-_]+$/. No whitespaces or special characters are allowed.
-     */
-    name: string;
-
-    /**
-     * Only applies for stored interactions. The version of the interaction.
-     * Undefined for non stored interactions
-     */
-    version?: number;
-
-    /**
-     * Only applies for stored interactions. Whether the interaction is published or not.
-     */
-    published?: boolean;
-
-    /**
-     * A title for the interaction. If not provided, the endpoint will be used.
-     */
-    title?: string;
-
-    /**
-     * An optional description of the interaction.
-     */
-    description?: string;
-
-    /**
-     * The JSON schema to be used for the result if any.
-     */
-    result_schema?: JSONSchema | SchemaRef;
-
-    /**
-     * The modality of the interaction output.
-     * If not specified Modalities.Text is assumed.
-     */
-    output_modality?: Modalities;
-
-    /**
-     * How to store the run data for executions of this interaction.
-     * Defaults to STANDARD.
-     */
-    storage?: RunDataStorageLevel;
-
-    /**
-     * Optional tags for the interaction.
-     */
-    tags?: string[];
-
-    /**
-     * Agent Runner configuration options.
-     */
-    agent_runner_options?: AgentRunnerOptions;
-
-    /**
-     * Default options for the model to be used when executing this interaction.
-     * (like temperature etc)
-     */
-    model_options?: ModelOptions;
-
-    /**
-     * The prompts composing the interaction. Required.
-     */
-    prompts: InCodePrompt[];
-
-    /**
-     * Optional reference to an external resource if any.
-     * Used internally by the system to synchronize stored interactions with in-code interactions.
-     */
-    externalId?: string;
-
-    /**
-     * Runtime configuration (system use only)
-     *
-     * This field is populated by the system when converting stored interactions
-     * and contains runtime-specific defaults like target model/environment IDs.
-     *
-     * DO NOT set this field manually when writing interaction definitions.
-     * These values are environment-specific and not portable.
-     *
-     * @internal
-     */
-    runtime?: {
-        /**
-         * Default target environment for the interaction execution
-         */
-        environment?: string;
-
-        /**
-         * Default (recommended) target model for the interaction execution
-         */
-        model?: string;
-    };
-}
-export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'> {}
+export type InCodeInteraction = z.infer<typeof InCodeInteractionSchema>;
+export type ResolvedCatalogInteraction = z.infer<typeof ResolvedCatalogInteractionSchema>;
+export type InteractionSpec = Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'>;
 // ---------------------------------------------------------
 
 /**
@@ -542,6 +434,7 @@ export interface BaseExecutionRun<P = unknown> {
     finish_reason?: string;
     prompt?: unknown;
     token_use?: ExecutionTokenUsage;
+    prompt_cache_diagnostics?: PromptCacheDiagnostic[];
     chunks?: number;
     execution_time?: number; // ms
     // ISO strings, not `Date`. `ExecutionRunRef` — the shape every run endpoint actually returns —

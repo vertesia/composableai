@@ -3,11 +3,8 @@ import { Button, CopyButton, Table, TBody, THead, VTooltip } from '@vertesia/ui/
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import clsx from 'clsx';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import { Filter } from 'lucide-react';
-
-dayjs.extend(relativeTime);
+import dayjs from '../../../core/utils/dayjs.js';
 
 const ACTION_BTN_CLASS =
     'h-6 w-6 p-0 opacity-0 group-hover/field:opacity-100 text-muted hover:text-foreground transition-opacity shrink-0';

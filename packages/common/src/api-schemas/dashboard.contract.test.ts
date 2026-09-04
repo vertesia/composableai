@@ -69,13 +69,23 @@ describe('dashboard request validation', () => {
         );
     });
 
-    it('derives update as the partial create shape plus skip_versioning', () => {
-        expect(validateApiRequest('UpdateDashboardPayload', {})).toMatchObject({ valid: true });
-        expect(validateApiRequest('UpdateDashboardPayload', { spec: { mark: 'line' } })).toMatchObject({
+    it('accepts legacy updates without a revision while rejecting undeclared fields', () => {
+        expect(validateApiRequest('UpdateDashboardPayload', {}).valid).toBe(true);
+        expect(validateApiRequest('UpdateDashboardPayload', { summary: 'Legacy update' }).valid).toBe(true);
+        expect(
+            validateApiRequest('UpdateDashboardPayload', {
+                expected_edit_revision: 1,
+                spec: { mark: 'line' },
+            }),
+        ).toMatchObject({
             valid: true,
         });
-        expect(validateApiRequest('UpdateDashboardPayload', { skip_versioning: true })).toMatchObject({ valid: true });
-        expect(validateApiRequest('UpdateDashboardPayload', { unknown: true }).valid).toBe(false);
+        expect(
+            validateApiRequest('UpdateDashboardPayload', { expected_edit_revision: 1, skip_versioning: true }),
+        ).toMatchObject({ valid: true });
+        expect(validateApiRequest('UpdateDashboardPayload', { expected_edit_revision: 1, unknown: true }).valid).toBe(
+            false,
+        );
     });
 
     it('keeps the two bulk bodies as the free-form string-array map already published', () => {
@@ -88,6 +98,7 @@ describe('dashboard request validation', () => {
 describe('dashboard response validation', () => {
     const item = {
         id: 'dashboard-1',
+        edit_revision: 1,
         name: 'Revenue',
         tags: [],
         updated_by: 'user:editor',

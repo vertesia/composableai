@@ -1,9 +1,12 @@
 import { ApiTopic, type ClientBase, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
 import type {
+    BucketCreateAccessStatusResponse,
     BucketReadAccessStatusResponse,
     BulkUploadUrlsPayload,
     BulkUploadUrlsResponse,
     DeleteFileResult,
+    EnsureBucketCreateAccessPayload,
+    EnsureBucketCreateAccessResponse,
     EnsureBucketReadAccessPayload,
     EnsureBucketReadAccessResponse,
     FileBucketResponse,
@@ -131,6 +134,15 @@ export class FilesApi extends ApiTopic {
 
     getBucketReadAccessStatus(principal: string): Promise<BucketReadAccessStatusResponse> {
         return this.get('/bucket/read-access', { query: { principal } });
+    }
+
+    ensureBucketCreateAccess(principal: string): Promise<EnsureBucketCreateAccessResponse> {
+        const payload: EnsureBucketCreateAccessPayload = { principal };
+        return this.post('/bucket/create-access', { payload });
+    }
+
+    getBucketCreateAccessStatus(principal: string): Promise<BucketCreateAccessStatusResponse> {
+        return this.get('/bucket/create-access', { query: { principal } });
     }
 
     list(prefix: string): Promise<FileListResponse> {

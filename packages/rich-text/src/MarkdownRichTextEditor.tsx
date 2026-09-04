@@ -116,7 +116,10 @@ export function MarkdownRichTextEditor({
                     ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
                 },
             },
-            onUpdate: ({ editor: updatedEditor }) => {
+            onUpdate: ({ editor: updatedEditor, transaction }) => {
+                // Tiptap emits `update` for state changes that leave the document untouched, so
+                // serializing here would report an edit the user never made.
+                if (!transaction.docChanged) return;
                 if (changeTimeoutRef.current !== undefined) clearTimeout(changeTimeoutRef.current);
 
                 const emitMarkdown = () => {
@@ -151,7 +154,9 @@ export function MarkdownRichTextEditor({
     );
 
     useEffect(() => {
-        editor?.setEditable(editable);
+        // `setEditable` emits an `update` with an empty transaction unless told not to; that
+        // phantom update would re-serialize the document on mount and on every editable toggle.
+        editor?.setEditable(editable, false);
     }, [editable, editor]);
 
     useEffect(() => {

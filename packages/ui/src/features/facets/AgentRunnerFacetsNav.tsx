@@ -10,11 +10,38 @@ import {
 } from '@vertesia/ui/core';
 import { RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import {
+    createSearchQueryKeyGuard,
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+} from './utils/SearchInterface';
 import type { EnrichedFacetBucket } from './utils/VInteractionFacet';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
+
+export interface AgentRunnerFilterQuery {
+    object?: string;
+    id?: string;
+    run_kind?: string;
+    interaction?: string;
+    status?: string;
+    initiated_by?: string;
+    start?: string;
+    end?: string;
+}
+
+const agentRunnerFilterNames = [
+    'id',
+    'run_kind',
+    'interaction',
+    'status',
+    'initiated_by',
+    'start',
+    'end',
+] as const satisfies readonly (keyof AgentRunnerFilterQuery)[];
+const isAgentRunnerFilterName = createSearchQueryKeyGuard<AgentRunnerFilterQuery>(agentRunnerFilterNames);
 
 interface AgentRunnerFacetsNavProps {
     facets: {
@@ -24,7 +51,7 @@ interface AgentRunnerFacetsNavProps {
         /** `run_kind` buckets — `agent` (autonomous runs) and `process` (process runs). */
         kinds?: FacetBucket[];
     };
-    search: SearchInterface;
+    search: SearchInterface<AgentRunnerFilterQuery>;
     actions?: React.ReactNode[];
     selectionCount?: number;
     /**
@@ -99,13 +126,16 @@ export function useAgentRunnerFilterGroups(facets: AgentRunnerFacetsNavProps['fa
 }
 
 // Create filter change handler for agent runners
-export function createAgentRunnerFilterHandler(search: SearchInterface) {
+export function createAgentRunnerFilterHandler(search: SearchInterface<AgentRunnerFilterQuery>) {
     return (newFilters: BaseFilter[]) => {
         // Clear all filters first, then apply new ones
         search.clearFilters(false, false);
 
         newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
+                if (!isAgentRunnerFilterName(filter.name)) {
+                    return;
+                }
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
                 setSearchQueryValue(search, filterName, filterValue);

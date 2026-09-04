@@ -10,10 +10,85 @@ import {
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
+import { generateAuthState } from './authState';
+import {
+    authReturnUrl,
+    buildCentralAuthRedirectUrl,
+    centralAuthUrl,
+    shouldRedirectToCentralAuth,
+} from './domainRouting';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
+
+/**
+ * Whether this tab ever held a token.
+ *
+ * Separates "the session expired" from "there is no session yet". Only the first is renewed from
+ * here; the first load is UserSessionProvider's, and it has the account/project selection that
+ * this layer does not.
+ */
+let HAD_SESSION = false;
+
+/** Session-storage stamp of the last renewal redirect, so the cooldown survives the navigation. */
+const RENEWAL_ATTEMPT_KEY = 'vt.centralAuthRenewalAt';
+const RENEWAL_COOLDOWN_MS = 60_000;
+
+/**
+ * Renew an expired Central Auth session by bouncing through the broker.
+ *
+ * A Central Auth session holds exactly one credential -- the STS JWT, in memory -- and STS refuses
+ * it once it has expired. There is no Firebase user in this browser to mint a replacement from and
+ * no refresh token, so the only way back is the broker, which still has the user's own session and
+ * returns a fresh identity token without prompting. That is precisely what a manual reload does
+ * today; doing it here turns a page that dead-ends on "Cannot acquire a composable token" into a
+ * redirect the user usually does not notice.
+ *
+ * The cooldown is the important part. If the broker returns a credential STS also rejects, an
+ * unguarded redirect bounces the browser between the two forever -- and a redirect loop is a worse
+ * failure than the error page it replaced, because it never comes to rest anywhere the user can
+ * read. One attempt per minute, recorded in sessionStorage because the module state does not
+ * survive the navigation this function starts.
+ *
+ * Returns whether a redirect was started.
+ */
+function renewExpiredCentralAuthSession(): boolean {
+    if (!HAD_SESSION || !shouldRedirectToCentralAuth()) {
+        return false;
+    }
+
+    let lastAttempt = 0;
+    try {
+        lastAttempt = Number(sessionStorage.getItem(RENEWAL_ATTEMPT_KEY) ?? '0');
+    } catch {
+        // sessionStorage unavailable -- treated as "no previous attempt", so the redirect is
+        // allowed once and the failure surfaces normally if it does not stick.
+    }
+    if (Number.isFinite(lastAttempt) && lastAttempt > 0 && Date.now() - lastAttempt < RENEWAL_COOLDOWN_MS) {
+        Env.logger.warn('Central Auth session renewal already attempted; surfacing the failure instead', {
+            vertesia: { last_attempt_ms_ago: Date.now() - lastAttempt },
+        });
+        return false;
+    }
+
+    try {
+        sessionStorage.setItem(RENEWAL_ATTEMPT_KEY, String(Date.now()));
+    } catch {
+        // Without the stamp the cooldown cannot be enforced across the navigation. Still worth
+        // redirecting once: the alternative is a page the user can only fix by reloading manually.
+    }
+
+    Env.logger.info('Renewing an expired Central Auth session through the broker');
+    const url = buildCentralAuthRedirectUrl(
+        centralAuthUrl(),
+        Env.endpoints.sts ?? 'https://sts.vertesia.io',
+        authReturnUrl(),
+        generateAuthState(),
+    );
+    location.replace(url.toString());
+    return true;
+}
 
 function clearRejectedPersistedScope(accountId?: string, projectId?: string) {
     if (!accountId) return;
@@ -92,6 +167,9 @@ function isVertesiaIssuedToken(token: string | undefined): token is string {
 
 function canUseVertesiaTokenDirectly(token: string, accountId?: string, projectId?: string): boolean {
     const decoded = decodeToken(token);
+    if (!decoded.exp || decoded.exp <= Date.now() / 1000 + 300) {
+        return false;
+    }
     const hasAuthorizationClaims = Boolean(
         decoded.permissions?.length ||
             decoded.account_roles?.length ||
@@ -117,8 +195,7 @@ export async function fetchComposableToken(
     ttl?: number,
     retryCount = 0,
 ): Promise<string> {
-    console.log(`Getting/refreshing composable token for account ${accountId} and project ${projectId} `);
-    Env.logger.info('Getting/refreshing composable token', {
+    Env.logger.debug('Getting/refreshing composable token', {
         vertesia: {
             account_id: accountId,
             project_id: projectId,
@@ -128,14 +205,12 @@ export async function fetchComposableToken(
 
     const idToken = await getIdToken(); //get from firebase
     if (!idToken) {
-        console.log('No id token found - using cookie auth');
         throw new Error('No id token found');
     }
 
     // Use STS endpoint - either configured or default to sts.vertesia.io
     const stsEndpoint = Env.endpoints.sts;
-    console.log('Using STS for token generation:', stsEndpoint);
-    Env.logger.info('Using STS for token generation', {
+    Env.logger.debug('Using STS for token generation', {
         vertesia: {
             account_id: accountId,
             project_id: projectId,
@@ -176,8 +251,7 @@ export async function fetchComposableToken(
 
         if (idToken && stsRes?.status === 404) {
             // User not found in token-server - call ensure-user endpoint
-            console.log('404: User not found - calling ensure-user endpoint');
-            Env.logger.info('404: User not found - calling ensure-user endpoint', {
+            Env.logger.debug('404: User not found - calling ensure-user endpoint', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
@@ -195,8 +269,7 @@ export async function fetchComposableToken(
 
             if (ensureResponse.status === 412) {
                 // No invite - trigger signup
-                console.log('412: No invite found - signup required');
-                Env.logger.info('412: No invite found - signup required', {
+                Env.logger.debug('412: No invite found - signup required', {
                     vertesia: {
                         account_id: accountId,
                         project_id: projectId,
@@ -234,8 +307,7 @@ export async function fetchComposableToken(
             }
 
             // User created/exists - retry token generation
-            console.log('User ensured - retrying token generation');
-            Env.logger.info('User ensured - retrying token generation', {
+            Env.logger.debug('User ensured - retrying token generation', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
@@ -245,8 +317,7 @@ export async function fetchComposableToken(
         }
 
         if (idToken && stsRes?.status === 412) {
-            console.log("412: auth succeeded but user doesn't exist - signup required", stsRes?.status);
-            Env.logger.error("412: auth succeeded but user doesn't exist - signup required", {
+            Env.logger.info("412: auth succeeded but user doesn't exist - signup required", {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
@@ -258,7 +329,7 @@ export async function fetchComposableToken(
                 Env.logger.error('No email found in id token');
                 throw new Error('No email found in id token');
             }
-            Env.logger.error('User not found', {
+            Env.logger.info('User not found', {
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
@@ -354,8 +425,7 @@ export async function fetchComposableToken(
         }
 
         const { token } = await stsRes.json();
-        console.log('Successfully got token from STS');
-        Env.logger.info('Successfully got token from STS');
+        Env.logger.debug('Successfully got token from STS');
         return token;
     } catch (error) {
         if (
@@ -439,6 +509,7 @@ export async function getComposableToken(
         cachedTokenMatchesScope &&
         AUTH_TOKEN.exp > Date.now() / 1000 + 300
     ) {
+        HAD_SESSION = true;
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
@@ -452,6 +523,7 @@ export async function getComposableToken(
         if (!AUTH_TOKEN.exp) {
             throw new Error('Invalid composable token');
         }
+        HAD_SESSION = true;
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
@@ -460,13 +532,31 @@ export async function getComposableToken(
         if (!devAuthToken && !useInternalAuth && getFirebaseAuth().currentUser) {
             //we have a firebase user, get the token from there
             AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
-        } else if (!devAuthToken && (initToken || AUTH_TOKEN_RAW)) {
-            // we have a token already and no firebase user, refresh it
-            AUTH_TOKEN_RAW = await fetchComposableToken(
-                () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
-                selectedAccount,
-                selectedProject,
-            );
+        } else if (!devAuthToken) {
+            // Embedded apps can reacquire a fresh credential from their host after their cached token expires.
+            const refreshCredential = (await Env.authTokenProvider?.()) ?? initToken ?? AUTH_TOKEN_RAW;
+            // `forceRefresh` has to defeat this shortcut, not just the cache above it. A caller
+            // asking for a forced refresh wants claims recomputed -- `refreshAuthToken()` exists so
+            // a stale `apps` claim can be re-read after an ACE change, and STS recomputes it on
+            // every issuance. Adopting the credential we already hold satisfies the check and
+            // returns the very token whose claims were suspect, silently making the call a no-op
+            // for exactly the sessions that have no other credential to fall back on.
+            if (
+                !forceRefresh &&
+                refreshCredential &&
+                isVertesiaIssuedToken(refreshCredential) &&
+                canUseVertesiaTokenDirectly(refreshCredential, selectedAccount, selectedProject)
+            ) {
+                AUTH_TOKEN_RAW = refreshCredential;
+            } else if (refreshCredential) {
+                AUTH_TOKEN_RAW = await fetchComposableToken(
+                    () => Promise.resolve(refreshCredential),
+                    selectedAccount,
+                    selectedProject,
+                );
+            } else {
+                AUTH_TOKEN_RAW = undefined;
+            }
         } else if (devAuthToken) {
             AUTH_TOKEN_RAW = devAuthToken;
         }
@@ -482,6 +572,13 @@ export async function getComposableToken(
                 clearRejectedPersistedScope(selectedAccount, selectedProject);
             }
         }
+        // An expired Central Auth session presents as a rejected credential: the JWT we sent STS to
+        // renew from is the one that timed out. The broker can still vouch for the user. Only this
+        // error -- a scope or account failure is about who the user is, and the broker would hand
+        // back the same identity and the same refusal.
+        if (error instanceof CredentialError) {
+            renewExpiredCentralAuthSession();
+        }
         throw error;
     }
 
@@ -492,6 +589,10 @@ export async function getComposableToken(
                 project_id: selectedProject,
             },
         });
+        // Reached once the credential has already been discarded -- typically the call after the
+        // one that saw STS reject it. Same remedy, and the cooldown keeps this from redirecting a
+        // second time for the same expiry.
+        renewExpiredCentralAuthSession();
         throw new Error('Cannot acquire a composable token');
     }
 
@@ -508,6 +609,7 @@ export async function getComposableToken(
         throw new Error('Invalid composable token');
     }
 
+    HAD_SESSION = true;
     return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
 }
 

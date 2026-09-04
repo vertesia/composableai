@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/jst",
-    "version": "1.5.0-dev.20260807.073259Z",
+    "version": "1.6.0-dev",
     "type": "module",
     "description": "Javascript text template",
     "license": "Apache-2.0",
@@ -39,14 +39,14 @@
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     },
     "dependencies": {
         "@types/node": "catalog:",
         "acorn": "8.18.0",
         "acorn-walk": "8.3.5",
-        "dayjs": "^1.11.21",
-        "papaparse": "^5.5.4"
+        "dayjs": "^1.11.23",
+        "papaparse": "^5.7.0"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",

@@ -4,6 +4,7 @@ import { ContentRoleNames } from './content.js';
 import {
     AbacRole,
     getAllRoleNames,
+    getDelegablePermissionsForRole,
     getPermissionsForRoles,
     getRoleByName,
     listAbacRolesForScope,
@@ -144,6 +145,20 @@ describe('getPermissionsForRoles', () => {
         expect(merged).toContain(Permission.int_read);
         expect(merged).toContain(Permission.content_read);
         expect(merged).toContain(Permission.account_member);
+    });
+});
+
+describe('getDelegablePermissionsForRole', () => {
+    it('returns system permission keys unchanged', () => {
+        expect(getDelegablePermissionsForRole(SystemRoles.reader)).toContain(Permission.content_read);
+    });
+
+    it('qualifies ABAC verbs with their role domain', () => {
+        expect(getDelegablePermissionsForRole(ContentRoleNames.content_manager).sort()).toEqual([
+            Permission.content_delete,
+            Permission.content_read,
+            Permission.content_write,
+        ]);
     });
 });
 

@@ -5,6 +5,7 @@ import {
     JSONSchemaSchema,
     ModalitiesSchema,
     ModelOptionsSchema,
+    PromptCacheDiagnosticSchema,
     PromptRoleSchema,
     StatelessExecutionOptionsSchema,
     ToolDefinitionSchema,
@@ -24,7 +25,9 @@ import { LlmCallType } from '../workflow-analytics.js';
 import { ProjectRefSchema } from './apikey.js';
 import { ExecutionEnvironmentRefSchema } from './environment.js';
 import { AccountRefSchema } from './invites.js';
+import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
 /**
@@ -40,7 +43,11 @@ export const ExecutionRunStatusSchema = z.enum(ExecutionRunStatus).meta({ id: 'E
 
 export const FacetSpecSchema = z
     .strictObject({
-        name: z.string(),
+        name: z.string().meta({
+            description:
+                'Key the buckets are returned under. `total` is reserved for the match count that every facet ' +
+                'response carries, and is rejected with a 400.',
+        }),
         field: z.string(),
     })
     .meta({ id: 'FacetSpec' });
@@ -401,6 +408,7 @@ export const PromptTemplateSchema = z
         name: z.string(),
         status: PromptStatusSchema,
         version: z.number(),
+        edit_revision: EditRevisionSchema,
         // The record this one was derived from. On a published version it is the draft it was
         // published from; on a fork it is the prompt that was forked, and the fork is itself a
         // draft. So `parent` alone does not tell you which kind of record this is — read `status`.
@@ -424,7 +432,15 @@ export const PromptTemplateSchema = z
 // The two payloads are projections of `PromptTemplate`, so they are derived from its canonical Zod
 // schema here. Leaving them as TypeScript utility types would give the generator only aliases with
 // no runtime properties to publish.
-const SERVER_OWNED_PROMPT_FIELDS = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by', 'project'] as const;
+const SERVER_OWNED_PROMPT_FIELDS = [
+    'id',
+    'edit_revision',
+    'created_at',
+    'updated_at',
+    'created_by',
+    'updated_by',
+    'project',
+] as const;
 const SERVER_OWNED_PROMPT_FIELD_KEYS = Object.fromEntries(
     SERVER_OWNED_PROMPT_FIELDS.map((field) => [field, true as const]),
 ) as Record<(typeof SERVER_OWNED_PROMPT_FIELDS)[number], true>;
@@ -448,6 +464,7 @@ export const PromptTemplateCreatePayloadSchema = PromptTemplateSchema.pick({
 
 export const PromptTemplateUpdatePayloadSchema = PromptTemplateSchema.omit(SERVER_OWNED_PROMPT_FIELD_KEYS)
     .partial()
+    .extend({ expected_edit_revision: ExpectedEditRevisionSchema })
     .meta({ id: 'PromptTemplateUpdatePayload' });
 
 export const CachePolicySchema = z
@@ -896,6 +913,13 @@ export const PromptTemplateRefSchema = z
     })
     .meta({ id: 'PromptTemplateRef' });
 
+// Interaction writes may carry a populated prompt copied from an interaction response. New clients
+// preserve its revision while legacy clients never sent one, so the embedded request shape accepts
+// both. The standalone PromptTemplate response keeps the revision required.
+export const InteractionPromptTemplateInputSchema = PromptTemplateSchema.extend({
+    edit_revision: EditRevisionSchema.optional(),
+}).meta({ id: 'InteractionPromptTemplateInput' });
+
 export const RunSourceSchema = z
     .strictObject({
         type: RunSourceTypesSchema,
@@ -914,6 +938,12 @@ export const PromptSegmentDefSchema = z
         configuration: z.unknown().optional(),
     })
     .meta({ id: 'PromptSegmentDef' });
+
+export const InteractionPromptSegmentInputSchema = PromptSegmentDefSchema.extend({
+    template: z
+        .union([z.string(), PromptTemplateSchema, InteractionPromptTemplateInputSchema, PromptTemplateRefSchema])
+        .optional(),
+}).meta({ id: 'InteractionPromptSegmentInput' });
 
 export const InteractionEndpointSchema = z
     .strictObject({
@@ -942,7 +972,7 @@ export const InteractionCreatePayloadSchema = z
         test_data: JSONObjectSchema.optional(),
         interaction_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
         cache_policy: CachePolicySchema.optional(),
-        prompts: z.array(PromptSegmentDefSchema),
+        prompts: z.array(InteractionPromptSegmentInputSchema),
         last_published_at: z.string().meta({ format: 'date-time' }).optional(),
         name: z.string(),
         description: z.string().optional(),
@@ -951,6 +981,7 @@ export const InteractionCreatePayloadSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
             description: 'Deprecated: This is deprecated. Use CompletionResult.type information instead.',
@@ -965,6 +996,7 @@ export const InteractionCreatePayloadSchema = z
 export const InteractionSchema = z
     .strictObject({
         id: z.string(),
+        edit_revision: EditRevisionSchema,
         name: z.string(),
         endpoint: z.string(),
         description: z.string().optional(),
@@ -975,6 +1007,7 @@ export const InteractionSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
             description: 'Deprecated: This is deprecated. Use CompletionResult.type information instead.',
@@ -1046,6 +1079,43 @@ export const CatalogInteractionRefSchema = z
         description:
             'Reference to an interaction in the catalog. Used in catalog listing. The id is composed of the namespace and the interaction name. Stored interactions can use `oid:` prefix. If no prefix is used it fallback on `oid:`.',
     });
+
+export const InCodeInteractionSchema = z
+    .strictObject({
+        type: z.enum(['sys', 'app', 'stored', 'draft']).meta({ description: 'The interaction type.' }),
+        id: z.string().meta({ description: 'The executable catalog interaction ID.' }),
+        name: z.string().meta({ description: 'The interaction code name.' }),
+        version: z.number().optional(),
+        published: z.boolean().optional(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        result_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
+        output_modality: ModalitiesSchema.optional(),
+        storage: RunDataStorageLevelSchema.optional(),
+        tags: z.array(z.string()).optional(),
+        agent_runner_options: AgentRunnerOptionsSchema.optional(),
+        model_options: ModelOptionsSchema.optional(),
+        prompts: z.array(InCodePromptSchema),
+        externalId: z.string().optional(),
+        runtime: z
+            .strictObject({
+                environment: z.string().optional(),
+                model: z.string().optional(),
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'InCodeInteraction',
+        description: 'An executable interaction definition, including the prompt schemas required by clients.',
+    });
+
+export const ResolvedCatalogInteractionSchema = InCodeInteractionSchema.extend({
+    title: z.string().meta({ description: 'Display title, normalized from the interaction name when absent.' }),
+    tags: z.array(z.string()).meta({ description: 'Tags, normalized to an empty array when absent.' }),
+}).meta({
+    id: 'ResolvedCatalogInteraction',
+    description: 'A catalog interaction resolved to its complete executable definition.',
+});
 
 export const RunSearchPayloadSchema = z
     .strictObject({
@@ -1140,6 +1210,7 @@ export const PromptSegmentRef_PromptTemplateRefSchema = z
 
 export const InteractionUpdatePayloadSchema = z
     .strictObject({
+        expected_edit_revision: ExpectedEditRevisionSchema,
         status: InteractionStatusSchema.optional(),
         parent: z.string().optional(),
         visibility: InteractionVisibilitySchema.optional(),
@@ -1147,7 +1218,7 @@ export const InteractionUpdatePayloadSchema = z
         test_data: JSONObjectSchema.optional(),
         interaction_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
         cache_policy: CachePolicySchema.optional(),
-        prompts: z.array(PromptSegmentDefSchema).optional(),
+        prompts: z.array(InteractionPromptSegmentInputSchema).optional(),
         last_published_at: z.string().meta({ format: 'date-time' }).optional(),
         name: z.string().optional(),
         endpoint: z.string().optional(),
@@ -1157,6 +1228,7 @@ export const InteractionUpdatePayloadSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
             description: 'Deprecated: This is deprecated. Use CompletionResult.type information instead.',
@@ -1318,7 +1390,14 @@ export const GeneratedInteractionDefinitionArraySchema = z
 export const PendingToolApprovalResultsSchema = z
     .strictObject({
         results: z.array(ToolResultSchema),
-        reason: z.enum(['denied', 'denied_with_feedback', 'timeout', 'reviewer_denied']),
+        reason: z.enum([
+            'denied',
+            'denied_with_feedback',
+            'timeout',
+            'reviewer_denied',
+            'user_interrupted_after_tool_execution',
+            'user_stopped_after_tool_execution',
+        ]),
         message: z.string(),
         created_at: z.string(),
     })
@@ -1364,6 +1443,7 @@ export const ExecutionRunSchema: z.ZodType = z
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
+        prompt_cache_diagnostics: z.array(PromptCacheDiagnosticSchema).optional(),
         chunks: z.number().optional(),
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -1422,6 +1502,7 @@ export const InteractionExecutionResultSchema = z
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
+        prompt_cache_diagnostics: z.array(PromptCacheDiagnosticSchema).optional(),
         chunks: z.number().optional(),
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -1465,6 +1546,27 @@ export const PopulatedExecutionRunResultSchema = InteractionExecutionResultSchem
     id: 'PopulatedExecutionRunResult',
     description: 'An execution run with its completion result and its interaction reference populated.',
 });
+
+/**
+ * Stored run fields returned by the internal `/runs/find` projection endpoint.
+ * Callers choose an arbitrary MongoDB projection, so every field is optional and references remain ids.
+ */
+export const FindRunResultSchema = InteractionExecutionResultSchema.omit({
+    tool_use: true,
+    conversation: true,
+    options: true,
+})
+    .extend({
+        environment: z.string(),
+    })
+    .partial()
+    .meta({
+        id: 'FindRunResult',
+        description:
+            'A caller-selected subset of canonical stored run fields. Internal persistence fields are normalized at the API boundary.',
+    });
+
+export const FindRunResultArraySchema = z.array(FindRunResultSchema).meta({ id: 'FindRunResultArray' });
 
 /**
  * `result` in the shape the pre-`COMPLETION_RESULT_V1` endpoints report it.
@@ -1521,8 +1623,10 @@ export const ExecutionRunRefSchema = z
             })
             .optional(),
         tags: z.array(z.string()).optional(),
-        environment: ExecutionEnvironmentRefSchema.meta({
-            description: 'Environment reference - populated with full object in API responses',
+        environment: z.union([ExecutionEnvironmentRefSchema, z.string(), z.null()]).meta({
+            description:
+                'Environment reference. API responses normally contain the populated environment object; the ' +
+                'stored environment ID or null is retained when the referenced environment no longer exists.',
         }),
         modelId: z.string().optional(),
         result_schema: JSONSchemaSchema.optional(),
@@ -1531,6 +1635,7 @@ export const ExecutionRunRefSchema = z
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
+        prompt_cache_diagnostics: z.array(PromptCacheDiagnosticSchema).optional(),
         chunks: z.number().optional(),
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -1552,6 +1657,8 @@ export const ExecutionRunRefSchema = z
                 'The Vertesia Workflow related to this Interaction Run.\n\nThis is only set when the interaction is executed as part of a workflow.',
         }).optional(),
         interaction: InteractionRefSchema.optional(),
+        result: z.array(CompletionResultSchema).optional(),
+        parameters: z.unknown().optional(),
     })
     .meta({ id: 'ExecutionRunRef' });
 
@@ -1568,7 +1675,7 @@ export const ConversationStateSchema = z
             description: 'Run-scoped, exact-target grants created by "allow this action for this run".',
         }).optional(),
         pending_tool_approval_results: PendingToolApprovalResultsSchema.meta({
-            description: 'Buffered tool results held while approval denial pauses until the next user message.',
+            description: 'Buffered tool results held across an interactive pause until the next user message.',
         }).optional(),
         latest_user_message: z
             .string()
@@ -1604,6 +1711,10 @@ export const ConversationStateSchema = z
         tool_reference: ToolReferenceSchema.meta({
             description: 'Reference to tools stored in GCP instead of embedding full tool definitions',
         }).optional(),
+        tool_catalog_storage_id: z
+            .string()
+            .meta({ description: 'Artifact-storage scope containing the referenced tool catalog.' })
+            .optional(),
         active_tool_names: z
             .array(z.string())
             .meta({
@@ -1687,7 +1798,7 @@ export const ConversationStateSchema = z
             .array(z.string())
             .meta({
                 description:
-                    'Names of skills whose full instructions are already present in the live conversation history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill re-activation idempotent: a repeat call returns a short "already active" acknowledgement instead of re-dumping the instructions.\n\nUnlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked), this list is reset when a checkpoint compacts the conversation, because the summary no longer carries the skill instructions and the next call must re-deliver them.',
+                    'Names of skills whose full instructions are already present in the live conversation history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill re-activation idempotent: a repeat call returns a short "already active" acknowledgement instead of re-dumping the instructions.\n\nUnlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked), this list tracks only instructions present in the current compacted conversation. Checkpoints restore active builtin skill bodies and preserve their names; skills that cannot be restored are removed so the next call can re-deliver them.',
             })
             .optional(),
         initialization_call_ids: z
@@ -1775,6 +1886,7 @@ export const UpdateExecutionRunPayloadSchema = z
         finish_reason: z.string().optional(),
         prompt: z.unknown().optional(),
         token_use: ExecutionTokenUsageSchema.optional(),
+        prompt_cache_diagnostics: z.array(PromptCacheDiagnosticSchema).optional(),
         chunks: z.number().optional(),
         execution_time: z.number().optional(),
         created_at: z.string().meta({ format: 'date-time' }).optional(),
@@ -1990,12 +2102,36 @@ export const AsyncInteractionExecutionPayloadSchema = z
     })
     .meta({ id: 'AsyncInteractionExecutionPayload' });
 
+export const ConversationEnrichmentFields = {
+    title: z.string().min(1).meta({ description: 'Caller-provided conversation title.' }).optional(),
+    topic: z
+        .string()
+        .min(1)
+        .meta({ description: 'Caller-provided conversation topic. Suppresses automatic topic generation.' })
+        .optional(),
+    generate_topic: z
+        .boolean()
+        .meta({
+            description:
+                'Whether to generate a conversation title and topic automatically. Defaults to true; a caller-provided topic always suppresses generation.',
+        })
+        .optional(),
+    generate_lessons: z
+        .boolean()
+        .meta({
+            description:
+                'Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled.',
+        })
+        .optional(),
+};
+
 export const AsyncConversationExecutionPayloadSchema = z
     .object({
         interaction: z.string().meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
+        ...ConversationEnrichmentFields,
         app_version: z
             .string()
             .meta({
@@ -2076,6 +2212,10 @@ export const AsyncConversationExecutionPayloadSchema = z
                     'Hard denylist of tool names for this conversation. Excluded tools are never exposed to the model and are refused at execution time, even when a skill or tool refresh would otherwise unlock them. Takes precedence over tool_names, initial_skills, and skill-based tool activation.',
             })
             .optional(),
+        agent_policy: ProcessAgentExecutionPolicySchema.meta({
+            description:
+                'Process-authored successful-tool phases enforced by this child conversation. Ordinary conversation callers should leave this unset.',
+        }).optional(),
         max_iterations: z
             .number()
             .meta({
@@ -2290,6 +2430,15 @@ export const ResolveInteractionQuerySchema = z
 // a union here would publish `anyOf` on an additionalProperties value, which the generated-client
 // rules rule out for a primitive-or-collection value. The emitted schema is what AJV compiles, so
 // array-or-number is enforced either way.
+// `total` is RESERVED: it is the match count and nothing else. The buckets live beside it under the
+// facet's own name, so the two never need the same slot. `computeFacets` used to seed the count and
+// then write the requested facets over it, so a caller who named a facet `total` got that facet's
+// buckets where the count belonged — an array in a field this schema types as a number. The server
+// now rejects that name with a 400 instead, which is why `total` can stay a plain number here.
+//
+// Widening it to the catchall's `['array', 'number']` is not an option regardless: a NAMED property
+// with a type array makes the Java generator reference a class it never writes (`AnyOfnumber`) and
+// the client stops compiling. The catchall gets away with it by becoming a map value, not a field.
 export const ComputedFacetResponseSchema = z
     .object({
         total: z.number().optional(),
@@ -2316,13 +2465,31 @@ export const ToolResultsPayloadSchema = z
     .meta({ id: 'ToolResultsPayload' });
 
 export const UserMessagePayloadSchema = z
-    .strictObject({ ...resumeConversationFields, message: z.string() })
+    .strictObject({
+        ...resumeConversationFields,
+        message: z.string(),
+        /**
+         * Tool results still owed to the model when the user message is sent.
+         *
+         * A conversation can be interrupted — the user stops the run, or a tool approval is
+         * denied — while a tool batch has already produced results, or while `tool_use` blocks
+         * are outstanding. Providers require a `tool_result` for every `tool_use` before the
+         * next turn, so those results have to travel with the message that resumes the
+         * conversation rather than in a separate turn of their own.
+         */
+        results: z
+            .array(ToolResultSchema)
+            .optional()
+            .meta({ description: 'Tool results owed to the model, delivered with this message.' }),
+    })
     .meta({ id: 'UserMessagePayload' });
 
 export const ExecutionResponseSchema = z
     .strictObject({
         result: z.array(CompletionResultSchema),
         token_usage: ExecutionTokenUsageSchema.optional(),
+        service_tier: z.string().meta({ description: 'Processing tier actually used by the provider' }).optional(),
+        prompt_cache_diagnostic: PromptCacheDiagnosticSchema.optional(),
         tool_use: z.array(ToolUseSchema).optional(),
         finish_reason: z.string().optional(),
         error: z
@@ -2340,8 +2507,16 @@ export const ExecutionResponseSchema = z
     })
     .meta({ id: 'ExecutionResponse' });
 
+const RunFacetSpecSchema = z.discriminatedUnion('name', [
+    z.strictObject({ name: z.literal('environments'), field: z.literal('environment') }),
+    z.strictObject({ name: z.literal('interactions'), field: z.literal('interaction') }),
+    z.strictObject({ name: z.literal('models'), field: z.literal('modelId') }),
+    z.strictObject({ name: z.literal('statuses'), field: z.literal('status') }),
+    z.strictObject({ name: z.literal('finish_reason'), field: z.literal('finish_reason') }),
+]);
+
 export const ComputeRunFacetPayloadSchema = z
-    .strictObject({ facets: z.array(FacetSpecSchema), query: RunSearchQuerySchema.optional() })
+    .strictObject({ facets: z.array(RunFacetSpecSchema).max(5), query: RunSearchQuerySchema.optional() })
     .meta({ id: 'ComputeRunFacetPayload' });
 
 export const RunSearchMetaResponseSchema = z
@@ -2356,30 +2531,26 @@ export const RunSearchMetaResponseSchema = z
     })
     .meta({ id: 'RunSearchMetaResponse' });
 
-const RunFacetBucketSchema = z.looseObject({
+const RunFacetBucketSchema = z.strictObject({
     _id: z.string().nullable(),
     count: z.number(),
     name: z.string().optional(),
-    status: z.string().optional(),
+    status: InteractionStatusSchema.optional(),
     version: z.number().optional(),
 });
 
-const RunFacetBucketArraySchema = z.array(RunFacetBucketSchema);
-
+/**
+ * Response returned by POST /runs/facets.
+ */
 export const ComputeRunFacetsResponseSchema = z
-    .object({
+    .strictObject({
+        environments: z.array(RunFacetBucketSchema).optional(),
+        interactions: z.array(RunFacetBucketSchema).optional(),
+        models: z.array(RunFacetBucketSchema).optional(),
+        statuses: z.array(RunFacetBucketSchema).optional(),
+        finish_reason: z.array(RunFacetBucketSchema).optional(),
         total: z.number().optional(),
-        type: RunFacetBucketArraySchema.optional(),
-        interactions: RunFacetBucketArraySchema.optional(),
-        environments: RunFacetBucketArraySchema.optional(),
-        models: RunFacetBucketArraySchema.optional(),
-        status: RunFacetBucketArraySchema.optional(),
-        statuses: RunFacetBucketArraySchema.optional(),
-        tags: RunFacetBucketArraySchema.optional(),
-        finish_reason: RunFacetBucketArraySchema.optional(),
-        created_by: RunFacetBucketArraySchema.optional(),
     })
-    .catchall(z.union([z.number(), RunFacetBucketArraySchema]))
     .meta({ id: 'ComputeRunFacetsResponse' });
 
 export const RunClonePayloadSchema = z

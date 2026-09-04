@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -10,7 +10,7 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
     theme: Theme;
-    setTheme: (theme: Theme) => void;
+    setTheme: (theme: Theme, options?: { persist?: boolean }) => void;
 };
 
 const initialState: ThemeProviderState = {
@@ -28,7 +28,7 @@ export function ThemeProvider({
     storageKey = 'vite-ui-theme',
     ...props
 }: ThemeProviderProps) {
-    const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) || defaultTheme);
+    const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) || defaultTheme);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -45,13 +45,14 @@ export function ThemeProvider({
         root.classList.add(theme);
     }, [theme]);
 
-    const value = {
-        theme,
-        setTheme: (theme: Theme) => {
-            localStorage.setItem(storageKey, theme);
-            setTheme(theme);
+    const setTheme = useCallback(
+        (nextTheme: Theme, options?: { persist?: boolean }) => {
+            if (options?.persist !== false) localStorage.setItem(storageKey, nextTheme);
+            setThemeState(nextTheme);
         },
-    };
+        [storageKey],
+    );
+    const value = useMemo(() => ({ theme, setTheme }), [setTheme, theme]);
 
     return (
         <ThemeProviderContext.Provider {...props} value={value}>

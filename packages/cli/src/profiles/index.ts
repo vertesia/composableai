@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, statSync } from 'node:fs';
 import os from 'node:os';
 import { join } from 'node:path';
-import jwt from 'jsonwebtoken';
 import { hasErrorCode } from '../utils/options.js';
 import { readJsonFile, writeJsonFile } from '../utils/stdio.js';
 import type { OnResultCallback } from './commands.js';
@@ -11,11 +10,11 @@ import {
     hasStoredAccessToken,
     isKeyringAvailable,
     readAuthBundle,
-    readProfileAccessToken,
     writeAuthBundle,
 } from './keyring.js';
 import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from './oauth.js';
 import { type ConfigPayload, type ConfigResult, startConfigSession } from './server/index.js';
+import { readInlineTokenExpiry, readResultAccessTokenExpiry, readResultRefreshTokenExpiry } from './token-expiry.js';
 
 export function getConfigFile(path?: string) {
     const dir = join(os.homedir(), '.vertesia');
@@ -157,10 +156,10 @@ interface ProfilesData {
     profiles: Profile[];
 }
 
-export function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
-    const token = readProfileAccessToken(profile);
+export async function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
+    const bundle = await readAuthBundle(profile.name);
+    const token = bundle?.accessToken || profile.apikey;
     if (token) {
-        const bundle = readAuthBundle(profile.name);
         const expiresAt = bundle?.accessTokenExpiresAt ?? getAccessTokenExpiry(token);
         if (expiresAt) {
             return expiresAt - thresholdInSeconds * 1000 < Date.now();
@@ -194,7 +193,7 @@ export class ConfigureProfile {
             return;
         }
         const oldName = this.data.name;
-        const previousBundle = oldName ? readAuthBundle(oldName) : undefined;
+        const previousBundle = oldName ? await readAuthBundle(oldName) : undefined;
         this.data.name = result.profile;
         this.data.account = result.account;
         this.data.project = result.project;
@@ -204,12 +203,12 @@ export class ConfigureProfile {
             this.data.oauth_server_url = result.oauth_server_url;
         }
         try {
-            writeAuthBundle(result.profile, {
+            await writeAuthBundle(result.profile, {
                 accessToken: result.token,
                 accessTokenExpiresAt: readResultAccessTokenExpiry(result),
                 idToken: result.id_token || previousBundle?.idToken,
                 refreshToken: result.refresh_token || previousBundle?.refreshToken,
-                refreshTokenExpiresAt: result.refresh_token_expires_at || previousBundle?.refreshTokenExpiresAt,
+                refreshTokenExpiresAt: readResultRefreshTokenExpiry(result, previousBundle),
                 oauthClientId: result.oauth_client_id || previousBundle?.oauthClientId,
                 oauthResource: result.oauth_resource || previousBundle?.oauthResource,
             });
@@ -222,7 +221,7 @@ export class ConfigureProfile {
             this.data.apikey = result.token;
         }
         if (oldName && oldName !== result.profile) {
-            deleteAuthBundle(oldName);
+            await deleteAuthBundle(oldName);
         }
         if (oldName) {
             this.config.remove(oldName);
@@ -231,7 +230,7 @@ export class ConfigureProfile {
         if (this.isNew) {
             this.config.use(result.profile);
         }
-        this.config.save();
+        await this.config.save();
         if (this.onResultCallback) {
             await this.onResultCallback(result);
             this.onResultCallback = undefined;
@@ -396,7 +395,7 @@ export class Config {
         }
     }
 
-    save() {
+    async save() {
         const dir = getConfigFile();
         if (!existsSync(dir)) {
             mkdirSync(dir, { recursive: true });
@@ -404,19 +403,21 @@ export class Config {
         const file = getConfigFile('profiles.json');
         writeJsonFile(file, {
             default: this.current?.name,
-            profiles: this.profiles.map((profile) => {
-                if (profile.apikey && !hasStoredAccessToken(profile.name)) {
-                    return profile;
-                }
-                const { apikey, ...safeProfile } = profile;
-                void apikey;
-                return safeProfile;
-            }),
+            profiles: await Promise.all(
+                this.profiles.map(async (profile) => {
+                    if (profile.apikey && !(await hasStoredAccessToken(profile.name))) {
+                        return profile;
+                    }
+                    const { apikey, ...safeProfile } = profile;
+                    void apikey;
+                    return safeProfile;
+                }),
+            ),
         });
         return this;
     }
 
-    load() {
+    async load() {
         try {
             const stats = statSync(getConfigFile('dev'));
             if (stats.isFile()) {
@@ -436,10 +437,10 @@ export class Config {
                     if (!profile.apikey) {
                         continue;
                     }
-                    const existingBundle = readAuthBundle(profile.name);
+                    const existingBundle = await readAuthBundle(profile.name);
                     if (!existingBundle?.accessToken) {
                         try {
-                            writeAuthBundle(profile.name, {
+                            await writeAuthBundle(profile.name, {
                                 accessToken: profile.apikey,
                                 accessTokenExpiresAt: readInlineTokenExpiry(profile.apikey),
                                 refreshToken: existingBundle?.refreshToken,
@@ -462,7 +463,7 @@ export class Config {
                 this.current = undefined;
             }
             if (needsSave) {
-                this.save();
+                await this.save();
             }
         } catch (err: unknown) {
             if (!hasErrorCode(err, 'ENOENT')) {
@@ -494,27 +495,9 @@ export class InvalidConfigUrlError extends Error {
     }
 }
 
-const config = new Config().load();
+const config = await new Config().load();
 
 export { config };
-
-function readInlineTokenExpiry(token: string): number | undefined {
-    const decoded = jwt.decode(token, { json: true });
-    if (!decoded?.exp) {
-        return undefined;
-    }
-    return decoded.exp * 1000;
-}
-
-function readResultAccessTokenExpiry(result: ConfigResult): number | undefined {
-    if (typeof result.access_token_expires_at === 'number') {
-        return result.access_token_expires_at;
-    }
-    if (typeof result.expires_in === 'number') {
-        return Date.now() + result.expires_in * 1000;
-    }
-    return readInlineTokenExpiry(result.token);
-}
 
 function readKnownServerUrls(
     target: ConfigUrlRef,

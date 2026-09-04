@@ -1,7 +1,8 @@
-import { HttpTimeoutOptionsSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
+import { HttpTimeoutOptionsSchema, ModelOptionsSchema, PromptCacheModeSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 
 /**
  * Runtime API schemas for the content-intake policy tree.
@@ -87,6 +88,21 @@ export const InteractionExecutionConfigurationSchema = z
             .string()
             .optional()
             .meta({ description: 'Stable provider-side routing key for automatic prompt caching.' }),
+        prompt_cache_mode: PromptCacheModeSchema.optional().meta({
+            description:
+                'Controls provider-side explicit caching: auto falls back safely, off disables it, and required ' +
+                'surfaces cache preparation failures for diagnostics.',
+        }),
+        prompt_cache_ttl_seconds: z
+            .number()
+            .int()
+            .min(60)
+            .optional()
+            .meta({
+                description:
+                    'Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; ' +
+                    'Vertex Gemini requires at least 60 seconds.',
+            }),
         prompt_cache_schema_suffix: z
             .boolean()
             .optional()
@@ -396,7 +412,10 @@ export const ColumnLayoutSchema = z
                     'The type of the field specifies how the rendering will be done. If not specified the string type will be used. The type may contain additional parameters prepended using a web-like query string syntax: date?LLL',
             })
             .optional(),
-        fallback: z.string().optional(),
+        fallback: z
+            .string()
+            .meta({ description: 'Path of an alternate field to display when the primary field is absent' })
+            .optional(),
         default: z
             .unknown()
             .meta({ description: 'A default value to be used if the field is not present in the object' })
@@ -442,17 +461,22 @@ const contentTypeFields = {
         .looseObject({})
         .meta({
             description:
-                'this is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+                'JSON Schema for the structured properties extracted into documents of this type. ' +
+                'Only included in ContentObjectTypeItem if explicitly requested; always included in ContentObjectType.',
         })
         .optional(),
     table_layout: z
         .array(ColumnLayoutSchema)
         .meta({
             description:
-                'This is only included in ContentObjectTypeItem if explicitly requested It is always included in ContentObjectType',
+                'Column layout used when listing documents of this type. ' +
+                'Only included in ContentObjectTypeItem if explicitly requested; always included in ContentObjectType.',
         })
         .optional(),
-    is_chunkable: z.boolean().optional(),
+    is_chunkable: z
+        .boolean()
+        .meta({ description: 'Whether documents of this type can be split into chunks' })
+        .optional(),
     strict_mode: z
         .boolean()
         .meta({
@@ -463,6 +487,23 @@ const contentTypeFields = {
     status: ContentObjectTypeStatusSchema.optional(),
     intake: ContentTypeIntakePolicySchema.optional(),
     editing: ContentTypeEditingPolicySchema.optional(),
+    /**
+     * Display title, as every OTHER app-contribution shape already publishes it:
+     * `InCodeViewDefinition`, `InCodeProcessDefinition` and `AppDashboardDefinition` all pair the
+     * app-local `name` used for lookup with an optional human-readable `title`. A contributed type
+     * was the one shape missing it, so deployed app packages sent `title` into a `strictObject` that
+     * forbade it and `GET /projects/:projectId/app-types` and `GET /types/catalog` failed their own
+     * response contract on every call.
+     *
+     * Appended last on purpose: property order decides the generated clients' constructor argument
+     * order, so a new field goes on the end rather than next to `name` where it reads better.
+     *
+     * Note this key reaches only the two shapes that spread the whole dictionary —
+     * `InCodeTypeDefinition` and `ContentObjectTypeCatalogEntry`, the two that carry app
+     * contributions. The stored shapes and the create payload list their keys explicitly, so a
+     * stored type still has no `title`.
+     */
+    title: z.string().meta({ description: 'Display title. Defaults to `name` or `id`.' }).optional(),
 };
 
 /**
@@ -492,6 +533,9 @@ export const ContentObjectTypeCatalogEntrySchema = z
     .strictObject({
         ...contentTypeFields,
         ...catalogAuditFields,
+        edit_revision: EditRevisionSchema.optional().meta({
+            description: 'Stored-resource revision. Omitted for app-contributed in-code types.',
+        }),
     })
     .meta({ id: 'ContentObjectTypeCatalogEntry' });
 
@@ -509,6 +553,7 @@ export const ContentObjectTypeCatalogEntryArraySchema = z
  */
 const storedContentTypeShape = {
     id: contentTypeFields.id,
+    edit_revision: EditRevisionSchema,
     name: contentTypeFields.name,
     description: contentTypeFields.description,
     tags: contentTypeFields.tags,
@@ -564,12 +609,14 @@ export const CreateContentObjectTypePayloadSchema = z
  * the fields it changes, which is what `.partial()` says and what the handler has always done. The
  * property order is the create payload's, so the generated clients' argument order does not move.
  */
-export const UpdateContentObjectTypePayloadSchema = CreateContentObjectTypePayloadSchema.partial().meta({
-    id: 'UpdateContentObjectTypePayload',
-    description:
-        'Fields to change on a content object type. Every field is optional — only the ones present ' +
-        'are written, and the rest are left as they are.',
-});
+export const UpdateContentObjectTypePayloadSchema = CreateContentObjectTypePayloadSchema.partial()
+    .extend({ expected_edit_revision: ExpectedEditRevisionSchema })
+    .meta({
+        id: 'UpdateContentObjectTypePayload',
+        description:
+            'Fields to change on a content object type. Only fields present are written; ' +
+            'expected_edit_revision prevents overwriting a concurrent edit.',
+    });
 
 export const ContentObjectTypeSchema = z.strictObject(storedContentTypeShape).meta({ id: 'ContentObjectType' });
 

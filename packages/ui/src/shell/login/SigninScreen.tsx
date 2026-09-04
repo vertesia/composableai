@@ -1,7 +1,6 @@
 import { REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE, type SignupData, type SignupPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { RegionTag } from '@vertesia/ui/layout';
 import {
     AuthenticationServiceError,
     CredentialError,
@@ -12,27 +11,14 @@ import {
     useUserSession,
     useUXTracking,
 } from '@vertesia/ui/session';
-import { useCallback, useEffect, useState } from 'react';
-import SignInAuthPending from './SignInAuthPending';
-import SignInEmailStep, { type TenantInfo } from './SignInEmailStep';
-import SignInProvidersStep from './SignInProvidersStep';
+import { useCallback, useEffect } from 'react';
+import { type SignInFlowController, SignInFlowSteps, useSignInFlow } from './SignInFlow';
+import { SignInPageShell } from './SignInPageShell';
 import SignInRecoveryStep, { type SignInRecoveryKind } from './SignInRecoveryStep';
 import SignInRestrictedEnvStep from './SignInRestrictedEnvStep';
-import SignInReturningStep from './SignInReturningStep';
 import SignInTenantBlockedStep from './SignInTenantBlockedStep';
-import SignInTenantStep from './SignInTenantStep';
 import SignupForm from './SignupForm';
-import {
-    clearLastSuccessfulLogin,
-    clearPendingSignin,
-    isInviteRequiredError,
-    type LastSuccessfulLogin,
-    type ProviderId,
-    readLastSuccessfulLogin,
-    readPendingSignin,
-    resetSignInState,
-    writeLastSuccessfulLogin,
-} from './signInUtils';
+import { isInviteRequiredError, readPendingSignin, resetSignInState } from './signInUtils';
 
 interface SigninScreenProps {
     isNested?: boolean;
@@ -75,13 +61,12 @@ function matchesPathPrefix(pathname: string, prefix?: string | string[]) {
     });
 }
 
-type Mode =
-    | 'email'
-    | 'providers'
-    | 'tenant'
+/**
+ * The modes this screen adds on top of {@link SignInCoreMode}: every one is entered from an
+ * `authError` the session surfaced, which is why they stay here rather than in the shared flow.
+ */
+type RecoveryMode =
     | 'blocked'
-    | 'returning'
-    | 'pending'
     | 'signup'
     | 'restricted'
     | 'scopeUnavailable'
@@ -111,14 +96,8 @@ function SigninScreenImpl({
     const { isLoading, user, authError, signOut } = useUserSession();
     const { trackEvent } = useUXTracking();
 
-    const [storedSession, setStoredSession] = useState<LastSuccessfulLogin | null>(() => readLastSuccessfulLogin());
-    const [mode, setMode] = useState<Mode>(() => {
-        const s = readLastSuccessfulLogin();
-        return s ? 'returning' : 'email';
-    });
-    const [email, setEmail] = useState('');
-    const [tenant, setTenant] = useState<TenantInfo | undefined>(undefined);
-    const [pendingProvider, setPendingProvider] = useState<ProviderId | null>(null);
+    const flow: SignInFlowController<RecoveryMode> = useSignInFlow<RecoveryMode>({ signOut, trackEvent, user });
+    const { mode, setMode, email, setEmail, tenant, setTenant, storedSession, setStoredSession } = flow;
 
     const recoveryIdentity =
         authError instanceof RequestedScopeUnavailableError || authError instanceof NoAccessibleAccountError
@@ -166,68 +145,14 @@ function SigninScreenImpl({
             if (pending) setEmail(pending.email);
             setMode('blocked');
         }
-    }, [authError]);
-
-    // On successful login, finalize the last-successful-login entry with the user's name.
-    useEffect(() => {
-        if (!user) return;
-        const pending = readPendingSignin();
-        if (!pending) return;
-        writeLastSuccessfulLogin({
-            email: pending.email,
-            lastProvider: pending.provider,
-            tenantName: pending.tenantName,
-            name: user.name || undefined,
-        });
-        clearPendingSignin();
-    }, [user]);
-
-    const onProceedFromEmail = useCallback((e: string, t: TenantInfo | undefined) => {
-        setEmail(e);
-        setTenant(t);
-        setMode(t ? 'tenant' : 'providers');
-    }, []);
-
-    const onBack = useCallback(() => {
-        setMode('email');
-        setTenant(undefined);
-    }, []);
-
-    const onNotYou = useCallback(() => {
-        clearLastSuccessfulLogin();
-        clearPendingSignin();
-        setStoredSession(null);
-        setEmail('');
-        setTenant(undefined);
-        setMode('email');
-        void signOut();
-    }, [signOut]);
-
-    const onProviderClicked = useCallback(
-        (provider: ProviderId) => {
-            // Tenant context comes from a resolved tenant or stored tenantName, not the provider.
-            const hasTenant = !!tenant || !!storedSession?.tenantName;
-            // Only the pre-existing enterprise_signin event; non-tenant sign-ins emit nothing.
-            if (hasTenant) trackEvent('enterprise_signin', { provider });
-            setPendingProvider(provider);
-            setMode('pending');
-            // The redirect itself happens in the calling step's startSignIn(); this just shows the pending screen.
-        },
-        [trackEvent, storedSession?.tenantName, tenant],
-    );
+    }, [authError, setEmail, setMode]);
 
     // "Use a different email" out of the blocked/signup screen. The user reached it
     // as a valid Firebase user with no Vertesia account, so a partial reset isn't
     // enough: unless we also clear the persisted records and sign out of Firebase,
     // the leftover session re-runs the invite check on the next auth change or
     // reload and lands them back on blocked.
-    const startOver = useCallback(() => {
-        setStoredSession(null); // drop the in-memory mirror too — resetSignInState only clears storage
-        setEmail('');
-        setTenant(undefined);
-        setMode('email');
-        void resetSignInState();
-    }, []);
+    const { startOver } = flow;
 
     const useDifferentAccount = useCallback(() => {
         Env.logger.info('Authentication recovery action selected', {
@@ -238,7 +163,7 @@ function SigninScreenImpl({
         setTenant(undefined);
         setMode('email');
         void resetSignInState().finally(() => signOut());
-    }, [signOut]);
+    }, [setStoredSession, setEmail, setTenant, setMode, signOut]);
 
     const continueWithSanitizedScope = useCallback(() => {
         if (!(authError instanceof RequestedScopeUnavailableError)) return;
@@ -279,9 +204,7 @@ function SigninScreenImpl({
     if (isLoading || user || shouldHideTransientAuthError) return null;
 
     let content: React.ReactNode = null;
-    if (mode === 'pending' && pendingProvider) {
-        content = <SignInAuthPending provider={pendingProvider} />;
-    } else if (mode === 'blocked') {
+    if (mode === 'blocked') {
         content = (
             <SignInTenantBlockedStep
                 email={email || storedSession?.email || ''}
@@ -336,23 +259,10 @@ function SigninScreenImpl({
         );
     } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
         content = <SignupForm onSignup={onSignup} goBack={startOver} />;
-    } else if (mode === 'tenant' && tenant) {
-        content = (
-            <SignInTenantStep
-                email={email}
-                tenant={tenant}
-                onBack={onBack}
-                onProviderClicked={() => onProviderClicked((tenant.provider ?? 'oidc') as ProviderId)}
-            />
-        );
-    } else if (mode === 'providers') {
-        content = <SignInProvidersStep email={email} onBack={onBack} onProviderClicked={onProviderClicked} />;
-    } else if (mode === 'returning' && storedSession) {
-        content = (
-            <SignInReturningStep session={storedSession} onNotYou={onNotYou} onProviderClicked={onProviderClicked} />
-        );
     } else {
-        content = <SignInEmailStep initialEmail={email} onProceed={onProceedFromEmail} />;
+        // Every remaining mode is a core one; an unmatched recovery mode falls through to the
+        // email step, exactly as it did when this chain owned all twelve branches.
+        content = <SignInFlowSteps flow={flow} />;
     }
 
     return (
@@ -360,18 +270,13 @@ function SigninScreenImpl({
             style={{ zIndex: 999998 }}
             className={`${isNested ? 'absolute' : 'fixed'} inset-0 overflow-y-auto bg-background`}
         >
-            <div className="min-h-full flex flex-col items-center justify-center py-12 px-4">
-                <div className="flex flex-col items-center w-full">
-                    {(lightLogo || darkLogo) && (
-                        <div className="mb-7">
-                            {lightLogo && <img src={lightLogo} alt="Vertesia" className="h-10 block dark:hidden" />}
-                            {darkLogo && <img src={darkLogo} alt="Vertesia" className="h-10 hidden dark:block" />}
-                        </div>
-                    )}
-
-                    {content}
-
-                    {authError && !isDedicatedAuthError(authError) && !isInviteRequiredError(authError) && (
+            <SignInPageShell
+                lightLogo={lightLogo}
+                darkLogo={darkLogo}
+                notice={
+                    authError &&
+                    !isDedicatedAuthError(authError) &&
+                    !isInviteRequiredError(authError) && (
                         <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
                             <div>
                                 {t('auth.signInError')}
@@ -383,21 +288,11 @@ function SigninScreenImpl({
                                 {t('auth.signInErrorPersists')}
                             </div>
                         </div>
-                    )}
-
-                    <div className="flex items-center gap-5 mt-10 text-xs text-muted-foreground">
-                        <a href="https://vertesiahq.com/privacy" className="hover:text-foreground transition">
-                            {t('auth.privacyPolicy')}
-                        </a>
-                        <span className="text-border">·</span>
-                        <a href="https://vertesiahq.com/terms" className="hover:text-foreground transition">
-                            {t('auth.termsOfService')}
-                        </a>
-                        <span className="text-border">·</span>
-                        <RegionTag className="cursor-default" />
-                    </div>
-                </div>
-            </div>
+                    )
+                }
+            >
+                {content}
+            </SignInPageShell>
         </div>
     );
 }

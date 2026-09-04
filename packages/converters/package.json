@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/converters",
-    "version": "1.5.0-dev.20260807.073259Z",
+    "version": "1.6.0-dev",
     "description": "Image and content converters",
     "type": "module",
     "main": "./lib/index.js",
@@ -28,10 +28,10 @@
         "@types/tmp": "^0.2.6",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "catalog:",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     },
     "dependencies": {
-        "sharp": "^0.35.3",
+        "sharp": "^0.35.4",
         "tmp": "^0.2.7"
     },
     "repository": {

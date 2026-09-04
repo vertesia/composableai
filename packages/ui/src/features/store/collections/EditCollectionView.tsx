@@ -23,8 +23,8 @@ import {
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { type EditorApi, GeneratedForm, ManagedObject, MonacoEditor, type Node } from '@vertesia/ui/widgets';
-import dayjs from 'dayjs';
 import { useContext, useMemo, useRef, useState } from 'react';
+import dayjs from '../../../core/utils/dayjs.js';
 import { UserInfo } from '../../user/UserInfo';
 import { SearchContext } from '../objects/search/DocumentSearchContext';
 import { SelectContentType, stringifyTableLayout } from '../types';

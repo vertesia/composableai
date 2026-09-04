@@ -10,6 +10,7 @@ import { registerIamCommand } from './iam/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
+import { registerProcessTestsCommand } from './process-tests/index.js';
 import {
     type CreateProfileOptions,
     createProfile,
@@ -32,7 +33,7 @@ import { listProjects, useProject } from './projects/index.js';
 import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
-import { getBooleanOption, hasStatus } from './utils/options.js';
+import { errorMessage, getBooleanOption, hasStatus } from './utils/options.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 
 //warnIfNotLatest();
@@ -272,7 +273,7 @@ profilesRoot
     .command('delete <name>')
     .description('delete an existing configuration profile')
     .action((name) => {
-        deleteProfile(name);
+        return deleteProfile(name);
     });
 profilesRoot
     .command('file')
@@ -282,18 +283,21 @@ profilesRoot
     });
 
 registerObjectsCommand(program);
+registerProcessTestsCommand(program);
 registerWorkflowsCommand(program);
 registerQuotaCommand(program);
 
 program.parseAsync(process.argv).catch((err) => {
-    console.error(err);
+    // Fetch-client errors may retain a complete Request with authorization headers. Print only
+    // the sanitized human message at the process boundary.
+    console.error(errorMessage(err));
     process.exit(1);
 });
 
 process.on('unhandledRejection', (err: unknown) => {
     if (hasStatus(err, 401)) {
         // token expired?
-        console.error('ERROR', err);
+        console.error('ERROR', errorMessage(err));
         void tryRefreshToken();
     }
 });

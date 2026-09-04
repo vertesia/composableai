@@ -1,7 +1,23 @@
+import { Env } from '@vertesia/ui/env';
+
 declare global {
     interface Window {
         AUTH_MODE?: 'firebase' | 'central';
     }
+}
+
+/**
+ * The broker this app sends users to for sign-in and logout.
+ *
+ * Hard-coded until now, which meant every consumer of this package reached the same deployment no
+ * matter what was running. It is read from the environment so a single app can be pointed at a
+ * different broker, and it keeps this default so an app that configures nothing is unaffected.
+ */
+export const DEFAULT_CENTRAL_AUTH_URL = 'https://internal-auth.vertesia.app/';
+
+export function centralAuthUrl(): string {
+    const configured = Env.endpoints.auth;
+    return configured ? configured : DEFAULT_CENTRAL_AUTH_URL;
 }
 
 export function shouldUseFirebaseAuth(_hostname?: string) {
@@ -10,6 +26,11 @@ export function shouldUseFirebaseAuth(_hostname?: string) {
 
 export function shouldRedirectToCentralAuth(_hostname?: string) {
     return !shouldUseFirebaseAuth();
+}
+
+interface AuthSelection {
+    accountId?: string;
+    projectId?: string;
 }
 
 /**
@@ -47,5 +68,32 @@ export function mountRootUrl(): URL {
     const url = new URL(document.baseURI);
     url.hash = '';
     url.search = '';
+    return url;
+}
+
+/**
+ * The broker URL a sign-in or renewal round-trip navigates to.
+ *
+ * Every parameter goes on through `searchParams`, never by concatenating a query string onto
+ * `centralAuth`. The endpoint is configurable, so it may already carry its own query or a
+ * fragment -- and appending `?sts=...` to one of those folds the parameter into the existing value
+ * or hides it in the fragment, leaving Central Auth with no `sts` at all. `searchParams` also
+ * percent-encodes the values, which the interpolated URLs did not.
+ */
+export function buildCentralAuthRedirectUrl(
+    centralAuth: string,
+    stsUrl: string,
+    returnUrl: URL,
+    state: string,
+    selection: AuthSelection = {},
+): URL {
+    const selectedReturnUrl = new URL(returnUrl);
+    if (selection.projectId) selectedReturnUrl.searchParams.set('p', selection.projectId);
+    if (selection.accountId) selectedReturnUrl.searchParams.set('a', selection.accountId);
+
+    const url = new URL(centralAuth);
+    url.searchParams.set('sts', stsUrl);
+    url.searchParams.set('redirect_uri', selectedReturnUrl.toString());
+    url.searchParams.set('state', state);
     return url;
 }

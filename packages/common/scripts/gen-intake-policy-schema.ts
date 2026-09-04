@@ -22,7 +22,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { bundleCanonicalComponent } from '../src/api-schemas/registry.js';
+import { buildApiSchemaComponents, bundleCanonicalComponent } from '../src/api-schemas/registry.js';
 
 /** Canonical component -> the artifact module that publishes it as plain JSON Schema. */
 const ARTIFACTS = [
@@ -49,8 +49,14 @@ const header = (component: string) => `// GENERATED FILE — DO NOT EDIT.
 
 `;
 
+// Emitted fresh from the Zod schemas rather than read from `api-contract/components.generated.json`.
+// That artifact is another generator's output, so bundling from it would derive these policies from
+// whatever contract was committed last — and, depending on the order `gen:schemas` happens to run its
+// steps in, could leave the two generated files describing different shapes from a single run.
+const components = buildApiSchemaComponents();
+
 for (const { component, output } of ARTIFACTS) {
-    const schema = bundleCanonicalComponent(component);
+    const schema = bundleCanonicalComponent(component, components);
     // Annotated as `JSONObject` rather than left to infer, and not for brevity: an `as const` literal
     // of this size becomes a 1700-line literal type in the emitted `.d.ts`, and the OpenAPI scanner
     // then walks it — which drags the submodule's SOURCE tree into its program alongside the built

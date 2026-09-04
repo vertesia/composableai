@@ -1,4 +1,5 @@
 import { Button, cn } from '@vertesia/ui/core';
+import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { AlertCircle, CheckCircle, HelpCircle, MessageSquare, Send, XCircle } from 'lucide-react';
 import React from 'react';
@@ -152,6 +153,21 @@ export function AskUserWidget({
 
     const styles = VARIANT_STYLES[variant];
     const DefaultIcon = VARIANT_ICONS[variant];
+    const safeOptions = Array.isArray(options) ? options : [];
+    const invalidOptionsReported = React.useRef(false);
+
+    React.useEffect(() => {
+        if (options === undefined || Array.isArray(options) || invalidOptionsReported.current) return;
+
+        invalidOptionsReported.current = true;
+        Env.logger.warn('AskUserWidget received invalid options; rendering without options', {
+            vertesia: {
+                component: 'AskUserWidget',
+                received_type: typeof options,
+            },
+        });
+        console.warn('[AskUserWidget] Invalid options received; rendering without options.');
+    }, [options]);
 
     const toggleOption = (optionId: string) => {
         setSelectedOptions((prev) => {
@@ -232,11 +248,11 @@ export function AskUserWidget({
                         </div>
                     </div>
 
-                    {options && options.length > 0 && (
+                    {safeOptions.length > 0 && (
                         <div className={cn('flex flex-col gap-1.5 px-3 pb-3 pt-0', optionsClassName)}>
                             {multiSelect ? (
                                 <>
-                                    {options.map((option) => {
+                                    {safeOptions.map((option) => {
                                         const selected = selectedOptions.has(option.id);
                                         return (
                                             <label
@@ -286,7 +302,7 @@ export function AskUserWidget({
                                     </div>
                                 </>
                             ) : (
-                                options.map((option) => (
+                                safeOptions.map((option) => (
                                     <button
                                         type="button"
                                         key={option.id}
@@ -383,12 +399,12 @@ export function AskUserWidget({
                 </div>
 
                 {/* Options */}
-                {options && options.length > 0 && (
+                {safeOptions.length > 0 && (
                     <div className={`px-4 pb-3 pt-1 ${optionsClassName || ''}`}>
                         {multiSelect ? (
                             /* Multi-select mode with checkboxes */
                             <div className="space-y-2">
-                                {options.map((option) => (
+                                {safeOptions.map((option) => (
                                     <label
                                         key={option.id}
                                         className={`flex items-start gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors
@@ -436,7 +452,7 @@ export function AskUserWidget({
                         ) : (
                             /* Single-select mode - always use full-width card layout for clarity */
                             <div className="flex flex-col gap-2 w-full">
-                                {options.map((option) => (
+                                {safeOptions.map((option) => (
                                     <Button
                                         variant="unstyled"
                                         key={option.id}

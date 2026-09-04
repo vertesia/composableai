@@ -74,7 +74,7 @@ export function ContentObjectsListStateProvider({ children }: ProviderProps) {
     } = useFetch<ContentObjectItem[]>(
         async () => {
             const result = await client.objects.search({
-                query: buildQuery(),
+                query: { ...buildQuery() },
                 limit: PAGE_SIZE,
                 offset: 0,
                 sort: sortPayload,
@@ -102,7 +102,7 @@ export function ContentObjectsListStateProvider({ children }: ProviderProps) {
         const offset = items.length;
         client.objects
             .search({
-                query: buildQuery(),
+                query: { ...buildQuery() },
                 limit: PAGE_SIZE,
                 offset,
                 sort: sortPayload,

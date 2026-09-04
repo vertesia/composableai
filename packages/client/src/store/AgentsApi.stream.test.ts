@@ -151,6 +151,62 @@ describe('AgentsApi.streamMessages reconnection', () => {
         vi.useRealTimers();
     });
 
+    it('keeps interactive streams open on root IDLE by default', async () => {
+        const harness = createHarness();
+        const settled = vi.fn();
+        const received: AgentMessage[] = [];
+        const done = harness.client.agents
+            .streamMessages(AGENT_RUN_ID, (message) => received.push(message))
+            .then(settled);
+        await settle();
+
+        FakeEventSource.instances[0].emit({
+            t: AgentMessageType.IDLE,
+            m: 'Waiting for your command...',
+            w: 'main',
+            ts: 1_000,
+        });
+        await settle();
+        expect(settled).not.toHaveBeenCalled();
+
+        FakeEventSource.instances[0].emit({
+            t: AgentMessageType.ANSWER,
+            m: 'Follow-up response',
+            w: 'main',
+            ts: 1_500,
+        });
+        await settle();
+        expect(received.map((message) => message.message)).toEqual([
+            'Waiting for your command...',
+            'Follow-up response',
+        ]);
+
+        FakeEventSource.instances[0].emit({
+            t: AgentMessageType.COMPLETE,
+            m: 'Conversation complete',
+            w: 'main',
+            ts: 2_000,
+        });
+        await expect(done).resolves.toBeUndefined();
+    });
+
+    it('lets headless followers opt into closing on root IDLE', async () => {
+        const harness = createHarness();
+        const done = harness.client.agents.streamMessages(AGENT_RUN_ID, undefined, undefined, undefined, {
+            closeOnIdle: true,
+        });
+        await settle();
+
+        FakeEventSource.instances[0].emit({
+            t: AgentMessageType.IDLE,
+            m: 'Waiting for your command...',
+            w: 'main',
+            ts: 1_000,
+        });
+
+        await expect(done).resolves.toBeNull();
+    });
+
     it('resolves a fresh auth token for every reconnection attempt', async () => {
         const harness = createHarness();
         const abort = new AbortController();

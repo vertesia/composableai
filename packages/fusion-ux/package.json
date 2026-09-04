@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/fusion-ux",
-    "version": "1.5.0-dev.20260807.073259Z",
+    "version": "1.6.0-dev",
     "description": "Dynamic model-generated UI components for Vertesia",
     "type": "module",
     "main": "./lib/index.js",
@@ -37,10 +37,10 @@
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "react": "19.2.7",
+        "react": "19.2.8",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     },
     "exports": {
         ".": {

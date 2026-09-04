@@ -418,6 +418,8 @@ export const ProjectIntakeConfigurationSchema = z
  */
 export const ProjectConfigurationSchema = z
     .strictObject({
+        default_environment: z.string().optional(),
+        default_model: z.string().optional(),
         human_context: z.string().optional(),
         defaults: ProjectModelDefaultsSchema.optional(),
         default_visibility: ResourceVisibilitySchema.optional(),

@@ -16,8 +16,6 @@ const SUBPATH_INDEX_FILES: Record<string, string> = {
     'rich-text': 'src/rich-text/index.ts',
     env: 'src/env/index.ts',
     widgets: 'src/widgets/index.ts',
-    code: 'src/code/index.ts',
-    form: 'src/form/index.ts',
 };
 
 export default defineConfig({

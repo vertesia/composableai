@@ -1,10 +1,15 @@
-import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@vertesia/ui/core';
 import clsx from 'clsx';
 import debounce from 'debounce';
 import type * as monaco from 'monaco-editor';
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, type RefObject, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { registerCustomFoldingProviders } from './foldingProviders.js';
+
+/**
+ * The Monaco React wrapper drags in the Monaco loader (and, once mounted, the editor itself) on
+ * import. Most screens never open an editor, so it is fetched on first render instead.
+ */
+const Editor = lazy(() => import('@monaco-editor/react').then(({ Editor: component }) => ({ default: component })));
 
 export type Monaco = typeof monaco;
 
@@ -343,24 +348,26 @@ export function MonacoEditor({
 
     return (
         <div className={clsx(className, 'w-full h-full!')}>
-            <Editor
-                className="h-full w-full"
-                height="100%"
-                theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
-                language={language}
-                path={modelPath}
-                onChange={handleEditorChange}
-                onMount={handleEditorDidMount}
-                beforeMount={beforeMount}
-                options={defaultOptions}
-                // Uncontrolled: seed the initial content once via `defaultValue` and never bind a
-                // reactive `value`. @monaco-editor/react re-applies a changed `value` prop through
-                // `executeEdits(..., forceMoveMarkers: true)` whenever it differs from the live
-                // model, snapping the caret to the END of the content — the cursor jump we are
-                // eliminating whenever a caller feeds its own onChange output back into `value`.
-                // All external updates instead flow through the focus-guarded sync effect above.
-                defaultValue={effectiveValue}
-            />
+            <Suspense fallback={<div className="h-full w-full" />}>
+                <Editor
+                    className="h-full w-full"
+                    height="100%"
+                    theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
+                    language={language}
+                    path={modelPath}
+                    onChange={handleEditorChange}
+                    onMount={handleEditorDidMount}
+                    beforeMount={beforeMount}
+                    options={defaultOptions}
+                    // Uncontrolled: seed the initial content once via `defaultValue` and never bind a
+                    // reactive `value`. @monaco-editor/react re-applies a changed `value` prop through
+                    // `executeEdits(..., forceMoveMarkers: true)` whenever it differs from the live
+                    // model, snapping the caret to the END of the content — the cursor jump we are
+                    // eliminating whenever a caller feeds its own onChange output back into `value`.
+                    // All external updates instead flow through the focus-guarded sync effect above.
+                    defaultValue={effectiveValue}
+                />
+            </Suspense>
         </div>
     );
 }

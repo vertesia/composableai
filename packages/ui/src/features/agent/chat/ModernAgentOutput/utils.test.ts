@@ -12,6 +12,7 @@ import {
     getSlidingViewMessageBuckets,
     groupMessagesWithStreaming,
     isInProgress,
+    isStreamingDataVisibleInWorkstream,
     isStreamReplacedByMessage,
     isToolActivityMessage,
     mergeConsecutiveToolGroups,
@@ -1310,6 +1311,43 @@ describe('ModernAgentOutput summary conversation items', () => {
         expect(summaryMessages).toEqual([answer]);
     });
 
+    it('does not duplicate persisted reasoning without streaming metadata across intervening activity', () => {
+        const activity = makeMessage({
+            timestamp: 2500,
+            type: AgentMessageType.THOUGHT,
+            message: 'Launching workstream',
+            details: {
+                tool: 'launch_workstream',
+                tool_status: 'completed',
+                tool_run_id: 'tool-1',
+            },
+        });
+        const reasoning = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Launching parallel processing',
+            details: {
+                display_role: 'reasoning',
+            },
+        });
+
+        const summaryMessages = buildSummaryDisplayMessages(
+            [activity, reasoning],
+            new Map([
+                [
+                    'stream-1',
+                    {
+                        text: 'Launching parallel processing',
+                        startTimestamp: 2000,
+                        isComplete: true,
+                    },
+                ],
+            ]),
+        );
+
+        expect(summaryMessages).toEqual([activity, reasoning]);
+    });
+
     it('does not duplicate completed tool preamble streams once persisted prose replaces them', () => {
         const preamble = makeMessage({
             timestamp: 3000,
@@ -1391,6 +1429,33 @@ describe('ModernAgentOutput summary conversation items', () => {
 });
 
 describe('ModernAgentOutput utils - streamed deduplication', () => {
+    it('shows a workstream stream only in its owning workstream', () => {
+        const stream = {
+            text: 'Child work in progress',
+            startTimestamp: 1000,
+            workstreamId: 'research',
+        };
+
+        expect(isStreamingDataVisibleInWorkstream(stream, 'all')).toBe(false);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'main')).toBe(false);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'research')).toBe(true);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'writing')).toBe(false);
+
+        const streams = new Map([['stream-1', stream]]);
+        expect(groupMessagesWithStreaming([], streams, 'all')).toHaveLength(0);
+        expect(groupMessagesWithStreaming([], streams, 'research')).toHaveLength(1);
+    });
+
+    it('keeps main-agent streams in the main conversation', () => {
+        const stream = {
+            text: 'Main response in progress',
+            startTimestamp: 1000,
+        };
+
+        expect(isStreamingDataVisibleInWorkstream(stream, 'all')).toBe(true);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'main')).toBe(true);
+    });
+
     it('skips a stale streaming item once an equivalent streamed answer is persisted', () => {
         const answer = makeMessage({
             timestamp: 2000,
@@ -1497,6 +1562,35 @@ describe('ModernAgentOutput utils - streamed deduplication', () => {
                 [tool],
             ),
         ).toBe(false);
+    });
+
+    it('replaces matching streamed prose with persisted thinking prose, but not a generic marker', () => {
+        const matchingThinking = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Launching parallel processing',
+            details: {
+                activity_id: 'activity-1',
+                display_role: 'thinking',
+            },
+        });
+        const genericMarker = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Thinking...',
+            details: {
+                activity_id: 'activity-1',
+                display_role: 'thinking',
+            },
+        });
+        const streaming = {
+            text: 'Launching parallel processing',
+            startTimestamp: 1000,
+            activityId: 'activity-1',
+        };
+
+        expect(isStreamReplacedByMessage(streaming, [matchingThinking])).toBe(true);
+        expect(isStreamReplacedByMessage(streaming, [genericMarker])).toBe(false);
     });
 });
 

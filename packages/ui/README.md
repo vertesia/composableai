@@ -24,13 +24,7 @@ import { Layout, Sidebar, ... } from "@vertesia/ui/layout";
 // Feature components (agents, PDF viewer, permissions, etc.)
 import { AgentConversation, PDFViewer, ... } from "@vertesia/ui/features";
 
-// Form components
-import { Form, FormField, ... } from "@vertesia/ui/form";
-
-// Code editors and viewers
-import { CodeEditor, JSONEditor, ... } from "@vertesia/ui/code";
-
-// Widget components
+// Widget components, including the form, code editor and JSON viewer widgets
 import { Chart, DataTable, ... } from "@vertesia/ui/widgets";
 
 // Router utilities

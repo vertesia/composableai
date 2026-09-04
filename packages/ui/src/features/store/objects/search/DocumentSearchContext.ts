@@ -29,6 +29,17 @@ export class DocumentSearch implements SearchInterface {
     facetSpecs: FacetSpec[] = [];
     query: ComplexSearchQuery = {};
 
+    /**
+     * Ids the server confirmed deleted, hidden until the index stops returning them.
+     *
+     * Deletes reach the search index out of band, so a search issued right after one can still
+     * return the object. Without this the row reappears and stays until a manual refresh.
+     */
+    private deletedIds = new Set<string>();
+
+    /** Objects the server has returned so far, before hiding — `loadMore` pages on this, not on the visible count. */
+    private loadedCount = 0;
+
     constructor(
         public client: ZenoClient,
         public limit = 100,
@@ -98,8 +109,31 @@ export class DocumentSearch implements SearchInterface {
         this.query = {};
     }
 
+    /**
+     * Drop objects the server confirmed deleted, and keep them out of results until the index
+     * agrees. Reconciled in `_search`: once a full search stops returning an id, it is really gone
+     * and stops being hidden.
+     */
+    removeDeletedObjects(ids: string[]) {
+        if (ids.length === 0) return;
+        for (const id of ids) {
+            this.deletedIds.add(id);
+        }
+        const previous = this.result.value;
+        const objects = previous.objects.filter((obj) => !this.deletedIds.has(obj.id));
+        const removed = previous.objects.length - objects.length;
+        this.result.value = { ...previous, objects };
+
+        const facets = this.facets.value;
+        if (removed > 0 && typeof facets.total === 'number') {
+            this.facets.value = { ...facets, total: Math.max(0, facets.total - removed) };
+        }
+    }
+
     reset(isLoading = false) {
         this.initialized = false;
+        this.deletedIds.clear();
+        this.loadedCount = 0;
         this.result.value = {
             objects: [],
             isLoading,
@@ -161,16 +195,30 @@ export class DocumentSearch implements SearchInterface {
             hasMore: loadMore ? this.result.value.hasMore : true,
         };
         const limit = this.limit;
-        const offset = loadMore ? this.objects.length : 0;
+        const offset = loadMore ? this.loadedCount : 0;
         try {
             const res = await this._searchRequest(this.query, limit, offset, !noFacets);
             // Handle the new format with results and facets
             const results = res.results || [];
             const facets = res.facets || {};
 
+            this.loadedCount = loadMore ? this.loadedCount + results.length : results.length;
+
+            // Only a full search proves an id is gone. A `loadMore` page is a different slice, so an
+            // absence there says nothing and must not clear the entry.
+            if (!loadMore && this.deletedIds.size > 0) {
+                for (const id of [...this.deletedIds]) {
+                    if (!results.some((obj) => obj.id === id)) {
+                        this.deletedIds.delete(id);
+                    }
+                }
+            }
+            const visible = this.deletedIds.size > 0 ? results.filter((obj) => !this.deletedIds.has(obj.id)) : results;
+
             this.result.value = {
                 isLoading: false,
-                objects: loadMore ? this.objects.concat(results) : results,
+                objects: loadMore ? this.objects.concat(visible) : visible,
+                // `results`, not `visible`: paging is the server's page size, not what we show.
                 hasMore: results.length === limit,
             };
 

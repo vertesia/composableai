@@ -1,8 +1,8 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import dayjs from 'dayjs';
 import type React from 'react';
 import { useState } from 'react';
 import Calendar from 'react-calendar';
+import dayjs from '../../../../utils/dayjs.js';
 import { Button } from '../../button';
 import { calendarStyles } from '../filter-styles';
 import type { Filter, FilterGroup } from '../types';

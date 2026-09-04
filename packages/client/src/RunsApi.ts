@@ -1,5 +1,5 @@
 import type { ExecutionResponse } from '@llumiverse/common';
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
 import type {
     ComputeRunFacetPayload,
     ComputeRunFacetsResponse,
@@ -7,6 +7,8 @@ import type {
     ExecutionRunDocRef,
     ExecutionRunRef,
     FindPayload,
+    FindRunResult,
+    InteractionExecutionResult,
     PopulatedExecutionRun,
     RunClonePayload,
     RunCreatePayload,
@@ -17,7 +19,12 @@ import type {
     UserMessagePayload,
 } from '@vertesia/common';
 import type { VertesiaClient } from './client.js';
-import { type EnhancedExecutionRun, enhanceExecutionRun } from './InteractionOutput.js';
+import {
+    type EnhancedExecutionRun,
+    type EnhancedInteractionExecutionResult,
+    enhanceExecutionRun,
+    enhanceInteractionExecutionResult,
+} from './InteractionOutput.js';
 
 export interface FilterOption {
     id: string;
@@ -26,6 +33,8 @@ export interface FilterOption {
 }
 
 export type { ComputeRunFacetsResponse } from '@vertesia/common';
+
+type ResumeRequestOptions = Pick<IRequestParams, 'headers' | 'signal' | 'timeoutMs'>;
 
 export class RunsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -48,7 +57,7 @@ export class RunsApi extends ApiTopic {
         return this.get('/', { query: query });
     }
 
-    find(payload: FindPayload): Promise<ExecutionRun[]> {
+    find(payload: FindPayload): Promise<FindRunResult[]> {
         return this.post('/find', {
             payload,
         });
@@ -85,7 +94,7 @@ export class RunsApi extends ApiTopic {
     async create<ResultT = unknown, ParamsT = unknown>(
         payload: RunCreatePayload,
         options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
-    ): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+    ): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
         const sessionTags = (this.client as VertesiaClient).sessionTags;
         if (sessionTags) {
             let tags = Array.isArray(sessionTags) ? sessionTags : [sessionTags];
@@ -96,12 +105,12 @@ export class RunsApi extends ApiTopic {
             }
             payload = { ...payload, tags };
         }
-        const r = await this.post<ExecutionRun<ParamsT>>('/', {
+        const r = await this.post<InteractionExecutionResult<ParamsT>>('/', {
             payload,
             timeoutMs: options?.timeoutMs,
             signal: options?.signal,
         });
-        return enhanceExecutionRun<ResultT, ParamsT>(r);
+        return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
     }
 
     /**
@@ -109,12 +118,10 @@ export class RunsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    sendToolResults(
-        payload: ToolResultsPayload,
-        options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
-    ): Promise<ExecutionResponse> {
+    sendToolResults(payload: ToolResultsPayload, options?: ResumeRequestOptions): Promise<ExecutionResponse> {
         return this.post(`/tool-results`, {
             payload,
+            headers: options?.headers,
             timeoutMs: options?.timeoutMs,
             signal: options?.signal,
         });
@@ -125,12 +132,10 @@ export class RunsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    sendUserMessage(
-        payload: UserMessagePayload,
-        options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
-    ): Promise<ExecutionResponse> {
+    sendUserMessage(payload: UserMessagePayload, options?: ResumeRequestOptions): Promise<ExecutionResponse> {
         return this.post(`/user-message`, {
             payload,
+            headers: options?.headers,
             timeoutMs: options?.timeoutMs,
             signal: options?.signal,
         });
@@ -139,7 +144,7 @@ export class RunsApi extends ApiTopic {
     /**
      * Get the list of all runs facets
      * @param payload query payload to filter facet search
-     * @returns ComputeRunFacetsResponse[]
+     * @returns Facet buckets and the total number of matching runs
      **/
     computeFacets(query: ComputeRunFacetPayload): Promise<ComputeRunFacetsResponse> {
         return this.post('/facets', {

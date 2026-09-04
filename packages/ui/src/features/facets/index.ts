@@ -1,5 +1,6 @@
 export {
     AgentRunnerFacetsNav,
+    type AgentRunnerFilterQuery,
     createAgentRunnerFilterHandler,
     useAgentRunnerFilterGroups,
 } from './AgentRunnerFacetsNav';

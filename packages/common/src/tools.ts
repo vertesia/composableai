@@ -1,7 +1,12 @@
 import type { z } from 'zod';
 import type {
     AggregatedToolSchema,
+    InspectProjectToolQuerySchema,
     ListProjectToolsQuerySchema,
+    ProcessToolCompatibilityReasonSchema,
+    ProcessToolCompatibilitySchema,
+    ToolInspectionSchema,
+    ToolRuntimeContextSchema,
     ToolSourceSchema,
     ToolValidationResultSchema,
     ValidateToolNamesPayloadSchema,
@@ -14,6 +19,16 @@ import type {
 export type ToolSource = z.infer<typeof ToolSourceSchema>;
 
 export type AggregatedTool = z.infer<typeof AggregatedToolSchema>;
+
+export type ToolRuntimeContext = z.infer<typeof ToolRuntimeContextSchema>;
+
+export type ProcessToolCompatibilityReason = z.infer<typeof ProcessToolCompatibilityReasonSchema>;
+
+export type ProcessToolCompatibility = z.infer<typeof ProcessToolCompatibilitySchema>;
+
+export type InspectProjectToolQuery = z.infer<typeof InspectProjectToolQuerySchema>;
+
+export type ToolInspection = z.infer<typeof ToolInspectionSchema>;
 
 export type ListProjectToolsQuery = z.infer<typeof ListProjectToolsQuerySchema>;
 

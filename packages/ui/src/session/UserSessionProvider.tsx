@@ -12,18 +12,25 @@ import {
     resolveAuthSelection,
     UserNotFoundError,
 } from './auth/composable';
-import { authReturnUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
+import {
+    authReturnUrl,
+    buildCentralAuthRedirectUrl,
+    centralAuthUrl,
+    shouldRedirectToCentralAuth,
+} from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
-
-const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
 
 function clearAuthHash() {
     const url = new URL(window.location.href);
     url.hash = '';
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
 }
+
+// Re-exported from its new home in ./auth/domainRouting, which the token layer can import without
+// a cycle -- it renews an expired Central Auth session through the same URL.
+export { buildCentralAuthRedirectUrl };
 
 export function sanitizeRejectedScopeUrl(
     currentUrl: URL,
@@ -110,31 +117,29 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         return true;
     };
 
-    const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
-        const currentUrl = authReturnUrl();
-        if (projectId) currentUrl.searchParams.set('p', projectId);
-        if (accountId) currentUrl.searchParams.set('a', accountId);
-        url.searchParams.set('redirect_uri', currentUrl.toString());
-        url.searchParams.set('state', generateState());
+    const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
+        const url = buildCentralAuthRedirectUrl(
+            centralAuthUrl(),
+            Env.endpoints.sts ?? 'https://sts.vertesia.io',
+            authReturnUrl(),
+            generateState(),
+            selection,
+        );
         location.replace(url.toString());
     };
 
     authFlowRef.current = () => {
         // Make this effect idempotent - only run auth flow once
         if (hasInitiatedAuthRef.current) {
-            console.log('Auth: skipping duplicate auth flow initiation');
+            Env.logger.debug('Skipping duplicate auth flow initiation');
             return;
         }
         hasInitiatedAuthRef.current = true;
 
-        console.log('Auth: starting auth flow');
-        Env.logger.info('Starting auth flow');
+        Env.logger.debug('Starting auth flow');
         const currentUrl = new URL(window.location.href);
         const { accountId: selectedAccount, projectId: selectedProject } = resolveAuthSelection(currentUrl);
-        console.log('Auth: selected account', selectedAccount);
-        console.log('Auth: selected project', selectedProject);
-        Env.logger.info('Selected account and project', {
+        Env.logger.debug('Selected account and project', {
             vertesia: {
                 account_id: selectedAccount,
                 project_id: selectedProject,
@@ -174,7 +179,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         state: state,
                     },
                 });
-                redirectToCentralAuth();
+                redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
             } else {
                 clearState();
             }
@@ -194,7 +199,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                             error: err,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                 });
             return;
         }
@@ -207,31 +212,24 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
 
             // If the current host is not in the Firebase allowlist, central auth owns sign-in.
             if (!session.isLoggedIn()) {
-                console.log('Auth: not logged in & no token/state');
-                Env.logger.info('Not logged in & no token/state', {
+                Env.logger.debug('Not logged in & no token/state', {
                     vertesia: {
                         account_id: selectedAccount,
                         project_id: selectedProject,
                     },
                 });
                 if (shouldRedirectToCentralAuth()) {
-                    console.log(
-                        'Auth: host is not in Firebase auth allowlist, redirecting to central auth with selection',
-                        selectedAccount,
-                        selectedProject,
-                    );
-                    Env.logger.info('Redirecting to central auth with selection', {
+                    Env.logger.debug('Redirecting to central auth with selection', {
                         vertesia: {
                             account_id: selectedAccount,
                             project_id: selectedProject,
                         },
                     });
-                    redirectToCentralAuth();
+                    redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
                     return; // Don't register onAuthStateChanged listener when redirecting
                 }
 
-                console.log('Auth: host is in Firebase auth allowlist');
-                Env.logger.info('Host is in Firebase auth allowlist', {
+                Env.logger.debug('Host is in Firebase auth allowlist', {
                     vertesia: {
                         account_id: selectedAccount,
                         project_id: selectedProject,
@@ -241,8 +239,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
 
             unsubscribe = onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
                 if (firebaseUser) {
-                    console.log('Auth: successful login with firebase');
-                    Env.logger.info('Successful login with firebase', {
+                    Env.logger.debug('Successful login with firebase', {
                         vertesia: {
                             account_id: selectedAccount,
                             project_id: selectedProject,
@@ -274,8 +271,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         });
                 } else {
                     // anonymous user
-                    console.log('Auth: using anonymous user');
-                    Env.logger.info('Using anonymous user', {
+                    Env.logger.debug('Using anonymous user', {
                         vertesia: {
                             account_id: selectedAccount,
                             project_id: selectedProject,

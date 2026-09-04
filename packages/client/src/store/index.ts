@@ -12,6 +12,7 @@ export * from './IndexingApi.js';
 export * from './ObjectsApi.js';
 export * from './PendingAsksApi.js';
 export * from './ProcessApi.js';
+export * from './ProcessTestRunApi.js';
 export * from './QueryApi.js';
 export * from './RenderingApi.js';
 export * from './SchedulesApi.js';

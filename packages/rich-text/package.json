@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/rich-text",
-    "version": "1.5.0-dev.20260807.073259Z",
+    "version": "1.6.0-dev",
     "description": "Markdown-first rich-text editing primitives for Vertesia",
     "type": "module",
     "main": "./lib/index.js",
@@ -27,16 +27,16 @@
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
     },
     "dependencies": {
-        "@tiptap/core": "^3.29.2",
-        "@tiptap/extension-code-block": "^3.29.2",
-        "@tiptap/extension-image": "^3.29.2",
-        "@tiptap/extension-link": "^3.29.2",
-        "@tiptap/extension-table": "^3.29.2",
-        "@tiptap/markdown": "^3.29.2",
-        "@tiptap/pm": "^3.29.2",
-        "@tiptap/react": "^3.29.2",
-        "@tiptap/starter-kit": "^3.29.2",
-        "marked": "^17.0.6",
+        "@tiptap/core": "^3.30.5",
+        "@tiptap/extension-code-block": "^3.30.5",
+        "@tiptap/extension-image": "^3.30.5",
+        "@tiptap/extension-link": "^3.30.5",
+        "@tiptap/extension-table": "^3.30.5",
+        "@tiptap/markdown": "^3.30.5",
+        "@tiptap/pm": "^3.30.5",
+        "@tiptap/react": "^3.30.5",
+        "@tiptap/starter-kit": "^3.30.5",
+        "marked": "^18.0.11",
         "react": "catalog:",
         "react-dom": "catalog:"
     },
@@ -47,7 +47,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.11"
     },
     "exports": {
         ".": {

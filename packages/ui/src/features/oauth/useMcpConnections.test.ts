@@ -16,6 +16,7 @@ function group(memberIds: string[], authenticated?: boolean, label = 'Server'): 
         representativeId: memberIds[0],
         memberIds,
         memberNames: memberIds,
+        authType: 'oauth',
         authStatus:
             authenticated === undefined
                 ? undefined

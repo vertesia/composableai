@@ -486,7 +486,7 @@ export function UniversalDocumentViewer({
     loadText,
     createRendition,
     markdownComponents,
-    showHeader = true,
+    showHeader = false,
     onDownload,
 }: UniversalDocumentViewerProps) {
     const { client } = useUserSession();

@@ -1,4 +1,4 @@
-import type { ComputeRunFacetsResponse } from '@vertesia/common';
+import type { ComputeRunFacetsResponse, RunSearchQuery } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     Button,
@@ -10,18 +10,34 @@ import {
 } from '@vertesia/ui/core';
 import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import {
+    createSearchQueryKeyGuard,
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+} from './utils/SearchInterface';
 import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
-import { VUserFacet } from './utils/VUserFacet';
+
+const runFilterNames = [
+    'run_ids',
+    'interaction',
+    'environment',
+    'tags',
+    'model',
+    'status',
+    'finish_reason',
+    'start',
+    'end',
+    'workflow_run_ids',
+    'workflow_ids',
+] as const satisfies readonly (keyof RunSearchQuery)[];
+const isRunFilterName = createSearchQueryKeyGuard<RunSearchQuery>(runFilterNames);
 
 interface RunsFacetsNavProps {
-    facets: Pick<
-        ComputeRunFacetsResponse,
-        'type' | 'interactions' | 'environments' | 'models' | 'statuses' | 'tags' | 'finish_reason' | 'created_by'
-    >;
-    search: SearchInterface;
+    facets: Pick<ComputeRunFacetsResponse, 'interactions' | 'environments' | 'models' | 'statuses' | 'finish_reason'>;
+    search: SearchInterface<RunSearchQuery>;
     actions?: React.ReactNode[];
     selectionCount?: number;
     /**
@@ -35,7 +51,7 @@ interface RunsFacetsNavProps {
     filterGroups?: FilterGroup[];
 }
 
-type RunFacetBucket = NonNullable<ComputeRunFacetsResponse['type']>[number];
+type RunFacetBucket = NonNullable<ComputeRunFacetsResponse['models']>[number];
 type IdentifiedRunFacetBucket<T extends RunFacetBucket = RunFacetBucket> = T & { _id: string };
 
 function identifiedBuckets<T extends RunFacetBucket>(buckets: T[]): IdentifiedRunFacetBucket<T>[] {
@@ -66,7 +82,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
     if (facets.environments) {
         const environmentFilterGroup = VEnvironmentFacet({
             buckets: identifiedBuckets(facets.environments),
-            name: 'environments',
+            name: 'environment',
         });
         customFilterGroups.push(environmentFilterGroup);
     }
@@ -110,18 +126,6 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         customFilterGroups.push(finishReasonFilterGroup);
     }
 
-    if (facets.created_by) {
-        const createdByFilterGroup = VUserFacet({
-            buckets: facets.created_by.map((bucket) => ({
-                ...bucket,
-                _id: bucket._id ?? 'Unknown User',
-            })),
-            name: 'created_by',
-            placeholder: 'Created By',
-        });
-        customFilterGroups.push(createdByFilterGroup);
-    }
-
     const dateAfterFilterGroup = {
         name: 'start',
         placeholder: 'Date After',
@@ -158,7 +162,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 }
 
 // Hook to create filter change handler for runs
-export function useRunsFilterHandler(search: SearchInterface) {
+export function useRunsFilterHandler(search: SearchInterface<RunSearchQuery>) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             // Clear filters without applying defaults - user wants to remove all filters
@@ -171,6 +175,9 @@ export function useRunsFilterHandler(search: SearchInterface) {
 
         newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
+                if (!isRunFilterName(filter.name)) {
+                    return;
+                }
                 const filterName = filter.name;
                 let filterValue = filterValueToQueryValue(filter);
 

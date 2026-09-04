@@ -2,12 +2,17 @@ import type { AppManifestData } from '@vertesia/common';
 import type { Command } from 'commander';
 import {
     createApp,
+    createDevelopmentTask,
     deleteAppInstallation,
     getApp,
     getAppInstallation,
+    getDevelopmentTask,
     installApp,
     listApps,
+    listDevelopmentTasks,
     listInstalledApps,
+    scaffoldApp,
+    startDevelopmentTask,
     updateApp,
     updateAppInstallationSettings,
 } from './commands.js';
@@ -48,6 +53,46 @@ const exampleManifest: AppManifestData = {
 
 export function registerAppsCommand(program: Command) {
     const apps = program.command('apps').description('Manage applications and app installations');
+
+    const scaffolds = apps.command('scaffolds').description('Create source-backed App Builder applications');
+    scaffolds
+        .command('create <appName>')
+        .description('Create and scaffold a new app package, then follow workflow progress through the live stream')
+        .option('--title <title>', 'App title')
+        .option('--description <description>', 'App description')
+        .option('--modules <modules>', 'Comma-separated modules: service,assistant,content-app,examples')
+        .option('--no-create-version', 'Do not build an initial immutable version')
+        .option('--no-follow', 'Return after starting instead of following live progress')
+        .action(async (appName: string, options) => scaffoldApp(program, appName, options));
+
+    const developmentTasks = apps.command('development-tasks').description('Manage App Builder development tasks');
+    developmentTasks
+        .command('create <appId> <taskId>')
+        .description('Create an agent/* task branch from an existing ref')
+        .requiredOption('--source-ref <ref>', 'Source branch, tag, or commit')
+        .action(async (appId: string, taskId: string, options) =>
+            createDevelopmentTask(program, appId, taskId, options),
+        );
+    developmentTasks
+        .command('start <appId> <taskId>')
+        .description('Start the policy-controlled App Builder parent and follow its live agent stream')
+        .requiredOption('--prompt <prompt>', 'Development request')
+        .requiredOption('-e, --env <environment>', 'Execution environment id')
+        .requiredOption('-m, --model <model>', 'Model id')
+        .option('--source-ref <ref>', 'Create the task branch from this ref before starting')
+        .option('--build-version', 'Build one immutable version after validation')
+        .option('--no-follow', 'Return after starting instead of following live progress')
+        .action(async (appId: string, taskId: string, options) =>
+            startDevelopmentTask(program, appId, taskId, options),
+        );
+    developmentTasks
+        .command('list <appId>')
+        .description('List development-task branches')
+        .action(async (appId: string) => listDevelopmentTasks(program, appId));
+    developmentTasks
+        .command('get <appId> <taskId>')
+        .description('Get a development task and its latest App Builder parent run')
+        .action(async (appId: string, taskId: string) => getDevelopmentTask(program, appId, taskId));
 
     apps.command('list')
         .description('List all available app manifests')

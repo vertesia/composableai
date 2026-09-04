@@ -60,6 +60,12 @@ describe('GroundedExtractionPanel', () => {
 
         fireEvent.click(screen.getByText('DFVS25'));
         expect(screen.getByText('E38:J38')).not.toBeNull();
-        expect(screen.getByRole('button', { name: 'part_number' }).getAttribute('title')).toContain('E38:J38');
+
+        // The citation box repeats the range in its tooltip. It is a VTooltip, not a
+        // native `title`: a raw title on a <button> also picks up the global
+        // button[title] pseudo-element in custom-tooltips.css, so both render at once.
+        fireEvent.focus(screen.getByRole('button', { name: 'part_number' }));
+        const tooltip = await screen.findByRole('tooltip');
+        expect(tooltip.textContent).toContain('E38:J38');
     });
 });

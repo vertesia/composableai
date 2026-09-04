@@ -32,6 +32,9 @@ describe('the provider vocabulary', () => {
         expect(validateApiRequest('ExecutionEnvironmentCreatePayload', { name: 'e', provider: 'openai' }).valid).toBe(
             true,
         );
+        expect(
+            validateApiRequest('ExecutionEnvironmentCreatePayload', { name: 'router', provider: 'openrouter' }).valid,
+        ).toBe(true);
         expect(validateApiRequest('ExecutionEnvironmentCreatePayload', { name: 'e', provider: 'gpt' }).valid).toBe(
             false,
         );
@@ -164,6 +167,21 @@ describe('the embeddings request', () => {
         // `minItems` is deliberately not published: an empty batch is well-formed and useless, and
         // adding the constraint would newly reject a request the document has always described.
         expect(validateApiRequest('EmbeddingsApiRequest', { inputs: [] }).valid).toBe(true);
+    });
+
+    it('accepts the logical project embedding type and rejects unknown types', () => {
+        expect(
+            validateApiRequest('EmbeddingsApiRequest', {
+                embedding_type: 'properties',
+                inputs: [{ type: 'text', text: '{}' }],
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiRequest('EmbeddingsApiRequest', {
+                embedding_type: 'audio',
+                inputs: [{ type: 'audio', source: { url: 'gs://b/o' } }],
+            }).valid,
+        ).toBe(false);
     });
 });
 

@@ -85,10 +85,33 @@ export const AgenticViewRerankConfigurationSchema = z
     })
     .meta({ id: 'AgenticViewRerankConfiguration' });
 
+/**
+ * The model configuration a View stores for its agentic search.
+ *
+ * Identical to `InteractionExecutionConfiguration` apart from `model_options`, which is an open
+ * object here rather than the `ModelOptions` driver union. A View's options are authored in the view
+ * editor and saved before any driver is chosen, so they carry no `_option_id`; every branch of the
+ * union requires one, so a stored View could not satisfy it and `GET /views` failed its own response
+ * contract on every call.
+ *
+ * Only the View usage changes. The shared component keeps the strict union because agent runs,
+ * events and workflow runs record options a driver already resolved, and those are in production.
+ */
+export const ViewAgenticExecutionConfigurationSchema = InteractionExecutionConfigurationSchema.extend({
+    model_options: z
+        .looseObject({})
+        .meta({
+            description:
+                'Model options as authored for this View. Open rather than the driver-discriminated ' +
+                '`ModelOptions` union, because a View is saved before a driver is resolved.',
+        })
+        .optional(),
+}).meta({ id: 'ViewAgenticExecutionConfiguration' });
+
 export const AgenticViewSearchConfigurationSchema = z
     .strictObject({
         interaction: z.string().optional(),
-        config: InteractionExecutionConfigurationSchema.optional(),
+        config: ViewAgenticExecutionConfigurationSchema.optional(),
         instructions: z
             .string()
             .meta({ description: 'View-specific guidance for Elasticsearch query planning.' })

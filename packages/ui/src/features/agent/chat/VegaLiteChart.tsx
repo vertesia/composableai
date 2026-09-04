@@ -4,13 +4,18 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Check, Copy, Download, Loader2, Maximize2, Minimize2, X } from 'lucide-react';
 import Papa from 'papaparse';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { VegaEmbed } from 'react-vega';
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
 import { cn } from '../../../core/components/libs/utils';
 import type { VegaLiteChartSpec } from './AgentChart';
 import { getArtifactCacheKey, getFileCacheKey, isProjectFilePath, useArtifactUrlCache } from './useArtifactUrlCache';
+
+/**
+ * Vega and its Vega-Lite compiler are ~1 MB and are only needed once a chart is actually rendered,
+ * so they are pulled in on demand instead of at module load.
+ */
+const VegaEmbed = lazy(() => import('react-vega').then(({ VegaEmbed: component }) => ({ default: component })));
 
 type VegaLiteChartProps = {
     spec: VegaLiteChartSpec;
@@ -35,6 +40,15 @@ function VegaErrorDisplay({ error, chartTitle }: { error: string; chartTitle?: s
                 <p className="text-xs text-red-500 dark:text-red-500 mt-1 max-w-xs truncate">{error}</p>
             </div>
         </div>
+    );
+}
+
+// Shown while the Vega runtime is being fetched on first chart render
+function VegaLoadingPlaceholder() {
+    return (
+        <output className="flex items-center justify-center w-full h-full">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-500 dark:text-gray-400" />
+        </output>
     );
 }
 
@@ -1122,12 +1136,14 @@ export const VegaLiteChart = memo(
                             className="bg-white dark:bg-gray-900 rounded overflow-hidden"
                             style={{ width: '100%', height: baseHeight, minWidth: 0 }}
                         >
-                            <VegaEmbed
-                                spec={chartSpec}
-                                onEmbed={(result) => handleNewView(result.view)}
-                                onError={handleError}
-                                options={{ renderer: options?.renderer || 'canvas', actions: false }}
-                            />
+                            <Suspense fallback={<VegaLoadingPlaceholder />}>
+                                <VegaEmbed
+                                    spec={chartSpec}
+                                    onEmbed={(result) => handleNewView(result.view)}
+                                    onError={handleError}
+                                    options={{ renderer: options?.renderer || 'canvas', actions: false }}
+                                />
+                            </Suspense>
                         </div>
                     </div>
                 </div>
@@ -1141,12 +1157,14 @@ export const VegaLiteChart = memo(
                 >
                     <div className="w-full h-full min-h-[calc(100vh-200px)]">
                         {fullscreenSpec && (
-                            <VegaEmbed
-                                spec={fullscreenSpec}
-                                onEmbed={(result) => handleFullscreenNewView(result.view)}
-                                onError={handleError}
-                                options={{ renderer: options?.renderer || 'canvas', actions: false }}
-                            />
+                            <Suspense fallback={<VegaLoadingPlaceholder />}>
+                                <VegaEmbed
+                                    spec={fullscreenSpec}
+                                    onEmbed={(result) => handleFullscreenNewView(result.view)}
+                                    onError={handleError}
+                                    options={{ renderer: options?.renderer || 'canvas', actions: false }}
+                                />
+                            </Suspense>
                         )}
                     </div>
                     {/* Floating toolbar in fullscreen */}

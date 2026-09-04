@@ -1,13 +1,21 @@
 import type { ContentObject } from '@vertesia/common';
 import { Button, errorMessage, useTheme, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { VertesiaMarkdownDocumentEditor } from '@vertesia/ui/rich-text';
 import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { type IEditorApi, MonacoEditor } from '@vertesia/ui/widgets';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { isMarkdownContentType } from './documentEditingRun.js';
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
+
+/**
+ * The rich-text editor carries the whole TipTap stack. Importing it statically here would defeat the
+ * lazy boundaries the markdown widgets already use, pulling TipTap into every app that can reach
+ * this panel — so it is loaded on demand, like the other consumers do.
+ */
+const MarkdownDocumentEditor = lazy(() =>
+    import('@vertesia/ui/rich-text').then((module) => ({ default: module.VertesiaMarkdownDocumentEditor })),
+);
 
 interface TextEditorPanelProps {
     object: ContentObject;
@@ -139,7 +147,9 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
             </div>
             <div className="flex-1 min-h-0 border rounded-md overflow-hidden mx-2 mb-2">
                 {isMarkdown ? (
-                    <VertesiaMarkdownDocumentEditor value={editorText} onChange={handleMarkdownChange} />
+                    <Suspense fallback={<div className="h-full w-full" />}>
+                        <MarkdownDocumentEditor value={editorText} onChange={handleMarkdownChange} />
+                    </Suspense>
                 ) : (
                     <MonacoEditor
                         value={text}

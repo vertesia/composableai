@@ -1,4 +1,6 @@
+import { JSONSchemaSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
+import { AgentToolApprovalClassSchema } from './app-lifecycle.js';
 import { MCPToolAnnotationsSchema } from './apps.js';
 
 // The unified project-scoped tool registry as `GET /tools` and `POST /tools/validate` publish it.
@@ -12,6 +14,30 @@ export const ToolSourceSchema = z.enum(['builtin', 'app', 'interaction']).meta({
     description:
         'Origin of a tool in the unified project-scoped tool registry.\n\n- `builtin`: anything statically registered on the worker — workflow builtins, studio agent tools, and sys skills\n- `app`: tools contributed by an installed app for the project\n- `interaction`: a project interaction exposed via `tag=tool` / `is_tool=true` / `is_skill=true`\n\nSkill semantics (the tool unlocks others when invoked) are NOT part of the source. They are identified universally by the `learn_` prefix in the tool name. This matches how the runtime registry stores them and avoids splitting one logical origin into two sources.',
 });
+
+export const ToolRuntimeContextSchema = z.enum(['conversation', 'process']).meta({
+    id: 'ToolRuntimeContext',
+    description: 'The runtime context in which a caller intends to use a tool.',
+});
+
+export const ProcessToolCompatibilityReasonSchema = z
+    .enum([
+        'skill_not_supported',
+        'interaction_not_supported',
+        'agent_not_supported',
+        'confirmation_not_supported',
+        'control_tool_not_supported',
+        'approval_metadata_unavailable',
+        'ambiguous_name',
+    ])
+    .meta({ id: 'ProcessToolCompatibilityReason' });
+
+export const ProcessToolCompatibilitySchema = z
+    .strictObject({
+        compatible: z.boolean(),
+        reason: ProcessToolCompatibilityReasonSchema.optional(),
+    })
+    .meta({ id: 'ProcessToolCompatibility' });
 
 export const ValidateToolNamesPayloadSchema = z
     .strictObject({
@@ -76,6 +102,8 @@ export const AggregatedToolSchema = z
             })
             .optional(),
         annotations: MCPToolAnnotationsSchema.optional(),
+        approval_class: AgentToolApprovalClassSchema.optional(),
+        process_compatibility: ProcessToolCompatibilitySchema.optional(),
         unlocked_tools: z
             .array(z.string())
             .meta({ description: 'For skills (`learn_*`): tool names this skill unlocks when invoked.' })
@@ -126,6 +154,39 @@ export const ValidateToolNamesResponseSchema = z
 
 export const AggregatedToolArraySchema = z.array(AggregatedToolSchema).meta({ id: 'AggregatedToolArray' });
 
+export const InspectProjectToolQuerySchema = z
+    .strictObject({ context: ToolRuntimeContextSchema.optional() })
+    .meta({ id: 'InspectProjectToolQuery' });
+
+export const ToolInspectionSchema = z
+    .strictObject({
+        name: z.string(),
+        source: ToolSourceSchema,
+        description: z.string().optional(),
+        title: z.string().optional(),
+        input_schema: JSONSchemaSchema.optional().meta({
+            description: 'Exact input schema when the provider supplied one. Omitted rather than fabricated.',
+        }),
+        output_schema: JSONSchemaSchema.optional().meta({
+            description:
+                'MCP outputSchema advertised by the provider. It does not describe the process node result transport.',
+        }),
+        output_contract_status: z
+            .enum(['provider_supplied', 'unknown'])
+            .meta({
+                description:
+                    'For app tools, whether the provider advertised output schema metadata. Omitted for builtin and interaction tools.',
+            })
+            .optional(),
+        approval_class: AgentToolApprovalClassSchema.optional(),
+        annotations: MCPToolAnnotationsSchema.optional(),
+        app_install_id: z.string().optional(),
+        app_name: z.string().optional(),
+        ready: z.boolean().meta({ description: 'True only when an exact input schema was resolved.' }),
+        process_compatibility: ProcessToolCompatibilitySchema.optional(),
+    })
+    .meta({ id: 'ToolInspection' });
+
 // Query contracts are registry components even though the scanner expands them into parameters.
 export const ListProjectToolsQuerySchema = z
     .strictObject({
@@ -136,5 +197,6 @@ export const ListProjectToolsQuerySchema = z
                 description: 'Drop these sources from the result (and skip their fetch). Applied after `sources`.',
             })
             .optional(),
+        context: ToolRuntimeContextSchema.optional(),
     })
     .meta({ id: 'ListProjectToolsQuery' });

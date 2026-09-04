@@ -1,8 +1,7 @@
 import { Env } from '@vertesia/ui/env';
 import clsx from 'clsx';
-import { Info } from 'lucide-react';
 import { Children, cloneElement, Fragment, isValidElement, type ReactNode, useId, useRef } from 'react';
-import { VTooltip } from './shadcn/tooltip';
+import { InfoTip } from './InfoTip';
 
 interface FormItemProps {
     label: ReactNode;
@@ -126,9 +125,7 @@ export function FormItem({
                 </label>
                 {description && (
                     <div className="mx-2 flex w-4 items-center">
-                        <VTooltip description={description}>
-                            <Info className="size-3 text-muted" />
-                        </VTooltip>
+                        <InfoTip description={description} />
                     </div>
                 )}
             </div>

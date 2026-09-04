@@ -12,6 +12,7 @@ import {
     ExternalLink,
     GitFork,
     InfoIcon,
+    MessageCirclePlus,
     MessageSquareText,
     MoreVertical,
     Rows3,
@@ -64,6 +65,19 @@ export interface HeaderProps {
     className?: string;
 }
 
+/**
+ * Opens an internal route in a new browser tab, carrying the active tenant sticky params (a/p) so
+ * the new tab keeps the current account/project; absolute/external URLs are left untouched.
+ */
+function useOpenInNewTab() {
+    const { router } = useRouterContext();
+    return (url: string) => {
+        const href = url.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(url) : url;
+        window.open(href, '_blank', 'noopener,noreferrer');
+        return href;
+    };
+}
+
 export default function Header({
     title,
     variant = 'full',
@@ -92,6 +106,7 @@ export default function Header({
     className,
 }: HeaderProps) {
     const { t } = useUITranslation();
+    const openInNewTab = useOpenInNewTab();
     const isCompact = variant === 'compact';
     const nextViewMode: AgentConversationViewMode = viewMode === 'sliding' ? 'stacked' : 'sliding';
     const verboseLabel = t('agent.verbose');
@@ -194,6 +209,35 @@ export default function Header({
                 </Button>
             )}
 
+            {agentRunId && (
+                <Button
+                    type="button"
+                    size={isCompact ? 'icon' : 'xs'}
+                    variant="ghost"
+                    onClick={() => openInNewTab(`/store/agent-runner/${agentRunId}`)}
+                    title={t('agent.openInNewTab')}
+                    className={cn('transition-all duration-200 rounded-md', isCompact && 'size-8 rounded-lg')}
+                >
+                    <ExternalLink className="size-4" />
+                </Button>
+            )}
+
+            {resetWorkflow && (
+                <Button
+                    type="button"
+                    size={variant === 'compact' ? 'icon' : 'sm'}
+                    variant="ghost"
+                    onClick={resetWorkflow}
+                    title={t('agent.startNewConversation')}
+                    className={cn(
+                        'transition-all duration-200 rounded-md',
+                        variant === 'compact' && 'size-8 rounded-lg',
+                    )}
+                >
+                    <MessageCirclePlus className={cn('size-4', variant === 'full' && 'me-1.5')} />
+                </Button>
+            )}
+
             {/* More actions */}
             <MoreDropdown
                 compact={isCompact}
@@ -237,7 +281,7 @@ export default function Header({
         <PayloadBuilderProvider>
             <div
                 className={cn(
-                    'flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0',
+                    'flex flex-wrap items-center justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0',
                     className,
                 )}
             >
@@ -299,7 +343,6 @@ function MoreDropdown({
     const toast = useToast();
     const { client } = useUserSession();
     const builder = usePayloadBuilder();
-    const { router } = useRouterContext();
 
     const cancelWorkflow = async () => {
         try {
@@ -343,14 +386,6 @@ function MoreDropdown({
         }
     };
 
-    const openUrl = (url: string) => {
-        // Carry the active tenant sticky params (a/p) on internal routes so the new tab keeps the
-        // current account/project; leave absolute/external URLs untouched.
-        const href = url.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(url) : url;
-        window.open(href, '_blank');
-        return href;
-    };
-
     const copyAgentRunId = () => {
         navigator.clipboard.writeText(agentRunId);
         toast({
@@ -384,11 +419,6 @@ function MoreDropdown({
             }
         >
             <MenuGroup label="Actions">
-                {isModal && (
-                    <MenuItem onClick={() => openUrl(`/store/agent-runner/${agentRunId}`)}>
-                        <ExternalLink className="size-3.5 text-muted" /> {t('agent.openInNewTab')}
-                    </MenuItem>
-                )}
                 <MenuItem onClick={copyAgentRunId}>
                     <CopyIcon className="size-3.5 text-muted" /> {t('agent.copyAgentRunId')}
                 </MenuItem>

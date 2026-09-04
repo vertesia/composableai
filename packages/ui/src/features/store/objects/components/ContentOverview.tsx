@@ -11,7 +11,6 @@ import {
     WorkflowExecutionStatus,
 } from '@vertesia/common';
 import {
-    Badge,
     Button,
     Dropdown,
     MenuItem,
@@ -36,11 +35,7 @@ import {
     UniversalDocumentViewer,
 } from '../../../document-viewer/UniversalDocumentViewer.js';
 import { MagicPdfView } from '../../../magic-pdf';
-import {
-    GroundedExtractionView,
-    useGroundedExtractionAvailable,
-    useGroundedSummary,
-} from '../../../magic-pdf/GroundedExtractionView.js';
+import { GroundedExtractionView, useGroundedExtractionAvailable } from '../../../magic-pdf/GroundedExtractionView.js';
 import { AudioPanel, ImagePanel, VideoPanel } from '../../../media-viewer';
 import { SecureButton } from '../../../permissions/SecureButton.js';
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from '../../../utils/index.js';
@@ -348,7 +343,6 @@ function PropertiesPanel({
     const { t } = useUITranslation();
     const [viewCode, setViewCode] = useState(false);
     const [isPropertiesModalOpen, setPropertiesModalOpen] = useState(false);
-    const groundedSummary = useGroundedSummary(object.id);
 
     const handleOpenPropertiesModal = () => {
         setPropertiesModalOpen(true);
@@ -408,26 +402,6 @@ function PropertiesPanel({
                     </div>
                 </div>
 
-                {groundedSummary && object.properties && (
-                    <div className="flex items-center gap-2 px-2 pb-2">
-                        {typeof groundedSummary.confidence === 'number' && (
-                            <Badge
-                                variant={groundedSummary.confidence >= 0.95 ? 'success' : 'attention'}
-                                title={t('grounded.confidenceHint')}
-                            >
-                                {t('grounded.confidence', {
-                                    percent: Math.floor(groundedSummary.confidence * 100),
-                                })}
-                            </Badge>
-                        )}
-                        <Badge variant={groundedSummary.verified === groundedSummary.total ? 'success' : 'attention'}>
-                            {t('grounded.verifiedOf', {
-                                verified: groundedSummary.verified,
-                                total: groundedSummary.total,
-                            })}
-                        </Badge>
-                    </div>
-                )}
                 {object.properties ? (
                     <div className="flex-1 min-h-0 px-2">
                         <JSONDisplay value={object.properties} viewCode={viewCode} />
@@ -1229,7 +1203,7 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
 
     return (
         <div className="h-full">
-            <UniversalDocumentViewer source={source} className="h-full" />
+            <UniversalDocumentViewer source={source} className="h-full" showHeader={false} />
         </div>
     );
 }

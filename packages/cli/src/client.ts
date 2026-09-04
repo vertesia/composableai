@@ -35,11 +35,6 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
         storeUrl: preferProfileEndpoints
             ? profile?.zeno_server_url
             : process.env.VERTESIA_STORE_URL || process.env.ZENO_SERVER_URL,
-        projectId:
-            process.env.VERTESIA_PROJECT_ID ||
-            process.env.COMPOSABLE_PROMPTS_PROJECT_ID ||
-            profile?.project ||
-            undefined,
         sessionTags: profile?.session_tags ? profile.session_tags.split(/\s*,\s*/) : 'cli',
     };
 

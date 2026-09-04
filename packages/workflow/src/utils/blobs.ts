@@ -51,8 +51,17 @@ export async function saveBlobToTempFile(client: VertesiaClient, blobUri: string
         prefix: 'vertesia-activity-',
         postfix: fileExt ? `.${fileExt}` : '',
     });
-    await saveBlobToFile(client, blobUri, tmpFile.name);
-    return tmpFile.name;
+    try {
+        await saveBlobToFile(client, blobUri, tmpFile.name);
+        return tmpFile.name;
+    } catch (err: unknown) {
+        try {
+            tmpFile.removeCallback();
+        } catch {
+            // Preserve the download failure, which is the actionable error for the caller.
+        }
+        throw err;
+    }
 }
 
 export function md5(contents: string) {

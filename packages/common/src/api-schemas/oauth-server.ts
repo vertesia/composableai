@@ -115,6 +115,10 @@ export const OAuthAuthorizationRequestSchema = z
             .string()
             .optional()
             .meta({ description: 'Owning account enforced when restrict_to_owner_account is true.' }),
+        consent_required: z.boolean().optional().meta({
+            description:
+                'False when the authorization server has determined this client may be approved without showing a consent screen. Absent or true means consent must be collected from the user. Granted scopes are clamped to the user permissions by the server in either case, so this controls only whether the user is prompted.',
+        }),
         status: OAuthAuthorizationRequestStatusSchema,
         created_at: z.string(),
         expires_at: z.string(),
@@ -172,6 +176,15 @@ export const OAuthTokenResponseSchema = z
         expires_in: z.number(),
         scope: z.string().optional(),
         refresh_token: z.string().optional(),
+        /**
+         * Lifetime in seconds of `refresh_token`, from the moment this response was issued.
+         *
+         * Not an RFC 6749 parameter — refresh tokens there are opaque and undated — but clients that
+         * persist the token need it to report when the stored credential dies. Every refresh token
+         * this server returns is newly minted (the refresh grant rotates), so this is always the full
+         * lifetime and never a remaining one.
+         */
+        refresh_token_expires_in: z.number().optional(),
         id_token: z.string().optional(),
     })
     .meta({ id: 'OAuthTokenResponse' });

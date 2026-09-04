@@ -58,8 +58,18 @@ import { fetchSignedUrl } from './signed-url.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
 export interface AgentRunStreamMessagesOptions {
+    /** Resolve the stream when the root conversation becomes idle. Headless followers should opt in. */
+    closeOnIdle?: boolean;
     onHistoryLoaded?: (messages: AgentMessage[]) => void;
     onHistoryError?: (error: unknown) => void;
+}
+
+/**
+ * `#` and `?` are URL delimiters, not path content: either one truncates the path before the
+ * request is built. Nothing else is escaped — `%` keeps its existing rejection at upload.
+ */
+export function escapeArtifactPathDelimiters(path: string): string {
+    return path.replace(/#/g, '%23').replace(/\?/g, '%3F');
 }
 
 export class AgentsApi extends ApiTopic {
@@ -253,7 +263,8 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * Send a signal to a running agent.
-     * Signals: "UserInput", "Stop", "FileUploaded", "FileRemoved"
+     * Signals include "UserInput", "Stop", "ModelConfigChanged", "FileUploaded", "FileRemoved", and
+     * "FileBatchClosed".
      */
     sendSignal(id: string, signalName: string, payload?: SignalAgentPayload): Promise<SignalAgentResponse> {
         return this.post(`/${id}/signal/${signalName}`, { payload });
@@ -421,7 +432,7 @@ export class AgentsApi extends ApiTopic {
                     lastMessageTimestamp = timestamp;
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) return;
-                    if (shouldCloseAgentRunStream(msg, id)) {
+                    if (shouldCloseAgentRunStream(msg, id, options?.closeOnIdle)) {
                         exit(null);
                         return;
                     }
@@ -512,7 +523,8 @@ export class AgentsApi extends ApiTopic {
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) break;
 
-                    shouldCloseAfterHistory = index === historical.length - 1 && shouldCloseAgentRunStream(msg, id);
+                    shouldCloseAfterHistory =
+                        index === historical.length - 1 && shouldCloseAgentRunStream(msg, id, options?.closeOnIdle);
                 }
                 if (shouldCloseAfterHistory) {
                     exit(null);
@@ -598,7 +610,7 @@ export class AgentsApi extends ApiTopic {
                             onMessage(agentMessage, exit);
                         }
 
-                        if (shouldCloseCompactRunStream(compactMessage, id)) {
+                        if (shouldCloseCompactRunStream(compactMessage, id, options?.closeOnIdle)) {
                             exit(null);
                         }
                     } catch (err) {
@@ -791,7 +803,7 @@ export class AgentsApi extends ApiTopic {
 
     /** Read a text artifact together with its conditional-write generation token. */
     getArtifactContent(id: string, path: string): Promise<AgentArtifactContentResponse> {
-        return this.get(`/${id}/artifact-content/${path}`);
+        return this.get(`/${id}/artifact-content/${escapeArtifactPathDelimiters(path)}`);
     }
 
     /** Conditionally replace the text content of an agent artifact. */
@@ -800,7 +812,7 @@ export class AgentsApi extends ApiTopic {
         path: string,
         payload: UpdateAgentArtifactContentPayload,
     ): Promise<UpdateAgentArtifactContentResponse> {
-        return this.put(`/${id}/artifact-content/${path}`, { payload });
+        return this.put(`/${id}/artifact-content/${escapeArtifactPathDelimiters(path)}`, { payload });
     }
 
     /**
@@ -815,7 +827,7 @@ export class AgentsApi extends ApiTopic {
         const query: Record<string, string> = { url: '1' };
         if (disposition) query.disposition = disposition;
         if (fileName) query.filename = fileName;
-        return this.get(`/${id}/artifacts/${path}`, { query });
+        return this.get(`/${id}/artifacts/${escapeArtifactPathDelimiters(path)}`, { query });
     }
 
     /**
@@ -836,7 +848,7 @@ export class AgentsApi extends ApiTopic {
         const mimeType = contentType || 'application/octet-stream';
 
         // 1. Get signed upload URL from the agents API
-        const result = (await this.put(`/${id}/artifacts/${path}`, {
+        const result = (await this.put(`/${id}/artifacts/${escapeArtifactPathDelimiters(path)}`, {
             headers: { 'Content-Type': mimeType },
         })) as AgentArtifactUrlResponse;
 

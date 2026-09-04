@@ -9,7 +9,6 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useRouterContext } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
-import dayjs from 'dayjs';
 import {
     AlertCircle,
     Bot,
@@ -26,6 +25,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import dayjs from '../../../../core/utils/dayjs.js';
 import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';

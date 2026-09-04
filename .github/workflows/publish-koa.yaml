@@ -7,18 +7,13 @@ on:
         description: Release Type
         required: true
         type: choice
-        options:
-          - snapshot
-          - release
+        options: [snapshot, release]
         default: snapshot
       bump_type:
         description: Version Bump
         required: true
         type: choice
-        options:
-          - keep
-          - patch
-          - minor
+        options: [keep, patch, minor]
         default: keep
       dry_run:
         description: Dry Run
@@ -26,10 +21,8 @@ on:
         type: boolean
         default: true
 
-# Serialize publish runs so two concurrent dispatches don't race on the
-# shared npm registry or push competing version bumps.
 concurrency:
-  group: publish-npm-${{ github.ref }}
+  group: publish-koa-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -37,102 +30,96 @@ permissions:
 
 jobs:
   publish:
-    name: Publish all packages
+    name: Publish Koa cohort
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # Scopes DEPLOY_KEY (used to push version bumps past branch protection)
-    # to a dedicated environment.
+    timeout-minutes: 20
     environment: build
     permissions:
-      id-token: write # required for OIDC between GitHub and NPM
-      contents: write # required to push version-bump commits for preview
+      id-token: write # required for npm trusted publishing
+      contents: read # required to check out the release source
+    outputs:
+      version: ${{ steps.publish.outputs.version }}
+      npm_tag: ${{ steps.publish.outputs.npm_tag }}
     steps:
       - name: Checkout repository
-        # persist-credentials must stay true so the DEPLOY_KEY SSH config survives
-        # into the publish step, where the script runs `git push origin "$REF"` to
-        # push the version-bump commit past branch protection. With it false, the
-        # push fails with "git@github.com: Permission denied (publickey)".
-        # zizmor: ignore[artipacked] deploy key is scoped to the `build` environment.
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-          ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
-          persist-credentials: true
-
+          persist-credentials: false
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
-          registry-url: "https://registry.npmjs.org"
-          cache: "pnpm"
-
-      # Node.js 24 ships with npm 11.5.1 or later, as required for trusted publishing.
-      - name: Verify npm version
-        run: npm --version
-
+          node-version: 24.19.0
       - name: Install workspace dependencies
-        timeout-minutes: 5
         run: pnpm install
-
-      - name: Publish all packages
-        timeout-minutes: 15
+      - name: Save pnpm store cache
+        if: steps.pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
+      - name: Test package channel policy
+        run: bash ./.github/bin/lib-package-channel.test.sh
+      - name: Publish Koa packages
+        id: publish
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
           BUMP_TYPE: ${{ inputs.bump_type }}
           DRY_RUN: ${{ inputs.dry_run }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
-          ./.github/bin/publish-all-packages.sh \
+          deploy_key_path="${RUNNER_TEMP}/publish-deploy-key"
+          umask 077
+          printf '%s\n' "${DEPLOY_KEY}" > "${deploy_key_path}"
+          unset DEPLOY_KEY
+          trap 'rm -f "${deploy_key_path}"' EXIT
+          export GIT_SSH_COMMAND="ssh -i ${deploy_key_path} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git remote set-url origin git@github.com:vertesia/composableai.git
+          ./.github/bin/publish-koa-packages.sh \
               --ref "${GITHUB_REF_NAME}" \
               --release-type "${RELEASE_TYPE}" \
               --bump-type "${BUMP_TYPE}" \
               --dry-run "${DRY_RUN}"
 
-      # Template integration tests using local verdaccio registry (dry-run only)
-      - name: Template integration test - Plugin
-        if: inputs.dry_run == true
-        timeout-minutes: 10
-        env:
-          RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin"
-      - name: Template integration test - Tool Server (deprecated)
-        if: inputs.dry_run == true
-        timeout-minutes: 10
-        env:
-          RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Tool Server (deprecated)"
-
-  # ============================================================
-  # Integration test after real publish (non-dry-run only)
-  # Verifies published packages work by bootstrapping a template.
-  # ============================================================
-
-  integration-test:
-    name: Integration test (published packages)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+  verify:
+    name: Verify published Koa cohort
     needs: publish
     if: inputs.dry_run == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
-
-      - name: Smoke test - Plugin
-        timeout-minutes: 10
+          node-version: 24.19.0
+      - name: Verify exact published cohort
         env:
-          RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin" --branch "${GITHUB_REF_NAME}" --wait
-      - name: Smoke test - Tool Server (deprecated)
-        timeout-minutes: 10
-        env:
-          RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Tool Server (deprecated)" --branch "${GITHUB_REF_NAME}" --wait
+          VERSION: ${{ needs.publish.outputs.version }}
+          NPM_TAG: ${{ needs.publish.outputs.npm_tag }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            missing=false
+            for package in body router server; do
+              exact="$(npm view "@koa-stack/${package}@${VERSION}" version 2>/dev/null || true)"
+              tagged="$(npm view "@koa-stack/${package}@${NPM_TAG}" version 2>/dev/null || true)"
+              [ "$exact" = "$VERSION" ] && [ "$tagged" = "$VERSION" ] || missing=true
+            done
+            [ "$missing" = false ] && exit 0
+            [ "$attempt" -eq 5 ] && break
+            sleep $((attempt * 15))
+          done
+          echo "Koa-stack cohort ${VERSION} did not become readable from npm" >&2
+          exit 1

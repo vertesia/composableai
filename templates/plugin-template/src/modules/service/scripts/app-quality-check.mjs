@@ -121,6 +121,10 @@ function isCodeFile(file) {
     return /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(file);
 }
 
+function isTestFile(file) {
+    return /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file);
+}
+
 function isTemplateShellEntry(file) {
     return rel(file) === 'src/ui/shell/AppEntry.tsx';
 }
@@ -136,19 +140,112 @@ function hasDetachedVertesiaClientMethod(text) {
     return detachedAssignment.test(text) || destructuredTopic.test(text);
 }
 
+function objectSearchPayloadIssues(text) {
+    const issues = [];
+    const callPattern = /\.objects\.search\s*\(/g;
+    for (const call of text.matchAll(callPattern)) {
+        let index = (call.index ?? 0) + call[0].length;
+        while (/\s/.test(text[index] ?? '')) index++;
+        if (text[index] !== '{') continue;
+
+        const properties = new Map();
+        let depth = 0;
+        let quote = '';
+        let lineComment = false;
+        let blockComment = false;
+        let previousSignificant = '';
+        for (; index < text.length; index++) {
+            const char = text[index];
+            const next = text[index + 1];
+            if (lineComment) {
+                if (char === '\n') lineComment = false;
+                continue;
+            }
+            if (blockComment) {
+                if (char === '*' && next === '/') {
+                    blockComment = false;
+                    index++;
+                }
+                continue;
+            }
+            if (quote) {
+                if (char === '\\') index++;
+                else if (char === quote) quote = '';
+                continue;
+            }
+            if (char === '/' && next === '/') {
+                lineComment = true;
+                index++;
+                continue;
+            }
+            if (char === '/' && next === '*') {
+                blockComment = true;
+                index++;
+                continue;
+            }
+            if (char === "'" || char === '"' || char === '`') {
+                quote = char;
+                continue;
+            }
+            if (char === '{') {
+                depth++;
+                previousSignificant = char;
+                continue;
+            }
+            if (char === '}') {
+                depth--;
+                if (depth === 0) break;
+                previousSignificant = char;
+                continue;
+            }
+            if (
+                depth === 1 &&
+                (previousSignificant === '{' || previousSignificant === ',') &&
+                /[A-Za-z_$]/.test(char)
+            ) {
+                const keyStart = index;
+                while (/[A-Za-z0-9_$]/.test(text[index + 1] ?? '')) index++;
+                const key = text.slice(keyStart, index + 1);
+                let cursor = index + 1;
+                while (/\s/.test(text[cursor] ?? '')) cursor++;
+                if (text[cursor] === ':') {
+                    cursor++;
+                    while (/\s/.test(text[cursor] ?? '')) cursor++;
+                    properties.set(key, text[cursor]);
+                }
+            }
+            if (!/\s/.test(char)) previousSignificant = char;
+        }
+
+        if (properties.has('type')) issues.push('`type` must be nested under `query`');
+        if (properties.has('query') && properties.get('query') !== '{') {
+            issues.push('`query` must be an object');
+        }
+    }
+    return [...new Set(issues)];
+}
+
 const sourceFiles = (await walk(path.join(cwd, 'src'))).filter(isSourceFile);
 const scriptFiles = (await walk(path.join(cwd, 'scripts'))).filter(isSourceFile);
-const allFiles = [...sourceFiles, ...scriptFiles];
+const rootTestFiles = (await walk(path.join(cwd, 'tests'))).filter(isSourceFile);
+const allFiles = [...sourceFiles, ...scriptFiles, ...rootTestFiles];
 report.scanned_files = allFiles.length;
+
+// Keep tests in allFiles so policy and required-test checks still validate them, but do not
+// advertise test fixtures as production artifacts in the summary consumed by AppGen agents.
+const productionSourceFiles = sourceFiles.filter((file) => !isTestFile(file));
+const productionScriptFiles = scriptFiles.filter((file) => !isTestFile(file));
 
 const shellUiFiles = allFiles.filter((file) => rel(file).startsWith('src/ui/'));
 const moduleUiFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/ui\//.test(rel(file)));
-const uiFiles = [...shellUiFiles, ...moduleUiFiles];
-const appUiFiles = moduleUiFiles;
-const toolServerFiles = allFiles.filter((file) => rel(file).startsWith('src/tool-server/'));
-const moduleResourceFiles = allFiles.filter((file) => /^src\/modules\/[^/]+\/resources\//.test(rel(file)));
+// Tests may intentionally contain failure messages such as "stale seed marker". They are
+// regression fixtures, not customer-visible UI, so UI policy scans must ignore them.
+const uiFiles = [...shellUiFiles, ...moduleUiFiles].filter((file) => !isTestFile(file));
+const appUiFiles = moduleUiFiles.filter((file) => !isTestFile(file));
+const toolServerFiles = productionSourceFiles.filter((file) => rel(file).startsWith('src/tool-server/'));
+const moduleResourceFiles = productionSourceFiles.filter((file) => /^src\/modules\/[^/]+\/resources\//.test(rel(file)));
 const serverResourceFiles = [...toolServerFiles, ...moduleResourceFiles];
-const packageWriterFiles = scriptFiles.filter(
+const packageWriterFiles = productionScriptFiles.filter(
     (file) => rel(file) === 'src/modules/service/scripts/write-app-package.mjs',
 );
 const interactionFiles = serverResourceFiles.filter((file) => rel(file).includes('/interactions/'));
@@ -169,14 +266,14 @@ report.artifacts = {
     hooks: namesFromResourceFiles(serverResourceFiles, 'hooks'),
     subscriptions: namesFromResourceFiles(serverResourceFiles, 'subscriptions'),
     widgets: [
-        ...directFiles(sourceFiles, 'src/widgets/', ['.ts', '.tsx']),
+        ...directFiles(productionSourceFiles, 'src/widgets/', ['.ts', '.tsx']),
         ...directResourceFiles(serverResourceFiles, 'skills', ['.tsx']),
     ],
-    ui_routes: moduleUiFiles
+    ui_routes: appUiFiles
         .map((file) => rel(file))
         .filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'))
         .sort(),
-    seed_scripts: scriptFiles
+    seed_scripts: productionScriptFiles
         .map((file) => rel(file))
         .filter((file) => file.startsWith('scripts/') && /seed/i.test(file))
         .sort(),
@@ -192,6 +289,10 @@ async function readPackageJson() {
 
 const packageJson = await readPackageJson();
 const packageName = typeof packageJson?.name === 'string' ? packageJson.name : undefined;
+const generatedAppRequiresTests =
+    process.env.APPGEN_REQUIRE_TESTS === '1' &&
+    existsSync(path.join(cwd, 'src/modules/service')) &&
+    packageName !== 'plugin-template';
 // The smoke/integration tests bootstrap this exact template under throwaway
 // package names — both package managers (with an optional `-npm` infix) across
 // the smoke and integration scripts. The `--module dev` leg ships examples on
@@ -209,6 +310,48 @@ function hasDependency(name) {
         const deps = packageJson[section];
         return deps && typeof deps === 'object' && typeof deps[name] === 'string';
     });
+}
+
+if (generatedAppRequiresTests) {
+    const scripts = packageJson?.scripts && typeof packageJson.scripts === 'object' ? packageJson.scripts : {};
+    const unitScript = typeof scripts['test:unit'] === 'string' ? scripts['test:unit'] : '';
+    const e2eScript = typeof scripts['test:e2e'] === 'string' ? scripts['test:e2e'] : '';
+    const repositoryTestFiles = allFiles.filter((file) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file));
+    const classifiedTests = await Promise.all(
+        repositoryTestFiles.map(async (file) => ({ file, text: await readFile(file, 'utf8') })),
+    );
+    const isPlaywrightTest = ({ file, text }) =>
+        rel(file).startsWith('tests/e2e/') || /from\s+["']@playwright\/test["']/.test(text);
+    const playwrightTests = classifiedTests.filter(isPlaywrightTest);
+    const unitTests = classifiedTests.filter((testFile) => !isPlaywrightTest(testFile));
+
+    if (!unitScript || /no tests|passWithNoTests/i.test(unitScript)) {
+        add('errors', 'unit-tests-required', 'Generated apps require a real test:unit command.', packageJsonPath);
+    }
+    if (!e2eScript || !/\bplaywright\b/i.test(e2eScript)) {
+        add(
+            'errors',
+            'playwright-tests-required',
+            'Generated apps require a Playwright test:e2e command.',
+            packageJsonPath,
+        );
+    }
+    if (unitTests.length === 0) {
+        add(
+            'errors',
+            'unit-tests-required',
+            'Generated apps require at least one focused unit test.',
+            path.join(cwd, 'src'),
+        );
+    }
+    if (playwrightTests.length === 0) {
+        add(
+            'errors',
+            'playwright-tests-required',
+            'Generated apps require at least one committed Playwright primary-flow test.',
+            path.join(cwd, 'tests'),
+        );
+    }
 }
 
 function requireDependency(name, reason) {
@@ -260,6 +403,16 @@ for (const file of allFiles.filter(isCodeFile)) {
             'errors',
             'no-detached-vertesia-client-method',
             'Do not assign or destructure Vertesia SDK methods from client topics. Call through the client object, e.g. client.objects.search(...), so the SDK keeps its request context.',
+            file,
+        );
+    }
+
+    const searchIssues = objectSearchPayloadIssues(text);
+    if (searchIssues.length > 0) {
+        add(
+            'errors',
+            'valid-store-search-payload',
+            `client.objects.search requires ComplexSearchPayload: ${searchIssues.join('; ')}. Use { query: { type, name/match }, limit } and consume response.results.`,
             file,
         );
     }
@@ -436,7 +589,18 @@ for (const file of serverResourceFiles.filter((item) => item.endsWith('.hbs'))) 
 }
 
 const hasProcessYaml = processFiles.some((file) => /\.(ya?ml)$/.test(file));
-const hasProcessTs = processFiles.some((file) => /\.(ts|tsx)$/.test(file));
+const processTsFiles = processFiles.filter((file) => /\.(ts|tsx)$/.test(file));
+const hasProcessTs = (
+    await Promise.all(
+        processTsFiles.map(async (file) => {
+            const text = await readFile(file, 'utf8');
+            const onlyDeclaresEmptyCollection =
+                /export\s+const\s+processes\s*=\s*\[\s*\]\s+satisfies\s+InCodeProcessDefinition\[\]/.test(text) &&
+                !/\bdefinition\s*:/.test(text);
+            return !onlyDeclaresEmptyCollection;
+        }),
+    )
+).some(Boolean);
 if (hasProcessTs && !hasProcessYaml) {
     add(
         'warnings',

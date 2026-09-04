@@ -227,12 +227,14 @@ export default class InteractionsApi extends ApiTopic {
         nameWithTag: string,
         payload: InteractionExecutionPayload = {},
         onChunk?: (chunk: string) => void,
+        requestOptions?: IRequestParams,
     ): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
         const r = await executeInteractionByName<ParamsT>(
             this.client as VertesiaClient,
             nameWithTag,
             payload,
             onChunk,
+            requestOptions,
         ).catch((err) => {
             if (err instanceof ServerError && hasIdPayload(err.payload)) {
                 throw err.updateDetails({ run_id: err.payload.id });

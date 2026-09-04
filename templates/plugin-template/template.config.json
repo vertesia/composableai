@@ -45,8 +45,8 @@
       },
       "resources": "src/modules/content-app/resources",
       "packageScripts": {
-        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
-        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts",
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts"
       }
     },
     "service": {
@@ -54,6 +54,9 @@
         "entry": "src/modules/service/ui/AppEntry"
       },
       "packageScripts": {
+        "test": "pnpm run test:unit",
+        "test:unit": "vitest run src",
+        "test:e2e": "playwright test",
         "service:quality": "node src/modules/service/scripts/app-quality-check.mjs",
         "service:build:server": "pnpm run service:quality && node src/modules/service/scripts/build-server-esbuild.mjs && node src/modules/service/scripts/write-app-package.mjs",
         "service:build:ui": "pnpm run typecheck && vite build --mode app --outDir dist/app --emptyOutDir --minify false",
@@ -163,6 +166,7 @@
     "src/modules/content-app/resources/processes/review-workflow.ts",
     "src/ui/env.ts",
     "src/ui/plugin.tsx",
+    "tests/e2e/app.spec.ts",
     ".env.app.template",
     "README.md",
     "AGENTS.md"

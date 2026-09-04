@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DashboardStatus } from '../data-platform.js';
 import { StringValueMapSchema } from './files.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 
 export const DashboardElasticsearchResultMappingSchema = z
     .discriminatedUnion('type', [
@@ -179,6 +180,7 @@ export const DashboardVersionItemArraySchema = z
 export const DashboardItemSchema = z
     .strictObject({
         id: z.string().meta({ description: 'Unique identifier for the object' }),
+        edit_revision: EditRevisionSchema,
         name: z.string().meta({ description: 'Human-readable name or title' }),
         description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
         tags: z.array(z.string()).meta({ description: 'Tags for organization' }),
@@ -345,6 +347,7 @@ export const CreateDashboardPayloadSchema = z
 
 export const UpdateDashboardPayloadSchema = CreateDashboardPayloadSchema.partial()
     .extend({
+        expected_edit_revision: ExpectedEditRevisionSchema,
         name: z.string().meta({ description: 'Dashboard name' }).optional(),
         skip_versioning: z.boolean().meta({ description: 'Skip auto-version creation' }).optional(),
     })

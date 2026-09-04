@@ -3,7 +3,7 @@ import type { Filter as BaseFilter } from '@vertesia/ui/core';
 interface defaultKeys {
     [key: string]: string;
 }
-export interface SearchInterface {
+export interface SearchInterface<Query extends object = object> {
     getFilterValue(name: string): unknown;
     setFilterValue(name: string, value: unknown): void;
     clearFilters(autoSearch?: boolean, applyDefaults?: boolean): void;
@@ -12,7 +12,7 @@ export interface SearchInterface {
     readonly isRunning: boolean;
     readonly initialized?: boolean;
     readonly totalCount?: number;
-    query: object;
+    query: Query;
 }
 
 interface FilterOptionValue {
@@ -38,6 +38,15 @@ export function filterValueToQueryValue(filter: BaseFilter): unknown {
     return firstValue === undefined ? undefined : unwrapFilterOptionValue(firstValue);
 }
 
-export function setSearchQueryValue(search: SearchInterface, name: string, value: unknown): void {
+export function setSearchQueryValue<Query extends object, Name extends Extract<keyof Query, string>>(
+    search: SearchInterface<Query>,
+    name: Name,
+    value: unknown,
+): void {
     (search.query as Record<string, unknown>)[name] = value;
+}
+
+export function createSearchQueryKeyGuard<Query extends object>(names: readonly (keyof Query)[]) {
+    const nameSet = new Set<PropertyKey>(names);
+    return (name: string): name is Extract<keyof Query, string> => nameSet.has(name);
 }

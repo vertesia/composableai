@@ -64,6 +64,11 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
                     if (objectIds.length === facets._value.total) {
                         search.resetFacets();
                     }
+                    // Drop the deleted rows before refetching. The search index applies deletes out
+                    // of band, so the refetch below can still return them; without this they come
+                    // back and stay until the user refreshes by hand.
+                    const failed = new Set(result.failed);
+                    search.removeDeletedObjects(objectIds.filter((id) => !failed.has(id)));
                     search.search();
                 } else {
                     // we are in the object view

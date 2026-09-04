@@ -4,9 +4,16 @@ import type { Profile } from './index.js';
 
 const require = createRequire(import.meta.url);
 
-const KEYRING_SERVICE = 'vertesia-cli';
+const KEYRING_SERVICE = 'vertesia';
 const AUTH_BUNDLE_VERSION = 1;
-const KEYRING_UNAVAILABLE_MESSAGE = 'Native keyring is required for Vertesia CLI profile authentication.';
+const KEYRING_UNAVAILABLE_MESSAGE =
+    'A native credential store is required for Vertesia CLI profile authentication. Use the signed Vertesia CLI binary.';
+
+interface NativeSecrets {
+    get(options: { service: string; name: string }): Promise<string | null>;
+    set(options: { service: string; name: string; value: string }): Promise<void>;
+    delete(options: { service: string; name: string }): Promise<boolean>;
+}
 
 interface KeyringModule {
     Entry: new (
@@ -32,49 +39,84 @@ export interface StoredAuthBundle {
 
 type WritableAuthBundle = Omit<StoredAuthBundle, 'version'>;
 
-let cachedKeyringModule: KeyringModule | null | undefined;
+let cachedFallbackSecrets: NativeSecrets | null | undefined;
 
-function getKeyringModule(): KeyringModule | undefined {
-    if (cachedKeyringModule !== undefined) {
-        return cachedKeyringModule ?? undefined;
+function getBunSecrets(): NativeSecrets | undefined {
+    const runtime = globalThis as typeof globalThis & {
+        Bun?: { secrets?: NativeSecrets };
+    };
+    return runtime.Bun?.secrets;
+}
+
+function getFallbackSecrets(): NativeSecrets | undefined {
+    if (cachedFallbackSecrets !== undefined) {
+        return cachedFallbackSecrets ?? undefined;
     }
     try {
-        cachedKeyringModule = require('@napi-rs/keyring') as KeyringModule;
+        const { Entry } = require('@napi-rs/keyring') as KeyringModule;
+        cachedFallbackSecrets = {
+            async get({ service, name }) {
+                try {
+                    return new Entry(service, name).getPassword();
+                } catch (error: unknown) {
+                    if (isMissingSecretError(error)) {
+                        return null;
+                    }
+                    throw error;
+                }
+            },
+            async set({ service, name, value }) {
+                new Entry(service, name).setPassword(value);
+            },
+            async delete({ service, name }) {
+                try {
+                    new Entry(service, name).deletePassword();
+                    return true;
+                } catch (error: unknown) {
+                    if (isMissingSecretError(error)) {
+                        return false;
+                    }
+                    throw error;
+                }
+            },
+        };
     } catch {
-        cachedKeyringModule = null;
+        cachedFallbackSecrets = null;
     }
-    return cachedKeyringModule ?? undefined;
+    return cachedFallbackSecrets ?? undefined;
+}
+
+function getSecrets(): NativeSecrets | undefined {
+    return getBunSecrets() ?? getFallbackSecrets();
+}
+
+function isMissingSecretError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes('not found') || message.includes('No such') || message.includes('not exist');
+}
+
+function requireSecrets(): NativeSecrets {
+    const secrets = getSecrets();
+    if (!secrets) {
+        throw new Error(KEYRING_UNAVAILABLE_MESSAGE);
+    }
+    return secrets;
 }
 
 export function isKeyringAvailable(): boolean {
-    return !!getKeyringModule();
+    return Boolean(getSecrets());
 }
 
-function getEntry(profileName: string) {
-    const keyring = getKeyringModule();
-    if (!keyring) {
-        throw new Error(KEYRING_UNAVAILABLE_MESSAGE);
-    }
-    return new keyring.Entry(KEYRING_SERVICE, profileName);
-}
-
-function readRaw(profileName: string): string | null {
-    if (!isKeyringAvailable()) {
+async function readRaw(profileName: string): Promise<string | null> {
+    const secrets = getSecrets();
+    if (!secrets) {
         return null;
     }
-    try {
-        return getEntry(profileName).getPassword();
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (message.includes('not found') || message.includes('No such') || message.includes('not exist')) {
-            return null;
-        }
-        throw error;
-    }
+    return secrets.get({ service: KEYRING_SERVICE, name: profileName });
 }
 
-export function readAuthBundle(profileName: string): StoredAuthBundle | undefined {
-    const raw = readRaw(profileName);
+export async function readAuthBundle(profileName: string): Promise<StoredAuthBundle | undefined> {
+    const raw = await readRaw(profileName);
     if (!raw) {
         return undefined;
     }
@@ -90,7 +132,7 @@ export function readAuthBundle(profileName: string): StoredAuthBundle | undefine
     return bundle;
 }
 
-export function writeAuthBundle(profileName: string, bundle: WritableAuthBundle) {
+export async function writeAuthBundle(profileName: string, bundle: WritableAuthBundle): Promise<void> {
     const payload: StoredAuthBundle = {
         version: AUTH_BUNDLE_VERSION,
         accessToken: bundle.accessToken,
@@ -101,31 +143,28 @@ export function writeAuthBundle(profileName: string, bundle: WritableAuthBundle)
         oauthClientId: bundle.oauthClientId,
         oauthResource: bundle.oauthResource,
     };
-    getEntry(profileName).setPassword(JSON.stringify(payload));
+    await requireSecrets().set({
+        service: KEYRING_SERVICE,
+        name: profileName,
+        value: JSON.stringify(payload),
+    });
 }
 
-export function deleteAuthBundle(profileName: string) {
-    if (!isKeyringAvailable()) {
+export async function deleteAuthBundle(profileName: string): Promise<void> {
+    const secrets = getSecrets();
+    if (!secrets) {
         return;
     }
-    try {
-        getEntry(profileName).deletePassword();
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (message.includes('not found') || message.includes('No such') || message.includes('not exist')) {
-            return;
-        }
-        throw error;
-    }
+    await secrets.delete({ service: KEYRING_SERVICE, name: profileName });
 }
 
-export function readProfileAccessToken(profile: Pick<Profile, 'name' | 'apikey'>): string | undefined {
-    const bundle = readAuthBundle(profile.name);
+export async function readProfileAccessToken(profile: Pick<Profile, 'name' | 'apikey'>): Promise<string | undefined> {
+    const bundle = await readAuthBundle(profile.name);
     return bundle?.accessToken || profile.apikey;
 }
 
-export function readProfileRefreshToken(profileName: string): string | undefined {
-    return readAuthBundle(profileName)?.refreshToken;
+export async function readProfileRefreshToken(profileName: string): Promise<string | undefined> {
+    return (await readAuthBundle(profileName))?.refreshToken;
 }
 
 export function getAccessTokenExpiry(token: string | undefined): number | undefined {
@@ -139,10 +178,10 @@ export function getAccessTokenExpiry(token: string | undefined): number | undefi
     return decoded.exp * 1000;
 }
 
-export function hasStoredAccessToken(profileName: string): boolean {
-    return Boolean(readAuthBundle(profileName)?.accessToken);
+export async function hasStoredAccessToken(profileName: string): Promise<boolean> {
+    return Boolean((await readAuthBundle(profileName))?.accessToken);
 }
 
-export function hasStoredRefreshToken(profileName: string): boolean {
-    return Boolean(readAuthBundle(profileName)?.refreshToken);
+export async function hasStoredRefreshToken(profileName: string): Promise<boolean> {
+    return Boolean((await readAuthBundle(profileName))?.refreshToken);
 }

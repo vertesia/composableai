@@ -24,7 +24,7 @@ export function PluginTopNav() {
                             <Avatar size="sm" name={user.name} color="bg-primary" />
                         </li>
                         <li>
-                            <Button variant="outline" size="xs" onClick={() => logout()} alt={t('nav.signOut')}>
+                            <Button variant="outline" size="xs" onClick={() => logout()} aria-label={t('nav.signOut')}>
                                 <LogOut className="size-3.5" />
                             </Button>
                         </li>

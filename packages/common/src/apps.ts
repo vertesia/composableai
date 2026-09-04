@@ -19,6 +19,7 @@ import type {
     AppInstallationProjectsQuerySchema,
     AppInstallationProviderBindingSchema,
     AppInstallationsQuerySchema,
+    AppListScopeSchema,
     AppOAuthCollectionParamsSchema,
     AppOAuthProviderParamsSchema,
     AppRepoBranchSchema,
@@ -32,6 +33,7 @@ import type {
     AppScaffoldModuleSchema,
     AppScaffoldProgressSchema,
     AppScaffoldProgressStatusSchema,
+    AppsQuerySchema,
     AppToolCollectionSchema,
     AppVersionGitRefTypeSchema,
     AppVersionGitSourceSchema,
@@ -46,6 +48,7 @@ import type {
     OAuthClientCredentialsSchema,
     StartAppBuildRequestSchema,
     StartAppBuildResponseSchema,
+    StartAppDevelopmentTaskRequestSchema,
     StartAppScaffoldRequestSchema,
     StartAppScaffoldResponseSchema,
     UpdateAppInstallationToolAllowlistPayloadSchema,
@@ -85,6 +88,7 @@ import type {
     CompositeAppThemeOverridesSchema,
     CompositeAppUserMenuOverridesSchema,
     PromoteAppVersionResponseSchema,
+    UpdateAppPayloadSchema,
 } from './api-schemas/app-runtime.js';
 import type {
     AppAccessControlSchema,
@@ -163,6 +167,10 @@ export type AppUIConfig = z.infer<typeof AppUIConfigSchema>;
 export type AppInstallationProjectsQuery = z.infer<typeof AppInstallationProjectsQuerySchema>;
 
 export type AppInstallationsQuery = z.infer<typeof AppInstallationsQuerySchema>;
+
+export type AppListScope = z.infer<typeof AppListScopeSchema>;
+
+export type AppsQuery = z.infer<typeof AppsQuerySchema>;
 
 export type ToolCollectionAuthType = z.infer<typeof ToolCollectionAuthTypeSchema>;
 
@@ -309,6 +317,8 @@ export type StartAppScaffoldRequest = z.infer<typeof StartAppScaffoldRequestSche
 
 export type StartAppScaffoldResponse = z.infer<typeof StartAppScaffoldResponseSchema>;
 
+export type StartAppDevelopmentTaskRequest = z.infer<typeof StartAppDevelopmentTaskRequestSchema>;
+
 export type AppScaffoldProgressStatus = z.infer<typeof AppScaffoldProgressStatusSchema>;
 
 export type AppScaffoldProgress = z.infer<typeof AppScaffoldProgressSchema>;
@@ -341,6 +351,7 @@ export type AppAccessControl = z.infer<typeof AppAccessControlSchema>;
 //
 // Everything this interface REFERENCES converted: the fields below now carry canonical components.
 export type AppManifestData = z.infer<typeof AppManifestDataSchema>;
+export type UpdateAppPayload = z.infer<typeof UpdateAppPayloadSchema>;
 
 export type AppGitSourceConfig = z.infer<typeof AppGitSourceConfigSchema>;
 

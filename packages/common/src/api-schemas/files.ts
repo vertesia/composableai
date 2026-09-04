@@ -158,3 +158,29 @@ export const BucketReadAccessStatusResponseSchema = z
         hasAccess: z.boolean(),
     })
     .meta({ id: 'BucketReadAccessStatusResponse' });
+
+export const BucketCreateAccessQuerySchema = z
+    .strictObject({
+        principal: z.string(),
+    })
+    .meta({ id: 'BucketCreateAccessQuery' });
+
+export const EnsureBucketCreateAccessPayloadSchema = BucketCreateAccessQuerySchema.meta({
+    id: 'EnsureBucketCreateAccessPayload',
+});
+
+export const EnsureBucketCreateAccessResponseSchema = z
+    .strictObject({
+        bucket: z.string(),
+        principal: z.string(),
+        granted: z.boolean(),
+    })
+    .meta({ id: 'EnsureBucketCreateAccessResponse' });
+
+export const BucketCreateAccessStatusResponseSchema = z
+    .strictObject({
+        bucket: z.string(),
+        principal: z.string(),
+        hasAccess: z.boolean(),
+    })
+    .meta({ id: 'BucketCreateAccessStatusResponse' });

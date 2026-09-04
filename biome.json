@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
     "vcs": {
         "enabled": true,
         "clientKind": "git",
@@ -11,6 +11,7 @@
             "!!**/llumiverse",
             "**/package.json",
             "**/*.{js,cjs,mjs,jsx,ts,tsx,css,html}",
+            "packages/ui/src/i18n/locales/*.json",
             "!**/dist/**",
             "!**/lib/**",
             "!**/node_modules/**",

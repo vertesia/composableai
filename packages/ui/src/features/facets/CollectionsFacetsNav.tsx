@@ -1,4 +1,4 @@
-import type { FacetBucket } from '@vertesia/common';
+import type { ComplexCollectionSearchQuery, FacetBucket } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     FilterBar,
@@ -9,14 +9,22 @@ import {
 } from '@vertesia/ui/core';
 import { useState } from 'react';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import {
+    createSearchQueryKeyGuard,
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+} from './utils/SearchInterface';
+
+const collectionFilterNames = ['name', 'types'] as const satisfies readonly (keyof ComplexCollectionSearchQuery)[];
+const isCollectionFilterName = createSearchQueryKeyGuard<ComplexCollectionSearchQuery>(collectionFilterNames);
 
 interface CollectionsFacetsNavProps {
     facets: {
         type?: FacetBucket[];
         dynamic?: FacetBucket[];
     };
-    search: SearchInterface;
+    search: SearchInterface<ComplexCollectionSearchQuery>;
     /**
      * Optional controlled filter state. When provided, the parent owns the filter list (and is
      * responsible for translating it into the search query via {@link useCollectionsFilterHandler}).
@@ -70,7 +78,7 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
 }
 
 // Hook to create filter change handler for collections
-export function useCollectionsFilterHandler(search: SearchInterface) {
+export function useCollectionsFilterHandler(search: SearchInterface<ComplexCollectionSearchQuery>) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             // Clear filters without applying defaults - user wants to remove all filters
@@ -83,6 +91,9 @@ export function useCollectionsFilterHandler(search: SearchInterface) {
 
         newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
+                if (!isCollectionFilterName(filter.name)) {
+                    return;
+                }
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
                 setSearchQueryValue(search, filterName, filterValue);

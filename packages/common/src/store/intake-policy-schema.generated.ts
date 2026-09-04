@@ -251,6 +251,48 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
     additionalProperties: false,
     description: 'Per-content-type policy for the standard intake workflows.',
     $defs: {
+        AzureFoundryChatOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'azure-foundry-chat',
+                },
+                max_tokens: {
+                    type: 'number',
+                },
+                temperature: {
+                    type: 'number',
+                },
+                top_p: {
+                    type: 'number',
+                },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
+                stop_sequence: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                seed: {
+                    type: 'number',
+                },
+                image_detail: {
+                    type: 'string',
+                    enum: ['low', 'high', 'auto'],
+                },
+                include_thoughts: {
+                    type: 'boolean',
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
         BedrockAI21Options: {
             type: 'object',
             properties: {
@@ -275,6 +317,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 include_thoughts: {
                     type: 'boolean',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -322,6 +370,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['5m', '1h'],
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -351,6 +405,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 include_thoughts: {
                     type: 'boolean',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -379,6 +439,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 include_thoughts: {
                     type: 'boolean',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -416,6 +482,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 presence_penalty: {
                     type: 'number',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -441,6 +513,14 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+                effort: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
+                },
+                reasoning_effort: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
                 },
                 include_thoughts: {
                     type: 'boolean',
@@ -559,6 +639,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 include_thoughts: {
                     type: 'boolean',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -587,6 +673,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 include_thoughts: {
                     type: 'boolean',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -625,6 +717,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 presence_penalty: {
                     type: 'number',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
             required: ['_option_id'],
@@ -822,7 +920,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             },
             additionalProperties: false,
             description:
-                "HTTP timeouts applied to a driver's upstream LLM-provider calls.\n\nAll values are in milliseconds. Drivers should map these onto whatever HTTP client their SDK uses; the defaults applied in `@llumiverse/core/createDriverHttpAgent` are:   - headersTimeout:   60_000   - bodyTimeout:      60_000   - connectTimeout:   10_000   - keepAliveTimeout: 30_000\n\nThe defaults are deliberately tighter than Node's undici default (5 minutes for headers/body) so a hung upstream surfaces quickly. Bump `bodyTimeout` for streaming flows that have legitimate silent gaps (e.g. tool-using agents).",
+                "HTTP timeouts applied to a driver's upstream LLM-provider calls.\n\nAll values are in milliseconds. Drivers should map these onto whatever HTTP client their SDK uses; the defaults applied in `@llumiverse/core/createDriverHttpAgent` are:   - headersTimeout:   900_000   - bodyTimeout:      900_000   - connectTimeout:   60_000   - keepAliveTimeout: 300_000\n\nThe response defaults are deliberately longer than the hosting request boundary. Application-level cancellation should end user work first; driver timeouts are bounded-resource safety nets.",
         },
         ImagenMaskMode: {
             type: 'string',
@@ -976,6 +1074,18 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     description: 'Stable provider-side routing key for automatic prompt caching.',
                 },
+                prompt_cache_mode: {
+                    $ref: '#/$defs/PromptCacheMode',
+                    description:
+                        'Controls provider-side explicit caching: auto falls back safely, off disables it, and required surfaces cache preparation failures for diagnostics.',
+                },
+                prompt_cache_ttl_seconds: {
+                    type: 'integer',
+                    minimum: 60,
+                    maximum: 9007199254740991,
+                    description:
+                        'Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; Vertex Gemini requires at least 60 seconds.',
+                },
                 prompt_cache_schema_suffix: {
                     type: 'boolean',
                     description:
@@ -988,10 +1098,71 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             },
             additionalProperties: false,
         },
+        MistralTextOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'mistral-text',
+                },
+                max_tokens: {
+                    type: 'number',
+                },
+                temperature: {
+                    type: 'number',
+                },
+                top_p: {
+                    type: 'number',
+                },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
+                stop_sequence: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                effort: {
+                    type: 'string',
+                    enum: ['none', 'high'],
+                },
+                random_seed: {
+                    type: 'integer',
+                    minimum: -9007199254740991,
+                    maximum: 9007199254740991,
+                },
+                safe_prompt: {
+                    type: 'boolean',
+                },
+                parallel_tool_calls: {
+                    type: 'boolean',
+                },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
+                },
+                prompt_mode: {
+                    type: 'string',
+                    const: 'reasoning',
+                },
+                include_thoughts: {
+                    type: 'boolean',
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
         ModelOptions: {
             oneOf: [
                 {
                     $ref: '#/$defs/TextFallbackOptions',
+                },
+                {
+                    $ref: '#/$defs/AzureFoundryChatOptions',
                 },
                 {
                     $ref: '#/$defs/ImagenOptions',
@@ -1001,6 +1172,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 {
                     $ref: '#/$defs/VertexAIGeminiOptions',
+                },
+                {
+                    $ref: '#/$defs/VertexAIGeminiOmniVideoOptions',
                 },
                 {
                     $ref: '#/$defs/VertexAIGrokOptions',
@@ -1051,13 +1225,22 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/OpenAiTextOptions',
                 },
                 {
+                    $ref: '#/$defs/OpenRouterTextOptions',
+                },
+                {
                     $ref: '#/$defs/OpenAiDalleOptions',
                 },
                 {
                     $ref: '#/$defs/OpenAiGptImageOptions',
                 },
                 {
+                    $ref: '#/$defs/XAIGrokImageOptions',
+                },
+                {
                     $ref: '#/$defs/GroqOptions',
+                },
+                {
+                    $ref: '#/$defs/MistralTextOptions',
                 },
             ],
         },
@@ -1190,6 +1373,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 max_tokens: {
                     type: 'number',
                 },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
+                },
                 effort: {
                     $ref: '#/$defs/ReasoningEffort',
                 },
@@ -1221,6 +1408,17 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 include_thoughts: {
                     type: 'boolean',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
+                extra_body: {
+                    type: 'object',
+                    additionalProperties: true,
+                    description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -1234,6 +1432,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 max_tokens: {
                     type: 'number',
+                },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
                 },
                 stop_sequence: {
                     type: 'array',
@@ -1254,9 +1456,134 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 include_thoughts: {
                     type: 'boolean',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
+                extra_body: {
+                    type: 'object',
+                    additionalProperties: true,
+                    description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
+        },
+        OpenRouterTextOptions: {
+            type: 'object',
+            properties: {
+                max_tokens: {
+                    type: 'number',
+                },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
+                },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                reasoning_effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                temperature: {
+                    type: 'number',
+                },
+                top_p: {
+                    type: 'number',
+                },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
+                stop_sequence: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                image_detail: {
+                    type: 'string',
+                    enum: ['low', 'high', 'auto'],
+                },
+                include_thoughts: {
+                    type: 'boolean',
+                },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
+                _option_id: {
+                    type: 'string',
+                    const: 'openrouter-text',
+                },
+                provider_sort: {
+                    type: 'string',
+                    enum: ['price', 'throughput', 'latency', 'exacto'],
+                },
+                provider_order: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                provider_only: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                provider_ignore: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                provider_allow_fallbacks: {
+                    type: 'boolean',
+                },
+                provider_require_parameters: {
+                    type: 'boolean',
+                },
+                provider_data_collection: {
+                    type: 'string',
+                    enum: ['allow', 'deny'],
+                },
+                provider_zdr: {
+                    type: 'boolean',
+                },
+                provider_quantizations: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                        enum: [
+                            'int4',
+                            'int8',
+                            'fp4',
+                            'mxfp4',
+                            'nvfp4',
+                            'fp6',
+                            'fp8',
+                            'mxfp8',
+                            'fp16',
+                            'bf16',
+                            'fp32',
+                            'unknown',
+                        ],
+                    },
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        PromptCacheMode: {
+            type: 'string',
+            enum: ['auto', 'off', 'required'],
         },
         ReasoningEffort: {
             type: 'string',
@@ -1275,6 +1602,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 max_tokens: {
                     type: 'number',
+                },
+                tool_choice: {
+                    type: 'string',
+                    enum: ['auto', 'none', 'any', 'required'],
                 },
                 temperature: {
                     type: 'number',
@@ -1321,6 +1652,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 max_tokens: {
                     type: 'number',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
             },
             required: ['_option_id'],
             additionalProperties: false,
@@ -1366,6 +1703,30 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 cache_ttl: {
                     type: 'string',
                     enum: ['5m', '1h'],
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        VertexAIGeminiOmniVideoOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'vertexai-gemini-omni-video',
+                },
+                task: {
+                    type: 'string',
+                    enum: ['text_to_video', 'image_to_video', 'reference_to_video'],
+                },
+                aspect_ratio: {
+                    type: 'string',
+                    enum: ['16:9', '9:16'],
+                },
+                duration_seconds: {
+                    type: 'integer',
+                    minimum: 3,
+                    maximum: 10,
                 },
             },
             required: ['_option_id'],
@@ -1418,8 +1779,17 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 thinking_level: {
                     $ref: '#/$defs/ThinkingLevel',
                 },
+                service_tier: {
+                    type: 'string',
+                    minLength: 1,
+                    description:
+                        'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
                 flex: {
                     type: 'boolean',
+                    deprecated: true,
+                    'x-deprecated-message': 'Use service_tier="flex" instead.',
+                    description: 'Deprecated: Use service_tier="flex" instead.',
                 },
                 image_aspect_ratio: {
                     type: 'string',
@@ -1469,6 +1839,53 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        XAIGrokImageOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'xai-grok-image',
+                },
+                aspect_ratio: {
+                    type: 'string',
+                    enum: [
+                        '1:1',
+                        '16:9',
+                        '9:16',
+                        '4:3',
+                        '3:4',
+                        '3:2',
+                        '2:3',
+                        '2:1',
+                        '1:2',
+                        '19.5:9',
+                        '9:19.5',
+                        '20:9',
+                        '9:20',
+                        'auto',
+                    ],
+                },
+                resolution: {
+                    type: 'string',
+                    enum: ['1k', '2k'],
+                },
+                quality: {
+                    type: 'string',
+                    enum: ['low', 'medium'],
+                },
+                response_format: {
+                    type: 'string',
+                    enum: ['url', 'b64_json'],
+                },
+                n: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 10,
                 },
             },
             required: ['_option_id'],

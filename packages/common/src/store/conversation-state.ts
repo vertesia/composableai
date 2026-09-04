@@ -66,7 +66,7 @@ export interface ConversationState {
     /** Run-scoped, exact-target grants created by "allow this action for this run". */
     tool_approval_grants?: Record<string, ToolApprovalGrant>;
 
-    /** Buffered tool results held while approval denial pauses until the next user message. */
+    /** Buffered tool results held across an interactive pause until the next user message. */
     pending_tool_approval_results?: PendingToolApprovalResults;
 
     /** Compact, redacted latest user intent for reviewer-style system interactions. */
@@ -117,6 +117,15 @@ export interface ConversationState {
 
     /** Reference to tools stored in GCP instead of embedding full tool definitions */
     tool_reference?: ToolReference;
+
+    /**
+     * Explicit artifact-storage scope that owns `tool_reference`.
+     *
+     * Normally the catalog and conversation artifacts share a scope. Process tool nodes are the
+     * exception: their catalog is persisted once at process-run scope while each node keeps its own
+     * launch-scoped artifacts. Consumers resolving `tool_reference` must prefer this value when set.
+     */
+    tool_catalog_storage_id?: string;
 
     /** Names of currently active tools (base + unlocked). Tool definitions loaded from tool_reference. */
     active_tool_names?: string[];
@@ -194,8 +203,9 @@ export interface ConversationState {
      * instead of re-dumping the instructions.
      *
      * Unlike `unlocked_tools` (which must survive a checkpoint so tools stay unlocked),
-     * this list is reset when a checkpoint compacts the conversation, because the
-     * summary no longer carries the skill instructions and the next call must re-deliver them.
+     * this list tracks only instructions present in the current compacted conversation.
+     * Checkpoints restore active builtin skill bodies and preserve their names; skills
+     * that cannot be restored are removed so the next call can re-deliver them.
      */
     skill_instructions_delivered?: string[];
 

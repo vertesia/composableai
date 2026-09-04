@@ -35,6 +35,18 @@ interface HonoApp {
     fetch: (request: Request, env?: unknown, executionCtx?: unknown) => Response | Promise<Response>;
 }
 
+const RUNTIME_CONFIG_MARKER = 'vertesia-runtime-config';
+const RUNTIME_CONFIG_VERSION = 'v1';
+
+export function injectRuntimeConfigMarker(html: string): string {
+    const metaTags = html.match(/<meta\b[^>]*>/gi) || [];
+    const markerName = new RegExp(`\\bname\\s*=\\s*(["'])${RUNTIME_CONFIG_MARKER}\\1`, 'i');
+    if (metaTags.some((tag) => markerName.test(tag))) return html;
+
+    const marker = `<meta name="${RUNTIME_CONFIG_MARKER}" content="${RUNTIME_CONFIG_VERSION}" />`;
+    return html.replace(/<\/head>/i, `  ${marker}\n</head>`);
+}
+
 type NextHandleFunction = (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void;
 
 export interface ApiServerPluginOptions {
@@ -48,7 +60,10 @@ export interface ApiServerPluginOptions {
     /**
      * Compiled server module path used in preview mode. Resolved relative to
      * `process.cwd()` (the consuming project's root when running `vite preview`).
-     * @default './lib/server.js'
+     *
+     * Defaults to `entry` with `src/` swapped for `lib/` and the `.ts`
+     * extension dropped, which is where a `rootDir: src` / `outDir: lib`
+     * tsconfig emits it. Set this explicitly for any other output layout.
      */
     compiledEntry?: string;
 
@@ -66,10 +81,18 @@ export interface ApiServerPluginOptions {
     transformers?: readonly string[];
 }
 
+/**
+ * Maps a TypeScript source entry to the JavaScript file tsc emits for it under a
+ * `rootDir: src` / `outDir: lib` layout, so the dev and preview entries cannot drift apart.
+ */
+function compiledEntryFor(entry: string): string {
+    return entry.replace(/(^|\/)src\//, '$1lib/').replace(/\.tsx?$/, '.js');
+}
+
 export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] {
     const {
         entry = './src/tool-server/server.ts',
-        compiledEntry = './lib/server.js',
+        compiledEntry = compiledEntryFor(entry),
         apiPrefix = '/api',
         transformers,
     } = options;
@@ -79,6 +102,11 @@ export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] 
     const absoluteCompiledEntry = path.resolve(process.cwd(), compiledEntry);
 
     return [
+        {
+            name: 'vertesia-runtime-config-marker',
+            transformIndexHtml: injectRuntimeConfigMarker,
+        },
+
         // Vertesia query-import transformer (skill / raw / prompt / template etc.).
         vertesiaDevServerPlugin(transformers ? { transformers } : undefined),
 

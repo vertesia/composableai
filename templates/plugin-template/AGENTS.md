@@ -39,7 +39,18 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 
 {{PM_RUN}} dev                   # Vite dev server with API middleware (https://localhost:5173)
 {{PM_RUN}} start                 # Preview production build (build:server + vite preview)
+{{PM_RUN}} test:unit             # Vitest regression suite (must contain app-owned behavioral tests)
+PLAYWRIGHT_BASE_URL=<public-url> {{PM_RUN}} test:e2e  # Playwright primary-flow suite
 ```
+
+Every generated app must keep at least one focused unit test and one app-owned Playwright test for its primary user-visible
+workflow. Add or update both proportionally as behavior changes. A source-token search, screenshot-only assertion, or
+placeholder/no-test command is not behavioral coverage. Playwright tests must be deterministic: mock the network boundary or
+use uniquely owned fixtures with cleanup; never rely on mutable shared-project data. Assert user-observable responsive
+behavior rather than a specific layout mechanism; only require horizontal overflow when scrolling is itself a requirement.
+For intentional table scrolling, constrain the full flex/grid ancestor chain (`min-w-0` plus bounded widths), keep document
+overflow at zero, and let only the labeled inner region scroll. Bring each vertically distant control into view immediately
+before asserting it; do not require controls at opposite ends of the page to occupy the viewport simultaneously.
 
 ## Dual Build System
 
@@ -135,6 +146,20 @@ activities, tools, skills, templates, and processes will not resolve.
 Seed demo or test content from standalone scripts launched during development, not from the app UI or app API.
 Do not add visible "Seed" buttons, auto-seed on UI load, or create `/api/seed` routes. App runtime code should
 read real objects; seeding is a build/test concern.
+
+Write those scripts in TypeScript under `scripts/` and run them directly — `node scripts/<name>.ts`. Node strips
+the types, so there is no build step, and `tsconfig.scripts.json` type-checks `scripts/` and `tests/` as part of
+`{{PM_RUN}} typecheck`. Only erasable syntax is allowed there (no `enum`, `namespace`, or constructor parameter
+properties); the typecheck rejects the rest rather than letting it fail at runtime.
+
+They build their client with `createVertesiaClient()` from `scripts/vertesia-client.ts` — never
+`new VertesiaClient(...)` directly, and the Playwright fixtures use the same factory. The credential option is
+`apikey` (not `token`) and the version is pinned by `withAppVersion()` (not an `appVersion` option); the SDK
+ignores unknown constructor options — it warns on `console`, but still builds the client — so getting either
+name wrong produces a client that sends no
+`Authorization` header and fails with `401 Unauthorized: Authorization token is required`, or one that quietly
+reads the promoted version instead of the candidate under test. The typecheck rejects both shapes before a
+version is built — including in a `.mjs` script, which stays inside the gate via `checkJs`.
 
 ## Cross-Cutting Pitfalls
 

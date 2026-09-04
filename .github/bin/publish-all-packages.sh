@@ -1,5 +1,8 @@
 #!/bin/bash
-set -e
+set -eo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib-package-channel.sh"
 
 # Script to publish all composableai packages to NPM
 # Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]
@@ -31,40 +34,38 @@ workspace_package_dirs() {
 update_package_versions() {
   echo "=== Updating composableai package versions ==="
 
-  # Determine npm tag based on release type
-  if [ "$RELEASE_TYPE" = "snapshot" ]; then
-    npm_tag="dev"
+  if [ -n "${VERSION_OVERRIDE:-}" ]; then
+    new_version="$VERSION_OVERRIDE"
+    echo "Using prepared package version ${new_version}"
   else
-    npm_tag="latest"
-  fi
+    # Get current version and strip any existing -dev* suffix to get base version
+    current_version=$(npm pkg get version | tr -d '"')
+    base_version="${current_version%%-dev*}"
 
-  # Get current version and strip any existing -dev* suffix to get base version
-  current_version=$(npm pkg get version | tr -d '"')
-  base_version=$(echo "$current_version" | sed 's/-dev.*//')
+    # Apply bump if needed (for both snapshot and release)
+    if [ "$BUMP_TYPE" = "minor" ]; then
+      # Bump minor version: X.Y.Z -> X.(Y+1).0
+      IFS='.' read -r major minor patch <<< "$base_version"
+      base_version="${major}.$((minor + 1)).0"
+      echo "Bumped minor version to ${base_version}"
+    elif [ "$BUMP_TYPE" = "patch" ]; then
+      # Bump patch version: X.Y.Z -> X.Y.(Z+1)
+      IFS='.' read -r major minor patch <<< "$base_version"
+      base_version="${major}.${minor}.$((patch + 1))"
+      echo "Bumped patch version to ${base_version}"
+    fi
 
-  # Apply bump if needed (for both snapshot and release)
-  if [ "$BUMP_TYPE" = "minor" ]; then
-    # Bump minor version: X.Y.Z -> X.(Y+1).0
-    IFS='.' read -r major minor patch <<< "$base_version"
-    base_version="${major}.$((minor + 1)).0"
-    echo "Bumped minor version to ${base_version}"
-  elif [ "$BUMP_TYPE" = "patch" ]; then
-    # Bump patch version: X.Y.Z -> X.Y.(Z+1)
-    IFS='.' read -r major minor patch <<< "$base_version"
-    base_version="${major}.${minor}.$((patch + 1))"
-    echo "Bumped patch version to ${base_version}"
-  fi
-
-  if [ "$RELEASE_TYPE" = "snapshot" ]; then
-    # Snapshot: create dev version with date/time stamp
-    date_part=$(date -u +"%Y%m%d")
-    time_part=$(date -u +"%H%M%SZ")
-    new_version="${base_version}-dev.${date_part}.${time_part}"
-    echo "Generating new snapshot version ${new_version}"
-  else
-    # Release: use base version as-is
-    new_version="${base_version}"
-    echo "Updating to release version ${new_version}"
+    if [ "$RELEASE_TYPE" = "snapshot" ]; then
+      # Snapshot: create dev version with date/time stamp
+      date_part=$(date -u +"%Y%m%d")
+      time_part=$(date -u +"%H%M%SZ")
+      new_version="${base_version}-dev.${date_part}.${time_part}"
+      echo "Generating new snapshot version ${new_version}"
+    else
+      # Release: use base version as-is
+      new_version="${base_version}"
+      echo "Updating to release version ${new_version}"
+    fi
   fi
 
   # Update root package.json
@@ -87,44 +88,88 @@ update_package_versions() {
 publish_packages() {
   echo "=== Publishing composableai packages ==="
 
+  local create_plugin_dir="" pkg_name
   while IFS= read -r pkg_dir; do
     pkg_name=$(basename "$pkg_dir")
-    cd "$pkg_dir"
-
-      pkg_version=$(npm pkg get version | tr -d '"')
-
-    # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
-    if [ -z "$npm_tag" ]; then
-      echo "Error: npm_tag is not set. This indicates an invalid ref/version-type combination."
-      exit 1
+    if [ "$pkg_name" = "create-plugin" ]; then
+      create_plugin_dir="$pkg_dir"
+      continue
     fi
-
-    echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
-
-    # Publish. Don't let one package's failure (e.g. a new package whose npm OIDC
-    # trusted-publisher isn't configured yet) abort the whole run and strand the
-    # packages after it in the loop. Collect failures and report at the end; the
-    # caller fails the run so the gap is visible, but every package is attempted.
-    if [ -n "$DRY_RUN_FLAG" ]; then
-      pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG} || PUBLISH_FAILURES="${PUBLISH_FAILURES} ${pkg_name}"
-    else
-      pnpm publish --access public --tag "${npm_tag}" --no-git-checks || PUBLISH_FAILURES="${PUBLISH_FAILURES} ${pkg_name}"
-    fi
-
-    cd "$(git rev-parse --show-toplevel)"
+    publish_package "$pkg_dir"
   done < <(workspace_package_dirs)
+
+  # create-plugin is the cohort manifest: its templateVersions map points to the
+  # exact package versions appgen consumes. Publish it last, and only after every
+  # dependency succeeded, so its track tag never advertises an incomplete cohort.
+  if [ -z "${PUBLISH_FAILURES// /}" ] && [ -n "$create_plugin_dir" ]; then
+    publish_package "$create_plugin_dir"
+  elif [ -z "$create_plugin_dir" ]; then
+    PUBLISH_FAILURES="${PUBLISH_FAILURES} create-plugin-missing"
+  fi
+}
+
+publish_package() {
+  local pkg_dir="$1"
+  local pkg_name pkg_version package_os package_cpu
+  local -a publish_command publish_args
+  pkg_name=$(basename "$pkg_dir")
+  cd "$pkg_dir"
+
+  pkg_version=$(npm pkg get version | tr -d '"')
+  package_os=$(node -p "require('./package.json').os?.[0] || ''")
+  package_cpu=$(node -p "require('./package.json').cpu?.[0] || ''")
+
+  # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
+  if [ -z "$npm_tag" ]; then
+    echo "Error: npm_tag is not set. This indicates an invalid ref/version-type combination."
+    exit 1
+  fi
+
+  echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
+
+  # Publish. Don't let one package's failure (e.g. a new package whose npm OIDC
+  # trusted-publisher isn't configured yet) abort the whole run and strand the
+  # packages after it in the loop. Collect failures and report at the end; the
+  # caller fails the run so the gap is visible, but every package is attempted.
+  publish_command=(pnpm publish)
+  if [ -n "$package_os" ] && [ -n "$package_cpu" ]; then
+    publish_command=(pnpm "--config.os=${package_os}" "--config.cpu=${package_cpu}" publish)
+  fi
+  publish_args=(--access public --tag "$npm_tag" --no-git-checks)
+  if [ -n "$DRY_RUN_FLAG" ]; then
+    publish_args+=("$DRY_RUN_FLAG")
+  fi
+
+  if "${publish_command[@]}" "${publish_args[@]}"; then
+    PUBLISHED_PACKAGES="${PUBLISHED_PACKAGES} @vertesia/${pkg_name}"
+  else
+    PUBLISH_FAILURES="${PUBLISH_FAILURES} @vertesia/${pkg_name}"
+  fi
+
+  cd "$(git rev-parse --show-toplevel)"
 }
 
 write_package_summary_rows() {
   local version="$1"
+  local pkg_name package_name status pkg_url
 
   while IFS= read -r pkg_dir; do
     pkg_name=$(basename "$pkg_dir")
-    if [ "$DRY_RUN" = "true" ]; then
-      echo "| \`@vertesia/${pkg_name}\` | ${version} |" >> "$GITHUB_STEP_SUMMARY"
+    package_name="@vertesia/${pkg_name}"
+    if [[ " ${PUBLISH_FAILURES} " == *" ${package_name} "* ]]; then
+      status="failed"
+    elif [[ " ${PUBLISHED_PACKAGES} " == *" ${package_name} "* ]]; then
+      [ "$DRY_RUN" = "true" ] && status="planned" || status="published"
+    elif [ "$pkg_name" = "create-plugin" ] && [ "$PUBLISH_STATUS" = "partial" ]; then
+      status="withheld"
     else
-      pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
-      echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
+      status="not attempted"
+    fi
+    if [ "$DRY_RUN" = "true" ]; then
+      echo "| \`${package_name}\` | ${version} | ${status} |" >> "$GITHUB_STEP_SUMMARY"
+    else
+      pkg_url="https://www.npmjs.com/package/${package_name}?activeTab=versions"
+      echo "| \`${package_name}\` | [${version}](${pkg_url}) | ${status} |" >> "$GITHUB_STEP_SUMMARY"
     fi
   done < <(workspace_package_dirs)
 }
@@ -207,7 +252,9 @@ write_github_summary() {
   version=$(npm pkg get version | tr -d '"')
 
   # Determine title based on dry run mode
-  if [ "$DRY_RUN" = "true" ]; then
+  if [ "$PUBLISH_STATUS" = "partial" ]; then
+    title="## Partial Package Publish"
+  elif [ "$DRY_RUN" = "true" ]; then
     title="## Dry Run Summary"
   else
     title="## Published Packages"
@@ -217,8 +264,8 @@ write_github_summary() {
   cat >> "$GITHUB_STEP_SUMMARY" << EOF
 ${title}
 
-| Package | Version |
-| ------- | ------- |
+| Package | Version | Status |
+| ------- | ------- | ------ |
 EOF
 
   write_package_summary_rows "$version"
@@ -229,7 +276,35 @@ EOF
 **NPM Tag:** \`${npm_tag}\`
 **Branch:** \`${REF}\`
 **Dry Run:** \`${DRY_RUN}\`
+**Status:** \`${PUBLISH_STATUS}\`
+**Published/planned:** \`${PUBLISHED_PACKAGES# }\`
+**Failed:** \`${PUBLISH_FAILURES# }\`
 EOF
+
+  if [ "$PUBLISH_STATUS" = "partial" ]; then
+    if [ "$DRY_RUN" = "true" ]; then
+      partial_effect="The dry run failed before a complete cohort could be validated. No npm tag was changed."
+    else
+      partial_effect="Successfully published packages already moved on \`${npm_tag}\`, but \`@vertesia/create-plugin\` was withheld."
+      if [ "$RELEASE_TYPE" = "snapshot" ]; then
+        partial_effect="${partial_effect} The snapshot version bump was not pushed."
+      else
+        partial_effect="${partial_effect} The release version commit was already pushed before publishing began."
+      fi
+    fi
+    cat >> "$GITHUB_STEP_SUMMARY" << EOF
+
+> Partial publish: ${partial_effect}
+EOF
+  fi
+}
+
+write_github_outputs() {
+  if [ -n "${GITHUB_OUTPUT:-}" ]; then
+    echo "version=${new_version}" >> "$GITHUB_OUTPUT"
+    echo "npm_tag=${npm_tag}" >> "$GITHUB_OUTPUT"
+    echo "publish_status=${PUBLISH_STATUS}" >> "$GITHUB_OUTPUT"
+  fi
 }
 
 # =============================================================================
@@ -243,6 +318,8 @@ RELEASE_TYPE=""
 BUMP_TYPE=""
 # Space-separated list of packages whose publish failed (collected in publish_packages).
 PUBLISH_FAILURES=""
+PUBLISHED_PACKAGES=""
+PUBLISH_STATUS="pending"
 
 # Parse named arguments
 while [[ $# -gt 0 ]]; do
@@ -332,6 +409,14 @@ else
   DRY_RUN_FLAG=""
 fi
 
+source_sha=$(git rev-parse HEAD)
+npm_tag=$(resolve_package_channel "$REF" "$RELEASE_TYPE" "$source_sha")
+
+echo "=== Package channel ==="
+echo "Source ref: ${REF}"
+echo "Source SHA: ${source_sha}"
+echo "Target tag: ${npm_tag}"
+
 # =============================================================================
 # Main flow
 # =============================================================================
@@ -351,22 +436,25 @@ fi
 
 publish_packages
 
-# For a SNAPSHOT (dev) build the published npm artifact is the goal; pushing the
-# version bump back to the branch is bookkeeping. Publish first (above) so a
+if [ -n "${PUBLISH_FAILURES// /}" ]; then
+  PUBLISH_STATUS="partial"
+  echo "=== Packages that FAILED to publish:${PUBLISH_FAILURES} ==="
+  echo "@vertesia/create-plugin was not published, so AppGen will not advertise this incomplete cohort."
+  write_github_summary
+  write_github_outputs
+  exit 1
+fi
+
+# For a SNAPSHOT (dev) build the published npm artifact is the goal. Publish first
+# (above) so a
 # branch-push failure — e.g. a deploy key without write access to a feature
 # branch — cannot block the npm publish, and treat the push as best-effort.
 if [ "$DRY_RUN" = "false" ] && [ "$RELEASE_TYPE" = "snapshot" ]; then
   commit_and_push || echo "[WARN] snapshot version-bump push to ${REF} failed; packages were published, update create-plugin templateVersions on the branch manually."
 fi
 
+PUBLISH_STATUS="complete"
 write_github_summary
-
-# Surface any per-package publish failures (loop above continued past them so the
-# rest still publish). Fail the run so the gap is visible, after attempting all.
-if [ -n "${PUBLISH_FAILURES// /}" ]; then
-  echo "=== Packages that FAILED to publish:${PUBLISH_FAILURES} ==="
-  echo "The remaining packages WERE published. A common cause is a package whose npm OIDC trusted-publisher is not configured yet — set it up on npm and re-run."
-  exit 1
-fi
+write_github_outputs
 
 echo "=== Done ==="
