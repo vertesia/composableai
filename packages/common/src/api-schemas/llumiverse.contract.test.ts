@@ -105,6 +105,22 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
         ).toBe(true);
         expect(validate({ _option_id: 'openai-text', extra_body: ['not-an-object'] })).toBe(false);
     });
+
+    it('accepts Gemini Omni task and resolution options through the run request contract', () => {
+        const result = validateApiRequest('RunCreatePayload', {
+            interaction: 'GenerateVideo',
+            config: {
+                model: 'locations/global/publishers/google/models/gemini-omni-1.1-flash-preview',
+                model_options: {
+                    _option_id: 'vertexai-gemini-omni-video',
+                    task: 'extend',
+                    resolution: '4k',
+                },
+            },
+        });
+
+        expect(result.valid ? [] : result.errors).toEqual([]);
+    });
 });
 
 describe('the JSONSchema closure is published open, because a JSON Schema is open', () => {
