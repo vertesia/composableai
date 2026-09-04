@@ -40386,6 +40386,12 @@
         "type": "string",
         "const": "sync",
         "description": "Force synchronous per-object recalculation. When omitted, batch inference is used when supported."
+      },
+      "force": {
+        "type": "boolean"
+      },
+      "force_renditions": {
+        "type": "boolean"
       }
     },
     "additionalProperties": false
