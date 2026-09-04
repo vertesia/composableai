@@ -288,6 +288,35 @@ Do not mix `find` for the default state with `search` for filtered states if the
 
 Use `find` only for simple exact-match fetches that do not require backend sort, full-text behavior, or facets.
 
+### Composite App Navigation
+
+Routes declared in the router are visible inside the app. To also surface them in the Vertesia
+Composite App sidebar, list them in `src/tool-server/ui-nav-items.ts`, which is published in the app
+manifest as `ui.navigation`:
+
+```ts
+export default [
+  { label: 'Home', icon: 'Home', route: '/' },
+  { label: 'Reviews', icon: 'ClipboardCheck', route: '/reviews', description: 'Open review queue' },
+  {
+    label: 'Admin',
+    icon: 'Settings',
+    route: '/admin',
+    preferredSection: 'settings',
+    children: [{ label: 'Members', icon: 'Users', route: '/admin/members' }],
+  },
+] satisfies AppUINavItem[];
+```
+
+- `icon` is a Lucide icon name or an SVG element as a string; `route` is relative to the app base.
+- `children` nests sub-items; `topLevel: true` promotes an entry to a sidebar root sibling;
+  `preferredSection: "settings" | "footer"` places it in those sections.
+- This file **maps existing routes, it does not create them**. Add, rename, and remove entries in the
+  same change as the routes themselves — a listed route that does not resolve is a broken sidebar
+  link, and an unlisted route is invisible to composite users.
+- `uiConfig.available_in` in `src/tool-server/config.ts` decides whether the app is offered in the
+  Composite App shell at all (`app_portal`, `composite_app`, or both).
+
 ## Completion Check
 
 Before calling a UI task complete, run a short conformance pass:
@@ -300,6 +329,7 @@ Before calling a UI task complete, run a short conformance pass:
 6. any list/detail flow where filters, sort, or scroll reset on back-navigation because the state lives below the route boundary?
 7. any `FilterProvider` usage that can double-restore URL filters into already-persisted React state?
 8. any hover-reveal Tailwind classes built from template strings instead of literal class names?
+9. any user-facing route added, renamed, or removed without the matching update to `src/tool-server/ui-nav-items.ts`?
 
 If the answer is yes to any of the above, the UI pass is not done yet.
 
