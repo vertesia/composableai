@@ -126,6 +126,10 @@ export const RecalculateEmbeddingsQuerySchema = z
                     'Force synchronous per-object recalculation. When omitted, batch inference is used when supported.',
             })
             .optional(),
+        // TEMPORARY TEST CONTROL: include objects that already have a current embedding.
+        force: z.boolean().optional(),
+        // TEMPORARY TEST CONTROL: regenerate JPEG renditions even when one already exists.
+        force_renditions: z.boolean().optional(),
     })
     .meta({ id: 'RecalculateEmbeddingsQuery' });
 

@@ -60,6 +60,10 @@ describe('indexing and embedding API contracts', () => {
     it('allows only the explicit synchronous embedding recalculation override', () => {
         expect(validateApiRequest('RecalculateEmbeddingsQuery', {}).valid).toBe(true);
         expect(validateApiRequest('RecalculateEmbeddingsQuery', { mode: 'sync' }).valid).toBe(true);
+        // TEMPORARY TEST CONTROL: force flags are intentionally accepted for canary runs.
+        expect(validateApiRequest('RecalculateEmbeddingsQuery', { force: true, force_renditions: true }).valid).toBe(
+            true,
+        );
         expect(validateApiRequest('RecalculateEmbeddingsQuery', { mode: 'batch' }).valid).toBe(false);
     });
 
