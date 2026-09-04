@@ -317,6 +317,8 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                 <FormSection
                     title={t('intakePolicy.section.visionBudget')}
                     description={t('intakePolicy.help.section.visionBudget')}
+                    // `last` only because Verification below is hidden; drop it when that is restored.
+                    last
                 >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <SelectField
@@ -358,6 +360,11 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                     </div>
                 </FormSection>
+
+                {/* Verification is hidden until the feature is wired up. The policy schema, the
+                    API contract and this form all still carry it; nothing here consumes the values
+                    at processing time yet. Uncomment as-is to bring the section back, and remove
+                    the `last` prop added to the Vision evidence budget section above.
 
                 <FormSection title={t('intakePolicy.section.verification')} last>
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -410,6 +417,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         readonly={readonly}
                     />
                 </FormSection>
+                */}
             </FormSurface>
         );
     }
