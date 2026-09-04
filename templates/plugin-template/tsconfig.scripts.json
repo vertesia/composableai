@@ -38,9 +38,12 @@
     "scripts/**/*.mjs",
     "scripts/**/*.ts",
     "tests/**/*.mjs",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "src/modules/*/scripts/**/*.mjs",
+    "src/modules/*/scripts/**/*.ts"
   ],
   "exclude": [
-    "scripts/typecheck.mjs"
+    "scripts/typecheck.mjs",
+    "src/modules/service/scripts/**"
   ]
 }

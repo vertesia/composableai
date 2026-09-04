@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
 import { createVertesiaClient } from '../../../../scripts/vertesia-client.ts';
-import { seedContentApp } from './seed-content-app.mjs';
+import { seedContentApp } from './seed-content-app.ts';
 
-const packageJson = JSON.parse(readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8'));
+const packageJson: { name: string } = JSON.parse(
+    readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8'),
+);
 const APP_NAME = packageJson.name;
 const SEED_MARKER = `content-app:${APP_NAME}`;
 const GUIDE_TYPE = `app:${APP_NAME}:guide`;
@@ -25,7 +27,14 @@ async function main() {
         throw new Error(`No guide objects found for ${GUIDE_TYPE} and marker ${SEED_MARKER}.`);
     }
 
-    const properties = guide.properties;
+    // Store properties are an open bag; the seed above is what puts these keys there.
+    const properties = guide.properties as {
+        slug: string;
+        title: string;
+        body: string;
+        location_slug: string;
+        audience: string;
+    };
     const summary = await client.interactions.executeByName(GUIDE_SUMMARIZER_INTERACTION, {
         data: {
             guide_title: properties.title,

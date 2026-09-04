@@ -209,10 +209,23 @@ test('the shared Vertesia client factory is the only construction site, and is t
     // instead of a runtime 401 discovered after a candidate version already exists.
     assert.match(scriptsTsconfig, /"allowJs":\s*true/);
     assert.match(scriptsTsconfig, /"checkJs":\s*true/);
-    for (const pattern of ['scripts/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts']) {
+    for (const pattern of ['scripts/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts', 'src/modules/*/scripts/**/*.ts']) {
         assert.ok(scriptsTsconfig.includes(`"${pattern}"`), `tsconfig.scripts.json must include ${pattern}`);
     }
+    // The service module's scripts are the template's own build tooling, not app code. They are the
+    // one carve-out, and the typecheck runner must agree or it would run a project with no inputs.
+    assert.ok(scriptsTsconfig.includes('"src/modules/service/scripts/**"'));
     assert.match(typecheckRunner, /tsconfig\.scripts\.json/);
+    assert.match(typecheckRunner, /src\/modules\/service\//);
+
+    // Module scripts are Node code living under src/, which the browser projects otherwise claim.
+    for (const browserProject of ['tsconfig.ui.json', 'tsconfig.app.json']) {
+        const raw = fs.readFileSync(path.join(templateRoot, browserProject), 'utf8');
+        assert.ok(
+            raw.includes('"src/modules/*/scripts/**"'),
+            `${browserProject} must exclude module scripts, which are Node sources`,
+        );
+    }
     // Those scripts run under `node script.ts`, whose stripper can only erase types.
     assert.match(scriptsTsconfig, /"erasableSyntaxOnly":\s*true/);
 });
@@ -468,10 +481,10 @@ test('content-app module composes app routes and contributes resources', () => {
         assert.match(serverModules, /modules\/content-app\/resources\/index\.js/);
         assert.match(serverModules, /export const dashboards = \[/);
         assert.match(serverModules, /export const processes = \[/);
-        assert.equal(packageJson.scripts['seed:content'], 'node src/modules/content-app/scripts/seed-content-app.mjs');
+        assert.equal(packageJson.scripts['seed:content'], 'node src/modules/content-app/scripts/seed-content-app.ts');
         assert.equal(
             packageJson.scripts['exercise:content'],
-            'node src/modules/content-app/scripts/exercise-content-app.mjs',
+            'node src/modules/content-app/scripts/exercise-content-app.ts',
         );
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
