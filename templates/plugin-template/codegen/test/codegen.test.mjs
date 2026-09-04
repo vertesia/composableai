@@ -183,12 +183,51 @@ test('appgen Playwright support keeps authenticated output safe and transient ou
     assert.match(playwrightConfig, /hasVertesiaAuth \? 'off' : 'retain-on-failure'/);
     assert.match(playwrightFixture, /__VERTESIA_AUTH_TOKEN__/);
     assert.match(playwrightFixture, /headers\.authorization = `Bearer \$\{token\}`/);
-    assert.match(playwrightFixture, /await VertesiaClient\.fromAuthToken/);
+    assert.match(playwrightFixture, /createVertesiaClient\(/);
     assert.match(playwrightFixture, /PLAYWRIGHT_APP_VERSION/);
-    assert.match(playwrightFixture, /client\.withAppVersion\(version\)/);
+    // Client construction lives only in the shared factory; a second hand-rolled call site is how
+    // `token`/`appVersion` (options the SDK does not have) get silently dropped into a 401.
+    assert.doesNotMatch(playwrightFixture, /new VertesiaClient\(/);
     assert.match(gitignore, /pnpm-lock\.yaml/);
     assert.match(gitignore, /test-results\//);
     assert.match(gitignore, /playwright-report\//);
+});
+
+test('the shared Vertesia client factory is the only construction site, and is type-checked', () => {
+    const factory = fs.readFileSync(path.join(templateRoot, 'scripts/vertesia-client.ts'), 'utf8');
+    // Asserted as text: the file is JSONC, and stripping its /* */ comments would also eat the
+    // `/**/` inside the glob patterns this test is checking for.
+    const scriptsTsconfig = fs.readFileSync(path.join(templateRoot, 'tsconfig.scripts.json'), 'utf8');
+    const typecheckRunner = fs.readFileSync(path.join(templateRoot, 'scripts/typecheck.mjs'), 'utf8');
+
+    // The credential is `apikey` and the version is pinned by the method, never constructor options.
+    assert.match(factory, /await VertesiaClient\.fromAuthToken/);
+    assert.match(factory, /client\.withAppVersion\(options\.appVersion\)/);
+    assert.match(factory, /VERTESIA_TOKEN/);
+
+    // checkJs over scripts/ and tests/ is what turns a wrong option name into a build failure
+    // instead of a runtime 401 discovered after a candidate version already exists.
+    assert.match(scriptsTsconfig, /"allowJs":\s*true/);
+    assert.match(scriptsTsconfig, /"checkJs":\s*true/);
+    for (const pattern of ['scripts/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts', 'src/modules/*/scripts/**/*.ts']) {
+        assert.ok(scriptsTsconfig.includes(`"${pattern}"`), `tsconfig.scripts.json must include ${pattern}`);
+    }
+    // The service module's scripts are the template's own build tooling, not app code. They are the
+    // one carve-out, and the typecheck runner must agree or it would run a project with no inputs.
+    assert.ok(scriptsTsconfig.includes('"src/modules/service/scripts/**"'));
+    assert.match(typecheckRunner, /tsconfig\.scripts\.json/);
+    assert.match(typecheckRunner, /src\/modules\/service\//);
+
+    // Module scripts are Node code living under src/, which the browser projects otherwise claim.
+    for (const browserProject of ['tsconfig.ui.json', 'tsconfig.app.json']) {
+        const raw = fs.readFileSync(path.join(templateRoot, browserProject), 'utf8');
+        assert.ok(
+            raw.includes('"src/modules/*/scripts/**"'),
+            `${browserProject} must exclude module scripts, which are Node sources`,
+        );
+    }
+    // Those scripts run under `node script.ts`, whose stripper can only erase types.
+    assert.match(scriptsTsconfig, /"erasableSyntaxOnly":\s*true/);
 });
 
 test('examples module contributes optional UI routes, views, hooks, and subscriptions', () => {
@@ -442,10 +481,10 @@ test('content-app module composes app routes and contributes resources', () => {
         assert.match(serverModules, /modules\/content-app\/resources\/index\.js/);
         assert.match(serverModules, /export const dashboards = \[/);
         assert.match(serverModules, /export const processes = \[/);
-        assert.equal(packageJson.scripts['seed:content'], 'node src/modules/content-app/scripts/seed-content-app.mjs');
+        assert.equal(packageJson.scripts['seed:content'], 'node src/modules/content-app/scripts/seed-content-app.ts');
         assert.equal(
             packageJson.scripts['exercise:content'],
-            'node src/modules/content-app/scripts/exercise-content-app.mjs',
+            'node src/modules/content-app/scripts/exercise-content-app.ts',
         );
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
