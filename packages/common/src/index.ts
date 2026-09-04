@@ -51,6 +51,7 @@ export * from './schema-for-extraction.js';
 export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
+export * from './store/rendering.js';
 export type {
     ContentObjectExportArtifact,
     ContentObjectExportArtifactFile,
