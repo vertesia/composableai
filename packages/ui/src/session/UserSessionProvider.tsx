@@ -12,12 +12,7 @@ import {
     resolveAuthSelection,
     UserNotFoundError,
 } from './auth/composable';
-import {
-    authReturnUrl,
-    buildCentralAuthRedirectUrl,
-    centralAuthUrl,
-    shouldRedirectToCentralAuth,
-} from './auth/domainRouting';
+import { buildCentralAuthRedirectUrl, redirectToCentralAuth, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
@@ -73,7 +68,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     const token = hashParams.get('token');
     const state = hashParams.get('state');
     const [session, setSession] = useState<UserSession>(new UserSession());
-    const { generateState, verifyState, clearState } = useAuthState();
+    const { verifyState, clearState } = useAuthState();
     const hasInitiatedAuthRef = useRef(false);
     const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
@@ -115,17 +110,6 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         session.authError = error;
         setSession(session.clone());
         return true;
-    };
-
-    const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
-        const url = buildCentralAuthRedirectUrl(
-            centralAuthUrl(),
-            Env.endpoints.sts ?? 'https://sts.vertesia.io',
-            authReturnUrl(),
-            generateState(),
-            selection,
-        );
-        location.replace(url.toString());
     };
 
     authFlowRef.current = () => {

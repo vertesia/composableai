@@ -1,4 +1,5 @@
 import { Env } from '@vertesia/ui/env';
+import { generateAuthState } from './authState';
 
 declare global {
     interface Window {
@@ -96,4 +97,50 @@ export function buildCentralAuthRedirectUrl(
     url.searchParams.set('redirect_uri', selectedReturnUrl.toString());
     url.searchParams.set('state', state);
     return url;
+}
+
+/**
+ * Start a Central Auth round-trip for the current page.
+ *
+ * The single place the broker URL is assembled, so the boot-time shortcut in an app's entry module
+ * and {@link isCentralAuthRedirectPending}'s counterpart inside `UserSessionProvider` cannot drift
+ * into producing different `redirect_uri` / `state` / `sts` values for the same page load.
+ */
+export function redirectToCentralAuth(selection: AuthSelection = {}): void {
+    const url = buildCentralAuthRedirectUrl(
+        centralAuthUrl(),
+        Env.endpoints.sts ?? 'https://sts.vertesia.io',
+        authReturnUrl(),
+        generateAuthState(),
+        selection,
+    );
+    location.replace(url.toString());
+}
+
+/**
+ * Whether this page load is already certain to end in a Central Auth round-trip, decidable before
+ * any application module has run.
+ *
+ * A fresh `UserSession` holds no token and nothing persists one across loads, so on a cold load
+ * `session.isLoggedIn()` in `UserSessionProvider` is always false. Every condition that can keep
+ * that provider from redirecting is therefore knowable up front, and this predicate enumerates
+ * them in the same order:
+ *
+ *   - Firebase-allowlisted hosts sign in in place rather than at the broker;
+ *   - a host app that injects a token through `Env.authTokenProvider` may not need the broker
+ *     (and when its token turns out to be empty the provider still redirects — answering `false`
+ *     here just lets the normal flow decide, which is the safe direction);
+ *   - local development with a configured dev token skips auth entirely;
+ *   - a load carrying `#token=…&state=…` *is* the return leg and must be allowed to exchange it.
+ *
+ * When this returns true the app is going to navigate away, so an entry module can redirect
+ * immediately instead of mounting a full React tree, initializing telemetry and warming route
+ * chunks that the navigation is about to discard.
+ */
+export function isCentralAuthRedirectPending(): boolean {
+    if (!shouldRedirectToCentralAuth()) return false;
+    if (Env.authTokenProvider) return false;
+    if (Env.isLocalDev && Env.devAuthToken) return false;
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    return !(hashParams.get('token') && hashParams.get('state'));
 }
