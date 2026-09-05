@@ -17,6 +17,19 @@ import type { MarkdownEditingAction } from './CollaborativeMarkdownRenderer.js';
 // first document-mode test can legitimately take longer than Testing Library's one-second default.
 const LAZY_EDITOR_WAIT = { timeout: 5_000 } as const;
 
+// Waiting up to 5 s for the editor and then driving a save through it does not fit in vitest's 5 s
+// default, so a slow machine turned a passing test into a timeout. Raised for the file rather than
+// per test: every document-mode case here pays the same lazy-load cost.
+vi.setConfig({ testTimeout: 20_000 });
+
+// Budgets for the two shapes of save assertion in this file. A plain save is one debounce (400 ms)
+// plus one mocked round-trip. A conflict rebase is the same debounce followed by three sequential
+// round-trips -- save, 412, refetch, merge, save again -- so it needs several times the budget, and
+// giving it the plain-save one made it the file's flakiest assertion on a loaded machine: the retry
+// was still in flight when the wait expired, reported as "called only 1 times".
+const SAVE_WAIT = { timeout: 2_500 } as const;
+const REBASE_WAIT = { timeout: 8_000 } as const;
+
 const mocks = vi.hoisted(() => {
     const getArtifactContent = vi.fn();
     const updateArtifactContent = vi.fn();
@@ -161,15 +174,12 @@ describe('ArtifactEditingSurface', () => {
         await user.click(editor);
         await user.type(editor, ' revised');
 
-        await waitFor(
-            () => {
-                expect(mocks.updateArtifactContent).toHaveBeenCalledWith('run-1', 'drafts/document.md', {
-                    content: expect.stringContaining('revised'),
-                    generation: 'generation-1',
-                });
-            },
-            { timeout: 2500 },
-        );
+        await waitFor(() => {
+            expect(mocks.updateArtifactContent).toHaveBeenCalledWith('run-1', 'drafts/document.md', {
+                content: expect.stringContaining('revised'),
+                generation: 'generation-1',
+            });
+        }, SAVE_WAIT);
     });
 
     it('uses the floating selection comment control instead of a redundant toolbar button', async () => {
@@ -280,16 +290,13 @@ describe('ArtifactEditingSurface', () => {
 
         await user.type(editor, ' local edit');
 
-        await waitFor(
-            () => {
-                expect(mocks.updateArtifactContent).toHaveBeenCalledTimes(1);
-                expect(mocks.updateArtifactContent).toHaveBeenLastCalledWith('run-1', 'drafts/document.md', {
-                    content: expect.stringContaining('local edit'),
-                    generation: 'generation-1',
-                });
-            },
-            { timeout: 2500 },
-        );
+        await waitFor(() => {
+            expect(mocks.updateArtifactContent).toHaveBeenCalledTimes(1);
+            expect(mocks.updateArtifactContent).toHaveBeenLastCalledWith('run-1', 'drafts/document.md', {
+                content: expect.stringContaining('local edit'),
+                generation: 'generation-1',
+            });
+        }, SAVE_WAIT);
     });
 
     it('rebases focused full-document edits over a non-overlapping agent change after 412', async () => {
@@ -347,15 +354,12 @@ describe('ArtifactEditingSurface', () => {
         selection?.addRange(range);
         await user.type(editor, '!', { skipClick: true });
 
-        await waitFor(
-            () => {
-                expect(mocks.updateArtifactContent).toHaveBeenNthCalledWith(2, 'run-1', 'drafts/document.md', {
-                    content: expect.stringMatching(/updated remotely[\s\S]*Second paragraph\.!/),
-                    generation: 'generation-agent',
-                });
-            },
-            { timeout: 2500 },
-        );
+        await waitFor(() => {
+            expect(mocks.updateArtifactContent).toHaveBeenNthCalledWith(2, 'run-1', 'drafts/document.md', {
+                content: expect.stringMatching(/updated remotely[\s\S]*Second paragraph\.!/),
+                generation: 'generation-agent',
+            });
+        }, REBASE_WAIT);
         expect(screen.queryByRole('alert')).toBeNull();
         expect(editor.textContent).toContain('First paragraph updated remotely.');
     });
@@ -429,7 +433,7 @@ describe('ArtifactEditingSurface', () => {
                 content: 'First paragraph updated remotely.\n\nSecond paragraph edited locally.',
                 generation: 'generation-agent',
             });
-        });
+        }, REBASE_WAIT);
         expect(await screen.findByText('First paragraph updated remotely.')).not.toBeNull();
         expect(await screen.findByText('Second paragraph edited locally.')).not.toBeNull();
         expect(onAction).toHaveBeenCalledWith(
