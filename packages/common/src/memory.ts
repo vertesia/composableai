@@ -13,9 +13,11 @@ import type {
     MemoryBrainSchema,
     MemoryBrainUpdatePolicySchema,
     MemoryContentSourceSelectorSchema,
+    MemoryEvidenceEntrySchema,
     MemoryEvidenceLocatorSchema,
     MemoryEvidenceRefArraySchema,
     MemoryEvidenceRefSchema,
+    MemoryFacetCountSchema,
     MemoryGenerationArraySchema,
     MemoryGenerationCountsSchema,
     MemoryGenerationSchema,
@@ -23,6 +25,10 @@ import type {
     MemoryGraphQueryResultSchema,
     MemoryGraphQuerySchema,
     MemoryNodeArraySchema,
+    MemoryNodeEvidenceFacetsSchema,
+    MemoryNodeEvidenceQuerySchema,
+    MemoryNodeEvidenceResponseSchema,
+    MemoryNodeEvidenceRowSchema,
     MemoryNodePatternSchema,
     MemoryNodeSchema,
     MemoryPathQuerySchema,
@@ -99,6 +105,12 @@ export type MemoryRunSummaryArray = z.infer<typeof MemoryRunSummaryArraySchema>;
 export type MemoryEvidenceLocator = z.infer<typeof MemoryEvidenceLocatorSchema>;
 export type MemoryEvidenceRef = z.infer<typeof MemoryEvidenceRefSchema>;
 export type MemoryEvidenceRefArray = z.infer<typeof MemoryEvidenceRefArraySchema>;
+export type MemoryEvidenceEntry = z.infer<typeof MemoryEvidenceEntrySchema>;
+export type MemoryFacetCount = z.infer<typeof MemoryFacetCountSchema>;
+export type MemoryNodeEvidenceQuery = z.infer<typeof MemoryNodeEvidenceQuerySchema>;
+export type MemoryNodeEvidenceRow = z.infer<typeof MemoryNodeEvidenceRowSchema>;
+export type MemoryNodeEvidenceFacets = z.infer<typeof MemoryNodeEvidenceFacetsSchema>;
+export type MemoryNodeEvidenceResponse = z.infer<typeof MemoryNodeEvidenceResponseSchema>;
 export type MemorySupport = z.infer<typeof MemorySupportSchema>;
 export type MemoryNode = z.infer<typeof MemoryNodeSchema>;
 export type MemoryNodeArray = z.infer<typeof MemoryNodeArraySchema>;

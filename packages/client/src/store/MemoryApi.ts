@@ -10,6 +10,8 @@ import type {
     MemoryGraphQuery,
     MemoryGraphQueryResult,
     MemoryNode,
+    MemoryNodeEvidenceQuery,
+    MemoryNodeEvidenceResponse,
     MemoryRunSummary,
     MemoryStatement,
     UpdateMemoryBrainPayload,
@@ -113,6 +115,23 @@ export class MemoryApi extends ApiTopic {
      */
     getNode(nodeId: string): Promise<MemoryNode> {
         return this.get(`/nodes/${encodeURIComponent(nodeId)}`);
+    }
+
+    /**
+     * Where a Node and each of its Statements came from.
+     *
+     * One row per derivation, so a Statement two sources support appears twice with its own basis
+     * and citations each time. `facets` counts the whole readable result, not the returned page, so
+     * the filter controls can be rendered without a second call.
+     */
+    getNodeEvidence(
+        brainId: string,
+        nodeId: string,
+        query: MemoryNodeEvidenceQuery = {},
+    ): Promise<MemoryNodeEvidenceResponse> {
+        return this.get(`/brains/${encodeURIComponent(brainId)}/nodes/${encodeURIComponent(nodeId)}/evidence`, {
+            query,
+        });
     }
 
     getStatement(statementId: string): Promise<MemoryStatement> {

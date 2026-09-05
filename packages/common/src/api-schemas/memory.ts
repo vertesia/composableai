@@ -81,7 +81,14 @@ export const MemoryBrainDeletionErrorSchema = z
 export const DeleteMemoryBrainResponseSchema = z
     .strictObject({
         brain_id: z.string().meta({ description: 'The Brain namespace that was targeted.' }),
-        brain_object_id: z.string().meta({ description: 'Content object id of the Brain definition.' }),
+        brain_object_id: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    'Content object id of the Phase-0 Brain definition. Absent when the deleted Brain was a ' +
+                    'canonical draft, which has no content object behind it.',
+            }),
         brain_deleted: z.boolean().meta({ description: 'Whether the Brain definition itself was deleted.' }),
         records_deleted: MemoryBrainRecordDeletionCountsSchema,
         errors: z.array(MemoryBrainDeletionErrorSchema).meta({
@@ -124,8 +131,12 @@ export const MemoryContentSourceSelectorSchema = z
         include_collection_descendants: z.boolean().optional(),
         type_ids: z.array(z.string()).optional(),
         locations: z.array(z.string()).optional(),
-        head_only: z.literal(true).meta({
-            description: 'V1 content lanes read the head revision only. Earlier revisions stay reachable as Evidence.',
+        head_only: z.boolean().meta({
+            description:
+                'V1 content lanes read the head revision only, so this must be `true`; `false` is refused. ' +
+                'Earlier revisions stay reachable as immutable Evidence once later ones arrive. It is a ' +
+                'boolean rather than a constant so the field can widen without a breaking change when ' +
+                'historical revisions become selectable.',
         }),
     })
     .meta({ id: 'MemoryContentSourceSelector', description: 'A content lane of a Brain source scope.' });
@@ -470,6 +481,124 @@ export const MemoryStatementSchema = z
     .meta({ id: 'MemoryStatement', description: 'One temporal fact, with the derivations that support it.' });
 
 export const MemoryStatementArraySchema = z.array(MemoryStatementSchema).meta({ id: 'MemoryStatementArray' });
+
+export const MemoryNodeEvidenceQuerySchema = z
+    .strictObject({
+        predicate: z
+            .array(z.string())
+            .optional()
+            .meta({ description: 'Keep only these predicates. Repeat the parameter for several.' }),
+        direction: z
+            .enum(['subject', 'object', 'both'])
+            .optional()
+            .meta({ description: 'Whether the Node is the subject or the object of the Statement. Default both.' }),
+        source_id: z
+            .array(z.string())
+            .optional()
+            .meta({ description: 'Keep only evidence from these sources. Repeat the parameter for several.' }),
+        basis: z.enum(['explicit', 'strong_inference', 'tentative']).optional(),
+        observed_from: z.string().meta({ format: 'date-time' }).optional(),
+        observed_to: z.string().meta({ format: 'date-time' }).optional(),
+        valid_from: z.string().meta({ format: 'date-time' }).optional(),
+        valid_to: z.string().meta({ format: 'date-time' }).optional(),
+        q: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    'Case-insensitive substring over the locator heading. Source text is not stored, so this ' +
+                    'searches where a claim was read, not what it said.',
+            }),
+        include_superseded: z.boolean().optional().meta({
+            description: 'Include Statements a later one replaced. Off by default, so the view is the current one.',
+        }),
+        limit: z.number().int().min(1).max(200).optional(),
+        cursor: z.string().optional().meta({ description: 'Opaque page cursor from a previous response.' }),
+    })
+    .meta({
+        id: 'MemoryNodeEvidenceQuery',
+        description: 'Filters over the evidence behind one Node. All optional, and all combinable.',
+    });
+
+export const MemoryEvidenceEntrySchema = MemoryEvidenceRefSchema.extend({
+    source_type: z.string().optional().meta({ description: 'Content type name of the source, when resolvable.' }),
+    source_title: z.string().optional().meta({ description: 'Human-readable source name, when resolvable.' }),
+    observed_at: z
+        .string()
+        .meta({ format: 'date-time', description: 'When the extraction observed this source revision.' })
+        .optional(),
+    excerpt_digest: z
+        .string()
+        .optional()
+        .meta({
+            description:
+                'Digest of the quoted span. Evidence stores locators and digests rather than copies of source ' +
+                'text, so an excerpt is re-fetched from the source and verified against this before it is shown.',
+        }),
+}).meta({
+    id: 'MemoryEvidenceEntry',
+    description: 'One citation, enriched with what the source is, for an evidence inspector.',
+});
+
+export const MemoryNodeEvidenceRowSchema = z
+    .strictObject({
+        statement_id: z.string(),
+        predicate: z.string(),
+        direction: z.enum(['subject', 'object']).meta({
+            description: 'Whether the requested Node is the subject or the object of this Statement.',
+        }),
+        other_node_id: z.string().optional().meta({ description: 'Absent when the other end is a literal.' }),
+        other_node_label: z.string().optional(),
+        literal_value: z.unknown().optional().meta({ description: 'Set when the other end is a literal.' }),
+        valid_from: z.string().meta({ format: 'date-time' }).optional(),
+        valid_to: z.string().meta({ format: 'date-time' }).optional(),
+        undated: z.boolean().optional(),
+        superseded_at: z.string().meta({ format: 'date-time' }).optional(),
+        basis: z.enum(['explicit', 'strong_inference', 'tentative']),
+        evidence: z.array(MemoryEvidenceEntrySchema),
+    })
+    .meta({
+        id: 'MemoryNodeEvidenceRow',
+        description:
+            'One derivation of one Statement touching the Node. A Statement derived independently twice ' +
+            'produces two rows, because each derivation has its own basis and its own citations.',
+    });
+
+export const MemoryFacetCountSchema = z
+    .strictObject({
+        value: z.string(),
+        label: z.string().optional(),
+        count: z.number().int().nonnegative(),
+    })
+    .meta({ id: 'MemoryFacetCount', description: 'One filter value and how many rows carry it.' });
+
+export const MemoryNodeEvidenceFacetsSchema = z
+    .strictObject({
+        predicates: z.array(MemoryFacetCountSchema),
+        sources: z.array(MemoryFacetCountSchema),
+        bases: z.array(MemoryFacetCountSchema),
+    })
+    .meta({
+        id: 'MemoryNodeEvidenceFacets',
+        description:
+            'Counts over the whole readable result, not just the returned page, so the filter controls can be ' +
+            'rendered without a second call.',
+    });
+
+export const MemoryNodeEvidenceResponseSchema = z
+    .strictObject({
+        node: MemoryNodeSchema,
+        rows: z.array(MemoryNodeEvidenceRowSchema),
+        facets: MemoryNodeEvidenceFacetsSchema,
+        next_cursor: z.string().optional().meta({ description: 'Absent when this is the last page.' }),
+        total: z.number().int().nonnegative().meta({
+            description: 'Readable rows matching the filters. Evidence the caller cannot read is never counted.',
+        }),
+    })
+    .meta({
+        id: 'MemoryNodeEvidenceResponse',
+        description: 'Where a Node and each of its Statements came from, filtered and faceted for inspection.',
+    });
 
 export const MemoryNodePatternSchema = z
     .strictObject({

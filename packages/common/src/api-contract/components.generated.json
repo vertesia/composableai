@@ -40967,7 +40967,7 @@
       },
       "brain_object_id": {
         "type": "string",
-        "description": "Content object id of the Brain definition."
+        "description": "Content object id of the Phase-0 Brain definition. Absent when the deleted Brain was a canonical draft, which has no content object behind it."
       },
       "brain_deleted": {
         "type": "boolean",
@@ -40986,7 +40986,6 @@
     },
     "required": [
       "brain_id",
-      "brain_object_id",
       "brain_deleted",
       "records_deleted",
       "errors"
@@ -41028,8 +41027,7 @@
       },
       "head_only": {
         "type": "boolean",
-        "const": true,
-        "description": "V1 content lanes read the head revision only. Earlier revisions stay reachable as Evidence."
+        "description": "V1 content lanes read the head revision only, so this must be `true`; `false` is refused. Earlier revisions stay reachable as immutable Evidence once later ones arrive. It is a boolean rather than a constant so the field can widen without a breaking change when historical revisions become selectable."
       }
     },
     "required": [
@@ -41748,41 +41746,255 @@
       "$ref": "#/components/schemas/MemoryEvidenceRef"
     }
   },
-  "MemorySupport": {
+  "MemoryEvidenceEntry": {
     "type": "object",
     "properties": {
+      "id": {
+        "type": "string"
+      },
+      "source_kind": {
+        "type": "string",
+        "enum": [
+          "content",
+          "agent_run"
+        ]
+      },
+      "source_id": {
+        "type": "string"
+      },
+      "source_revision_id": {
+        "type": "string"
+      },
+      "source_root_id": {
+        "type": "string"
+      },
+      "locator": {
+        "$ref": "#/components/schemas/MemoryEvidenceLocator"
+      },
+      "extracted_by_run_id": {
+        "type": "string"
+      },
+      "prompt_version": {
+        "type": "string"
+      },
+      "ontology_version": {
+        "type": "string"
+      },
+      "source_type": {
+        "type": "string",
+        "description": "Content type name of the source, when resolvable."
+      },
+      "source_title": {
+        "type": "string",
+        "description": "Human-readable source name, when resolvable."
+      },
+      "observed_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the extraction observed this source revision."
+      },
+      "excerpt_digest": {
+        "type": "string",
+        "description": "Digest of the quoted span. Evidence stores locators and digests rather than copies of source text, so an excerpt is re-fetched from the source and verified against this before it is shown."
+      }
+    },
+    "required": [
+      "id",
+      "source_kind",
+      "source_id"
+    ],
+    "additionalProperties": false,
+    "description": "One citation, enriched with what the source is, for an evidence inspector."
+  },
+  "MemoryFacetCount": {
+    "type": "object",
+    "properties": {
+      "value": {
+        "type": "string"
+      },
+      "label": {
+        "type": "string"
+      },
+      "count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "value",
+      "count"
+    ],
+    "additionalProperties": false,
+    "description": "One filter value and how many rows carry it."
+  },
+  "MemoryNodeEvidenceQuery": {
+    "type": "object",
+    "properties": {
+      "predicate": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Keep only these predicates. Repeat the parameter for several."
+      },
+      "direction": {
+        "type": "string",
+        "enum": [
+          "subject",
+          "object",
+          "both"
+        ],
+        "description": "Whether the Node is the subject or the object of the Statement. Default both."
+      },
+      "source_id": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Keep only evidence from these sources. Repeat the parameter for several."
+      },
       "basis": {
         "type": "string",
         "enum": [
           "explicit",
           "strong_inference",
           "tentative"
-        ],
-        "description": "How the derivation reached the fact, not how certain the fact is. A quantified contract clause is `explicit`; a conclusion drawn across two sources is `strong_inference`."
+        ]
       },
-      "evidence_ids": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "derived_at": {
+      "observed_from": {
         "type": "string",
         "format": "date-time"
       },
-      "derived_by_run_id": {
+      "observed_to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "valid_from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "valid_to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "q": {
+        "type": "string",
+        "description": "Case-insensitive substring over the locator heading. Source text is not stored, so this searches where a claim was read, not what it said."
+      },
+      "include_superseded": {
+        "type": "boolean",
+        "description": "Include Statements a later one replaced. Off by default, so the view is the current one."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200
+      },
+      "cursor": {
+        "type": "string",
+        "description": "Opaque page cursor from a previous response."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Filters over the evidence behind one Node. All optional, and all combinable."
+  },
+  "MemoryNodeEvidenceRow": {
+    "type": "object",
+    "properties": {
+      "statement_id": {
         "type": "string"
       },
-      "rationale": {
+      "predicate": {
         "type": "string"
+      },
+      "direction": {
+        "type": "string",
+        "enum": [
+          "subject",
+          "object"
+        ],
+        "description": "Whether the requested Node is the subject or the object of this Statement."
+      },
+      "other_node_id": {
+        "type": "string",
+        "description": "Absent when the other end is a literal."
+      },
+      "other_node_label": {
+        "type": "string"
+      },
+      "literal_value": {
+        "description": "Set when the other end is a literal."
+      },
+      "valid_from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "valid_to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "undated": {
+        "type": "boolean"
+      },
+      "superseded_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "basis": {
+        "type": "string",
+        "enum": [
+          "explicit",
+          "strong_inference",
+          "tentative"
+        ]
+      },
+      "evidence": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryEvidenceEntry"
+        }
       }
     },
     "required": [
+      "statement_id",
+      "predicate",
+      "direction",
       "basis",
-      "evidence_ids"
+      "evidence"
     ],
     "additionalProperties": false,
-    "description": "One independent derivation of a Statement. The security snapshots that authorize it are server-side only and are never projected here."
+    "description": "One derivation of one Statement touching the Node. A Statement derived independently twice produces two rows, because each derivation has its own basis and its own citations."
+  },
+  "MemoryNodeEvidenceFacets": {
+    "type": "object",
+    "properties": {
+      "predicates": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryFacetCount"
+        }
+      },
+      "sources": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryFacetCount"
+        }
+      },
+      "bases": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryFacetCount"
+        }
+      }
+    },
+    "required": [
+      "predicates",
+      "sources",
+      "bases"
+    ],
+    "additionalProperties": false,
+    "description": "Counts over the whole readable result, not just the returned page, so the filter controls can be rendered without a second call."
   },
   "MemoryNode": {
     "type": "object",
@@ -41858,6 +42070,77 @@
     ],
     "additionalProperties": false,
     "description": "An entity, event, concept or procedure in a Brain Generation."
+  },
+  "MemoryNodeEvidenceResponse": {
+    "type": "object",
+    "properties": {
+      "node": {
+        "$ref": "#/components/schemas/MemoryNode"
+      },
+      "rows": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryNodeEvidenceRow"
+        }
+      },
+      "facets": {
+        "$ref": "#/components/schemas/MemoryNodeEvidenceFacets"
+      },
+      "next_cursor": {
+        "type": "string",
+        "description": "Absent when this is the last page."
+      },
+      "total": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Readable rows matching the filters. Evidence the caller cannot read is never counted."
+      }
+    },
+    "required": [
+      "node",
+      "rows",
+      "facets",
+      "total"
+    ],
+    "additionalProperties": false,
+    "description": "Where a Node and each of its Statements came from, filtered and faceted for inspection."
+  },
+  "MemorySupport": {
+    "type": "object",
+    "properties": {
+      "basis": {
+        "type": "string",
+        "enum": [
+          "explicit",
+          "strong_inference",
+          "tentative"
+        ],
+        "description": "How the derivation reached the fact, not how certain the fact is. A quantified contract clause is `explicit`; a conclusion drawn across two sources is `strong_inference`."
+      },
+      "evidence_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "derived_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "derived_by_run_id": {
+        "type": "string"
+      },
+      "rationale": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "basis",
+      "evidence_ids"
+    ],
+    "additionalProperties": false,
+    "description": "One independent derivation of a Statement. The security snapshots that authorize it are server-side only and are never projected here."
   },
   "MemoryNodeArray": {
     "type": "array",
