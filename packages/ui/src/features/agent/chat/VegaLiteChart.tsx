@@ -3,7 +3,6 @@ import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Check, Copy, Download, Loader2, Maximize2, Minimize2, X } from 'lucide-react';
-import Papa from 'papaparse';
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
@@ -717,7 +716,12 @@ export const VegaLiteChart = memo(
                         let data: unknown[];
 
                         if (isCsv) {
-                            // Parse CSV to JSON array
+                            // Parse CSV to JSON array. papaparse is imported here rather than at
+                            // module scope: it is only ever needed for a chart whose data comes from
+                            // a .csv artifact, and a static import put it in the widgets bundle's
+                            // graph (this module is reachable from widgets/markdown), so every
+                            // application paid for it on first render.
+                            const { default: Papa } = await import('papaparse');
                             const csvText = await response.text();
                             const parseResult = Papa.parse(csvText, {
                                 header: true,
