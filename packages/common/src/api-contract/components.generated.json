@@ -2297,6 +2297,18 @@
     },
     "additionalProperties": false
   },
+  "MemoryProjectConfiguration": {
+    "type": "object",
+    "properties": {
+      "default_brain_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Project-unique Memory Brain slug used when an agent or reconstruction workflow does not explicitly select a Brain. An empty memory block clears the default."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Project defaults for workflow-bound Memory Brain resolution."
+  },
   "ProjectIntakeSniffConfiguration": {
     "type": "object",
     "properties": {
@@ -4765,6 +4777,10 @@
         "$ref": "#/components/schemas/AgentProjectConfiguration",
         "description": "Agent runtime configuration for this project."
       },
+      "memory": {
+        "$ref": "#/components/schemas/MemoryProjectConfiguration",
+        "description": "Memory Brain defaults for this project."
+      },
       "indexing": {
         "$ref": "#/components/schemas/ProjectIndexingConfiguration",
         "description": "Indexing configuration for this project. Controls whether indexing and querying are enabled at the project level."
@@ -4955,6 +4971,10 @@
       "agent": {
         "$ref": "#/components/schemas/AgentProjectConfiguration",
         "description": "Agent runtime configuration for this project."
+      },
+      "memory": {
+        "$ref": "#/components/schemas/MemoryProjectConfiguration",
+        "description": "Memory Brain defaults for this project."
       },
       "indexing": {
         "$ref": "#/components/schemas/ProjectIndexingConfiguration",

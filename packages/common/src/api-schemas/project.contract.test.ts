@@ -220,6 +220,7 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
             'BrowserUseRiskPolicy',
             'BrowserUseScreenshotCapture',
             'BrowserUseProjectConfiguration',
+            'MemoryProjectConfiguration',
             'ProjectIntakeSniffConfiguration',
         ]) {
             expect(Object.keys(ApiSchemaComponents), name).toContain(name);
@@ -267,6 +268,15 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
             false,
         );
         expect(validateApiRequest('BrowserUseProjectConfiguration', { unknown_switch: true }).valid).toBe(false);
+    });
+
+    it('publishes a closed project Memory default configuration', () => {
+        expect(validateApiRequest('MemoryProjectConfiguration', { default_brain_id: 'sol-medium' }).valid).toBe(true);
+        expect(validateApiRequest('MemoryProjectConfiguration', {}).valid).toBe(true);
+        expect(validateApiRequest('MemoryProjectConfiguration', { default_brain_id: '' }).valid).toBe(false);
+        expect(
+            validateApiRequest('MemoryProjectConfiguration', { default_brain_id: 'sol', brain_id: 'glm' }).valid,
+        ).toBe(false);
     });
 
     it('converts the rendering templates ahead of the AppManifest that embeds them', () => {
