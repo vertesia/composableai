@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/build-tools",
-    "version": "1.5.0-dev.20260901.052906Z",
+    "version": "1.5.0-dev.20260905.011013Z",
     "description": "Build tools for Vertesia projects - import transformers (skill / template / prompt / raw), esbuild widget bundler, vertesia-build CLI, and a Vite dev plugin",
     "type": "module",
     "main": "./lib/index.js",
@@ -83,5 +83,5 @@
         "zod",
         "validation"
     ],
-    "gitHead": "8dbc027c29037b4252475ecae3bff0adf8c980c4"
+    "gitHead": "ea74a29f6885cec132eec4b6b319e40137df3b40"
 }
