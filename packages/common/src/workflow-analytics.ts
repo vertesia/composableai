@@ -16,6 +16,7 @@ export enum AgentEventType {
     AgentRunCompleted = 'agent_run_completed',
     LlmCall = 'llm_call',
     ToolCall = 'tool_call',
+    ShadowSkillRanking = 'shadow_skill_ranking',
 }
 
 /**
@@ -210,6 +211,21 @@ export interface ToolCallEvent extends BaseAgentEvent {
     spawnedChildWorkflow?: boolean;
 }
 
+/** Shadow-only lexical skill ranking emitted without changing the active catalog. */
+export interface ShadowSkillRankingEvent extends BaseAgentEvent {
+    eventType: AgentEventType.ShadowSkillRanking;
+    callType: LlmCallType.Start | LlmCallType.ResumeUser;
+    /** Workflow model iteration used to join subsequent tool calls. */
+    iteration: number;
+    /** Activity attempt used to deduplicate retries. */
+    attemptNumber: number;
+    scorerVersion: number;
+    /** Lexical token count only; user text and token strings are never emitted. */
+    userMessageTokenCount: number;
+    scope: 'universe' | 'active_only';
+    rankings: Array<{ skill: string; score: number; active: boolean }>;
+}
+
 // ============================================================================
 // Nested Interaction Execution Events
 // ============================================================================
@@ -235,7 +251,12 @@ export interface NestedInteractionEvent extends LlmCallEvent {
 /**
  * @discriminator eventType
  */
-export type AgentEvent = AgentRunStartedEvent | AgentRunCompletedEvent | LlmCallEvent | ToolCallEvent;
+export type AgentEvent =
+    | AgentRunStartedEvent
+    | AgentRunCompletedEvent
+    | LlmCallEvent
+    | ToolCallEvent
+    | ShadowSkillRankingEvent;
 
 /**
  * Workflow Analytics Types

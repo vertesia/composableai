@@ -275,6 +275,9 @@ export interface ConversationCatalogState {
      */
     skill_tool_map?: Record<string, string[]>;
 
+    /** Routing keywords keyed by bare skill name (without the learn_ prefix). */
+    skill_keywords?: Record<string, string[]>;
+
     /** All available skills from registered tool collections (for upfront hydration in sandbox) */
     available_skills?: AvailableSkill[];
 
@@ -290,7 +293,10 @@ export interface ConversationCatalogState {
  * (catalog.json, next to conversation.json and tools.json). Activation metadata is
  * runtime bookkeeping and is deliberately not part of the stored catalog.
  */
-export type StoredConversationCatalog = Pick<ConversationCatalogState, 'skill_tool_map' | 'available_skills'>;
+export type StoredConversationCatalog = Pick<
+    ConversationCatalogState,
+    'skill_tool_map' | 'skill_keywords' | 'available_skills'
+>;
 
 /** Artifact key of the stored conversation catalog, relative to the agent storage root. */
 export const CONVERSATION_CATALOG_ARTIFACT_KEY = 'catalog.json';

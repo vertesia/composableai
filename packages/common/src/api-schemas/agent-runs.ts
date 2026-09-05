@@ -125,12 +125,33 @@ const ToolCallEventSchema = z.strictObject({
     spawnedChildWorkflow: z.boolean().optional(),
 });
 
+const ShadowSkillRankingEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.ShadowSkillRanking),
+    callType: z.union([z.literal(LlmCallType.Start), z.literal(LlmCallType.ResumeUser)]),
+    iteration: z.number(),
+    attemptNumber: z.number(),
+    scorerVersion: z.number(),
+    userMessageTokenCount: z.number(),
+    scope: z.enum(['universe', 'active_only']),
+    rankings: z
+        .array(
+            z.strictObject({
+                skill: z.string(),
+                score: z.number(),
+                active: z.boolean(),
+            }),
+        )
+        .max(20),
+});
+
 export const AgentEventSchema: z.ZodType<AgentEvent> = z
     .discriminatedUnion('eventType', [
         AgentRunStartedEventSchema,
         AgentRunCompletedEventSchema,
         LlmCallEventSchema,
         ToolCallEventSchema,
+        ShadowSkillRankingEventSchema,
     ])
     .meta({ id: 'AgentEvent' });
 

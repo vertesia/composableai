@@ -491,6 +491,13 @@ export const AgentToolDefinitionSchema = z
                     'For skill tools (`learn_*`): the tool names this skill enables when called. Matches the `tools:` key used in SKILL.md frontmatter and built-in skill definitions — one name across the whole stack.',
             })
             .optional(),
+        keywords: z
+            .array(z.string())
+            .meta({
+                description:
+                    'For skill tools (`learn_*`): context-trigger keywords from SKILL.md frontmatter. Not included in primary-agent tool definitions; available to discovery and routing components.',
+            })
+            .optional(),
         annotations: MCPToolAnnotationsSchema.meta({
             description: 'MCP tool annotations providing hints about tool behavior and safety.',
         }).optional(),
