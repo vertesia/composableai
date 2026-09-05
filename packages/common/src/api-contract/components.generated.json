@@ -13520,6 +13520,10 @@
       "prompt_cache_diagnostic": {
         "$ref": "#/components/schemas/PromptCacheDiagnostic"
       },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier actually used by the provider"
+      },
       "tool_use": {
         "type": "array",
         "items": {
@@ -38489,6 +38493,7 @@
           "project",
           "project_tag",
           "provider",
+          "service_tier",
           "interaction",
           "workflow"
         ],
@@ -38515,6 +38520,10 @@
       "provider": {
         "type": "string",
         "description": "Filter by provider"
+      },
+      "service_tier": {
+        "type": "string",
+        "description": "Filter by resolved processing tier"
       },
       "project_id": {
         "type": "string",
@@ -38701,6 +38710,10 @@
       "provider_account_id": {
         "type": "string"
       },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier this price applies to"
+      },
       "input_price_per_m_tokens": {
         "type": "number"
       },
@@ -38810,6 +38823,10 @@
       "provider_account_id": {
         "type": "string"
       },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier this price applies to"
+      },
       "list_price_date": {
         "type": "string"
       },
@@ -38864,6 +38881,9 @@
         "type": "string"
       },
       "provider": {
+        "type": "string"
+      },
+      "service_tier": {
         "type": "string"
       },
       "cost": {
@@ -38959,6 +38979,53 @@
           "$ref": "#/components/schemas/ModelPricing"
         }
       },
+      "pricing_coverage": {
+        "type": "object",
+        "properties": {
+          "priced_calls": {
+            "type": "number"
+          },
+          "unpriced_calls": {
+            "type": "number"
+          },
+          "assumed_default_calls": {
+            "type": "number"
+          },
+          "unpriced": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_tier": {
+                  "type": "string"
+                },
+                "calls": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "model",
+                "service_tier",
+                "calls"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "priced_calls",
+          "unpriced_calls",
+          "assumed_default_calls",
+          "unpriced"
+        ],
+        "additionalProperties": false
+      },
       "query_range": {
         "type": "object",
         "properties": {
@@ -39006,6 +39073,53 @@
         "items": {
           "$ref": "#/components/schemas/ModelPricing"
         }
+      },
+      "pricing_coverage": {
+        "type": "object",
+        "properties": {
+          "priced_calls": {
+            "type": "number"
+          },
+          "unpriced_calls": {
+            "type": "number"
+          },
+          "assumed_default_calls": {
+            "type": "number"
+          },
+          "unpriced": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_tier": {
+                  "type": "string"
+                },
+                "calls": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "model",
+                "service_tier",
+                "calls"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "priced_calls",
+          "unpriced_calls",
+          "assumed_default_calls",
+          "unpriced"
+        ],
+        "additionalProperties": false
       },
       "query_range": {
         "type": "object",
@@ -39068,13 +39182,25 @@
       },
       "aws_pricing": {
         "type": "number"
+      },
+      "xai_pricing": {
+        "type": "number"
+      },
+      "openrouter_pricing": {
+        "type": "number"
+      },
+      "openai_costs": {
+        "type": "number"
       }
     },
     "required": [
       "date",
       "gcp_list",
       "gcp_effective",
-      "aws_pricing"
+      "aws_pricing",
+      "xai_pricing",
+      "openrouter_pricing",
+      "openai_costs"
     ],
     "additionalProperties": false
   },
