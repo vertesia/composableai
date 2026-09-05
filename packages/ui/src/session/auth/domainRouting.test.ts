@@ -2,8 +2,10 @@ import { Env } from '@vertesia/ui/env';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
     centralAuthUrl,
+    clearCentralAuthRoundTripMarker,
     DEFAULT_CENTRAL_AUTH_URL,
     isCentralAuthRedirectPending,
+    markCentralAuthRoundTripStarted,
     mountRootUrl,
     shouldRedirectToCentralAuth,
     shouldUseFirebaseAuth,
@@ -169,5 +171,44 @@ describe('isCentralAuthRedirectPending', () => {
         initEnv({ isLocalDev: true });
         setLocation('');
         expect(isCentralAuthRedirectPending()).toBe(true);
+    });
+});
+
+// The marker exists for a server that generates the page: it is the only way to tell the leg that
+// is about to redirect from the leg that came back, since the token returns in the URL fragment and
+// never reaches a server. Its exact attributes are the contract -- a cookie the browser refuses to
+// store, or one that is not sent on the top-level navigation back from the broker, degrades to "no
+// marker" silently and costs a round-trip on every load instead.
+describe('central auth round-trip marker', () => {
+    function setProtocol(protocol: string): { cookie: string } {
+        const document = { cookie: '' };
+        (globalThis as { window?: unknown }).window = { location: { protocol } };
+        (globalThis as { document?: unknown }).document = document;
+        return document;
+    }
+
+    afterEach(() => {
+        delete (globalThis as { window?: unknown }).window;
+        delete (globalThis as { document?: unknown }).document;
+    });
+
+    it('sets a short-lived, root-scoped cookie that survives the navigation back from the broker', () => {
+        const document = setProtocol('https:');
+        markCentralAuthRoundTripStarted();
+        // Lax, not Strict: the return leg is a cross-site top-level GET, which Strict would drop.
+        expect(document.cookie).toBe('vtsauth=1; Path=/; Max-Age=300; SameSite=Lax; Secure');
+    });
+
+    it('omits Secure over http so local development keeps the marker', () => {
+        const document = setProtocol('http:');
+        markCentralAuthRoundTripStarted();
+        expect(document.cookie).toBe('vtsauth=1; Path=/; Max-Age=300; SameSite=Lax');
+    });
+
+    it('expires the cookie on the same path when the app mounts', () => {
+        const document = setProtocol('https:');
+        clearCentralAuthRoundTripMarker();
+        // Same name and Path, or the browser keeps the original cookie alongside this one.
+        expect(document.cookie).toBe('vtsauth=; Path=/; Max-Age=0; SameSite=Lax; Secure');
     });
 });
