@@ -40994,6 +40994,1309 @@
     "additionalProperties": false,
     "description": "Summary of a Memory Brain deletion, including any partially failed cascade."
   },
+  "MemoryContentSourceSelector": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "content"
+      },
+      "id": {
+        "type": "string",
+        "description": "Selector id, unique within the Brain. Names the source lane."
+      },
+      "collection_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "include_collection_descendants": {
+        "type": "boolean"
+      },
+      "type_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "locations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "head_only": {
+        "type": "boolean",
+        "const": true,
+        "description": "V1 content lanes read the head revision only. Earlier revisions stay reachable as Evidence."
+      }
+    },
+    "required": [
+      "kind",
+      "id",
+      "head_only"
+    ],
+    "additionalProperties": false,
+    "description": "A content lane of a Brain source scope."
+  },
+  "MemoryAgentRunSourceSelector": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "agent_run"
+      },
+      "id": {
+        "type": "string",
+        "description": "Selector id, unique within the Brain. Names the source lane."
+      },
+      "interaction_refs": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "categories": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "statuses": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "failed",
+            "cancelled"
+          ]
+        }
+      },
+      "completed_after": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "additionalProperties": false,
+    "description": "An AgentRun lane of a Brain source scope."
+  },
+  "MemorySourceSelector": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/MemoryContentSourceSelector"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryAgentRunSourceSelector"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "content": "#/components/schemas/MemoryContentSourceSelector",
+        "agent_run": "#/components/schemas/MemoryAgentRunSourceSelector"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ],
+    "description": "One source lane of a Brain. Each selector carries an independent watermark and backlog; a model never supplies or widens one."
+  },
+  "MemoryBrainRecipe": {
+    "type": "object",
+    "properties": {
+      "interaction": {
+        "type": "string",
+        "description": "Stable ref of the Dreamer interaction."
+      },
+      "environment": {
+        "type": "string",
+        "description": "Stable ref of the execution environment."
+      },
+      "model": {
+        "type": "string"
+      },
+      "prompt_version": {
+        "type": "string",
+        "description": "Prompt version folded into the configuration fingerprint."
+      },
+      "max_run_duration_hours": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "interaction",
+      "prompt_version"
+    ],
+    "additionalProperties": false,
+    "description": "How a Brain builds itself: interaction, environment and budgets."
+  },
+  "MemoryBrainUpdatePolicy": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "scheduled",
+          "continuous"
+        ]
+      },
+      "cron": {
+        "type": "string",
+        "description": "Schedule expression, for `scheduled` mode."
+      },
+      "debounce_seconds": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "max_sources_per_run": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "mode"
+    ],
+    "additionalProperties": false,
+    "description": "When a Brain reprocesses its sources."
+  },
+  "MemoryBrainLaneState": {
+    "type": "object",
+    "properties": {
+      "selector_id": {
+        "type": "string"
+      },
+      "watermark": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "sweep_cursor": {
+        "type": "string"
+      },
+      "lag_seconds": {
+        "type": "number"
+      },
+      "last_run_id": {
+        "type": "string"
+      },
+      "backlog": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "selector_id"
+    ],
+    "additionalProperties": false,
+    "description": "Freshness of one source lane. Server-managed."
+  },
+  "MemoryBrain": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Immutable project-unique slug. Not the Mongo id."
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "building",
+          "active",
+          "paused",
+          "degraded",
+          "archived"
+        ]
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Optimistic-concurrency revision of the configuration."
+      },
+      "source_selectors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemorySourceSelector"
+        }
+      },
+      "ontology_ref": {
+        "type": "string"
+      },
+      "ontology_version": {
+        "type": "string"
+      },
+      "recipe": {
+        "$ref": "#/components/schemas/MemoryBrainRecipe"
+      },
+      "update_policy": {
+        "$ref": "#/components/schemas/MemoryBrainUpdatePolicy"
+      },
+      "lane_state": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryBrainLaneState"
+        }
+      },
+      "active_generation_id": {
+        "type": "string"
+      },
+      "configuration_fingerprint": {
+        "type": "string"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "status",
+      "revision",
+      "source_selectors",
+      "created_by",
+      "updated_by",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false,
+    "description": "A Memory Brain: source scope, ontology, recipe and derived state."
+  },
+  "MemoryBrainArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/MemoryBrain"
+    }
+  },
+  "CreateMemoryBrainPayload": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Project-unique slug. Immutable once created; derived from the name if omitted."
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "source_selectors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemorySourceSelector"
+        }
+      },
+      "ontology_ref": {
+        "type": "string"
+      },
+      "ontology_version": {
+        "type": "string"
+      },
+      "recipe": {
+        "$ref": "#/components/schemas/MemoryBrainRecipe"
+      },
+      "update_policy": {
+        "$ref": "#/components/schemas/MemoryBrainUpdatePolicy"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "Create a draft Brain. It builds nothing until it is run."
+  },
+  "UpdateMemoryBrainPayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "source_selectors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemorySourceSelector"
+        }
+      },
+      "ontology_ref": {
+        "type": "string"
+      },
+      "ontology_version": {
+        "type": "string"
+      },
+      "recipe": {
+        "$ref": "#/components/schemas/MemoryBrainRecipe"
+      },
+      "update_policy": {
+        "$ref": "#/components/schemas/MemoryBrainUpdatePolicy"
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Revision the caller read. The update is refused with 409 when the stored revision moved on, so two administrators cannot silently overwrite each other."
+      }
+    },
+    "required": [
+      "expected_revision"
+    ],
+    "additionalProperties": false,
+    "description": "Update a Brain under optimistic concurrency."
+  },
+  "PromoteMemoryGenerationPayload": {
+    "type": "object",
+    "properties": {
+      "generation_id": {
+        "type": "string"
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Brain revision the caller read. Promotion is one conditional pointer update, so a Brain that moved on fails the check instead of switching."
+      }
+    },
+    "required": [
+      "generation_id",
+      "expected_revision"
+    ],
+    "additionalProperties": false,
+    "description": "Make a built Generation the active one."
+  },
+  "MemoryBrainActionResponse": {
+    "type": "object",
+    "properties": {
+      "brain": {
+        "$ref": "#/components/schemas/MemoryBrain"
+      },
+      "applied": {
+        "type": "boolean",
+        "description": "False when the action was a no-op for the current state."
+      },
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "brain",
+      "applied"
+    ],
+    "additionalProperties": false,
+    "description": "Result of a Brain lifecycle action."
+  },
+  "MemoryGenerationCounts": {
+    "type": "object",
+    "properties": {
+      "nodes": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "statements": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "evidence": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "nodes",
+      "statements",
+      "evidence"
+    ],
+    "additionalProperties": false,
+    "description": "Committed record counts of a Generation."
+  },
+  "MemoryGeneration": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "brain_id": {
+        "type": "string",
+        "description": "Public slug of the owning Brain."
+      },
+      "ordinal": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Monotonic per Brain. Generation 1 is the first build."
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "building",
+          "ready",
+          "active",
+          "superseded",
+          "abandoned",
+          "failed"
+        ]
+      },
+      "is_active": {
+        "type": "boolean",
+        "description": "Derived from the Brain's pointer, which is the only authority on which Generation is live."
+      },
+      "configuration_fingerprint": {
+        "type": "string"
+      },
+      "counts": {
+        "$ref": "#/components/schemas/MemoryGenerationCounts"
+      },
+      "build_started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "build_ended_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "promoted_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "promoted_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "brain_id",
+      "ordinal",
+      "status",
+      "is_active",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false,
+    "description": "One build of a Brain graph. Only a promoted Generation answers public queries."
+  },
+  "MemoryGenerationArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/MemoryGeneration"
+    }
+  },
+  "MemoryRunCounts": {
+    "type": "object",
+    "properties": {
+      "nodes_upserted": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "statements_upserted": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "statements_superseded": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "evidence_linked": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "refused": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "nodes_upserted",
+      "statements_upserted",
+      "statements_superseded",
+      "evidence_linked",
+      "refused"
+    ],
+    "additionalProperties": false,
+    "description": "What one run wrote, and how much of it was refused."
+  },
+  "MemoryRunSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "brain_id": {
+        "type": "string"
+      },
+      "generation_id": {
+        "type": "string"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "discover",
+          "maintain",
+          "rebuild"
+        ]
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "committed",
+          "refused",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "counts": {
+        "$ref": "#/components/schemas/MemoryRunCounts"
+      },
+      "manifest_size": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "committed_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "error": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "brain_id",
+      "generation_id",
+      "mode",
+      "status",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false,
+    "description": "Receipt of one Memory run. Execution mechanics live in Temporal and the transcript in the AgentRun; this is the permanent audit anchor for what the run changed."
+  },
+  "MemoryRunSummaryArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/MemoryRunSummary"
+    }
+  },
+  "MemoryEvidenceLocator": {
+    "type": "object",
+    "properties": {
+      "page": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "heading": {
+        "type": "string"
+      },
+      "line_start": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "line_end": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "message_id": {
+        "type": "string"
+      },
+      "workstream_id": {
+        "type": "string"
+      },
+      "tool_call_id": {
+        "type": "string"
+      },
+      "json_pointer": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Where inside a source the claim was extracted. At least one of `heading`, `page`, `line_start`, `json_pointer` or `message_id` is required — a bare document reference is not a locator. The rule is enforced server-side because JSON Schema cannot express it."
+  },
+  "MemoryEvidenceRef": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "source_kind": {
+        "type": "string",
+        "enum": [
+          "content",
+          "agent_run"
+        ]
+      },
+      "source_id": {
+        "type": "string"
+      },
+      "source_revision_id": {
+        "type": "string"
+      },
+      "source_root_id": {
+        "type": "string"
+      },
+      "locator": {
+        "$ref": "#/components/schemas/MemoryEvidenceLocator"
+      },
+      "extracted_by_run_id": {
+        "type": "string"
+      },
+      "prompt_version": {
+        "type": "string"
+      },
+      "ontology_version": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "source_kind",
+      "source_id"
+    ],
+    "additionalProperties": false,
+    "description": "A citation: one immutable source and the location inside it. Source text is re-fetched and verified rather than served from this record."
+  },
+  "MemoryEvidenceRefArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/MemoryEvidenceRef"
+    }
+  },
+  "MemorySupport": {
+    "type": "object",
+    "properties": {
+      "basis": {
+        "type": "string",
+        "enum": [
+          "explicit",
+          "strong_inference",
+          "tentative"
+        ],
+        "description": "How the derivation reached the fact, not how certain the fact is. A quantified contract clause is `explicit`; a conclusion drawn across two sources is `strong_inference`."
+      },
+      "evidence_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "derived_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "derived_by_run_id": {
+        "type": "string"
+      },
+      "rationale": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "basis",
+      "evidence_ids"
+    ],
+    "additionalProperties": false,
+    "description": "One independent derivation of a Statement. The security snapshots that authorize it are server-side only and are never projected here."
+  },
+  "MemoryNode": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "brain_id": {
+        "type": "string"
+      },
+      "generation_id": {
+        "type": "string"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "entity",
+          "event",
+          "concept",
+          "procedure"
+        ]
+      },
+      "type": {
+        "type": "string"
+      },
+      "label": {
+        "type": "string"
+      },
+      "aliases": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "attributes": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "identity_key": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "active",
+          "redirected",
+          "retracted"
+        ]
+      },
+      "redirect_to": {
+        "type": "string",
+        "description": "Surviving Node when this one was merged away."
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "brain_id",
+      "generation_id",
+      "kind",
+      "type",
+      "label",
+      "status",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false,
+    "description": "An entity, event, concept or procedure in a Brain Generation."
+  },
+  "MemoryNodeArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/MemoryNode"
+    }
+  },
+  "MemoryStatementNodeObject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "node"
+      },
+      "node_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "node_id"
+    ],
+    "additionalProperties": false
+  },
+  "MemoryStatementLiteralObject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "literal"
+      },
+      "type": {
+        "type": "string",
+        "description": "Literal type from the ontology, such as `money` or `absence`."
+      },
+      "value": {}
+    },
+    "required": [
+      "kind",
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "MemoryStatementObject": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/MemoryStatementNodeObject"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryStatementLiteralObject"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "node": "#/components/schemas/MemoryStatementNodeObject",
+        "literal": "#/components/schemas/MemoryStatementLiteralObject"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ],
+    "description": "Object of a Statement. An unnamed or placeholder party is a literal of type `absence`, never a Node."
+  },
+  "MemoryStatement": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "brain_id": {
+        "type": "string"
+      },
+      "generation_id": {
+        "type": "string"
+      },
+      "subject_node_id": {
+        "type": "string"
+      },
+      "predicate": {
+        "type": "string"
+      },
+      "object": {
+        "$ref": "#/components/schemas/MemoryStatementObject"
+      },
+      "context_event_id": {
+        "type": "string"
+      },
+      "valid_from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "valid_to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "undated": {
+        "type": "boolean",
+        "description": "Set when the source genuinely does not place the fact in time. A Statement with neither `valid_from` nor `undated` is refused: a fact nobody bothered to date is not the same as one the source leaves undated."
+      },
+      "asserted_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "superseded_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "superseded_by": {
+        "type": "string"
+      },
+      "retracted_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "confidence": {
+        "type": "number"
+      },
+      "salience": {
+        "type": "number"
+      },
+      "support": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemorySupport"
+        },
+        "description": "Readable derivations only. A Statement is returned when at least one of them authorizes."
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "brain_id",
+      "generation_id",
+      "subject_node_id",
+      "predicate",
+      "object",
+      "asserted_at",
+      "support",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false,
+    "description": "One temporal fact, with the derivations that support it."
+  },
+  "MemoryStatementArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/MemoryStatement"
+    }
+  },
+  "MemoryNodePattern": {
+    "type": "object",
+    "properties": {
+      "node": {
+        "type": "string",
+        "description": "Variable this pattern binds."
+      },
+      "type": {
+        "type": "string"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "entity",
+          "event",
+          "concept",
+          "procedure"
+        ]
+      },
+      "alias": {
+        "type": "string",
+        "description": "Match by label or normalized alias."
+      },
+      "identity_key": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "node"
+    ],
+    "additionalProperties": false,
+    "description": "Binds a variable to Nodes matching a type and a name."
+  },
+  "MemoryStatementPatternObject": {
+    "type": "object",
+    "properties": {
+      "variable": {
+        "type": "string",
+        "description": "Bind the object Node to this variable."
+      },
+      "literal": {
+        "description": "Match a literal object value exactly."
+      }
+    },
+    "additionalProperties": false
+  },
+  "MemoryStatementPatternBody": {
+    "type": "object",
+    "properties": {
+      "subject": {
+        "type": "string",
+        "description": "Variable bound to the subject Node."
+      },
+      "predicate": {
+        "type": "string"
+      },
+      "object": {
+        "$ref": "#/components/schemas/MemoryStatementPatternObject"
+      },
+      "bind": {
+        "type": "string",
+        "description": "Variable bound to the Statement itself."
+      }
+    },
+    "required": [
+      "subject"
+    ],
+    "additionalProperties": false
+  },
+  "MemoryStatementPattern": {
+    "type": "object",
+    "properties": {
+      "statement": {
+        "$ref": "#/components/schemas/MemoryStatementPatternBody"
+      }
+    },
+    "required": [
+      "statement"
+    ],
+    "additionalProperties": false,
+    "description": "Binds variables through one predicate edge."
+  },
+  "MemoryGraphPattern": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/MemoryNodePattern"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryStatementPattern"
+      }
+    ],
+    "description": "One clause of a graph query. Node patterns bind entities; statement patterns bind edges."
+  },
+  "MemoryValueFilter": {
+    "type": "object",
+    "properties": {
+      "variable": {
+        "type": "string"
+      },
+      "field": {
+        "type": "string",
+        "description": "Attribute path on the bound Node or Statement — `attributes.jurisdiction`, `confidence`, `valid_from`, `valid_to`."
+      },
+      "operator": {
+        "type": "string",
+        "enum": [
+          "eq",
+          "ne",
+          "gt",
+          "gte",
+          "lt",
+          "lte",
+          "in",
+          "exists"
+        ]
+      },
+      "value": {}
+    },
+    "required": [
+      "variable",
+      "field",
+      "operator"
+    ],
+    "additionalProperties": false,
+    "description": "An attribute, confidence or valid-time constraint."
+  },
+  "MemoryPathQuery": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": "string"
+      },
+      "to": {
+        "type": "string"
+      },
+      "predicates": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "max_hops": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 3,
+        "description": "Server-clamped to 3; default 2."
+      }
+    },
+    "required": [
+      "from",
+      "to"
+    ],
+    "additionalProperties": false,
+    "description": "Bounded path search between two bound variables."
+  },
+  "MemoryGraphQuery": {
+    "type": "object",
+    "properties": {
+      "generation_id": {
+        "type": "string",
+        "description": "Defaults to the Brain's active Generation. Naming a shadow Generation requires content_admin."
+      },
+      "match": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryGraphPattern"
+        },
+        "description": "Up to 8 patterns."
+      },
+      "where": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryValueFilter"
+        }
+      },
+      "path": {
+        "$ref": "#/components/schemas/MemoryPathQuery"
+      },
+      "return": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Bound variables to project."
+      },
+      "as_of": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Valid-time point. Statements whose interval does not contain it are excluded."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200
+      }
+    },
+    "required": [
+      "match",
+      "return"
+    ],
+    "additionalProperties": false,
+    "description": "A closed, server-validated graph query. Not a Cypher passthrough: patterns are checked against the Brain's ontology and an unknown type or predicate fails with the valid vocabulary listed. V1 ships match, where, bounded path, as-of and limit; aggregation is not in v1."
+  },
+  "MemoryPath": {
+    "type": "object",
+    "properties": {
+      "node_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Nodes in order, from the `from` binding to the `to` one."
+      },
+      "statement_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Edges traversed, one fewer than the Nodes."
+      }
+    },
+    "required": [
+      "node_ids",
+      "statement_ids"
+    ],
+    "additionalProperties": false,
+    "description": "One authorized path through the graph."
+  },
+  "MemoryGraphQueryResult": {
+    "type": "object",
+    "properties": {
+      "brain_id": {
+        "type": "string"
+      },
+      "generation_id": {
+        "type": "string"
+      },
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryNode"
+        }
+      },
+      "statements": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryStatement"
+        }
+      },
+      "paths": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryPath"
+        }
+      },
+      "bindings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "description": "One row per match, mapping each returned variable to a Node or Statement id."
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True when the limit or a hop cap cut the result short."
+      }
+    },
+    "required": [
+      "brain_id",
+      "generation_id",
+      "nodes",
+      "statements",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "Authorized results only. The engine never reports pre-authorization totals, so a count here is a count of what this principal may read."
+  },
   "EmbeddingsStatusResponse": {
     "type": "object",
     "properties": {
