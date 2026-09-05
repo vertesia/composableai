@@ -50,11 +50,22 @@ let monacoReact: Promise<typeof import('@monaco-editor/react')> | undefined;
  * Import `@monaco-editor/react` on demand with the version pin applied before the module is handed
  * out, so no caller can mount an `Editor` against the unpinned default. The promise is memoized:
  * concurrent callers share one module instance and one `config()` call.
+ *
+ * A failed import is not memoized -- a transient chunk or CDN error would otherwise make every
+ * later attempt fail instantly for the rest of the session, with nothing left to retry. Note that
+ * this only restores retries for direct callers: `MonacoEditor` reaches this through React's
+ * `lazy()`, which keeps a rejection cache of its own that a remount does not clear.
  */
 export function loadMonacoReact(): Promise<typeof import('@monaco-editor/react')> {
-    monacoReact ??= import('@monaco-editor/react').then((mod) => {
-        configureMonacoLoader(mod.loader);
-        return mod;
-    });
+    monacoReact ??= import('@monaco-editor/react').then(
+        (mod) => {
+            configureMonacoLoader(mod.loader);
+            return mod;
+        },
+        (err) => {
+            monacoReact = undefined;
+            throw err;
+        },
+    );
     return monacoReact;
 }
