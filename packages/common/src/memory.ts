@@ -50,6 +50,39 @@ import type {
     PromoteMemoryGenerationPayloadSchema,
     UpdateMemoryBrainPayloadSchema,
 } from './api-schemas/memory.js';
+import type {
+    CreateMemoryOntologyPayloadSchema,
+    CreateMemoryRunPayloadSchema,
+    MemoryAddStatementOpSchema,
+    MemoryCommitTicketSchema,
+    MemoryFindEntitiesPayloadSchema,
+    MemoryFindEntitiesResultSchema,
+    MemoryLinkEvidenceOpSchema,
+    MemoryNodeHandleSchema,
+    MemoryOntologyArraySchema,
+    MemoryOntologyNodeTypeSchema,
+    MemoryOntologyPredicateSchema,
+    MemoryOntologySchema,
+    MemoryPredicateLiteralObjectSchema,
+    MemoryPredicateNodeObjectSchema,
+    MemoryPredicateObjectSignatureSchema,
+    MemoryPutNodeOpSchema,
+    MemoryReadGraphPayloadSchema,
+    MemoryRefusalSchema,
+    MemoryRetractNodeOpSchema,
+    MemoryRetractStatementOpSchema,
+    MemoryRunCreatedSchema,
+    MemoryRunOperationSchema,
+    MemoryRunSourceRefSchema,
+    MemoryStagedOpSchema,
+    MemoryStageOpsPayloadSchema,
+    MemoryStageOpsResultSchema,
+    MemoryStatementHandleSchema,
+    MemoryStatementObjectRefLiteralSchema,
+    MemoryStatementObjectRefNodeSchema,
+    MemoryStatementObjectRefSchema,
+    MemoryWitnessRefSchema,
+} from './api-schemas/memory-runs.js';
 
 /**
  * Default content-type names of the platform memory ontology.
@@ -129,3 +162,39 @@ export type MemoryPathQuery = z.infer<typeof MemoryPathQuerySchema>;
 export type MemoryGraphQuery = z.infer<typeof MemoryGraphQuerySchema>;
 export type MemoryPath = z.infer<typeof MemoryPathSchema>;
 export type MemoryGraphQueryResult = z.infer<typeof MemoryGraphQueryResultSchema>;
+
+export type MemoryOntologyNodeType = z.infer<typeof MemoryOntologyNodeTypeSchema>;
+export type MemoryPredicateNodeObject = z.infer<typeof MemoryPredicateNodeObjectSchema>;
+export type MemoryPredicateLiteralObject = z.infer<typeof MemoryPredicateLiteralObjectSchema>;
+export type MemoryPredicateObjectSignature = z.infer<typeof MemoryPredicateObjectSignatureSchema>;
+export type MemoryOntologyPredicate = z.infer<typeof MemoryOntologyPredicateSchema>;
+export type MemoryOntology = z.infer<typeof MemoryOntologySchema>;
+export type MemoryOntologyArray = z.infer<typeof MemoryOntologyArraySchema>;
+export type CreateMemoryOntologyPayload = z.infer<typeof CreateMemoryOntologyPayloadSchema>;
+export type MemoryRunSourceRef = z.infer<typeof MemoryRunSourceRefSchema>;
+export type CreateMemoryRunPayload = z.infer<typeof CreateMemoryRunPayloadSchema>;
+export type MemoryRunCreated = z.infer<typeof MemoryRunCreatedSchema>;
+export type MemoryNodeHandle = z.infer<typeof MemoryNodeHandleSchema>;
+export type MemoryStatementHandle = z.infer<typeof MemoryStatementHandleSchema>;
+export type MemoryWitnessRef = z.infer<typeof MemoryWitnessRefSchema>;
+export type MemoryStatementObjectRefNode = z.infer<typeof MemoryStatementObjectRefNodeSchema>;
+export type MemoryStatementObjectRefLiteral = z.infer<typeof MemoryStatementObjectRefLiteralSchema>;
+export type MemoryStatementObjectRef = z.infer<typeof MemoryStatementObjectRefSchema>;
+export type MemoryPutNodeOp = z.infer<typeof MemoryPutNodeOpSchema>;
+export type MemoryAddStatementOp = z.infer<typeof MemoryAddStatementOpSchema>;
+export type MemoryLinkEvidenceOp = z.infer<typeof MemoryLinkEvidenceOpSchema>;
+export type MemoryRetractNodeOp = z.infer<typeof MemoryRetractNodeOpSchema>;
+export type MemoryRetractStatementOp = z.infer<typeof MemoryRetractStatementOpSchema>;
+export type MemoryRunOperation = z.infer<typeof MemoryRunOperationSchema>;
+export type MemoryStageOpsPayload = z.infer<typeof MemoryStageOpsPayloadSchema>;
+export type MemoryRefusal = z.infer<typeof MemoryRefusalSchema>;
+export type MemoryRefusalCode = MemoryRefusal['code'];
+export type MemoryStagedOp = z.infer<typeof MemoryStagedOpSchema>;
+export type MemoryStageOpsResult = z.infer<typeof MemoryStageOpsResultSchema>;
+export type MemoryCommitTicket = z.infer<typeof MemoryCommitTicketSchema>;
+export type MemoryFindEntitiesPayload = z.infer<typeof MemoryFindEntitiesPayloadSchema>;
+export type MemoryFindEntitiesResult = z.infer<typeof MemoryFindEntitiesResultSchema>;
+export type MemoryReadGraphPayload = z.infer<typeof MemoryReadGraphPayloadSchema>;
+
+/** The witness locator shape, named by the role it plays in a run's citations. */
+export type MemoryWitnessLocator = MemoryEvidenceLocator;

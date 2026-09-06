@@ -115,13 +115,13 @@ const MemoryGenerationStatusSchema = z.enum(['building', 'ready', 'active', 'sup
 
 const MemoryRunModeSchema = z.enum(['discover', 'maintain', 'rebuild']);
 
-const MemoryRunStatusSchema = z.enum(['pending', 'running', 'committed', 'refused', 'failed', 'cancelled']);
+export const MemoryRunStatusSchema = z.enum(['pending', 'running', 'committed', 'refused', 'failed', 'cancelled']);
 
-const MemoryNodeKindSchema = z.enum(['entity', 'event', 'concept', 'procedure']);
+export const MemoryNodeKindSchema = z.enum(['entity', 'event', 'concept', 'procedure']);
 
 const MemoryNodeStatusSchema = z.enum(['active', 'redirected', 'retracted']);
 
-const MemorySupportBasisSchema = z.enum(['explicit', 'strong_inference', 'tentative']);
+export const MemorySupportBasisSchema = z.enum(['explicit', 'strong_inference', 'tentative']);
 
 export const MemoryContentSourceSelectorSchema = z
     .strictObject({

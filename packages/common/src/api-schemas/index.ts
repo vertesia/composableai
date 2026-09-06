@@ -29,6 +29,7 @@ export * from './events.js';
 export * from './indexing.js';
 export * from './integrations.js';
 export * from './memory.js';
+export * from './memory-runs.js';
 export * from './oauth-server.js';
 export * from './parameters.js';
 export * from './process.js';

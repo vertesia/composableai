@@ -1,18 +1,28 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateMemoryBrainPayload,
+    CreateMemoryOntologyPayload,
+    CreateMemoryRunPayload,
     DeleteMemoryBrainQuery,
     DeleteMemoryBrainResponse,
     MemoryBrain,
     MemoryBrainActionResponse,
+    MemoryCommitTicket,
     MemoryEvidenceRef,
+    MemoryFindEntitiesPayload,
+    MemoryFindEntitiesResult,
     MemoryGeneration,
     MemoryGraphQuery,
     MemoryGraphQueryResult,
     MemoryNode,
     MemoryNodeEvidenceQuery,
     MemoryNodeEvidenceResponse,
+    MemoryOntology,
+    MemoryReadGraphPayload,
+    MemoryRunCreated,
     MemoryRunSummary,
+    MemoryStageOpsPayload,
+    MemoryStageOpsResult,
     MemoryStatement,
     UpdateMemoryBrainPayload,
 } from '@vertesia/common';
@@ -88,6 +98,17 @@ export class MemoryApi extends ApiTopic {
         });
     }
 
+    /**
+     * Start a new Generation for a Brain.
+     *
+     * The Generation is built in the shadow: it answers no public query until it is promoted, which
+     * is what lets a rebuild populate it over many bounded, committed runs without anyone reading a
+     * half-built graph.
+     */
+    createGeneration(brainId: string): Promise<MemoryGeneration> {
+        return this.post(`/brains/${encodeURIComponent(brainId)}/generations`);
+    }
+
     listGenerations(brainId: string): Promise<MemoryGeneration[]> {
         return this.get(`/brains/${encodeURIComponent(brainId)}/generations`);
     }
@@ -141,5 +162,83 @@ export class MemoryApi extends ApiTopic {
     /** The citations supporting a Statement, across all of its readable support groups. */
     getStatementEvidence(statementId: string): Promise<MemoryEvidenceRef[]> {
         return this.get(`/statements/${encodeURIComponent(statementId)}/evidence`);
+    }
+
+    /* ------------------------------------------------------------------------------------------ */
+    /* Ontologies                                                                                  */
+    /* ------------------------------------------------------------------------------------------ */
+
+    listOntologies(): Promise<MemoryOntology[]> {
+        return this.get('/ontologies');
+    }
+
+    getOntology(ontologyId: string, version: string): Promise<MemoryOntology> {
+        return this.get(`/ontologies/${encodeURIComponent(ontologyId)}/${encodeURIComponent(version)}`);
+    }
+
+    /**
+     * Create one version of an ontology.
+     *
+     * A version a Generation has been built against is immutable, so a vocabulary change is a new
+     * version rather than an edit: the Statements citing the old one keep meaning what they meant.
+     */
+    createOntology(payload: CreateMemoryOntologyPayload): Promise<MemoryOntology> {
+        return this.post('/ontologies', { payload });
+    }
+
+    /* ------------------------------------------------------------------------------------------ */
+    /* Run lifecycle. Internal: these are how a reconstruction workflow writes to the store.       */
+    /* ------------------------------------------------------------------------------------------ */
+
+    /**
+     * Claim a run against a Generation and freeze the sources it may cite.
+     *
+     * The response carries the Brain ontology alongside the run, so the caller can render the
+     * vocabulary into the extraction context without a second round trip.
+     */
+    createRun(brainId: string, payload: CreateMemoryRunPayload): Promise<MemoryRunCreated> {
+        return this.post(`/brains/${encodeURIComponent(brainId)}/runs`, { payload });
+    }
+
+    /**
+     * Stage a batch of operations on a run's ledger.
+     *
+     * Nothing reaches the graph here. Structurally invalid operations come back refused with the
+     * rule that refused them rather than being dropped, and the persisted form of every accepted
+     * operation is returned so a caller can compare it against what it submitted.
+     */
+    stageRunOps(brainId: string, runId: string, payload: MemoryStageOpsPayload): Promise<MemoryStageOpsResult> {
+        return this.post(`/brains/${encodeURIComponent(brainId)}/runs/${encodeURIComponent(runId)}/ops`, { payload });
+    }
+
+    /** Resolve a name to typed Nodes in the run's Generation, overlaid with the run's own writes. */
+    findRunEntities(
+        brainId: string,
+        runId: string,
+        payload: MemoryFindEntitiesPayload,
+    ): Promise<MemoryFindEntitiesResult> {
+        return this.post(
+            `/brains/${encodeURIComponent(brainId)}/runs/${encodeURIComponent(runId)}/graph/find-entities`,
+            {
+                payload,
+            },
+        );
+    }
+
+    /** Expand from seed Nodes, or match a structured pattern, inside the run's Generation. */
+    readRunGraph(brainId: string, runId: string, payload: MemoryReadGraphPayload): Promise<MemoryGraphQueryResult> {
+        return this.post(`/brains/${encodeURIComponent(brainId)}/runs/${encodeURIComponent(runId)}/graph/read`, {
+            payload,
+        });
+    }
+
+    /**
+     * Apply a run's staged operations in one transaction and return the commit ticket.
+     *
+     * The ticket is what makes a claimed commit checkable: its digest is recomputed from the ledger,
+     * so a run that reports success without having committed cannot pass verification.
+     */
+    commitRun(brainId: string, runId: string): Promise<MemoryCommitTicket> {
+        return this.post(`/brains/${encodeURIComponent(brainId)}/runs/${encodeURIComponent(runId)}/commit`);
     }
 }

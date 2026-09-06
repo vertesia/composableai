@@ -42580,6 +42580,1015 @@
     "additionalProperties": false,
     "description": "Authorized results only. The engine never reports pre-authorization totals, so a count here is a count of what this principal may read."
   },
+  "MemoryOntologyNodeType": {
+    "type": "object",
+    "properties": {
+      "slug": {
+        "type": "string",
+        "description": "Stable identifier a Node names in its `type` field."
+      },
+      "title": {
+        "type": "string"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "entity",
+          "event",
+          "concept",
+          "procedure"
+        ]
+      },
+      "identity_fields": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Attributes that, together with the label, decide identity. Two Nodes agreeing on all of them are the same entity — the mechanism that stops one organisation becoming three Nodes."
+      },
+      "attribute_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "JSON Schema the Node attributes are validated against."
+      }
+    },
+    "required": [
+      "slug",
+      "title",
+      "kind"
+    ],
+    "additionalProperties": false,
+    "description": "One Node type of an ontology."
+  },
+  "MemoryPredicateNodeObject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "node"
+      },
+      "types": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Node type slugs accepted as the object."
+      }
+    },
+    "required": [
+      "kind",
+      "types"
+    ],
+    "additionalProperties": false
+  },
+  "MemoryPredicateLiteralObject": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "literal"
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "string",
+          "number",
+          "boolean",
+          "date",
+          "datetime",
+          "money"
+        ]
+      }
+    },
+    "required": [
+      "kind",
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "MemoryPredicateObjectSignature": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/MemoryPredicateNodeObject"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryPredicateLiteralObject"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "node": "#/components/schemas/MemoryPredicateNodeObject",
+        "literal": "#/components/schemas/MemoryPredicateLiteralObject"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ],
+    "description": "What a predicate may take as its object."
+  },
+  "MemoryOntologyPredicate": {
+    "type": "object",
+    "properties": {
+      "slug": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "subject_types": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "object": {
+        "$ref": "#/components/schemas/MemoryPredicateObjectSignature"
+      },
+      "context": {
+        "type": "string",
+        "enum": [
+          "forbidden",
+          "optional",
+          "required"
+        ]
+      },
+      "cardinality": {
+        "type": "string",
+        "enum": [
+          "one",
+          "many"
+        ]
+      },
+      "inverse": {
+        "type": "string"
+      },
+      "transitive": {
+        "type": "boolean"
+      },
+      "symmetric": {
+        "type": "boolean",
+        "description": "A symmetric predicate canonicalizes subject and object order in the fact key, so `a partner b` and `b partner a` are one fact rather than two. Both ends must accept the same types."
+      }
+    },
+    "required": [
+      "slug",
+      "title",
+      "subject_types",
+      "object",
+      "context"
+    ],
+    "additionalProperties": false,
+    "description": "One predicate signature of an ontology."
+  },
+  "MemoryOntology": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Project-unique ontology id, such as `ai_market_network`."
+      },
+      "version": {
+        "type": "string",
+        "description": "Immutable while a Generation is built against it."
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "active",
+          "deprecated"
+        ]
+      },
+      "node_types": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryOntologyNodeType"
+        }
+      },
+      "predicates": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryOntologyPredicate"
+        }
+      },
+      "literal_types": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Literal type names beyond the built-in scalars, such as `absence`."
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "version",
+      "node_types",
+      "predicates"
+    ],
+    "additionalProperties": false,
+    "description": "The vocabulary a Brain validates against. Every Node type and predicate an operation may name is here; anything else is refused with this list attached, so a caller can correct itself."
+  },
+  "MemoryOntologyArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/MemoryOntology"
+    }
+  },
+  "CreateMemoryOntologyPayload": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Project-unique ontology id, such as `ai_market_network`."
+      },
+      "version": {
+        "type": "string",
+        "description": "Immutable while a Generation is built against it."
+      },
+      "node_types": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryOntologyNodeType"
+        }
+      },
+      "predicates": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryOntologyPredicate"
+        }
+      },
+      "literal_types": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Literal type names beyond the built-in scalars, such as `absence`."
+      }
+    },
+    "required": [
+      "id",
+      "version",
+      "node_types",
+      "predicates"
+    ],
+    "additionalProperties": false,
+    "description": "Create one version of an ontology. A version is immutable once a Generation has been built against it, so a change is a new version rather than an edit."
+  },
+  "MemoryRunSourceRef": {
+    "type": "object",
+    "properties": {
+      "witness_id": {
+        "type": "string",
+        "description": "Run-local witness id. This, never a raw source id, is what an operation cites; the server resolves it against the frozen manifest."
+      },
+      "source_kind": {
+        "type": "string",
+        "enum": [
+          "content",
+          "agent_run"
+        ]
+      },
+      "source_id": {
+        "type": "string"
+      },
+      "source_revision_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "witness_id",
+      "source_kind",
+      "source_id"
+    ],
+    "additionalProperties": false,
+    "description": "One source a run may cite. The caller names the source; the server reads its digest and current security state itself, so no ACL detail crosses the wire in either direction."
+  },
+  "CreateMemoryRunPayload": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": [
+          "maintain",
+          "rebuild"
+        ],
+        "description": "`rebuild` writes into a shadow Generation; `maintain` extends the active one."
+      },
+      "generation_id": {
+        "type": "string",
+        "description": "Generation this run writes into."
+      },
+      "partition_id": {
+        "type": "string",
+        "description": "Bounded slice of the corpus this run covers."
+      },
+      "manifest_digest": {
+        "type": "string",
+        "description": "Digest of the frozen manifest the caller believes it is running."
+      },
+      "workflow_id": {
+        "type": "string"
+      },
+      "agent_run_id": {
+        "type": "string"
+      },
+      "sources": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryRunSourceRef"
+        },
+        "description": "The frozen source manifest. An operation citing anything outside it is refused at commit."
+      }
+    },
+    "required": [
+      "mode",
+      "generation_id",
+      "sources"
+    ],
+    "additionalProperties": false,
+    "description": "Claim a run against a Generation and freeze the sources it is allowed to cite."
+  },
+  "MemoryRunCreated": {
+    "type": "object",
+    "properties": {
+      "run": {
+        "$ref": "#/components/schemas/MemoryRunSummary"
+      },
+      "ontology": {
+        "$ref": "#/components/schemas/MemoryOntology",
+        "description": "The Brain's vocabulary, returned with the run so a caller can render it into the extraction context in the same round trip that claimed the run."
+      }
+    },
+    "required": [
+      "run",
+      "ontology"
+    ],
+    "additionalProperties": false,
+    "description": "A claimed run, and the vocabulary it must author against."
+  },
+  "MemoryNodeHandle": {
+    "type": "object",
+    "properties": {
+      "ref": {
+        "type": "string",
+        "description": "Run-local handle an earlier operation in this run created."
+      },
+      "node_id": {
+        "type": "string",
+        "description": "Opaque id of an already-committed Node."
+      }
+    },
+    "additionalProperties": false,
+    "description": "A Node, named either by a run-local handle or by the opaque id of a committed one."
+  },
+  "MemoryStatementHandle": {
+    "type": "object",
+    "properties": {
+      "ref": {
+        "type": "string"
+      },
+      "statement_id": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "description": "A Statement, by run-local handle or by committed id."
+  },
+  "MemoryWitnessRef": {
+    "type": "object",
+    "properties": {
+      "witness_id": {
+        "type": "string",
+        "description": "Witness id from the run manifest."
+      },
+      "locator": {
+        "$ref": "#/components/schemas/MemoryEvidenceLocator"
+      },
+      "excerpt_digest": {
+        "type": "string",
+        "description": "Digest of the quoted span. Evidence stores digests, never copies of source text."
+      }
+    },
+    "required": [
+      "witness_id",
+      "locator"
+    ],
+    "additionalProperties": false,
+    "description": "One citation: which witness, and where inside it."
+  },
+  "MemoryStatementObjectRefNode": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "node"
+      },
+      "node": {
+        "$ref": "#/components/schemas/MemoryNodeHandle"
+      }
+    },
+    "required": [
+      "kind",
+      "node"
+    ],
+    "additionalProperties": false
+  },
+  "MemoryStatementObjectRefLiteral": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "literal"
+      },
+      "type": {
+        "type": "string",
+        "description": "Literal type from the ontology, such as `money` or `absence`."
+      },
+      "value": {}
+    },
+    "required": [
+      "kind",
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "MemoryStatementObjectRef": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/MemoryStatementObjectRefNode"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryStatementObjectRefLiteral"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "node": "#/components/schemas/MemoryStatementObjectRefNode",
+        "literal": "#/components/schemas/MemoryStatementObjectRefLiteral"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ],
+    "description": "Object of a proposed Statement. An unnamed party is a literal of type `absence`, never a Node: a run that invents `unnamed_us_hyperscaler` has created something an agent will later answer a question with."
+  },
+  "MemoryPutNodeOp": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "put_node"
+      },
+      "ref": {
+        "type": "string",
+        "description": "Run-local handle later operations use to name this Node."
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "entity",
+          "event",
+          "concept",
+          "procedure"
+        ]
+      },
+      "type": {
+        "type": "string",
+        "description": "Node type slug from the ontology."
+      },
+      "label": {
+        "type": "string"
+      },
+      "aliases": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "attributes": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "identity_key": {
+        "type": "string",
+        "description": "Explicit identity key. Normally omitted: the server derives it from type and label."
+      },
+      "found_candidates": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Node ids an entity search returned for this label, including an empty array when it returned nothing. A put with no prior search for the label is refused."
+      },
+      "rationale": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "ref",
+      "kind",
+      "type",
+      "label"
+    ],
+    "additionalProperties": false,
+    "description": "Create or update a Node. Identity is resolved server-side."
+  },
+  "MemoryAddStatementOp": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "add_statement"
+      },
+      "ref": {
+        "type": "string"
+      },
+      "subject": {
+        "$ref": "#/components/schemas/MemoryNodeHandle"
+      },
+      "predicate": {
+        "type": "string"
+      },
+      "object": {
+        "$ref": "#/components/schemas/MemoryStatementObjectRef"
+      },
+      "context_event": {
+        "$ref": "#/components/schemas/MemoryNodeHandle"
+      },
+      "valid_from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "valid_to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "undated": {
+        "type": "boolean",
+        "description": "Set only when the source does not date the fact. Required when `valid_from` is absent."
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "salience": {
+        "type": "number"
+      },
+      "basis": {
+        "type": "string",
+        "enum": [
+          "explicit",
+          "strong_inference",
+          "tentative"
+        ]
+      },
+      "witnesses": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryWitnessRef"
+        },
+        "description": "At least one citation with a section-level locator. A bare document reference is refused."
+      },
+      "rationale": {
+        "type": "string"
+      },
+      "supersedes": {
+        "$ref": "#/components/schemas/MemoryStatementHandle",
+        "description": "Statement this one replaces. The predecessor is closed with a pointer to this one."
+      }
+    },
+    "required": [
+      "op",
+      "ref",
+      "subject",
+      "predicate",
+      "object",
+      "basis",
+      "witnesses"
+    ],
+    "additionalProperties": false,
+    "description": "Assert one evidenced, dated fact."
+  },
+  "MemoryLinkEvidenceOp": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "link_evidence"
+      },
+      "statement": {
+        "$ref": "#/components/schemas/MemoryStatementHandle"
+      },
+      "basis": {
+        "type": "string",
+        "enum": [
+          "explicit",
+          "strong_inference",
+          "tentative"
+        ]
+      },
+      "witnesses": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryWitnessRef"
+        }
+      },
+      "rationale": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "statement",
+      "basis",
+      "witnesses"
+    ],
+    "additionalProperties": false,
+    "description": "Attach another derivation to an existing Statement rather than restating the fact beside it."
+  },
+  "MemoryRetractNodeOp": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "retract_node"
+      },
+      "node_id": {
+        "type": "string"
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "node_id",
+      "reason"
+    ],
+    "additionalProperties": false,
+    "description": "Retract a Node. Its provenance is kept."
+  },
+  "MemoryRetractStatementOp": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "retract_statement"
+      },
+      "statement_id": {
+        "type": "string"
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "statement_id",
+      "reason"
+    ],
+    "additionalProperties": false,
+    "description": "Retract a Statement. Its provenance is kept."
+  },
+  "MemoryRunOperation": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/MemoryPutNodeOp"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryAddStatementOp"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryLinkEvidenceOp"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryRetractNodeOp"
+      },
+      {
+        "$ref": "#/components/schemas/MemoryRetractStatementOp"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "op",
+      "mapping": {
+        "put_node": "#/components/schemas/MemoryPutNodeOp",
+        "add_statement": "#/components/schemas/MemoryAddStatementOp",
+        "link_evidence": "#/components/schemas/MemoryLinkEvidenceOp",
+        "retract_node": "#/components/schemas/MemoryRetractNodeOp",
+        "retract_statement": "#/components/schemas/MemoryRetractStatementOp"
+      }
+    },
+    "type": "object",
+    "required": [
+      "op"
+    ],
+    "description": "One proposed mutation. Nothing is applied until the run commits, and then all of it or none."
+  },
+  "MemoryStageOpsPayload": {
+    "type": "object",
+    "properties": {
+      "operations": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryRunOperation"
+        }
+      }
+    },
+    "required": [
+      "operations"
+    ],
+    "additionalProperties": false,
+    "description": "A batch of operations to stage on a run ledger."
+  },
+  "MemoryRefusal": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "enum": [
+          "unknown_predicate",
+          "unknown_node_type",
+          "signature_mismatch",
+          "placeholder_node",
+          "undated_statement",
+          "invalid_interval",
+          "missing_locator",
+          "unknown_witness",
+          "unresolved_reference",
+          "cross_generation_reference",
+          "find_before_put",
+          "cap_exceeded",
+          "stale_source",
+          "invalid_ontology"
+        ]
+      },
+      "message": {
+        "type": "string"
+      },
+      "vocabulary": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The valid words, when the refusal is about an unknown type or predicate."
+      },
+      "field": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "code",
+      "message"
+    ],
+    "additionalProperties": false,
+    "description": "Why an operation was refused, as a correctable message. Refusals stay in the ledger: a predicate a run keeps reaching for and never getting is how we learn the ontology is missing a word."
+  },
+  "MemoryStagedOp": {
+    "type": "object",
+    "properties": {
+      "sequence": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Monotonic within the run, so replay order is exact."
+      },
+      "ref": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "staged",
+          "applied",
+          "refused"
+        ]
+      },
+      "operation": {
+        "$ref": "#/components/schemas/MemoryRunOperation",
+        "description": "The operation as persisted, so a caller can compare it against what it submitted."
+      },
+      "refusals": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryRefusal"
+        }
+      }
+    },
+    "required": [
+      "sequence",
+      "status",
+      "operation"
+    ],
+    "additionalProperties": false,
+    "description": "One entry of the run ledger, as it was written down."
+  },
+  "MemoryStageOpsResult": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "accepted": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "refused": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryStagedOp"
+        }
+      }
+    },
+    "required": [
+      "run_id",
+      "accepted",
+      "refused",
+      "results"
+    ],
+    "additionalProperties": false,
+    "description": "What the ledger now holds for this batch. A refused operation is returned rather than thrown away, so the caller can correct it and stage it again."
+  },
+  "MemoryCommitTicket": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "brain_id": {
+        "type": "string"
+      },
+      "generation_id": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "committed",
+          "refused",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "counts": {
+        "$ref": "#/components/schemas/MemoryRunCounts"
+      },
+      "operation_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Applied operations. Refused ones stay in the ledger and are not counted here."
+      },
+      "applied_sequence_digest": {
+        "type": "string",
+        "description": "Digest of the applied operation sequence numbers, in order. It is recomputed from the ledger when the ticket is verified, so a reported commit that did not happen cannot pass."
+      },
+      "committed_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "run_id",
+      "brain_id",
+      "generation_id",
+      "status",
+      "counts",
+      "operation_count",
+      "applied_sequence_digest",
+      "committed_at"
+    ],
+    "additionalProperties": false,
+    "description": "Proof that a run committed. A normal completion without one changes nothing: the parent treats a missing or unverifiable ticket as a failed attempt and retries the partition."
+  },
+  "MemoryFindEntitiesPayload": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Name or description to resolve, matched by alias prefix."
+      },
+      "type": {
+        "type": "string",
+        "description": "Node type slug from the ontology."
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "entity",
+          "event",
+          "concept",
+          "procedure"
+        ]
+      },
+      "identity_key": {
+        "type": "string"
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200
+      }
+    },
+    "additionalProperties": false,
+    "description": "Resolve a name to typed Nodes."
+  },
+  "MemoryFindEntitiesResult": {
+    "type": "object",
+    "properties": {
+      "brain_id": {
+        "type": "string"
+      },
+      "generation_id": {
+        "type": "string"
+      },
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryNode"
+        }
+      },
+      "truncated": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "brain_id",
+      "generation_id",
+      "nodes",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "Candidate Nodes for a name."
+  },
+  "MemoryReadGraphPayload": {
+    "type": "object",
+    "properties": {
+      "node_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Seed Nodes to expand from."
+      },
+      "query": {
+        "$ref": "#/components/schemas/MemoryGraphQuery",
+        "description": "Structured pattern query. Supplying it selects pattern matching over seed expansion."
+      },
+      "predicates": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "direction": {
+        "type": "string",
+        "enum": [
+          "out",
+          "in",
+          "both"
+        ]
+      },
+      "as_of": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "max_hops": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 3
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200
+      }
+    },
+    "additionalProperties": false,
+    "description": "Read the graph, either by expanding seed Nodes or by matching a structured pattern. Both go through the same ontology validation and the same authorization."
+  },
   "EmbeddingsStatusResponse": {
     "type": "object",
     "properties": {
