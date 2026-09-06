@@ -131,6 +131,17 @@ export class MemoryApi extends ApiTopic {
     }
 
     /**
+     * Expand from Nodes in the Brain's active Generation.
+     *
+     * This is how a caller walks the graph across several steps instead of asking one monolithic
+     * question: each hop is authorized as the requesting principal, so what comes back is what that
+     * principal may read rather than what the graph holds.
+     */
+    expandGraph(brainId: string, payload: MemoryReadGraphPayload): Promise<MemoryGraphQueryResult> {
+        return this.post(`/brains/${encodeURIComponent(brainId)}/graph/expand`, { payload });
+    }
+
+    /**
      * Fetch one Node by its opaque id. The id carries its Brain and Generation, so no other context
      * is needed.
      */
