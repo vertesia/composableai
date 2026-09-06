@@ -74,6 +74,7 @@ import type {
     MemoryRunCreatedSchema,
     MemoryRunOperationSchema,
     MemoryRunSourceRefSchema,
+    MemoryStagedNodeSchema,
     MemoryStagedOpSchema,
     MemoryStageOpsPayloadSchema,
     MemoryStageOpsResultSchema,
@@ -189,6 +190,7 @@ export type MemoryRunOperation = z.infer<typeof MemoryRunOperationSchema>;
 export type MemoryStageOpsPayload = z.infer<typeof MemoryStageOpsPayloadSchema>;
 export type MemoryRefusal = z.infer<typeof MemoryRefusalSchema>;
 export type MemoryRefusalCode = MemoryRefusal['code'];
+export type MemoryStagedNode = z.infer<typeof MemoryStagedNodeSchema>;
 export type MemoryStagedOp = z.infer<typeof MemoryStagedOpSchema>;
 export type MemoryStageOpsResult = z.infer<typeof MemoryStageOpsResultSchema>;
 export type MemoryCommitTicket = z.infer<typeof MemoryCommitTicketSchema>;

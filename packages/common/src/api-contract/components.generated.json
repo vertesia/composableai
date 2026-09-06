@@ -41126,9 +41126,48 @@
       "model": {
         "type": "string"
       },
+      "reasoning_effort": {
+        "type": "string",
+        "enum": [
+          "none",
+          "minimal",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ],
+        "description": "Resolved against the environment provider; a model with no effort option fails."
+      },
       "prompt_version": {
         "type": "string",
         "description": "Prompt version folded into the configuration fingerprint."
+      },
+      "instruction": {
+        "type": "string",
+        "description": "The domain objective and retention policy, in the operator's words. The build runner is domain-agnostic: this is the only thing that says what the Brain is for."
+      },
+      "instruction_version": {
+        "type": "string"
+      },
+      "partition_field": {
+        "type": "string",
+        "description": "Source property the corpus is sliced by, such as `published_at`."
+      },
+      "partition_interval": {
+        "type": "string",
+        "enum": [
+          "week",
+          "month",
+          "quarter"
+        ]
+      },
+      "partition_order": {
+        "type": "string",
+        "enum": [
+          "ascending",
+          "descending"
+        ]
       },
       "max_run_duration_hours": {
         "type": "integer",
@@ -41141,7 +41180,7 @@
       "prompt_version"
     ],
     "additionalProperties": false,
-    "description": "How a Brain builds itself: interaction, environment and budgets."
+    "description": "How a Brain builds itself: which interaction and model run it, what it is for, how the corpus is sliced, and what it may spend. Every field is folded into the configuration fingerprint, so a Generation always records the recipe that produced it."
   },
   "MemoryBrainUpdatePolicy": {
     "type": "object",
@@ -41167,6 +41206,10 @@
         "type": "integer",
         "exclusiveMinimum": 0,
         "maximum": 9007199254740991
+      },
+      "auto_promote": {
+        "type": "boolean",
+        "description": "Whether a completed rebuild promotes its Generation itself. Off by default: a shadow build that nobody looked at is not obviously better than the graph it would replace."
       }
     },
     "required": [
@@ -41614,6 +41657,10 @@
           "cancelled"
         ]
       },
+      "partition_id": {
+        "type": "string",
+        "description": "Bounded slice of the corpus this run covered."
+      },
       "counts": {
         "$ref": "#/components/schemas/MemoryRunCounts"
       },
@@ -41621,6 +41668,10 @@
         "type": "integer",
         "minimum": 0,
         "maximum": 9007199254740991
+      },
+      "applied_sequence_digest": {
+        "type": "string",
+        "description": "Digest of the operation sequence this run applied, written inside the commit transaction. It is what a commit ticket is checked against: the ticket travels back through the agent, this value does not, so a claimed commit that never happened cannot match."
       },
       "started_at": {
         "type": "string",
@@ -42325,13 +42376,20 @@
       },
       "identity_key": {
         "type": "string"
+      },
+      "ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Bind the variable to exactly these Nodes, by opaque id. This is how a caller expands from a result it already holds, rather than searching for it again by name. Ids from another Brain or Generation bind nothing."
       }
     },
     "required": [
       "node"
     ],
     "additionalProperties": false,
-    "description": "Binds a variable to Nodes matching a type and a name."
+    "description": "Binds a variable to Nodes: by id when you have them, otherwise by type and name."
   },
   "MemoryStatementPatternObject": {
     "type": "object",
@@ -42656,7 +42714,8 @@
           "boolean",
           "date",
           "datetime",
-          "money"
+          "money",
+          "absence"
         ]
       }
     },
@@ -42753,6 +42812,12 @@
         "type": "string",
         "description": "Immutable while a Generation is built against it."
       },
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
       "status": {
         "type": "string",
         "enum": [
@@ -42792,6 +42857,7 @@
     "required": [
       "id",
       "version",
+      "title",
       "node_types",
       "predicates"
     ],
@@ -42814,6 +42880,12 @@
       "version": {
         "type": "string",
         "description": "Immutable while a Generation is built against it."
+      },
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
       },
       "node_types": {
         "type": "array",
@@ -42838,6 +42910,7 @@
     "required": [
       "id",
       "version",
+      "title",
       "node_types",
       "predicates"
     ],
@@ -43358,6 +43431,34 @@
     "additionalProperties": false,
     "description": "Why an operation was refused, as a correctable message. Refusals stay in the ledger: a predicate a run keeps reaching for and never getting is how we learn the ontology is missing a word."
   },
+  "MemoryStagedNode": {
+    "type": "object",
+    "properties": {
+      "ref": {
+        "type": "string",
+        "description": "Run-local handle to cite this Node with until the run commits."
+      },
+      "type": {
+        "type": "string"
+      },
+      "label": {
+        "type": "string"
+      },
+      "aliases": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "ref",
+      "type",
+      "label"
+    ],
+    "additionalProperties": false,
+    "description": "A Node this run proposed but has not committed yet."
+  },
   "MemoryStagedOp": {
     "type": "object",
     "properties": {
@@ -43530,6 +43631,13 @@
           "$ref": "#/components/schemas/MemoryNode"
         }
       },
+      "staged": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryStagedNode"
+        },
+        "description": "Matching Nodes this run has staged but not committed. Without them a run cannot see its own writes across stateless tool calls, and would propose the same organisation twice in one partition."
+      },
       "truncated": {
         "type": "boolean"
       }
@@ -43538,10 +43646,11 @@
       "brain_id",
       "generation_id",
       "nodes",
+      "staged",
       "truncated"
     ],
     "additionalProperties": false,
-    "description": "Candidate Nodes for a name."
+    "description": "Candidate Nodes for a name: what is committed, and what this run has already proposed."
   },
   "MemoryReadGraphPayload": {
     "type": "object",

@@ -167,10 +167,35 @@ export const MemoryBrainRecipeSchema = z
         interaction: z.string().meta({ description: 'Stable ref of the Dreamer interaction.' }),
         environment: z.string().optional().meta({ description: 'Stable ref of the execution environment.' }),
         model: z.string().optional(),
+        reasoning_effort: z
+            .enum(['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'])
+            .optional()
+            .meta({ description: 'Resolved against the environment provider; a model with no effort option fails.' }),
         prompt_version: z.string().meta({ description: 'Prompt version folded into the configuration fingerprint.' }),
+        instruction: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    "The domain objective and retention policy, in the operator's words. The build runner is " +
+                    'domain-agnostic: this is the only thing that says what the Brain is for.',
+            }),
+        instruction_version: z.string().optional(),
+        partition_field: z
+            .string()
+            .optional()
+            .meta({ description: 'Source property the corpus is sliced by, such as `published_at`.' }),
+        partition_interval: z.enum(['week', 'month', 'quarter']).optional(),
+        partition_order: z.enum(['ascending', 'descending']).optional(),
         max_run_duration_hours: z.number().int().positive().optional(),
     })
-    .meta({ id: 'MemoryBrainRecipe', description: 'How a Brain builds itself: interaction, environment and budgets.' });
+    .meta({
+        id: 'MemoryBrainRecipe',
+        description:
+            'How a Brain builds itself: which interaction and model run it, what it is for, how the corpus is ' +
+            'sliced, and what it may spend. Every field is folded into the configuration fingerprint, so a ' +
+            'Generation always records the recipe that produced it.',
+    });
 
 export const MemoryBrainUpdatePolicySchema = z
     .strictObject({
@@ -178,6 +203,14 @@ export const MemoryBrainUpdatePolicySchema = z
         cron: z.string().optional().meta({ description: 'Schedule expression, for `scheduled` mode.' }),
         debounce_seconds: z.number().int().nonnegative().optional(),
         max_sources_per_run: z.number().int().positive().optional(),
+        auto_promote: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Whether a completed rebuild promotes its Generation itself. Off by default: a shadow build ' +
+                    'that nobody looked at is not obviously better than the graph it would replace.',
+            }),
     })
     .meta({ id: 'MemoryBrainUpdatePolicy', description: 'When a Brain reprocesses its sources.' });
 
@@ -327,8 +360,18 @@ export const MemoryRunSummarySchema = z
         generation_id: z.string(),
         mode: MemoryRunModeSchema,
         status: MemoryRunStatusSchema,
+        partition_id: z.string().optional().meta({ description: 'Bounded slice of the corpus this run covered.' }),
         counts: MemoryRunCountsSchema.optional(),
         manifest_size: z.number().int().nonnegative().optional(),
+        applied_sequence_digest: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    'Digest of the operation sequence this run applied, written inside the commit transaction. It ' +
+                    'is what a commit ticket is checked against: the ticket travels back through the agent, this ' +
+                    'value does not, so a claimed commit that never happened cannot match.',
+            }),
         started_at: z.string().meta({ format: 'date-time' }).optional(),
         committed_at: z.string().meta({ format: 'date-time' }).optional(),
         error: z.string().optional(),
@@ -607,8 +650,20 @@ export const MemoryNodePatternSchema = z
         kind: MemoryNodeKindSchema.optional(),
         alias: z.string().optional().meta({ description: 'Match by label or normalized alias.' }),
         identity_key: z.string().optional(),
+        ids: z
+            .array(z.string())
+            .optional()
+            .meta({
+                description:
+                    'Bind the variable to exactly these Nodes, by opaque id. This is how a caller expands from a ' +
+                    'result it already holds, rather than searching for it again by name. Ids from another Brain or ' +
+                    'Generation bind nothing.',
+            }),
     })
-    .meta({ id: 'MemoryNodePattern', description: 'Binds a variable to Nodes matching a type and a name.' });
+    .meta({
+        id: 'MemoryNodePattern',
+        description: 'Binds a variable to Nodes: by id when you have them, otherwise by type and name.',
+    });
 
 export const MemoryStatementPatternObjectSchema = z
     .strictObject({

@@ -33,7 +33,13 @@ import {
  * the valid list attached, which only helps if the list is readable.
  * ---------------------------------------------------------------------------------------------- */
 
-const MemoryOntologyLiteralTypeSchema = z.enum(['string', 'number', 'boolean', 'date', 'datetime', 'money']);
+/**
+ * `absence` is not a scalar like the others. It is the type a predicate takes when the fact is that
+ * a source declines to name the party — "supplies an unnamed US hyperscaler". Without it, a run has
+ * nowhere to put that except a placeholder Node, which is how `unnamed_us_hyperscaler` became a Node
+ * an agent later answered a question with.
+ */
+const MemoryOntologyLiteralTypeSchema = z.enum(['string', 'number', 'boolean', 'date', 'datetime', 'money', 'absence']);
 
 export const MemoryOntologyNodeTypeSchema = z
     .strictObject({
@@ -98,6 +104,8 @@ export const MemoryOntologySchema = z
     .strictObject({
         id: z.string().meta({ description: 'Project-unique ontology id, such as `ai_market_network`.' }),
         version: z.string().meta({ description: 'Immutable while a Generation is built against it.' }),
+        title: z.string(),
+        description: z.string().optional(),
         status: z.enum(['draft', 'active', 'deprecated']).optional(),
         node_types: z.array(MemoryOntologyNodeTypeSchema),
         predicates: z.array(MemoryOntologyPredicateSchema),
@@ -248,12 +256,9 @@ export const MemoryPutNodeOpSchema = z
         label: z.string(),
         aliases: z.array(z.string()).optional(),
         attributes: z.record(z.string(), z.unknown()).optional(),
-        identity_key: z
-            .string()
-            .optional()
-            .meta({
-                description: 'Explicit identity key. Normally omitted: the server derives it from type and label.',
-            }),
+        identity_key: z.string().optional().meta({
+            description: 'Explicit identity key. Normally omitted: the server derives it from type and label.',
+        }),
         found_candidates: z
             .array(z.string())
             .optional()
@@ -276,12 +281,9 @@ export const MemoryAddStatementOpSchema = z
         context_event: MemoryNodeHandleSchema.optional(),
         valid_from: z.string().meta({ format: 'date-time' }).optional(),
         valid_to: z.string().meta({ format: 'date-time' }).optional(),
-        undated: z
-            .boolean()
-            .optional()
-            .meta({
-                description: 'Set only when the source does not date the fact. Required when `valid_from` is absent.',
-            }),
+        undated: z.boolean().optional().meta({
+            description: 'Set only when the source does not date the fact. Required when `valid_from` is absent.',
+        }),
         confidence: z.number().min(0).max(1).optional(),
         salience: z.number().optional(),
         basis: MemorySupportBasisSchema,
@@ -439,14 +441,31 @@ export const MemoryFindEntitiesPayloadSchema = z
     })
     .meta({ id: 'MemoryFindEntitiesPayload', description: 'Resolve a name to typed Nodes.' });
 
+export const MemoryStagedNodeSchema = z
+    .strictObject({
+        ref: z.string().meta({ description: 'Run-local handle to cite this Node with until the run commits.' }),
+        type: z.string(),
+        label: z.string(),
+        aliases: z.array(z.string()).optional(),
+    })
+    .meta({ id: 'MemoryStagedNode', description: 'A Node this run proposed but has not committed yet.' });
+
 export const MemoryFindEntitiesResultSchema = z
     .strictObject({
         brain_id: z.string(),
         generation_id: z.string(),
         nodes: z.array(MemoryNodeSchema),
+        staged: z.array(MemoryStagedNodeSchema).meta({
+            description:
+                'Matching Nodes this run has staged but not committed. Without them a run cannot see its own ' +
+                'writes across stateless tool calls, and would propose the same organisation twice in one partition.',
+        }),
         truncated: z.boolean(),
     })
-    .meta({ id: 'MemoryFindEntitiesResult', description: 'Candidate Nodes for a name.' });
+    .meta({
+        id: 'MemoryFindEntitiesResult',
+        description: 'Candidate Nodes for a name: what is committed, and what this run has already proposed.',
+    });
 
 export const MemoryReadGraphPayloadSchema = z
     .strictObject({
