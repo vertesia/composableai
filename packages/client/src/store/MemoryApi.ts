@@ -19,7 +19,6 @@ import type {
     MemoryNodeEvidenceResponse,
     MemoryOntology,
     MemoryReadGraphPayload,
-    MemoryRunCreated,
     MemoryRunSummary,
     MemoryStageOpsPayload,
     MemoryStageOpsResult,
@@ -204,10 +203,10 @@ export class MemoryApi extends ApiTopic {
     /**
      * Claim a run against a Generation and freeze the sources it may cite.
      *
-     * The response carries the Brain ontology alongside the run, so the caller can render the
-     * vocabulary into the extraction context without a second round trip.
+     * The vocabulary is not returned with it: the caller already froze the ontology into the
+     * extraction context, and a second copy per attempt would be paid for nothing.
      */
-    createRun(brainId: string, payload: CreateMemoryRunPayload): Promise<MemoryRunCreated> {
+    createRun(brainId: string, payload: CreateMemoryRunPayload): Promise<MemoryRunSummary> {
         return this.post(`/brains/${encodeURIComponent(brainId)}/runs`, { payload });
     }
 

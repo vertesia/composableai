@@ -42991,24 +42991,6 @@
     "additionalProperties": false,
     "description": "Claim a run against a Generation and freeze the sources it is allowed to cite."
   },
-  "MemoryRunCreated": {
-    "type": "object",
-    "properties": {
-      "run": {
-        "$ref": "#/components/schemas/MemoryRunSummary"
-      },
-      "ontology": {
-        "$ref": "#/components/schemas/MemoryOntology",
-        "description": "The Brain's vocabulary, returned with the run so a caller can render it into the extraction context in the same round trip that claimed the run."
-      }
-    },
-    "required": [
-      "run",
-      "ontology"
-    ],
-    "additionalProperties": false,
-    "description": "A claimed run, and the vocabulary it must author against."
-  },
   "MemoryNodeHandle": {
     "type": "object",
     "properties": {

@@ -71,7 +71,6 @@ import type {
     MemoryRefusalSchema,
     MemoryRetractNodeOpSchema,
     MemoryRetractStatementOpSchema,
-    MemoryRunCreatedSchema,
     MemoryRunOperationSchema,
     MemoryRunSourceRefSchema,
     MemoryStagedNodeSchema,
@@ -174,7 +173,6 @@ export type MemoryOntologyArray = z.infer<typeof MemoryOntologyArraySchema>;
 export type CreateMemoryOntologyPayload = z.infer<typeof CreateMemoryOntologyPayloadSchema>;
 export type MemoryRunSourceRef = z.infer<typeof MemoryRunSourceRefSchema>;
 export type CreateMemoryRunPayload = z.infer<typeof CreateMemoryRunPayloadSchema>;
-export type MemoryRunCreated = z.infer<typeof MemoryRunCreatedSchema>;
 export type MemoryNodeHandle = z.infer<typeof MemoryNodeHandleSchema>;
 export type MemoryStatementHandle = z.infer<typeof MemoryStatementHandleSchema>;
 export type MemoryWitnessRef = z.infer<typeof MemoryWitnessRefSchema>;

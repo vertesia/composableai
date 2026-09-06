@@ -6,7 +6,6 @@ import {
     MemoryNodeSchema,
     MemoryRunCountsSchema,
     MemoryRunStatusSchema,
-    MemoryRunSummarySchema,
     MemorySupportBasisSchema,
 } from './memory.js';
 
@@ -179,17 +178,6 @@ export const CreateMemoryRunPayloadSchema = z
         id: 'CreateMemoryRunPayload',
         description: 'Claim a run against a Generation and freeze the sources it is allowed to cite.',
     });
-
-export const MemoryRunCreatedSchema = z
-    .strictObject({
-        run: MemoryRunSummarySchema,
-        ontology: MemoryOntologySchema.meta({
-            description:
-                "The Brain's vocabulary, returned with the run so a caller can render it into the extraction " +
-                'context in the same round trip that claimed the run.',
-        }),
-    })
-    .meta({ id: 'MemoryRunCreated', description: 'A claimed run, and the vocabulary it must author against.' });
 
 /* -------------------------------------------------------------------------------------------------
  * Staged operations (specification.md §8.1 steps 3-4, §10)
