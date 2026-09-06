@@ -13,7 +13,12 @@ import type {
     MemoryBrainSchema,
     MemoryBrainUpdatePolicySchema,
     MemoryContentSourceSelectorSchema,
+    MemoryContextPackBrainRefSchema,
+    MemoryContextPackRetrievalSchema,
+    MemoryContextPackSchema,
+    MemoryContextPackWarningSchema,
     MemoryEvidenceEntrySchema,
+    MemoryEvidenceExcerptSchema,
     MemoryEvidenceLocatorSchema,
     MemoryEvidenceRefArraySchema,
     MemoryEvidenceRefSchema,
@@ -33,6 +38,9 @@ import type {
     MemoryNodeSchema,
     MemoryPathQuerySchema,
     MemoryPathSchema,
+    MemoryProjectionRebuildResponseSchema,
+    MemoryProjectionStatusSchema,
+    MemoryQueryPayloadSchema,
     MemoryRunCountsSchema,
     MemoryRunSummaryArraySchema,
     MemoryRunSummarySchema,
@@ -198,3 +206,11 @@ export type MemoryReadGraphPayload = z.infer<typeof MemoryReadGraphPayloadSchema
 
 /** The witness locator shape, named by the role it plays in a run's citations. */
 export type MemoryWitnessLocator = MemoryEvidenceLocator;
+export type MemoryQueryPayload = z.infer<typeof MemoryQueryPayloadSchema>;
+export type MemoryContextPackBrainRef = z.infer<typeof MemoryContextPackBrainRefSchema>;
+export type MemoryEvidenceExcerpt = z.infer<typeof MemoryEvidenceExcerptSchema>;
+export type MemoryContextPackWarning = z.infer<typeof MemoryContextPackWarningSchema>;
+export type MemoryContextPackRetrieval = z.infer<typeof MemoryContextPackRetrievalSchema>;
+export type MemoryContextPack = z.infer<typeof MemoryContextPackSchema>;
+export type MemoryProjectionStatus = z.infer<typeof MemoryProjectionStatusSchema>;
+export type MemoryProjectionRebuildResponse = z.infer<typeof MemoryProjectionRebuildResponseSchema>;
