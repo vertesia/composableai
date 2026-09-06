@@ -13,7 +13,12 @@ import type {
     MemoryBrainSchema,
     MemoryBrainUpdatePolicySchema,
     MemoryContentSourceSelectorSchema,
+    MemoryContextPackBrainRefSchema,
+    MemoryContextPackRetrievalSchema,
+    MemoryContextPackSchema,
+    MemoryContextPackWarningSchema,
     MemoryEvidenceEntrySchema,
+    MemoryEvidenceExcerptSchema,
     MemoryEvidenceLocatorSchema,
     MemoryEvidenceRefArraySchema,
     MemoryEvidenceRefSchema,
@@ -33,6 +38,9 @@ import type {
     MemoryNodeSchema,
     MemoryPathQuerySchema,
     MemoryPathSchema,
+    MemoryProjectionRebuildResponseSchema,
+    MemoryProjectionStatusSchema,
+    MemoryQueryPayloadSchema,
     MemoryRunCountsSchema,
     MemoryRunSummaryArraySchema,
     MemoryRunSummarySchema,
@@ -129,3 +137,11 @@ export type MemoryPathQuery = z.infer<typeof MemoryPathQuerySchema>;
 export type MemoryGraphQuery = z.infer<typeof MemoryGraphQuerySchema>;
 export type MemoryPath = z.infer<typeof MemoryPathSchema>;
 export type MemoryGraphQueryResult = z.infer<typeof MemoryGraphQueryResultSchema>;
+export type MemoryQueryPayload = z.infer<typeof MemoryQueryPayloadSchema>;
+export type MemoryContextPackBrainRef = z.infer<typeof MemoryContextPackBrainRefSchema>;
+export type MemoryEvidenceExcerpt = z.infer<typeof MemoryEvidenceExcerptSchema>;
+export type MemoryContextPackWarning = z.infer<typeof MemoryContextPackWarningSchema>;
+export type MemoryContextPackRetrieval = z.infer<typeof MemoryContextPackRetrievalSchema>;
+export type MemoryContextPack = z.infer<typeof MemoryContextPackSchema>;
+export type MemoryProjectionStatus = z.infer<typeof MemoryProjectionStatusSchema>;
+export type MemoryProjectionRebuildResponse = z.infer<typeof MemoryProjectionRebuildResponseSchema>;

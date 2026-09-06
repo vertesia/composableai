@@ -712,3 +712,173 @@ export const MemoryGraphQueryResultSchema = z
             'Authorized results only. The engine never reports pre-authorization totals, so a count here is a ' +
             'count of what this principal may read.',
     });
+
+/* ------------------------------------------------------------------------------------------- */
+/* Natural-language query and the Context Pack (specification.md §11)                            */
+/* ------------------------------------------------------------------------------------------- */
+
+export const MemoryQueryPayloadSchema = z
+    .strictObject({
+        query: z.string().meta({
+            description: 'What to look for, in natural language. Seeds are selected from the retrieval projection.',
+        }),
+        brain_ids: z
+            .array(z.string())
+            .optional()
+            .meta({ description: 'Brains to search. Defaults to every active Brain in the project.' }),
+        generation_id: z.string().optional().meta({
+            description:
+                "Defaults to each Brain's active Generation. Naming a shadow Generation requires content_admin.",
+        }),
+        node_types: z.array(z.string()).optional().meta({ description: 'Restrict seeds to these ontology types.' }),
+        predicates: z.array(z.string()).optional().meta({ description: 'Restrict expansion to these predicates.' }),
+        as_of: z
+            .string()
+            .meta({
+                format: 'date-time',
+                description: 'World-time point. A Statement whose valid interval excludes it is left out.',
+            })
+            .optional(),
+        max_hops: z.number().int().min(1).max(3).optional().meta({ description: 'Server-clamped to 3; default 2.' }),
+        max_statements: z
+            .number()
+            .int()
+            .min(1)
+            .max(200)
+            .optional()
+            .meta({ description: 'Ceiling on returned Statements. Clamped server-side; default 50.' }),
+        max_excerpts: z
+            .number()
+            .int()
+            .min(0)
+            .max(20)
+            .optional()
+            .meta({ description: 'Ceiling on verified source excerpts. Clamped server-side; default 20.' }),
+    })
+    .meta({
+        id: 'MemoryQueryPayload',
+        description:
+            'A natural-language Memory query. Every limit is a request the server may lower and never raises, so a ' +
+            'caller cannot widen a traversal by asking.',
+    });
+
+export const MemoryContextPackBrainRefSchema = z
+    .strictObject({
+        id: z.string(),
+        generation_id: z.string(),
+        generation_ordinal: z.number().int().optional(),
+        source_lag_seconds: z.number().int().nonnegative().optional().meta({
+            description: 'How far the retrieval projection trails the graph. Absent when nothing has been projected.',
+        }),
+        degraded: z.boolean().optional().meta({
+            description: 'True when the projection is behind or unavailable, so the answer may be incomplete.',
+        }),
+    })
+    .meta({ id: 'MemoryContextPackBrainRef', description: 'One Brain and Generation a Context Pack drew on.' });
+
+export const MemoryEvidenceExcerptSchema = z
+    .strictObject({
+        evidence: MemoryEvidenceRefSchema,
+        excerpt: z
+            .string()
+            .optional()
+            .meta({
+                description:
+                    'Source text re-fetched at read time and verified against the digest recorded when it was read. ' +
+                    'Absent when the source is unavailable or has changed under the citation.',
+            }),
+        verified: z.boolean().meta({
+            description:
+                'Whether the excerpt matched its recorded digest. An unverified citation keeps its reference and ' +
+                'loses its text rather than presenting current text as an old reading.',
+        }),
+    })
+    .meta({
+        id: 'MemoryEvidenceExcerpt',
+        description: 'One citation, with its verified quote when the source still says what it said.',
+    });
+
+export const MemoryContextPackWarningSchema = z
+    .enum(['projection_lag', 'truncated', 'partial_source', 'low_confidence', 'stale_security_snapshot'])
+    .meta({
+        id: 'MemoryContextPackWarning',
+        description:
+            'Why a Context Pack may be incomplete. `stale_security_snapshot` means at least one item was authorized ' +
+            'against live source state because its frozen snapshot no longer verified.',
+    });
+
+export const MemoryContextPackRetrievalSchema = z
+    .strictObject({
+        mode: z.literal('local'),
+        candidates_considered: z.number().int().nonnegative().meta({
+            description:
+                'Seed candidates the projection offered. Not a corpus total, and never a pre-authorization one.',
+        }),
+        hops: z.number().int().nonnegative(),
+        truncated: z.boolean(),
+    })
+    .meta({ id: 'MemoryContextPackRetrieval', description: 'How the result was reached.' });
+
+export const MemoryContextPackSchema = z
+    .strictObject({
+        query_id: z.string(),
+        brains: z.array(MemoryContextPackBrainRefSchema),
+        entities: z.array(MemoryNodeSchema).meta({
+            description: 'Nodes with at least one readable representation. One with none is omitted entirely.',
+        }),
+        statements: z.array(MemoryStatementSchema).meta({
+            description: 'Ranked and authorized. Every one carries at least one complete readable support group.',
+        }),
+        paths: z.array(MemoryPathSchema).optional(),
+        evidence: z.array(MemoryEvidenceExcerptSchema),
+        warnings: z.array(MemoryContextPackWarningSchema).optional(),
+        retrieval: MemoryContextPackRetrievalSchema,
+    })
+    .meta({
+        id: 'MemoryContextPack',
+        description:
+            'A cited answer set. Counts are counts of what this principal may read: the service never exposes raw ' +
+            'index totals before authorization.',
+    });
+
+/* ------------------------------------------------------------------------------------------- */
+/* Projection operations (specification.md §12)                                                  */
+/* ------------------------------------------------------------------------------------------- */
+
+export const MemoryProjectionStatusSchema = z
+    .strictObject({
+        brain_id: z.string(),
+        generation_id: z.string(),
+        available: z.boolean().meta({ description: 'Whether the retrieval projection answered at all.' }),
+        projected_documents: z.number().int().nonnegative(),
+        canonical_documents: z.number().int().nonnegative(),
+        drift: z.number().int().nonnegative().meta({
+            description: 'Difference between canonical and projected document counts. Non-zero means a rebuild is due.',
+        }),
+        lag_seconds: z.number().int().nonnegative().optional().meta({
+            description: 'How far the projection trails the newest canonical write.',
+        }),
+        degraded: z.boolean(),
+        last_projected_at: z.string().meta({ format: 'date-time' }).optional(),
+        error: z.string().optional().meta({ description: 'Why the projection could not be inspected.' }),
+    })
+    .meta({
+        id: 'MemoryProjectionStatus',
+        description:
+            "Health of one Generation's retrieval projection. Natural-language retrieval requires a healthy one; " +
+            'exact-id inspection does not.',
+    });
+
+export const MemoryProjectionRebuildResponseSchema = z
+    .strictObject({
+        brain_id: z.string(),
+        generation_id: z.string(),
+        rebuilt: z.boolean(),
+        status: MemoryProjectionStatusSchema,
+    })
+    .meta({
+        id: 'MemoryProjectionRebuildResponse',
+        description:
+            'Result of rebuilding a Generation’s projection from canonical state. The previous index stays ' +
+            'queryable until the alias swap, so a failed rebuild leaves the last good projection in place.',
+    });

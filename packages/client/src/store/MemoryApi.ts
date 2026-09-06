@@ -5,6 +5,7 @@ import type {
     DeleteMemoryBrainResponse,
     MemoryBrain,
     MemoryBrainActionResponse,
+    MemoryContextPack,
     MemoryEvidenceRef,
     MemoryGeneration,
     MemoryGraphQuery,
@@ -12,6 +13,9 @@ import type {
     MemoryNode,
     MemoryNodeEvidenceQuery,
     MemoryNodeEvidenceResponse,
+    MemoryProjectionRebuildResponse,
+    MemoryProjectionStatus,
+    MemoryQueryPayload,
     MemoryRunSummary,
     MemoryStatement,
     UpdateMemoryBrainPayload,
@@ -141,5 +145,48 @@ export class MemoryApi extends ApiTopic {
     /** The citations supporting a Statement, across all of its readable support groups. */
     getStatementEvidence(statementId: string): Promise<MemoryEvidenceRef[]> {
         return this.get(`/statements/${encodeURIComponent(statementId)}/evidence`);
+    }
+
+    /**
+     * Ask Memory a question and get back a cited Context Pack.
+     *
+     * Every Statement returned carries at least one complete support group the caller may read; a
+     * Node with no readable representation is left out entirely, paths and counts included. Limits
+     * in the payload are requests the server may lower and never raises.
+     *
+     * Fails with a retryable 503 when the retrieval projection is unavailable — reads that address
+     * an exact Node, Statement or Evidence id keep working.
+     */
+    query(payload: MemoryQueryPayload): Promise<MemoryContextPack> {
+        return this.post('/query', { payload });
+    }
+
+    /**
+     * Run a structured graph query with full support-group authorization.
+     *
+     * Unlike {@link queryGraph}, which inspects one Brain, this applies the same snapshot
+     * authorization as {@link query}: unreadable Nodes are dropped from results, paths and bindings.
+     */
+    graphQuery(query: MemoryGraphQuery): Promise<MemoryGraphQueryResult> {
+        return this.post('/graph-query', { payload: query });
+    }
+
+    /** Health of a Generation's retrieval projection: drift against canonical state, and lag. */
+    getProjectionStatus(brainId: string, generationId?: string): Promise<MemoryProjectionStatus> {
+        return this.get(`/projections/${encodeURIComponent(brainId)}`, {
+            query: generationId ? { generation_id: generationId } : undefined,
+        });
+    }
+
+    /**
+     * Rebuild a Generation's projection from canonical state.
+     *
+     * The previous index stays queryable until the alias swap, so a failed rebuild leaves the last
+     * good projection in place.
+     */
+    rebuildProjection(brainId: string, generationId?: string): Promise<MemoryProjectionRebuildResponse> {
+        return this.post(`/projections/${encodeURIComponent(brainId)}/actions/rebuild`, {
+            query: generationId ? { generation_id: generationId } : undefined,
+        });
     }
 }
