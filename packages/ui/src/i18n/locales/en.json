@@ -1264,5 +1264,10 @@
     "widgets.schema.propertyColumn": "Property",
     "memoryGraph": {
         "episodeStopSummary": "{{count}} episodes"
-    }
+    },
+    "agent.backToDocuments": "Back to documents",
+    "agent.documentCount_one": "{{count}} document",
+    "agent.documentCount_other": "{{count}} documents",
+    "agent.documentsFiltered": "{{visible}} of {{total}} documents",
+    "agent.noMatchingDocuments": "No matching documents"
 }

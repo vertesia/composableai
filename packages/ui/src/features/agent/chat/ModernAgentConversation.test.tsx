@@ -282,7 +282,6 @@ describe('ModernAgentConversation send handling', () => {
             isDocPanelOpen: false,
             docRefreshKey: 0,
             closeDocPanel: vi.fn(),
-            closeDocument: vi.fn(),
             selectDocument: vi.fn(),
             openDocInPanel: vi.fn(),
             updateDocumentTitle: vi.fn(),

@@ -26,7 +26,7 @@ import {
 import React, { useCallback, useMemo, useState } from 'react';
 import { ArtifactsTab } from './ArtifactsTab.js';
 import { BrowserUseWidget, getLatestBrowserUseByWorkstream } from './BrowserUseWidget.js';
-import { DocumentPanel } from './DocumentPanel.js';
+import { DocumentsTab } from './DocumentsTab.js';
 import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
 import { getConversationUrl } from './ModernAgentOutput/utils.js';
 import type { OpenDocument } from './types/document.js';
@@ -370,8 +370,7 @@ export interface AgentRightPanelProps {
     // Documents
     openDocuments?: OpenDocument[];
     activeDocumentId?: string | null;
-    onSelectDocument?: (id: string) => void;
-    onCloseDocument?: (id: string) => void;
+    onSelectDocument?: (id: string | null) => void;
     onUpdateDocumentTitle?: (id: string, title: string) => void;
     docRefreshKey?: number;
     runId?: string;
@@ -415,7 +414,6 @@ function AgentRightPanelComponent({
     openDocuments = [],
     activeDocumentId,
     onSelectDocument,
-    onCloseDocument,
     onUpdateDocumentTitle,
     docRefreshKey = 0,
     runId,
@@ -533,13 +531,11 @@ function AgentRightPanelComponent({
             ),
             content: withTabBoundary(
                 t('agent.documents'),
-                openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
-                    <DocumentPanel
-                        isOpen={true}
+                openDocuments.length > 0 && onSelectDocument ? (
+                    <DocumentsTab
                         documents={openDocuments}
                         activeDocumentId={activeDocumentId ?? null}
                         onSelectDocument={onSelectDocument}
-                        onCloseDocument={onCloseDocument}
                         onUpdateDocumentTitle={onUpdateDocumentTitle}
                         refreshKey={docRefreshKey}
                         runId={runId}
