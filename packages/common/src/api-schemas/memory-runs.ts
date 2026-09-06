@@ -333,6 +333,18 @@ export const MemoryStageOpsPayloadSchema = z
     })
     .meta({ id: 'MemoryStageOpsPayload', description: 'A batch of operations to stage on a run ledger.' });
 
+export const AbandonMemoryRunPayloadSchema = z
+    .strictObject({
+        reason: z
+            .string()
+            .optional()
+            .meta({ description: 'Why the attempt was given up on. Recorded on the run so a receipt says so.' }),
+    })
+    .meta({
+        id: 'AbandonMemoryRunPayload',
+        description: 'Close an attempt nobody will finish. A run that already committed is left alone.',
+    });
+
 export const MemoryRefusalSchema = z
     .strictObject({
         code: z.enum([

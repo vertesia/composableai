@@ -59,6 +59,7 @@ import type {
     UpdateMemoryBrainPayloadSchema,
 } from './api-schemas/memory.js';
 import type {
+    AbandonMemoryRunPayloadSchema,
     CreateMemoryOntologyPayloadSchema,
     CreateMemoryRunPayloadSchema,
     ListMemoryRunOpsQuerySchema,
@@ -202,6 +203,7 @@ export type MemoryStagedNode = z.infer<typeof MemoryStagedNodeSchema>;
 export type MemoryStagedOp = z.infer<typeof MemoryStagedOpSchema>;
 export type MemoryStageOpsResult = z.infer<typeof MemoryStageOpsResultSchema>;
 export type ListMemoryRunOpsQuery = z.infer<typeof ListMemoryRunOpsQuerySchema>;
+export type AbandonMemoryRunPayload = z.infer<typeof AbandonMemoryRunPayloadSchema>;
 export type MemoryRunOpPage = z.infer<typeof MemoryRunOpPageSchema>;
 export type MemoryCommitTicket = z.infer<typeof MemoryCommitTicketSchema>;
 export type MemoryFindEntitiesPayload = z.infer<typeof MemoryFindEntitiesPayloadSchema>;

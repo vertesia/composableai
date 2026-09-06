@@ -1,5 +1,6 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    AbandonMemoryRunPayload,
     CreateMemoryBrainPayload,
     CreateMemoryOntologyPayload,
     CreateMemoryRunPayload,
@@ -236,6 +237,19 @@ export class MemoryApi extends ApiTopic {
      */
     stageRunOps(brainId: string, runId: string, payload: MemoryStageOpsPayload): Promise<MemoryStageOpsResult> {
         return this.post(`/brains/${encodeURIComponent(brainId)}/runs/${encodeURIComponent(runId)}/ops`, { payload });
+    }
+
+    /**
+     * Close an attempt nobody will finish.
+     *
+     * A coordinator that gives up on a partition and claims a fresh run must say so, or the run it
+     * walked away from reads as work still in flight forever. A run that already committed is left
+     * exactly as it is and returned unchanged, which is what makes this safe to retry.
+     */
+    abandonRun(brainId: string, runId: string, payload: AbandonMemoryRunPayload = {}): Promise<MemoryRunSummary> {
+        return this.post(`/brains/${encodeURIComponent(brainId)}/runs/${encodeURIComponent(runId)}/actions/abandon`, {
+            payload,
+        });
     }
 
     /** Resolve a name to typed Nodes in the run's Generation, overlaid with the run's own writes. */

@@ -648,6 +648,7 @@ import {
     UpdateMemoryBrainPayloadSchema,
 } from './memory.js';
 import {
+    AbandonMemoryRunPayloadSchema,
     CreateMemoryOntologyPayloadSchema,
     CreateMemoryRunPayloadSchema,
     ListMemoryRunOpsQuerySchema,
@@ -1636,6 +1637,7 @@ const MEMORY_SCHEMAS = {
     MemoryStageOpsResult: MemoryStageOpsResultSchema,
     ListMemoryRunOpsQuery: ListMemoryRunOpsQuerySchema,
     MemoryRunOpPage: MemoryRunOpPageSchema,
+    AbandonMemoryRunPayload: AbandonMemoryRunPayloadSchema,
     MemoryCommitTicket: MemoryCommitTicketSchema,
     MemoryFindEntitiesPayload: MemoryFindEntitiesPayloadSchema,
     MemoryFindEntitiesResult: MemoryFindEntitiesResultSchema,
@@ -2885,6 +2887,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // Expanded into parameters rather than published, like the other query components.
     'ListMemoryRunOpsQuery',
     'MemoryRunOpPage',
+    'AbandonMemoryRunPayload',
     'MemoryCommitTicket',
     'MemoryFindEntitiesPayload',
     'MemoryFindEntitiesResult',

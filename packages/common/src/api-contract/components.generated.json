@@ -41672,7 +41672,8 @@
           "committed",
           "refused",
           "failed",
-          "cancelled"
+          "cancelled",
+          "abandoned"
         ]
       },
       "partition_id": {
@@ -43589,6 +43590,17 @@
     "additionalProperties": false,
     "description": "A page of the run ledger. This is where a refusal outlives the workflow that provoked it: the rule that refused an operation is readable long after Temporal has dropped the history."
   },
+  "AbandonMemoryRunPayload": {
+    "type": "object",
+    "properties": {
+      "reason": {
+        "type": "string",
+        "description": "Why the attempt was given up on. Recorded on the run so a receipt says so."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Close an attempt nobody will finish. A run that already committed is left alone."
+  },
   "MemoryCommitTicket": {
     "type": "object",
     "properties": {
@@ -43609,7 +43621,8 @@
           "committed",
           "refused",
           "failed",
-          "cancelled"
+          "cancelled",
+          "abandoned"
         ]
       },
       "counts": {

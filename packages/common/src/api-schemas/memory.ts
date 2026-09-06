@@ -115,7 +115,20 @@ const MemoryGenerationStatusSchema = z.enum(['building', 'ready', 'active', 'sup
 
 const MemoryRunModeSchema = z.enum(['discover', 'maintain', 'rebuild']);
 
-export const MemoryRunStatusSchema = z.enum(['pending', 'running', 'committed', 'refused', 'failed', 'cancelled']);
+/**
+ * `abandoned` is the state of an attempt nobody will finish: the coordinator gave up on the run and
+ * claimed a fresh one. It is distinct from `failed`, which is a run that tried to commit and could
+ * not, and it matters because a run left in `running` reads as work still in flight forever.
+ */
+export const MemoryRunStatusSchema = z.enum([
+    'pending',
+    'running',
+    'committed',
+    'refused',
+    'failed',
+    'cancelled',
+    'abandoned',
+]);
 
 export const MemoryNodeKindSchema = z.enum(['entity', 'event', 'concept', 'procedure']);
 
