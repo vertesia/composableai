@@ -69,6 +69,8 @@ import type {
     WorkflowRunEvent,
 } from './workflow.js';
 
+export * from './agent-run-values.js';
+
 export type AgentRunStatus = z.infer<typeof AgentRunStatusSchema>;
 
 export type AgentRunArchiveState = z.infer<typeof AgentRunArchiveStateSchema>;

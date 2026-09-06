@@ -19,6 +19,7 @@ import {
     XIcon,
 } from 'lucide-react';
 import { PayloadBuilderProvider, usePayloadBuilder } from '../../PayloadBuilder';
+import { AgentRunFeedback } from '../AgentRunFeedback';
 import type { AgentConversationViewMode } from './AllMessagesMixed';
 import { getConversationUrl } from './utils';
 
@@ -208,6 +209,8 @@ export default function Header({
                     )}
                 </Button>
             )}
+
+            {agentRunId && <AgentRunFeedback agentRunId={agentRunId} variant={variant} />}
 
             {agentRunId && (
                 <Button

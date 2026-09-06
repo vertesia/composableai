@@ -2,6 +2,7 @@
 
 import { ExecutionTokenUsageSchema, ReasoningEffortSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
+import { AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH } from '../store/agent-run-values.js';
 import type { AgentMessageType, FileProcessingStatus } from '../store/workflow.js';
 import { type AgentEvent, AgentEventType, LlmCallType, TelemetryToolType } from '../workflow-analytics.js';
 import * as AppLifecycleSchemas from './app-lifecycle.js';
@@ -1162,9 +1163,6 @@ export const AgentRunFeedbackReasonCodeSchema = z
         'other',
     ])
     .meta({ id: 'AgentRunFeedbackReasonCode', description: 'Why the run was rated the way it was.' });
-
-/** Bound on `comment`; the field is stored with the tenant and never leaves it. */
-export const AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH = 2000;
 
 export const AgentRunFeedbackPayloadSchema = z
     .strictObject({

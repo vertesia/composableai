@@ -28,6 +28,11 @@ export {
     type AgentChatReplayStreamingMessage,
 } from './AgentChatFixtureReplay';
 export { AgentChatPlaybackControls, type AgentChatPlaybackControlsProps } from './AgentChatPlaybackControls';
+export {
+    AgentRunFeedback,
+    type AgentRunFeedbackProps,
+    agentRunFeedbackReasonCodes,
+} from './AgentRunFeedback';
 export * from './AnimatedThinkingDots';
 // AskUser widget for displaying agent prompts/questions
 export {
