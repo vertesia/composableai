@@ -43479,6 +43479,10 @@
           "refused"
         ]
       },
+      "tool": {
+        "type": "string",
+        "description": "The agent tool this entry came from, such as `memory_add_statement`. Named rather than derived from the operation, so a refusal reads against the transcript without decoding the payload."
+      },
       "operation": {
         "$ref": "#/components/schemas/MemoryRunOperation",
         "description": "The operation as persisted, so a caller can compare it against what it submitted."
@@ -43488,12 +43492,18 @@
         "items": {
           "$ref": "#/components/schemas/MemoryRefusal"
         }
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
       }
     },
     "required": [
       "sequence",
       "status",
-      "operation"
+      "tool",
+      "operation",
+      "created_at"
     ],
     "additionalProperties": false,
     "description": "One entry of the run ledger, as it was written down."
@@ -43529,6 +43539,55 @@
     ],
     "additionalProperties": false,
     "description": "What the ledger now holds for this batch. A refused operation is returned rather than thrown away, so the caller can correct it and stage it again."
+  },
+  "ListMemoryRunOpsQuery": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "staged",
+          "applied",
+          "refused"
+        ],
+        "description": "Keep only entries in this state. `refused` is the interesting one."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200
+      },
+      "cursor": {
+        "type": "string",
+        "description": "Opaque page cursor from a previous response."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Filters over a run ledger. Entries come back in the order the run wrote them."
+  },
+  "MemoryRunOpPage": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "ops": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/MemoryStagedOp"
+        }
+      },
+      "next_cursor": {
+        "type": "string",
+        "description": "Absent on the last page."
+      }
+    },
+    "required": [
+      "run_id",
+      "ops"
+    ],
+    "additionalProperties": false,
+    "description": "A page of the run ledger. This is where a refusal outlives the workflow that provoked it: the rule that refused an operation is readable long after Temporal has dropped the history."
   },
   "MemoryCommitTicket": {
     "type": "object",

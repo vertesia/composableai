@@ -365,17 +365,56 @@ export const MemoryRefusalSchema = z
             'keeps reaching for and never getting is how we learn the ontology is missing a word.',
     });
 
+/**
+ * Inlined rather than published as its own component: three values shared by a ledger entry and the
+ * filter over it do not need a `$ref`, and a name here would collide in meaning with the run status.
+ */
+const MEMORY_RUN_OP_STATUSES = ['staged', 'applied', 'refused'] as const;
+
 export const MemoryStagedOpSchema = z
     .strictObject({
         sequence: z.number().int().meta({ description: 'Monotonic within the run, so replay order is exact.' }),
         ref: z.string().optional(),
-        status: z.enum(['staged', 'applied', 'refused']),
+        status: z.enum(MEMORY_RUN_OP_STATUSES),
+        tool: z.string().meta({
+            description:
+                'The agent tool this entry came from, such as `memory_add_statement`. Named rather than derived ' +
+                'from the operation, so a refusal reads against the transcript without decoding the payload.',
+        }),
         operation: MemoryRunOperationSchema.meta({
             description: 'The operation as persisted, so a caller can compare it against what it submitted.',
         }),
         refusals: z.array(MemoryRefusalSchema).optional(),
+        created_at: z.string().meta({ format: 'date-time' }),
     })
     .meta({ id: 'MemoryStagedOp', description: 'One entry of the run ledger, as it was written down.' });
+
+export const ListMemoryRunOpsQuerySchema = z
+    .strictObject({
+        status: z
+            .enum(MEMORY_RUN_OP_STATUSES)
+            .optional()
+            .meta({ description: 'Keep only entries in this state. `refused` is the interesting one.' }),
+        limit: z.number().int().min(1).max(200).optional(),
+        cursor: z.string().optional().meta({ description: 'Opaque page cursor from a previous response.' }),
+    })
+    .meta({
+        id: 'ListMemoryRunOpsQuery',
+        description: 'Filters over a run ledger. Entries come back in the order the run wrote them.',
+    });
+
+export const MemoryRunOpPageSchema = z
+    .strictObject({
+        run_id: z.string(),
+        ops: z.array(MemoryStagedOpSchema),
+        next_cursor: z.string().optional().meta({ description: 'Absent on the last page.' }),
+    })
+    .meta({
+        id: 'MemoryRunOpPage',
+        description:
+            'A page of the run ledger. This is where a refusal outlives the workflow that provoked it: the rule ' +
+            'that refused an operation is readable long after Temporal has dropped the history.',
+    });
 
 export const MemoryStageOpsResultSchema = z
     .strictObject({

@@ -61,6 +61,7 @@ import type {
 import type {
     CreateMemoryOntologyPayloadSchema,
     CreateMemoryRunPayloadSchema,
+    ListMemoryRunOpsQuerySchema,
     MemoryAddStatementOpSchema,
     MemoryCommitTicketSchema,
     MemoryFindEntitiesPayloadSchema,
@@ -80,6 +81,7 @@ import type {
     MemoryRetractNodeOpSchema,
     MemoryRetractStatementOpSchema,
     MemoryRunOperationSchema,
+    MemoryRunOpPageSchema,
     MemoryRunSourceRefSchema,
     MemoryStagedNodeSchema,
     MemoryStagedOpSchema,
@@ -199,6 +201,8 @@ export type MemoryRefusalCode = MemoryRefusal['code'];
 export type MemoryStagedNode = z.infer<typeof MemoryStagedNodeSchema>;
 export type MemoryStagedOp = z.infer<typeof MemoryStagedOpSchema>;
 export type MemoryStageOpsResult = z.infer<typeof MemoryStageOpsResultSchema>;
+export type ListMemoryRunOpsQuery = z.infer<typeof ListMemoryRunOpsQuerySchema>;
+export type MemoryRunOpPage = z.infer<typeof MemoryRunOpPageSchema>;
 export type MemoryCommitTicket = z.infer<typeof MemoryCommitTicketSchema>;
 export type MemoryFindEntitiesPayload = z.infer<typeof MemoryFindEntitiesPayloadSchema>;
 export type MemoryFindEntitiesResult = z.infer<typeof MemoryFindEntitiesResultSchema>;

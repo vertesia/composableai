@@ -5,6 +5,7 @@ import type {
     CreateMemoryRunPayload,
     DeleteMemoryBrainQuery,
     DeleteMemoryBrainResponse,
+    ListMemoryRunOpsQuery,
     MemoryBrain,
     MemoryBrainActionResponse,
     MemoryCommitTicket,
@@ -23,6 +24,7 @@ import type {
     MemoryProjectionStatus,
     MemoryQueryPayload,
     MemoryReadGraphPayload,
+    MemoryRunOpPage,
     MemoryRunSummary,
     MemoryStageOpsPayload,
     MemoryStageOpsResult,
@@ -126,6 +128,17 @@ export class MemoryApi extends ApiTopic {
 
     getRun(brainId: string, runId: string): Promise<MemoryRunSummary> {
         return this.get(`/brains/${encodeURIComponent(brainId)}/runs/${encodeURIComponent(runId)}`);
+    }
+
+    /**
+     * Read a run's operation ledger, in the order the run wrote it.
+     *
+     * A run receipt reports how many operations were refused; this reports which and under which
+     * rule. Pass `status: 'refused'` to page only over those, which is what an operator asking why
+     * a rebuild came out thin actually wants.
+     */
+    listRunOps(brainId: string, runId: string, query: ListMemoryRunOpsQuery = {}): Promise<MemoryRunOpPage> {
+        return this.get(`/brains/${encodeURIComponent(brainId)}/runs/${encodeURIComponent(runId)}/ops`, { query });
     }
 
     /** Execute a structured graph query against a Brain Generation. */
