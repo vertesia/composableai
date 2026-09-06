@@ -33973,6 +33973,96 @@
       }
     }
   },
+  "AgentRunFeedbackRating": {
+    "type": "string",
+    "enum": [
+      "up",
+      "down"
+    ],
+    "description": "Thumbs up or thumbs down on an agent run."
+  },
+  "AgentRunFeedbackReasonCode": {
+    "type": "string",
+    "enum": [
+      "accurate",
+      "helpful",
+      "fast",
+      "well_explained",
+      "wrong_result",
+      "incomplete",
+      "misunderstood_request",
+      "too_slow",
+      "tool_failure",
+      "unsafe_action",
+      "other"
+    ],
+    "description": "Why the run was rated the way it was."
+  },
+  "AgentRunFeedbackPayload": {
+    "type": "object",
+    "properties": {
+      "rating": {
+        "$ref": "#/components/schemas/AgentRunFeedbackRating"
+      },
+      "reason_code": {
+        "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
+      },
+      "comment": {
+        "type": "string",
+        "maxLength": 2000,
+        "description": "Free-text comment. Stored with the tenant; only its presence is ever counted."
+      },
+      "message_id": {
+        "type": "string",
+        "description": "Rate one message rather than the run as a whole."
+      },
+      "message_seq": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Position of the rated message in the run, when a message is rated."
+      }
+    },
+    "required": [
+      "rating"
+    ],
+    "additionalProperties": false,
+    "description": "A user rating on an agent run."
+  },
+  "AgentRunFeedbackStatus": {
+    "type": "string",
+    "enum": [
+      "recorded",
+      "no_diagnosis",
+      "disabled"
+    ],
+    "description": "Whether the rating reached a diagnosis record."
+  },
+  "AgentRunFeedbackResponse": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "$ref": "#/components/schemas/AgentRunFeedbackStatus"
+      },
+      "episode_seq": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "The episode the rating was attached to, when one was."
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "The diagnosis revision the rating produced, when it produced one."
+      }
+    },
+    "required": [
+      "status"
+    ],
+    "additionalProperties": false,
+    "description": "Result of rating an agent run."
+  },
   "AgentEvent": {
     "oneOf": [
       {

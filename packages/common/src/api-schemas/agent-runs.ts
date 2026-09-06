@@ -1134,3 +1134,75 @@ export const AgentRunInternalsSchema = z
         updated_at: z.string().meta({ format: 'date-time' }),
     })
     .meta({ id: 'AgentRunInternals' });
+
+/**
+ * How the user rated an agent run's work. Two values on purpose: a rating is a signal, not a score,
+ * and a wider scale invites a precision the reader does not have.
+ */
+export const AgentRunFeedbackRatingSchema = z
+    .enum(['up', 'down'])
+    .meta({ id: 'AgentRunFeedbackRating', description: 'Thumbs up or thumbs down on an agent run.' });
+
+/**
+ * The closed reason vocabulary. Closed rather than free text because the reason is the part that
+ * gets counted; the free-text `comment` stays with the tenant and is never aggregated.
+ */
+export const AgentRunFeedbackReasonCodeSchema = z
+    .enum([
+        'accurate',
+        'helpful',
+        'fast',
+        'well_explained',
+        'wrong_result',
+        'incomplete',
+        'misunderstood_request',
+        'too_slow',
+        'tool_failure',
+        'unsafe_action',
+        'other',
+    ])
+    .meta({ id: 'AgentRunFeedbackReasonCode', description: 'Why the run was rated the way it was.' });
+
+/** Bound on `comment`; the field is stored with the tenant and never leaves it. */
+export const AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH = 2000;
+
+export const AgentRunFeedbackPayloadSchema = z
+    .strictObject({
+        rating: AgentRunFeedbackRatingSchema,
+        reason_code: AgentRunFeedbackReasonCodeSchema.optional(),
+        comment: z.string().max(AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH).optional().meta({
+            description: 'Free-text comment. Stored with the tenant; only its presence is ever counted.',
+        }),
+        message_id: z.string().optional().meta({
+            description: 'Rate one message rather than the run as a whole.',
+        }),
+        message_seq: z.number().int().min(0).optional().meta({
+            description: 'Position of the rated message in the run, when a message is rated.',
+        }),
+    })
+    .meta({ id: 'AgentRunFeedbackPayload', description: 'A user rating on an agent run.' });
+
+/**
+ * What happened to the rating, said plainly rather than inferred from a status code.
+ *
+ * `recorded` is the only one that means the rating reached a diagnosis. The other two are the two
+ * honest ways it can fail to: the deployment does not run product diagnostics at all, or this run
+ * has no diagnosis to attach it to. Both answer 200 — a rating the user gave is never an error on
+ * their side — and both are distinguishable, because "we counted it" and "we dropped it" must not
+ * look the same to the caller.
+ */
+export const AgentRunFeedbackStatusSchema = z
+    .enum(['recorded', 'no_diagnosis', 'disabled'])
+    .meta({ id: 'AgentRunFeedbackStatus', description: 'Whether the rating reached a diagnosis record.' });
+
+export const AgentRunFeedbackResponseSchema = z
+    .strictObject({
+        status: AgentRunFeedbackStatusSchema,
+        episode_seq: z.number().int().optional().meta({
+            description: 'The episode the rating was attached to, when one was.',
+        }),
+        revision: z.number().int().optional().meta({
+            description: 'The diagnosis revision the rating produced, when it produced one.',
+        }),
+    })
+    .meta({ id: 'AgentRunFeedbackResponse', description: 'Result of rating an agent run.' });
