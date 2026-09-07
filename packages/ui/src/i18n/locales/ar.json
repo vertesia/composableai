@@ -127,6 +127,7 @@
     "agent.feedback.reasonPlaceholder": "اختر سببًا (اختياري)",
     "agent.feedback.skip": "ليس الآن",
     "agent.feedback.status.disabled": "لا يتم جمع التقييمات في هذه البيئة.",
+    "agent.feedback.status.episode_unavailable": "هذا التشغيل بين مهمتين. حاول مرة أخرى بعد لحظة.",
     "agent.feedback.status.no_diagnosis": "لا يوجد في هذا التشغيل ما يمكن ربط التقييم به.",
     "agent.feedback.submit": "إرسال",
     "agent.feedback.thanks": "شكرًا على ملاحظاتك",

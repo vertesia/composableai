@@ -119,6 +119,7 @@
     "agent.feedback.reasonPlaceholder": "Grund auswählen (optional)",
     "agent.feedback.skip": "Jetzt nicht",
     "agent.feedback.status.disabled": "In dieser Umgebung werden keine Bewertungen erfasst.",
+    "agent.feedback.status.episode_unavailable": "Dieser Lauf befindet sich zwischen zwei Aufgaben. Versuchen Sie es gleich noch einmal.",
     "agent.feedback.status.no_diagnosis": "Für diesen Lauf gibt es nichts, woran eine Bewertung angehängt werden könnte.",
     "agent.feedback.submit": "Senden",
     "agent.feedback.thanks": "Danke für Ihr Feedback",

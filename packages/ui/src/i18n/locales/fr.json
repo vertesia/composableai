@@ -120,6 +120,7 @@
     "agent.feedback.reasonPlaceholder": "Choisissez une raison (facultatif)",
     "agent.feedback.skip": "Pas maintenant",
     "agent.feedback.status.disabled": "Les évaluations ne sont pas collectées dans cet environnement.",
+    "agent.feedback.status.episode_unavailable": "Cette exécution est entre deux tâches. Réessayez dans un instant.",
     "agent.feedback.status.no_diagnosis": "Cette exécution n'a rien à quoi rattacher une évaluation.",
     "agent.feedback.submit": "Envoyer",
     "agent.feedback.thanks": "Merci pour votre retour",

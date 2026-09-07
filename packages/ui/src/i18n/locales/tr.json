@@ -119,6 +119,7 @@
     "agent.feedback.reasonPlaceholder": "Bir neden seçin (isteğe bağlı)",
     "agent.feedback.skip": "Şimdi değil",
     "agent.feedback.status.disabled": "Bu ortamda değerlendirmeler toplanmaz.",
+    "agent.feedback.status.episode_unavailable": "Bu çalıştırma iki görev arasında. Birazdan tekrar deneyin.",
     "agent.feedback.status.no_diagnosis": "Bu çalıştırmaya değerlendirme eklenecek bir kayıt yok.",
     "agent.feedback.submit": "Gönder",
     "agent.feedback.thanks": "Geri bildiriminiz için teşekkürler",

@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { AgentRunFeedbackPayload, AgentRunFeedbackStatus } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
+import englishMessages from '../../../i18n/locales/en.json' with { type: 'json' };
 import { AgentRunFeedback, agentRunFeedbackReasonCodes } from './AgentRunFeedback';
 
 const mocks = vi.hoisted(() => ({ recordFeedback: vi.fn() }));
@@ -124,6 +125,48 @@ describe('AgentRunFeedback', () => {
         await waitFor(() => expect(onRecorded).toHaveBeenCalledWith({ rating: 'up' }, 'no_diagnosis'));
         expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('false');
         expect(screen.queryByText('Tell us more')).toBeNull();
+    });
+
+    it('keeps offering itself when the run is between episodes', async () => {
+        // `episode_unavailable` is the one non-recorded status worth another click: the run IS in an
+        // episode, we just do not know which one yet. Removing the control (as `disabled` does) or
+        // lighting the thumb (as `recorded` does) would both be wrong.
+        respondWith('episode_unavailable');
+        const onRecorded = vi.fn();
+        renderWithProviders(<AgentRunFeedback agentRunId="run-1" onRecorded={onRecorded} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Rate this run up' }));
+
+        await waitFor(() => expect(onRecorded).toHaveBeenCalledWith({ rating: 'up' }, 'episode_unavailable'));
+        const button = await screen.findByRole('button', { name: 'Rate this run up' });
+        expect(button.getAttribute('aria-pressed')).toBe('false');
+        expect(screen.queryByText('Tell us more')).toBeNull();
+        // The message itself goes out as a toast, which renders through a provider this harness
+        // does not mount; what is checkable here is that the status the server sent has a message
+        // at all — a missing key would surface to the user as the raw status string.
+        expect(englishMessages['agent.feedback.status.episode_unavailable']).toBe(
+            'This run is between tasks. Try again in a moment.',
+        );
+    });
+
+    it('sends the detail to the episode the thumb landed on, not to whichever one is current', async () => {
+        // Identity is separate from revision: the episode usually CLOSES between the two
+        // submissions, and re-resolving would file the reason code on the next one.
+        mocks.recordFeedback.mockResolvedValueOnce({ status: 'recorded', episode_seq: 4 });
+        mocks.recordFeedback.mockResolvedValueOnce({ status: 'recorded', episode_seq: 4, revision: 3 });
+        renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Rate this run down' }));
+        await screen.findByText('Tell us more');
+        fireEvent.change(screen.getByPlaceholderText('What went well, or what went wrong?'), {
+            target: { value: 'it stopped halfway' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+        await waitFor(() => expect(mocks.recordFeedback).toHaveBeenCalledTimes(2));
+        // The first submission does not name an episode — it is what ASKS which episode this is.
+        expect(payloadOf(0)).toEqual({ rating: 'down' });
+        expect(payloadOf(1)).toEqual({ rating: 'down', comment: 'it stopped halfway', episode_seq: 4 });
     });
 
     it('stops offering itself once the deployment says ratings are not collected', async () => {

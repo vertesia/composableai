@@ -119,6 +119,7 @@
     "agent.feedback.reasonPlaceholder": "选择原因（可选）",
     "agent.feedback.skip": "暂不填写",
     "agent.feedback.status.disabled": "此环境不收集评分。",
+    "agent.feedback.status.episode_unavailable": "此运行正处于任务之间。请稍后再试。",
     "agent.feedback.status.no_diagnosis": "该运行没有可关联评分的记录。",
     "agent.feedback.submit": "发送",
     "agent.feedback.thanks": "感谢你的反馈",
