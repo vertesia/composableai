@@ -2780,7 +2780,9 @@
         "enum": [
           "text_to_video",
           "image_to_video",
-          "reference_to_video"
+          "reference_to_video",
+          "edit",
+          "extend"
         ]
       },
       "aspect_ratio": {
@@ -2794,6 +2796,15 @@
         "type": "integer",
         "minimum": 3,
         "maximum": 10
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "360p",
+          "720p",
+          "1080p",
+          "4k"
+        ]
       }
     },
     "required": [
@@ -13850,6 +13861,13 @@
       },
       "message": {
         "type": "string"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolResult"
+        },
+        "description": "Tool results owed to the model, delivered with this message."
       }
     },
     "required": [
@@ -23680,6 +23698,9 @@
         "items": {
           "$ref": "#/components/schemas/TaskField"
         }
+      },
+      "requestId": {
+        "type": "string"
       }
     },
     "required": [

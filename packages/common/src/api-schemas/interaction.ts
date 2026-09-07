@@ -2465,7 +2465,23 @@ export const ToolResultsPayloadSchema = z
     .meta({ id: 'ToolResultsPayload' });
 
 export const UserMessagePayloadSchema = z
-    .strictObject({ ...resumeConversationFields, message: z.string() })
+    .strictObject({
+        ...resumeConversationFields,
+        message: z.string(),
+        /**
+         * Tool results still owed to the model when the user message is sent.
+         *
+         * A conversation can be interrupted — the user stops the run, or a tool approval is
+         * denied — while a tool batch has already produced results, or while `tool_use` blocks
+         * are outstanding. Providers require a `tool_result` for every `tool_use` before the
+         * next turn, so those results have to travel with the message that resumes the
+         * conversation rather than in a separate turn of their own.
+         */
+        results: z
+            .array(ToolResultSchema)
+            .optional()
+            .meta({ description: 'Tool results owed to the model, delivered with this message.' }),
+    })
     .meta({ id: 'UserMessagePayload' });
 
 export const ExecutionResponseSchema = z

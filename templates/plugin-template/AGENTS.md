@@ -147,6 +147,20 @@ Seed demo or test content from standalone scripts launched during development, n
 Do not add visible "Seed" buttons, auto-seed on UI load, or create `/api/seed` routes. App runtime code should
 read real objects; seeding is a build/test concern.
 
+Write those scripts in TypeScript under `scripts/` and run them directly — `node scripts/<name>.ts`. Node strips
+the types, so there is no build step, and `tsconfig.scripts.json` type-checks `scripts/` and `tests/` as part of
+`{{PM_RUN}} typecheck`. Only erasable syntax is allowed there (no `enum`, `namespace`, or constructor parameter
+properties); the typecheck rejects the rest rather than letting it fail at runtime.
+
+They build their client with `createVertesiaClient()` from `scripts/vertesia-client.ts` — never
+`new VertesiaClient(...)` directly, and the Playwright fixtures use the same factory. The credential option is
+`apikey` (not `token`) and the version is pinned by `withAppVersion()` (not an `appVersion` option); the SDK
+ignores unknown constructor options — it warns on `console`, but still builds the client — so getting either
+name wrong produces a client that sends no
+`Authorization` header and fails with `401 Unauthorized: Authorization token is required`, or one that quietly
+reads the promoted version instead of the candidate under test. The typecheck rejects both shapes before a
+version is built — including in a `.mjs` script, which stays inside the gate via `checkJs`.
+
 ## Cross-Cutting Pitfalls
 
 Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
