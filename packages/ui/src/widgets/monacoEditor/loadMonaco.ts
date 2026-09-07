@@ -40,8 +40,8 @@ let configured = false;
  */
 export function configureMonacoLoader(loader: MonacoLoader): void {
     if (configured) return;
-    configured = true;
     loader.config({ paths: { vs: MONACO_VS_URL } });
+    configured = true;
 }
 
 let monacoReact: Promise<typeof import('@monaco-editor/react')> | undefined;
@@ -51,21 +51,20 @@ let monacoReact: Promise<typeof import('@monaco-editor/react')> | undefined;
  * out, so no caller can mount an `Editor` against the unpinned default. The promise is memoized:
  * concurrent callers share one module instance and one `config()` call.
  *
- * A failed import is not memoized -- a transient chunk or CDN error would otherwise make every
+ * A failed import or configuration is not memoized -- a transient chunk or CDN error would otherwise make every
  * later attempt fail instantly for the rest of the session, with nothing left to retry. Note that
  * this only restores retries for direct callers: `MonacoEditor` reaches this through React's
  * `lazy()`, which keeps a rejection cache of its own that a remount does not clear.
  */
 export function loadMonacoReact(): Promise<typeof import('@monaco-editor/react')> {
-    monacoReact ??= import('@monaco-editor/react').then(
-        (mod) => {
+    monacoReact ??= import('@monaco-editor/react')
+        .then((mod) => {
             configureMonacoLoader(mod.loader);
             return mod;
-        },
-        (err) => {
+        })
+        .catch((err: unknown) => {
             monacoReact = undefined;
             throw err;
-        },
-    );
+        });
     return monacoReact;
 }
