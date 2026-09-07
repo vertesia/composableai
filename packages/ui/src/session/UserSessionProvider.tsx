@@ -12,16 +12,10 @@ import {
     resolveAuthSelection,
     UserNotFoundError,
 } from './auth/composable';
-<<<<<<< HEAD
-import { authReturnUrl, centralAuthRedirectUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
-=======
-import { buildCentralAuthRedirectUrl, redirectToCentralAuth, shouldRedirectToCentralAuth } from './auth/domainRouting';
->>>>>>> ac4641ba (perf(ui): decide the auth redirect before boot, and defer Monaco (#2111))
+import { redirectToCentralAuth, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
-
-const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
 
 function clearAuthHash() {
     const url = new URL(window.location.href);
@@ -114,20 +108,6 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         return true;
     };
 
-<<<<<<< HEAD
-    const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
-        const url = centralAuthRedirectUrl({
-            centralAuthUrl: CENTRAL_AUTH_REDIRECT,
-            stsEndpoint: Env.endpoints.sts ?? 'https://sts.vertesia.io',
-            returnUrl: authReturnUrl(),
-            state: generateState(),
-            ...selection,
-        });
-        location.replace(url.toString());
-    };
-
-=======
->>>>>>> ac4641ba (perf(ui): decide the auth redirect before boot, and defer Monaco (#2111))
     authFlowRef.current = () => {
         // Make this effect idempotent - only run auth flow once
         if (hasInitiatedAuthRef.current) {

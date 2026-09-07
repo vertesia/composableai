@@ -1,15 +1,12 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { Env } from '@vertesia/ui/env';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-<<<<<<< HEAD
     centralAuthRedirectUrl,
-=======
-    centralAuthUrl,
     clearCentralAuthRoundTripMarker,
-    DEFAULT_CENTRAL_AUTH_URL,
     isCentralAuthRedirectPending,
     markCentralAuthRoundTripStarted,
->>>>>>> ac4641ba (perf(ui): decide the auth redirect before boot, and defer Monaco (#2111))
     mountRootUrl,
+    redirectToCentralAuth,
     shouldRedirectToCentralAuth,
     shouldUseFirebaseAuth,
 } from './domainRouting';
@@ -82,39 +79,6 @@ describe('domainRouting', () => {
         });
     });
 });
-<<<<<<< HEAD
-=======
-
-describe('centralAuthUrl', () => {
-    function initEnv(auth?: string) {
-        Env.init({
-            name: 'test',
-            version: '0',
-            isLocalDev: true,
-            isDocker: false,
-            type: 'development',
-            endpoints: { studio: 'https://studio.test', zeno: 'https://zeno.test', sts: 'https://sts.test', auth },
-        });
-    }
-
-    it('falls back to the default broker when no auth endpoint is configured', () => {
-        initEnv(undefined);
-        expect(centralAuthUrl()).toBe(DEFAULT_CENTRAL_AUTH_URL);
-        expect(DEFAULT_CENTRAL_AUTH_URL).toBe('https://internal-auth.vertesia.app/');
-    });
-
-    it('uses the configured auth endpoint when one is set', () => {
-        initEnv('https://auth.vertesia.io/');
-        expect(centralAuthUrl()).toBe('https://auth.vertesia.io/');
-    });
-
-    // An empty string is what an unset VITE_* override collapses to; it must not become the broker
-    // URL, or the app would redirect to its own origin instead of a login page.
-    it('treats an empty auth endpoint as unconfigured', () => {
-        initEnv('');
-        expect(centralAuthUrl()).toBe(DEFAULT_CENTRAL_AUTH_URL);
-    });
-});
 
 // The boot-time counterpart of the redirect UserSessionProvider performs after mounting. It must
 // answer true only when that provider is certain to redirect, because an app's entry module skips
@@ -152,7 +116,7 @@ describe('isCentralAuthRedirectPending', () => {
         expect(isCentralAuthRedirectPending()).toBe(true);
     });
 
-    it('is false on a Firebase-allowlisted host, which signs in without the broker', () => {
+    it('is false when AUTH_MODE is firebase, which signs in without the broker', () => {
         initEnv({});
         (globalThis as { window?: unknown }).window = { AUTH_MODE: 'firebase', location: { hash: '' } };
         expect(isCentralAuthRedirectPending()).toBe(false);
@@ -235,4 +199,46 @@ describe('central auth round-trip marker', () => {
         expect(document.cookie).toBe('vtsauth=; Path=/; Max-Age=0; SameSite=Lax; Secure');
     });
 });
->>>>>>> ac4641ba (perf(ui): decide the auth redirect before boot, and defer Monaco (#2111))
+
+// The shared redirect must preserve release/1.5's gateway selection and write state that
+// the provider's hook accepts when the broker returns.
+describe('redirectToCentralAuth', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        sessionStorage.clear();
+        Env.init();
+    });
+
+    it('keeps the gateway mount and selection, records state, and marks the round trip before navigating', async () => {
+        const { verifyAuthState, clearAuthState } = await import('./authState');
+        const mount = 'https://apps.test/tenants/t/apps/a/versions/v/app/';
+        const document = { baseURI: mount, cookie: '' };
+        const replace = vi.fn((target: string) => {
+            const url = new URL(target);
+            expect(document.cookie).toBe('vtsauth=1; Path=/; Max-Age=300; SameSite=Lax; Secure');
+            expect(verifyAuthState(url.searchParams.get('state'))).toBeUndefined();
+        });
+        vi.stubGlobal('window', { location: { href: 'https://apps.test/?view=grid#old', protocol: 'https:' } });
+        vi.stubGlobal('document', document);
+        vi.stubGlobal('location', { replace });
+        Env.init({
+            name: 'test',
+            version: '0',
+            isLocalDev: false,
+            isDocker: false,
+            type: 'production',
+            endpoints: { studio: 'https://studio.test', zeno: 'https://zeno.test', sts: 'https://sts.test/?x=1&y=2' },
+        });
+
+        redirectToCentralAuth({ accountId: 'account-1', projectId: 'project-1' });
+
+        expect(replace).toHaveBeenCalledOnce();
+        const url = new URL(replace.mock.calls[0][0]);
+        expect(url.origin).toBe('https://internal-auth.vertesia.app');
+        expect(url.searchParams.get('sts')).toBe('https://sts.test/?x=1&y=2');
+        expect(url.searchParams.get('redirect_uri')).toBe(`${mount}?p=project-1&a=account-1`);
+        expect(verifyAuthState('wrong')).toContain('State mismatched');
+        clearAuthState();
+        expect(verifyAuthState(url.searchParams.get('state'))).toContain('State mismatched');
+    });
+});

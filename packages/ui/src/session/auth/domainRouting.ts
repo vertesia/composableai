@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-=======
 import { Env } from '@vertesia/ui/env';
 import { generateAuthState } from './authState';
 
->>>>>>> ac4641ba (perf(ui): decide the auth redirect before boot, and defer Monaco (#2111))
 declare global {
     interface Window {
         AUTH_MODE?: 'firebase' | 'central';
@@ -84,35 +81,6 @@ export function mountRootUrl(): URL {
     url.search = '';
     return url;
 }
-<<<<<<< HEAD
-=======
-
-/**
- * The broker URL a sign-in or renewal round-trip navigates to.
- *
- * Every parameter goes on through `searchParams`, never by concatenating a query string onto
- * `centralAuth`. The endpoint is configurable, so it may already carry its own query or a
- * fragment -- and appending `?sts=...` to one of those folds the parameter into the existing value
- * or hides it in the fragment, leaving Central Auth with no `sts` at all. `searchParams` also
- * percent-encodes the values, which the interpolated URLs did not.
- */
-export function buildCentralAuthRedirectUrl(
-    centralAuth: string,
-    stsUrl: string,
-    returnUrl: URL,
-    state: string,
-    selection: AuthSelection = {},
-): URL {
-    const selectedReturnUrl = new URL(returnUrl);
-    if (selection.projectId) selectedReturnUrl.searchParams.set('p', selection.projectId);
-    if (selection.accountId) selectedReturnUrl.searchParams.set('a', selection.accountId);
-
-    const url = new URL(centralAuth);
-    url.searchParams.set('sts', stsUrl);
-    url.searchParams.set('redirect_uri', selectedReturnUrl.toString());
-    url.searchParams.set('state', state);
-    return url;
-}
 
 /**
  * A short-lived marker saying "a Central Auth round-trip is in flight for this browser".
@@ -160,14 +128,14 @@ export function clearCentralAuthRoundTripMarker(): void {
  * and {@link isCentralAuthRedirectPending}'s counterpart inside `UserSessionProvider` cannot drift
  * into producing different `redirect_uri` / `state` / `sts` values for the same page load.
  */
-export function redirectToCentralAuth(selection: AuthSelection = {}): void {
-    const url = buildCentralAuthRedirectUrl(
-        centralAuthUrl(),
-        Env.endpoints.sts ?? 'https://sts.vertesia.io',
-        authReturnUrl(),
-        generateAuthState(),
-        selection,
-    );
+export function redirectToCentralAuth(selection: { accountId?: string; projectId?: string } = {}): void {
+    const url = centralAuthRedirectUrl({
+        centralAuthUrl: 'https://internal-auth.vertesia.app/',
+        stsEndpoint: Env.endpoints.sts ?? 'https://sts.vertesia.io',
+        returnUrl: authReturnUrl(),
+        state: generateAuthState(),
+        ...selection,
+    });
     markCentralAuthRoundTripStarted();
     location.replace(url.toString());
 }
@@ -181,7 +149,7 @@ export function redirectToCentralAuth(selection: AuthSelection = {}): void {
  * that provider from redirecting is therefore knowable up front, and this predicate enumerates
  * them in the same order:
  *
- *   - Firebase-allowlisted hosts sign in in place rather than at the broker;
+ *   - Apps configured with Firebase auth sign in in place rather than at the broker;
  *   - a host app that injects a token through `Env.authTokenProvider` may not need the broker
  *     (and when its token turns out to be empty the provider still redirects — answering `false`
  *     here just lets the normal flow decide, which is the safe direction);
@@ -199,4 +167,3 @@ export function isCentralAuthRedirectPending(): boolean {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     return !(hashParams.get('token') && hashParams.get('state'));
 }
->>>>>>> ac4641ba (perf(ui): decide the auth redirect before boot, and defer Monaco (#2111))
