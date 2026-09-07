@@ -48,4 +48,32 @@ describe('parseXML', () => {
         vi.doUnmock('fast-xml-parser');
         vi.resetModules();
     });
+    it('retries after parser construction fails and shares the successful parser', async () => {
+        vi.resetModules();
+        let attempts = 0;
+        vi.doMock('fast-xml-parser', () => ({
+            XMLParser: class {
+                constructor() {
+                    if (++attempts === 1) throw new Error('construction failed');
+                }
+                parse = () => [{ root: [] }];
+            },
+        }));
+        try {
+            const { parseXML: freshParseXML } = await import('./useXMLViewer');
+            expect(await freshParseXML('<root/>')).toEqual({
+                valid: false,
+                json: null,
+                errorMessage: 'Fail to parse: construction failed',
+            });
+            const results = await Promise.all([freshParseXML('<root/>'), freshParseXML('<root/>')]);
+            expect(results.every((result) => result.valid)).toBe(true);
+            expect(attempts).toBe(2);
+            expect((await freshParseXML('<root/>')).valid).toBe(true);
+            expect(attempts).toBe(2);
+        } finally {
+            vi.doUnmock('fast-xml-parser');
+            vi.resetModules();
+        }
+    });
 });

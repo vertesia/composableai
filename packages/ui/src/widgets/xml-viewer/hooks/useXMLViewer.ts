@@ -21,24 +21,25 @@ interface XMLParserLike {
 let parser: Promise<XMLParserLike> | undefined;
 
 function loadParser(): Promise<XMLParserLike> {
-    parser ??= import('fast-xml-parser').then(
-        ({ XMLParser }) =>
-            new XMLParser({
-                preserveOrder: true,
-                ignoreAttributes: false,
-                attributeNamePrefix: '',
-                allowBooleanAttributes: true,
-                commentPropName: ATTRIBUTE_COMMENT,
-                cdataPropName: ATTRIBUTE_CDATA,
-                parseTagValue: false,
-            }),
-        (err) => {
-            // Not memoized on failure: one transient chunk error would otherwise make every later
+    parser ??= import('fast-xml-parser')
+        .then(
+            ({ XMLParser }) =>
+                new XMLParser({
+                    preserveOrder: true,
+                    ignoreAttributes: false,
+                    attributeNamePrefix: '',
+                    allowBooleanAttributes: true,
+                    commentPropName: ATTRIBUTE_COMMENT,
+                    cdataPropName: ATTRIBUTE_CDATA,
+                    parseTagValue: false,
+                }),
+        )
+        .catch((err: unknown) => {
+            // Not memoized on failure: one transient import or constructor error would otherwise make every later
             // parse in the session fail instantly.
             parser = undefined;
             throw err;
-        },
-    );
+        });
     return parser;
 }
 
