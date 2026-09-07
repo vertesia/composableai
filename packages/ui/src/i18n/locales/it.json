@@ -120,6 +120,7 @@
     "agent.feedback.reasonPlaceholder": "Scegli un motivo (facoltativo)",
     "agent.feedback.skip": "Non ora",
     "agent.feedback.status.disabled": "In questo ambiente le valutazioni non vengono raccolte.",
+    "agent.feedback.status.episode_unavailable": "Questa esecuzione è tra un'attività e l'altra. Riprova tra un istante.",
     "agent.feedback.status.no_diagnosis": "Questa esecuzione non ha nulla a cui associare una valutazione.",
     "agent.feedback.submit": "Invia",
     "agent.feedback.thanks": "Grazie per il tuo feedback",

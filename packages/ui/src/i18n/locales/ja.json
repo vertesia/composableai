@@ -119,6 +119,7 @@
     "agent.feedback.reasonPlaceholder": "理由を選択（任意）",
     "agent.feedback.skip": "後で",
     "agent.feedback.status.disabled": "この環境では評価を収集していません。",
+    "agent.feedback.status.episode_unavailable": "この実行はタスクの切り替え中です。少し待ってからもう一度お試しください。",
     "agent.feedback.status.no_diagnosis": "この実行には評価を紐付ける対象がありません。",
     "agent.feedback.submit": "送信",
     "agent.feedback.thanks": "フィードバックありがとうございます",

@@ -119,6 +119,7 @@
     "agent.feedback.reasonPlaceholder": "이유 선택 (선택 사항)",
     "agent.feedback.skip": "나중에",
     "agent.feedback.status.disabled": "이 환경에서는 평가를 수집하지 않습니다.",
+    "agent.feedback.status.episode_unavailable": "이 실행은 작업 사이에 있습니다. 잠시 후 다시 시도하세요.",
     "agent.feedback.status.no_diagnosis": "이 실행에는 평가를 연결할 대상이 없습니다.",
     "agent.feedback.submit": "보내기",
     "agent.feedback.thanks": "의견 감사합니다",

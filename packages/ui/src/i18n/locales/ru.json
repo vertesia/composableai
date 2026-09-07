@@ -123,6 +123,7 @@
     "agent.feedback.reasonPlaceholder": "Выберите причину (необязательно)",
     "agent.feedback.skip": "Не сейчас",
     "agent.feedback.status.disabled": "В этой среде оценки не собираются.",
+    "agent.feedback.status.episode_unavailable": "Этот запуск находится между задачами. Повторите попытку через мгновение.",
     "agent.feedback.status.no_diagnosis": "К этому запуску нечего привязать оценку.",
     "agent.feedback.submit": "Отправить",
     "agent.feedback.thanks": "Спасибо за отзыв",

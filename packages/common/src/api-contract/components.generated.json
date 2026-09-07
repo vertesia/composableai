@@ -34021,6 +34021,12 @@
         "minimum": 0,
         "maximum": 9007199254740991,
         "description": "Position of the rated message in the run, when a message is rated."
+      },
+      "episode_seq": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "The episode this rating is for, echoed from a previous response. Send it when adding a reason or a comment to a rating already given, so both land on the same episode; the request is refused when it names an episode the run does not have."
       }
     },
     "required": [
@@ -34034,7 +34040,8 @@
     "enum": [
       "recorded",
       "no_diagnosis",
-      "disabled"
+      "disabled",
+      "episode_unavailable"
     ],
     "description": "Whether the rating reached a diagnosis record."
   },

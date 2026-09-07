@@ -1177,20 +1177,37 @@ export const AgentRunFeedbackPayloadSchema = z
         message_seq: z.number().int().min(0).optional().meta({
             description: 'Position of the rated message in the run, when a message is rated.',
         }),
+        episode_seq: z
+            .number()
+            .int()
+            .min(1)
+            .optional()
+            .meta({
+                description:
+                    'The episode this rating is for, echoed from a previous response. Send it when ' +
+                    'adding a reason or a comment to a rating already given, so both land on the same ' +
+                    'episode; the request is refused when it names an episode the run does not have.',
+            }),
     })
     .meta({ id: 'AgentRunFeedbackPayload', description: 'A user rating on an agent run.' });
 
 /**
  * What happened to the rating, said plainly rather than inferred from a status code.
  *
- * `recorded` is the only one that means the rating reached a diagnosis. The other two are the two
- * honest ways it can fail to: the deployment does not run product diagnostics at all, or this run
- * has no diagnosis to attach it to. Both answer 200 — a rating the user gave is never an error on
- * their side — and both are distinguishable, because "we counted it" and "we dropped it" must not
- * look the same to the caller.
+ * `recorded` is the only one that means the rating reached a diagnosis. The other three are the
+ * honest ways it can fail to: the deployment does not run product diagnostics at all, this run has
+ * no diagnosis to attach it to, or — `episode_unavailable` — the run is between episodes and which
+ * one is being rated is not knowable yet. They all answer 200, because a rating the user gave is
+ * never an error on their side, and they are distinguishable because "we counted it", "we dropped
+ * it" and "ask again in a moment" must not look the same to the caller.
+ *
+ * `episode_unavailable` is the one that is worth RETRYING, and it exists because the alternative was
+ * guessing. A rating given in the gap between one episode closing and the next one opening used to
+ * be filed on an episode number nothing had run, which is worse than not filing it: the row exists,
+ * it is counted, and it describes work that never happened.
  */
 export const AgentRunFeedbackStatusSchema = z
-    .enum(['recorded', 'no_diagnosis', 'disabled'])
+    .enum(['recorded', 'no_diagnosis', 'disabled', 'episode_unavailable'])
     .meta({ id: 'AgentRunFeedbackStatus', description: 'Whether the rating reached a diagnosis record.' });
 
 export const AgentRunFeedbackResponseSchema = z

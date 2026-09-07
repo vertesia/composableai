@@ -119,6 +119,7 @@
     "agent.feedback.reasonPlaceholder": "選擇原因（選填）",
     "agent.feedback.skip": "暫不填寫",
     "agent.feedback.status.disabled": "此環境不會收集評分。",
+    "agent.feedback.status.episode_unavailable": "此執行正處於任務之間。請稍後再試。",
     "agent.feedback.status.no_diagnosis": "此執行沒有可關聯評分的紀錄。",
     "agent.feedback.submit": "送出",
     "agent.feedback.thanks": "感謝你的意見回饋",

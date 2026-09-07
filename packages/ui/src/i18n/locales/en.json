@@ -173,6 +173,7 @@
     "agent.feedback.reasonPlaceholder": "Pick a reason (optional)",
     "agent.feedback.skip": "Not now",
     "agent.feedback.status.disabled": "Ratings are not collected in this environment.",
+    "agent.feedback.status.episode_unavailable": "This run is between tasks. Try again in a moment.",
     "agent.feedback.status.no_diagnosis": "This run has nothing to attach a rating to.",
     "agent.feedback.submit": "Send",
     "agent.feedback.thanks": "Thanks for the feedback",

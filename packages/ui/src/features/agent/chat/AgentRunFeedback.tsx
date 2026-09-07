@@ -74,9 +74,11 @@ export interface AgentRunFeedbackProps {
  * with.
  *
  * The outcome is read from the response's `status`, not from the HTTP code: a deployment that does
- * not run product diagnostics, and a run with no diagnosis to attach the rating to, both answer 200
- * and neither has counted anything. Saying "thanks" in those cases would be a lie, so the control
- * says the rating was not recorded and, when the feature is off entirely, stops offering itself.
+ * not run product diagnostics, a run with no diagnosis to attach the rating to, and a run caught
+ * between two episodes all answer 200 and none of them has counted anything. Saying "thanks" in
+ * those cases would be a lie, so the control says the rating was not recorded and, when the feature
+ * is off entirely, stops offering itself. Only the between-episodes case is worth another click,
+ * and it is the only one whose message asks for one.
  */
 export function AgentRunFeedback({
     agentRunId,
@@ -90,6 +92,15 @@ export function AgentRunFeedback({
     const { client } = useUserSession();
     const toast = useToast();
     const [rating, setRating] = useState<AgentRunFeedbackRating>();
+    /**
+     * The episode the recorded rating landed on, echoed back on the detail submission.
+     *
+     * Without it the two submissions are two independent questions of "which episode is this run
+     * in", asked seconds apart — and the answer legitimately changes in between, because the
+     * episode the user just rated is usually the one that ends when they stop typing. Naming it
+     * keeps the reason code and the comment on the same episode as the thumb.
+     */
+    const [episodeSeq, setEpisodeSeq] = useState<number>();
     const [pendingRating, setPendingRating] = useState<AgentRunFeedbackRating>();
     const [isUnavailable, setIsUnavailable] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -121,6 +132,7 @@ export function AgentRunFeedback({
         setLastScopeKey(scopeKey);
         currentScopeKey.current = scopeKey;
         setRating(undefined);
+        setEpisodeSeq(undefined);
         setPendingRating(undefined);
         setIsDetailOpen(false);
         setIsSubmittingDetail(false);
@@ -141,6 +153,7 @@ export function AgentRunFeedback({
             ...(detail && comment.trim().length > 0 ? { comment: comment.trim() } : {}),
             ...(messageId !== undefined ? { message_id: messageId } : {}),
             ...(messageSeq !== undefined ? { message_seq: messageSeq } : {}),
+            ...(detail && episodeSeq !== undefined ? { episode_seq: episodeSeq } : {}),
         };
         // Captured before the await: a response that lands after the user has moved to another run
         // describes a subject this control is no longer showing, and applying it would light a
@@ -152,10 +165,13 @@ export function AgentRunFeedback({
             onRecorded?.(payload, response.status);
             if (response.status === 'recorded') {
                 setRating(value);
+                if (response.episode_seq !== undefined) setEpisodeSeq(response.episode_seq);
                 return response.status;
             }
             // `disabled` means no deployment-wide diagnosis pipeline; there is nothing to retry,
             // so the control removes itself rather than inviting a second useless click.
+            // `episode_unavailable` is the opposite: the run is between episodes and will be in one
+            // shortly, so the control stays, the thumb stays unlit, and the toast says to try again.
             setIsUnavailable(response.status === 'disabled');
             toast({
                 status: 'info',
