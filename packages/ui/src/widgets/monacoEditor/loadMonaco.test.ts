@@ -43,4 +43,21 @@ describe('loadMonacoReact', () => {
         await expect(loadMonacoReact()).resolves.toBeDefined();
         expect(attempts).toBe(2);
     });
+    it('retries configuration after it throws and only caches a successful configuration', async () => {
+        const config = vi
+            .fn()
+            .mockImplementationOnce(() => {
+                throw new Error('configuration failed');
+            })
+            .mockImplementation(() => undefined);
+        vi.doMock('@monaco-editor/react', () => ({ loader: { config }, Editor: () => null }));
+        const { loadMonacoReact } = await import('./loadMonaco.js');
+
+        await expect(loadMonacoReact()).rejects.toThrow('configuration failed');
+        const [first, second] = await Promise.all([loadMonacoReact(), loadMonacoReact()]);
+        expect(first).toBe(second);
+        expect(config).toHaveBeenCalledTimes(2);
+        await expect(loadMonacoReact()).resolves.toBe(first);
+        expect(config).toHaveBeenCalledTimes(2);
+    });
 });
