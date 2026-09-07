@@ -12,7 +12,11 @@ import {
     resolveAuthSelection,
     UserNotFoundError,
 } from './auth/composable';
+<<<<<<< HEAD
 import { authReturnUrl, centralAuthRedirectUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
+=======
+import { buildCentralAuthRedirectUrl, redirectToCentralAuth, shouldRedirectToCentralAuth } from './auth/domainRouting';
+>>>>>>> ac4641ba (perf(ui): decide the auth redirect before boot, and defer Monaco (#2111))
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
@@ -66,7 +70,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     const token = hashParams.get('token');
     const state = hashParams.get('state');
     const [session, setSession] = useState<UserSession>(new UserSession());
-    const { generateState, verifyState, clearState } = useAuthState();
+    const { verifyState, clearState } = useAuthState();
     const hasInitiatedAuthRef = useRef(false);
     const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
@@ -110,6 +114,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         return true;
     };
 
+<<<<<<< HEAD
     const redirectToCentralAuth = (selection: { accountId?: string; projectId?: string }) => {
         const url = centralAuthRedirectUrl({
             centralAuthUrl: CENTRAL_AUTH_REDIRECT,
@@ -121,6 +126,8 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         location.replace(url.toString());
     };
 
+=======
+>>>>>>> ac4641ba (perf(ui): decide the auth redirect before boot, and defer Monaco (#2111))
     authFlowRef.current = () => {
         // Make this effect idempotent - only run auth flow once
         if (hasInitiatedAuthRef.current) {
