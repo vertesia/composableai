@@ -21,7 +21,7 @@ import {
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 /**
  * Which rating each reason code belongs to.
@@ -99,6 +99,38 @@ export function AgentRunFeedback({
 
     const scope = messageId !== undefined || messageSeq !== undefined ? 'message' : 'run';
 
+    /**
+     * The subject this control is rating. Every piece of state below belongs to it and to nothing
+     * else, so when it changes they all have to go.
+     *
+     * Without this the component kept its rating, its reason code, its comment and its open dialog
+     * across a switch to a different run: the previous conversation's thumb stayed lit on the new
+     * one, and submitting a dialog left open across the switch sent the old comment against the new
+     * run's id — `send` reads `agentRunId` at call time, so the request went to the new run
+     * carrying text written about the old one. A parent that remounts per run hid it; the component
+     * is exported from `@vertesia/ui` and cannot assume one does.
+     *
+     * Reset during render, which is React's documented way to adjust state when a prop changes: it
+     * re-renders before committing, so nothing paints with the stale value the way a `useEffect`
+     * reset would.
+     */
+    const scopeKey = `${agentRunId}|${messageId ?? ''}|${messageSeq ?? ''}`;
+    const [lastScopeKey, setLastScopeKey] = useState(scopeKey);
+    const currentScopeKey = useRef(scopeKey);
+    if (lastScopeKey !== scopeKey) {
+        setLastScopeKey(scopeKey);
+        currentScopeKey.current = scopeKey;
+        setRating(undefined);
+        setPendingRating(undefined);
+        setIsDetailOpen(false);
+        setIsSubmittingDetail(false);
+        setReasonCode(undefined);
+        setComment('');
+        // `isUnavailable` is NOT reset: `disabled` is a property of the deployment, not of the run,
+        // so a control that has already learned the pipeline is off stays hidden rather than
+        // re-offering itself on every switch and collecting clicks nothing records.
+    }
+
     const send = async (
         value: AgentRunFeedbackRating,
         detail: boolean,
@@ -110,8 +142,13 @@ export function AgentRunFeedback({
             ...(messageId !== undefined ? { message_id: messageId } : {}),
             ...(messageSeq !== undefined ? { message_seq: messageSeq } : {}),
         };
+        // Captured before the await: a response that lands after the user has moved to another run
+        // describes a subject this control is no longer showing, and applying it would light a
+        // thumb for a rating given somewhere else.
+        const sentScopeKey = scopeKey;
         try {
             const response = await client.agents.recordFeedback(agentRunId, payload);
+            if (sentScopeKey !== currentScopeKey.current) return undefined;
             onRecorded?.(payload, response.status);
             if (response.status === 'recorded') {
                 setRating(value);
@@ -128,6 +165,7 @@ export function AgentRunFeedback({
             });
             return response.status;
         } catch (error: unknown) {
+            if (sentScopeKey !== currentScopeKey.current) return undefined;
             toast({
                 status: 'error',
                 title: t('agent.feedback.failed'),

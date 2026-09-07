@@ -44,6 +44,48 @@ describe('AgentRunFeedback', () => {
         expect(mocks.recordFeedback).toHaveBeenCalledTimes(1);
     });
 
+    it('drops the previous run’s rating when the run it is showing changes', async () => {
+        // The control is exported from `@vertesia/ui` and cannot assume its parent keys it by run.
+        // Without an internal reset the lit thumb followed the user into the next conversation.
+        respondWith('recorded');
+        const { rerender } = renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Rate this run up' }));
+        // The dialog takes the page out of the a11y tree, so dismiss it before reading the thumb.
+        await screen.findByText('Tell us more');
+        fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('true'),
+        );
+
+        rerender(<AgentRunFeedback agentRunId="run-2" />);
+
+        expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('false');
+        expect(screen.getByRole('button', { name: 'Rate this run down' }).getAttribute('aria-pressed')).toBe('false');
+        // And the detail dialog does not survive the switch carrying the old run's draft.
+        expect(screen.queryByText('Tell us more')).toBeNull();
+    });
+
+    it('does not send a comment written about one run against another', async () => {
+        // `send` reads `agentRunId` at call time, so a dialog left open across a switch submitted
+        // the previous run's text under the new run's id.
+        respondWith('recorded', 'recorded');
+        const { rerender } = renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Rate this run down' }));
+        await screen.findByText('Tell us more');
+        fireEvent.change(screen.getByPlaceholderText('What went well, or what went wrong?'), {
+            target: { value: 'this was about run one' },
+        });
+
+        rerender(<AgentRunFeedback agentRunId="run-2" />);
+
+        // The dialog is gone, so there is nothing left to submit the stale draft from.
+        expect(screen.queryByText('Tell us more')).toBeNull();
+        expect(mocks.recordFeedback).toHaveBeenCalledTimes(1);
+        expect(mocks.recordFeedback).toHaveBeenCalledWith('run-1', { rating: 'down' });
+    });
+
     it('sends the reason and comment as a revision of the same rating', async () => {
         respondWith('recorded', 'recorded');
         renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
