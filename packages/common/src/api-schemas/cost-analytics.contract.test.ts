@@ -62,3 +62,21 @@ describe('cost analytics API contracts', () => {
         }
     });
 });
+
+describe('unknown cost on the wire', () => {
+    it.each([null, 0, 1.25])('preserves cost %s in a published dimension', (cost) => {
+        const payload = { dimension: 'FutureVendor/NewModel', cost, input_tokens: 10, output_tokens: 5, calls: 1 };
+        expect(validateApiResponse('CostByDimension', payload).valid).toBe(true);
+    });
+    it('rejects a string sentinel for unknown cost', () => {
+        expect(
+            validateApiResponse('CostByDimension', {
+                dimension: 'new-model',
+                cost: 'unknown',
+                input_tokens: 10,
+                output_tokens: 5,
+                calls: 1,
+            }).valid,
+        ).toBe(false);
+    });
+});

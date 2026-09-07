@@ -39260,7 +39260,15 @@
         "type": "string"
       },
       "cost": {
-        "type": "number"
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Estimated cost, or null when pricing is unavailable for any usage in this bucket."
       },
       "input_tokens": {
         "type": "number"
@@ -39291,7 +39299,15 @@
     "type": "object",
     "properties": {
       "total_cost": {
-        "type": "number"
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Estimated cost, or null when pricing is unavailable for any usage in this bucket."
       },
       "total_input_tokens": {
         "type": "number"
@@ -39397,7 +39413,15 @@
         "type": "string"
       },
       "cost": {
-        "type": "number"
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Estimated cost, or null when pricing is unavailable for any usage in this bucket."
       },
       "input_tokens": {
         "type": "number"
