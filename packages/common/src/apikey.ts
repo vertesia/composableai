@@ -42,8 +42,14 @@ export interface ContentSecurity {
     read?: PropertyConditions[];
     write?: PropertyConditions[];
     delete?: PropertyConditions[];
-    /** Scope-prefixed entries: `'collection:read'`, `'task:write'`, etc. */
-    [scopedKey: string]: PropertyConditions[] | undefined;
+    /**
+     * Either a scope-prefixed conditions entry (`'collection:read'`, `'task:write'`, …) whose value
+     * is a conditions array, OR a cross-project shared-content group keyed by `'@<owner_project_id>'`
+     * whose value is a nested `ContentSecurity` — the SAME shape scoped to that owner project, minus
+     * any further `@` keys (the mint never nests `@` groups inside `@` groups). Distinguish by the
+     * `@` prefix (or `Array.isArray`): bare/scope keys → conditions array; `@`-keys → nested group.
+     */
+    [scopedKey: string]: PropertyConditions[] | ContentSecurity | undefined;
 }
 
 /**
