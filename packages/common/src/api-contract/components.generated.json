@@ -893,6 +893,7 @@
     "enum": [
       "document",
       "collection",
+      "shared_content",
       "task"
     ]
   },
@@ -1133,6 +1134,7 @@
     "enum": [
       "system",
       "content",
+      "shared_content",
       "tasks"
     ],
     "description": "Logical grouping of roles by the service area that owns them. One domain may declare roles applicable to multiple scopes (e.g. the `content` domain owns roles applicable to both `document` and `collection` scopes). The `system` domain owns the built-in foundational roles (currently exposed as `SystemRoles`) — registered first so domain partitions cannot shadow them."
@@ -26856,6 +26858,10 @@
         },
         "description": "Compartments — set directly or inherited from collections (union across collections)."
       },
+      "shared": {
+        "type": "boolean",
+        "description": "When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection."
+      },
       "inherited_properties": {
         "type": "array",
         "items": {
@@ -27001,6 +27007,10 @@
           "type": "string"
         },
         "description": "Compartments — set directly or inherited from collections (union across collections)."
+      },
+      "shared": {
+        "type": "boolean",
+        "description": "When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection."
       },
       "inherited_properties": {
         "type": "array",
@@ -27300,6 +27310,10 @@
         },
         "description": "Compartments — set directly or inherited from collections (union across collections)."
       },
+      "shared": {
+        "type": "boolean",
+        "description": "When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection."
+      },
       "inherited_properties": {
         "type": "array",
         "items": {
@@ -27480,6 +27494,10 @@
         },
         "description": "Compartments — set directly or inherited from collections (union across collections)."
       },
+      "shared": {
+        "type": "boolean",
+        "description": "When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection."
+      },
       "inherited_properties": {
         "type": "array",
         "items": {
@@ -27651,6 +27669,9 @@
         "items": {
           "type": "string"
         }
+      },
+      "shared": {
+        "type": "boolean"
       },
       "inherited_properties": {
         "type": "array",
@@ -31826,6 +31847,10 @@
         },
         "description": "Compartments for member documents"
       },
+      "shared": {
+        "type": "boolean",
+        "description": "When true, the collection is in its project shared space; member documents inherit shared=true."
+      },
       "name": {
         "type": "string",
         "description": "Name of the collection"
@@ -31921,6 +31946,10 @@
           "type": "string"
         },
         "description": "Compartments for member documents"
+      },
+      "shared": {
+        "type": "boolean",
+        "description": "When true, the collection is in its project shared space; member documents inherit shared=true."
       },
       "name": {
         "type": "string",
@@ -32070,6 +32099,10 @@
           "type": "string"
         },
         "description": "Compartments — propagated to member documents (union across collections)"
+      },
+      "shared": {
+        "type": "boolean",
+        "description": "When true, the collection is in its project shared space (listable/readable by non-members via matching shared-content ABAC rules); member documents inherit shared=true."
       },
       "shared_properties": {
         "type": "array",
