@@ -4,12 +4,14 @@ import debounce from 'debounce';
 import type * as monaco from 'monaco-editor';
 import { lazy, type RefObject, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { registerCustomFoldingProviders } from './foldingProviders.js';
+import { loadMonacoReact } from './loadMonaco.js';
 
 /**
  * The Monaco React wrapper drags in the Monaco loader (and, once mounted, the editor itself) on
- * import. Most screens never open an editor, so it is fetched on first render instead.
+ * import. Most screens never open an editor, so it is fetched on first render instead --
+ * through loadMonacoReact, which applies the runtime version pin before handing the module out.
  */
-const Editor = lazy(() => import('@monaco-editor/react').then(({ Editor: component }) => ({ default: component })));
+const Editor = lazy(() => loadMonacoReact().then(({ Editor: component }) => ({ default: component })));
 
 export type Monaco = typeof monaco;
 
