@@ -30109,6 +30109,12 @@
       "run_type": {
         "$ref": "#/components/schemas/ProcessRunType"
       },
+      "schedule_id": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/AgentRunType"
+      },
       "process_id": {
         "type": "string"
       },
