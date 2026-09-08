@@ -77,7 +77,7 @@
         "@vertesia/build-tools": "workspace:*",
         "@vertesia/plugin-builder": "workspace:*",
         "@vitejs/plugin-basic-ssl": "^2.3.0",
-        "@vitejs/plugin-react": "^6.1.0",
+        "@vitejs/plugin-react": "^6.1.1",
         "concurrently": "^10.0.5",
         "esbuild": "^0.28.2",
         "globals": "^17.11.0",
@@ -89,7 +89,7 @@
         "typescript": "catalog:",
         "vite": "catalog:",
         "vitest": "^4.1.11",
-        "vite-plugin-serve-static": "^2.2.0"
+        "vite-plugin-serve-static": "^2.2.1"
     },
     "dependencies": {
         "@hono/node-server": "^2.1.1",
