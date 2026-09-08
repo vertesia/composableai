@@ -1,6 +1,6 @@
 # Color token migration
 
-The 1.6 theme uses surface / foreground pairs consistently. Update consumer classes and CSS
+The updated theme uses surface / foreground pairs consistently. Update consumer classes and CSS
 alongside the shared theme. Keeping old text classes with the new theme will paint surface
 colors as text. This is a styling compatibility change even though the React APIs are unchanged.
 
@@ -23,12 +23,18 @@ Use the surface token for new translucent panels.
 
 `--<name>-background` and `--color-<name>-background` remain compatibility aliases for those
 seven surface tokens. They do not preserve the old meaning of `--<name>` as text.
+These aliases are deprecated for new code. Keep them throughout this migration; removal
+requires a separately announced breaking change after downstream consumers have migrated.
 Primary remains blue; `--primary-foreground` is white in both modes. The old
-`--primary-background` variable remains available but is not the primary button surface.
+`--primary-background` variable and `bg-primary-background` utility remain available as a legacy tint, not the
+primary button surface. New buttons use `bg-primary text-primary-foreground`.
 
 The generic `@utility bg-*` override is removed. Built-in background, text, border, and opacity
-utilities all use the named token. `@theme inline` supports scoped themes; raw `--<name>` variables remain
-available to CSS consumers. Mixer utilities explicitly blend the named token with white/black;
+utilities all use the named token. `@theme static` emits every `--color-*` binding, including
+ones used only by downstream CSS or inline styles. Utilities read these bindings, preserving
+scoped `--color-*` overrides. Set global raw tokens on `:root` / `.dark` at the document root;
+for a nested theme, override the corresponding `--color-*` bindings inside that scope.
+Mixer utilities explicitly blend the named token with white/black;
 standard `/50` is opacity, not a mixer percentage.
 
 ## Surface recipes
@@ -48,4 +54,4 @@ near-black/dark-gray surfaces. Do not substitute hardcoded gray or black utility
 Run the package's `test`, `typecheck:test`, `lint`, and `build` scripts, then build affected consumers.
 The theme compiler tests check exposed token resolution, foreground utility generation, and
 opacity behavior; contrast tests check canonical pairs in light and dark mode. Check rendered
-pages/buttons in both modes, including hover, disabled, focus, and nested theme scopes.
+pages/buttons in both modes, including hover, disabled, focus, and scoped `--color-*` overrides.

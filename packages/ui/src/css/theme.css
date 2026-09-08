@@ -1,4 +1,4 @@
-@theme inline {
+@theme static {
     --radius: 0.625rem;
     --radius-xs: calc(var(--radius) - 8px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -19,6 +19,7 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-background: var(--primary-background); /* Legacy primary tint */
 
     --color-link: var(--primary);
     --color-link-foreground: var(--primary-foreground);

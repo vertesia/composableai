@@ -44,7 +44,7 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 destructive:
-                    'bg-destructive dark:bg-destructive-foreground/10 text-destructive-foreground ring-1 ring-inset ring-destructive-foreground/50 dark:ring-destructive-foreground/50 shadow-xs hover:bg-destructive-foreground/50',
+                    'bg-destructive dark:bg-destructive-foreground/10 text-destructive-foreground ring-1 ring-inset ring-destructive-foreground/50 dark:ring-destructive-foreground/50 shadow-xs hover:bg-destructive-foreground/10 dark:hover:bg-destructive-foreground/20',
                 outline: 'border border-input bg-background text-foreground shadow-xs hover:bg-muted ring-inset',
                 secondary:
                     'bg-primary/5 dark:bg-primary/10 text-primary shadow-xs hover:bg-primary/10 dark:hover:bg-primary/20 ring-inset',

@@ -18,15 +18,15 @@
  */
 
 /* :root {
-  --primary: oklch(55% 0.200 145);
-  --primary-background: oklch(97% 0.020 145);
-  --secondary: oklch(35% 0.050 280);
-  --secondary-background: oklch(95% 0.010 280);
+  --primary: oklch(40% 0.100 145);
+  --primary-foreground: oklch(1 0 0);
+  --secondary-foreground: oklch(35% 0.050 280);
+  --secondary: oklch(95% 0.010 280);
 }
 
 .dark {
-  --primary: oklch(72% 0.190 145);
-  --primary-background: oklch(25% 0.030 145);
-  --secondary: oklch(80% 0.040 280);
-  --secondary-background: oklch(22% 0.015 280);
+  --primary: oklch(45% 0.100 145);
+  --primary-foreground: oklch(1 0 0);
+  --secondary-foreground: oklch(80% 0.040 280);
+  --secondary: oklch(22% 0.015 280);
 } */
