@@ -14,7 +14,7 @@ export function ErrorPage({
     onAction,
 }: ErrorPageProps) {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-white px-6 py-12 text-center">
+        <div className="flex min-h-screen items-center justify-center bg-background text-foreground px-6 py-12 text-center">
             <div className="max-w-md space-y-6">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive text-3xl font-semibold text-destructive-foreground">
                     !

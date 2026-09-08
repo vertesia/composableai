@@ -111,7 +111,7 @@ function optionLayout(option: ObjectsActionSpec) {
     return {
         label: option.name,
         className: clsx(
-            'flex-1 px-2 py-2 hover:bg-accent nowrap',
+            'flex-1 px-2 py-2 hover:bg-accent whitespace-nowrap',
             option.destructive ? 'text-destructive-foreground' : '',
         ),
     };
