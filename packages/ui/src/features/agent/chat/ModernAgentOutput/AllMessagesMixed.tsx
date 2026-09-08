@@ -3168,7 +3168,7 @@ function AllMessagesMixedComponent({
                     padding: 0.75rem;
                     border-radius: 0.5rem;
                     overflow-x: auto;
-                    background-color: var(--color-muted-background, #f3f4f6);
+                    background-color: var(--color-muted, #f3f4f6);
                     color: var(--color-foreground, #1f2937);
                 }
                 .vprose pre code {
@@ -3263,7 +3263,7 @@ function AllMessagesMixedComponent({
                 .agent-markdown :not(pre) > code {
                     border: 1px solid var(--border);
                     border-radius: 0.375rem;
-                    background: var(--muted-background);
+                    background: var(--muted);
                     color: var(--foreground);
                     padding: 0.1rem 0.35rem;
                     font-size: 0.8125em;
@@ -3276,7 +3276,7 @@ function AllMessagesMixedComponent({
                     overflow: auto;
                     border: 1px solid var(--border);
                     border-radius: 0.75rem;
-                    background: var(--muted-background);
+                    background: var(--muted);
                     color: var(--foreground);
                     padding: 0.875rem;
                     font-size: 0.8125rem;

@@ -67,7 +67,7 @@ export function TemplateDetail() {
 
             <div className="mb-8">
                 <h2 className="mb-3 text-lg font-semibold text-foreground">Instructions</h2>
-                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                     {template.instructions}
                 </pre>
             </div>

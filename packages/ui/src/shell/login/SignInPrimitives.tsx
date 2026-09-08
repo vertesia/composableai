@@ -145,7 +145,7 @@ export function SignInInitialsBadge({ initials, shape = 'circle' }: SignInInitia
 /** Rounded tile framing a provider/status icon. */
 export function SignInIconBadge({ children }: { children: ReactNode }) {
     return (
-        <div className="inline-grid place-items-center size-14 rounded-xl bg-info-background border border-info-foreground/15 mb-3.5">
+        <div className="inline-grid place-items-center size-14 rounded-xl bg-info border border-info-foreground/15 mb-3.5">
             {children}
         </div>
     );
@@ -177,7 +177,7 @@ const ACCOUNT_CARD_VARIANTS = {
         topRow: 'flex items-center gap-2.5 px-3 py-2.5',
         title: 'text-[13.5px] font-semibold text-foreground leading-tight',
         subtitle: 'text-[11.5px] text-muted-foreground leading-tight mt-0.5',
-        bottomRow: 'flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted-background',
+        bottomRow: 'flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted',
         mailBox: 'size-[30px] grid place-items-center shrink-0',
         mailIcon: 'size-4 text-muted-foreground',
         email: 'text-sm text-foreground/80 flex-1 truncate',
@@ -187,7 +187,7 @@ const ACCOUNT_CARD_VARIANTS = {
         topRow: 'flex items-center gap-3 px-3.5 py-2.5',
         title: 'text-sm font-semibold text-foreground truncate',
         subtitle: 'text-xs text-foreground/80 truncate',
-        bottomRow: 'flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted-background',
+        bottomRow: 'flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted',
         mailBox: 'w-9 h-6 grid place-items-center shrink-0',
         mailIcon: 'size-3.5 text-muted-foreground',
         email: 'text-xs text-foreground/80 flex-1 truncate',
@@ -253,7 +253,7 @@ interface SignInAccountRowProps {
 /** Single-row identity card: badge + title/subtitle + a trailing action link. */
 export function SignInAccountRow({ badge, title, subtitle, actionLabel, onAction }: SignInAccountRowProps) {
     return (
-        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted-background">
+        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted">
             {badge}
             <SignInIdentityLines
                 title={title}
@@ -275,7 +275,7 @@ interface SignInEmailRowProps {
 /** Standalone bordered pill: mail icon + email + a trailing action link. */
 export function SignInEmailRow({ email, actionLabel, onAction }: SignInEmailRowProps) {
     return (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted-background">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted">
             <Mail className="size-4 text-muted-foreground shrink-0" />
             <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
             <SignInInlineLinkButton onClick={onAction}>{actionLabel}</SignInInlineLinkButton>
@@ -307,7 +307,7 @@ export function SignInProviderButton({ provider, label, onClick, variant = 'outl
                 variant="unstyled"
                 size="none"
                 onClick={onClick}
-                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 ps-3.5 pe-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
+                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 ps-3.5 pe-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted"
             >
                 <Icon className="!size-[18px] shrink-0" />
                 <span className="flex-1 text-start">{label}</span>
@@ -342,7 +342,7 @@ interface SignInCalloutProps {
 /** Destructive notice: icon + bold title over a muted meta line. */
 export function SignInCallout({ icon: Icon, title, meta }: SignInCalloutProps) {
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive-background border border-destructive-foreground/20">
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive border border-destructive-foreground/20">
             <Icon className="size-5 text-destructive-foreground shrink-0" />
             <div className="flex-1 min-w-0 text-sm">
                 <div className="font-semibold text-destructive-foreground">{title}</div>

@@ -50,7 +50,7 @@
     border-radius: var(--radius-sm, 4px);
     padding: 0.75rem 1rem;
     margin: 1rem 0;
-    background: var(--color-muted-background, oklch(0.97 0 0));
+    background: var(--color-muted, oklch(0.97 0 0));
 }
 
 .md-callout .md-callout-title {
@@ -96,7 +96,7 @@
     border-radius: var(--radius-sm, 4px);
     padding: 0.75rem 1rem;
     margin: 1rem 0;
-    background: var(--color-muted-background, oklch(0.97 0 0));
+    background: var(--color-muted, oklch(0.97 0 0));
 }
 
 .markdown-alert .markdown-alert-title {

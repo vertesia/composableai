@@ -75,7 +75,7 @@ export function InteractionDetail() {
                                         <span className="text-sm italic text-muted-foreground">{prompt.name}</span>
                                     )}
                                 </div>
-                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                     {prompt.content}
                                 </pre>
                             </CardContent>
@@ -87,7 +87,7 @@ export function InteractionDetail() {
             {interaction.result_schema && (
                 <div className="mb-8">
                     <h2 className="mb-3 text-lg font-semibold text-foreground">Result Schema</h2>
-                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                         {JSON.stringify(interaction.result_schema, null, 2)}
                     </pre>
                 </div>

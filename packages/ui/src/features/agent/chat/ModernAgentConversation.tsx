@@ -1231,7 +1231,7 @@ function StartWorkflowView({
             >
                 {/* Drag overlay for full-panel file drop */}
                 {canStageFiles && isDragOver && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-info-background z-50 pointer-events-none rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center bg-info z-50 pointer-events-none rounded-lg">
                         <div className="text-info-foreground font-medium flex items-center gap-2 text-lg">
                             <UploadIcon className="size-6" />
                             Drop files to stage for upload

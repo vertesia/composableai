@@ -64,7 +64,7 @@ export function ToolCollection() {
                         </div>
                         <div className="text-sm text-muted-foreground">{tool.description || 'No description'}</div>
                         {tool.input_schema && (
-                            <pre className="mt-3 whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                            <pre className="mt-3 whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                 {JSON.stringify(tool.input_schema, null, 2)}
                             </pre>
                         )}

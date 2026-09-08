@@ -108,7 +108,7 @@ export function SkillDetail() {
                     Instructions
                     {skill.content_type === 'jst' && <Badge className="ml-2">JST template</Badge>}
                 </h2>
-                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                     {skill.instructions}
                 </pre>
             </div>
@@ -116,7 +116,7 @@ export function SkillDetail() {
             {skill.input_schema && (
                 <div className="mb-8">
                     <h2 className="mb-3 text-lg font-semibold text-foreground">Input Schema</h2>
-                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                         {JSON.stringify(skill.input_schema, null, 2)}
                     </pre>
                 </div>
