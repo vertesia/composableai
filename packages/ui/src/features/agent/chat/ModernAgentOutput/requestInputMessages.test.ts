@@ -164,6 +164,24 @@ describe('request input correlation', () => {
         expect(getPendingRequestInputMessage([firstRequest, firstAnswer, secondRequest])).toBe(secondRequest);
     });
 
+    it('stops asking once the workflow releases the approval without a user answer', () => {
+        const request = makeApprovalRequest();
+        const released = {
+            timestamp: 3,
+            type: AgentMessageType.UPDATE,
+            message: 'Approval reviewer allowed Create a new draft interaction.',
+            workstream_id: 'main',
+            details: {
+                approval_decision: 'auto_approved',
+                approval_release_reason: 'reviewer_allowed',
+                approval_request: { tool_name: 'create_interaction', approval_key: APPROVAL_KEY },
+            },
+        } as unknown as AgentMessage;
+
+        expect(getPendingRequestInputMessage([request])).toBe(request);
+        expect(getPendingRequestInputMessage([request, released])).toBeUndefined();
+    });
+
     it('reads a request id from response metadata', () => {
         expect(
             getRequestInputResponseIdFromMetadata({

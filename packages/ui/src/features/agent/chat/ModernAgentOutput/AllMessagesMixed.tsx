@@ -1217,6 +1217,11 @@ function getToolTarget(details: Record<string, unknown>): string | undefined {
     return undefined;
 }
 
+/** An approval decision that stopped the tool from running (as opposed to releasing it). */
+function isDeniedApprovalDecision(decision: unknown): boolean {
+    return typeof decision === 'string' && decision !== 'auto_approved';
+}
+
 function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string | undefined {
     switch (decision) {
         case 'denied':
@@ -1228,6 +1233,8 @@ function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string 
             return `Approval reviewer denied ${toolLabel}.`;
         case 'cancelled_after_denial':
             return `Cancelled ${toolLabel} after another tool was denied.`;
+        case 'auto_approved':
+            return `Approval no longer required for ${toolLabel}.`;
         default:
             return undefined;
     }
@@ -1244,6 +1251,8 @@ function getApprovalDecisionStatusText(decision: unknown): string | undefined {
             return 'Denied by reviewer';
         case 'cancelled_after_denial':
             return 'Cancelled after denial';
+        case 'auto_approved':
+            return 'Approved without asking';
         default:
             return undefined;
     }
@@ -1474,7 +1483,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
     addSection(
         'Output',
         ['output', 'stdout', 'result', 'results', 'content', 'result_summary', 'observation', 'display_message'],
-        typeof details.approval_decision === 'string' ? 'error' : undefined,
+        isDeniedApprovalDecision(details.approval_decision) ? 'error' : undefined,
     );
     addSection('Files', ['files', 'outputFiles']);
     addSection('Error', ['error', 'stderr'], 'error');

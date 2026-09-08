@@ -257,7 +257,10 @@ export function getResolvedToolApprovalKeys(messages: AgentMessage[]): Set<strin
                 decision === 'denied_with_feedback' ||
                 decision === 'timeout' ||
                 decision === 'reviewer_denied' ||
-                decision === 'cancelled_after_denial')
+                decision === 'cancelled_after_denial' ||
+                // Released without a user answer (approval mode change, or the reviewer allowed it
+                // after the run switched to auto_review) — the prompt must stop asking.
+                decision === 'auto_approved')
         ) {
             resolved.add(approvalKey);
         }
