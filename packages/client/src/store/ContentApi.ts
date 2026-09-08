@@ -83,4 +83,12 @@ export class ContentApi extends ApiTopic {
             },
         });
     }
+
+    /**
+     * The CURRENT project's shared roots (collections + documents) — the Manage view. Requires
+     * content-admin. Unshare an entry via the regular collection/object update with `shared_root: false`.
+     */
+    managed(): Promise<SharedContentEntry[]> {
+        return this.get('/managed');
+    }
 }
