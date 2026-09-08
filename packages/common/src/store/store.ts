@@ -260,10 +260,13 @@ export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
     sensitivity?: number;
     /** Compartments — set directly or inherited from collections (union across collections). */
     compartments?: string[];
-    /** When true, the document is in its project shared space, readable by non-members via matching
-     * shared-content ABAC rules. Set directly or inherited from a shared collection (overwritten by
-     * collections like `security`). */
+    /** Effective shared state (readable by non-members via matching shared-content ABAC rules): true
+     * iff this document is a member of an effectively-shared collection (inherited; sync-managed).
+     * Combine with `shared_root` for full readability. */
     shared?: boolean;
+    /** True iff this document was explicitly shared via the API (a root of the project shared space).
+     * Never set by the sync. */
+    shared_root?: boolean;
 
     /**
      * Inherited properties metadata - tracks which properties were inherited from parent collections.
