@@ -1,13 +1,20 @@
 import {
     ActivityCancellationType,
+    ApplicationFailure,
     CancellationScope,
     condition,
     executeChild,
     isCancellation,
+    log,
     ParentClosePolicy,
     sleep,
 } from '@temporalio/workflow';
-import type { DSLActivityExecutionPayload, EmbeddingBatchSubjob, WorkflowExecutionPayload } from '@vertesia/common';
+import type {
+    DSLActivityExecutionPayload,
+    EmbeddingBatchApplyResponse,
+    EmbeddingBatchSubjob,
+    WorkflowExecutionPayload,
+} from '@vertesia/common';
 import type * as activities from '../activities/index-dsl.js';
 import { dslProxyActivities } from '../dsl/dslProxyActivities.js';
 import type { EmbeddingBatchParams } from '../embeddingBatch.js';
@@ -145,6 +152,23 @@ export async function embeddingBatchWorkflow(payload: WorkflowExecutionPayload) 
     const params = payload.vars?.embedding_batch as unknown as EmbeddingBatchParams;
     if (!params?.run_id || !params.capability?.eligible) throw new Error('Missing embedding batch parameters');
     let subjobs: EmbeddingBatchSubjob[] = [];
+    let finalized = false;
+    const finish = (result: EmbeddingBatchApplyResponse) => {
+        finalized = true;
+        const summary = { run_id: params.run_id, embedding_type: params.type, ...result };
+        if (result.state === 'failed') {
+            log.error('Embedding batch failed', summary);
+            throw ApplicationFailure.nonRetryable(
+                `Embedding batch failed: ${result.failed} failed, ${result.applied} applied; ` +
+                    JSON.stringify(result.failure_counts ?? {}),
+                'EmbeddingBatchFailed',
+                summary,
+            );
+        }
+        if (result.state === 'completed_with_errors') log.warn('Embedding batch completed with errors', summary);
+        else log.info('Embedding batch finalized', summary);
+        return result;
+    };
     try {
         await refreshAuthToken(payload);
         if (params.type === 'image') {
@@ -156,7 +180,7 @@ export async function embeddingBatchWorkflow(payload: WorkflowExecutionPayload) 
         if (subjobs.length === 0) {
             await refreshAuthToken(payload);
             await batch.updateEmbeddingBatch(payload, { run_id: params.run_id, state: 'applying', subjobs: [] });
-            return longBatch.applyEmbeddingBatch(payload, { run_id: params.run_id });
+            return finish(await longBatch.applyEmbeddingBatch(payload, { run_id: params.run_id }));
         }
         for (const subjob of subjobs) {
             await refreshAuthToken(payload);
@@ -167,8 +191,10 @@ export async function embeddingBatchWorkflow(payload: WorkflowExecutionPayload) 
         }
         await pollProviderJobs(payload, params, subjobs);
         await refreshAuthToken(payload);
-        return applyTerminalOutput(payload, params, subjobs);
+        return finish(await applyTerminalOutput(payload, params, subjobs));
     } catch (error) {
+        // A finalized outcome must not re-enter cancellation/application recovery or overwrite its counters.
+        if (finalized) throw error;
         if (!isCancellation(error)) {
             await CancellationScope.nonCancellable(async () => {
                 try {

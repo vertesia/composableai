@@ -21,7 +21,9 @@ const temporal = vi.hoisted(() => ({
 }));
 
 vi.mock('../dsl/dslProxyActivities.js', () => ({ dslProxyActivities: () => activities }));
-vi.mock('@temporalio/workflow', () => ({
+vi.mock('@temporalio/workflow', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@temporalio/workflow')>()),
+    log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     ActivityCancellationType: { TRY_CANCEL: 'TRY_CANCEL' },
     sleep: temporal.sleep,
     isCancellation: () => workflowState.cancellation,
@@ -49,6 +51,31 @@ const payload = {
 } as unknown as WorkflowExecutionPayload;
 
 describe('embeddingBatchWorkflow', () => {
+    it('fails visibly after finalization without cancelling jobs or applying again', async () => {
+        activities.prepareEmbeddingBatch.mockResolvedValue({
+            run_id: 'run',
+            row_count: 3,
+            subjobs: [
+                { index: 0, display_name: 'batch', input_uri: 'gs://b/in', output_uri: 'gs://b/out/', row_count: 3 },
+            ],
+        });
+        activities.createEmbeddingBatchJob.mockResolvedValue({ name: 'provider/job', state: 'succeeded' });
+        activities.applyEmbeddingBatch.mockResolvedValue({
+            state: 'failed',
+            succeeded: 0,
+            failed: 3,
+            stale: 0,
+            applied: 0,
+            failure_counts: { provider_permission_denied: 3 },
+        });
+        await expect(embeddingBatchWorkflow(payload)).rejects.toMatchObject({
+            type: 'EmbeddingBatchFailed',
+            nonRetryable: true,
+        });
+        expect(activities.applyEmbeddingBatch).toHaveBeenCalledOnce();
+        expect(activities.cancelEmbeddingBatchJob).not.toHaveBeenCalled();
+        expect(activities.updateEmbeddingBatch).toHaveBeenCalledTimes(2);
+    });
     beforeEach(() => {
         vi.clearAllMocks();
         workflowState.cancellation = false;

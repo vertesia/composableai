@@ -272,5 +272,6 @@ export const EmbeddingBatchApplyResponseSchema = z
         failed: z.number().int().nonnegative(),
         stale: z.number().int().nonnegative(),
         applied: z.number().int().nonnegative(),
+        failure_counts: z.record(z.string(), z.number().int().nonnegative()).optional(),
     })
     .meta({ id: 'EmbeddingBatchApplyResponse' });
