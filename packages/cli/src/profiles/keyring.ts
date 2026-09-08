@@ -150,6 +150,42 @@ export async function writeAuthBundle(profileName: string, bundle: WritableAuthB
     });
 }
 
+/** Retain the rotated replacement in memory and retry only its keychain write. */
+export async function writeRefreshedAuthBundle(profileName: string, bundle: WritableAuthBundle): Promise<void> {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            await writeAuthBundle(profileName, bundle);
+            return;
+        } catch (error: unknown) {
+            if (attempt === 2) throw error;
+            await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+        }
+    }
+}
+
+/** Check each credential against its own expiry from one keychain snapshot. */
+export async function readUsableProfileToken(
+    profile: Pick<Profile, 'name' | 'apikey'>,
+    thresholdSeconds: number,
+): Promise<string | undefined> {
+    return selectUsableProfileToken(profile, await readAuthBundle(profile.name), thresholdSeconds);
+}
+
+export function selectUsableProfileToken(
+    profile: Pick<Profile, 'apikey'>,
+    bundle: StoredAuthBundle | undefined,
+    thresholdSeconds: number,
+): string | undefined {
+    const threshold = Date.now() + thresholdSeconds * 1000;
+    if (bundle?.accessToken) {
+        const expiresAt = bundle.accessTokenExpiresAt ?? getAccessTokenExpiry(bundle.accessToken);
+        if (expiresAt && expiresAt > threshold) return bundle.accessToken;
+    }
+    // Legacy keychain-write failures may have saved a newer token in the profile file.
+    const expiresAt = getAccessTokenExpiry(profile.apikey);
+    return expiresAt && expiresAt > threshold ? profile.apikey : undefined;
+}
+
 export async function deleteAuthBundle(profileName: string): Promise<void> {
     const secrets = getSecrets();
     if (!secrets) {

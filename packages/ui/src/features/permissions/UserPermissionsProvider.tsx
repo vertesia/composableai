@@ -1,9 +1,10 @@
 import { type AuthTokenPayload, type Permission, PrincipalType, type SystemRoleDefinition } from '@vertesia/common';
-import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
+import { Button, errorMessage, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { createContext, useContext, useMemo } from 'react';
 import { isAnyOf } from './helpers';
+import { roleMappingsErrorStatus, useRoleMappings } from './useRoleMappings';
 
 type ListRolesResponse = SystemRoleDefinition[];
 
@@ -68,35 +69,81 @@ export function useUserPermissions() {
 
 interface UserPermissionProviderProps {
     children: React.ReactNode;
+    loadingIcon?: React.ReactNode;
 }
-export function UserPermissionProvider({ children }: UserPermissionProviderProps) {
+export function UserPermissionProvider({ children, loadingIcon }: UserPermissionProviderProps) {
     const { t } = useUITranslation();
     const session = useUserSession();
     const authToken = session.authToken;
-    const shouldFetchRoleMappings = Boolean(authToken && !authToken.permissions);
-    const { data, error, isLoading } = useFetch<ListRolesResponse | undefined>(() => {
-        if (shouldFetchRoleMappings) {
-            return session.client.iam.roles.listSystem();
-        }
-        return Promise.resolve(undefined);
-    }, [session.client, authToken, shouldFetchRoleMappings]);
+    const { state, retry } = useRoleMappings(session.client, authToken);
 
     const perms = useMemo(() => {
-        if (authToken) {
-            if (authToken.permissions || !shouldFetchRoleMappings) {
-                return new UserPermissions(authToken);
-            }
-            if (data && !isLoading) {
-                return new UserPermissions(authToken, data);
-            }
-        } else {
-            return undefined;
+        if (!authToken) return undefined;
+        if (authToken.permissions) {
+            return new UserPermissions(authToken);
+        }
+        if (state.status === 'ready') {
+            return new UserPermissions(authToken, state.roles);
         }
         return undefined;
-    }, [authToken, data, isLoading, shouldFetchRoleMappings]);
+    }, [authToken, state]);
 
-    if (error) {
-        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{errorMessage(error)}</ErrorBox>;
+    if (authToken && !perms) {
+        const failed = state.status === 'error';
+        const status = failed ? roleMappingsErrorStatus(state.error) : undefined;
+        const needsSignIn = status === 401;
+        const denied = status === 403;
+        const title = needsSignIn
+            ? t('auth.recovery.credential.title')
+            : denied
+              ? t('shell.accessDenied')
+              : failed
+                ? t('permissions.connectionFailed')
+                : t('permissions.connecting');
+        return (
+            <div className="flex min-h-dvh items-center justify-center bg-background px-6 text-foreground">
+                <div className="w-full max-w-md space-y-6 text-center">
+                    <div aria-hidden="true" className="flex justify-center">
+                        {loadingIcon || (!failed && <Spinner size="2xl" className="text-primary" />)}
+                    </div>
+                    <div
+                        role={failed ? 'alert' : 'status'}
+                        aria-live={failed ? 'assertive' : 'polite'}
+                        className="space-y-2"
+                    >
+                        <h1 className="text-xl font-semibold">{title}</h1>
+                        <p className="text-muted-foreground">
+                            {needsSignIn
+                                ? t('auth.recovery.credential.body')
+                                : denied
+                                  ? t('permissions.accessDenied')
+                                  : failed
+                                    ? t('permissions.tryAgainLater')
+                                    : state.status === 'retrying'
+                                      ? t('permissions.retrying')
+                                      : t('permissions.loadingPermissions')}
+                        </p>
+                    </div>
+                    {failed && (
+                        <>
+                            <Button variant="outline" onClick={needsSignIn || denied ? () => session.signOut() : retry}>
+                                {needsSignIn || denied
+                                    ? t('auth.recovery.useDifferentAccount')
+                                    : t('auth.recovery.tryAgain')}
+                            </Button>
+                            {state.error != null && (
+                                <details className="text-start text-sm text-muted-foreground">
+                                    <summary className="cursor-pointer">{t('auth.recovery.technicalDetails')}</summary>
+                                    <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap wrap-break-word">
+                                        {errorMessage(state.error)}
+                                    </pre>
+                                </details>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+        );
     }
 
     return perms && <UserPermissionsContext.Provider value={perms}>{children}</UserPermissionsContext.Provider>;
