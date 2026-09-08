@@ -163,7 +163,7 @@ export function GenericPageNavHeader({
                         )}
                         {description && (
                             <VTooltip description={description}>
-                                <Info className="size-4 text-muted ms-4" />
+                                <Info className="size-4 text-muted-foreground ms-4" />
                             </VTooltip>
                         )}
                     </nav>

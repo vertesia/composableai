@@ -20,7 +20,7 @@ const VARIANT_CLASSES: Record<OverflowTabsVariant, { base: string; active: strin
     },
     pills: {
         base: 'flex items-center rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap cursor-pointer shrink-0',
-        inactive: 'text-muted-foreground hover:bg-muted/60',
+        inactive: 'text-muted-foreground hover:bg-muted-foreground/60',
         active: 'bg-muted text-foreground',
         icon: 'ms-0.5 size-3.5',
     },

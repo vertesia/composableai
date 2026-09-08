@@ -28,7 +28,7 @@ export function ResourceChangeSummary({ resources, workflowRunId, className }: R
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl py-2', className)} data-agent-resource-summary>
-            <div className="mb-2 text-xs font-medium text-muted">{t('agent.resourcesChanged')}</div>
+            <div className="mb-2 text-xs font-medium text-muted-foreground">{t('agent.resourcesChanged')}</div>
             <ResourceChipList resources={visible} workflowRunId={workflowRunId} />
             {collapsible && (
                 <Button variant="outline" size="xs" className="mt-2" onClick={() => setExpanded((prev) => !prev)}>

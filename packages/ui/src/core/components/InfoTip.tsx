@@ -26,7 +26,7 @@ export function InfoTip({ description, size = 'sm', placement = 'top', className
     }
     return (
         <VTooltip description={description} placement={placement}>
-            <Info className={cn(size === 'md' ? 'size-4' : 'size-3', 'text-muted', className)} />
+            <Info className={cn(size === 'md' ? 'size-4' : 'size-3', 'text-muted-foreground', className)} />
         </VTooltip>
     );
 }

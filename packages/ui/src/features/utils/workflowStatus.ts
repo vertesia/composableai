@@ -6,16 +6,16 @@ import { WorkflowExecutionStatus } from '@vertesia/common';
 export function getWorkflowStatusColor(status?: WorkflowExecutionStatus): string {
     switch (status) {
         case WorkflowExecutionStatus.RUNNING:
-            return 'text-info';
+            return 'text-info-foreground';
         case WorkflowExecutionStatus.COMPLETED:
-            return 'text-success';
+            return 'text-success-foreground';
         case WorkflowExecutionStatus.FAILED:
-            return 'text-destructive';
+            return 'text-destructive-foreground';
         case WorkflowExecutionStatus.TERMINATED:
         case WorkflowExecutionStatus.CANCELED:
-            return 'text-attention';
+            return 'text-attention-foreground';
         default:
-            return 'text-muted';
+            return 'text-muted-foreground';
     }
 }
 

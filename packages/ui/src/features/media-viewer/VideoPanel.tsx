@@ -92,7 +92,9 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
 
     if (showsObjectFallbackEmpty) {
         return (
-            <div className={`flex justify-center items-center h-[400px] text-muted ${className ?? ''}`.trim()}>
+            <div
+                className={`flex justify-center items-center h-[400px] text-muted-foreground ${className ?? ''}`.trim()}
+            >
                 <div className="text-center">
                     <p>{t('store.noVideoRendition')}</p>
                     <p className="text-sm mt-2">{t('store.videoFormatRequired')}</p>
@@ -111,7 +113,9 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
 
     if (!videoUrl) {
         return (
-            <div className={`flex justify-center items-center h-[400px] text-muted ${className ?? ''}`.trim()}>
+            <div
+                className={`flex justify-center items-center h-[400px] text-muted-foreground ${className ?? ''}`.trim()}
+            >
                 Failed to load video
             </div>
         );

@@ -440,7 +440,7 @@ function ViewExperienceRuntime({
                             </MessageBox>
                         )}
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 text-sm text-muted">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <span>{t('view.resultsCount', { count: result.total })}</span>
                                 {isLoading && <Spinner size="sm" />}
                             </div>
@@ -453,7 +453,7 @@ function ViewExperienceRuntime({
                                 {resultsConfiguration?.allow_display_switch &&
                                     resultsConfiguration.displays.length > 1 && (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-muted">{t('view.display')}</span>
+                                            <span className="text-sm text-muted-foreground">{t('view.display')}</span>
                                             <SelectBox
                                                 options={resultsConfiguration.displays}
                                                 value={display}
@@ -474,7 +474,7 @@ function ViewExperienceRuntime({
                                     )}
                                 {resultsConfiguration?.sort_options && resultsConfiguration.sort_options.length > 0 && (
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-muted">{t('view.sort')}</span>
+                                        <span className="text-sm text-muted-foreground">{t('view.sort')}</span>
                                         <SelectBox
                                             options={resultsConfiguration.sort_options}
                                             value={resultsConfiguration.sort_options.find(

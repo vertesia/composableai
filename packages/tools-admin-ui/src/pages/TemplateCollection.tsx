@@ -21,7 +21,9 @@ export function TemplateCollection() {
 
     if (error)
         return (
-            <div className="p-6 text-destructive">Failed to load template collection &ldquo;{collection}&rdquo;.</div>
+            <div className="p-6 text-destructive-foreground">
+                Failed to load template collection &ldquo;{collection}&rdquo;.
+            </div>
         );
     if (!templates)
         return (

@@ -229,11 +229,11 @@ function AttachmentPreview({
     }, [artifactPath, artifactRunId, item.previewUrl, session?.client, shouldRenderThumbnail, urlCache]);
 
     const statusClassName = {
-        attention: 'bg-attention/15 text-attention',
-        destructive: 'bg-destructive/15 text-destructive',
-        info: 'bg-info/15 text-info',
-        muted: 'bg-muted text-muted',
-        success: 'bg-success/15 text-success',
+        attention: 'bg-attention-foreground/15 text-attention-foreground',
+        destructive: 'bg-destructive-foreground/15 text-destructive-foreground',
+        info: 'bg-info-foreground/15 text-info-foreground',
+        muted: 'bg-muted text-muted-foreground',
+        success: 'bg-success-foreground/15 text-success-foreground',
     }[item.statusTone ?? 'muted'];
 
     const canRemove = Boolean(onRemove && item.removable !== false);
@@ -250,7 +250,7 @@ function AttachmentPreview({
             onClick={handleRemove}
             className={cn(
                 'absolute -end-1.5 -top-1.5 inline-flex size-5 items-center justify-center rounded-full',
-                'border border-border bg-background text-muted shadow-sm transition-colors hover:text-foreground',
+                'border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground',
             )}
         >
             <XIcon className="size-3" aria-hidden="true" />
@@ -263,7 +263,7 @@ function AttachmentPreview({
             aria-label={t('agent.removeFile', { name: item.name })}
             onClick={handleRemove}
             className={cn(
-                '-me-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted',
+                '-me-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground',
                 'transition-colors hover:bg-mixer-muted/30 hover:text-foreground',
             )}
         >
@@ -297,9 +297,9 @@ function AttachmentPreview({
                 />
             </Button>
         ) : isImage ? (
-            <ImageIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+            <ImageIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
         ) : (
-            <FileTextIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+            <FileTextIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
         );
     const attachmentLabel = (
         <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
@@ -413,7 +413,7 @@ export function AttachmentPreviewList({
                     aria-controls={attachmentListId}
                     aria-expanded={isExpanded}
                     onClick={() => setIsExpanded((expanded) => !expanded)}
-                    className="h-8 shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted"
+                    className="h-8 shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted-foreground"
                 >
                     {!isExpanded && <span>+{hiddenItemCount}</span>}
                     {isExpanded ? t('agent.showLess') : t('agent.showMore')}

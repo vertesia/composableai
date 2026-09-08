@@ -93,7 +93,7 @@ export function InputList({
             className={clsx(
                 className,
                 'w-full flex flex-wrap items-center gap-1 p-2 py-1.5',
-                'rounded-md text-sm rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+                'rounded-md text-sm rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
                 disabled && 'opacity-50 cursor-not-allowed',
             )}
         >
@@ -108,7 +108,7 @@ export function InputList({
                                 'flex-shrink-0 transition-colors',
                                 disabled
                                     ? 'cursor-not-allowed'
-                                    : 'cursor-pointer hover:bg-destructive hover:text-destructive',
+                                    : 'cursor-pointer hover:bg-destructive hover:text-destructive-foreground',
                             )}
                             title={v}
                         >
@@ -117,7 +117,7 @@ export function InputList({
                     </VTooltip>
                 ))}
             <input
-                className="flex-1 min-w-[80px] m-0 p-0 px-1 border-0 bg-transparent text-sm placeholder:text-muted focus:outline-none focus:ring-0 disabled:cursor-not-allowed"
+                className="flex-1 min-w-[80px] m-0 p-0 px-1 border-0 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-0 disabled:cursor-not-allowed"
                 type="text"
                 value={text}
                 onBlur={onBlur}

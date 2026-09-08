@@ -247,13 +247,13 @@ const renderers: Record<
                     <div className="flex flex-col gap-0.5">
                         {root && (
                             <div className="flex items-center gap-1">
-                                <span className="text-xs text-muted font-mono">root: ~{root.slice(-7)}</span>
+                                <span className="text-xs text-muted-foreground font-mono">root: ~{root.slice(-7)}</span>
                                 <a href={`/store/objects/${root}`} onClick={(e) => e.stopPropagation()}>
-                                    <ExternalLink className="size-3 text-muted" />
+                                    <ExternalLink className="size-3 text-muted-foreground" />
                                 </a>
                             </div>
                         )}
-                        {label && <span className="text-xs text-muted">label: {label}</span>}
+                        {label && <span className="text-xs text-muted-foreground">label: {label}</span>}
                     </div>
                 </td>
             );

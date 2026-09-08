@@ -124,21 +124,36 @@ export interface MessageItemProps extends MessageItemClassNames {
 
 // Consolidated Studio/default message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
-    [AgentMessageType.ANSWER]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ANSWER]: {
+        borderColor: 'border-s-info',
+        iconColor: 'text-info-foreground',
+        sender: 'Agent',
+        Icon: Bot,
+    },
     [AgentMessageType.COMPLETE]: {
         borderColor: 'border-s-success',
-        iconColor: 'text-success',
+        iconColor: 'text-success-foreground',
         sender: 'Completed',
         Icon: CheckCircle,
     },
-    [AgentMessageType.IDLE]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
+    [AgentMessageType.IDLE]: {
+        borderColor: 'border-s-info',
+        iconColor: 'text-info-foreground',
+        sender: 'Ready',
+        Icon: Clock,
+    },
     [AgentMessageType.REQUEST_INPUT]: {
         borderColor: 'border-s-attention',
-        iconColor: 'text-attention',
+        iconColor: 'text-attention-foreground',
         sender: 'Input',
         Icon: User,
     },
-    [AgentMessageType.QUESTION]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
+    [AgentMessageType.QUESTION]: {
+        borderColor: 'border-s-muted',
+        iconColor: 'text-muted-foreground',
+        sender: 'User',
+        Icon: User,
+    },
     [AgentMessageType.THOUGHT]: {
         borderColor: 'border-s-purple-500',
         iconColor: 'text-purple-600 dark:text-purple-400',
@@ -147,38 +162,43 @@ export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleCo
     },
     [AgentMessageType.ERROR]: {
         borderColor: 'border-s-destructive',
-        iconColor: 'text-destructive',
+        iconColor: 'text-destructive-foreground',
         sender: 'Error',
         Icon: AlertCircle,
     },
     [AgentMessageType.UPDATE]: {
         borderColor: 'border-s-success',
-        iconColor: 'text-success',
+        iconColor: 'text-success-foreground',
         sender: 'Update',
         Icon: Info,
     },
     [AgentMessageType.PLAN]: {
         borderColor: 'border-s-attention',
-        iconColor: 'text-attention',
+        iconColor: 'text-attention-foreground',
         sender: 'Plan',
         Icon: MessageSquare,
     },
     [AgentMessageType.TERMINATED]: {
         borderColor: 'border-s-muted',
-        iconColor: 'text-muted',
+        iconColor: 'text-muted-foreground',
         sender: 'Terminated',
         Icon: CheckCircle,
     },
     [AgentMessageType.WARNING]: {
         borderColor: 'border-s-attention',
-        iconColor: 'text-attention',
+        iconColor: 'text-attention-foreground',
         sender: 'Warning',
         Icon: AlertCircle,
     },
-    [AgentMessageType.SYSTEM]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
+    [AgentMessageType.SYSTEM]: {
+        borderColor: 'border-s-muted',
+        iconColor: 'text-muted-foreground',
+        sender: 'System',
+        Icon: Info,
+    },
     [AgentMessageType.STREAMING_CHUNK]: {
         borderColor: 'border-s-info',
-        iconColor: 'text-info',
+        iconColor: 'text-info-foreground',
         sender: 'Agent',
         Icon: Bot,
     },
@@ -190,11 +210,11 @@ export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleCo
     },
     [AgentMessageType.RESTARTING]: {
         borderColor: 'border-s-attention',
-        iconColor: 'text-attention',
+        iconColor: 'text-attention-foreground',
         sender: 'Restarting',
         Icon: RefreshCcw,
     },
-    default: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
+    default: { borderColor: 'border-s-muted', iconColor: 'text-muted-foreground', sender: 'Agent', Icon: Bot },
 };
 
 function MessageItemComponent({
@@ -560,27 +580,29 @@ function MessageItemComponent({
                         <div className={cn(showPulsatingCircle ? 'animate-fadeIn' : '', resolvedStyle.iconClassName)}>
                             {renderIcon()}
                         </div>
-                        <span className={cn('text-xs font-medium text-muted', resolvedStyle.senderClassName)}>
+                        <span
+                            className={cn('text-xs font-medium text-muted-foreground', resolvedStyle.senderClassName)}
+                        >
                             {SENDER_I18N_KEYS[resolvedStyle.sender]
                                 ? t(SENDER_I18N_KEYS[resolvedStyle.sender])
                                 : resolvedStyle.sender}
                         </span>
                         {workstreamId !== 'main' && workstreamId !== 'all' && (
-                            <Badge variant="default" className="text-xs text-muted ms-1">
+                            <Badge variant="default" className="text-xs text-muted-foreground ms-1">
                                 {workstreamId}
                             </Badge>
                         )}
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
                         <MessageDeliveryStatus message={message} />
-                        <span className={cn('text-[11px] text-muted/70', resolvedStyle.timestampClassName)}>
+                        <span className={cn('text-[11px] text-muted-foreground/70', resolvedStyle.timestampClassName)}>
                             {dayjs(message.timestamp).format('HH:mm:ss')}
                         </span>
                         <Button
                             variant="ghost"
                             size="xs"
                             onClick={copyToClipboard}
-                            className="text-muted/50 hover:text-muted h-5 w-5 p-0"
+                            className="text-muted-foreground/50 hover:text-muted-foreground h-5 w-5 p-0"
                             title={t('agent.copyMessage')}
                         >
                             <CopyIcon className="size-3" />
@@ -591,7 +613,7 @@ function MessageItemComponent({
                                     <Button
                                         variant="ghost"
                                         size="xs"
-                                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
+                                        className="text-muted-foreground/50 hover:text-muted-foreground h-5 w-5 p-0"
                                         title={t('agent.exportMessage')}
                                         disabled={isExportingFile}
                                     >
@@ -678,7 +700,7 @@ function MessageItemComponent({
                     {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                     {artifactLinks.length > 0 && (
                         <div className={cn('mt-3 text-xs', resolvedStyle.artifactsClassName)}>
-                            <div className="font-medium text-muted mb-1">Artifacts</div>
+                            <div className="font-medium text-muted-foreground mb-1">Artifacts</div>
 
                             {/* Inline previews for image artifacts */}
                             {artifactLinks.some((a) => a.isImage) && (
@@ -698,7 +720,7 @@ function MessageItemComponent({
                                                     alt={displayName}
                                                     className="max-w-full h-auto rounded-lg shadow-sm hover:shadow-md transition-shadow"
                                                 />
-                                                <div className="mt-1 text-[11px] text-muted truncate">
+                                                <div className="mt-1 text-[11px] text-muted-foreground truncate">
                                                     {displayName}
                                                 </div>
                                             </Button>
@@ -736,7 +758,7 @@ function MessageItemComponent({
                             <Button
                                 variant="unstyled"
                                 onClick={() => setShowDetails(!showDetails)}
-                                className="text-[11px] text-muted flex items-center"
+                                className="text-[11px] text-muted-foreground flex items-center"
                             >
                                 {showDetails ? t('agent.hideDetails') : t('agent.showDetails')}
                                 <svg
@@ -757,11 +779,11 @@ function MessageItemComponent({
                             </Button>
 
                             {showDetails && (
-                                <div className="mt-1 p-1.5 bg-muted border border-mixer-muted/40 rounded text-sm">
+                                <div className="mt-1 p-1.5 bg-muted border border-mixer-muted-foreground/40 rounded text-sm">
                                     {typeof message.details === 'string' ? (
                                         renderContent(message.details)
                                     ) : (
-                                        <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted">
+                                        <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted-foreground">
                                             {JSON.stringify(message.details, null, 2)}
                                         </pre>
                                     )}

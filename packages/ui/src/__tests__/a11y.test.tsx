@@ -26,6 +26,22 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
+    it('Button resolves custom color overrides without conflicting variant colors', () => {
+        const { container } = renderWithProviders(
+            <div>
+                <Button>Save</Button>
+                <Button className="bg-info text-info-foreground">Custom action</Button>
+                <Button variant="outline">Cancel</Button>
+            </div>,
+        );
+        const [primary, custom, outline] = container.querySelectorAll('button');
+        expect(primary.classList.contains('text-primary-foreground')).toBe(true);
+        expect(custom.classList.contains('text-info-foreground')).toBe(true);
+        expect(custom.classList.contains('text-primary-foreground')).toBe(false);
+        expect(custom.classList.contains('bg-primary')).toBe(false);
+        expect(outline.classList.contains('text-foreground')).toBe(true);
+    });
+
     it('Button defaults to type="button" but does not inject type when asChild', async () => {
         const { container } = renderWithProviders(
             <div>

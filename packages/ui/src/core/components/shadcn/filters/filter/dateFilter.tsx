@@ -132,11 +132,11 @@ export default function DateFilter({
             if (effectiveDateRange[0] && effectiveDateRange[1]) {
                 return (
                     <span className="flex items-center gap-2">
-                        <span className="text-xs text-muted">{t('filter.from')}</span>
+                        <span className="text-xs text-muted-foreground">{t('filter.from')}</span>
                         <span className="text-xs font-medium">
                             {dayjs(effectiveDateRange[0]).format('MMMM DD, YYYY')}
                         </span>
-                        <span className="text-xs text-muted">{t('filter.to')}</span>
+                        <span className="text-xs text-muted-foreground">{t('filter.to')}</span>
                         <span className="text-xs font-medium">
                             {dayjs(effectiveDateRange[1]).format('MMMM DD, YYYY')}
                         </span>
@@ -145,16 +145,16 @@ export default function DateFilter({
             } else if (effectiveDateRange[0]) {
                 return (
                     <span className="flex items-center gap-2">
-                        <span className="text-xs text-muted">{t('filter.from')}</span>
+                        <span className="text-xs text-muted-foreground">{t('filter.from')}</span>
                         <span className="text-xs font-medium">
                             {dayjs(effectiveDateRange[0]).format('MMMM DD, YYYY')}
                         </span>
-                        <span className="text-xs text-muted">→ Select end date</span>
+                        <span className="text-xs text-muted-foreground">→ Select end date</span>
                     </span>
                 );
             } else {
                 return (
-                    <span className="text-muted text-xs">
+                    <span className="text-muted-foreground text-xs">
                         {selectedGroup?.placeholder || selectedGroup?.name || selectedView || 'Select date range'}
                     </span>
                 );
@@ -187,7 +187,7 @@ export default function DateFilter({
 
                                     // Check if date is disabled (future date)
                                     if (currentDate > today.getTime()) {
-                                        return 'text-muted/20 cursor-not-allowed';
+                                        return 'text-muted-foreground/20 cursor-not-allowed';
                                     }
 
                                     // Handle selected date styling
@@ -247,7 +247,7 @@ export default function DateFilter({
 
                                 // Check if date is disabled (future date)
                                 if (currentDate > today.getTime()) {
-                                    return 'text-muted/20 cursor-not-allowed';
+                                    return 'text-muted-foreground/20 cursor-not-allowed';
                                 }
 
                                 // Handle selected date styling

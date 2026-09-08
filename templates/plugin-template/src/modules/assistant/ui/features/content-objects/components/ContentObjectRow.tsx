@@ -14,7 +14,7 @@ function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProp
     const statusValue = row.statusValue;
 
     return (
-        <tr className="cursor-pointer hover:bg-muted/50" onClick={() => onOpen(row.id)}>
+        <tr className="cursor-pointer hover:bg-muted-foreground/50" onClick={() => onOpen(row.id)}>
             <td>
                 <div className="flex flex-col">
                     <span className="font-medium">{row.title}</span>

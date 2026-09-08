@@ -38,7 +38,7 @@ export default function TextFilter({
 
     return (
         <div className="p-2 flex flex-col gap-1">
-            <div className="flex items-center p-1.5 text-xs text-muted">
+            <div className="flex items-center p-1.5 text-xs text-muted-foreground">
                 <span>{filterGroups.find((group) => group.name === selectedView)?.placeholder}</span>
             </div>
             <Input

@@ -40,7 +40,7 @@ export function ReviewQueuePage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h1 className="text-xl font-semibold">Review Queue</h1>
-                        <p className="text-sm text-muted">Typed review task objects linked to guides.</p>
+                        <p className="text-sm text-muted-foreground">Typed review task objects linked to guides.</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => void loadTasks()}>
                         <RefreshCw className="me-2 size-4" />
@@ -51,7 +51,9 @@ export function ReviewQueuePage() {
 
             <section className="min-h-0 flex-1 overflow-auto p-4">
                 {error && (
-                    <div className="rounded-md border border-destructive p-3 text-sm text-destructive">{error}</div>
+                    <div className="rounded-md border border-destructive-foreground p-3 text-sm text-destructive-foreground">
+                        {error}
+                    </div>
                 )}
                 {isLoading ? (
                     <div className="flex h-40 items-center justify-center">
@@ -64,7 +66,9 @@ export function ReviewQueuePage() {
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                         <h2 className="font-semibold">{task.properties.title}</h2>
-                                        <p className="text-sm text-muted">Guide: {task.properties.guide_slug}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Guide: {task.properties.guide_slug}
+                                        </p>
                                     </div>
                                     <div className="flex gap-2">
                                         <span
@@ -85,9 +89,9 @@ export function ReviewQueuePage() {
                                 </div>
                                 <div className="mt-3 grid gap-3 md:grid-cols-[220px_1fr]">
                                     <dl className="grid grid-cols-[80px_1fr] gap-2 text-sm">
-                                        <dt className="text-muted">Owner</dt>
+                                        <dt className="text-muted-foreground">Owner</dt>
                                         <dd>{task.properties.assignee}</dd>
-                                        <dt className="text-muted">Due</dt>
+                                        <dt className="text-muted-foreground">Due</dt>
                                         <dd>{task.properties.due_date}</dd>
                                     </dl>
                                     <ul className="list-disc space-y-1 ps-5 text-sm">
@@ -99,7 +103,7 @@ export function ReviewQueuePage() {
                             </article>
                         ))}
                         {tasks.length === 0 && (
-                            <div className="rounded-md border border-border p-8 text-center text-muted">
+                            <div className="rounded-md border border-border p-8 text-center text-muted-foreground">
                                 No review tasks found. Run the content app setup script from the project workspace.
                             </div>
                         )}

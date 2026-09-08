@@ -107,7 +107,7 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = 'md' }: Ser
     const description = (
         <>
             <div>{t('user.serviceAccountDescription')}</div>
-            <div className="text-muted text-sm">
+            <div className="text-muted-foreground text-sm">
                 <span className="font-semibold">ID:</span> {accountId}
             </div>
         </>
@@ -136,7 +136,7 @@ function EmailAgentAvatar({ email, showTitle = false, size = 'md' }: EmailAgentA
     const description = (
         <>
             <div>{t('user.agentOnBehalfOf')}</div>
-            <div className="text-muted text-sm">
+            <div className="text-muted-foreground text-sm">
                 <span className="font-semibold">Email:</span> {email}
             </div>
         </>
@@ -201,7 +201,7 @@ function AgentAvatar({
                     <Avatar src={user.picture} name={user.name} size="sm" />
                     <div>
                         <div className="font-medium">{user.name || user.email}</div>
-                        {user.email && user.name && <div className="text-xs text-muted">{user.email}</div>}
+                        {user.email && user.name && <div className="text-xs text-muted-foreground">{user.email}</div>}
                     </div>
                 </div>
             )}

@@ -322,7 +322,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
                     size="md"
                     className={cn('transition group flex gap-1.5', className)}
                 >
-                    <ListFilter className="size-4 shrink-0 transition-all text-muted" />
+                    <ListFilter className="size-4 shrink-0 transition-all text-muted-foreground" />
                     {t('filter.filter')}
                 </Button>
             </PopoverTrigger>

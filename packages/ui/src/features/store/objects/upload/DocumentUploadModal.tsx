@@ -587,7 +587,8 @@ export function DocumentUploadModal({
         return (
             <div className="mb-4">
                 <div className="block text-sm font-medium mb-2">
-                    {t('store.contentType')} <span className="text-muted font-normal">{t('store.optional')}</span>
+                    {t('store.contentType')}{' '}
+                    <span className="text-muted-foreground font-normal">{t('store.optional')}</span>
                     <VTooltip description={t('upload.contentTypeTooltip')} placement="top" size="xs">
                         <Info className="size-3 ms-2" />
                     </VTooltip>
@@ -603,7 +604,7 @@ export function DocumentUploadModal({
                 />
                 {!selectedType && (
                     <div className="p-2 rounded-md">
-                        <div className="flex items-center text-attention">
+                        <div className="flex items-center text-attention-foreground">
                             <CheckCircleIcon className="size-4 me-1" />
                             {t('store.automaticTypeDetection')}
                             <VTooltip
@@ -685,14 +686,14 @@ export function DocumentUploadModal({
                                         </div>
                                         <div className="flex flex-col items-center">
                                             <div className="flex items-center gap-2">
-                                                <CheckCircleIcon className="size-5 text-success" />
+                                                <CheckCircleIcon className="size-5 text-success-foreground" />
                                                 <span className="font-medium">{t('upload.update')}</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toUpdate}</div>
                                         </div>
                                         <div className="flex flex-col items-center">
                                             <div className="flex items-center gap-2">
-                                                <AlertCircleIcon className="size-5 text-mixer-attention/40" />
+                                                <AlertCircleIcon className="size-5 text-mixer-attention-foreground/40" />
                                                 <span className="font-medium">{t('upload.skip')}</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toSkip}</div>
@@ -738,7 +739,7 @@ export function DocumentUploadModal({
 
                     <div className="mb-4">
                         {/* Progress bar */}
-                        <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
+                        <div className="h-2 bg-muted-foreground/20 rounded-full overflow-hidden">
                             <div className="h-full bg-primary rounded-full" style={{ width: `${overallProgress}%` }} />
                         </div>
                     </div>
@@ -751,18 +752,20 @@ export function DocumentUploadModal({
                                 className="flex items-center py-2 border-b border-border last:border-b-0"
                             >
                                 <div className="me-3">
-                                    {fileStatus.status === 'pending' && <FileIcon className="size-5 text-muted" />}
+                                    {fileStatus.status === 'pending' && (
+                                        <FileIcon className="size-5 text-muted-foreground" />
+                                    )}
                                     {fileStatus.status === 'uploading' && <Spinner size="sm" />}
                                     {fileStatus.status === 'success' && (
-                                        <CheckCircleIcon className="size-5 text-success" />
+                                        <CheckCircleIcon className="size-5 text-success-foreground" />
                                     )}
                                     {fileStatus.status === 'error' && (
-                                        <XCircleIcon className="size-5 text-destructive" />
+                                        <XCircleIcon className="size-5 text-destructive-foreground" />
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="truncate font-medium">{fileStatus.file.name}</div>
-                                    <div className="text-xs text-muted">
+                                    <div className="text-xs text-muted-foreground">
                                         {fileStatus.status === 'pending' && t('agent.waiting')}
                                         {fileStatus.status === 'uploading' && t('agent.uploading')}
                                         {fileStatus.status === 'success' &&

@@ -21,7 +21,7 @@ interface THeadProps {
 }
 export function THead({ children }: Readonly<THeadProps>) {
     return (
-        <thead className="sticky top-0 bg-background z-10 after:absolute after:bottom-0 after:start-0 after:w-full after:h-px after:bg-muted/20">
+        <thead className="sticky top-0 bg-background z-10 after:absolute after:bottom-0 after:start-0 after:w-full after:h-px after:bg-muted-foreground/20">
             {children}
         </thead>
     );

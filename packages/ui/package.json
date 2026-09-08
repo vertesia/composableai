@@ -125,6 +125,7 @@
         "i18next-cli": "^1.71.3",
         "jsdom": "^30.0.1",
         "rolldown": "catalog:",
+        "tailwindcss": "^4.3.3",
         "typescript": "catalog:",
         "vitest": "^4.1.11",
         "vitest-axe": "^0.1.0",

@@ -53,7 +53,7 @@ export function PdfPageRenderer({
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-destructive text-sm ${className || ''}`}>
+            <div className={`flex items-center justify-center text-destructive-foreground text-sm ${className || ''}`}>
                 Failed to load PDF
             </div>
         );
@@ -167,7 +167,11 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
     );
 
     if (error) {
-        return <div className="flex items-center justify-center text-destructive text-sm py-4">Failed to load PDF</div>;
+        return (
+            <div className="flex items-center justify-center text-destructive-foreground text-sm py-4">
+                Failed to load PDF
+            </div>
+        );
     }
 
     return (
@@ -464,7 +468,11 @@ export function PdfThumbnailList({
     }, [itemHeight, pageCount, scrollContainerRef]);
 
     if (error) {
-        return <div className="flex items-center justify-center text-destructive text-sm py-4">Failed to load PDF</div>;
+        return (
+            <div className="flex items-center justify-center text-destructive-foreground text-sm py-4">
+                Failed to load PDF
+            </div>
+        );
     }
 
     if (urlLoading || !pdfUrl) {
@@ -569,7 +577,7 @@ export function PdfDocumentRenderer({
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-destructive ${className || ''}`}>
+            <div className={`flex items-center justify-center text-destructive-foreground ${className || ''}`}>
                 <span>Failed to load PDF: {error.message}</span>
             </div>
         );

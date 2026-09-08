@@ -35,7 +35,7 @@ export function InteractionDetail() {
     );
 
     if (error) {
-        return <div className="p-6 text-destructive">Failed to load interaction &ldquo;{name}&rdquo;.</div>;
+        return <div className="p-6 text-destructive-foreground">Failed to load interaction &ldquo;{name}&rdquo;.</div>;
     }
 
     if (!interaction) {

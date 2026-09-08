@@ -29,7 +29,8 @@ export function TemplateDetail() {
         [baseUrl, collection, name],
     );
 
-    if (error) return <div className="p-6 text-destructive">Failed to load template &ldquo;{name}&rdquo;.</div>;
+    if (error)
+        return <div className="p-6 text-destructive-foreground">Failed to load template &ldquo;{name}&rdquo;.</div>;
     if (!template)
         return (
             <div className="flex h-64 items-center justify-center text-muted-foreground">

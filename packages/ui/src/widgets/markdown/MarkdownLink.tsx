@@ -159,7 +159,7 @@ function ResolvedLink({
 
     if (isLoading) {
         return (
-            <span className="inline-flex items-center gap-1 text-muted">
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
                 <CodeBlockPlaceholder type="link" />
             </span>
         );

@@ -60,30 +60,30 @@
 
 /* Semantic variants */
 .md-callout-info {
-    border-left-color: var(--color-info);
-    background: color-mix(in oklch, var(--color-info) 8%, var(--color-background));
+    border-left-color: var(--color-info-foreground);
+    background: color-mix(in oklch, var(--color-info-foreground) 8%, var(--color-background));
 }
 
 .md-callout-info > .md-callout-title {
-    color: var(--color-info);
+    color: var(--color-info-foreground);
 }
 
 .md-callout-attention {
-    border-left-color: var(--color-attention);
-    background: color-mix(in oklch, var(--color-attention) 8%, var(--color-background));
+    border-left-color: var(--color-attention-foreground);
+    background: color-mix(in oklch, var(--color-attention-foreground) 8%, var(--color-background));
 }
 
 .md-callout-attention > .md-callout-title {
-    color: var(--color-attention);
+    color: var(--color-attention-foreground);
 }
 
 .md-callout-destructive {
-    border-left-color: var(--color-destructive);
-    background: color-mix(in oklch, var(--color-destructive) 8%, var(--color-background));
+    border-left-color: var(--color-destructive-foreground);
+    background: color-mix(in oklch, var(--color-destructive-foreground) 8%, var(--color-background));
 }
 
 .md-callout-destructive > .md-callout-title {
-    color: var(--color-destructive);
+    color: var(--color-destructive-foreground);
 }
 
 /* ------------------------------------------------------------------ */
@@ -116,35 +116,35 @@
 /* NOTE, TIP → info */
 .markdown-alert-note,
 .markdown-alert-tip {
-    border-left-color: var(--color-info);
-    background: color-mix(in oklch, var(--color-info) 8%, var(--color-background));
+    border-left-color: var(--color-info-foreground);
+    background: color-mix(in oklch, var(--color-info-foreground) 8%, var(--color-background));
 }
 
 .markdown-alert-note > .markdown-alert-title,
 .markdown-alert-tip > .markdown-alert-title {
-    color: var(--color-info);
+    color: var(--color-info-foreground);
 }
 
 /* WARNING, IMPORTANT → attention */
 .markdown-alert-warning,
 .markdown-alert-important {
-    border-left-color: var(--color-attention);
-    background: color-mix(in oklch, var(--color-attention) 8%, var(--color-background));
+    border-left-color: var(--color-attention-foreground);
+    background: color-mix(in oklch, var(--color-attention-foreground) 8%, var(--color-background));
 }
 
 .markdown-alert-warning > .markdown-alert-title,
 .markdown-alert-important > .markdown-alert-title {
-    color: var(--color-attention);
+    color: var(--color-attention-foreground);
 }
 
 /* CAUTION → destructive */
 .markdown-alert-caution {
-    border-left-color: var(--color-destructive);
-    background: color-mix(in oklch, var(--color-destructive) 8%, var(--color-background));
+    border-left-color: var(--color-destructive-foreground);
+    background: color-mix(in oklch, var(--color-destructive-foreground) 8%, var(--color-background));
 }
 
 .markdown-alert-caution > .markdown-alert-title {
-    color: var(--color-destructive);
+    color: var(--color-destructive-foreground);
 }
 
 /* ------------------------------------------------------------------ */
@@ -186,7 +186,7 @@
 
 .md-content figcaption {
     font-size: 0.875rem;
-    color: var(--color-muted);
+    color: var(--color-muted-foreground);
     margin-top: 0.5rem;
     font-style: italic;
 }

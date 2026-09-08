@@ -463,7 +463,7 @@ export function IntakePolicyEditor({
                             <FileText className="size-4" />
                             <div className="flex flex-col">
                                 <span>{t(`intakePolicy.example.${example.key}.label`)}</span>
-                                <span className="text-xs text-muted">
+                                <span className="text-xs text-muted-foreground">
                                     {t(`intakePolicy.example.${example.key}.description`)}
                                 </span>
                             </div>
@@ -499,7 +499,7 @@ export function IntakePolicyEditor({
             <div className="flex h-full min-h-0 flex-col gap-3">
                 <IntakeSummary policy={summaryPolicy} />
                 {validationMessage && (
-                    <div className="rounded-sm border border-destructive bg-mixer-destructive/10 px-3 py-2 text-sm whitespace-pre-line text-destructive">
+                    <div className="rounded-sm border border-destructive-foreground bg-mixer-destructive/10 px-3 py-2 text-sm whitespace-pre-line text-destructive-foreground">
                         {validationMessage}
                     </div>
                 )}
@@ -607,7 +607,7 @@ function IntakeSummary({ policy }: { policy: ContentTypeIntakePolicy }) {
         <div className="flex flex-wrap gap-2">
             {values.map(([label, value]) => (
                 <Badge key={label} variant="outline" className="gap-1">
-                    <span className="text-muted">{label}:</span>
+                    <span className="text-muted-foreground">{label}:</span>
                     <span>{value}</span>
                 </Badge>
             ))}
@@ -620,7 +620,7 @@ function IntakeHelp() {
     return (
         <aside className="hidden w-80 shrink-0 overflow-y-auto rounded-sm border bg-mixer-muted/20 p-3 text-sm lg:block">
             <div className="mb-3 font-semibold">{t('intakePolicy.help.title')}</div>
-            <div className="space-y-3 text-muted">
+            <div className="space-y-3 text-muted-foreground">
                 <HelpItem label="identification" text={t('intakePolicy.help.identification')} />
                 <HelpItem label="text_conversion" text={t('intakePolicy.help.textConversion')} />
                 <HelpItem label="extraction.source" text={t('intakePolicy.help.extractionSource')} />

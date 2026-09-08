@@ -105,7 +105,12 @@ export function VertesiaMarkdownComponentEditor({
 
     return (
         <CodeBlockHandlerProvider artifactRunId={artifactRunId} MarkdownRenderer={MarkdownRenderer}>
-            <div className={cn('overflow-hidden rounded-md border border-mixer-muted/30 bg-background', className)}>
+            <div
+                className={cn(
+                    'overflow-hidden rounded-md border border-mixer-muted-foreground/30 bg-background',
+                    className,
+                )}
+            >
                 <EditorToolbar editor={editor} editable={props.editable !== false} />
                 <MarkdownComponentEditor
                     {...props}
@@ -191,7 +196,7 @@ export function VertesiaMarkdownDocumentEditor({
             ) : (
                 <div className={cn('flex h-full min-h-0 flex-col bg-background', className)}>
                     {onSendChangesToAgent ? (
-                        <div className="flex min-h-10 shrink-0 items-center justify-end gap-1 border-b border-mixer-muted/25 px-1.5 py-1">
+                        <div className="flex min-h-10 shrink-0 items-center justify-end gap-1 border-b border-mixer-muted-foreground/25 px-1.5 py-1">
                             {toolbarStatus}
                             <SendChangesToAgentButton
                                 onSend={onSendChangesToAgent}
@@ -225,7 +230,9 @@ export function VertesiaMarkdownDocumentEditor({
             >
                 <ModalTitle>{t('richText.sourceCompatibilityWarningTitle')}</ModalTitle>
                 <ModalBody>
-                    <p className="text-sm text-muted">{t('richText.sourceCompatibilityWarningDescription')}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {t('richText.sourceCompatibilityWarningDescription')}
+                    </p>
                 </ModalBody>
                 <ModalFooter align="right">
                     <Button variant="outline" onClick={() => setEditingMode('source')}>

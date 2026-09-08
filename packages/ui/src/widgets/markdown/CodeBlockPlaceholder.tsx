@@ -52,17 +52,17 @@ export function CodeBlockPlaceholder({ type, error, onRetry, message, height }: 
     if (error) {
         return (
             <div
-                className={`flex items-center gap-2 rounded border border-destructive/30 bg-destructive/5 text-destructive ${
+                className={`flex items-center gap-2 rounded border border-destructive-foreground/30 bg-destructive-foreground/5 text-destructive-foreground ${
                     isInline ? 'inline-flex px-2 py-1 text-sm' : 'p-4'
                 }`}
                 style={!isInline ? { minHeight: displayHeight } : undefined}
             >
-                <span className="text-destructive">Failed to load {config.label}</span>
+                <span className="text-destructive-foreground">Failed to load {config.label}</span>
                 {onRetry && (
                     <Button
                         variant="unstyled"
                         onClick={onRetry}
-                        className="ms-2 rounded bg-destructive/10 px-2 py-1 text-xs hover:bg-destructive/20 transition-colors text-destructive"
+                        className="ms-2 rounded bg-destructive-foreground/10 px-2 py-1 text-xs hover:bg-destructive-foreground/20 transition-colors text-destructive-foreground"
                     >
                         Retry
                     </Button>
@@ -75,7 +75,7 @@ export function CodeBlockPlaceholder({ type, error, onRetry, message, height }: 
 
     if (isInline) {
         return (
-            <span className="inline-flex items-center gap-1 text-muted animate-pulse">
+            <span className="inline-flex items-center gap-1 text-muted-foreground animate-pulse">
                 <IconComponent className="h-3 w-3" />
                 <span>{message || `Loading ${config.label}...`}</span>
             </span>
@@ -84,11 +84,11 @@ export function CodeBlockPlaceholder({ type, error, onRetry, message, height }: 
 
     return (
         <div
-            className="flex flex-col items-center justify-center gap-3 rounded border border-border bg-muted/30 animate-pulse"
+            className="flex flex-col items-center justify-center gap-3 rounded border border-border bg-muted-foreground/30 animate-pulse"
             style={{ minHeight: displayHeight }}
         >
-            <IconComponent className="h-8 w-8 text-muted" />
-            <span className="text-sm text-muted">{message || `Loading ${config.label}...`}</span>
+            <IconComponent className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{message || `Loading ${config.label}...`}</span>
             <div className="flex gap-1">
                 {[...Array(3)].map((_, i) => (
                     <div
@@ -149,10 +149,10 @@ export class CodeBlockErrorBoundary extends React.Component<CodeBlockErrorBounda
                     />
                     {fallbackCode && (
                         <details className="text-sm">
-                            <summary className="cursor-pointer text-muted hover:text-foreground">
+                            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
                                 Show raw content
                             </summary>
-                            <pre className="mt-2 overflow-x-auto rounded bg-muted/50 p-2 text-xs">
+                            <pre className="mt-2 overflow-x-auto rounded bg-muted-foreground/50 p-2 text-xs">
                                 <code>{fallbackCode}</code>
                             </pre>
                         </details>

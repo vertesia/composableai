@@ -27,7 +27,9 @@ export function ActivityCollection() {
 
     if (error)
         return (
-            <div className="p-6 text-destructive">Failed to load activity collection &ldquo;{collection}&rdquo;.</div>
+            <div className="p-6 text-destructive-foreground">
+                Failed to load activity collection &ldquo;{collection}&rdquo;.
+            </div>
         );
     if (!data)
         return (

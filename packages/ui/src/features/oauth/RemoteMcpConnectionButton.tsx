@@ -183,7 +183,7 @@ export function RemoteMcpConnectionButton({
         return (
             <div className="flex items-center gap-2">
                 {showLabel && <span className="font-medium text-sm text-foreground">{displayName}:</span>}
-                <div className="flex items-center gap-1 text-success text-sm">
+                <div className="flex items-center gap-1 text-success-foreground text-sm">
                     <CheckCircle2 className="size-4" />
                     <span>{t('mcpOAuth.connected')}</span>
                 </div>
@@ -224,7 +224,7 @@ export function RemoteMcpConnectionButton({
         }
 
         return (
-            <div className="flex items-center gap-1 text-success">
+            <div className="flex items-center gap-1 text-success-foreground">
                 <CheckCircle2 className="size-4" />
                 <span className="text-sm">{t('mcpOAuth.connected')}</span>
             </div>
@@ -236,7 +236,7 @@ export function RemoteMcpConnectionButton({
             return (
                 <div className="flex items-center gap-2">
                     {showLabel && <span className="font-medium text-xs text-foreground">{collectionName}:</span>}
-                    <div className="flex items-center gap-1 text-muted">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                         <span className="text-xs">{t('mcpOAuth.notConnected')}</span>
                     </div>
                 </div>

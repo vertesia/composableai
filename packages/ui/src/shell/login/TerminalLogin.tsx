@@ -219,7 +219,9 @@ function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenPro
     return user && allProjects ? (
         <>
             <div className="w-1/3">
-                <div className="mb-4 text-xl font-semibold text-info">Authorizing client on {envName} environment.</div>
+                <div className="mb-4 text-xl font-semibold text-info-foreground">
+                    Authorizing client on {envName} environment.
+                </div>
                 <div className="mb-2 text-md text-muted-foreground">
                     <div>{t('login.terminal.clientWantsAuth')}</div>
                     <div>
@@ -318,7 +320,7 @@ function ProfileForm({ allProjects, data, onAccept }: Readonly<ProfileFormProps>
                 <span className="font-semibold text-muted-foreground">{t('login.terminal.project')}</span>
                 <SelectProject value={currentData.project} onChange={onChangeProject} projects={projects} />
             </div>
-            <div className="mb-4 text-sm text-attention">{t('login.terminal.browserPermissionNote')}</div>
+            <div className="mb-4 text-sm text-attention-foreground">{t('login.terminal.browserPermissionNote')}</div>
             <div>
                 <Button size="xl" onClick={() => onAccept(currentData)}>
                     {t('login.terminal.authorizeClient')}

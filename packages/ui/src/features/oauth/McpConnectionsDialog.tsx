@@ -50,13 +50,13 @@ export function McpConnectionsDialog({
         <Modal isOpen={isOpen} onClose={onClose} size="md" className="max-w-[92vw] sm:max-w-[620px] lg:max-w-[620px]">
             <ModalTitle>{t('mcpConnections.title')}</ModalTitle>
             <ModalBody>
-                <p className="mb-4 text-sm text-muted">{t('mcpConnections.subtitle')}</p>
+                <p className="mb-4 text-sm text-muted-foreground">{t('mcpConnections.subtitle')}</p>
                 {loading ? (
                     <div className="flex items-center justify-center py-8">
                         <Spinner className="size-5" />
                     </div>
                 ) : groups.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-muted">{t('mcpConnections.empty')}</div>
+                    <div className="py-8 text-center text-sm text-muted-foreground">{t('mcpConnections.empty')}</div>
                 ) : (
                     <div className="space-y-1">
                         {groups.map((group) => {
@@ -69,7 +69,7 @@ export function McpConnectionsDialog({
                                 <div key={group.key} className="flex items-center justify-between gap-3 py-3">
                                     <div className="flex min-w-0 items-center gap-2">
                                         <StatusIcon
-                                            className={`size-4 shrink-0 ${connected ? 'text-success' : 'text-muted'}`}
+                                            className={`size-4 shrink-0 ${connected ? 'text-success-foreground' : 'text-muted-foreground'}`}
                                             aria-hidden="true"
                                         />
                                         <VTooltip
@@ -77,7 +77,7 @@ export function McpConnectionsDialog({
                                                 <div className="space-y-0.5">
                                                     <div className="font-medium">{group.appName}</div>
                                                     {group.memberNames.length > 1 && (
-                                                        <div className="text-xs text-muted">
+                                                        <div className="text-xs text-muted-foreground">
                                                             {group.memberNames.join(' · ')}
                                                         </div>
                                                     )}
@@ -87,7 +87,7 @@ export function McpConnectionsDialog({
                                             asChild
                                         >
                                             <span
-                                                className={`truncate ${active ? 'text-foreground' : 'text-muted line-through'}`}
+                                                className={`truncate ${active ? 'text-foreground' : 'text-muted-foreground line-through'}`}
                                             >
                                                 {group.label}
                                             </span>

@@ -70,7 +70,7 @@ export function JSONEditor({
                     options={readonly ? { readOnly: true, domReadOnly: true } : undefined}
                 />
             </div>
-            {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+            {error && <p className="text-xs text-destructive-foreground mt-1">{error}</p>}
         </div>
     );
 }

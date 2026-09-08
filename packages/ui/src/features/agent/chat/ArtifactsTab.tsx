@@ -62,20 +62,20 @@ function TreeNode({ node, depth, runId, onOpen, onDownload, downloadingPath, for
             <div className="min-w-0">
                 <Button
                     variant="unstyled"
-                    className="flex w-full max-w-full items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
+                    className="flex w-full max-w-full items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted-foreground/30"
                     style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
                     aria-expanded={isExpanded}
                 >
                     {isExpanded ? (
-                        <ChevronDownIcon className="size-3.5 shrink-0 text-muted" />
+                        <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
                     ) : (
-                        <ChevronRightIcon className="size-3.5 shrink-0 text-muted cn-rtl-flip" />
+                        <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground cn-rtl-flip" />
                     )}
                     {isExpanded ? (
-                        <FolderOpenIcon className="size-4 shrink-0 text-info" />
+                        <FolderOpenIcon className="size-4 shrink-0 text-info-foreground" />
                     ) : (
-                        <FolderIcon className="size-4 shrink-0 text-info" />
+                        <FolderIcon className="size-4 shrink-0 text-info-foreground" />
                     )}
                     <span className="min-w-0 truncate font-medium" title={node.path}>
                         {formatDirectoryLabel(node.name)}
@@ -104,13 +104,13 @@ function TreeNode({ node, depth, runId, onOpen, onDownload, downloadingPath, for
         <div className="flex min-w-0 items-center gap-1">
             <Button
                 variant="unstyled"
-                className="flex min-w-0 flex-1 items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
+                className="flex min-w-0 flex-1 items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted-foreground/30"
                 style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
                 onClick={() => onOpen(node.path)}
                 title={node.path}
             >
                 <span className="size-3.5 shrink-0" />
-                <FileIcon className="size-4 shrink-0 text-muted" />
+                <FileIcon className="size-4 shrink-0 text-muted-foreground" />
                 <span className="min-w-0 truncate">{node.name}</span>
             </Button>
             <Button
@@ -123,7 +123,7 @@ function TreeNode({ node, depth, runId, onOpen, onDownload, downloadingPath, for
                 title={t('agent.download')}
             >
                 {isDownloading ? (
-                    <Loader2Icon className="size-3.5 animate-spin text-info" />
+                    <Loader2Icon className="size-3.5 animate-spin text-info-foreground" />
                 ) : (
                     <DownloadIcon className="size-3.5" />
                 )}
@@ -274,14 +274,14 @@ function ArtifactMarkdownEditor({
                     {saveStatus === 'saving' ? (
                         <VTooltip description={t('agent.savingWorkingCopy')} asChild>
                             <Loader2Icon
-                                className="size-3.5 shrink-0 animate-spin text-muted"
+                                className="size-3.5 shrink-0 animate-spin text-muted-foreground"
                                 aria-label={t('agent.savingWorkingCopy')}
                             />
                         </VTooltip>
                     ) : saveStatus === 'saved' ? (
                         <VTooltip description={t('agent.savedToWorkingCopy')} asChild>
                             <CheckIcon
-                                className="size-3.5 shrink-0 text-success"
+                                className="size-3.5 shrink-0 text-success-foreground"
                                 aria-label={t('agent.savedToWorkingCopy')}
                             />
                         </VTooltip>
@@ -352,7 +352,7 @@ function ArtifactEmptyState({
     action?: React.ReactNode;
 }) {
     return (
-        <Center className="h-full min-h-[240px] flex-col text-center text-muted">
+        <Center className="h-full min-h-[240px] flex-col text-center text-muted-foreground">
             {icon}
             <span className="text-sm">{children}</span>
             {action}
@@ -448,7 +448,7 @@ function ArtifactsTabComponent({
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center p-4 text-muted w-full">
+            <div className="flex flex-col items-center justify-center p-4 text-muted-foreground w-full">
                 <ErrorBox
                     title="Fail to load Artifacts"
                     className="w-full"
@@ -460,7 +460,7 @@ function ArtifactsTabComponent({
                         </>
                     }
                 >
-                    <span className="break-all text-muted">{error}</span> <br />
+                    <span className="break-all text-muted-foreground">{error}</span> <br />
                 </ErrorBox>
             </div>
         );
@@ -500,7 +500,7 @@ function ArtifactsTabComponent({
         <div className="flex flex-col h-full">
             {/* Top bar */}
             <div className="flex shrink-0 flex-col gap-2 border-b px-3 py-2">
-                <div className="flex items-center justify-between gap-2 text-xs text-muted">
+                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>
                         {normalizedFilterValue
                             ? `${visibleFileCount} of ${flatFiles.length} file${flatFiles.length !== 1 ? 's' : ''}`
@@ -509,7 +509,7 @@ function ArtifactsTabComponent({
                     </span>
                     <div className="flex items-center gap-1">
                         <Switch size="sm" value={showSystem} onChange={setShowSystem}>
-                            <span className="text-xs text-muted">{t('agent.showSystemArtifacts')}</span>
+                            <span className="text-xs text-muted-foreground">{t('agent.showSystemArtifacts')}</span>
                         </Switch>
                         <Button
                             variant="ghost"
@@ -555,7 +555,7 @@ function ArtifactsTabComponent({
                         ))}
                     </div>
                 ) : (
-                    <div className="px-1 py-6 text-sm text-muted">
+                    <div className="px-1 py-6 text-sm text-muted-foreground">
                         {!showSystem && systemHiddenCount > 0
                             ? t('agent.onlySystemArtifacts')
                             : t('agent.noContentAvailable')}
@@ -575,7 +575,7 @@ function ArtifactsTabComponent({
                         <React.Suspense
                             fallback={
                                 <Center className="h-full">
-                                    <Loader2Icon className="size-6 animate-spin text-muted" />
+                                    <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
                                 </Center>
                             }
                         >

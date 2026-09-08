@@ -98,7 +98,10 @@ const BreadcrumbList = React.forwardRef<HTMLOListElement, React.ComponentPropsWi
     ({ className, ...props }, ref) => (
         <ol
             ref={ref}
-            className={cn('flex flex-wrap items-center gap-1.5 break-words text-sm text-muted sm:gap-2.5', className)}
+            className={cn(
+                'flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5',
+                className,
+            )}
             {...props}
         />
     ),
@@ -107,7 +110,7 @@ BreadcrumbList.displayName = 'BreadcrumbList';
 
 const BreadcrumbItem = React.forwardRef<HTMLLIElement, React.ComponentPropsWithoutRef<'li'>>(
     ({ className, ...props }, ref) => (
-        <li ref={ref} className={cn('inline-flex items-center gap-1.5 text-muted', className)} {...props} />
+        <li ref={ref} className={cn('inline-flex items-center gap-1.5 text-muted-foreground', className)} {...props} />
     ),
 );
 BreadcrumbItem.displayName = 'BreadcrumbItem';
@@ -118,7 +121,7 @@ const BreadcrumbLink = React.forwardRef<
         asChild?: boolean;
     }
 >(({ asChild, className, ...props }, ref) => {
-    return <a ref={ref} className={cn('transition-colors hover:text-muted', className)} {...props} />;
+    return <a ref={ref} className={cn('transition-colors hover:text-muted-foreground', className)} {...props} />;
 });
 BreadcrumbLink.displayName = 'BreadcrumbLink';
 

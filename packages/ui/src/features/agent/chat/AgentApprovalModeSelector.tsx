@@ -28,9 +28,9 @@ export interface AgentApprovalModeSelectorProps {
 }
 
 function getModeIconClassName(mode: AgentToolApprovalMode) {
-    if (mode === 'full_control') return 'text-attention';
-    if (mode === 'auto_review') return 'text-info';
-    return 'text-muted';
+    if (mode === 'full_control') return 'text-attention-foreground';
+    if (mode === 'auto_review') return 'text-info-foreground';
+    return 'text-muted-foreground';
 }
 
 function getModeIcon(mode: AgentToolApprovalMode) {
@@ -88,7 +88,7 @@ export function AgentApprovalModeSelector({
                     disabled={disabled}
                     className={cn(
                         'h-8 max-w-[13rem] rounded-full px-2.5 font-medium',
-                        'bg-mixer-muted/15 text-muted hover:bg-muted hover:text-foreground disabled:opacity-60',
+                        'bg-mixer-muted/15 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60',
                         className,
                     )}
                     aria-label={t('agent.approvalMode.selectorLabel')}
@@ -117,7 +117,7 @@ export function AgentApprovalModeSelector({
                             </span>
                             <span className="min-w-0 flex-1">
                                 <span className="block text-sm font-medium text-foreground">{option.label}</span>
-                                <span className="mt-0.5 block whitespace-normal text-sm leading-5 text-muted">
+                                <span className="mt-0.5 block whitespace-normal text-sm leading-5 text-muted-foreground">
                                     {option.description}
                                 </span>
                             </span>

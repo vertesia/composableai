@@ -27,7 +27,7 @@ export function DocumentIconSkeleton({ isLoading = false, counts = 6 }: { isLoad
                 .map((_, index) => (
                     <div key={`skeleton-${index}`} className="w-[15vw] animate-pulse">
                         <Card className="relative flex flex-col border h-fit">
-                            <div className="h-48 bg-muted rounded-t-xl flex items-center justify-center text-muted">
+                            <div className="h-48 bg-muted rounded-t-xl flex items-center justify-center text-muted-foreground">
                                 &nbsp;
                             </div>
                             <Separator className="bg-muted h-[2px]" />
@@ -36,7 +36,7 @@ export function DocumentIconSkeleton({ isLoading = false, counts = 6 }: { isLoad
                                     <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
                                     <div className="h-4 bg-muted rounded w-1/2"></div>
                                 </div>
-                                <div className="text-xs text-muted w-full flex justify-end mt-2">
+                                <div className="text-xs text-muted-foreground w-full flex justify-end mt-2">
                                     <div className="h-3 bg-muted rounded w-1/4"></div>
                                 </div>
                             </CardContent>
@@ -80,7 +80,7 @@ export function DocumentIcon({
 
     return (
         <Card
-            className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''}`}
+            className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention-foreground border-4' : ''} ${isHighlighted ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''}`}
             onClick={() => onRowClick?.(document)}
         >
             {isHighlighted && (
@@ -109,14 +109,14 @@ export function DocumentIcon({
                         previewObject?.(document.id);
                     }}
                 >
-                    <Eye className={`size-4 ${renditionStatus === 'ready' ? 'text-muted' : 'text-white'}`} />
+                    <Eye className={`size-4 ${renditionStatus === 'ready' ? 'text-muted-foreground' : 'text-white'}`} />
                 </Button>
             </div>
 
             {renditionUrl && renditionStatus === 'ready' ? (
                 <img src={renditionUrl} alt={renditionAlt} className="w-auto h-48 object-cover rounded-t-xl" />
             ) : (
-                <div className="h-48 bg-gray-700 rounded-t-xl flex items-center justify-center text-muted">
+                <div className="h-48 bg-gray-700 rounded-t-xl flex items-center justify-center text-muted-foreground">
                     {renditionStatus}
                 </div>
             )}
@@ -128,14 +128,14 @@ export function DocumentIcon({
                     </VTooltip>
                     {document?.type?.name ? (
                         <VTooltip placement="bottom" size="xs" description={document?.type?.name}>
-                            <p className="text-start text-xs text-muted truncate">{document?.type?.name}</p>
+                            <p className="text-start text-xs text-muted-foreground truncate">{document?.type?.name}</p>
                         </VTooltip>
                     ) : (
-                        <p className="text-xs text-muted">{'\u2002'}</p>
+                        <p className="text-xs text-muted-foreground">{'\u2002'}</p>
                     )}
                 </div>
                 {document.score && (
-                    <div className="text-xs text-muted w-full flex justify-end">
+                    <div className="text-xs text-muted-foreground w-full flex justify-end">
                         Score: {document.score.toFixed(4) ?? '-'}
                     </div>
                 )}

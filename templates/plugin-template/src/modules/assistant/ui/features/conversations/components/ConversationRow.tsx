@@ -21,7 +21,7 @@ export function ConversationRow({ hit, t, onAddFilter, onOpen }: ConversationRow
     const status = hit.status;
 
     return (
-        <tr className="cursor-pointer hover:bg-muted/50" onClick={() => onOpen(hit.id)}>
+        <tr className="cursor-pointer hover:bg-muted-foreground/50" onClick={() => onOpen(hit.id)}>
             <td className="max-w-0">
                 <div className="font-medium line-clamp-2 pe-4" title={topic}>
                     {topic}

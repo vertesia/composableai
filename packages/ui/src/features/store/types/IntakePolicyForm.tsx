@@ -931,7 +931,7 @@ function ModelConfigFields({
 
     return (
         <div>
-            <div className="mb-2 text-xs font-medium text-muted">{title}</div>
+            <div className="mb-2 text-xs font-medium text-muted-foreground">{title}</div>
             <div className="grid gap-4 md:grid-cols-2">
                 <FormItem label={t('intakePolicy.field.environment')}>
                     <SelectEnvironment

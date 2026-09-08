@@ -69,13 +69,13 @@ export function ProcessPage() {
     return (
         <main className="p-6">
             <section className="max-w-3xl space-y-4">
-                <div className="flex items-center gap-2 text-sm text-muted">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <GitBranch className="size-4" />
                     Packaged process
                 </div>
                 <div>
                     <h1 className="text-xl font-semibold">Guide Review Process</h1>
-                    <p className="text-sm text-muted">
+                    <p className="text-sm text-muted-foreground">
                         Starts {GUIDE_REVIEW_PROCESS}, which runs two packaged interactions and then waits on a human
                         task.
                     </p>
@@ -102,16 +102,18 @@ export function ProcessPage() {
                                     ))}
                                 </select>
                             </label>
-                            {selectedGuide && <p className="text-sm text-muted">{selectedGuide.properties.summary}</p>}
+                            {selectedGuide && (
+                                <p className="text-sm text-muted-foreground">{selectedGuide.properties.summary}</p>
+                            )}
                             <Button onClick={() => void startProcess()} disabled={!selectedGuide || isStarting}>
                                 <Play className="me-2 size-4" />
                                 Start review
                             </Button>
                         </div>
                     )}
-                    {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+                    {error && <p className="mt-4 text-sm text-destructive-foreground">{error}</p>}
                     {startedRunId && (
-                        <p className="mt-4 rounded-md border border-success p-3 text-sm text-success">
+                        <p className="mt-4 rounded-md border border-success-foreground p-3 text-sm text-success-foreground">
                             Process run started: {startedRunId}
                         </p>
                     )}

@@ -16,7 +16,7 @@ export function DocumentEditingLockStatus({ isLocked, onToggleLock }: DocumentEd
 
     return (
         <div
-            className="flex h-8 max-w-64 shrink-0 items-center gap-1 rounded-md border border-mixer-attention/30 bg-mixer-attention/10 ps-2 pe-1 text-attention"
+            className="flex h-8 max-w-64 shrink-0 items-center gap-1 rounded-md border border-mixer-attention-foreground/30 bg-mixer-attention/10 ps-2 pe-1 text-attention-foreground"
             role={isLocked ? 'status' : 'alert'}
             aria-live="polite"
         >
@@ -33,7 +33,7 @@ export function DocumentEditingLockStatus({ isLocked, onToggleLock }: DocumentEd
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="size-6 shrink-0 rounded p-0 text-attention hover:bg-mixer-attention/15"
+                    className="size-6 shrink-0 rounded p-0 text-attention-foreground hover:bg-mixer-attention/15"
                     onClick={onToggleLock}
                     aria-label={action}
                 >

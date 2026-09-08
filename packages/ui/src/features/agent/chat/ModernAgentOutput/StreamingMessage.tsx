@@ -288,12 +288,12 @@ function StreamingMessageComponent({
                                 <Bot className="size-4 text-purple-600 dark:text-purple-400" />
                             )}
                         </div>
-                        <span className={cn('text-xs font-medium text-muted', senderClassName)}>Agent</span>
+                        <span className={cn('text-xs font-medium text-muted-foreground', senderClassName)}>Agent</span>
                         {workstreamId && workstreamId !== 'main' && (
-                            <span className="text-xs text-muted">• Task {workstreamId}</span>
+                            <span className="text-xs text-muted-foreground">• Task {workstreamId}</span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 text-muted">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                         <span className="text-[11px]">{formattedTime}</span>
                         <Button
                             variant="ghost"

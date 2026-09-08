@@ -20,7 +20,7 @@ export function TypeDetail() {
         [baseUrl, collection, name],
     );
 
-    if (error) return <div className="p-6 text-destructive">Failed to load type &ldquo;{name}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive-foreground">Failed to load type &ldquo;{name}&rdquo;.</div>;
     if (!typeDef)
         return (
             <div className="flex h-64 items-center justify-center text-muted-foreground">
