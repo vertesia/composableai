@@ -20,10 +20,13 @@ describe('EmbeddingsApi', () => {
 
         await client.embeddings.recalculate(SupportedEmbeddingTypes.text);
         await client.embeddings.recalculate(SupportedEmbeddingTypes.text, { mode: 'sync' });
+        // TEMPORARY TEST CONTROL: force flags must reach the server without a sync override.
+        await client.embeddings.recalculate(SupportedEmbeddingTypes.image, { force: true, force_renditions: true });
 
         expect(requests.map(({ url }) => url)).toEqual([
             'https://store.example.com/api/v1/embeddings/text/recalculate',
             'https://store.example.com/api/v1/embeddings/text/recalculate?mode=sync',
+            'https://store.example.com/api/v1/embeddings/image/recalculate?force=true&force_renditions=true',
         ]);
     });
 });

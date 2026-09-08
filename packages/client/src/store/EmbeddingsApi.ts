@@ -45,7 +45,7 @@ export class EmbeddingsApi extends ApiTopic {
         type: SupportedEmbeddingTypes,
         query: RecalculateEmbeddingsQuery = {},
     ): Promise<GenericCommandResponse> {
-        return query.mode ? this.post(`${type}/recalculate`, { query }) : this.post(`${type}/recalculate`);
+        return this.post(`${type}/recalculate`, Object.keys(query).length ? { query } : undefined);
     }
 
     async prepareBatch(

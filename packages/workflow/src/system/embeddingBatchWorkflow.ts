@@ -38,6 +38,12 @@ const longBatch = dslProxyActivities<BatchWorkflowActivities>(WORKFLOW_NAME, {
     retry: { initialInterval: '15s', backoffCoefficient: 2, maximumAttempts: 4, maximumInterval: '2 minutes' },
 });
 
+const submissionBatch = dslProxyActivities<BatchWorkflowActivities>(WORKFLOW_NAME, {
+    startToCloseTimeout: '2 minutes',
+    scheduleToCloseTimeout: '10 minutes',
+    retry: { initialInterval: '5s', backoffCoefficient: 2, maximumAttempts: 8, maximumInterval: '1 minute' },
+});
+
 const TERMINAL = new Set(['succeeded', 'failed', 'cancelled', 'paused']);
 const INITIAL_POLL_DELAY_MS = 30_000;
 const MAX_POLL_DELAY_MS = 10 * 60_000;
@@ -184,9 +190,13 @@ export async function embeddingBatchWorkflow(payload: WorkflowExecutionPayload) 
         }
         for (const subjob of subjobs) {
             await refreshAuthToken(payload);
-            const job = await batch.createEmbeddingBatchJob(payload, { ...params, subjob });
-            subjob.provider_name = job.name;
-            subjob.state = job.state;
+            // Preserve an accepted submission's identity before cancellation can discard its activity result.
+            // Submission retries recover ambiguous responses by deterministic display name and are time bounded.
+            await CancellationScope.nonCancellable(async () => {
+                const job = await submissionBatch.createEmbeddingBatchJob(payload, { ...params, subjob });
+                subjob.provider_name = job.name;
+                subjob.state = job.state;
+            });
             await batch.updateEmbeddingBatch(payload, { run_id: params.run_id, state: 'submitted', subjobs });
         }
         await pollProviderJobs(payload, params, subjobs);
@@ -219,8 +229,9 @@ export async function embeddingBatchWorkflow(payload: WorkflowExecutionPayload) 
             }
             await cancelProviderJobs(payload, params, subjobs);
             try {
-                await applyTerminalOutput(payload, params, subjobs);
+                // Record cancellation before application so its durable terminal result preserves that intent.
                 await batch.updateEmbeddingBatch(payload, { run_id: params.run_id, state: 'cancelled', subjobs });
+                await longBatch.applyEmbeddingBatch(payload, { run_id: params.run_id });
             } catch (applyError) {
                 await markFailed(payload, params, subjobs, applyError);
             }
