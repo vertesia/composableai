@@ -1476,7 +1476,7 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText('Approval request')).toBeNull();
         expect(screen.getAllByText(/quotes\.md/).length).toBeGreaterThan(0);
         const deniedMessage = screen.getByText('The user declined this tool action.');
-        expect(deniedMessage.className).toContain('text-destructive');
+        expect(deniedMessage.className).toContain('text-destructive-foreground');
     });
 
     it('does not split a denied approval into separate worked and attention rows', () => {

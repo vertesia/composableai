@@ -208,9 +208,9 @@ function SelectionComment({
                     <div
                         role="dialog"
                         aria-label={t('agent.commentOnSelection')}
-                        className="w-80 max-w-[calc(100vw-1.5rem)] space-y-2 rounded-lg border border-mixer-muted/25 bg-popover p-3 text-popover-foreground shadow-lg"
+                        className="w-80 max-w-[calc(100vw-1.5rem)] space-y-2 rounded-lg border border-mixer-muted-foreground/25 bg-popover p-3 text-popover-foreground shadow-lg"
                     >
-                        <div className="line-clamp-2 text-xs text-muted">
+                        <div className="line-clamp-2 text-xs text-muted-foreground">
                             <span className="font-medium text-foreground">{t('agent.commentingOn')}</span>{' '}
                             <span className="italic">“{selection.quote}”</span>
                         </div>
@@ -284,7 +284,7 @@ function ToolButton({
             onMouseDown={retainSelection}
             onClick={onClick}
             className={cn(
-                'size-8 shrink-0 rounded-md p-0 text-foreground hover:bg-muted/60',
+                'size-8 shrink-0 rounded-md p-0 text-foreground hover:bg-muted-foreground/60',
                 active && 'bg-muted text-foreground',
             )}
         >
@@ -337,7 +337,7 @@ export function SendChangesToAgentButton({
         <Button
             variant={hasUnsentChanges ? 'primary' : 'ghost'}
             size="sm"
-            className={cn('h-8 gap-1.5', !hasUnsentChanges && 'text-muted')}
+            className={cn('h-8 gap-1.5', !hasUnsentChanges && 'text-muted-foreground')}
             onMouseDown={retainSelection}
             onClick={() => void onSend()}
             disabled={disabled || !hasUnsentChanges || isSending}
@@ -455,7 +455,7 @@ export function EditorToolbar({
                 role="toolbar"
                 aria-label={t('richText.blockStyle')}
                 className={cn(
-                    'flex min-h-10 shrink-0 items-center gap-0.5 overflow-x-auto border-b border-mixer-muted/25 px-1.5 py-1',
+                    'flex min-h-10 shrink-0 items-center gap-0.5 overflow-x-auto border-b border-mixer-muted-foreground/25 px-1.5 py-1',
                     className,
                 )}
             >
@@ -481,7 +481,7 @@ export function EditorToolbar({
                             size="sm"
                             disabled={!editable}
                             onMouseDown={retainSelection}
-                            className="h-8 shrink-0 gap-1 px-2 text-xs font-medium text-foreground hover:bg-muted/60"
+                            className="h-8 shrink-0 gap-1 px-2 text-xs font-medium text-foreground hover:bg-muted-foreground/60"
                         >
                             {blockLabel}
                             <ChevronDown className="size-3 opacity-60" />
@@ -583,7 +583,7 @@ export function EditorToolbar({
                             title={inTable ? t('richText.tableActions') : t('richText.table')}
                             onMouseDown={retainSelection}
                             className={cn(
-                                'size-8 shrink-0 rounded-md p-0 text-foreground hover:bg-muted/60',
+                                'size-8 shrink-0 rounded-md p-0 text-foreground hover:bg-muted-foreground/60',
                                 inTable && 'bg-muted',
                             )}
                         >
@@ -634,7 +634,7 @@ export function EditorToolbar({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 px-2 text-xs text-muted"
+                                    className="h-8 px-2 text-xs text-muted-foreground"
                                     onClick={() => setShowList((value) => !value)}
                                 >
                                     {t('agent.comments')} ({pending.length})
@@ -679,14 +679,14 @@ export function EditorToolbar({
             ) : null}
 
             {showList && pending.length > 0 ? (
-                <ul className="max-h-48 shrink-0 space-y-1.5 overflow-y-auto border-b border-mixer-muted/15 px-3 py-2">
+                <ul className="max-h-48 shrink-0 space-y-1.5 overflow-y-auto border-b border-mixer-muted-foreground/15 px-3 py-2">
                     {pending.map((entry) => (
                         <li
                             key={entry.id}
-                            className="flex items-start gap-2 rounded-md border border-mixer-muted/20 bg-muted/10 px-2 py-1.5"
+                            className="flex items-start gap-2 rounded-md border border-mixer-muted-foreground/20 bg-muted-foreground/10 px-2 py-1.5"
                         >
                             <div className="min-w-0 flex-1">
-                                <div className="truncate text-[11px] italic text-muted">“{entry.quote}”</div>
+                                <div className="truncate text-[11px] italic text-muted-foreground">“{entry.quote}”</div>
                                 <div className="whitespace-pre-wrap text-xs text-foreground">{entry.comment}</div>
                             </div>
                             <Button
@@ -694,7 +694,7 @@ export function EditorToolbar({
                                 size="sm"
                                 aria-label={t('agent.deleteComment')}
                                 title={t('agent.deleteComment')}
-                                className="size-6 shrink-0 p-0 text-muted"
+                                className="size-6 shrink-0 p-0 text-muted-foreground"
                                 onClick={() => removeComment(entry.id)}
                             >
                                 <X className="size-3.5" />

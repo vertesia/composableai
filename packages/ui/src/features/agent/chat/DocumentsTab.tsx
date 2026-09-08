@@ -58,7 +58,7 @@ function DocumentsTabComponent({
         <div className="flex flex-col h-full">
             {/* Top bar */}
             <div className="flex shrink-0 flex-col gap-2 border-b px-3 py-2">
-                <span className="text-xs text-muted">
+                <span className="text-xs text-muted-foreground">
                     {normalizedFilterValue
                         ? t('agent.documentsFiltered', {
                               visible: filteredDocuments.length,
@@ -93,17 +93,17 @@ function DocumentsTabComponent({
                             <div key={doc.id} className="flex min-w-0 items-center gap-1">
                                 <Button
                                     variant="unstyled"
-                                    className="flex min-w-0 flex-1 items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
+                                    className="flex min-w-0 flex-1 items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted-foreground/30"
                                     onClick={() => onSelectDocument(doc.id)}
                                     title={doc.title}
                                 >
-                                    <FileTextIcon className="size-4 shrink-0 text-muted" />
+                                    <FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
                                     <span className="min-w-0 truncate">{doc.title}</span>
                                 </Button>
                                 <NavLink
                                     href={`/store/objects/${doc.id}#overview`}
                                     topLevelNav
-                                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted hover:bg-muted/20 hover:text-foreground"
+                                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground"
                                 >
                                     <VTooltip description={t('agent.openDocument')} placement="top" size="xs" asChild>
                                         <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
@@ -114,7 +114,7 @@ function DocumentsTabComponent({
                         ))}
                     </div>
                 ) : (
-                    <div className="px-1 py-6 text-sm text-muted">{t('agent.noMatchingDocuments')}</div>
+                    <div className="px-1 py-6 text-sm text-muted-foreground">{t('agent.noMatchingDocuments')}</div>
                 )}
             </div>
         </div>

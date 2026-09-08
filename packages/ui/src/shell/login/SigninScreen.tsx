@@ -277,12 +277,12 @@ function SigninScreenImpl({
                     authError &&
                     !isDedicatedAuthError(authError) &&
                     !isInviteRequiredError(authError) && (
-                        <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
+                        <div className="mt-6 max-w-[420px] text-center text-sm text-muted-foreground">
                             <div>
                                 {t('auth.signInError')}
                                 <br />
                                 {t('auth.signInErrorContact')}
-                                <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
+                                <a className="text-info-foreground mx-1" href="mailto:support@vertesiahq.com">
                                     support@vertesiahq.com
                                 </a>
                                 {t('auth.signInErrorPersists')}

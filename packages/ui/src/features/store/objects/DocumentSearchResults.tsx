@@ -373,7 +373,7 @@ export function DocumentSearchResults({
                             <Spinner size="xl" />
                         </div>
                     ) : (
-                        <div className="text-muted text-center text-sm py-1">
+                        <div className="text-muted-foreground text-center text-sm py-1">
                             {`All ${objects.length} objects loaded.`}
                         </div>
                     )}

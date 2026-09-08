@@ -5,7 +5,6 @@ import { Slot } from '@radix-ui/react-slot';
 // pinned to the fallback language regardless of LanguageProvider changes.
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { cva, type VariantProps } from 'class-variance-authority';
-import clsx from 'clsx';
 import { Check, CopyIcon, Loader2 } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
@@ -45,13 +44,13 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 destructive:
-                    'bg-destructive dark:bg-destructive/10 text-destructive ring-1 ring-inset ring-destructive-muted/50 dark:ring-destructive-muted/50 shadow-xs hover:bg-destructive/50',
-                outline: 'border border-input bg-background shadow-xs hover:bg-muted ring-inset',
+                    'bg-destructive dark:bg-destructive-foreground/10 text-destructive-foreground ring-1 ring-inset ring-destructive-foreground/50 dark:ring-destructive-foreground/50 shadow-xs hover:bg-destructive-foreground/10 dark:hover:bg-destructive-foreground/20',
+                outline: 'border border-input bg-background text-foreground shadow-xs hover:bg-muted ring-inset',
                 secondary:
                     'bg-primary/5 dark:bg-primary/10 text-primary shadow-xs hover:bg-primary/10 dark:hover:bg-primary/20 ring-inset',
-                ghost: 'hover:bg-muted/50 dark:hover:bg-muted/20 ring-inset',
+                ghost: 'text-foreground hover:bg-muted-foreground/50 dark:hover:bg-muted-foreground/20 ring-inset',
                 link: 'text-foreground underline-offset-4 hover:underline ring-inset',
-                primary: 'bg-primary text-white shadow-xs hover:bg-primary/90 ring-inset',
+                primary: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 ring-inset',
                 unstyled: '',
             },
             size: {
@@ -150,7 +149,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         const buttonElement = (
             <Comp
-                className={clsx(cn(buttonVariants({ variant, size })), className)}
+                className={cn(buttonVariants({ variant, size }), className)}
                 disabled={isDisabled || isLoading || props.disabled}
                 ref={ref}
                 onClick={onClick}
@@ -248,7 +247,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
                 {...props}
                 title={label}
             >
-                {isCopied ? <Check className="text-success" /> : <CopyIcon className="size-4" />}
+                {isCopied ? <Check className="text-success-foreground" /> : <CopyIcon className="size-4" />}
             </Button>
         );
     },

@@ -79,22 +79,22 @@ const VARIANT_STYLES = {
     default: {
         border: 'border-s-attention',
         bg: 'bg-amber-50 dark:bg-amber-900/20',
-        icon: 'text-attention',
+        icon: 'text-attention-foreground',
     },
     warning: {
         border: 'border-s-destructive',
         bg: 'bg-red-50 dark:bg-red-900/20',
-        icon: 'text-destructive',
+        icon: 'text-destructive-foreground',
     },
     info: {
         border: 'border-s-info',
         bg: 'bg-blue-50 dark:bg-blue-900/20',
-        icon: 'text-info',
+        icon: 'text-info-foreground',
     },
     success: {
         border: 'border-s-success',
         bg: 'bg-green-50 dark:bg-green-900/20',
-        icon: 'text-success',
+        icon: 'text-success-foreground',
     },
 };
 
@@ -218,7 +218,7 @@ export function AskUserWidget({
                     <div className={SCROLLABLE_PROMPT_CLASS}>
                         {compactQuestion}
                         {description && (
-                            <p className={cn('mt-1 text-xs leading-5 text-muted', descriptionClassName)}>
+                            <p className={cn('mt-1 text-xs leading-5 text-muted-foreground', descriptionClassName)}>
                                 {description}
                             </p>
                         )}
@@ -233,13 +233,20 @@ export function AskUserWidget({
                     <div className={cn('px-3 py-2', headerClassName)}>
                         <div className="flex items-start gap-2.5">
                             {!hideIcon && (
-                                <div className={cn('mt-1 flex-shrink-0 text-attention', iconClassName)}>{iconNode}</div>
+                                <div className={cn('mt-1 flex-shrink-0 text-attention-foreground', iconClassName)}>
+                                    {iconNode}
+                                </div>
                             )}
                             <div className="min-w-0 flex-1">
                                 <div className={SCROLLABLE_PROMPT_CLASS}>
                                     {compactQuestion}
                                     {description && (
-                                        <p className={cn('mt-1 text-xs leading-5 text-muted', descriptionClassName)}>
+                                        <p
+                                            className={cn(
+                                                'mt-1 text-xs leading-5 text-muted-foreground',
+                                                descriptionClassName,
+                                            )}
+                                        >
                                             {description}
                                         </p>
                                     )}
@@ -260,7 +267,7 @@ export function AskUserWidget({
                                                 className={cn(
                                                     'flex cursor-pointer items-start gap-2.5 rounded-md border px-3 py-2 text-start transition-colors',
                                                     selected
-                                                        ? 'border-info/60 bg-info/10'
+                                                        ? 'border-info-foreground/60 bg-info-foreground/10'
                                                         : 'border-border bg-background/70 hover:bg-mixer-muted/15',
                                                     isLoading && 'cursor-not-allowed opacity-50',
                                                     buttonClassName,
@@ -271,7 +278,7 @@ export function AskUserWidget({
                                                     checked={selected}
                                                     onChange={() => toggleOption(option.id)}
                                                     disabled={isLoading}
-                                                    className="mt-1 size-4 rounded border-border bg-background text-info focus:ring-info"
+                                                    className="mt-1 size-4 rounded border-border bg-background text-info-foreground focus:ring-info-foreground"
                                                 />
                                                 <span className="min-w-0 flex-1">
                                                     <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
@@ -279,7 +286,7 @@ export function AskUserWidget({
                                                         <span className="break-words">{option.label}</span>
                                                     </span>
                                                     {option.description && (
-                                                        <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
+                                                        <span className="mt-0.5 block break-words text-xs leading-5 text-muted-foreground">
                                                             {option.description}
                                                         </span>
                                                     )}
@@ -325,7 +332,7 @@ export function AskUserWidget({
                                                 <span className="break-words">{option.label}</span>
                                             </span>
                                             {option.description && (
-                                                <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
+                                                <span className="mt-0.5 block break-words text-xs leading-5 text-muted-foreground">
                                                     {option.description}
                                                 </span>
                                             )}

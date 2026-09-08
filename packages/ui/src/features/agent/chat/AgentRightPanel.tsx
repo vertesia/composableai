@@ -44,7 +44,7 @@ interface UploadedDocumentsProps {
 
 function RightPanelEmptyState({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
     return (
-        <Center className="h-full min-h-[240px] flex-col text-center text-muted">
+        <Center className="h-full min-h-[240px] flex-col text-center text-muted-foreground">
             {icon}
             <span className="text-sm">{children}</span>
         </Center>
@@ -61,13 +61,13 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
         switch (status) {
             case FileProcessingStatus.UPLOADING:
             case FileProcessingStatus.PROCESSING:
-                return <Loader2Icon className="size-4 animate-spin text-info" />;
+                return <Loader2Icon className="size-4 animate-spin text-info-foreground" />;
             case FileProcessingStatus.READY:
-                return <CheckCircleIcon className="size-4 text-success" />;
+                return <CheckCircleIcon className="size-4 text-success-foreground" />;
             case FileProcessingStatus.ERROR:
-                return <XCircleIcon className="size-4 text-destructive" />;
+                return <XCircleIcon className="size-4 text-destructive-foreground" />;
             default:
-                return <FileTextIcon className="size-4 text-muted" />;
+                return <FileTextIcon className="size-4 text-muted-foreground" />;
         }
     };
 
@@ -95,14 +95,19 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
             ) : (
                 <div className="space-y-2 p-2">
                     {filesArray.map((file) => (
-                        <div key={file.id} className="flex items-start gap-2 p-2 border border-muted rounded-md">
+                        <div
+                            key={file.id}
+                            className="flex items-start gap-2 p-2 border border-muted-foreground rounded-md"
+                        >
                             <div className="mt-0.5">{getStatusIcon(file.status)}</div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-sm font-medium truncate">{file.name}</span>
                                     {getStatusBadge(file.status)}
                                 </div>
-                                {file.error && <div className="text-xs text-destructive mt-1">{file.error}</div>}
+                                {file.error && (
+                                    <div className="text-xs text-destructive-foreground mt-1">{file.error}</div>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -151,14 +156,14 @@ class RightPanelErrorBoundary extends React.Component<RightPanelErrorBoundaryPro
         return (
             <div
                 className={cn(
-                    'rounded-md border border-destructive bg-mixer-destructive/10 text-destructive',
+                    'rounded-md border border-destructive-foreground bg-mixer-destructive/10 text-destructive-foreground',
                     this.props.compact ? 'p-2 text-xs' : 'm-3 p-3 text-sm',
                 )}
             >
                 <div className="font-medium">{this.props.title}</div>
-                <div className="mt-1 text-xs text-muted">{this.props.description}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{this.props.description}</div>
                 {this.state.message && (
-                    <div className="mt-1 break-all text-[11px] text-muted">{this.state.message}</div>
+                    <div className="mt-1 break-all text-[11px] text-muted-foreground">{this.state.message}</div>
                 )}
             </div>
         );
@@ -212,7 +217,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 
     return (
         <div className="h-full min-h-0 overflow-y-auto px-2 py-2">
-            <div className="px-1 pb-2 text-xs text-muted">{t('agent.parallelWorkDescription')}</div>
+            <div className="px-1 pb-2 text-xs text-muted-foreground">{t('agent.parallelWorkDescription')}</div>
             <div className="divide-y divide-border/60">
                 {workstreams.map((ws) => {
                     const isActive = ws.status === 'running' || ws.status === 'canceling';
@@ -274,7 +279,9 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                         </div>
 
                                         {meta.length > 0 && (
-                                            <div className="mt-0.5 truncate text-xs text-muted">{meta.join(' · ')}</div>
+                                            <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                                                {meta.join(' · ')}
+                                            </div>
                                         )}
 
                                         {isActive && hasDeadline && (
@@ -315,7 +322,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 px-2 text-xs text-muted hover:text-foreground"
+                                                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
                                                     onClick={() => copyRunId(childRunId)}
                                                 >
                                                     <ClipboardCopyIcon className="size-3 me-1" />
@@ -324,7 +331,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 px-2 text-xs text-muted hover:text-foreground"
+                                                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
                                                     onClick={() => downloadConversation(childRunId)}
                                                 >
                                                     <DownloadCloudIcon className="size-3 me-1" />
@@ -504,7 +511,7 @@ function AgentRightPanelComponent({
             label: hasWorkstreams ? (
                 <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
                     {t('agent.workstreams')}{' '}
-                    <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info">
+                    <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info-foreground">
                         {activeWorkstreams.length}
                     </span>
                 </span>
@@ -522,7 +529,7 @@ function AgentRightPanelComponent({
             label: hasDocuments ? (
                 <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
                     {t('agent.documents')}{' '}
-                    <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info">
+                    <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info-foreground">
                         {openDocuments.length}
                     </span>
                 </span>

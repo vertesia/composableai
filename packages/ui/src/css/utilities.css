@@ -16,20 +16,12 @@
     color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(50 * 0.7%));
 }
 
-@utility bg-* {
-    background-color: --value(--color-* -background, [*]);
-}
-
 @utility bg-mixer-* {
     background-color: color-mix(
         in oklab,
-        --value(--color-* -background, [*]),
+        --value(--color-*, [*]),
         var(--mixer) calc(((--modifier(integer, var(--modifier-default)))) * 1%)
     );
-}
-
-@utility border-* {
-    border-color: --value(--color-*, [*]);
 }
 
 @utility border-mixer-* {
@@ -40,7 +32,7 @@
     );
 }
 @utility border-disabled-* {
-    border-color: color-mix(in oklab, --value(--color-* -background, [*]), var(--mixer) calc(50 * 0.7%));
+    border-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(50 * 0.7%));
 }
 
 @utility decoration-mixer-* {

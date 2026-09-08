@@ -79,7 +79,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                         type="button"
                         onClick={_onClear}
                         className={`clear-button opacity-0 transition-opacity duration-200
-              absolute top-1/2 -translate-y-1/2 text-muted !hover:text-destructive cursor-pointer
+              absolute top-1/2 -translate-y-1/2 text-muted-foreground !hover:text-destructive-foreground cursor-pointer
               flex items-center justify-center size-6 rounded end-2`}
                         aria-label="Clear input"
                     >

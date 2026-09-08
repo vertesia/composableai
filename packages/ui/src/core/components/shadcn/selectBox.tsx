@@ -201,7 +201,7 @@ export function SelectBox<T = unknown>({
 
     const renderSingleValue = () => {
         if (!value || (Array.isArray(value) && value.length === 0)) {
-            return <span className="text-muted">{placeholder}</span>;
+            return <span className="text-muted-foreground">{placeholder}</span>;
         }
         const singleValue = Array.isArray(value) ? value[0] : value;
         return optionLabel ? optionLabel(singleValue) : (singleValue as string);
@@ -211,7 +211,7 @@ export function SelectBox<T = unknown>({
         const arrayValue = Array.isArray(value) ? value : value ? [value] : [];
 
         if (arrayValue.length === 0) {
-            return <span className="text-muted">{placeholder}</span>;
+            return <span className="text-muted-foreground">{placeholder}</span>;
         }
 
         if (arrayValue.length === 1) {
@@ -313,7 +313,7 @@ export function SelectBox<T = unknown>({
                             <CommandGroup
                                 key={group.key}
                                 heading={group.key}
-                                className="[&_[cmdk-group-heading]]:text-muted [&_[cmdk-group-heading]]:border-b [&_[cmdk-group-heading]]:border-border [&_[cmdk-group-heading]]:ml-[-0.5rem] [&_[cmdk-group-heading]]:text-xs"
+                                className="[&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:border-b [&_[cmdk-group-heading]]:border-border [&_[cmdk-group-heading]]:ml-[-0.5rem] [&_[cmdk-group-heading]]:text-xs"
                             >
                                 {group.items.map((opt, index) => renderOption(opt, `${group.key}-${index}`))}
                             </CommandGroup>
@@ -344,7 +344,7 @@ export function SelectBox<T = unknown>({
         return (
             <div className={clsx(className, border && 'border border-border rounded-md', 'bg-popover p-1', popupClass)}>
                 {isLoading ? (
-                    <div className="flex justify-center items-center p-2 text-muted text-sm">
+                    <div className="flex justify-center items-center p-2 text-muted-foreground text-sm">
                         <LoaderCircle className="size-4 animate-spin" />
                     </div>
                 ) : (
@@ -396,15 +396,17 @@ export function SelectBox<T = unknown>({
                         aria-invalid={ariaInvalid}
                         className={clsx(
                             isLoading
-                                ? 'flex w-full justify-center items-center gap-2 border border-border rounded-md p-2 text-muted text-sm bg-transparent'
+                                ? 'flex w-full justify-center items-center gap-2 border border-border rounded-md p-2 text-muted-foreground text-sm bg-transparent'
                                 : clsx(
                                       border &&
                                           (isMissingValue || ariaInvalid
-                                              ? 'border border-destructive'
+                                              ? 'border border-destructive-foreground'
                                               : 'border border-border'),
                                       'flex w-full flex-row gap-2 items-center justify-between p-2 rounded-md group bg-transparent text-inherit text-start',
                                       'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                                      !disabled ? 'cursor-pointer hover:bg-muted' : 'cursor-not-allowed text-muted',
+                                      !disabled
+                                          ? 'cursor-pointer hover:bg-muted'
+                                          : 'cursor-not-allowed text-muted-foreground',
                                       // Leave room for the absolutely-positioned clear button on the right.
                                       showClear && 'pe-10',
                                   ),
@@ -424,7 +426,12 @@ export function SelectBox<T = unknown>({
                                             {label}
                                         </div>
                                     )}
-                                    <div className={clsx('w-full text-start ', isMissingValue && 'text-destructive')}>
+                                    <div
+                                        className={clsx(
+                                            'w-full text-start ',
+                                            isMissingValue && 'text-destructive-foreground',
+                                        )}
+                                    >
                                         {isMissingValue && (
                                             <VTooltip description={missingValueWarning} placement="top" asChild>
                                                 <AlertTriangle className="inline-block size-4 me-1 -mt-0.5 cursor-help" />
@@ -462,7 +469,7 @@ export function SelectBox<T = unknown>({
                                 e.stopPropagation();
                             }
                         }}
-                        className="absolute end-2 top-1/2 -translate-y-1/2 hover:bg-muted/20 rounded p-1"
+                        className="absolute end-2 top-1/2 -translate-y-1/2 hover:bg-muted-foreground/20 rounded p-1"
                     >
                         {clearIcon ? clearIcon : <X className="size-4" />}
                     </Button>

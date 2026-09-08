@@ -58,11 +58,11 @@ export function UploadSummary({ files, className = '', location, collection }: U
     return (
         <div className={`flex flex-col py-2 ${className}`}>
             <div className="flex items-center mb-4">
-                <div className="size-8 me-4 rounded-full bg-success/10 flex items-center justify-center">
-                    <CheckCircleIcon className="size-4 text-success" />
+                <div className="size-8 me-4 rounded-full bg-success-foreground/10 flex items-center justify-center">
+                    <CheckCircleIcon className="size-4 text-success-foreground" />
                 </div>
                 <div>
-                    <p className="text-muted">
+                    <p className="text-muted-foreground">
                         {t('upload.filesProcessed', { count: totalCount })}
                         {collection ? t('upload.inCollection', { collection }) : ''}
                         {location ? t('upload.inFolder', { location }) : ''}

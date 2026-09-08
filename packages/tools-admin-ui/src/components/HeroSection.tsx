@@ -43,7 +43,7 @@ export function HeroSection({ title, version, resources }: HeroSectionProps) {
     const counts = countByType(resources);
 
     return (
-        <Card className="mb-10 overflow-hidden border bg-linear-to-br from-card to-muted-background">
+        <Card className="mb-10 overflow-hidden border bg-linear-to-br from-card to-muted">
             <div className="flex flex-col gap-6 p-6 md:flex-row md:items-start md:justify-between">
                 <div className="flex flex-1 flex-col gap-3">
                     <div className="flex items-center gap-4">

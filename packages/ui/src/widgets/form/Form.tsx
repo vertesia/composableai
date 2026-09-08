@@ -185,7 +185,7 @@ function ListItem({ list, object, onDelete, disabled }: ListItemProps) {
         <div className="flex gap-2 w-full">
             <div className="flex-1">{renderItemProperty(object, editor)}</div>
             <Button variant="ghost" onClick={onDelete} disabled={disabled} title="Delete">
-                <Trash2 className="size-4 text-destructive" />
+                <Trash2 className="size-4 text-destructive-foreground" />
             </Button>
         </div>
     );

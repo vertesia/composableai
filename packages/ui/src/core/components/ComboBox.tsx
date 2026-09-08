@@ -5,7 +5,7 @@ import { type AlignType, Popup, type PopupController } from './popup/index';
 
 const INPUT_UNSTYLED = 'block m-0 p-0 border-0 focus:outline-none focus:ring-0';
 const INPUT_NO_PADDING =
-    'block sm:text-sm sm:leading-6 bg-muted rounded-md border-0 shadow-sm ring-1 ring-inset ring-muted placeholder:text-muted focus:ring-2 focus:ring-inset focus:ring-primary';
+    'block sm:text-sm sm:leading-6 bg-muted rounded-md border-0 shadow-sm ring-1 ring-inset ring-muted-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-primary';
 const INPUT = `${INPUT_NO_PADDING} py-1.5`;
 const COMBOBOX_POPUP = 'combobox-popup';
 

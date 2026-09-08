@@ -27,7 +27,9 @@ export function ActivityCollection() {
 
     if (error)
         return (
-            <div className="p-6 text-destructive">Failed to load activity collection &ldquo;{collection}&rdquo;.</div>
+            <div className="p-6 text-destructive-foreground">
+                Failed to load activity collection &ldquo;{collection}&rdquo;.
+            </div>
         );
     if (!data)
         return (
@@ -62,7 +64,7 @@ export function ActivityCollection() {
                                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Input Schema
                                 </p>
-                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                     {JSON.stringify(activity.input_schema, null, 2)}
                                 </pre>
                             </div>
@@ -72,7 +74,7 @@ export function ActivityCollection() {
                                 <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                     Output Schema
                                 </p>
-                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                     {JSON.stringify(activity.output_schema, null, 2)}
                                 </pre>
                             </div>

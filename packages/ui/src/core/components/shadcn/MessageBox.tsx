@@ -13,45 +13,45 @@ export function MessageBox({ icon, status, title, children, className }: Message
     let defaultIcon: React.ReactNode, titleColor: string, textColor: string, bgColor: string;
     switch (status) {
         case 'error': {
-            defaultIcon = <CircleX className="size-5 text-destructive" aria-hidden="true" />;
-            titleColor = 'text-destructive';
+            defaultIcon = <CircleX className="size-5 text-destructive-foreground" aria-hidden="true" />;
+            titleColor = 'text-destructive-foreground';
             textColor = 'text-foreground';
-            bgColor = 'bg-destructive border border-destructive';
+            bgColor = 'bg-destructive border border-destructive-foreground';
             break;
         }
         case 'warning': {
-            defaultIcon = <AlertTriangle className="size-5 text-attention" aria-hidden="true" />;
+            defaultIcon = <AlertTriangle className="size-5 text-attention-foreground" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-attention border border-attention';
+            bgColor = 'bg-attention border border-attention-foreground';
             break;
         }
         case 'success': {
-            defaultIcon = <CircleCheck className="size-5 text-success" aria-hidden="true" />;
+            defaultIcon = <CircleCheck className="size-5 text-success-foreground" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-success border border-success';
+            bgColor = 'bg-success border border-success-foreground';
             break;
         }
         case 'info': {
-            defaultIcon = <Info className="size-5 text-info" aria-hidden="true" />;
+            defaultIcon = <Info className="size-5 text-info-foreground" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-info border border-info';
+            bgColor = 'bg-info border border-info-foreground';
             break;
         }
         case 'default': {
-            defaultIcon = <Info className="size-5 text-muted" aria-hidden="true" />;
+            defaultIcon = <Info className="size-5 text-muted-foreground" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-muted border border-muted';
+            bgColor = 'bg-muted border border-muted-foreground';
             break;
         }
         case 'done': {
-            defaultIcon = <Info className="size-5 text-done" aria-hidden="true" />;
+            defaultIcon = <Info className="size-5 text-done-foreground" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-done border border-done';
+            bgColor = 'bg-done border border-done-foreground';
             break;
         }
     }

@@ -38,12 +38,12 @@ interface SignInStepHeaderProps {
 }
 
 export function SignInStepHeader({ eyebrow, title, body, variant = 'info' }: SignInStepHeaderProps) {
-    const eyebrowColor = variant === 'destructive' ? 'text-destructive' : 'text-info';
+    const eyebrowColor = variant === 'destructive' ? 'text-destructive-foreground' : 'text-info-foreground';
     return (
         <div>
             {eyebrow && <div className={`${eyebrowColor} text-[12.5px] font-medium mb-2`}>{eyebrow}</div>}
             <h1 className="text-foreground text-[22px] font-semibold tracking-tight leading-tight mb-1.5">{title}</h1>
-            {body && <p className="text-muted text-sm leading-relaxed">{body}</p>}
+            {body && <p className="text-muted-foreground text-sm leading-relaxed">{body}</p>}
         </div>
     );
 }
@@ -60,7 +60,7 @@ const SIGNIN_STEP_BUTTON_VARIANTS = {
     // Non-interactive primary kept at full opacity (spinner reads as active).
     loading: 'h-[42px] gap-2.5 rounded-md bg-foreground text-background opacity-90',
     // Flat text link.
-    ghost: 'h-9 text-muted hover:text-foreground',
+    ghost: 'h-9 text-muted-foreground hover:text-foreground',
 } as const;
 
 interface SignInStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -104,7 +104,7 @@ export function SignInInlineLinkButton({
     // `!` overrides beat the Button base's text-sm/rounded-md defaults.
     const sizeClass = size === 'smaller' ? '!text-[11px]' : '!text-xs';
     const base =
-        `cursor-pointer ${sizeClass} text-muted hover:text-foreground !transition px-2 py-1 ` +
+        `cursor-pointer ${sizeClass} text-muted-foreground hover:text-foreground !transition px-2 py-1 ` +
         '!rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]';
     return (
         <Button
@@ -145,7 +145,7 @@ export function SignInInitialsBadge({ initials, shape = 'circle' }: SignInInitia
 /** Rounded tile framing a provider/status icon. */
 export function SignInIconBadge({ children }: { children: ReactNode }) {
     return (
-        <div className="inline-grid place-items-center size-14 rounded-xl bg-info-background border border-info/15 mb-3.5">
+        <div className="inline-grid place-items-center size-14 rounded-xl bg-info border border-info-foreground/15 mb-3.5">
             {children}
         </div>
     );
@@ -176,10 +176,10 @@ const ACCOUNT_CARD_VARIANTS = {
     tenant: {
         topRow: 'flex items-center gap-2.5 px-3 py-2.5',
         title: 'text-[13.5px] font-semibold text-foreground leading-tight',
-        subtitle: 'text-[11.5px] text-muted leading-tight mt-0.5',
-        bottomRow: 'flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted-background',
+        subtitle: 'text-[11.5px] text-muted-foreground leading-tight mt-0.5',
+        bottomRow: 'flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted',
         mailBox: 'size-[30px] grid place-items-center shrink-0',
-        mailIcon: 'size-4 text-muted',
+        mailIcon: 'size-4 text-muted-foreground',
         email: 'text-sm text-foreground/80 flex-1 truncate',
         actionSize: 'xs',
     },
@@ -187,9 +187,9 @@ const ACCOUNT_CARD_VARIANTS = {
         topRow: 'flex items-center gap-3 px-3.5 py-2.5',
         title: 'text-sm font-semibold text-foreground truncate',
         subtitle: 'text-xs text-foreground/80 truncate',
-        bottomRow: 'flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted-background',
+        bottomRow: 'flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted',
         mailBox: 'w-9 h-6 grid place-items-center shrink-0',
-        mailIcon: 'size-3.5 text-muted',
+        mailIcon: 'size-3.5 text-muted-foreground',
         email: 'text-xs text-foreground/80 flex-1 truncate',
         actionSize: 'smaller',
     },
@@ -253,13 +253,13 @@ interface SignInAccountRowProps {
 /** Single-row identity card: badge + title/subtitle + a trailing action link. */
 export function SignInAccountRow({ badge, title, subtitle, actionLabel, onAction }: SignInAccountRowProps) {
     return (
-        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted-background">
+        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted">
             {badge}
             <SignInIdentityLines
                 title={title}
                 subtitle={subtitle}
                 titleClass="text-sm font-semibold text-foreground truncate"
-                subtitleClass="text-xs text-muted truncate"
+                subtitleClass="text-xs text-muted-foreground truncate"
             />
             <SignInInlineLinkButton onClick={onAction}>{actionLabel}</SignInInlineLinkButton>
         </div>
@@ -275,8 +275,8 @@ interface SignInEmailRowProps {
 /** Standalone bordered pill: mail icon + email + a trailing action link. */
 export function SignInEmailRow({ email, actionLabel, onAction }: SignInEmailRowProps) {
     return (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted-background">
-            <Mail className="size-4 text-muted shrink-0" />
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted">
+            <Mail className="size-4 text-muted-foreground shrink-0" />
             <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
             <SignInInlineLinkButton onClick={onAction}>{actionLabel}</SignInInlineLinkButton>
         </div>
@@ -301,13 +301,13 @@ export function SignInProviderButton({ provider, label, onClick, variant = 'outl
         // rtl-ok: arrow hover nudge moves toward inline-end with an explicit RTL mirror.
         // !size beats Button's [&_svg]:size-4 rule. Arrow fades in and nudges on hover.
         const arrowClass =
-            '!size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition'; // rtl-ok: matched line mirrors the hover nudge for RTL.
+            '!size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition'; // rtl-ok: matched line mirrors the hover nudge for RTL.
         return (
             <Button
                 variant="unstyled"
                 size="none"
                 onClick={onClick}
-                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 ps-3.5 pe-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
+                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 ps-3.5 pe-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted"
             >
                 <Icon className="!size-[18px] shrink-0" />
                 <span className="flex-1 text-start">{label}</span>
@@ -342,11 +342,11 @@ interface SignInCalloutProps {
 /** Destructive notice: icon + bold title over a muted meta line. */
 export function SignInCallout({ icon: Icon, title, meta }: SignInCalloutProps) {
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive-background border border-destructive/20">
-            <Icon className="size-5 text-destructive shrink-0" />
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive border border-destructive-foreground/20">
+            <Icon className="size-5 text-destructive-foreground shrink-0" />
             <div className="flex-1 min-w-0 text-sm">
-                <div className="font-semibold text-destructive">{title}</div>
-                <div className="text-xs text-destructive/80">{meta}</div>
+                <div className="font-semibold text-destructive-foreground">{title}</div>
+                <div className="text-xs text-destructive-foreground/80">{meta}</div>
             </div>
         </div>
     );
@@ -393,7 +393,7 @@ export function SignInEmailField({
                 id="vt-login-email"
                 name="vt-login-email"
                 type="email"
-                className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
+                className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info-foreground focus:ring-4 focus:ring-info-foreground/15 aria-[invalid=true]:border-destructive-foreground aria-[invalid=true]:ring-destructive-foreground/15"
                 placeholder={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -407,7 +407,7 @@ export function SignInEmailField({
                 data-form-type="other"
             />
             {error && (
-                <div role="alert" className="text-xs text-destructive">
+                <div role="alert" className="text-xs text-destructive-foreground">
                     {error}
                 </div>
             )}

@@ -107,7 +107,7 @@ export function SaveVersionConfirmModal({
                             </p>
                         </div>
                     )}
-                    <p className="text-sm text-mixer-muted/5">{t('modal.saveVersion.howToSave')}</p>
+                    <p className="text-sm text-mixer-muted-foreground/5">{t('modal.saveVersion.howToSave')}</p>
 
                     <RadioGroup
                         adapter={optionAdapter}

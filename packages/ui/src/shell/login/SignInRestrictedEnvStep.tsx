@@ -78,7 +78,7 @@ export default function SignInRestrictedEnvStep({ onUseDifferentEmail }: SignInR
                 <SignInStepButton variant="ghost" onClick={onUseDifferentEmail}>
                     {t('auth.restricted.useDifferent')}
                 </SignInStepButton>
-                <p className="text-center text-xs text-muted">
+                <p className="text-center text-xs text-muted-foreground">
                     {t('auth.restricted.autoRedirect', { seconds: secondsLeft })}
                 </p>
             </div>

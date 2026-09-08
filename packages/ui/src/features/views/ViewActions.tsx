@@ -284,14 +284,16 @@ export function ViewActionsToolbar({
                         checked={allOnPageSelected ? true : selectedOnPage > 0 ? 'indeterminate' : false}
                         onCheckedChange={(checked) => selection.togglePage(page, checked === true)}
                     />
-                    <label htmlFor={selectPageId} className="text-sm text-muted">
+                    <label htmlFor={selectPageId} className="text-sm text-muted-foreground">
                         {t('view.selectPage')}
                     </label>
                 </div>
             )}
             {selected.length > 0 && (
                 <>
-                    <span className="text-sm text-muted">{t('view.selectedCount', { count: selected.length })}</span>
+                    <span className="text-sm text-muted-foreground">
+                        {t('view.selectedCount', { count: selected.length })}
+                    </span>
                     <Button
                         type="button"
                         variant="ghost"
@@ -341,7 +343,7 @@ export function ViewRowActions({ hit }: { hit: ViewHit }) {
                     options={actions}
                     optionLayout={(action) => ({
                         label: action.label,
-                        className: action.destructive ? 'text-destructive' : undefined,
+                        className: action.destructive ? 'text-destructive-foreground' : undefined,
                     })}
                     onChange={(action) => runtime.run(action, [hit])}
                     noCheck

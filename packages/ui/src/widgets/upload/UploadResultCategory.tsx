@@ -53,7 +53,7 @@ export function UploadResultCategory({
                     <span className="font-medium">{title}</span>
                     <span className="ms-2 px-2 py-0.5 bg-color-muted/20 rounded-full text-xs">{count}</span>
                 </span>
-                <span className="text-muted" aria-hidden="true">
+                <span className="text-muted-foreground" aria-hidden="true">
                     <svg
                         className={`h-5 w-5 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
                         fill="none"
@@ -77,7 +77,7 @@ export function UploadResultCategory({
                             ))}
                         </ul>
                     ) : (
-                        <div className="text-sm text-muted py-2">{t('upload.noItems')}</div>
+                        <div className="text-sm text-muted-foreground py-2">{t('upload.noItems')}</div>
                     )}
                 </div>
             )}

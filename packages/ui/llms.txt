@@ -505,8 +505,12 @@ Semantic Tailwind classes and approved lucide-react icon guidance for Vertesia a
 
 ### Notes
 
-- Examples: `text-success`, `bg-attention`, `border-destructive`, `bg-mixer-muted/30`.
-- Avoid hardcoded color values in application UI.
+- Examples: `text-success-foreground`, `bg-attention`, `border-destructive-foreground`, `bg-mixer-muted/30`.
+- Pages: `bg-background text-foreground`; cards: `bg-card text-card-foreground` (white in light mode).
+- Reserve `bg-muted` for subdued sections; muted text uses `text-muted-foreground`.
+- Primary buttons pair `bg-primary text-primary-foreground`; prefer `<Button>` without color overrides.
+- Base names are surfaces; `-foreground` names are text/icons. `/50` changes opacity of the named token.
+- Avoid hardcoded gray/black/white app surfaces and manual dark-mode surface overrides.
 
 # Key Rules
 

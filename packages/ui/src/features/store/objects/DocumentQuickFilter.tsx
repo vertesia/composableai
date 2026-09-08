@@ -26,7 +26,7 @@ export function useDocumentQuickFilter() {
 }
 
 const ACTION_BTN_CLASS =
-    'h-6 w-6 p-0 opacity-0 group-hover/field:opacity-100 text-muted hover:text-foreground transition-opacity shrink-0';
+    'h-6 w-6 p-0 opacity-0 group-hover/field:opacity-100 text-muted-foreground hover:text-foreground transition-opacity shrink-0';
 
 /**
  * Hover-revealed per-cell actions for the document table: an optional copy button (for id-valued

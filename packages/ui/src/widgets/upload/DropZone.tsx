@@ -264,9 +264,9 @@ export function DropZone({ onDrop, message, buttonLabel, allowFolders = true, cl
             onDrop={handleDrop}
         >
             <UploadIcon
-                className={`h-12 w-12 mb-3 transition-colors ${isDragging ? 'text-primary' : 'text-muted/50'}`}
+                className={`h-12 w-12 mb-3 transition-colors ${isDragging ? 'text-primary' : 'text-muted-foreground/50'}`}
             />
-            <p className="text-muted">{message}</p>
+            <p className="text-muted-foreground">{message}</p>
 
             <div className="flex gap-2 justify-center mt-2">
                 <Button onClick={selectFile}>{resolvedButtonLabel}</Button>

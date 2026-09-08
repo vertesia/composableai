@@ -20,7 +20,11 @@ export function TypeCollection() {
     );
 
     if (error)
-        return <div className="p-6 text-destructive">Failed to load type collection &ldquo;{collection}&rdquo;.</div>;
+        return (
+            <div className="p-6 text-destructive-foreground">
+                Failed to load type collection &ldquo;{collection}&rdquo;.
+            </div>
+        );
     if (!types)
         return (
             <div className="flex h-64 items-center justify-center text-muted-foreground">

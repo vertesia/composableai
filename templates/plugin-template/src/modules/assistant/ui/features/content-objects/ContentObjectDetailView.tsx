@@ -129,7 +129,7 @@ export function ContentObjectDetailView() {
                     <MetadataRow label={t('objects.detail.created')}>{formatDateTime(object.created_at)}</MetadataRow>
                     {properties && Object.keys(properties).length > 0 && (
                         <MetadataRow label={t('objects.detail.properties')}>
-                            <pre className="text-xs whitespace-pre-wrap wrap-break-word bg-muted/40 rounded p-2 max-h-64 overflow-auto">
+                            <pre className="text-xs whitespace-pre-wrap wrap-break-word bg-muted-foreground/40 rounded p-2 max-h-64 overflow-auto">
                                 {JSON.stringify(properties, null, 2)}
                             </pre>
                         </MetadataRow>

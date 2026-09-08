@@ -91,7 +91,7 @@ export const DateCombobox = ({
 
     return (
         <Popover _open={open} onOpenChange={setOpen}>
-            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition">
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted-foreground/50 text-muted-foreground hover:text-primary shrink-0 transition">
                 <div className="flex gap-1.5 items-center min-h-[20px]">{getDisplayText()}</div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-4} sideOffset={6}>
@@ -119,7 +119,7 @@ export const DateCombobox = ({
 
                                             // Check if date is disabled (future date)
                                             if (currentDate > today.getTime()) {
-                                                return 'text-muted/20 cursor-not-allowed';
+                                                return 'text-muted-foreground/20 cursor-not-allowed';
                                             }
 
                                             // Handle selected date styling
@@ -185,7 +185,7 @@ export const DateCombobox = ({
 
                                         // Check if date is disabled (future date)
                                         if (currentDate > today.getTime()) {
-                                            return 'text-muted/20 cursor-not-allowed';
+                                            return 'text-muted-foreground/20 cursor-not-allowed';
                                         }
 
                                         // Handle selected date styling

@@ -50,7 +50,7 @@ export const SelectionCombobox = ({
                 }
             }}
         >
-            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 transition text-muted hover:text-primary shrink-0">
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted-foreground/50 transition text-muted-foreground hover:text-primary shrink-0">
                 <div className="flex gap-1.5 items-center">
                     {filterValues?.length === 1
                         ? (() => {
@@ -137,7 +137,7 @@ export const SelectionCombobox = ({
                                                             className="opacity-0 group-data-[selected=true]:opacity-100"
                                                         />
                                                     )}
-                                                    <span className="text-muted">
+                                                    <span className="text-muted-foreground">
                                                         <DynamicLabel
                                                             value={filter.value || ''}
                                                             labelRenderer={filter.labelRenderer || labelRenderer}

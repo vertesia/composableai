@@ -165,7 +165,7 @@ export function SelectCollection({
                 <Button
                     variant="unstyled"
                     aria-label="Clear selection"
-                    className="ms-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive cursor-pointer"
+                    className="ms-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive-foreground cursor-pointer"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleClear();
@@ -232,7 +232,11 @@ export function SelectCollection({
                     </CommandEmpty>
                     <CommandGroup className="max-h-[300px] overflow-auto">
                         {showClearOption && !hasSearchQuery && (
-                            <CommandItem value="__clear__" onSelect={handleClear} className="text-destructive">
+                            <CommandItem
+                                value="__clear__"
+                                onSelect={handleClear}
+                                className="text-destructive-foreground"
+                            >
                                 Remove collection selection(s)
                             </CommandItem>
                         )}
@@ -240,7 +244,7 @@ export function SelectCollection({
                             <CommandItem
                                 value="__clear_search__"
                                 onSelect={() => setSearchQuery('')}
-                                className="text-muted"
+                                className="text-muted-foreground"
                             >
                                 {t('store.clearSelection')}
                             </CommandItem>

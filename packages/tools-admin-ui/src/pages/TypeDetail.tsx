@@ -20,7 +20,7 @@ export function TypeDetail() {
         [baseUrl, collection, name],
     );
 
-    if (error) return <div className="p-6 text-destructive">Failed to load type &ldquo;{name}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive-foreground">Failed to load type &ldquo;{name}&rdquo;.</div>;
     if (!typeDef)
         return (
             <div className="flex h-64 items-center justify-center text-muted-foreground">
@@ -48,7 +48,7 @@ export function TypeDetail() {
             {typeDef.object_schema && (
                 <div className="mb-8">
                     <h2 className="mb-3 text-lg font-semibold text-foreground">Object Schema</h2>
-                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                         {JSON.stringify(typeDef.object_schema, null, 2)}
                     </pre>
                 </div>
@@ -57,7 +57,7 @@ export function TypeDetail() {
             {typeDef.table_layout && typeDef.table_layout.length > 0 && (
                 <div className="mb-8">
                     <h2 className="mb-3 text-lg font-semibold text-foreground">Table Layout</h2>
-                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                         {JSON.stringify(typeDef.table_layout, null, 2)}
                     </pre>
                 </div>

@@ -301,7 +301,7 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
                         href={file}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted-foreground/80"
                     >
                         📎 {fileName}
                     </a>
@@ -468,9 +468,9 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                 <div className="flex items-start gap-2 flex-1 min-w-0">
                     <div className="flex-shrink-0 pt-0.5">
                         {isExpanded ? (
-                            <ChevronDown className="size-3 text-muted" />
+                            <ChevronDown className="size-3 text-muted-foreground" />
                         ) : (
-                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
+                            <ChevronRight className="size-3 text-muted-foreground cn-rtl-flip" />
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -478,7 +478,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                         {messageContent ? (
                             <span className="text-xs text-foreground line-clamp-2">{messageContent}</span>
                         ) : (
-                            <span className="text-xs text-muted italic">Activity: {toolName}</span>
+                            <span className="text-xs text-muted-foreground italic">Activity: {toolName}</span>
                         )}
                     </div>
                 </div>
@@ -492,7 +492,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                             e.stopPropagation();
                             copyToClipboard();
                         }}
-                        className="text-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
                         title={t('agent.copyMessage')}
                     >
                         <CopyIcon className="size-3" />
@@ -537,7 +537,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                         {toolStatusValue}
                                     </span>
                                 )}
-                                <span className="text-[10px] text-muted/70">
+                                <span className="text-[10px] text-muted-foreground/70">
                                     {dayjs(message.timestamp).format('HH:mm:ss')}
                                 </span>
                             </div>
@@ -547,7 +547,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                 <div className="mb-2 space-y-0.5">
                                     {interestingDetails.map(([key, value]) => (
                                         <div key={key} className="flex gap-1.5 text-xs">
-                                            <span className="text-muted font-medium flex-shrink-0">
+                                            <span className="text-muted-foreground font-medium flex-shrink-0">
                                                 {formatDetailKey(key)}:
                                             </span>
                                             <span className="text-foreground break-all">
@@ -560,13 +560,13 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
 
                             {progressDetails.length > 0 && (
                                 <div className="mb-2 space-y-1">
-                                    <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
+                                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 font-medium">
                                         {t('agent.progress')}
                                     </div>
                                     {progressDetails.map((item) => (
-                                        <div key={getProgressDetailKey(item)} className="text-xs text-muted">
+                                        <div key={getProgressDetailKey(item)} className="text-xs text-muted-foreground">
                                             {item.timestamp && (
-                                                <span className="me-1 text-muted/60">
+                                                <span className="me-1 text-muted-foreground/60">
                                                     {dayjs(item.timestamp).format('HH:mm:ss')}
                                                 </span>
                                             )}
@@ -832,13 +832,13 @@ function ToolCallGroupComponent({
             return <span className="size-2 rounded-full bg-blue-500 inline-block" />;
         }
         if (toolStatus === 'completed') {
-            return <CheckCircle className="size-4 text-success" />;
+            return <CheckCircle className="size-4 text-success-foreground" />;
         }
         if (toolStatus === 'error') {
-            return <AlertCircle className="size-4 text-destructive" />;
+            return <AlertCircle className="size-4 text-destructive-foreground" />;
         }
         if (toolStatus === 'warning') {
-            return <AlertTriangle className="size-4 text-attention" />;
+            return <AlertTriangle className="size-4 text-attention-foreground" />;
         }
         return <Bot className="size-4 text-purple-600 dark:text-purple-400" />;
     };
@@ -940,7 +940,9 @@ function ToolCallGroupComponent({
                         </span>
                     ) : (
                         <>
-                            <span className={cn('text-xs font-medium text-muted', senderClassName)}>Agent</span>
+                            <span className={cn('text-xs font-medium text-muted-foreground', senderClassName)}>
+                                Agent
+                            </span>
                             <span
                                 className={cn(
                                     'text-xs text-purple-600 dark:text-purple-400 font-medium',
@@ -952,9 +954,9 @@ function ToolCallGroupComponent({
                         </>
                     )}
                     {isCollapsed ? (
-                        <ChevronRight className="size-3 text-muted flex-shrink-0 cn-rtl-flip" />
+                        <ChevronRight className="size-3 text-muted-foreground flex-shrink-0 cn-rtl-flip" />
                     ) : (
-                        <ChevronDown className="size-3 text-muted flex-shrink-0" />
+                        <ChevronDown className="size-3 text-muted-foreground flex-shrink-0" />
                     )}
                 </div>
 
@@ -969,7 +971,7 @@ function ToolCallGroupComponent({
                             {toolSummary}
                         </span>
                     )}
-                    <span className="text-[11px] text-muted/70">
+                    <span className="text-[11px] text-muted-foreground/70">
                         {dayjs(firstTimestamp).format('HH:mm:ss')}
                         {messages.length > 1 && ` - ${dayjs(lastTimestamp).format('HH:mm:ss')}`}
                     </span>
@@ -980,7 +982,7 @@ function ToolCallGroupComponent({
                             e.stopPropagation();
                             copyAllToClipboard();
                         }}
-                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
+                        className="text-muted-foreground/50 hover:text-muted-foreground h-5 w-5 p-0"
                         title={t('agent.copyAllToolCalls')}
                     >
                         <CopyIcon className="size-3" />
@@ -1045,9 +1047,9 @@ function ToolCallGroupComponent({
                                 >
                                     <div className="flex-shrink-0 pt-0.5">
                                         {isItemExpanded ? (
-                                            <ChevronDown className="size-3 text-muted" />
+                                            <ChevronDown className="size-3 text-muted-foreground" />
                                         ) : (
-                                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
+                                            <ChevronRight className="size-3 text-muted-foreground cn-rtl-flip" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -1055,7 +1057,7 @@ function ToolCallGroupComponent({
                                         {fullMessage ? (
                                             <span className="text-foreground line-clamp-2">{fullMessage}</span>
                                         ) : (
-                                            <span className="text-muted italic">Activity: {toolName}</span>
+                                            <span className="text-muted-foreground italic">Activity: {toolName}</span>
                                         )}
                                     </div>
                                     {/* Tool name badge on the right */}
@@ -1095,7 +1097,7 @@ function ToolCallGroupComponent({
                                                             {toolStatusValue}
                                                         </span>
                                                     )}
-                                                    <span className="text-[10px] text-muted/70">
+                                                    <span className="text-[10px] text-muted-foreground/70">
                                                         {dayjs(m.timestamp).format('HH:mm:ss')}
                                                     </span>
                                                 </div>
@@ -1105,7 +1107,7 @@ function ToolCallGroupComponent({
                                                     <div className="mb-1.5 space-y-0.5">
                                                         {interestingDetails.map(([key, value]) => (
                                                             <div key={key} className="flex gap-1.5 text-xs">
-                                                                <span className="text-muted font-medium flex-shrink-0">
+                                                                <span className="text-muted-foreground font-medium flex-shrink-0">
                                                                     {formatDetailKey(key)}:
                                                                 </span>
                                                                 <span className="text-foreground break-all">
@@ -1120,16 +1122,16 @@ function ToolCallGroupComponent({
 
                                                 {progressDetails.length > 0 && (
                                                     <div className="mb-1.5 space-y-1">
-                                                        <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
+                                                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 font-medium">
                                                             {t('agent.progress')}
                                                         </div>
                                                         {progressDetails.map((item) => (
                                                             <div
                                                                 key={getProgressDetailKey(item)}
-                                                                className="text-xs text-muted"
+                                                                className="text-xs text-muted-foreground"
                                                             >
                                                                 {item.timestamp && (
-                                                                    <span className="me-1 text-muted/60">
+                                                                    <span className="me-1 text-muted-foreground/60">
                                                                         {dayjs(item.timestamp).format('HH:mm:ss')}
                                                                     </span>
                                                                 )}

@@ -145,19 +145,14 @@ pnpm dev                          # Vite dev server on http://localhost:5174
 Override CSS custom properties **after** the shared `@vertesia/ui` import in `index.css`:
 
 ```css
-@layer base {
-  :root {
-    --primary: oklch(55% 0.2 145);            /* light mode */
-    --primary-background: oklch(97% 0.02 145);
-  }
-  .dark {
-    --primary: oklch(75% 0.18 145);            /* dark mode */
-    --primary-background: oklch(75% 0.18 145 / 0.2);
-  }
-}
+:root { --primary: oklch(40% 0.1 145); --primary-foreground: oklch(1 0 0); }
+.dark { --primary: oklch(45% 0.1 145); --primary-foreground: oklch(1 0 0); }
 ```
 
-Available tokens: `--primary`, `--success`, `--attention`, `--destructive`, `--done`, `--info`, `--muted` (each with a `-background` variant), plus `--background`, `--foreground`, `--card-*`, `--sidebar-*`, `--topnav-*`, `--border`, `--input`, `--ring`. See `@vertesia/ui/src/css/color.css` for all values.
+Available tokens: `--primary`, `--secondary`, `--success`, `--attention`, `--destructive`, `--done`, `--info`, `--muted` (each paired with `-foreground`), plus `--background`, `--foreground`, `--card-*`, `--sidebar-*`, `--topnav-*`, `--border`, `--input`, `--ring`. See `@vertesia/ui/src/css/color.css` for all values.
+
+Base tokens are surfaces; pair them with `-foreground` text/icons. The old status, muted, and secondary
+`-background` names are deprecated aliases; use base names in new code. Primary is solid, with a contrasting foreground.
 
 ---
 

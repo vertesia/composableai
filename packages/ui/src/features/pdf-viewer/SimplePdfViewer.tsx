@@ -87,7 +87,11 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
     }
 
     if (!pdfUrl) {
-        return <div className="flex items-center justify-center h-full text-muted">{t('pdf.noPdfAvailable')}</div>;
+        return (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+                {t('pdf.noPdfAvailable')}
+            </div>
+        );
     }
 
     // Fullscreen overlay

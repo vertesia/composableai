@@ -9,8 +9,8 @@ export const AGENT_PROSE_CLASS = [
     'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/80',
     'prose-p:my-2 prose-p:leading-6 prose-li:my-0.5 prose-pre:my-3 prose-headings:tracking-normal',
     'prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground',
-    'prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4',
-    '[&_p]:text-foreground/80 [&_li]:text-foreground/80 [&_li::marker]:text-muted',
+    'prose-a:text-foreground prose-a:underline prose-a:decoration-muted-foreground prose-a:underline-offset-4',
+    '[&_p]:text-foreground/80 [&_li]:text-foreground/80 [&_li::marker]:text-muted-foreground',
 ].join(' ');
 
 /** Clamp applied to collapsed markdown. Kept as a literal so Tailwind emits the utility. */
@@ -68,7 +68,7 @@ export function CollapsibleAgentMarkdown({
                         type="button"
                         aria-expanded={isExpanded}
                         className={cn(
-                            'inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors',
+                            'inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors',
                             '[text-decoration:none] hover:text-foreground hover:[text-decoration:none]',
                             'focus-visible:text-foreground focus-visible:[text-decoration:none]',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',

@@ -19,30 +19,38 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-background: var(--primary-background); /* Legacy primary tint */
 
     --color-link: var(--primary);
     --color-link-foreground: var(--primary-foreground);
 
     --color-secondary: var(--secondary);
-    --color-secondary-background: var(--secondary-background);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary-background: var(--secondary); /* Compatibility alias */
 
     --color-muted: var(--muted);
-    --color-muted-background: var(--muted-background);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted-background: var(--muted); /* Compatibility alias */
 
     --color-destructive: var(--destructive);
-    --color-destructive-background: var(--destructive-background);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-destructive-background: var(--destructive); /* Compatibility alias */
 
     --color-success: var(--success);
-    --color-success-background: var(--success-background);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-background: var(--success); /* Compatibility alias */
 
     --color-attention: var(--attention);
-    --color-attention-background: var(--attention-background);
+    --color-attention-foreground: var(--attention-foreground);
+    --color-attention-background: var(--attention); /* Compatibility alias */
 
     --color-done: var(--done);
-    --color-done-background: var(--done-background);
+    --color-done-foreground: var(--done-foreground);
+    --color-done-background: var(--done); /* Compatibility alias */
 
     --color-info: var(--info);
-    --color-info-background: var(--info-background);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-background: var(--info); /* Compatibility alias */
 
     --color-border: var(--border);
     --color-input: var(--input);

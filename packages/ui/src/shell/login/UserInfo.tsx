@@ -19,11 +19,11 @@ export function InfoItems({ title, value }: { title: string; value: string }) {
             <div className="flex flex-col w-[calc(100%-3rem)]">
                 <div className="text-sm px-2 dark:text-slate-200">{title}</div>
                 <VTooltip description={value} size="xs" placement="left">
-                    <div className="text-xs truncate text-muted w-full text-start px-2">{value} </div>
+                    <div className="text-xs truncate text-muted-foreground w-full text-start px-2">{value} </div>
                 </VTooltip>
             </div>
             {isCopied ? (
-                <Check className="size-4 cursor-pointer text-success" />
+                <Check className="size-4 cursor-pointer text-success-foreground" />
             ) : (
                 <CopyIcon
                     className="size-4 cursor-pointer text-gray-400 dark:text-slate-400"

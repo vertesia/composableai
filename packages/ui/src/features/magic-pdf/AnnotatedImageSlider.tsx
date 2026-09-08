@@ -422,7 +422,7 @@ function PageThumbnail({ pageNumber, currentPage, aspectRatio, zoom, url, onSele
                 aria-pressed={isSelected}
                 aria-label={`Page ${pageNumber}`}
                 className={clsx(
-                    'relative border-[2px] cursor-pointer overflow-hidden !flex items-center justify-center bg-muted/50 w-full',
+                    'relative border-[2px] cursor-pointer overflow-hidden !flex items-center justify-center bg-muted-foreground/50 w-full',
                     isSelected ? 'border-primary' : 'border-border',
                 )}
                 style={{ aspectRatio: `1 / ${aspectRatio}` }}

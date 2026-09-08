@@ -165,7 +165,7 @@ function ItemProperty({ index, value, useBullet }: ItemPropertyProps) {
     }
     return (
         <div className="flex gap-4 hover:bg-muted py-2 pe-2 ps-4">
-            <div className="font-semibold text-muted">{bullet}</div>
+            <div className="font-semibold text-muted-foreground">{bullet}</div>
             <div>{content}</div>
         </div>
     );

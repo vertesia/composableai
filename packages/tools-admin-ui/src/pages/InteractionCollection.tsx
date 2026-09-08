@@ -20,7 +20,9 @@ export function InteractionCollection() {
     );
 
     if (error) {
-        return <div className="p-6 text-destructive">Failed to load collection &ldquo;{collection}&rdquo;.</div>;
+        return (
+            <div className="p-6 text-destructive-foreground">Failed to load collection &ldquo;{collection}&rdquo;.</div>
+        );
     }
 
     if (!interactions) {

@@ -506,15 +506,17 @@ function PendingStartConversation({ message, startedAt }: { message: string; sta
                     <div className="whitespace-pre-wrap">{message}</div>
                 </div>
             </div>
-            <div className="border-b border-border/70 pb-4 text-sm text-muted">
+            <div className="border-b border-border/70 pb-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-3">
                     <PulsatingCircle size="sm" color="blue" />
                     <div className="min-w-0">
                         <div>
                             <span className="font-medium">{t('agent.preparing')}</span>
-                            <span className="ms-2 text-muted/75">for {formatCompactDuration(elapsed)}</span>
+                            <span className="ms-2 text-muted-foreground/75">for {formatCompactDuration(elapsed)}</span>
                         </div>
-                        <div className="mt-1 truncate text-muted/80">{ThinkingMessages[thinkingMessageIndex]}</div>
+                        <div className="mt-1 truncate text-muted-foreground/80">
+                            {ThinkingMessages[thinkingMessageIndex]}
+                        </div>
                     </div>
                 </div>
                 <div className="mt-3 ps-6">
@@ -826,9 +828,9 @@ export function ModernAgentConversation(props: ModernAgentConversationProps) {
 function EmptyState() {
     const { t } = useUITranslation();
     return (
-        <MessageBox status="info" icon={<Bot className="size-16 text-muted mb-4" />}>
-            <div className="text-base font-medium text-muted">{t('agent.noAgentRunning')}</div>
-            <div className="mt-3 text-sm text-muted">{t('agent.selectInteraction')}</div>
+        <MessageBox status="info" icon={<Bot className="size-16 text-muted-foreground mb-4" />}>
+            <div className="text-base font-medium text-muted-foreground">{t('agent.noAgentRunning')}</div>
+            <div className="mt-3 text-sm text-muted-foreground">{t('agent.selectInteraction')}</div>
         </MessageBox>
     );
 }
@@ -1229,8 +1231,8 @@ function StartWorkflowView({
             >
                 {/* Drag overlay for full-panel file drop */}
                 {canStageFiles && isDragOver && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-info-background z-50 pointer-events-none rounded-lg">
-                        <div className="text-info font-medium flex items-center gap-2 text-lg">
+                    <div className="absolute inset-0 flex items-center justify-center bg-info z-50 pointer-events-none rounded-lg">
+                        <div className="text-info-foreground font-medium flex items-center gap-2 text-lg">
                             <UploadIcon className="size-6" />
                             Drop files to stage for upload
                         </div>
@@ -1254,7 +1256,7 @@ function StartWorkflowView({
                     <div className="flex items-center justify-between border-b border-border/60 bg-background px-3 py-2">
                         <div className="flex items-center gap-2">
                             <div className="p-1">
-                                <Cpu className="size-3.5 text-muted" />
+                                <Cpu className="size-3.5 text-muted-foreground" />
                             </div>
                             <span className="text-sm font-medium text-foreground">{resolvedTitle}</span>
                         </div>
@@ -1266,7 +1268,7 @@ function StartWorkflowView({
                                 variant="ghost"
                                 onClick={onClose}
                                 title={t('agent.close')}
-                                className="text-muted hover:text-foreground"
+                                className="text-muted-foreground hover:text-foreground"
                             >
                                 <XIcon className="size-4" />
                             </Button>
@@ -1317,7 +1319,7 @@ function StartWorkflowView({
                                 {visibleStagedFiles.map((file, index) => (
                                     <div
                                         key={`${file.name}-${file.size}-${file.lastModified}`}
-                                        className="flex items-center gap-1.5 rounded-md bg-attention/10 px-2 py-1 text-sm text-attention"
+                                        className="flex items-center gap-1.5 rounded-md bg-attention-foreground/10 px-2 py-1 text-sm text-attention-foreground"
                                         title={t('agent.fileStagedTooltip')}
                                     >
                                         <FileTextIcon className="size-3.5" />
@@ -1327,7 +1329,7 @@ function StartWorkflowView({
                                             variant="unstyled"
                                             aria-label={`Remove staged file ${file.name}`}
                                             onClick={() => removeStagedFile(index)}
-                                            className="ms-1 rounded p-0.5 hover:bg-attention/20"
+                                            className="ms-1 rounded p-0.5 hover:bg-attention-foreground/20"
                                         >
                                             <XIcon className="size-3" />
                                         </Button>
@@ -1340,7 +1342,7 @@ function StartWorkflowView({
                                         size="sm"
                                         aria-expanded={areStagedFilesExpanded}
                                         onClick={() => setAreStagedFilesExpanded((expanded) => !expanded)}
-                                        className="h-8 shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted"
+                                        className="h-8 shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted-foreground"
                                     >
                                         {!areStagedFilesExpanded && <span>+{hiddenStagedFileCount}</span>}
                                         {areStagedFilesExpanded ? t('agent.showLess') : t('agent.showMore')}
@@ -1389,7 +1391,7 @@ function StartWorkflowView({
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={isSending || stagedFiles.length >= maxFiles}
                                         aria-label={t('agent.upload')}
-                                        className="rounded-full text-muted"
+                                        className="rounded-full text-muted-foreground"
                                         title={t('agent.upload')}
                                     >
                                         <UploadIcon className="size-4" />
@@ -1411,7 +1413,7 @@ function StartWorkflowView({
                                 className={cn(
                                     'size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm',
                                     'hover:bg-foreground/90 hover:text-background',
-                                    'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
+                                    'disabled:bg-mixer-muted/25 disabled:text-muted-foreground disabled:opacity-100',
                                 )}
                                 title={resolvedStartButtonText}
                             >
@@ -2062,7 +2064,7 @@ function ModernAgentConversationInner({
         ({ href, documentId, children }: { href: string; documentId: string; children: React.ReactNode }) => (
             <a
                 href={href}
-                className="text-info underline cursor-pointer hover:text-info/80"
+                className="text-info-foreground underline cursor-pointer hover:text-info-foreground/80"
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2882,8 +2884,8 @@ function ModernAgentConversationInner({
                           effectiveWorkflowStatus !== 'RUNNING' &&
                           !canContinueConversation ? (
                             viewMode === 'sliding' && effectiveWorkflowStatus === 'COMPLETED' ? (
-                                <div className="mx-auto w-full max-w-3xl px-4 py-3 text-sm text-muted">
-                                    <div className="flex items-center gap-2 border-t border-success/25 pt-3 text-success">
+                                <div className="mx-auto w-full max-w-3xl px-4 py-3 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-2 border-t border-success-foreground/25 pt-3 text-success-foreground">
                                         <CheckCircle className="size-4" />
                                         <span className="font-medium">Workflow completed</span>
                                     </div>
@@ -3094,7 +3096,7 @@ function ModernAgentConversationInner({
                             <p className="mb-2">
                                 This will open your browser&apos;s print dialog with the current conversation.
                             </p>
-                            <p className="text-sm text-muted">
+                            <p className="text-sm text-muted-foreground">
                                 To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
                             </p>
                         </ModalBody>

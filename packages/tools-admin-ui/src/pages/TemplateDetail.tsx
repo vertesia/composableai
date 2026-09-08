@@ -29,7 +29,8 @@ export function TemplateDetail() {
         [baseUrl, collection, name],
     );
 
-    if (error) return <div className="p-6 text-destructive">Failed to load template &ldquo;{name}&rdquo;.</div>;
+    if (error)
+        return <div className="p-6 text-destructive-foreground">Failed to load template &ldquo;{name}&rdquo;.</div>;
     if (!template)
         return (
             <div className="flex h-64 items-center justify-center text-muted-foreground">
@@ -66,7 +67,7 @@ export function TemplateDetail() {
 
             <div className="mb-8">
                 <h2 className="mb-3 text-lg font-semibold text-foreground">Instructions</h2>
-                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                     {template.instructions}
                 </pre>
             </div>

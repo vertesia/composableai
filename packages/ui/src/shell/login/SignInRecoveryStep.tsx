@@ -93,7 +93,7 @@ export default function SignInRecoveryStep({
         <SignInStepLayout>
             <div role="alert" aria-live="assertive">
                 <SignInIconBadge>
-                    <AlertTriangle className="size-7 text-attention" aria-hidden="true" />
+                    <AlertTriangle className="size-7 text-attention-foreground" aria-hidden="true" />
                 </SignInIconBadge>
                 <SignInStepHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
             </div>
@@ -128,9 +128,9 @@ export default function SignInRecoveryStep({
                     {t('auth.recovery.useDifferentAccount')}
                 </SignInStepButton>
                 {(kind === 'noAccessibleAccount' || kind === 'service') && (
-                    <p className="text-center text-xs text-muted">
+                    <p className="text-center text-xs text-muted-foreground">
                         {t('auth.recovery.supportPrefix')}{' '}
-                        <a className="text-info" href="mailto:support@vertesiahq.com">
+                        <a className="text-info-foreground" href="mailto:support@vertesiahq.com">
                             support@vertesiahq.com
                         </a>
                     </p>
@@ -138,36 +138,36 @@ export default function SignInRecoveryStep({
             </div>
 
             {details && (
-                <details className="rounded-lg border border-mixer-muted/30 bg-mixer-muted/10 px-4 py-3 text-sm">
-                    <summary className="cursor-pointer font-medium text-muted marker:text-muted focus-visible:outline-2 focus-visible:outline-offset-2">
+                <details className="rounded-lg border border-mixer-muted-foreground/30 bg-mixer-muted/10 px-4 py-3 text-sm">
+                    <summary className="cursor-pointer font-medium text-muted-foreground marker:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2">
                         {t('auth.recovery.technicalDetails')}
                     </summary>
                     <dl className="mt-3 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs">
                         {details.errorCode && (
                             <>
-                                <dt className="text-muted">{t('auth.recovery.errorCode')}</dt>
+                                <dt className="text-muted-foreground">{t('auth.recovery.errorCode')}</dt>
                                 <dd className="wrap-break-word font-mono">{details.errorCode}</dd>
                             </>
                         )}
                         {details.status && (
                             <>
-                                <dt className="text-muted">{t('auth.recovery.httpStatus')}</dt>
+                                <dt className="text-muted-foreground">{t('auth.recovery.httpStatus')}</dt>
                                 <dd className="font-mono">{details.status}</dd>
                             </>
                         )}
                         {details.accountId && (
                             <>
-                                <dt className="text-muted">{t('auth.recovery.requestedAccount')}</dt>
+                                <dt className="text-muted-foreground">{t('auth.recovery.requestedAccount')}</dt>
                                 <dd className="wrap-break-word font-mono">{details.accountId}</dd>
                             </>
                         )}
                         {details.projectId && (
                             <>
-                                <dt className="text-muted">{t('auth.recovery.requestedProject')}</dt>
+                                <dt className="text-muted-foreground">{t('auth.recovery.requestedProject')}</dt>
                                 <dd className="wrap-break-word font-mono">{details.projectId}</dd>
                             </>
                         )}
-                        <dt className="text-muted">{t('auth.recovery.errorMessage')}</dt>
+                        <dt className="text-muted-foreground">{t('auth.recovery.errorMessage')}</dt>
                         <dd className="wrap-break-word font-mono">{details.message}</dd>
                     </dl>
                 </details>

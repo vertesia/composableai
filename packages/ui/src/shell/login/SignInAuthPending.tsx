@@ -19,7 +19,7 @@ export default function SignInAuthPending({ provider, onCancel }: SignInAuthPend
         <SignInStepLayout centered>
             <div>
                 <SignInIconBadge>
-                    <Icon className={provider === 'oidc' ? 'size-6 text-info' : 'size-6'} />
+                    <Icon className={provider === 'oidc' ? 'size-6 text-info-foreground' : 'size-6'} />
                 </SignInIconBadge>
                 <SignInStepHeader
                     title={t('auth.pending.title', { provider: titleProvider })}

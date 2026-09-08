@@ -16,8 +16,8 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
         plan && (
             <SlideInPanel isOpen={isOpen} onClose={onClose} title={t('agent.agentPlan')}>
                 {/* Plan Summary */}
-                <div className="mb-4 p-3 bg-info rounded-md border border-info">
-                    <div className="text-sm font-medium text-info mb-1">{t('agent.planProgress')}</div>
+                <div className="mb-4 p-3 bg-info rounded-md border border-info-foreground">
+                    <div className="text-sm font-medium text-info-foreground mb-1">{t('agent.planProgress')}</div>
                     <div className="flex items-center gap-2">
                         <div className="w-full bg-muted rounded-full h-2.5">
                             <div
@@ -37,7 +37,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 }}
                             />
                         </div>
-                        <span className="text-xs text-muted">
+                        <span className="text-xs text-muted-foreground">
                             {plan.plan?.length
                                 ? `${Array.from(workstreamStatus.values()).filter((status) => status === 'completed').length}/${workstreamStatus.size}`
                                 : '0/0'}
@@ -46,8 +46,8 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                 </div>
 
                 {/* Detailed Plan Steps */}
-                <div className="rounded-md border border-muted">
-                    <div className="p-3 border-b border-muted bg-muted/50">
+                <div className="rounded-md border border-muted-foreground">
+                    <div className="p-3 border-b border-muted-foreground bg-muted-foreground/50">
                         <div className="font-medium text-sm">{t('agent.stepByStepPlan')}</div>
                     </div>
 

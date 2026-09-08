@@ -28,7 +28,7 @@ export function SelectContentType({
         return (
             <div>
                 <div className="text-sm">{type.name}</div>
-                <div className="text-xs text-muted truncate">{type.description}</div>
+                <div className="text-xs text-muted-foreground truncate">{type.description}</div>
             </div>
         );
     };

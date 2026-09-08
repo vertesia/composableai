@@ -20,13 +20,13 @@ export const calendarStyles = `
   min-width: 32px !important;
   height: 32px !important;
   border-radius: 4px !important;
-  border: 1px solid hsl(var(--border)) !important;
-  background: hsl(var(--background)) !important;
-  color: hsl(var(--foreground)) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--background) !important;
+  color: var(--foreground) !important;
 }
 
 .calendar-wrapper .react-calendar__navigation__arrow:hover {
-  background: oklch(var(--muted)) !important;
+  background: var(--muted) !important;
 }
 
 .calendar-wrapper .react-calendar__tile {

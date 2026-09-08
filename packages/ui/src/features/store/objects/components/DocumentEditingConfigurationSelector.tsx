@@ -164,7 +164,7 @@ export function DocumentEditingConfigurationSelector({
                     <div className="text-sm font-semibold text-foreground">
                         {t('agent.documentEditingConfiguration')}
                     </div>
-                    <div className="mt-0.5 text-xs leading-4 text-muted">
+                    <div className="mt-0.5 text-xs leading-4 text-muted-foreground">
                         {disabled
                             ? t('agent.documentEditingConfigurationLocked')
                             : t('agent.documentEditingConfigurationDescription')}

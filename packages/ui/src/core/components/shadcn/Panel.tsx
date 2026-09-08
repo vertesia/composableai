@@ -38,9 +38,9 @@ export function Panel({
     const sectioned = isSmall || useClickableHeader;
 
     const chevron = isCollapsed ? (
-        <ChevronDown className="size-4 text-muted" />
+        <ChevronDown className="size-4 text-muted-foreground" />
     ) : (
-        <ChevronUp className="size-4 text-muted" />
+        <ChevronUp className="size-4 text-muted-foreground" />
     );
 
     const headerInner = (
@@ -74,7 +74,7 @@ export function Panel({
             {useClickableHeader ? (
                 <button
                     type="button"
-                    className={`w-full flex items-center justify-between ${headerPadding} hover:bg-muted/50 transition-colors`}
+                    className={`w-full flex items-center justify-between ${headerPadding} hover:bg-muted-foreground/50 transition-colors`}
                     onClick={() => setIsCollapsed(!isCollapsed)}
                 >
                     {headerInner}
@@ -86,7 +86,9 @@ export function Panel({
             )}
             {!isCollapsed && (sectioned ? <div className={contentPadding}>{children}</div> : children)}
             {footer && (
-                <div className={`border-t border-muted flex flex-col-2 text-sm pt-4 ${sectioned ? footerPadding : ''}`}>
+                <div
+                    className={`border-t border-muted-foreground flex flex-col-2 text-sm pt-4 ${sectioned ? footerPadding : ''}`}
+                >
                     {footer}
                 </div>
             )}

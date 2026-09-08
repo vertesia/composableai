@@ -192,19 +192,19 @@ function DocumentWorkingCopyDiff({ original, workingCopy }: { original: string; 
     );
 
     return (
-        <div className="flex h-full min-h-0 flex-col bg-muted/10">
-            <div className="flex shrink-0 items-center justify-end gap-3 border-b border-mixer-muted/20 px-5 py-2 text-xs">
-                <span className="text-destructive">−{counts.removed}</span>
-                <span className="text-success">+{counts.added}</span>
+        <div className="flex h-full min-h-0 flex-col bg-muted-foreground/10">
+            <div className="flex shrink-0 items-center justify-end gap-3 border-b border-mixer-muted-foreground/20 px-5 py-2 text-xs">
+                <span className="text-destructive-foreground">−{counts.removed}</span>
+                <span className="text-success-foreground">+{counts.added}</span>
             </div>
             <div className="min-h-0 flex-1 overflow-auto p-5">
-                <pre className="mx-auto max-w-5xl whitespace-pre-wrap break-words rounded-lg border border-mixer-muted/25 bg-background p-5 font-mono text-xs leading-6 shadow-sm">
+                <pre className="mx-auto max-w-5xl whitespace-pre-wrap break-words rounded-lg border border-mixer-muted-foreground/25 bg-background p-5 font-mono text-xs leading-6 shadow-sm">
                     {segments.map((segment, index) => {
                         if (segment.type === 'removed') {
                             return (
                                 <del
                                     key={index}
-                                    className="bg-mixer-destructive/15 text-destructive line-through decoration-destructive/50"
+                                    className="bg-mixer-destructive/15 text-destructive-foreground line-through decoration-destructive-foreground/50"
                                 >
                                     {segment.text}
                                 </del>
@@ -212,7 +212,7 @@ function DocumentWorkingCopyDiff({ original, workingCopy }: { original: string; 
                         }
                         if (segment.type === 'added') {
                             return (
-                                <ins key={index} className="bg-mixer-success/15 text-success no-underline">
+                                <ins key={index} className="bg-mixer-success/15 text-success-foreground no-underline">
                                     {segment.text}
                                 </ins>
                             );
@@ -897,25 +897,25 @@ export function DocumentEditingWorkspace({
 
     return (
         <div className="flex h-full min-h-0 flex-col">
-            <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-mixer-muted/20 px-4">
+            <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-mixer-muted-foreground/20 px-4">
                 <div className="min-w-0">
                     <div className="truncate font-semibold">{object.name || object.content?.name}</div>
-                    <div className="flex items-center gap-2 text-xs text-muted">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span className="flex shrink-0 items-center gap-1.5">
                             {isDirty ? (
                                 <span aria-hidden className="size-1.5 rounded-full bg-attention" />
                             ) : artifactLoaded ? (
-                                <Check className="size-3 text-success" />
+                                <Check className="size-3 text-success-foreground" />
                             ) : null}
                             {isDirty ? t('store.unsavedChanges') : t('store.textSaved')}
                         </span>
-                        <span aria-hidden className="text-mixer-muted/60">
+                        <span aria-hidden className="text-mixer-muted-foreground/60">
                             ·
                         </span>
                         <VTooltip description={`${t('agent.workingCopy')}: ${draftPath}`} asChild>
                             <span className="min-w-0 truncate font-mono">drafts/{shortenRunId(documentRootId)}.md</span>
                         </VTooltip>
-                        <span aria-hidden className="text-mixer-muted/60">
+                        <span aria-hidden className="text-mixer-muted-foreground/60">
                             ·
                         </span>
                         <VTooltip
@@ -930,7 +930,7 @@ export function DocumentEditingWorkspace({
                     </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
-                    <div className="flex items-center rounded-md border border-mixer-muted/25 bg-muted/10 p-0.5">
+                    <div className="flex items-center rounded-md border border-mixer-muted-foreground/25 bg-muted-foreground/10 p-0.5">
                         <Button
                             variant={workspaceView === 'document' ? 'secondary' : 'ghost'}
                             size="sm"
@@ -1018,7 +1018,7 @@ export function DocumentEditingWorkspace({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="font-mono text-[11px] text-muted"
+                                    className="font-mono text-[11px] text-muted-foreground"
                                     onClick={handleCopyRunId}
                                     aria-label={t('agent.copyRunId')}
                                 >
@@ -1074,8 +1074,8 @@ export function DocumentEditingWorkspace({
                 </div>
             </div>
             {saveConflict ? (
-                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-mixer-attention/30 bg-mixer-attention/10 px-4 py-2 text-sm">
-                    <span className="min-w-0 truncate text-attention">{t('agent.saveConflictNotice')}</span>
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-mixer-attention-foreground/30 bg-mixer-attention/10 px-4 py-2 text-sm">
+                    <span className="min-w-0 truncate text-attention-foreground">{t('agent.saveConflictNotice')}</span>
                     <div className="flex shrink-0 items-center gap-2">
                         <Button variant="outline" size="sm" onClick={handleReconcile}>
                             {t('agent.askAgentToReconcile')}
@@ -1140,7 +1140,7 @@ export function DocumentEditingWorkspace({
                         </Center>
                     ) : targetResolutionFailed ? (
                         <Center className="h-full flex-col gap-3 px-6 text-center">
-                            <div className="text-sm text-muted">{t('agent.failedToLoadDocument')}</div>
+                            <div className="text-sm text-muted-foreground">{t('agent.failedToLoadDocument')}</div>
                             <Button
                                 variant="outline"
                                 size="sm"

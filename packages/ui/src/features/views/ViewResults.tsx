@@ -268,7 +268,7 @@ function ViewMedia({
 
 function Annotation({ hit }: { hit: ViewHit }) {
     const annotation = hit.annotation?.why_match ?? hit.annotation?.answer ?? hit.annotation?.excerpt;
-    return annotation ? <p className="text-sm text-info">{annotation}</p> : null;
+    return annotation ? <p className="text-sm text-info-foreground">{annotation}</p> : null;
 }
 
 function HitSelectionCheckbox({
@@ -323,7 +323,7 @@ function LabeledFields({ hit, fields }: { hit: ViewHit; fields?: ViewResultField
                 if (!value) return null;
                 return (
                     <div key={`${field.field}-${field.label ?? ''}`} className="flex gap-2">
-                        {field.label && <dt className="shrink-0 text-muted">{field.label}</dt>}
+                        {field.label && <dt className="shrink-0 text-muted-foreground">{field.label}</dt>}
                         <dd className="min-w-0 truncate">{value}</dd>
                     </div>
                 );
@@ -350,7 +350,7 @@ function ListResults({
             {hits.map((hit) => (
                 <article
                     key={hit.id}
-                    className={`flex gap-4 p-4 ${selection?.isSelected(hit.id) ? 'bg-muted/40' : ''}`}
+                    className={`flex gap-4 p-4 ${selection?.isSelected(hit.id) ? 'bg-muted-foreground/40' : ''}`}
                 >
                     {selection && (
                         <div className="pt-1">
@@ -371,7 +371,7 @@ function ListResults({
                                 <ViewField hit={hit} field={display.title} />
                             </h3>
                             {display.subtitle && (
-                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted">
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                                     {display.subtitle.map((field) => (
                                         <ViewField key={field.field} hit={hit} field={field} />
                                     ))}
@@ -468,7 +468,12 @@ function TableResults({
                                         if (sortDirection === 'descending') {
                                             return <ChevronDown className="size-3" aria-hidden="true" />;
                                         }
-                                        return <ChevronsUpDown className="size-3 text-muted" aria-hidden="true" />;
+                                        return (
+                                            <ChevronsUpDown
+                                                className="size-3 text-muted-foreground"
+                                                aria-hidden="true"
+                                            />
+                                        );
                                     }}
                                 >
                                     {column.label ?? column.field}
@@ -489,7 +494,10 @@ function TableResults({
                     columns={display.columns.length + (selection ? 1 : 0) + (onOpenHit || hasRowActions ? 1 : 0)}
                 >
                     {hits.map((hit) => (
-                        <tr key={hit.id} className={selection?.isSelected(hit.id) ? 'bg-muted/40' : undefined}>
+                        <tr
+                            key={hit.id}
+                            className={selection?.isSelected(hit.id) ? 'bg-muted-foreground/40' : undefined}
+                        >
                             {selection && (
                                 <td className="w-0">
                                     <HitSelectionCheckbox hit={hit} page={hits} selection={selection} />
@@ -652,7 +660,7 @@ function GalleryResults({
                             <ViewField hit={hit} field={display.title} />
                         </h3>
                         {display.caption && (
-                            <div className="space-y-1 text-sm text-muted">
+                            <div className="space-y-1 text-sm text-muted-foreground">
                                 {display.caption.map((field) => (
                                     <div key={field.field} className="truncate">
                                         <ViewField hit={hit} field={field} />
@@ -698,7 +706,10 @@ function BoardResults({
             {columns.map((column) => {
                 const columnHits = grouped.get(column.value) ?? [];
                 return (
-                    <section key={column.value} className="w-80 shrink-0 space-y-3 rounded-lg bg-muted/40 p-3">
+                    <section
+                        key={column.value}
+                        className="w-80 shrink-0 space-y-3 rounded-lg bg-muted-foreground/40 p-3"
+                    >
                         <div className="flex items-center justify-between gap-2">
                             <h3 className="font-semibold">{column.label}</h3>
                             <Badge>{columnHits.length}</Badge>
@@ -806,7 +817,7 @@ export function DefaultViewResults({
     const { t } = useUITranslation();
     const formatters = useLocaleFormat();
     if (!isLoading && result.hits.length === 0) {
-        return <p className="py-12 text-center text-sm text-muted">{t('filter.noResultsFound')}</p>;
+        return <p className="py-12 text-center text-sm text-muted-foreground">{t('filter.noResultsFound')}</p>;
     }
     return (
         <ViewValueFormattersContext.Provider value={formatters}>

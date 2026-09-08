@@ -78,10 +78,10 @@ function BatchProgressPanelComponent({
             return <PulsatingCircle size="sm" color="blue" />;
         }
         if (overallStatus === 'completed') {
-            return <CheckCircle className="size-4 text-success" />;
+            return <CheckCircle className="size-4 text-success-foreground" />;
         }
         if (overallStatus === 'error' || overallStatus === 'warning') {
-            return <AlertCircle className="size-4 text-destructive" />;
+            return <AlertCircle className="size-4 text-destructive-foreground" />;
         }
         return <Layers className="size-4 text-purple-600" />;
     };
@@ -138,21 +138,23 @@ function BatchProgressPanelComponent({
             >
                 <div className="flex items-center gap-2">
                     {renderStatusIndicator()}
-                    <span className={cn('text-xs font-medium text-muted', senderClassName)}>{t('agent.batch')}</span>
+                    <span className={cn('text-xs font-medium text-muted-foreground', senderClassName)}>
+                        {t('agent.batch')}
+                    </span>
                     <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">{tool_name}</span>
-                    <span className="text-xs text-muted">
+                    <span className="text-xs text-muted-foreground">
                         {completed}/{total}
                     </span>
                     {isExpanded ? (
-                        <ChevronDown className="size-3 text-muted" />
+                        <ChevronDown className="size-3 text-muted-foreground" />
                     ) : (
-                        <ChevronRight className="size-3 text-muted cn-rtl-flip" />
+                        <ChevronRight className="size-3 text-muted-foreground cn-rtl-flip" />
                     )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">{durationSec}s</span>
-                    <span className="text-xs text-muted">{dayjs(started_at).format('HH:mm:ss')}</span>
+                    <span className="text-xs text-muted-foreground">{durationSec}s</span>
+                    <span className="text-xs text-muted-foreground">{dayjs(started_at).format('HH:mm:ss')}</span>
                     <Button
                         variant="ghost"
                         size="xs"
@@ -160,7 +162,7 @@ function BatchProgressPanelComponent({
                             e.stopPropagation();
                             copyToClipboard();
                         }}
-                        className="text-muted"
+                        className="text-muted-foreground"
                         title={t('agent.copyBatchDetails')}
                     >
                         <CopyIcon className="size-3" />
@@ -179,13 +181,13 @@ function BatchProgressPanelComponent({
                     </div>
                     <div className="flex items-center gap-2 text-xs">
                         {succeeded > 0 && (
-                            <span className="text-success flex items-center gap-1">
+                            <span className="text-success-foreground flex items-center gap-1">
                                 <CheckCircle className="size-3" />
                                 {succeeded}
                             </span>
                         )}
                         {failed > 0 && (
-                            <span className="text-destructive flex items-center gap-1">
+                            <span className="text-destructive-foreground flex items-center gap-1">
                                 <AlertCircle className="size-3" />
                                 {failed}
                             </span>
@@ -213,8 +215,12 @@ function BatchProgressPanelComponent({
                         >
                             {/* Status icon */}
                             <div className="w-4 flex-shrink-0">
-                                {item.status === 'success' && <CheckCircle className="size-3 text-success" />}
-                                {item.status === 'error' && <AlertCircle className="size-3 text-destructive" />}
+                                {item.status === 'success' && (
+                                    <CheckCircle className="size-3 text-success-foreground" />
+                                )}
+                                {item.status === 'error' && (
+                                    <AlertCircle className="size-3 text-destructive-foreground" />
+                                )}
                                 {item.status === 'running' && <Loader2 className="size-3 text-blue-500 animate-spin" />}
                                 {item.status === 'pending' && (
                                     <div className="size-3 rounded-full border border-gray-300 dark:border-gray-600" />
@@ -222,18 +228,21 @@ function BatchProgressPanelComponent({
                             </div>
 
                             {/* Item ID */}
-                            <span className="font-mono text-muted w-24 truncate flex-shrink-0" title={item.id}>
+                            <span
+                                className="font-mono text-muted-foreground w-24 truncate flex-shrink-0"
+                                title={item.id}
+                            >
                                 {item.id}
                             </span>
 
                             {/* Message */}
-                            <span className="text-muted truncate flex-1" title={item.message}>
+                            <span className="text-muted-foreground truncate flex-1" title={item.message}>
                                 {item.message || (item.status === 'pending' ? t('agent.waiting') : '')}
                             </span>
 
                             {/* Duration */}
                             {item.duration_ms !== undefined && (
-                                <span className="text-muted flex-shrink-0">
+                                <span className="text-muted-foreground flex-shrink-0">
                                     {(item.duration_ms / 1000).toFixed(1)}s
                                 </span>
                             )}
@@ -244,7 +253,7 @@ function BatchProgressPanelComponent({
 
             {/* Summary message if collapsed and has message */}
             {!isExpanded && message.message && (
-                <div className={cn('px-4 py-2 text-xs text-muted', summaryClassName)}>{message.message}</div>
+                <div className={cn('px-4 py-2 text-xs text-muted-foreground', summaryClassName)}>{message.message}</div>
             )}
         </div>
     );

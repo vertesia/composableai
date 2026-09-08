@@ -341,7 +341,7 @@ const TabsTrigger: React.ForwardRefExoticComponent<
                     variant === 'tabs'
                         ? cn(
                               'border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer',
-                              'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
+                              'border-transparent text-foreground hover:border-border hover:text-foreground',
                               'data-[state=active]:border-primary data-[state=active]:text-primary',
                               'disabled:pointer-events-none disabled:opacity-50',
                           )

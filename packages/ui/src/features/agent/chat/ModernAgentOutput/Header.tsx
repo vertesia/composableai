@@ -287,10 +287,10 @@ export default function Header({
             >
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-1">
-                        <Bot className="size-5 text-muted" />
+                        <Bot className="size-5 text-muted-foreground" />
                         <span className="font-medium">{title}</span>
                     </div>
-                    <span className="text-xs text-muted ms-1 flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground ms-1 flex items-center gap-1.5">
                         (Agent Run ID: {agentRunId})
                         {/* Streaming chunk indicator - gray when idle, purple when receiving */}
                         <span
@@ -420,14 +420,14 @@ function MoreDropdown({
         >
             <MenuGroup label="Actions">
                 <MenuItem onClick={copyAgentRunId}>
-                    <CopyIcon className="size-3.5 text-muted" /> {t('agent.copyAgentRunId')}
+                    <CopyIcon className="size-3.5 text-muted-foreground" /> {t('agent.copyAgentRunId')}
                 </MenuItem>
                 <MenuItem onClick={copyWorkflowRunId}>
-                    <CopyIcon className="size-3.5 text-muted" /> {t('agent.copyWorkflowRunId')}
+                    <CopyIcon className="size-3.5 text-muted-foreground" /> {t('agent.copyWorkflowRunId')}
                 </MenuItem>
                 {onShowDetails && (
                     <MenuItem onClick={onShowDetails}>
-                        <InfoIcon className="size-3.5 text-muted" /> {t('agent.details')}
+                        <InfoIcon className="size-3.5 text-muted-foreground" /> {t('agent.details')}
                     </MenuItem>
                 )}
                 <MenuItem
@@ -439,26 +439,27 @@ function MoreDropdown({
                         }
                     }}
                 >
-                    <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.downloadConversation')}
+                    <DownloadCloudIcon className="size-3.5 text-muted-foreground" /> {t('agent.downloadConversation')}
                 </MenuItem>
                 {onExportPdf && (
                     <MenuItem onClick={onExportPdf}>
-                        <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.exportAsPdf')}
+                        <DownloadCloudIcon className="size-3.5 text-muted-foreground" /> {t('agent.exportAsPdf')}
                     </MenuItem>
                 )}
                 {onExportFixture && (
                     <MenuItem onClick={onExportFixture}>
-                        <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.rewind.exportFixture')}
+                        <DownloadCloudIcon className="size-3.5 text-muted-foreground" />{' '}
+                        {t('agent.rewind.exportFixture')}
                     </MenuItem>
                 )}
                 {onClose && isModal && (
                     <MenuItem onClick={onClose}>
-                        <XIcon className="size-3.5 text-muted" /> {t('agent.close')}
+                        <XIcon className="size-3.5 text-muted-foreground" /> {t('agent.close')}
                     </MenuItem>
                 )}
                 {onClone && (
                     <MenuItem onClick={cloneWorkflow}>
-                        <GitFork className="size-3.5 text-muted" /> {t('agent.cloneConversation')}
+                        <GitFork className="size-3.5 text-muted-foreground" /> {t('agent.cloneConversation')}
                     </MenuItem>
                 )}
                 {allowWorkflowControl && !isTerminal && (

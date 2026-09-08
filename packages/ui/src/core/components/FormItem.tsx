@@ -118,10 +118,10 @@ export function FormItem({
             <div className={clsx('flex items-center gap-1 mb-0', fullWidthLabel && 'w-full')}>
                 <label
                     htmlFor={labelHtmlFor}
-                    className={`text-sm font-medium mb-1 ${disabled ? 'text-muted' : ''} ${fullWidthLabel && 'flex-1'}`}
+                    className={`text-sm font-medium mb-1 ${disabled ? 'text-muted-foreground' : ''} ${fullWidthLabel && 'flex-1'}`}
                 >
                     {label}
-                    {required ? <span className="text-destructive -mt-4 ms-1">*</span> : ''}
+                    {required ? <span className="text-destructive-foreground -mt-4 ms-1">*</span> : ''}
                 </label>
                 {description && (
                     <div className="mx-2 flex w-4 items-center">
@@ -131,12 +131,12 @@ export function FormItem({
             </div>
             {renderedChildren}
             {helpText && (
-                <p id={helpTextId} className="text-xs text-muted">
+                <p id={helpTextId} className="text-xs text-muted-foreground">
                     {helpText}
                 </p>
             )}
             {error && (
-                <p id={errorId} className="text-xs text-destructive">
+                <p id={errorId} className="text-xs text-destructive-foreground">
                     {error}
                 </p>
             )}

@@ -186,7 +186,7 @@ function PropertyTitleBar({ property, readonly }: PropertyTitleBarProps) {
             ) : property.extractable === false ? (
                 <div className="shrink-0 w-28 flex justify-end pe-1">
                     <span
-                        className="text-[10px] uppercase tracking-wide text-attention border border-attention/40 bg-attention/10 rounded px-1.5 py-0.5"
+                        className="text-[10px] uppercase tracking-wide text-attention-foreground border border-attention-foreground/40 bg-attention-foreground/10 rounded px-1.5 py-0.5"
                         title={t('widgets.schema.extractFromDocumentHint')}
                     >
                         {t('widgets.schema.noExtract')}

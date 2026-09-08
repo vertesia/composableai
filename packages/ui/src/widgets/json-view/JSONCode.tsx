@@ -50,13 +50,13 @@ export function renderJsonLine(line: string) {
         // A string is a key when immediately followed by a colon.
         const isKey = stringValue !== undefined && KEY_SUFFIX.test(line.slice(match.index + token.length));
         const className = isKey
-            ? 'text-info'
+            ? 'text-info-foreground'
             : stringValue
-              ? 'text-success'
+              ? 'text-success-foreground'
               : literal
                 ? 'text-primary'
                 : numberValue
-                  ? 'text-attention'
+                  ? 'text-attention-foreground'
                   : undefined;
 
         parts.push(

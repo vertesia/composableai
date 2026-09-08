@@ -15,7 +15,7 @@ function NodeLabel({ node }: { node: ViewNavigationNode }) {
     return (
         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
             <span className="truncate">{node.label}</span>
-            <span className="text-xs tabular-nums text-muted">{node.count}</span>
+            <span className="text-xs tabular-nums text-muted-foreground">{node.count}</span>
         </span>
     );
 }
@@ -96,7 +96,9 @@ export function DefaultViewNavigation({
                     <ol className="flex flex-wrap items-center gap-1 text-sm">
                         {breadcrumbs.map((node, index) => (
                             <li key={node.id} className="flex items-center gap-1">
-                                {index > 0 && <ChevronRight aria-hidden="true" className="size-3.5 text-muted" />}
+                                {index > 0 && (
+                                    <ChevronRight aria-hidden="true" className="size-3.5 text-muted-foreground" />
+                                )}
                                 <Button
                                     type="button"
                                     variant="ghost"
@@ -173,7 +175,7 @@ export function DefaultViewNavigation({
                             onClick={() => toggle(node.id, !result.selected.includes(node.id))}
                         >
                             {node.label}
-                            <span className="text-xs tabular-nums text-muted">{node.count}</span>
+                            <span className="text-xs tabular-nums text-muted-foreground">{node.count}</span>
                         </Button>
                     ))}
                 </div>
@@ -190,7 +192,7 @@ export function DefaultViewNavigation({
                         >
                             <NodeLabel node={node} />
                             {node.expandable && (
-                                <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted" />
+                                <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
                             )}
                         </Button>
                     ))}
@@ -219,7 +221,9 @@ export function DefaultViewNavigation({
                 </div>
             )}
 
-            {result.nodes.length === 0 && <p className="text-sm text-muted">{t('filter.noAvailableFilters')}</p>}
+            {result.nodes.length === 0 && (
+                <p className="text-sm text-muted-foreground">{t('filter.noAvailableFilters')}</p>
+            )}
         </section>
     );
 }
