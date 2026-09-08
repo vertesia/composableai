@@ -1217,6 +1217,15 @@ function getToolTarget(details: Record<string, unknown>): string | undefined {
     return undefined;
 }
 
+/**
+ * An approval decision that stopped the tool from running — a denial, a timeout, or a cancellation
+ * — as opposed to one that released it. Unknown decisions count as blocking: every decision the
+ * agent has ever emitted except `auto_approved` is one, so that is the safer default.
+ */
+function isBlockingApprovalDecision(decision: unknown): boolean {
+    return typeof decision === 'string' && decision !== 'auto_approved';
+}
+
 function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string | undefined {
     switch (decision) {
         case 'denied':
@@ -1228,6 +1237,8 @@ function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string 
             return `Approval reviewer denied ${toolLabel}.`;
         case 'cancelled_after_denial':
             return `Cancelled ${toolLabel} after another tool was denied.`;
+        case 'auto_approved':
+            return `Approval no longer required for ${toolLabel}.`;
         default:
             return undefined;
     }
@@ -1244,6 +1255,8 @@ function getApprovalDecisionStatusText(decision: unknown): string | undefined {
             return 'Denied by reviewer';
         case 'cancelled_after_denial':
             return 'Cancelled after denial';
+        case 'auto_approved':
+            return 'Approved without asking';
         default:
             return undefined;
     }
@@ -1474,7 +1487,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
     addSection(
         'Output',
         ['output', 'stdout', 'result', 'results', 'content', 'result_summary', 'observation', 'display_message'],
-        typeof details.approval_decision === 'string' ? 'error' : undefined,
+        isBlockingApprovalDecision(details.approval_decision) ? 'error' : undefined,
     );
     addSection('Files', ['files', 'outputFiles']);
     addSection('Error', ['error', 'stderr'], 'error');
