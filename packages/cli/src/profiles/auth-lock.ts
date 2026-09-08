@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createServer, type Server } from 'node:net';
-import { homedir } from 'node:os';
+import { userInfo } from 'node:os';
 import { performance } from 'node:perf_hooks';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -12,9 +12,10 @@ export class AuthRefreshLockError extends Error {
 }
 
 export class AuthRefreshBusyError extends AuthRefreshLockError {
-    constructor(profileName: string, cause: unknown) {
+    constructor(profileName: string, port: number, cause: unknown) {
         super(
-            `Authentication refresh for profile "${profileName}" is busy. Wait for the other command and try again.`,
+            `Authentication refresh for profile "${profileName}" could not acquire local port 127.0.0.1:${port}. ` +
+                'Another command or application may be using it. Retry later or check which process occupies the port.',
             cause,
         );
         this.name = 'AuthRefreshBusyError';
@@ -30,11 +31,17 @@ export class AuthRefreshBusyError extends AuthRefreshLockError {
 export async function withProfileAuthLock<T>(
     profileName: string,
     operation: () => Promise<T>,
-    namespace = homedir(),
+    namespace?: string,
     timeoutMs = 75_000,
 ): Promise<T> {
+    let userNamespace: string;
+    try {
+        userNamespace = namespace ?? authUserNamespace();
+    } catch (error: unknown) {
+        throw new AuthRefreshLockError('Unable to identify the OS user for authentication coordination.', error);
+    }
     const key = createHash('sha256')
-        .update(JSON.stringify(['vertesia-auth-v1', namespace, profileName]))
+        .update(JSON.stringify(['vertesia-auth-v1', userNamespace, profileName]))
         .digest();
     const port = 49_152 + (key.readUInt32BE(0) % 16_384);
     const started = performance.now();
@@ -47,14 +54,18 @@ export async function withProfileAuthLock<T>(
         } catch (error: unknown) {
             if (!error || typeof error !== 'object' || !('code' in error) || error.code !== 'EADDRINUSE') {
                 throw new AuthRefreshLockError(
-                    `Unable to coordinate authentication refresh for profile "${profileName}".`,
+                    `Unable to coordinate authentication refresh for profile "${profileName}". ` +
+                        `Allow this command to bind to 127.0.0.1:${port} and retry.`,
                     error,
                 );
             }
             const elapsed = performance.now() - started;
-            if (elapsed >= timeoutMs) throw new AuthRefreshBusyError(profileName, error);
+            if (elapsed >= timeoutMs) throw new AuthRefreshBusyError(profileName, port, error);
             if (!notified && elapsed >= 5_000) {
-                console.warn(`Waiting for another command to finish refreshing profile "${profileName}"...`);
+                console.warn(
+                    `Waiting for authentication coordination for profile "${profileName}": ` +
+                        `local port 127.0.0.1:${port} is occupied...`,
+                );
                 notified = true;
             }
             await delay(Math.min(250, timeoutMs - elapsed));
@@ -79,4 +90,11 @@ function acquire(port: number): Promise<Server> {
         server.once('error', reject);
         server.listen({ host: '127.0.0.1', port, exclusive: true }, () => resolve(server));
     });
+}
+
+function authUserNamespace(): string {
+    // Match the OS user that owns the keychain, regardless of HOME overrides.
+    // Windows reports uid -1; its OS-provided username is stable across shells.
+    const user = userInfo();
+    return user.uid >= 0 ? `uid:${user.uid}` : `username:${user.username}`;
 }

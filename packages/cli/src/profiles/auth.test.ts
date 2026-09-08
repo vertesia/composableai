@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     bundle: undefined as StoredAuthBundle | undefined,
     refresh: vi.fn(),
     persist: vi.fn(),
+    read: vi.fn(),
     readError: undefined as Error | undefined,
     lock: vi.fn(),
     start: vi.fn(),
@@ -66,6 +67,7 @@ beforeEach(async () => {
     vi.stubGlobal('Bun', {
         secrets: {
             get: async () => {
+                mocks.read();
                 if (mocks.readError) throw mocks.readError;
                 return mocks.bundle ? JSON.stringify(mocks.bundle) : null;
             },
@@ -99,6 +101,17 @@ describe('profile refresh', () => {
         expect(await createProfileAuthProvider(profile)()).toBe('Bearer new-access');
         expect(mocks.refresh).toHaveBeenCalledWith(profile, 'old-refresh', expect.anything(), {});
         expect(mocks.persist).toHaveBeenCalledWith(result, expect.objectContaining({ requireKeyring: true }));
+    });
+
+    it('uses one fresh snapshot under the lock for exchange and persistence', async () => {
+        const fresh = { ...mocks.bundle, version: 1, refreshToken: 'rotated-by-other-process' };
+        mocks.lock.mockImplementationOnce(() => {
+            mocks.bundle = fresh;
+        });
+        expect(await ensureProfileAccessToken(profile)).toBe('new-access');
+        expect(mocks.read).toHaveBeenCalledTimes(2);
+        expect(mocks.refresh).toHaveBeenCalledWith(profile, fresh.refreshToken, fresh, {});
+        expect(mocks.persist).toHaveBeenCalledWith(result, { requireKeyring: true, previousBundle: fresh });
     });
 
     it('rechecks the keychain after waiting for another automatic refresh', async () => {

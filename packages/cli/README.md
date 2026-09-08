@@ -47,3 +47,5 @@ Otherwise the original refresh error is surfaced. Failed exchanges do not delete
 Saving a rotated replacement retries the same keychain write up to three times; it never repeats the token exchange.
 If saving still fails, the CLI reports the keychain error instead of reporting a successful refresh.
 A lost response after server-side rotation can still require interactive authentication.
+
+Refresh coordination uses the OS user identity and profile name, independently of home-directory overrides. If its local port is occupied, the CLI reports the address so you can identify the owning process. Coordination failures stop credential writes; allow loopback binding before retrying.

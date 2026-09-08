@@ -2,15 +2,21 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { Server } from 'node:net';
-import { tmpdir } from 'node:os';
+import { tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript-legacy';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthRefreshBusyError, withProfileAuthLock } from './auth-lock.js';
+import { AuthRefreshBusyError, AuthRefreshLockError, withProfileAuthLock } from './auth-lock.js';
+
+vi.mock('node:os', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('node:os')>();
+    return { ...actual, userInfo: vi.fn(actual.userInfo) };
+});
 
 let directory: string;
 beforeEach(async () => {
+    // The random namespace can collide with an unrelated ephemeral port user.
     directory = await mkdtemp(join(tmpdir(), 'cli-auth-lock-'));
     const source = await readFile(new URL('./auth-lock.ts', import.meta.url), 'utf8');
     const compiled = ts.transpileModule(source, {
@@ -24,6 +30,28 @@ afterEach(async () => {
 });
 
 describe('profile authentication lock', () => {
+    it.each([501, -1])('coordinates by OS user independently of home directory (uid %s)', async (uid) => {
+        const user = { ...userInfo(), uid, username: 'test-user', homedir: '/first-home' };
+        vi.mocked(userInfo).mockReturnValue(user);
+        await withProfileAuthLock(directory, async () => {
+            vi.mocked(userInfo).mockReturnValue({ ...user, homedir: '/second-home' });
+            const operation = vi.fn(async () => 'must not run');
+            await expect(withProfileAuthLock(directory, operation, undefined, 0)).rejects.toThrow(
+                /local port 127\.0\.0\.1:.*Another command or application/,
+            );
+            expect(operation).not.toHaveBeenCalled();
+        });
+    });
+
+    it('fails closed when the OS user cannot be identified', async () => {
+        vi.mocked(userInfo).mockImplementationOnce(() => {
+            throw new Error('OS user unavailable');
+        });
+        const operation = vi.fn(async () => 'must not run');
+        await expect(withProfileAuthLock(directory, operation)).rejects.toBeInstanceOf(AuthRefreshLockError);
+        expect(operation).not.toHaveBeenCalled();
+    });
+
     it('serializes separate processes sharing the same profile', async () => {
         const modulePath = join(directory, 'auth-lock.mjs');
         const counter = join(directory, 'counter');

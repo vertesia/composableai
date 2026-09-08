@@ -168,7 +168,14 @@ export async function readUsableProfileToken(
     profile: Pick<Profile, 'name' | 'apikey'>,
     thresholdSeconds: number,
 ): Promise<string | undefined> {
-    const bundle = await readAuthBundle(profile.name);
+    return selectUsableProfileToken(profile, await readAuthBundle(profile.name), thresholdSeconds);
+}
+
+export function selectUsableProfileToken(
+    profile: Pick<Profile, 'apikey'>,
+    bundle: StoredAuthBundle | undefined,
+    thresholdSeconds: number,
+): string | undefined {
     const threshold = Date.now() + thresholdSeconds * 1000;
     if (bundle?.accessToken) {
         const expiresAt = bundle.accessTokenExpiresAt ?? getAccessTokenExpiry(bundle.accessToken);

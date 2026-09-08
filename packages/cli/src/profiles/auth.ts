@@ -2,7 +2,7 @@ import { AuthRefreshLockError, withProfileAuthLock } from './auth-lock.js';
 import type { OnResultCallback } from './commands.js';
 import type { Profile } from './index.js';
 import { config } from './index.js';
-import { readAuthBundle, readUsableProfileToken } from './keyring.js';
+import { readAuthBundle, readUsableProfileToken, type StoredAuthBundle, selectUsableProfileToken } from './keyring.js';
 import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import type { ConfigResult } from './server/index.js';
 
@@ -10,16 +10,18 @@ export async function ensureProfileAccessToken(
     profile: Profile,
     onResult?: OnResultCallback,
 ): Promise<string | undefined> {
-    const currentToken = await readUsableProfileToken(profile, 30);
+    const currentBundle = await readAuthBundle(profile.name);
+    const currentToken = selectUsableProfileToken(profile, currentBundle, 30);
     if (currentToken) return currentToken;
-    if (!(await canRefreshProfile(profile))) return undefined;
+    if (!currentBundle?.refreshToken || !canUseOAuthProfile(profile)) return undefined;
     return withProfileAuthLock(profile.name, async () => {
         // Re-read under the lock: another process may have refreshed while we waited.
-        const token = await readUsableProfileToken(profile, 30);
+        const bundle = await readAuthBundle(profile.name);
+        const token = selectUsableProfileToken(profile, bundle, 30);
         if (token) {
             return token;
         }
-        const result = await refreshProfileAccessTokenUnlocked(profile, onResult);
+        const result = await refreshProfileAccessTokenUnlocked(profile, bundle, onResult);
         return result?.token;
     });
 }
@@ -83,7 +85,10 @@ export async function refreshProfileAccessToken(
     } = {},
 ): Promise<ConfigResult | undefined> {
     if (!(await canRefreshProfile(profile))) return undefined;
-    return withProfileAuthLock(profile.name, () => refreshProfileAccessTokenUnlocked(profile, onResult, options));
+    return withProfileAuthLock(profile.name, async () => {
+        const bundle = await readAuthBundle(profile.name);
+        return refreshProfileAccessTokenUnlocked(profile, bundle, onResult, options);
+    });
 }
 
 async function canRefreshProfile(profile: Profile): Promise<boolean> {
@@ -93,10 +98,10 @@ async function canRefreshProfile(profile: Profile): Promise<boolean> {
 /** Caller must hold the profile lock until the rotated credentials have been persisted. */
 async function refreshProfileAccessTokenUnlocked(
     profile: Profile,
+    bundle: StoredAuthBundle | undefined,
     onResult?: OnResultCallback,
     options: { projectId?: string } = {},
 ): Promise<ConfigResult | undefined> {
-    const bundle = await readAuthBundle(profile.name);
     if (!bundle?.refreshToken || !canUseOAuthProfile(profile)) {
         return undefined;
     }
@@ -128,7 +133,7 @@ export async function refreshProfileAuthentication(
             return refreshed;
         }
     } catch (error) {
-        // Do not start a second interactive credential writer while another process owns the lock.
+        // Without coordination we cannot safely start another credential writer.
         if (error instanceof AuthRefreshLockError) throw error;
         if (options.projectId) {
             throw error;
