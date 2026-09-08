@@ -39,6 +39,7 @@ import {
     type ObjectSearchResponse,
     type ProjectedContentObjectApiResponse,
     type SetObjectEmbeddingsResponse,
+    type SetObjectTextPayload,
     type StartContentObjectExportRequest,
     type StartContentObjectExportResponse,
     type SupportedEmbeddingTypes,
@@ -278,6 +279,18 @@ export class ObjectsApi extends ApiTopic {
 
     getObjectText(id: string): Promise<ContentObjectTextResponse> {
         return this.get(`/${id}/text`);
+    }
+
+    /**
+     * Store the extracted text of an object as a text artifact.
+     *
+     * Pass the content etag the text was extracted from so the server records it as the
+     * object `text_etag`, allowing extraction to be skipped while the content is unchanged.
+     */
+    setObjectText(id: string, payload: SetObjectTextPayload): Promise<ContentObjectTextResponse> {
+        return this.put(`/${id}/text`, {
+            payload,
+        });
     }
 
     async upload(source: StreamSource | File) {

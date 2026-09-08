@@ -12,6 +12,16 @@ export const StartProjectReindexPayloadSchema = z
         concurrency: z.number().optional(),
         bulk_size_bytes: z.number().optional(),
         bulk_concurrency: z.number().optional(),
+        modified_since: z
+            .string()
+            .meta({
+                format: 'date-time',
+                description:
+                    'When set, reindex only documents whose updated_at is at or after this RFC3339/ISO-8601 ' +
+                    'datetime. Writes in-place into the live index (no new versioned target, no alias swap). ' +
+                    'Omit for a full reindex into a fresh versioned target.',
+            })
+            .optional(),
     })
     .meta({ id: 'StartProjectReindexPayload' });
 
