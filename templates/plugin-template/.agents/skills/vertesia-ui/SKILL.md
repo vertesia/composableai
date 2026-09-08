@@ -316,8 +316,11 @@ export default [
   parent's `children`: nesting is never inferred from the path, so listing `/admin/members` at the top
   level makes it a sibling of `/admin`, not a child. A sub-view rendered from parent-local state with
   no route cannot be listed here at all — that is a missing route in the app, not an entry to omit.
-- Not every route belongs here. Mirror the routes that carry a `label` and are not `hideFromNav` —
-  the same set `PluginSidebar` renders in the app's own sidebar. Catch-alls and redirects stay out.
+- Not every route belongs here, and this module's routes file is not the whole list. Mirror the
+  COMPOSED routes — what `src/ui/app-ui-modules.tsx` exports, concatenating every active UI module —
+  taking each one that carries a `label` and is not `hideFromNav`, whichever module declares it. A
+  scaffold selected with an assistant or content-app module serves those routes too. With no extra
+  modules the composed list is just the app module's own. Catch-alls and redirects stay out.
 - This file **maps existing routes, it does not create them**. Add, rename, and remove entries in the
   same change as the routes themselves — a listed route that does not resolve is a broken sidebar
   link, and an unlisted route is invisible to composite users.

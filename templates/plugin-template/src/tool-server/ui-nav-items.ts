@@ -17,8 +17,14 @@ import type { AppUINavItem } from '@vertesia/common';
  * parent-local state with no route is a missing route first. Nesting comes from `children` alone and
  * is never inferred from the path.
  *
- * Mirror the routes that carry a `label` and are not `hideFromNav` -- the same set the app's own
- * sidebar renders. Catch-alls and redirects stay out.
+ * Mirror the COMPOSED route list -- what `src/ui/app-ui-modules.tsx` exports, which concatenates every
+ * active UI module's routes, not just `src/modules/app/ui/routes.tsx`. Take each route there carrying a
+ * `label` and not marked `hideFromNav`, whichever module declares it. Catch-alls and redirects stay out.
+ *
+ * The one entry below is the default for a scaffold with no extra UI modules. A scaffold selected with
+ * an assistant or content-app module already serves that module's labelled routes on day one, so this
+ * list starts INCOMPLETE for those apps -- reconcile it against the composed list rather than assuming
+ * the default is the whole picture.
  *
  * `icon` is a Lucide icon name (https://lucide.dev/icons) or an SVG element as a string; `route` is
  * relative to the app's base URL. Only `/` exists in every scaffold -- add an entry per user-facing

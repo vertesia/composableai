@@ -153,6 +153,12 @@ declared is a route its sidebar cannot offer.
   about/help/support; leave it unset for ordinary pages so they stay in the app's own group.
 - `icon` is the Lucide icon NAME, not the local identifier a route file imported it as: `routes.tsx`
   may say `import { Home as HomeIcon }`, and the nav entry still says `'Home'`.
+- **Mirror the COMPOSED route list, not just this module's routes file.** `src/ui/app-ui-modules.tsx`
+  concatenates every active UI module's routes, and all of them are served by the app. Take each route
+  there that carries a `label` and is not `hideFromNav`, whichever module declares it — a scaffold
+  selected with extra modules (an assistant, a content app) serves their routes too, and they belong
+  in the sidebar just as much as the ones you wrote. With no extra modules the composed list is simply
+  `src/modules/app/ui/routes.tsx` and the two are identical.
 - An administrator can rearrange the composite menu afterwards, and their edits are preserved.
   Studio reconciles the stored menu against this list — new routes are offered, and entries whose
   route disappeared are flagged as stale — so an accurate list is what makes that reconciliation
