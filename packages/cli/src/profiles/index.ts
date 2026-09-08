@@ -188,7 +188,7 @@ export class ConfigureProfile {
         };
     }
 
-    async persistConfigResult(result: ConfigResult | undefined) {
+    async persistConfigResult(result: ConfigResult | undefined, options: { requireKeyring?: boolean } = {}) {
         if (!result) {
             return;
         }
@@ -214,6 +214,9 @@ export class ConfigureProfile {
             });
             delete this.data.apikey;
         } catch (error: unknown) {
+            if (options.requireKeyring) {
+                throw new Error('Unable to save refreshed credentials in the native keychain.', { cause: error });
+            }
             const message = error instanceof Error ? error.message : String(error);
             console.warn(
                 `Unable to store credentials in the native keychain; falling back to profile file storage: ${message}`,

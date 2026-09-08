@@ -1,7 +1,8 @@
+import { withProfileAuthLock } from './auth-lock.js';
 import type { OnResultCallback } from './commands.js';
 import type { Profile } from './index.js';
-import { config, shouldRefreshProfileToken } from './index.js';
-import { readAuthBundle, readProfileAccessToken } from './keyring.js';
+import { config } from './index.js';
+import { getAccessTokenExpiry, readAuthBundle } from './keyring.js';
 import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import type { ConfigResult } from './server/index.js';
 
@@ -9,13 +10,17 @@ export async function ensureProfileAccessToken(
     profile: Profile,
     onResult?: OnResultCallback,
 ): Promise<string | undefined> {
-    const token = await readProfileAccessToken(profile);
-    if (token && !(await shouldRefreshProfileToken(profile, 30))) {
-        return token;
-    }
-
-    const result = await refreshProfileAccessToken(profile, onResult);
-    return result?.token;
+    const currentToken = await readUsableProfileToken(profile, 30);
+    if (currentToken) return currentToken;
+    return withProfileAuthLock(profile.name, async () => {
+        // Re-read under the lock: another process may have refreshed while we waited.
+        const token = await readUsableProfileToken(profile, 30);
+        if (token) {
+            return token;
+        }
+        const result = await refreshProfileAccessTokenUnlocked(profile, onResult);
+        return result?.token;
+    });
 }
 
 /**
@@ -52,16 +57,32 @@ async function resolveProfileToken(profile: Profile): Promise<string | undefined
         if (token) {
             return token;
         }
-    } catch (error) {
-        // A refresh failure is often transient (network, STS hiccup). Report it and fall back to
-        // the stored token so a long-running command can recover on the next request.
+    } catch (error: unknown) {
+        // A proactive refresh may fail while the old token is still usable. Never
+        // hide the refresh error behind a subsequent request with an expired JWT.
+        const token = await readUsableProfileToken(profile, 0);
+        if (!token) {
+            throw error;
+        }
         console.warn(
             `Failed to refresh the access token for profile "${profile.name}": ${
                 error instanceof Error ? error.message : String(error)
             }`,
         );
+        return token;
     }
-    return readProfileAccessToken(profile);
+    return undefined;
+}
+
+/** Check expiry and token from the same keychain snapshot. */
+async function readUsableProfileToken(profile: Profile, thresholdSeconds: number): Promise<string | undefined> {
+    const bundle = await readAuthBundle(profile.name);
+    const token = bundle?.accessToken || profile.apikey;
+    if (!token) return undefined;
+    const expiresAt = bundle?.accessToken
+        ? (bundle.accessTokenExpiresAt ?? getAccessTokenExpiry(token))
+        : getAccessTokenExpiry(token);
+    return expiresAt && expiresAt > Date.now() + thresholdSeconds * 1000 ? token : undefined;
 }
 
 export async function refreshProfileAccessToken(
@@ -71,6 +92,15 @@ export async function refreshProfileAccessToken(
         projectId?: string;
     } = {},
 ): Promise<ConfigResult | undefined> {
+    return withProfileAuthLock(profile.name, () => refreshProfileAccessTokenUnlocked(profile, onResult, options));
+}
+
+/** Caller must hold the profile lock until the rotated credentials have been persisted. */
+async function refreshProfileAccessTokenUnlocked(
+    profile: Profile,
+    onResult?: OnResultCallback,
+    options: { projectId?: string } = {},
+): Promise<ConfigResult | undefined> {
     const bundle = await readAuthBundle(profile.name);
     if (!bundle?.refreshToken || !canUseOAuthProfile(profile)) {
         return undefined;
@@ -79,7 +109,7 @@ export async function refreshProfileAccessToken(
     const result = await refreshOAuthSession(profile, bundle.refreshToken, bundle, options);
     const updater = config.updateProfile(profile.name);
     updater.onResultCallback = onResult;
-    await updater.persistConfigResult(result);
+    await updater.persistConfigResult(result, { requireKeyring: true });
     return result;
 }
 
