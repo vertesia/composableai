@@ -106,7 +106,11 @@ export function UserPermissionProvider({ children, loadingIcon }: UserPermission
                     <div aria-hidden="true" className="flex justify-center">
                         {loadingIcon || (!failed && <Spinner size="2xl" className="text-primary" />)}
                     </div>
-                    <div role={failed ? 'alert' : 'status'} aria-live="polite" className="space-y-2">
+                    <div
+                        role={failed ? 'alert' : 'status'}
+                        aria-live={failed ? 'assertive' : 'polite'}
+                        className="space-y-2"
+                    >
                         <h1 className="text-xl font-semibold">{title}</h1>
                         <p className="text-muted-foreground">
                             {needsSignIn

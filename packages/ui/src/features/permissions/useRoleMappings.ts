@@ -1,6 +1,6 @@
 import type { VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload, SystemRoleDefinition } from '@vertesia/common';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type RoleMappingsState =
     | { status: 'loading' | 'retrying' }
@@ -29,7 +29,9 @@ function isTransient(error: unknown): boolean {
 export function useRoleMappings(client: VertesiaClient, authToken?: AuthTokenPayload) {
     // UserSession.rawAuthToken decodes the cached JWT on each authenticated request.
     // Object identity would restart recovery on every failure (or success), forever.
-    const tokenKey = authToken ? JSON.stringify(authToken) : undefined;
+    // Preserve all claims in the identity: subject/account/expiry can stay the same
+    // when project, roles, or other authorization claims change.
+    const tokenKey = useMemo(() => (authToken ? JSON.stringify(authToken) : undefined), [authToken]);
     const needsMappings = Boolean(authToken && !authToken.permissions);
     const [attempt, setAttempt] = useState(0);
     const [result, setResult] = useState<{
