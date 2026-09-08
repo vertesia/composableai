@@ -7,10 +7,17 @@ import { ReactRouterContext, useRouterContext } from './Router';
 
 interface NestedNavigationContextProps {
     basePath: string;
+    /** Whether this base path is relative to the current nested router. Defaults to true. */
+    isBasePathNested?: boolean;
     fixLinks?: boolean;
     children: React.ReactNode | React.ReactNode[];
 }
-export function NestedNavigationContext({ basePath, fixLinks = false, children }: NestedNavigationContextProps) {
+export function NestedNavigationContext({
+    basePath,
+    isBasePathNested = true,
+    fixLinks = false,
+    children,
+}: NestedNavigationContextProps) {
     const ctx = useRouterContext();
 
     const wrapWithFixLinks = fixLinks
@@ -27,7 +34,7 @@ export function NestedNavigationContext({ basePath, fixLinks = false, children }
                         return ctx.navigate(to, options);
                     }
                     const actualBasePath = options?.basePath ? joinPath(basePath, options.basePath) : basePath;
-                    return ctx.navigate(to, { ...options, basePath: actualBasePath });
+                    return ctx.navigate(to, { ...options, basePath: actualBasePath, isBasePathNested });
                 },
             }}
         >

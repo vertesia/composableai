@@ -15,6 +15,7 @@ import {
     PromptSegmentDefSchema,
     ResolvedCatalogInteractionSchema,
 } from './interaction.js';
+import { validateApiRequest } from './registry.js';
 
 describe('conversation state contract', () => {
     it('publishes the tool catalog storage scope used to resolve tool references', () => {
@@ -226,5 +227,35 @@ describe('interaction contracts', () => {
                 template: { ...populatedPrompt, edit_revision: 3 },
             }).success,
         ).toBe(true);
+    });
+});
+
+describe('user message payload contract', () => {
+    const base = {
+        run: { id: 'run-1', account: 'acc-1', project: 'proj-1' },
+        environment: 'env-1',
+        options: { model: 'model-1' },
+        tools: [],
+        message: 'Search the other collection instead.',
+    };
+
+    it('accepts tool results owed to the model alongside the message', () => {
+        // A stop or an approval denial can leave results undelivered. They have to travel with
+        // the message that resumes the conversation: the payload is strict, so before `results`
+        // existed here the server rejected them and the work was silently dropped.
+        const result = validateApiRequest('UserMessagePayload', {
+            ...base,
+            results: [{ tool_use_id: 'search-1', content: 'found 3 docs', is_error: false }],
+        });
+
+        expect(result.valid).toBe(true);
+    });
+
+    it('still accepts a message with no owed results', () => {
+        expect(validateApiRequest('UserMessagePayload', base).valid).toBe(true);
+    });
+
+    it('stays closed to undeclared fields', () => {
+        expect(validateApiRequest('UserMessagePayload', { ...base, unsupported: true }).valid).toBe(false);
     });
 });

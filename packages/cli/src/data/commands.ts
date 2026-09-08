@@ -58,7 +58,7 @@ export async function importData(
         },
     };
 
-    const job = await client.data.importData(storeId, payload);
+    const job = await client.data.import(storeId, payload);
 
     if (options.json) {
         console.log(JSON.stringify(job, null, 2));

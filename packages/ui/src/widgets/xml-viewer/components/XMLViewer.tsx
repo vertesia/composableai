@@ -37,7 +37,7 @@ export function XMLViewer(props: XMLViewerProps): React.ReactNode {
         return { ...baseTheme, ...customTheme };
     }, [isDarkMode, customTheme]);
 
-    const { json, valid } = useXMLViewer(xml);
+    const parsed = useXMLViewer(xml);
     const context = useMemo(
         () => ({
             theme,
@@ -48,7 +48,11 @@ export function XMLViewer(props: XMLViewerProps): React.ReactNode {
         [theme, collapsible, indentSize, initalCollapsedDepth, initialCollapsedDepth],
     );
 
-    if (!valid) {
+    // The parser is fetched on first use, so the result is not available on the first render.
+    if (!parsed) {
+        return null;
+    }
+    if (!parsed.valid) {
         return invalidXml ? invalidXml : <InvalidXml />;
     }
 
@@ -58,7 +62,7 @@ export function XMLViewer(props: XMLViewerProps): React.ReactNode {
                 className="rxv-container"
                 style={{ whiteSpace: 'pre-wrap', fontFamily: theme.fontFamily, overflowWrap: 'break-word' }}
             >
-                <Elements elements={json} />
+                <Elements elements={parsed.json} />
             </div>
         </XMLViewerContext.Provider>
     );

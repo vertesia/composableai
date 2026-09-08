@@ -7,22 +7,21 @@ import {
 import { useUserSession } from '@vertesia/ui/session';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-/**
- * A group of MCP tool collections that share authentication and activation state.
- */
+/** A visible MCP collection row. OAuth authentication may be shared with sibling rows. */
 export interface McpConnectionGroup {
     key: string;
     appId: string;
     appName: string;
-    /** Display label: provider display_name, oauth_app name, or individual collection name */
+    /** Display label for the MCP collection. */
     label: string;
-    /** Representative collection ID used for status and, for OAuth groups, connection operations. */
+    /** Collection ID used for status and OAuth operations; shared when collections use the same provider. */
     representativeId: string;
-    /** All collection IDs in this group (used for per-conversation activation toggles) */
+    /** Collection IDs controlled by this row's per-conversation activation toggle. */
     memberIds: string[];
-    /** Names of all collections in this group (for tooltip when > 1) */
+    /** Collection names represented by this row. */
     memberNames: string[];
     authType: 'oauth' | 'api_key';
+    oauthGrantType?: 'authorization_code' | 'client_credentials';
     authStatus?: OAuthAuthStatus;
 }
 
@@ -80,29 +79,36 @@ export function useMcpConnections() {
                 }
 
                 for (const [providerKey, cols] of providerMap) {
-                    allGroups.push({
-                        key: `${inst.id}:provider:${providerKey}`,
-                        appId: inst.id,
-                        appName: inst.manifest.title || inst.manifest.name,
-                        label: manifestProviders[providerKey]?.display_name || providerKey,
-                        representativeId: cols[0].id,
-                        memberIds: cols.map((c) => c.id),
-                        memberNames: cols.map((c) => c.name),
-                        authType: 'oauth',
-                    });
+                    const representativeId = cols[0].id;
+                    for (const col of cols) {
+                        allGroups.push({
+                            key: `${inst.id}:provider:${providerKey}:${col.id}`,
+                            appId: inst.id,
+                            appName: inst.manifest.title || inst.manifest.name,
+                            label: col.name,
+                            representativeId,
+                            memberIds: [col.id],
+                            memberNames: [col.name],
+                            authType: 'oauth',
+                            oauthGrantType: manifestProviders[providerKey]?.grant_type,
+                        });
+                    }
                 }
 
                 for (const [oauthApp, cols] of oauthAppMap) {
-                    allGroups.push({
-                        key: `${inst.id}:oauthapp:${oauthApp}`,
-                        appId: inst.id,
-                        appName: inst.manifest.title || inst.manifest.name,
-                        label: oauthApp,
-                        representativeId: cols[0].id,
-                        memberIds: cols.map((c) => c.id),
-                        memberNames: cols.map((c) => c.name),
-                        authType: 'oauth',
-                    });
+                    const representativeId = cols[0].id;
+                    for (const col of cols) {
+                        allGroups.push({
+                            key: `${inst.id}:oauthapp:${oauthApp}:${col.id}`,
+                            appId: inst.id,
+                            appName: inst.manifest.title || inst.manifest.name,
+                            label: col.name,
+                            representativeId,
+                            memberIds: [col.id],
+                            memberNames: [col.name],
+                            authType: 'oauth',
+                        });
+                    }
                 }
 
                 for (const col of individualCols) {
