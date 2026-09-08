@@ -309,8 +309,12 @@ export default [
 ```
 
 - `icon` is a Lucide icon name or an SVG element as a string; `route` is relative to the app base.
-- `children` nests sub-items; `topLevel: true` promotes an entry to a sidebar root sibling;
-  `preferredSection: "settings" | "footer"` places it in those sections.
+- `children` nests sub-items; `topLevel: true` promotes an entry to a sidebar root sibling. Use
+  `preferredSection: "settings"` for settings/admin surfaces and `"footer"` for about/help/support;
+  leave it unset for ordinary pages.
+- A nested sub-item needs its OWN route, as `/admin/members` does above. A sub-view rendered from
+  parent-local state with no route cannot be listed here at all — that is a missing route in the app,
+  not an entry to omit. Give it a real route, then nest it.
 - This file **maps existing routes, it does not create them**. Add, rename, and remove entries in the
   same change as the routes themselves — a listed route that does not resolve is a broken sidebar
   link, and an unlisted route is invisible to composite users.

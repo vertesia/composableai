@@ -12,6 +12,10 @@ import type { AppUINavItem } from '@vertesia/common';
  * file, not a page that is missing and needs building. The app's own sidebar components never render
  * the Composite App sidebar, so composite navigation is fixed here and nowhere else.
  *
+ * A sub-page reached from inside a parent page still belongs here, nested under that parent with
+ * `children` -- it needs its own route (`/parent/child`) to be listed, so a nested view rendered from
+ * parent-local state with no route is a missing route first.
+ *
  * `icon` is a Lucide icon name (https://lucide.dev/icons) or an SVG element as a string; `route` is
  * relative to the app's base URL. Only `/` exists in every scaffold -- add an entry per user-facing
  * route as you build it, or use an empty array if the app has no UI.

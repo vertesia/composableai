@@ -135,14 +135,20 @@ declared is a route its sidebar cannot offer.
 - `navigation` (from `src/tool-server/ui-nav-items.ts`) is the app's sidebar entries. **It maps
   routes that already exist; it does not create them.** Update it in the same change that adds,
   renames, or removes a user-facing route, or the Composite App will advertise a route that 404s or
-  hide one the app actually has. The direction only ever runs routes -> list: an entry whose `route`
-  does not resolve is a bug in this list, not a missing page to go and build. Delete it.
+  hide one the app actually has. An entry whose `route` resolves nowhere at all is a bug in this list,
+  not a missing page to go and build — delete it. But a surface that DOES exist and is simply reached
+  from inside a parent page belongs under that parent as a `children` entry rather than being deleted.
+  A sub-page needs its own route (`/parent/child`) to be listable, so a nested view rendered from
+  parent-local state with no route is a missing route first: add the route, then list the child.
 - **The app's own sidebar components do not render the Composite App sidebar.** In that surface the
   shell renders navigation from the published `navigation` list and the app's own layout/sidebar is
   not mounted at all, so changing `PluginSidebar` or similar components cannot affect what composite
   users see. Fix composite navigation in `ui-nav-items.ts`.
 - Sub-items nest with `children`. `topLevel: true` lifts an entry out of its app group into the
-  sidebar root; `preferredSection: "settings" | "footer"` places it in those sections instead.
+  sidebar root. Use `preferredSection: "settings"` for settings and admin surfaces and `"footer"` for
+  about/help/support; leave it unset for ordinary pages so they stay in the app's own group.
+- `icon` is the Lucide icon NAME, not the local identifier a route file imported it as: `routes.tsx`
+  may say `import { Home as HomeIcon }`, and the nav entry still says `'Home'`.
 - An administrator can rearrange the composite menu afterwards, and their edits are preserved.
   Studio reconciles the stored menu against this list — new routes are offered, and entries whose
   route disappeared are flagged as stale — so an accurate list is what makes that reconciliation
