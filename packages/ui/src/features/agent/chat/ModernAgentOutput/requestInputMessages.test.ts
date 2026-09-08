@@ -28,6 +28,29 @@ function makeApprovalRequest(): AgentMessage {
     } as unknown as AgentMessage;
 }
 
+function makeApprovalRequestForToolUse(toolUseId: string): AgentMessage {
+    const request = makeApprovalRequest();
+    return {
+        ...request,
+        details: { ...(request.details as Record<string, unknown>), request_id: toolUseId },
+    } as unknown as AgentMessage;
+}
+
+function makeApprovalReleasedMessage(toolUseId: string, timestamp: number): AgentMessage {
+    return {
+        timestamp,
+        type: AgentMessageType.UPDATE,
+        message: 'Approval reviewer allowed Create a new draft interaction.',
+        workstream_id: 'main',
+        details: {
+            request_id: toolUseId,
+            approval_decision: 'auto_approved',
+            approval_release_reason: 'reviewer_allowed',
+            approval_request: { tool_name: 'create_interaction', approval_key: APPROVAL_KEY },
+        },
+    } as unknown as AgentMessage;
+}
+
 function makeUserAnswer(message: string, metadata?: Record<string, unknown>): AgentMessage {
     return {
         timestamp: 2,
@@ -165,21 +188,21 @@ describe('request input correlation', () => {
     });
 
     it('stops asking once the workflow releases the approval without a user answer', () => {
-        const request = makeApprovalRequest();
-        const released = {
-            timestamp: 3,
-            type: AgentMessageType.UPDATE,
-            message: 'Approval reviewer allowed Create a new draft interaction.',
-            workstream_id: 'main',
-            details: {
-                approval_decision: 'auto_approved',
-                approval_release_reason: 'reviewer_allowed',
-                approval_request: { tool_name: 'create_interaction', approval_key: APPROVAL_KEY },
-            },
-        } as unknown as AgentMessage;
+        const request = makeApprovalRequestForToolUse('write-1');
+        const released = makeApprovalReleasedMessage('write-1', 3);
 
         expect(getPendingRequestInputMessage([request])).toBe(request);
         expect(getPendingRequestInputMessage([request, released])).toBeUndefined();
+    });
+
+    it('keeps asking for a later request that reuses a released approval key', () => {
+        // Approval keys are `tool_name:target`, so the same action repeats across turns: a release
+        // must resolve the request it answered, not every prompt that shares its key.
+        const firstRequest = makeApprovalRequestForToolUse('write-1');
+        const released = makeApprovalReleasedMessage('write-1', 3);
+        const laterRequest = { ...makeApprovalRequestForToolUse('write-2'), timestamp: 4 };
+
+        expect(getPendingRequestInputMessage([firstRequest, released, laterRequest])).toBe(laterRequest);
     });
 
     it('reads a request id from response metadata', () => {

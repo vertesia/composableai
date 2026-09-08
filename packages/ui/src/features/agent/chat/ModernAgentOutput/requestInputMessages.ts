@@ -242,6 +242,12 @@ export function getRequestInputResponseIdFromMetadata(metadata?: Record<string, 
     return typeof requestId === 'string' && requestId ? requestId : undefined;
 }
 
+/**
+ * Prefix marking a resolution that belongs to ONE request rather than to every prompt sharing an
+ * approval key. Approval keys are `tool_name:target`, so the same action repeats across turns.
+ */
+const RESOLVED_REQUEST_ID_PREFIX = 'request:';
+
 export function getResolvedToolApprovalKeys(messages: AgentMessage[]): Set<string> {
     const resolved = new Set<string>();
 
@@ -251,16 +257,24 @@ export function getResolvedToolApprovalKeys(messages: AgentMessage[]): Set<strin
         const approvalKey = approvalRequest?.approval_key;
         const decision = details?.approval_decision;
 
+        // Released without a user answer (approval mode change, or the reviewer allowed it after the
+        // run switched to auto_review). Scoped to the released request: a later prompt for the same
+        // action still has to be answered, or the run would wait with nothing on screen.
+        if (decision === 'auto_approved') {
+            const requestId = details?.request_id;
+            if (typeof requestId === 'string' && requestId) {
+                resolved.add(`${RESOLVED_REQUEST_ID_PREFIX}${requestId}`);
+            }
+            continue;
+        }
+
         if (
             typeof approvalKey === 'string' &&
             (decision === 'denied' ||
                 decision === 'denied_with_feedback' ||
                 decision === 'timeout' ||
                 decision === 'reviewer_denied' ||
-                decision === 'cancelled_after_denial' ||
-                // Released without a user answer (approval mode change, or the reviewer allowed it
-                // after the run switched to auto_review) — the prompt must stop asking.
-                decision === 'auto_approved')
+                decision === 'cancelled_after_denial')
         ) {
             resolved.add(approvalKey);
         }
@@ -324,6 +338,8 @@ export function isRequestInputResolvedByToolApprovalEvent(
     resolvedToolApprovalKeys: Set<string>,
 ): boolean {
     if (message.type !== AgentMessageType.REQUEST_INPUT) return false;
+    const requestId = getRequestInputId(message);
+    if (requestId && resolvedToolApprovalKeys.has(`${RESOLVED_REQUEST_ID_PREFIX}${requestId}`)) return true;
     const approvalKey = getToolApprovalKey(message);
     return approvalKey ? resolvedToolApprovalKeys.has(approvalKey) : false;
 }
