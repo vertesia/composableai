@@ -135,7 +135,12 @@ declared is a route its sidebar cannot offer.
 - `navigation` (from `src/tool-server/ui-nav-items.ts`) is the app's sidebar entries. **It maps
   routes that already exist; it does not create them.** Update it in the same change that adds,
   renames, or removes a user-facing route, or the Composite App will advertise a route that 404s or
-  hide one the app actually has.
+  hide one the app actually has. The direction only ever runs routes -> list: an entry whose `route`
+  does not resolve is a bug in this list, not a missing page to go and build. Delete it.
+- **The app's own sidebar components do not render the Composite App sidebar.** In that surface the
+  shell renders navigation from the published `navigation` list and the app's own layout/sidebar is
+  not mounted at all, so changing `PluginSidebar` or similar components cannot affect what composite
+  users see. Fix composite navigation in `ui-nav-items.ts`.
 - Sub-items nest with `children`. `topLevel: true` lifts an entry out of its app group into the
   sidebar root; `preferredSection: "settings" | "footer"` places it in those sections instead.
 - An administrator can rearrange the composite menu afterwards, and their edits are preserved.

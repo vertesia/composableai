@@ -8,6 +8,10 @@ import type { AppUINavItem } from '@vertesia/common';
  * app's own router, so keep this in sync with `src/modules/app/ui/routes.tsx` (and any other active
  * UI module) whenever routes are added, renamed, or removed.
  *
+ * Delete an entry when its route goes away: a listed `route` that does not resolve is a bug in this
+ * file, not a page that is missing and needs building. The app's own sidebar components never render
+ * the Composite App sidebar, so composite navigation is fixed here and nowhere else.
+ *
  * `icon` is a Lucide icon name (https://lucide.dev/icons) or an SVG element as a string; `route` is
  * relative to the app's base URL. Only `/` exists in every scaffold -- add an entry per user-facing
  * route as you build it, or use an empty array if the app has no UI.
