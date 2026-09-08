@@ -340,5 +340,11 @@ describe('embeddingBatchWorkflow', () => {
             payload,
             expect.objectContaining({ state: 'cancelled' }),
         );
+        const cancelledUpdateIndex = activities.updateEmbeddingBatch.mock.calls.findIndex(
+            ([, params]) => params.state === 'cancelled',
+        );
+        expect(activities.updateEmbeddingBatch.mock.invocationCallOrder[cancelledUpdateIndex]).toBeLessThan(
+            activities.applyEmbeddingBatch.mock.invocationCallOrder[0],
+        );
     });
 });
