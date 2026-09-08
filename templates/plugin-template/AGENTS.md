@@ -140,6 +140,10 @@ declared is a route its sidebar cannot offer.
   from inside a parent page belongs under that parent as a `children` entry rather than being deleted.
   A sub-page needs its own route (`/parent/child`) to be listable, so a nested view rendered from
   parent-local state with no route is a missing route first: add the route, then list the child.
+  Nesting is expressed by `children` and is NEVER inferred from the route path — the shell copies
+  `route` verbatim, so `/projects` and `/projects/timeline` listed side by side are two siblings.
+  Not every route earns an entry: mirror the routes that carry a `label` and are not `hideFromNav`,
+  which is the same set the app's own sidebar renders.
 - **The app's own sidebar components do not render the Composite App sidebar.** In that surface the
   shell renders navigation from the published `navigation` list and the app's own layout/sidebar is
   not mounted at all, so changing `PluginSidebar` or similar components cannot affect what composite

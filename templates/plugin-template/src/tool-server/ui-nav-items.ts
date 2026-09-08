@@ -14,7 +14,11 @@ import type { AppUINavItem } from '@vertesia/common';
  *
  * A sub-page reached from inside a parent page still belongs here, nested under that parent with
  * `children` -- it needs its own route (`/parent/child`) to be listed, so a nested view rendered from
- * parent-local state with no route is a missing route first.
+ * parent-local state with no route is a missing route first. Nesting comes from `children` alone and
+ * is never inferred from the path.
+ *
+ * Mirror the routes that carry a `label` and are not `hideFromNav` -- the same set the app's own
+ * sidebar renders. Catch-alls and redirects stay out.
  *
  * `icon` is a Lucide icon name (https://lucide.dev/icons) or an SVG element as a string; `route` is
  * relative to the app's base URL. Only `/` exists in every scaffold -- add an entry per user-facing

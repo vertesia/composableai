@@ -312,9 +312,12 @@ export default [
 - `children` nests sub-items; `topLevel: true` promotes an entry to a sidebar root sibling. Use
   `preferredSection: "settings"` for settings/admin surfaces and `"footer"` for about/help/support;
   leave it unset for ordinary pages.
-- A nested sub-item needs its OWN route, as `/admin/members` does above. A sub-view rendered from
-  parent-local state with no route cannot be listed here at all — that is a missing route in the app,
-  not an entry to omit. Give it a real route, then nest it.
+- A nested sub-item needs its OWN route, as `/admin/members` does above, and must be placed in the
+  parent's `children`: nesting is never inferred from the path, so listing `/admin/members` at the top
+  level makes it a sibling of `/admin`, not a child. A sub-view rendered from parent-local state with
+  no route cannot be listed here at all — that is a missing route in the app, not an entry to omit.
+- Not every route belongs here. Mirror the routes that carry a `label` and are not `hideFromNav` —
+  the same set `PluginSidebar` renders in the app's own sidebar. Catch-alls and redirects stay out.
 - This file **maps existing routes, it does not create them**. Add, rename, and remove entries in the
   same change as the routes themselves — a listed route that does not resolve is a broken sidebar
   link, and an unlisted route is invisible to composite users.
