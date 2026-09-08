@@ -77,12 +77,14 @@ async function resolveProfileToken(profile: Profile): Promise<string | undefined
 /** Check expiry and token from the same keychain snapshot. */
 async function readUsableProfileToken(profile: Profile, thresholdSeconds: number): Promise<string | undefined> {
     const bundle = await readAuthBundle(profile.name);
-    const token = bundle?.accessToken || profile.apikey;
-    if (!token) return undefined;
-    const expiresAt = bundle?.accessToken
-        ? (bundle.accessTokenExpiresAt ?? getAccessTokenExpiry(token))
-        : getAccessTokenExpiry(token);
-    return expiresAt && expiresAt > Date.now() + thresholdSeconds * 1000 ? token : undefined;
+    const threshold = Date.now() + thresholdSeconds * 1000;
+    if (bundle?.accessToken) {
+        const expiresAt = bundle.accessTokenExpiresAt ?? getAccessTokenExpiry(bundle.accessToken);
+        if (expiresAt && expiresAt > threshold) return bundle.accessToken;
+    }
+    // Legacy keychain-write failures may have saved a newer token in the profile file.
+    const expiresAt = getAccessTokenExpiry(profile.apikey);
+    return expiresAt && expiresAt > threshold ? profile.apikey : undefined;
 }
 
 export async function refreshProfileAccessToken(

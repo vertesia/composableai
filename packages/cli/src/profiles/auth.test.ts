@@ -11,13 +11,14 @@ const mocks = vi.hoisted(() => ({
     bundle: undefined as StoredAuthBundle | undefined,
     refresh: vi.fn(),
     persist: vi.fn(),
+    expiry: vi.fn(),
 }));
 vi.mock('./index.js', () => ({
     config: { updateProfile: () => ({ persistConfigResult: mocks.persist }) },
 }));
 vi.mock('./keyring.js', () => ({
     readAuthBundle: async () => (mocks.bundle ? { ...mocks.bundle } : undefined),
-    getAccessTokenExpiry: () => undefined,
+    getAccessTokenExpiry: mocks.expiry,
 }));
 vi.mock('./oauth.js', () => ({ canUseOAuthProfile: () => true, refreshOAuthSession: mocks.refresh }));
 vi.mock('./auth-lock.js', async (importOriginal) => {
@@ -135,6 +136,26 @@ describe('profile refresh', () => {
         mocks.bundle = { ...mocks.bundle, version: 1, accessTokenExpiresAt: undefined };
         mocks.refresh.mockRejectedValue(new Error('Unavailable'));
         await expect(createProfileAuthProvider(profile)()).rejects.toThrow('Unavailable');
+    });
+
+    it.each([undefined, 0])('uses a valid profile-file token when keychain expiry is %s', async (expiry) => {
+        mocks.bundle = { ...mocks.bundle, version: 1, accessTokenExpiresAt: expiry };
+        mocks.expiry.mockImplementation((token: string) => (token === 'file-token' ? Date.now() + 60_000 : undefined));
+        const auth = createProfileAuthProvider({ ...profile, apikey: 'file-token' });
+        expect(await auth()).toBe('Bearer file-token');
+        expect(mocks.refresh).not.toHaveBeenCalled();
+    });
+
+    it('still prefers a valid keychain token over the profile-file token', async () => {
+        mocks.bundle = { ...mocks.bundle, version: 1, accessTokenExpiresAt: Date.now() + 60_000 };
+        mocks.expiry.mockReturnValue(Date.now() + 60_000);
+        expect(await createProfileAuthProvider({ ...profile, apikey: 'file-token' })()).toBe('Bearer old-access');
+    });
+
+    it('never falls back to an expired profile-file token', async () => {
+        mocks.expiry.mockReturnValue(Date.now() - 1);
+        mocks.refresh.mockRejectedValue(new Error('Unavailable'));
+        await expect(createProfileAuthProvider({ ...profile, apikey: 'file-token' })()).rejects.toThrow('Unavailable');
     });
 
     it('surfaces failed persistence and releases the lock', async () => {
