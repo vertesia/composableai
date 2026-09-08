@@ -654,6 +654,7 @@ import {
 } from './project.js';
 import {
     BrowserUseProjectConfigurationSchema,
+    MemoryProjectConfigurationSchema,
     ProjectConfigurationEmbeddingSchema,
     ProjectConfigurationSchema,
     ProjectIndexingConfigurationSchema,
@@ -874,6 +875,7 @@ const PROJECT_AND_APP_SCHEMAS = {
     ProjectIndexingConfiguration: ProjectIndexingConfigurationSchema,
     ProjectConfigurationEmbedding: ProjectConfigurationEmbeddingSchema,
     BrowserUseProjectConfiguration: BrowserUseProjectConfigurationSchema,
+    MemoryProjectConfiguration: MemoryProjectConfigurationSchema,
     ProjectIntakeSniffConfiguration: ProjectIntakeSniffConfigurationSchema,
     // Leaves of the Project closure. `ModelOptions` hoists its driver option sets and shared enums;
     // `JSONSchema` hoists `JSONSchemaProperties`.
@@ -2531,6 +2533,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // The agent configuration block under `ProjectConfiguration`, published closed on both sides.
     'AgentProjectConfiguration',
     'AgentCheckpointConfiguration',
+    'MemoryProjectConfiguration',
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
     // The intake policy tree. Every object in it is published closed today, including the inline

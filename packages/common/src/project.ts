@@ -32,6 +32,7 @@ import type {
     BrowserUseScreenshotCaptureSchema,
     ElasticsearchBackendSchema,
     IntakeVisionProfileSettingsUpdateSchema,
+    MemoryProjectConfigurationSchema,
     ModalityDefaultsSchema,
     ModelDefaultSchema,
     ProjectConfigurationEmbeddingSchema,
@@ -158,6 +159,8 @@ export type ProjectIntakeConfiguration = z.infer<typeof ProjectIntakeConfigurati
 export type ProjectConfiguration = z.infer<typeof ProjectConfigurationSchema>;
 
 export type AgentProjectConfiguration = z.infer<typeof AgentProjectConfigurationSchema>;
+
+export type MemoryProjectConfiguration = z.infer<typeof MemoryProjectConfigurationSchema>;
 
 export type AgentCheckpointConfiguration = z.infer<typeof AgentCheckpointConfigurationSchema>;
 

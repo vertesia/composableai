@@ -155,6 +155,23 @@ export const AgentProjectConfigurationSchema = z
             '(`configuration.agent`).',
     });
 
+export const MemoryProjectConfigurationSchema = z
+    .strictObject({
+        default_brain_id: z
+            .string()
+            .min(1)
+            .optional()
+            .meta({
+                description:
+                    'Project-unique Memory Brain slug used when an agent or reconstruction workflow does not ' +
+                    'explicitly select a Brain. An empty memory block clears the default.',
+            }),
+    })
+    .meta({
+        id: 'MemoryProjectConfiguration',
+        description: 'Project defaults for workflow-bound Memory Brain resolution.',
+    });
+
 export const ProjectIndexingConfigurationSchema = z
     .object({
         enabled: z
@@ -441,6 +458,9 @@ export const ProjectConfigurationSchema = z
             }),
         agent: AgentProjectConfigurationSchema.optional().meta({
             description: 'Agent runtime configuration for this project.',
+        }),
+        memory: MemoryProjectConfigurationSchema.optional().meta({
+            description: 'Memory Brain defaults for this project.',
         }),
         indexing: ProjectIndexingConfigurationSchema.optional().meta({
             description:
