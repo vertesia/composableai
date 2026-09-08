@@ -6,11 +6,13 @@ import { readJsonFile, writeJsonFile } from '../utils/stdio.js';
 import type { OnResultCallback } from './commands.js';
 import {
     deleteAuthBundle,
-    getAccessTokenExpiry,
     hasStoredAccessToken,
     isKeyringAvailable,
     readAuthBundle,
+    readUsableProfileToken,
+    type StoredAuthBundle,
     writeAuthBundle,
+    writeRefreshedAuthBundle,
 } from './keyring.js';
 import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from './oauth.js';
 import { type ConfigPayload, type ConfigResult, startConfigSession } from './server/index.js';
@@ -157,16 +159,7 @@ interface ProfilesData {
 }
 
 export async function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
-    const bundle = await readAuthBundle(profile.name);
-    const token = bundle?.accessToken || profile.apikey;
-    if (token) {
-        const expiresAt = bundle?.accessTokenExpiresAt ?? getAccessTokenExpiry(token);
-        if (expiresAt) {
-            return expiresAt - thresholdInSeconds * 1000 < Date.now();
-        }
-    }
-    // if no token or no expiration set then refresh auth token
-    return true;
+    return !(await readUsableProfileToken(profile, thresholdInSeconds));
 }
 
 export class ConfigureProfile {
@@ -188,12 +181,15 @@ export class ConfigureProfile {
         };
     }
 
-    async persistConfigResult(result: ConfigResult | undefined, options: { requireKeyring?: boolean } = {}) {
+    async persistConfigResult(
+        result: ConfigResult | undefined,
+        options: { requireKeyring?: boolean; previousBundle?: StoredAuthBundle } = {},
+    ) {
         if (!result) {
             return;
         }
         const oldName = this.data.name;
-        const previousBundle = oldName ? await readAuthBundle(oldName) : undefined;
+        const previousBundle = options.previousBundle ?? (oldName ? await readAuthBundle(oldName) : undefined);
         this.data.name = result.profile;
         this.data.account = result.account;
         this.data.project = result.project;
@@ -203,7 +199,8 @@ export class ConfigureProfile {
             this.data.oauth_server_url = result.oauth_server_url;
         }
         try {
-            await writeAuthBundle(result.profile, {
+            const write = options.requireKeyring ? writeRefreshedAuthBundle : writeAuthBundle;
+            await write(result.profile, {
                 accessToken: result.token,
                 accessTokenExpiresAt: readResultAccessTokenExpiry(result),
                 idToken: result.id_token || previousBundle?.idToken,

@@ -11,25 +11,35 @@ const mocks = vi.hoisted(() => ({
     bundle: undefined as StoredAuthBundle | undefined,
     refresh: vi.fn(),
     persist: vi.fn(),
-    expiry: vi.fn(),
+    readError: undefined as Error | undefined,
+    lock: vi.fn(),
+    start: vi.fn(),
 }));
 vi.mock('./index.js', () => ({
-    config: { updateProfile: () => ({ persistConfigResult: mocks.persist }) },
-}));
-vi.mock('./keyring.js', () => ({
-    readAuthBundle: async () => (mocks.bundle ? { ...mocks.bundle } : undefined),
-    getAccessTokenExpiry: mocks.expiry,
+    config: {
+        getProfile: () => profile,
+        updateProfile: () => ({ persistConfigResult: mocks.persist, start: mocks.start }),
+    },
 }));
 vi.mock('./oauth.js', () => ({ canUseOAuthProfile: () => true, refreshOAuthSession: mocks.refresh }));
 vi.mock('./auth-lock.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('./auth-lock.js')>();
     return {
-        withProfileAuthLock: <T>(name: string, operation: () => Promise<T>) =>
-            actual.withProfileAuthLock(name, operation, mocks.directory),
+        ...actual,
+        withProfileAuthLock: <T>(name: string, operation: () => Promise<T>) => {
+            mocks.lock();
+            return actual.withProfileAuthLock(name, operation, mocks.directory);
+        },
     };
 });
 
-import { createProfileAuthProvider, ensureProfileAccessToken, refreshProfileAccessToken } from './auth.js';
+import {
+    createProfileAuthProvider,
+    ensureProfileAccessToken,
+    refreshProfileAccessToken,
+    refreshProfileAuthentication,
+} from './auth.js';
+import { AuthRefreshLockError } from './auth-lock.js';
 
 const profile: Profile = {
     name: 'test',
@@ -52,6 +62,15 @@ const result: ConfigResult = {
 
 beforeEach(async () => {
     vi.resetAllMocks();
+    mocks.readError = undefined;
+    vi.stubGlobal('Bun', {
+        secrets: {
+            get: async () => {
+                if (mocks.readError) throw mocks.readError;
+                return mocks.bundle ? JSON.stringify(mocks.bundle) : null;
+            },
+        },
+    });
     mocks.directory = await mkdtemp(join(tmpdir(), 'cli-auth-test-'));
     mocks.bundle = {
         version: 1,
@@ -71,6 +90,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     await rm(mocks.directory, { recursive: true, force: true });
 });
 
@@ -78,7 +98,7 @@ describe('profile refresh', () => {
     it('automatically refreshes an expired token and saves the rotated credentials', async () => {
         expect(await createProfileAuthProvider(profile)()).toBe('Bearer new-access');
         expect(mocks.refresh).toHaveBeenCalledWith(profile, 'old-refresh', expect.anything(), {});
-        expect(mocks.persist).toHaveBeenCalledWith(result, { requireKeyring: true });
+        expect(mocks.persist).toHaveBeenCalledWith(result, expect.objectContaining({ requireKeyring: true }));
     });
 
     it('rechecks the keychain after waiting for another automatic refresh', async () => {
@@ -140,22 +160,54 @@ describe('profile refresh', () => {
 
     it.each([undefined, 0])('uses a valid profile-file token when keychain expiry is %s', async (expiry) => {
         mocks.bundle = { ...mocks.bundle, version: 1, accessTokenExpiresAt: expiry };
-        mocks.expiry.mockImplementation((token: string) => (token === 'file-token' ? Date.now() + 60_000 : undefined));
-        const auth = createProfileAuthProvider({ ...profile, apikey: 'file-token' });
-        expect(await auth()).toBe('Bearer file-token');
+        const fileToken = tokenWithExpiry(Date.now() + 60_000);
+        const auth = createProfileAuthProvider({ ...profile, apikey: fileToken });
+        expect(await auth()).toBe(`Bearer ${fileToken}`);
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
     it('still prefers a valid keychain token over the profile-file token', async () => {
         mocks.bundle = { ...mocks.bundle, version: 1, accessTokenExpiresAt: Date.now() + 60_000 };
-        mocks.expiry.mockReturnValue(Date.now() + 60_000);
-        expect(await createProfileAuthProvider({ ...profile, apikey: 'file-token' })()).toBe('Bearer old-access');
+        const fileToken = tokenWithExpiry(Date.now() + 60_000);
+        expect(await createProfileAuthProvider({ ...profile, apikey: fileToken })()).toBe('Bearer old-access');
     });
 
     it('never falls back to an expired profile-file token', async () => {
-        mocks.expiry.mockReturnValue(Date.now() - 1);
+        const fileToken = tokenWithExpiry(Date.now() - 1);
         mocks.refresh.mockRejectedValue(new Error('Unavailable'));
-        await expect(createProfileAuthProvider({ ...profile, apikey: 'file-token' })()).rejects.toThrow('Unavailable');
+        await expect(createProfileAuthProvider({ ...profile, apikey: fileToken })()).rejects.toThrow('Unavailable');
+    });
+
+    it('rejects a fallback with less than five seconds remaining', async () => {
+        mocks.bundle = { ...mocks.bundle, version: 1, accessTokenExpiresAt: Date.now() + 1000 };
+        mocks.refresh.mockRejectedValue(new Error('Unavailable'));
+        await expect(createProfileAuthProvider(profile)()).rejects.toThrow('Unavailable');
+    });
+
+    it('preserves the refresh error if reading fallback credentials also fails', async () => {
+        const error = new Error('OAuth unavailable');
+        mocks.refresh.mockImplementation(async () => {
+            mocks.readError = new Error('Invalid keychain payload');
+            throw error;
+        });
+        await expect(createProfileAuthProvider(profile)()).rejects.toBe(error);
+    });
+
+    it('does not acquire a lock when refresh is unavailable', async () => {
+        mocks.bundle = undefined;
+        await expect(ensureProfileAccessToken(profile)).resolves.toBeUndefined();
+        await expect(refreshProfileAccessToken(profile)).resolves.toBeUndefined();
+        expect(mocks.lock).not.toHaveBeenCalled();
+    });
+
+    it('does not bypass a coordination failure through interactive authentication', async () => {
+        const error = new AuthRefreshLockError('Coordination unavailable', new Error('Access denied'));
+        mocks.lock.mockImplementation(() => {
+            throw error;
+        });
+        await expect(refreshProfileAuthentication(profile.name)).rejects.toBe(error);
+        expect(mocks.start).not.toHaveBeenCalled();
+        expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
     it('surfaces failed persistence and releases the lock', async () => {
@@ -164,3 +216,8 @@ describe('profile refresh', () => {
         await expect(refreshProfileAccessToken(profile)).resolves.toMatchObject({ token: 'new-access' });
     });
 });
+
+function tokenWithExpiry(expiry: number): string {
+    const payload = Buffer.from(JSON.stringify({ exp: Math.floor(expiry / 1000) })).toString('base64url');
+    return `eyJhbGciOiJub25lIn0.${payload}.`;
+}

@@ -1,8 +1,8 @@
-import { withProfileAuthLock } from './auth-lock.js';
+import { AuthRefreshLockError, withProfileAuthLock } from './auth-lock.js';
 import type { OnResultCallback } from './commands.js';
 import type { Profile } from './index.js';
 import { config } from './index.js';
-import { getAccessTokenExpiry, readAuthBundle } from './keyring.js';
+import { readAuthBundle, readUsableProfileToken } from './keyring.js';
 import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import type { ConfigResult } from './server/index.js';
 
@@ -12,6 +12,7 @@ export async function ensureProfileAccessToken(
 ): Promise<string | undefined> {
     const currentToken = await readUsableProfileToken(profile, 30);
     if (currentToken) return currentToken;
+    if (!(await canRefreshProfile(profile))) return undefined;
     return withProfileAuthLock(profile.name, async () => {
         // Re-read under the lock: another process may have refreshed while we waited.
         const token = await readUsableProfileToken(profile, 30);
@@ -60,7 +61,7 @@ async function resolveProfileToken(profile: Profile): Promise<string | undefined
     } catch (error: unknown) {
         // A proactive refresh may fail while the old token is still usable. Never
         // hide the refresh error behind a subsequent request with an expired JWT.
-        const token = await readUsableProfileToken(profile, 0);
+        const token = await readUsableProfileToken(profile, 5).catch(() => undefined);
         if (!token) {
             throw error;
         }
@@ -74,19 +75,6 @@ async function resolveProfileToken(profile: Profile): Promise<string | undefined
     return undefined;
 }
 
-/** Check expiry and token from the same keychain snapshot. */
-async function readUsableProfileToken(profile: Profile, thresholdSeconds: number): Promise<string | undefined> {
-    const bundle = await readAuthBundle(profile.name);
-    const threshold = Date.now() + thresholdSeconds * 1000;
-    if (bundle?.accessToken) {
-        const expiresAt = bundle.accessTokenExpiresAt ?? getAccessTokenExpiry(bundle.accessToken);
-        if (expiresAt && expiresAt > threshold) return bundle.accessToken;
-    }
-    // Legacy keychain-write failures may have saved a newer token in the profile file.
-    const expiresAt = getAccessTokenExpiry(profile.apikey);
-    return expiresAt && expiresAt > threshold ? profile.apikey : undefined;
-}
-
 export async function refreshProfileAccessToken(
     profile: Profile,
     onResult?: OnResultCallback,
@@ -94,7 +82,12 @@ export async function refreshProfileAccessToken(
         projectId?: string;
     } = {},
 ): Promise<ConfigResult | undefined> {
+    if (!(await canRefreshProfile(profile))) return undefined;
     return withProfileAuthLock(profile.name, () => refreshProfileAccessTokenUnlocked(profile, onResult, options));
+}
+
+async function canRefreshProfile(profile: Profile): Promise<boolean> {
+    return canUseOAuthProfile(profile) && Boolean((await readAuthBundle(profile.name))?.refreshToken);
 }
 
 /** Caller must hold the profile lock until the rotated credentials have been persisted. */
@@ -111,7 +104,7 @@ async function refreshProfileAccessTokenUnlocked(
     const result = await refreshOAuthSession(profile, bundle.refreshToken, bundle, options);
     const updater = config.updateProfile(profile.name);
     updater.onResultCallback = onResult;
-    await updater.persistConfigResult(result, { requireKeyring: true });
+    await updater.persistConfigResult(result, { requireKeyring: true, previousBundle: bundle });
     return result;
 }
 
@@ -135,6 +128,8 @@ export async function refreshProfileAuthentication(
             return refreshed;
         }
     } catch (error) {
+        // Do not start a second interactive credential writer while another process owns the lock.
+        if (error instanceof AuthRefreshLockError) throw error;
         if (options.projectId) {
             throw error;
         }

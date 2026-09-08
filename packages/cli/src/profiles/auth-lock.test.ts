@@ -1,36 +1,31 @@
 import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rm, symlink, utimes, writeFile } from 'node:fs/promises';
+import { once } from 'node:events';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { Server } from 'node:net';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript-legacy';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { withProfileAuthLock } from './auth-lock.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthRefreshBusyError, withProfileAuthLock } from './auth-lock.js';
 
 let directory: string;
 beforeEach(async () => {
     directory = await mkdtemp(join(tmpdir(), 'cli-auth-lock-'));
+    const source = await readFile(new URL('./auth-lock.ts', import.meta.url), 'utf8');
+    const compiled = ts.transpileModule(source, {
+        compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    });
+    await writeFile(join(directory, 'auth-lock.mjs'), compiled.outputText);
 });
 afterEach(async () => {
+    vi.restoreAllMocks();
     await rm(directory, { recursive: true, force: true });
 });
 
 describe('profile authentication lock', () => {
     it('serializes separate processes sharing the same profile', async () => {
-        // Compile the actual helper so child Node processes need no TypeScript loader.
-        const source = await readFile(new URL('./auth-lock.ts', import.meta.url), 'utf8');
-        const compiled = ts.transpileModule(source, {
-            compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-        });
         const modulePath = join(directory, 'auth-lock.mjs');
-        await writeFile(modulePath, compiled.outputText);
-        await mkdir(join(directory, 'node_modules'));
-        await symlink(
-            dirname(fileURLToPath(import.meta.resolve('proper-lockfile'))),
-            join(directory, 'node_modules', 'proper-lockfile'),
-            'junction',
-        );
         const counter = join(directory, 'counter');
         await writeFile(counter, '0');
         const children = [0, 1].map(() => {
@@ -84,12 +79,57 @@ describe('profile authentication lock', () => {
         expect(await withProfileAuthLock('profile', async () => 'recovered', directory)).toBe('recovered');
     });
 
-    it('recovers a stale lock left by a terminated process', async () => {
-        const key = createHash('sha256').update('profile').digest('hex');
-        const lockPath = join(directory, `${key}.lock`);
-        await mkdir(lockPath);
-        const old = new Date(Date.now() - 120_000);
-        await utimes(lockPath, old, old);
-        expect(await withProfileAuthLock('profile', async () => 'recovered', directory)).toBe('recovered');
+    it('cannot steal a blocked live owner, but can acquire immediately after SIGKILL', async () => {
+        const child = spawn(
+            process.execPath,
+            [
+                fileURLToPath(new URL('./test/auth-lock-child.mjs', import.meta.url)),
+                pathToFileURL(join(directory, 'auth-lock.mjs')).href,
+                directory,
+                'unused',
+                'hold',
+            ],
+            { stdio: ['ignore', 'pipe', 'pipe'] },
+        );
+        const exited = once(child, 'exit');
+        try {
+            await once(child.stdout, 'data');
+            const acquired = once(child.stdout, 'data');
+            await writeFile(join(directory, 'start'), '');
+            // "acquired" is emitted just before synchronously blocking the event loop.
+            await acquired;
+            const operation = vi.fn(async () => 'should not run');
+            await expect(withProfileAuthLock('shared-profile', operation, directory, 100)).rejects.toBeInstanceOf(
+                AuthRefreshBusyError,
+            );
+            expect(operation).not.toHaveBeenCalled();
+            child.kill('SIGKILL');
+            await exited;
+            expect(await withProfileAuthLock('shared-profile', async () => 'recovered', directory, 1000)).toBe(
+                'recovered',
+            );
+        } finally {
+            child.kill('SIGKILL');
+            await exited;
+        }
+    }, 10_000);
+
+    it.each([false, true])('does not replace the operation outcome when socket cleanup fails (%s)', async (fails) => {
+        const close = Server.prototype.close;
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(Server.prototype, 'close').mockImplementationOnce(function (this: Server, callback) {
+            return close.call(this, () => callback?.(new Error('cleanup failure')));
+        });
+        const error = new Error('original refresh error');
+        const operation = withProfileAuthLock(
+            'profile',
+            async () => {
+                if (fails) throw error;
+                return 'persisted';
+            },
+            directory,
+        );
+        if (fails) await expect(operation).rejects.toBe(error);
+        else await expect(operation).resolves.toBe('persisted');
     });
 });
