@@ -34,6 +34,15 @@ describe('resolveInteractionName', () => {
         expect(resolveInteractionName(undefined, '', 'ref-string')).toBe('ref-string');
         expect(resolveInteractionName(undefined, undefined, '')).toBeUndefined();
     });
+
+    it('names a deleted interaction from its id, from either the ref or a bare bucket id', () => {
+        // The run row has the ref the server left behind; the facet bucket has only its `_id`.
+        // Both must produce the same label or the option stops matching the row it filters for.
+        const fromRow = resolveInteractionName({ name: '682a822c4dbfdc27017ff6cd' });
+        const fromBucket = resolveInteractionName(undefined, '682a822c4dbfdc27017ff6cd');
+        expect(fromRow).toBe('Deleted interaction (~017ff6cd)');
+        expect(fromBucket).toBe(fromRow);
+    });
 });
 
 describe('isUnresolvedInteractionRef', () => {
@@ -67,8 +76,18 @@ describe('InteractionLabel', () => {
         expect(container.textContent).toBe('Legacy Name');
     });
 
-    it('renders the fallback node when no name resolves', () => {
+    it('renders the fallback node only when there is no reference at all', () => {
         render(<InteractionLabel fallbackNode={<span>Interaction not found</span>} />);
         expect(screen.getByText('Interaction not found')).toBeTruthy();
+    });
+
+    it('names a deleted interaction rather than falling through to the fallback node', () => {
+        const { container } = render(
+            <InteractionLabel
+                interaction={{ name: '682a822c4dbfdc27017ff6cd', version: 0, status: InteractionStatus.unknown }}
+                fallbackNode={<span>Interaction not found</span>}
+            />,
+        );
+        expect(container.textContent).toBe('Deleted interaction (~017ff6cd)');
     });
 });

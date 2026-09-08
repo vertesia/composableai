@@ -28,17 +28,23 @@ export function splitInteractionType(name: string): { type?: string; label: stri
 }
 
 /**
- * Pick the name to display for an interaction reference. When the resolver couldn't find a real
- * name, `ref.name` is the bare ObjectId, so the fallbacks — a run's `interaction_name` / raw ref
- * string, a facet bucket's id — are preferred over it and legacy records still show something
- * readable. Returns undefined when nothing usable is left.
+ * Pick the name to display for an interaction reference: the ref's own name, then the fallbacks —
+ * a run's `interaction_name` / raw ref string, a facet bucket's id — in order.
+ *
+ * A bare ObjectId is never a name: it is what a deleted stored interaction leaves behind once the
+ * server can no longer resolve it. Those candidates are skipped, and if nothing else is left the
+ * id becomes a short "deleted" label instead, so a run row and the facet option that filters for
+ * it name the missing interaction identically. Returns undefined when there is no id either.
  */
 export function resolveInteractionName(
     ref: InteractionDisplayRef | undefined,
     ...fallbacks: (string | undefined)[]
 ): string | undefined {
-    const refName = ref?.name && !OBJECT_ID_RE.test(ref.name) ? ref.name : undefined;
-    return refName ?? fallbacks.find((fallback) => !!fallback);
+    const candidates = [ref?.name, ...fallbacks].filter((candidate): candidate is string => !!candidate);
+    const name = candidates.find((candidate) => !OBJECT_ID_RE.test(candidate));
+    if (name) return name;
+    const id = candidates[0];
+    return id ? `Deleted interaction (~${id.slice(-8)})` : undefined;
 }
 
 /**
