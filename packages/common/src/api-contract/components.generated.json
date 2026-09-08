@@ -26858,9 +26858,9 @@
         },
         "description": "Compartments — set directly or inherited from collections (union across collections)."
       },
-      "shared": {
+      "shared_root": {
         "type": "boolean",
-        "description": "When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection."
+        "description": "Explicitly share this document as a root of the project shared space (readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it."
       },
       "inherited_properties": {
         "type": "array",
@@ -27008,9 +27008,9 @@
         },
         "description": "Compartments — set directly or inherited from collections (union across collections)."
       },
-      "shared": {
+      "shared_root": {
         "type": "boolean",
-        "description": "When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection."
+        "description": "Explicitly share this document as a root of the project shared space (readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it."
       },
       "inherited_properties": {
         "type": "array",
@@ -27312,7 +27312,11 @@
       },
       "shared": {
         "type": "boolean",
-        "description": "When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection."
+        "description": "Effective shared state: true iff the document is a member of an effectively-shared collection (inherited; sync-managed). Combine with shared_root for full readability."
+      },
+      "shared_root": {
+        "type": "boolean",
+        "description": "True iff the document was explicitly shared via the API (a root of the project shared space). Never set by the sync."
       },
       "inherited_properties": {
         "type": "array",
@@ -27496,7 +27500,11 @@
       },
       "shared": {
         "type": "boolean",
-        "description": "When true, the document is in its project shared space, readable by non-members via matching shared-content ABAC rules. Set directly or inherited from a shared collection."
+        "description": "Effective shared state: true iff the document is a member of an effectively-shared collection (inherited; sync-managed). Combine with shared_root for full readability."
+      },
+      "shared_root": {
+        "type": "boolean",
+        "description": "True iff the document was explicitly shared via the API (a root of the project shared space). Never set by the sync."
       },
       "inherited_properties": {
         "type": "array",
@@ -27671,6 +27679,9 @@
         }
       },
       "shared": {
+        "type": "boolean"
+      },
+      "shared_root": {
         "type": "boolean"
       },
       "inherited_properties": {
@@ -31847,9 +31858,9 @@
         },
         "description": "Compartments for member documents"
       },
-      "shared": {
+      "shared_root": {
         "type": "boolean",
-        "description": "When true, the collection is in its project shared space; member documents inherit shared=true."
+        "description": "Explicitly share this collection as a root of the project shared space (listable/readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it."
       },
       "name": {
         "type": "string",
@@ -31947,9 +31958,9 @@
         },
         "description": "Compartments for member documents"
       },
-      "shared": {
+      "shared_root": {
         "type": "boolean",
-        "description": "When true, the collection is in its project shared space; member documents inherit shared=true."
+        "description": "Explicitly share this collection as a root of the project shared space (listable/readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it."
       },
       "name": {
         "type": "string",
@@ -32102,7 +32113,11 @@
       },
       "shared": {
         "type": "boolean",
-        "description": "When true, the collection is in its project shared space (listable/readable by non-members via matching shared-content ABAC rules); member documents inherit shared=true."
+        "description": "Effective shared state: true iff the collection is a member of an effectively-shared parent collection (inherited; sync-managed). Combine with shared_root for full readability."
+      },
+      "shared_root": {
+        "type": "boolean",
+        "description": "True iff the collection was explicitly shared via the API (a root of the project shared space). Never set by the sync."
       },
       "shared_properties": {
         "type": "array",
