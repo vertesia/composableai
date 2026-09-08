@@ -1217,8 +1217,12 @@ function getToolTarget(details: Record<string, unknown>): string | undefined {
     return undefined;
 }
 
-/** An approval decision that stopped the tool from running (as opposed to releasing it). */
-function isDeniedApprovalDecision(decision: unknown): boolean {
+/**
+ * An approval decision that stopped the tool from running — a denial, a timeout, or a cancellation
+ * — as opposed to one that released it. Unknown decisions count as blocking: every decision the
+ * agent has ever emitted except `auto_approved` is one, so that is the safer default.
+ */
+function isBlockingApprovalDecision(decision: unknown): boolean {
     return typeof decision === 'string' && decision !== 'auto_approved';
 }
 
@@ -1483,7 +1487,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
     addSection(
         'Output',
         ['output', 'stdout', 'result', 'results', 'content', 'result_summary', 'observation', 'display_message'],
-        isDeniedApprovalDecision(details.approval_decision) ? 'error' : undefined,
+        isBlockingApprovalDecision(details.approval_decision) ? 'error' : undefined,
     );
     addSection('Files', ['files', 'outputFiles']);
     addSection('Error', ['error', 'stderr'], 'error');
