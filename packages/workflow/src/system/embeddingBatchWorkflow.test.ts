@@ -111,6 +111,23 @@ describe('embeddingBatchWorkflow', () => {
         );
     });
 
+    it.each([false, true])(
+        'preserves prepared server subjobs when preparation response is lost (cancelled=%s)',
+        async (cancelled) => {
+            workflowState.cancellation = cancelled;
+            activities.prepareEmbeddingBatch.mockRejectedValue(new Error('preparation response lost'));
+
+            await expect(embeddingBatchWorkflow(payload)).rejects.toThrow('preparation response lost');
+
+            expect(activities.updateEmbeddingBatch).toHaveBeenCalledWith(payload, {
+                run_id: 'run',
+                state: cancelled ? 'cancelled' : 'failed',
+                ...(cancelled ? {} : { error: { message: 'preparation response lost' } }),
+            });
+            expect(activities.applyEmbeddingBatch).not.toHaveBeenCalled();
+        },
+    );
+
     it('submits multiple subjobs, polls to terminal state, applies, and retains provider metadata', async () => {
         const subjobs = [0, 1].map((index) => ({
             index,

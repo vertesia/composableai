@@ -148,7 +148,7 @@ async function markFailed(
         .updateEmbeddingBatch(payload, {
             run_id: params.run_id,
             state: 'failed',
-            subjobs,
+            ...(subjobs.length ? { subjobs } : {}),
             error: errorDetails(error),
         })
         .catch(() => undefined);
@@ -224,7 +224,8 @@ export async function embeddingBatchWorkflow(payload: WorkflowExecutionPayload) 
         await CancellationScope.nonCancellable(async () => {
             await refreshAuthToken(payload);
             if (subjobs.length === 0) {
-                await batch.updateEmbeddingBatch(payload, { run_id: params.run_id, state: 'cancelled', subjobs });
+                // Preparation may have persisted rows before its response was lost; preserve that server snapshot.
+                await batch.updateEmbeddingBatch(payload, { run_id: params.run_id, state: 'cancelled' });
                 return;
             }
             await cancelProviderJobs(payload, params, subjobs);
