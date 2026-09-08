@@ -338,6 +338,7 @@ export function adjustPackageJson(
     answers: Record<string, unknown>,
     isDev: boolean,
     packageManager: string,
+    dependencyMode: 'dev' | 'pinned' = isDev ? 'dev' : 'pinned',
 ): void {
     console.log(chalk.blue('Adjusting package.json...\n'));
 
@@ -389,7 +390,7 @@ export function adjustPackageJson(
 
         // 3. Replace workspace:* with pinned versions
         const internalScopes = ['@vertesia/', '@llumiverse/', '@dglabs/'];
-        const versionMap = isDev ? undefined : getTemplateVersions();
+        const versionMap = dependencyMode === 'pinned' ? getTemplateVersions() : undefined;
         let workspaceReplacements = 0;
 
         if (versionMap) {
@@ -401,8 +402,8 @@ export function adjustPackageJson(
                 Object.keys(packageJson[depType]).forEach((pkgName) => {
                     const isInternalPackage = internalScopes.some((scope) => pkgName.startsWith(scope));
                     if (isInternalPackage && packageJson[depType][pkgName] === 'workspace:*') {
-                        if (isDev) {
-                            // Dev mode: use 'dev' npm tag
+                        if (dependencyMode === 'dev') {
+                            // Floating development mode is retained for direct CLI compatibility.
                             packageJson[depType][pkgName] = 'dev';
                             workspaceReplacements++;
                         } else {
@@ -418,11 +419,11 @@ export function adjustPackageJson(
                                 // a generated app onto the npm `latest` tag silently couples it to
                                 // whatever publishes next (a different major can break the build at
                                 // an unrelated time). Fail loudly instead so the caller pins a
-                                // version map or uses --dev.
+                                // version map or uses floating development dependencies.
                                 throw new Error(
                                     `Cannot resolve a version for internal dependency "${pkgName}": no entry in the ` +
                                         'pinned version map and the npm registry returned no version. ' +
-                                        'Provide a version map (CLI-pinned versions) or run with --dev to use the "dev" tag.',
+                                        'Provide a version map (CLI-pinned versions) or use dependency mode "dev".',
                                 );
                             }
                         }
@@ -432,7 +433,7 @@ export function adjustPackageJson(
         });
 
         if (workspaceReplacements > 0) {
-            const method = versionMap ? 'pinned' : 'latest';
+            const method = versionMap ? 'pinned' : dependencyMode === 'dev' ? 'dev-tagged' : 'registry';
             console.log(
                 chalk.gray(`   Resolved ${workspaceReplacements} workspace:* dependencies to ${method} versions`),
             );
@@ -440,12 +441,11 @@ export function adjustPackageJson(
 
         // Write back to file
         fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
-    } catch (error) {
+    } catch (error: unknown) {
         console.log(
-            chalk.yellow(
-                `   Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            ),
+            chalk.red(`   Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`),
         );
+        throw error;
     }
 
     console.log();

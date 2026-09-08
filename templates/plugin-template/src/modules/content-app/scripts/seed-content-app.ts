@@ -1,15 +1,64 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
-import { VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
+import type { JSONObject } from '@vertesia/common';
+import { createVertesiaClient } from '../../../../scripts/vertesia-client.ts';
 
-const packageJson = JSON.parse(readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8'));
+const packageJson: { name: string } = JSON.parse(
+    readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8'),
+);
 const APP_NAME = packageJson.name;
 const SEED_MARKER = `content-app:${APP_NAME}`;
 const GUIDE_TYPE = `app:${APP_NAME}:guide`;
 const LOCATION_TYPE = `app:${APP_NAME}:location`;
 const REVIEW_TASK_TYPE = `app:${APP_NAME}:review_task`;
 
-const locations = [
+/**
+ * Every seeded record is addressed by its slug, which is what makes the seed idempotent. These are
+ * type aliases rather than interfaces so they satisfy the SDK's `JSONObject` when written to the
+ * Store — an interface gets no implicit index signature.
+ */
+type SeedRecord = {
+    slug: string;
+};
+
+type LocationRecord = SeedRecord & {
+    name: string;
+    region: string;
+    country: string;
+    terrain: string;
+    best_season: string;
+    summary: string;
+};
+
+type GuideRecord = SeedRecord & {
+    title: string;
+    summary: string;
+    body: string;
+    location_slug: string;
+    category: string;
+    status: string;
+    owner: string;
+    audience: string;
+    tags: string[];
+};
+
+type ReviewTaskRecord = SeedRecord & {
+    guide_slug: string;
+    title: string;
+    priority: string;
+    status: string;
+    assignee: string;
+    checklist: string[];
+    due_date: string;
+};
+
+type UpsertResult = {
+    id: string;
+    action: 'created' | 'updated';
+};
+
+const locations: LocationRecord[] = [
     {
         slug: 'north-ridge',
         name: 'North Ridge',
@@ -30,7 +79,7 @@ const locations = [
     },
 ];
 
-const guides = [
+const guides: GuideRecord[] = [
     {
         slug: 'north-ridge-day-loop',
         title: 'North Ridge Day Loop',
@@ -64,7 +113,7 @@ const guides = [
     },
 ];
 
-const reviewTasks = [
+const reviewTasks: ReviewTaskRecord[] = [
     {
         slug: 'review-north-ridge-day-loop',
         guide_slug: 'north-ridge-day-loop',
@@ -95,24 +144,7 @@ const reviewTasks = [
     },
 ];
 
-function resolveEndpoints() {
-    if (!process.env.VERTESIA_SERVER_URL || !process.env.VERTESIA_STORE_URL) return undefined;
-    return {
-        studio: process.env.VERTESIA_SERVER_URL,
-        store: process.env.VERTESIA_STORE_URL,
-        token: process.env.VERTESIA_TOKEN_SERVER_URL,
-    };
-}
-
-async function getClient() {
-    const token = process.env.VERTESIA_TOKEN;
-    if (!token) {
-        throw new Error('VERTESIA_TOKEN is required. Use `VERTESIA_TOKEN="$(vertesia auth token)" pnpm seed:content`.');
-    }
-    return await VertesiaClient.fromAuthToken(token, undefined, resolveEndpoints());
-}
-
-async function findBySlug(client, type, slug) {
+async function findBySlug(client: VertesiaClient, type: string, slug: string) {
     const response = await client.objects.search({
         query: {
             type,
@@ -126,15 +158,17 @@ async function findBySlug(client, type, slug) {
     return response.results[0];
 }
 
-async function upsertObject(client, type, record, toName) {
+async function upsertObject<T extends SeedRecord & JSONObject>(
+    client: VertesiaClient,
+    type: string,
+    record: T,
+    toName: (item: T) => string,
+): Promise<UpsertResult> {
     const existing = await findBySlug(client, type, record.slug);
     const payload = {
         type,
         name: toName(record),
-        properties: {
-            ...record,
-            seed_marker: SEED_MARKER,
-        },
+        properties: { ...record, seed_marker: SEED_MARKER },
     };
     if (existing?.id) {
         await client.objects.update(existing.id, payload, { suppressWorkflows: true });
@@ -144,7 +178,7 @@ async function upsertObject(client, type, record, toName) {
     return { id: created.id, action: 'created' };
 }
 
-function wrapAppScopeError(error) {
+function wrapAppScopeError(error: unknown): unknown {
     const message = error instanceof Error ? error.message : String(error);
     if (/app:|type|forbidden|unauthorized|permission|not found/i.test(message)) {
         return new Error(
@@ -163,8 +197,8 @@ function wrapAppScopeError(error) {
 }
 
 export async function seedContentApp() {
-    const client = await getClient();
-    const results = [];
+    const client = await createVertesiaClient();
+    const results: UpsertResult[] = [];
     try {
         for (const location of locations) {
             results.push(await upsertObject(client, LOCATION_TYPE, location, (item) => item.name));

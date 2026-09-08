@@ -23,7 +23,12 @@ export function useUXTracking() {
             console.debug('track event', eventName, eventProperties);
         }
 
-        //GA via firebase
+        // GA via firebase — needs a complete Firebase config. A partial one (no apiKey, as in
+        // central-auth deployments and local setups) would make the Installations SDK log an
+        // async FirebaseError on every event, so analytics is a no-op there.
+        if (!Env.firebase?.apiKey) {
+            return;
+        }
         logEvent(getFirebaseAnalytics(), eventName, { ...eventProperties, debug_mode: !Env.isProd });
     };
 

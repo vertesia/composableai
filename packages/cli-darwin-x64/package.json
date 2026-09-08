@@ -1,0 +1,27 @@
+{
+    "name": "@vertesia/cli-darwin-x64",
+    "version": "1.5.0-dev.20260905.011013Z",
+    "description": "The macOS x64 native executable for the Vertesia CLI.",
+    "license": "Apache-2.0",
+    "preferUnplugged": true,
+    "os": [
+        "darwin"
+    ],
+    "cpu": [
+        "x64"
+    ],
+    "files": [
+        "bin/vertesia"
+    ],
+    "publishConfig": {
+        "executableFiles": [
+            "bin/vertesia"
+        ]
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/cli-darwin-x64"
+    },
+    "gitHead": "ea74a29f6885cec132eec4b6b319e40137df3b40"
+}

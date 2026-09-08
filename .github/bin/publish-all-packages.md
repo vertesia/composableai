@@ -21,7 +21,7 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 
 ### Parameters
 
-- `--ref` (required): Git reference - `main` for dev builds, a `release/X.Y` branch (e.g. `release/1.4`) for releases. Publishing releases outside of a `release/*` branch is forbidden.
+- `--ref` (required): Git reference. It determines which moving npm tag a successful cohort may advance.
 - `--release-type` (required): The type of the version, either "release" or "snapshot". A "release" means this is a stable version. A "snapshot" means this is a development version.
   - "release" creates a stable version respecting semantic versioning, such as `1.0.0`. Release can only be performed from a `release/*` branch (e.g. `release/1.4`).
   - "snapshot" creates a new development version in format `{base}-dev.{date}.{time}`, such as `1.0.0-dev.20260128.144200Z`. Note that the time part contains 'Z', which means that the time is in UTC; it also allows NPM to use leading zeros, as it turns the segment into alphanumeric.
@@ -67,8 +67,26 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 
 ### NPM Tags
 
-* `dev` tag is used when changing a snapshot version on main.
-* `latest` tag is used when changing a release version (minor, patch)
+* `latest` is advanced by stable releases from `release/X.Y`.
+* `dev` is advanced by snapshots from `main`.
+* `dev-X.Y` is advanced by snapshots from `release/X.Y` (for example, `dev-1.5`).
+* Other branches publish under the isolated `snapshot-<short-sha>` tag and never advance a shared tag.
+
+`@vertesia/create-plugin` is published last because its baked `templateVersions` map is the cohort manifest used by
+AppGen. Its track tag advances only after every other package publishes successfully. Tests should prefer the exact
+version emitted by the workflow. Feature branches use their isolated tag to prevent npm from assigning `latest` or
+changing a shared development track.
+
+### Rollout sequencing
+
+Merge the publishing-script and create-plugin changes into the branch that owns a track before dispatching a
+snapshot publish for that track. In particular, `release/1.5` must contain this channel resolver before a workflow
+run is expected to create or advance `dev-1.5`; dispatching the older script would still advance `dev`.
+
+The workflow emits the exact published version and uses it for the post-publish template smoke test. Studio AppGen
+does not need to wait for a snapshot containing the new CLI options: it invokes its gitlink-pinned create-plugin
+version without those options, relies on that CLI's baked exact `templateVersions`, and rewrites `.env.app` after
+scaffolding for local and branch endpoints.
 
 ## Scenarios
 

@@ -273,7 +273,7 @@ profilesRoot
     .command('delete <name>')
     .description('delete an existing configuration profile')
     .action((name) => {
-        deleteProfile(name);
+        return deleteProfile(name);
     });
 profilesRoot
     .command('file')

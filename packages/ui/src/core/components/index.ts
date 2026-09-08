@@ -5,6 +5,7 @@ export * from './Divider.js';
 export * from './EmptyCollection.js';
 export * from './FileUpload.js';
 export * from './FormItem.js';
+export * from './InfoTip.js';
 export * from './InputList.js';
 export * from './Link.js';
 export * from './MenuList.js';

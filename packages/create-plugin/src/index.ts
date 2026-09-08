@@ -10,7 +10,7 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import chalk from 'chalk';
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { config, validation } from './configuration.js';
 import { downloadTemplate } from './download-template.js';
 import { appendModuleOption, parseModuleOption, runTemplateCodegen, type ScaffoldContext } from './modules.js';
@@ -41,7 +41,13 @@ async function main() {
         .option('-b, --branch <branch>', 'Use a specific template branch')
         .option('-t, --template <name>', 'Template name (skips interactive selection)')
         .option('-y, --yes', 'Non-interactive mode: use defaults for all prompts', false)
-        .option('--dev', 'Use workspace dependencies (development mode)', false)
+        .option('--dev', 'Apply template development settings (dependencies default to the dev tag)', false)
+        .addOption(
+            new Option(
+                '--dependency-mode <mode>',
+                'Resolve internal dependencies from the CLI-pinned version map or the dev npm tag',
+            ).choices(['pinned', 'dev']),
+        )
         .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
         .option('--skip-install', 'Skip dependency installation after copying and configuring the template', false)
         .option(
@@ -71,6 +77,7 @@ Documentation: ${config.docsUrl}
         template?: string;
         yes: boolean;
         dev: boolean;
+        dependencyMode?: 'pinned' | 'dev';
         localTemplates?: string;
         skipInstall: boolean;
         module: string[];
@@ -81,11 +88,13 @@ Documentation: ${config.docsUrl}
         template,
         yes: nonInteractive,
         dev,
+        dependencyMode: dependencyModeOption,
         localTemplates,
         skipInstall,
         module: moduleOptions,
         packageManager: packageManagerOverride,
     } = opts;
+    const dependencyMode = dependencyModeOption ?? (dev ? 'dev' : 'pinned');
     const selectedModules = parseModuleOption(moduleOptions);
 
     // Prompt for project name if not provided as CLI argument
@@ -161,7 +170,7 @@ Documentation: ${config.docsUrl}
         replaceVariables(projectName, templateConfig, answers);
 
         // Step 6: Adjust package.json (name and workspace dependencies)
-        adjustPackageJson(projectName, answers, dev, packageManager);
+        adjustPackageJson(projectName, answers, dev, packageManager, dependencyMode);
 
         // Step 7: Handle conditional removes
         if (templateConfig.conditionalRemove) {
