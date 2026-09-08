@@ -246,7 +246,9 @@ const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
                 className={cn(
                     fullWidth ? 'w-full' : '',
                     sticky && 'sticky top-0 bg-background z-10',
-                    direction === 'vertical' ? 'flex-col items-start' : 'flex-row',
+                    // TabsList's `border-b -mb-px` is the rail under a ROW of tabs. In vertical
+                    // mode it renders as a stray line beneath the column, so drop it here only.
+                    direction === 'vertical' ? 'flex-col items-start border-b-0 mb-0' : 'flex-row',
                     responsive ? 'hidden lg:flex' : '',
                     className,
                 )}
