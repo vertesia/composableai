@@ -5,6 +5,8 @@
  * Schedules are stored in MongoDB with execution handled by Temporal.
  */
 
+import type { ProcessRunType } from './agent-run.js';
+
 /**
  * Represents a scheduled agent execution configuration.
  */
@@ -43,6 +45,18 @@ export interface AgentSchedule {
 
     /** Process definition ID to execute */
     process?: string;
+
+    /**
+     * Initial process context the schedule fires with, as supplied at creation. Process schedules
+     * only; the agent equivalent is `vars`.
+     */
+    context?: Record<string, unknown>;
+
+    /**
+     * Process execution mode the schedule fires with. Process schedules only. Absent on schedules
+     * created before this field was reported, which run as "programmatic".
+     */
+    run_type?: ProcessRunType;
 
     /**
      * Cron expression defining when to run.
@@ -140,7 +154,7 @@ export interface CreateProcessSchedulePayload extends CreateSchedulePayloadBase 
     context?: Record<string, unknown>;
 
     /** Process execution mode (defaults to "programmatic") */
-    run_type?: 'programmatic' | 'supervised';
+    run_type?: ProcessRunType;
 }
 
 /** Payload for creating a new schedule. */
@@ -148,6 +162,9 @@ export type CreateSchedulePayload = CreateAgentSchedulePayload | CreateProcessSc
 
 /**
  * Payload for updating an existing schedule.
+ *
+ * Agent vars and delegation changes re-publish the execution specification. Process context,
+ * run_type, and task queues remain fixed at creation.
  */
 export interface UpdateSchedulePayload {
     run_as?: ScheduleRunAs;
@@ -188,6 +205,7 @@ export type ScheduleListItem = Pick<
     | 'description'
     | 'target'
     | 'process'
+    | 'run_type'
     | 'interaction'
     | 'interaction_name'
     | 'cron_expression'
