@@ -236,137 +236,71 @@ export const ResourceRefSchema = z
     .meta({ id: 'ResourceRef' });
 
 /**
- * Staged files — uploads that belong to a conversation that does not exist yet.
+ * Files attached to a conversation before its first turn.
  *
- * A file cannot be uploaded into a run before the run exists, so a composer that lets the user
- * attach files before sending had to create the run first and upload afterwards, and the agent's
- * first turn raced the uploads. Staging inverts that: the files are uploaded and their text
- * extracted while the user is still typing, and the run adopts a finished batch by id.
+ * A run's artifacts are addressed by run id, so a composer offering "attach, then type, then send"
+ * could only create the run and upload afterwards — and the agent's first turn raced the uploads.
+ * The run is now created when the first file is attached, so the files are uploaded and their text
+ * extracted into the run's own artifact space while the user is still typing, and the run is
+ * promoted to a working conversation when they press send.
  */
-export const StagedFileSchema = z
+export const AgentRunFileSchema = z
     .strictObject({
-        id: z.string().meta({ description: 'Server-assigned id for this staged file.' }),
+        id: z.string().meta({ description: 'Server-assigned id for this attachment.' }),
         name: z.string().meta({ description: 'Original filename, as the user sees it.' }),
         content_type: z.string().meta({ description: 'MIME type.' }),
-        size: z.number().meta({ description: 'Size in bytes, as declared by the client.' }).optional(),
+        size: z.number().meta({ description: 'Size in bytes, as reported by the client.' }).optional(),
+        artifact_path: z.string().meta({ description: 'Where the file sits in the run, e.g. "files/report.pdf".' }),
+        md_path: z
+            .string()
+            .meta({ description: 'Companion markdown of the extracted text, once there is any.' })
+            .optional(),
         status: FileProcessingStatusSchema.meta({
             description:
-                'Lifecycle of this staged file. Shares the vocabulary of a file already attached to a run, so a composer renders one shape before and after the run exists.',
+                'Lifecycle of this attachment. Shares the vocabulary of a file attached mid-conversation, so a composer renders one shape either side of the run starting.',
         }),
-        text_extracted: z.boolean().meta({ description: 'Whether text extraction produced usable text.' }).optional(),
-        error: z.string().meta({ description: 'Why the file failed to upload or to extract.' }).optional(),
+        text_extracted: z.boolean().meta({ description: 'Whether extraction produced usable text.' }).optional(),
+        error: z.string().meta({ description: 'Why the file is not usable.' }).optional(),
     })
-    .meta({ id: 'StagedFile', description: 'One file staged for a conversation that has not started yet.' });
+    .meta({ id: 'AgentRunFile', description: 'One file attached to a run before its first turn.' });
 
-export const StagedFileBatchSchema = z
+export const AgentRunFilesResponseSchema = z
     .strictObject({
-        batch_id: z.string().meta({ description: 'Identifier the run quotes to adopt this batch.' }),
-        files: z.array(StagedFileSchema).meta({ description: 'Every file in the batch, in the order staged.' }),
+        files: z.array(AgentRunFileSchema),
         settled: z.boolean().meta({
             description:
-                'True once no file is still uploading or processing. A run may be started before this; its first turn waits.',
+                'True once no attachment is still uploading or processing. A run may be started before this; its first turn waits.',
         }),
-        expires_at: z.string().meta({ format: 'date-time', description: 'When an unclaimed batch is discarded.' }),
     })
-    .meta({ id: 'StagedFileBatch', description: 'A batch of files staged ahead of a conversation.' });
+    .meta({ id: 'AgentRunFilesResponse', description: "A run's pre-turn attachments and their progress." });
 
-export const CreateStagedFileBatchPayloadSchema = z
-    .strictObject({
-        files: z
-            .array(
-                z.strictObject({
-                    name: z.string(),
-                    content_type: z.string(),
-                    size: z.number().optional(),
-                }),
-            )
-            .meta({ description: 'The files about to be uploaded. Storage keys are assigned by the server.' }),
-    })
-    .meta({
-        id: 'CreateStagedFileBatchPayload',
-        description: 'Reserve a staged batch and obtain one signed upload URL per file.',
-    });
-
-export const AddStagedFilesPayloadSchema = z
-    .strictObject({
-        files: z
-            .array(
-                z.strictObject({
-                    name: z.string(),
-                    content_type: z.string(),
-                    size: z.number().optional(),
-                }),
-            )
-            .meta({ description: 'Files added to an open batch after it was created.' }),
-    })
-    .meta({
-        id: 'AddStagedFilesPayload',
-        description:
-            'Append files to a batch that has not been adopted yet. Attaching is incremental — a user drops two files, types, then drops three more — and each drop starts extracting immediately rather than waiting for the rest.',
-    });
-
-export const StagedFileUploadTargetSchema = z
-    .strictObject({
-        id: z.string().meta({ description: 'Quote this id when reporting the upload finished or failed.' }),
-        name: z.string(),
-        upload_url: z.string().meta({ description: 'Signed URL to PUT the bytes to. Expires.' }),
-    })
-    .meta({ id: 'StagedFileUploadTarget', description: 'Where to send one staged file.' });
-
-export const CreateStagedFileBatchResponseSchema = z
-    .strictObject({
-        batch_id: z.string(),
-        files: z.array(StagedFileUploadTargetSchema),
-        expires_at: z.string().meta({ format: 'date-time' }),
-    })
-    .meta({
-        id: 'CreateStagedFileBatchResponse',
-        description: 'A reserved staged batch and its per-file upload targets.',
-    });
-
-export const AdoptStagedFileBatchPayloadSchema = z
-    .strictObject({
-        run_id: z.string().meta({ description: 'The agent run taking ownership of the batch.' }),
-    })
-    .meta({
-        id: 'AdoptStagedFileBatchPayload',
-        description: 'Hand a staged batch to the run that will use it.',
-    });
-
-export const AdoptedStagedFileSchema = z
+export const RegisterAgentRunFilePayloadSchema = z
     .strictObject({
         name: z.string().meta({ description: 'Original filename.' }),
         content_type: z.string(),
-        status: FileProcessingStatusSchema.meta({ description: 'Terminal state: ready, or error with a reason.' }),
         artifact_path: z
             .string()
-            .meta({ description: 'Where the file now lives in the run, e.g. "files/report.pdf".' })
-            .optional(),
-        md_path: z
-            .string()
-            .meta({ description: 'Companion markdown of the extracted text, if there was any.' })
-            .optional(),
-        error: z.string().meta({ description: 'Why this file is not usable.' }).optional(),
-    })
-    .meta({ id: 'AdoptedStagedFile', description: 'One staged file after it has been moved into a run.' });
-
-export const AdoptStagedFileBatchResponseSchema = z
-    .strictObject({
-        batch_id: z.string(),
-        files: z.array(AdoptedStagedFileSchema),
+            .meta({ description: 'Where the file was uploaded, as returned by the artifact upload.' }),
+        size: z.number().optional(),
     })
     .meta({
-        id: 'AdoptStagedFileBatchResponse',
-        description: "A staged batch after its files were copied into the run's artifact space.",
+        id: 'RegisterAgentRunFilePayload',
+        description:
+            "Report a file as uploaded into the run's artifact space, which starts its text extraction. Called once per file as its bytes land, so extraction overlaps the next upload and the user's typing.",
     });
 
-export const StagedFileUploadFailedPayloadSchema = z
+export const StartAgentRunPayloadSchema = z
     .strictObject({
-        error: z.string().meta({ description: 'What went wrong, shown to the user and to the agent.' }).optional(),
+        data: z
+            .looseObject({})
+            .meta({ description: "The interaction's input, including the user's prompt." })
+            .optional(),
+        tool_approval_mode: AgentToolApprovalModeSchema.optional(),
     })
     .meta({
-        id: 'StagedFileUploadFailedPayload',
-        description: 'Report that a staged file could not be uploaded, so the batch stops waiting for it.',
+        id: 'StartAgentRunPayload',
+        description:
+            'Promote a draft run to a working conversation. Its first turn waits for any attachment still processing.',
     });
 
 export const AgentArtifactContentResponseSchema = z
@@ -763,11 +697,11 @@ export const CreateAgentRunPayloadSchema = z
                     'Denylist of MCP tool-collection ids deactivated for this run. `undefined`/empty means all installed/connected MCP collections are active (back-compat, and new servers stay active by default). Listed collections are excluded even if connected.',
             })
             .optional(),
-        staged_batch_id: z
-            .string()
+        draft: z
+            .boolean()
             .meta({
                 description:
-                    "A batch of files staged before this run existed (see CreateStagedFileBatchResponse). The run adopts the batch: its files are copied into the run's artifact space and the first model turn waits until every one of them has finished uploading and extracting. The batch need not be settled when the run is created.",
+                    'Create the run record and its artifact space without starting the conversation. A composer creates a draft when the user attaches their first file, uploads into it while they type, and promotes it with StartAgentRun when they send. Without attachments there is no reason to create a run early, so an ordinary conversation never uses this.',
             })
             .optional(),
         content_type: ContentObjectTypeRefSchema.meta({

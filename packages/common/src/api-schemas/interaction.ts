@@ -2200,11 +2200,11 @@ export const AsyncConversationExecutionPayloadSchema = z
                     "Tool calls executed before the first model turn. Results are injected into the initial context. These run sequentially with the caller's authority before the first model turn. Only a bounded set of read/hydration tools is accepted.",
             })
             .optional(),
-        staged_batch_id: z
-            .string()
+        wait_for_attached_files: z
+            .boolean()
             .meta({
                 description:
-                    "A batch of files staged before this run existed. The workflow adopts it before the first model turn: the files are copied into the run's artifact space with their already-extracted text, and the turn waits until every file in the batch has settled. Start-only — it describes work in flight at run creation and is dropped when the run continues as new.",
+                    'The run has files attached before its first turn, uploaded into its artifact space while the user was composing. The first model turn waits until every one has finished processing and then opens with them in hand. Start-only — it describes work in flight at promotion and is dropped when the run continues as new.',
             })
             .optional(),
         excluded_tools: z

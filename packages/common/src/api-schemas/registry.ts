@@ -1789,16 +1789,10 @@ const AGENT_RUN_SCHEMAS = {
     AgentEvent: AgentRunSchemas.AgentEventSchema,
     IngestAgentEventsPayload: AgentRunSchemas.IngestAgentEventsPayloadSchema,
     IngestAgentEventsResponse: AgentRunSchemas.IngestAgentEventsResponseSchema,
-    StagedFile: AgentRunSchemas.StagedFileSchema,
-    StagedFileBatch: AgentRunSchemas.StagedFileBatchSchema,
-    StagedFileUploadTarget: AgentRunSchemas.StagedFileUploadTargetSchema,
-    CreateStagedFileBatchPayload: AgentRunSchemas.CreateStagedFileBatchPayloadSchema,
-    CreateStagedFileBatchResponse: AgentRunSchemas.CreateStagedFileBatchResponseSchema,
-    StagedFileUploadFailedPayload: AgentRunSchemas.StagedFileUploadFailedPayloadSchema,
-    AddStagedFilesPayload: AgentRunSchemas.AddStagedFilesPayloadSchema,
-    AdoptStagedFileBatchPayload: AgentRunSchemas.AdoptStagedFileBatchPayloadSchema,
-    AdoptedStagedFile: AgentRunSchemas.AdoptedStagedFileSchema,
-    AdoptStagedFileBatchResponse: AgentRunSchemas.AdoptStagedFileBatchResponseSchema,
+    AgentRunFile: AgentRunSchemas.AgentRunFileSchema,
+    AgentRunFilesResponse: AgentRunSchemas.AgentRunFilesResponseSchema,
+    RegisterAgentRunFilePayload: AgentRunSchemas.RegisterAgentRunFilePayloadSchema,
+    StartAgentRunPayload: AgentRunSchemas.StartAgentRunPayloadSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const WORKFLOW_RUN_SCHEMAS = {
@@ -2390,17 +2384,11 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
-    // Staged-file batches: closed shapes, so a stray key is a client bug and not silent drift.
-    'StagedFile',
-    'StagedFileBatch',
-    'StagedFileUploadTarget',
-    'CreateStagedFileBatchPayload',
-    'CreateStagedFileBatchResponse',
-    'StagedFileUploadFailedPayload',
-    'AddStagedFilesPayload',
-    'AdoptStagedFileBatchPayload',
-    'AdoptedStagedFile',
-    'AdoptStagedFileBatchResponse',
+    // Pre-turn run attachments: closed shapes, so a stray key is a client bug and not silent drift.
+    'AgentRunFile',
+    'AgentRunFilesResponse',
+    'RegisterAgentRunFilePayload',
+    'StartAgentRunPayload',
     // Process Test Lab request, fixture, and result contracts.
     'ProcessTestVirtualActor',
     'ProcessTestFixtureResult',

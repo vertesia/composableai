@@ -1,23 +1,19 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
     type ActiveWorkstreamsQueryResult,
-    type AddStagedFilesPayload,
-    type AdoptStagedFileBatchPayload,
-    type AdoptStagedFileBatchResponse,
     type AgentArtifactContentResponse,
     type AgentArtifactUrlResponse,
     type AgentEvent,
     type AgentMessage,
     type AgentRun,
     type AgentRunDetailsStreamEvent,
+    type AgentRunFilesResponse,
     type AgentRunInternals,
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
     type BindRunWorkflowPayload,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
-    type CreateStagedFileBatchPayload,
-    type CreateStagedFileBatchResponse,
     type ErrorAnalyticsResponse,
     type FirstResponseBehaviorAnalyticsResponse,
     type IngestAgentEventsPayload,
@@ -35,13 +31,13 @@ import {
     type RecordAgentRunPayload,
     type RecordProcessRunPayload,
     type RecordRunPayload,
+    type RegisterAgentRunFilePayload,
     type RunsByAgentAnalyticsResponse,
     type SearchAgentRunsQuery,
     type SearchAgentRunsResponse,
     type SignalAgentPayload,
     type SignalAgentResponse,
-    type StagedFileBatch,
-    type StagedFileUploadTarget,
+    type StartAgentRunPayload,
     type TerminateAgentRunResponse,
     type TimeToFirstResponseAnalyticsResponse,
     type TokenUsageAnalyticsResponse,
@@ -847,94 +843,43 @@ export class AgentsApi extends ApiTopic {
      * @returns The full storage path of the uploaded artifact.
      */
     // ========================================================================
-    // Staged files — uploads that precede the conversation
+    // Pre-turn attachments — files added before the conversation starts
     // ========================================================================
 
     /**
-     * Reserve a batch of files for a conversation that does not exist yet, and get one signed
-     * upload URL per file.
+     * Report a file as uploaded into the run's artifact space, which starts its text extraction.
      *
-     * Artifacts are addressed by run id, so files attached in a composer could previously only be
-     * uploaded after the run was created — which is what let the agent's first turn start before
-     * they arrived. Stage them instead: upload and extract while the user is still typing, then
-     * quote `batch_id` as `staged_batch_id` when starting the run.
+     * `uploadArtifact` only mints a signed URL and the bytes go straight to storage, so the server
+     * does not learn an upload finished unless it is told. Call this per file as each one lands
+     * rather than once at the end: extraction is the slow part, and starting it early is what the
+     * user's composing time pays for.
      */
-    createStagedFileBatch(payload: CreateStagedFileBatchPayload): Promise<CreateStagedFileBatchResponse> {
-        return this.post('/staged-files', { payload });
+    registerFile(runId: string, payload: RegisterAgentRunFilePayload): Promise<AgentRunFilesResponse> {
+        return this.post(`/${runId}/files`, { payload });
+    }
+
+    /** Per-file status for a run's pre-turn attachments — the composer's progress surface. */
+    getFiles(runId: string): Promise<AgentRunFilesResponse> {
+        return this.get(`/${runId}/files`);
     }
 
     /**
-     * Upload one staged file and report it, which starts its text extraction.
+     * Remove a file the user retracted before sending, cancelling any extraction in flight.
      *
-     * Report each file as it lands rather than the whole batch at the end: extraction is the slow
-     * part, and starting it early is what the user's composing time pays for.
+     * Not the same as a file that failed: nothing went wrong, and the agent is never told about it.
      */
-    async uploadStagedFile(
-        target: StagedFileUploadTarget,
-        batchId: string,
-        content: Blob | ReadableStream | ArrayBuffer | string,
-        contentType?: string,
-    ): Promise<StagedFileBatch> {
-        const mimeType = contentType || 'application/octet-stream';
-        const res = await fetchSignedUrl(target.upload_url, {
-            method: 'PUT',
-            body: content,
-            headers: { 'Content-Type': mimeType },
-        });
-        if (!res.ok) {
-            // Report it rather than throwing blind: a batch that never hears about a failed file
-            // waits for it, and the caller still needs the error to show the user.
-            const reason = `Failed to upload staged file: ${res.statusText}`;
-            await this.markStagedFileFailed(batchId, target.id, reason).catch(() => undefined);
-            throw new Error(reason);
-        }
-        return this.markStagedFileUploaded(batchId, target.id);
+    removeFile(runId: string, fileId: string): Promise<AgentRunFilesResponse> {
+        return this.del(`/${runId}/files/${fileId}`);
     }
 
     /**
-     * Append files to a batch that has not been adopted yet.
+     * Start the conversation for a run created as a draft.
      *
-     * Attaching is incremental — files are dropped, then more are dropped while the first are still
-     * extracting — so the batch stays open until a run takes it. Members already uploading or
-     * extracting are untouched.
+     * The prompt arrives here rather than at creation, because the run was created when the user
+     * attached their first file — before they had written anything.
      */
-    addStagedFiles(batchId: string, payload: AddStagedFilesPayload): Promise<CreateStagedFileBatchResponse> {
-        return this.post(`/staged-files/${batchId}/files`, { payload });
-    }
-
-    /**
-     * Remove a file the user retracted, deleting its bytes and cancelling any extraction in flight.
-     *
-     * Not the same as reporting a failure: nothing went wrong, and the agent is never told about a
-     * file the user took back.
-     */
-    removeStagedFile(batchId: string, fileId: string): Promise<StagedFileBatch> {
-        return this.del(`/staged-files/${batchId}/files/${fileId}`);
-    }
-
-    /** Report a staged file's bytes as landed, starting its text extraction. */
-    markStagedFileUploaded(batchId: string, fileId: string): Promise<StagedFileBatch> {
-        return this.post(`/staged-files/${batchId}/files/${fileId}/uploaded`);
-    }
-
-    /** Report a staged file as unuploadable, so the batch stops waiting for it. */
-    markStagedFileFailed(batchId: string, fileId: string, error?: string): Promise<StagedFileBatch> {
-        return this.post(`/staged-files/${batchId}/files/${fileId}/failed`, { payload: { error } });
-    }
-
-    /**
-     * Move a settled staged batch into an agent run.
-     *
-     * Called by the conversation workflow, not by a composer: the run takes ownership once, and the
-     * batch records which run took it so a second cannot.
-     */
-    adoptStagedFileBatch(batchId: string, payload: AdoptStagedFileBatchPayload): Promise<AdoptStagedFileBatchResponse> {
-        return this.post(`/staged-files/${batchId}/adopt`, { payload });
-    }
-
-    /** Per-file status for a staged batch — the composer's progress surface before a run exists. */
-    getStagedFileBatch(batchId: string): Promise<StagedFileBatch> {
-        return this.get(`/staged-files/${batchId}`);
+    startDraft(runId: string, payload: StartAgentRunPayload = {}): Promise<AgentRun> {
+        return this.post(`/${runId}/start`, { payload });
     }
 
     async uploadArtifact(

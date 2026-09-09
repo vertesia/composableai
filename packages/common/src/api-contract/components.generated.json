@@ -12813,9 +12813,9 @@
         },
         "description": "Tool calls executed before the first model turn. Results are injected into the initial context. These run sequentially with the caller's authority before the first model turn. Only a bounded set of read/hydration tools is accepted."
       },
-      "staged_batch_id": {
-        "type": "string",
-        "description": "A batch of files staged before this run existed. The workflow adopts it before the first model turn: the files are copied into the run's artifact space with their already-extracted text, and the turn waits until every file in the batch has settled. Start-only — it describes work in flight at run creation and is dropped when the run continues as new."
+      "wait_for_attached_files": {
+        "type": "boolean",
+        "description": "The run has files attached before its first turn, uploaded into its artifact space while the user was composing. The first model turn waits until every one has finished processing and then opens with them in hand. Start-only — it describes work in flight at promotion and is dropped when the run continues as new."
       },
       "excluded_tools": {
         "type": "array",
@@ -32565,9 +32565,9 @@
         },
         "description": "Denylist of MCP tool-collection ids deactivated for this run. `undefined`/empty means all installed/connected MCP collections are active (back-compat, and new servers stay active by default). Listed collections are excluded even if connected."
       },
-      "staged_batch_id": {
-        "type": "string",
-        "description": "A batch of files staged before this run existed (see CreateStagedFileBatchResponse). The run adopts the batch: its files are copied into the run's artifact space and the first model turn waits until every one of them has finished uploading and extracting. The batch need not be settled when the run is created."
+      "draft": {
+        "type": "boolean",
+        "description": "Create the run record and its artifact space without starting the conversation. A composer creates a draft when the user attaches their first file, uploads into it while they type, and promotes it with StartAgentRun when they send. Without attachments there is no reason to create a run early, so an ordinary conversation never uses this."
       },
       "content_type": {
         "$ref": "#/components/schemas/ContentObjectTypeRef",
@@ -34006,12 +34006,12 @@
     ],
     "additionalProperties": false
   },
-  "StagedFile": {
+  "AgentRunFile": {
     "type": "object",
     "properties": {
       "id": {
         "type": "string",
-        "description": "Server-assigned id for this staged file."
+        "description": "Server-assigned id for this attachment."
       },
       "name": {
         "type": "string",
@@ -34023,203 +34023,61 @@
       },
       "size": {
         "type": "number",
-        "description": "Size in bytes, as declared by the client."
+        "description": "Size in bytes, as reported by the client."
+      },
+      "artifact_path": {
+        "type": "string",
+        "description": "Where the file sits in the run, e.g. \"files/report.pdf\"."
+      },
+      "md_path": {
+        "type": "string",
+        "description": "Companion markdown of the extracted text, once there is any."
       },
       "status": {
         "$ref": "#/components/schemas/FileProcessingStatus",
-        "description": "Lifecycle of this staged file. Shares the vocabulary of a file already attached to a run, so a composer renders one shape before and after the run exists."
+        "description": "Lifecycle of this attachment. Shares the vocabulary of a file attached mid-conversation, so a composer renders one shape either side of the run starting."
       },
       "text_extracted": {
         "type": "boolean",
-        "description": "Whether text extraction produced usable text."
+        "description": "Whether extraction produced usable text."
       },
       "error": {
         "type": "string",
-        "description": "Why the file failed to upload or to extract."
+        "description": "Why the file is not usable."
       }
     },
     "required": [
       "id",
       "name",
       "content_type",
+      "artifact_path",
       "status"
     ],
     "additionalProperties": false,
-    "description": "One file staged for a conversation that has not started yet."
+    "description": "One file attached to a run before its first turn."
   },
-  "StagedFileBatch": {
+  "AgentRunFilesResponse": {
     "type": "object",
     "properties": {
-      "batch_id": {
-        "type": "string",
-        "description": "Identifier the run quotes to adopt this batch."
-      },
       "files": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/StagedFile"
-        },
-        "description": "Every file in the batch, in the order staged."
+          "$ref": "#/components/schemas/AgentRunFile"
+        }
       },
       "settled": {
         "type": "boolean",
-        "description": "True once no file is still uploading or processing. A run may be started before this; its first turn waits."
-      },
-      "expires_at": {
-        "type": "string",
-        "format": "date-time",
-        "description": "When an unclaimed batch is discarded."
+        "description": "True once no attachment is still uploading or processing. A run may be started before this; its first turn waits."
       }
     },
     "required": [
-      "batch_id",
       "files",
-      "settled",
-      "expires_at"
+      "settled"
     ],
     "additionalProperties": false,
-    "description": "A batch of files staged ahead of a conversation."
+    "description": "A run's pre-turn attachments and their progress."
   },
-  "StagedFileUploadTarget": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string",
-        "description": "Quote this id when reporting the upload finished or failed."
-      },
-      "name": {
-        "type": "string"
-      },
-      "upload_url": {
-        "type": "string",
-        "description": "Signed URL to PUT the bytes to. Expires."
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "upload_url"
-    ],
-    "additionalProperties": false,
-    "description": "Where to send one staged file."
-  },
-  "CreateStagedFileBatchPayload": {
-    "type": "object",
-    "properties": {
-      "files": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "content_type": {
-              "type": "string"
-            },
-            "size": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "name",
-            "content_type"
-          ],
-          "additionalProperties": false
-        },
-        "description": "The files about to be uploaded. Storage keys are assigned by the server."
-      }
-    },
-    "required": [
-      "files"
-    ],
-    "additionalProperties": false,
-    "description": "Reserve a staged batch and obtain one signed upload URL per file."
-  },
-  "CreateStagedFileBatchResponse": {
-    "type": "object",
-    "properties": {
-      "batch_id": {
-        "type": "string"
-      },
-      "files": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/StagedFileUploadTarget"
-        }
-      },
-      "expires_at": {
-        "type": "string",
-        "format": "date-time"
-      }
-    },
-    "required": [
-      "batch_id",
-      "files",
-      "expires_at"
-    ],
-    "additionalProperties": false,
-    "description": "A reserved staged batch and its per-file upload targets."
-  },
-  "StagedFileUploadFailedPayload": {
-    "type": "object",
-    "properties": {
-      "error": {
-        "type": "string",
-        "description": "What went wrong, shown to the user and to the agent."
-      }
-    },
-    "additionalProperties": false,
-    "description": "Report that a staged file could not be uploaded, so the batch stops waiting for it."
-  },
-  "AddStagedFilesPayload": {
-    "type": "object",
-    "properties": {
-      "files": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "content_type": {
-              "type": "string"
-            },
-            "size": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "name",
-            "content_type"
-          ],
-          "additionalProperties": false
-        },
-        "description": "Files added to an open batch after it was created."
-      }
-    },
-    "required": [
-      "files"
-    ],
-    "additionalProperties": false,
-    "description": "Append files to a batch that has not been adopted yet. Attaching is incremental — a user drops two files, types, then drops three more — and each drop starts extracting immediately rather than waiting for the rest."
-  },
-  "AdoptStagedFileBatchPayload": {
-    "type": "object",
-    "properties": {
-      "run_id": {
-        "type": "string",
-        "description": "The agent run taking ownership of the batch."
-      }
-    },
-    "required": [
-      "run_id"
-    ],
-    "additionalProperties": false,
-    "description": "Hand a staged batch to the run that will use it."
-  },
-  "AdoptedStagedFile": {
+  "RegisterAgentRunFilePayload": {
     "type": "object",
     "properties": {
       "name": {
@@ -34229,50 +34087,36 @@
       "content_type": {
         "type": "string"
       },
-      "status": {
-        "$ref": "#/components/schemas/FileProcessingStatus",
-        "description": "Terminal state: ready, or error with a reason."
-      },
       "artifact_path": {
         "type": "string",
-        "description": "Where the file now lives in the run, e.g. \"files/report.pdf\"."
+        "description": "Where the file was uploaded, as returned by the artifact upload."
       },
-      "md_path": {
-        "type": "string",
-        "description": "Companion markdown of the extracted text, if there was any."
-      },
-      "error": {
-        "type": "string",
-        "description": "Why this file is not usable."
+      "size": {
+        "type": "number"
       }
     },
     "required": [
       "name",
       "content_type",
-      "status"
+      "artifact_path"
     ],
     "additionalProperties": false,
-    "description": "One staged file after it has been moved into a run."
+    "description": "Report a file as uploaded into the run's artifact space, which starts its text extraction. Called once per file as its bytes land, so extraction overlaps the next upload and the user's typing."
   },
-  "AdoptStagedFileBatchResponse": {
+  "StartAgentRunPayload": {
     "type": "object",
     "properties": {
-      "batch_id": {
-        "type": "string"
+      "data": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "The interaction's input, including the user's prompt."
       },
-      "files": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AdoptedStagedFile"
-        }
+      "tool_approval_mode": {
+        "$ref": "#/components/schemas/AgentToolApprovalMode"
       }
     },
-    "required": [
-      "batch_id",
-      "files"
-    ],
     "additionalProperties": false,
-    "description": "A staged batch after its files were copied into the run's artifact space."
+    "description": "Promote a draft run to a working conversation. Its first turn waits for any attachment still processing."
   },
   "WorkflowQueryResult": {
     "$ref": "#/components/schemas/JSONValue"
