@@ -86,7 +86,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
     if (status?.authenticated) {
         return (
             <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 text-success-foreground text-sm">
+                <div className="flex items-center gap-1 text-success text-sm">
                     <CheckCircle2 className="size-4" />
                     <span>{t('oauthProvider.connected')}</span>
                 </div>

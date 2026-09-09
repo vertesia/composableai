@@ -257,16 +257,16 @@ export function DropZone({ onDrop, message, buttonLabel, allowFolders = true, cl
         // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target; file selection is exposed via the buttons inside.
         <div
             className={`flex flex-col items-center justify-center py-12 border-2 rounded-lg transition-colors ${
-                isDragging ? 'border-color-primary bg-color-primary/10' : 'border-dashed border-color-border'
+                isDragging ? 'border-primary bg-primary/10' : 'border-dashed border-border'
             } ${className}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
             <UploadIcon
-                className={`h-12 w-12 mb-3 transition-colors ${isDragging ? 'text-primary' : 'text-muted-foreground/50'}`}
+                className={`h-12 w-12 mb-3 transition-colors ${isDragging ? 'text-primary' : 'text-muted/50'}`}
             />
-            <p className="text-muted-foreground">{message}</p>
+            <p className="text-muted">{message}</p>
 
             <div className="flex gap-2 justify-center mt-2">
                 <Button onClick={selectFile}>{resolvedButtonLabel}</Button>

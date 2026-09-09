@@ -142,17 +142,17 @@ export function BrowserUseWidget({ state, runId, className, compact }: BrowserUs
         return (
             <div className={cn('overflow-hidden rounded-md border border-border/70 bg-transparent', className)}>
                 <div className="flex items-center gap-2 px-2 py-1.5">
-                    <MonitorIcon className="size-3.5 shrink-0 text-info-foreground" />
+                    <MonitorIcon className="size-3.5 shrink-0 text-info" />
                     <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-center gap-1">
                             <span className="text-xs font-medium text-foreground">{t('agent.browserPreview')}</span>
                             {state.phase && (
-                                <span className="truncate text-[11px] capitalize text-muted-foreground">
+                                <span className="truncate text-[11px] capitalize text-muted">
                                     · {phaseLabel(state.phase)}
                                 </span>
                             )}
                         </div>
-                        <div className="truncate text-[11px] text-muted-foreground" title={title}>
+                        <div className="truncate text-[11px] text-muted" title={title}>
                             {title}
                         </div>
                     </div>
@@ -164,7 +164,7 @@ export function BrowserUseWidget({ state, runId, className, compact }: BrowserUs
                             title={t('agent.openInNewTab')}
                             className={cn(
                                 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md',
-                                'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                'text-muted hover:bg-muted hover:text-foreground',
                             )}
                         >
                             <ExternalLinkIcon className="size-3" />
@@ -183,7 +183,7 @@ export function BrowserUseWidget({ state, runId, className, compact }: BrowserUs
                             <img src={imageUrl} alt={imageName} className="block max-h-32 w-full object-contain" />
                         </button>
                     ) : (
-                        <div className="flex min-h-16 items-center justify-center gap-2 bg-mixer-muted/20 px-3 py-4 text-xs text-muted-foreground">
+                        <div className="flex min-h-16 items-center justify-center gap-2 bg-mixer-muted/20 px-3 py-4 text-xs text-muted">
                             <ImageIcon className="size-4" />
                             <span>{t('agent.browserScreenshotPending')}</span>
                         </div>
@@ -193,13 +193,13 @@ export function BrowserUseWidget({ state, runId, className, compact }: BrowserUs
     }
 
     return (
-        <div className={cn('overflow-hidden rounded-md border border-muted-foreground bg-mixer-muted/10', className)}>
-            <div className="flex items-start justify-between gap-2 border-b border-muted-foreground px-2.5 py-2">
+        <div className={cn('overflow-hidden rounded-md border border-muted bg-mixer-muted/10', className)}>
+            <div className="flex items-start justify-between gap-2 border-b border-muted px-2.5 py-2">
                 <div className="flex min-w-0 items-start gap-2">
-                    <MonitorIcon className="mt-0.5 size-4 shrink-0 text-info-foreground" />
+                    <MonitorIcon className="mt-0.5 size-4 shrink-0 text-info" />
                     <div className="min-w-0">
                         <div className="text-xs font-medium text-foreground">{t('agent.browserUse')}</div>
-                        <div className="truncate text-xs text-muted-foreground" title={title}>
+                        <div className="truncate text-xs text-muted" title={title}>
                             {title}
                         </div>
                     </div>
@@ -219,19 +219,19 @@ export function BrowserUseWidget({ state, runId, className, compact }: BrowserUs
                     <img src={imageUrl} alt={imageName} className="block max-h-56 w-full object-contain" />
                 </button>
             ) : (
-                <div className="flex min-h-28 items-center justify-center gap-2 bg-mixer-muted/20 px-3 py-6 text-xs text-muted-foreground">
+                <div className="flex min-h-28 items-center justify-center gap-2 bg-mixer-muted/20 px-3 py-6 text-xs text-muted">
                     <ImageIcon className="size-4" />
                     <span>{t('agent.browserScreenshotPending')}</span>
                 </div>
             )}
 
             {state.url && (
-                <div className="flex items-center gap-2 border-t border-muted-foreground px-2.5 py-1.5">
+                <div className="flex items-center gap-2 border-t border-muted px-2.5 py-1.5">
                     <a
                         href={state.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="min-w-0 flex-1 truncate text-xs text-info-foreground hover:underline"
+                        className="min-w-0 flex-1 truncate text-xs text-info hover:underline"
                         title={state.url}
                     >
                         {state.url}
@@ -243,7 +243,7 @@ export function BrowserUseWidget({ state, runId, className, compact }: BrowserUs
                         title={t('agent.openInNewTab')}
                         className={cn(
                             'inline-flex h-6 shrink-0 items-center justify-center rounded-md px-1.5',
-                            'text-muted-foreground hover:bg-muted hover:text-foreground',
+                            'text-muted hover:bg-muted hover:text-foreground',
                         )}
                     >
                         <ExternalLinkIcon className="size-3" />

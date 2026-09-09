@@ -48,7 +48,7 @@ function Textarea({ className, minLines, maxLines, value, ...props }: TextareaPr
             className={cn(
                 'py-2 text-sm',
                 'flex w-full rounded-md border border-input bg-background ring-offset-background',
-                'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring',
+                'placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring',
                 'disabled:cursor-not-allowed disabled:opacity-50',
                 growing && 'resize-none',
                 className,

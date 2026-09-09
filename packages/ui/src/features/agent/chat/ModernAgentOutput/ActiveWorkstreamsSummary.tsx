@@ -47,12 +47,12 @@ export function ActiveWorkstreamsSummary({
     return (
         <div className={cn('mx-auto mb-2 w-full max-w-3xl px-1', className)} data-agent-active-workstreams>
             <output
-                className="flex flex-col gap-1.5 rounded-2xl border border-border/70 bg-background/95 p-2 text-xs text-muted-foreground shadow-lg shadow-black/5"
+                className="flex flex-col gap-1.5 rounded-2xl border border-border/70 bg-background/95 p-2 text-xs text-muted shadow-lg shadow-black/5"
                 aria-live="polite"
             >
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2 px-1 font-medium">
-                        <Bot className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                        <Bot className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
                         <span className="truncate">
                             {t('agent.activeWorkstreams', { count: runningWorkstreams.length })}
                         </span>
@@ -86,7 +86,7 @@ export function ActiveWorkstreamsSummary({
                                         />
                                         <span className="truncate font-medium">{workstreamName}</span>
                                         {workstream.phase && (
-                                            <span className="truncate text-xs text-muted-foreground/75">
+                                            <span className="truncate text-xs text-muted/75">
                                                 {formatWorkstreamName(workstream.phase)}
                                             </span>
                                         )}
@@ -127,7 +127,7 @@ export function ActiveWorkstreamsSummary({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-fit shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted-foreground"
+                                className="h-8 w-fit shrink-0 gap-1 rounded-xl px-2.5 text-xs text-muted"
                                 aria-expanded={isExpanded}
                                 aria-controls={listId}
                                 onClick={() => setIsExpanded((expanded) => !expanded)}

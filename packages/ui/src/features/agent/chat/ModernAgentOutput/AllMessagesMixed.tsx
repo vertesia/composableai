@@ -330,25 +330,23 @@ function SummaryWorkstreamLaunchMessage({
             <button
                 type="button"
                 className={cn(
-                    'group flex w-full items-start gap-3 border-b border-border/70 py-2 text-start text-sm text-muted-foreground',
+                    'group flex w-full items-start gap-3 border-b border-border/70 py-2 text-start text-sm text-muted',
                     'transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2',
                     'focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 )}
                 onClick={() => onSelectWorkstream?.(details.workstreamId)}
             >
-                <Bot className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <Bot className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="font-medium text-muted-foreground">{t('agent.workstreams')}</span>
+                        <span className="font-medium text-muted">{t('agent.workstreams')}</span>
                         <span className="min-w-0 truncate text-foreground/85">{workstreamName}</span>
                     </div>
-                    {secondaryName && (
-                        <div className="mt-0.5 truncate text-xs text-muted-foreground/75">{secondaryName}</div>
-                    )}
+                    {secondaryName && <div className="mt-0.5 truncate text-xs text-muted/75">{secondaryName}</div>}
                     <span className="sr-only">{getMessageText(message)}</span>
                 </div>
                 {/* rtl-ok: chevron points and nudges toward inline-end in both directions. */}
-                <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
+                <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
             </button>
         </div>
     );
@@ -627,7 +625,7 @@ function SummaryUserBubble({
                             components={markdownComponents}
                             className={cn(
                                 'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/90',
-                                'prose-p:my-0 prose-p:leading-6 prose-a:text-foreground prose-a:underline prose-a:decoration-muted-foreground prose-a:underline-offset-4',
+                                'prose-p:my-0 prose-p:leading-6 prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4',
                                 '[&_p+_p]:mt-2',
                             )}
                         >
@@ -641,7 +639,7 @@ function SummaryUserBubble({
                     <button
                         type="button"
                         aria-expanded={isExpanded}
-                        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => setIsExpanded((current) => !current)}
                     >
                         {isExpanded ? t('agent.showLess') : t('agent.showMore')}
@@ -787,7 +785,7 @@ function SummaryMessage({
     return (
         <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
             {isError && (
-                <div className="mb-2 text-xs font-medium text-destructive-foreground">
+                <div className="mb-2 text-xs font-medium text-destructive">
                     {message.type === AgentMessageType.WARNING ? 'Warning' : 'Error'}
                 </div>
             )}
@@ -795,8 +793,7 @@ function SummaryMessage({
                 <div
                     className={cn(
                         SUMMARY_PROSE_CLASS,
-                        isError &&
-                            'rounded-lg border border-destructive-foreground/20 bg-destructive-foreground/5 px-3 py-2',
+                        isError && 'rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2',
                     )}
                     style={{ overflowWrap: 'anywhere' }}
                 >
@@ -862,7 +859,7 @@ function stringifyRequestValue(value: unknown): string {
 
 function renderRequestValue(value: unknown): React.ReactNode {
     if (value === null || value === undefined || value === '') {
-        return <span className="text-muted-foreground">Not provided</span>;
+        return <span className="text-muted">Not provided</span>;
     }
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'number') return String(value);
@@ -900,13 +897,11 @@ function renderDefaultInitialRequest(
 
     return (
         <div className="space-y-2 text-start">
-            {title ? (
-                <div className="text-xs font-medium uppercase tracking-normal text-muted-foreground">{title}</div>
-            ) : null}
+            {title ? <div className="text-xs font-medium uppercase tracking-normal text-muted">{title}</div> : null}
             <dl className="space-y-2">
                 {fields.map((field) => (
                     <div key={field.key} className="grid gap-1 sm:grid-cols-[minmax(7rem,32%)_1fr] sm:gap-3">
-                        <dt className="text-xs font-medium text-muted-foreground">{field.label}</dt>
+                        <dt className="text-xs font-medium text-muted">{field.label}</dt>
                         <dd className="min-w-0 break-words text-sm text-foreground">
                             {renderRequestValue(field.value)}
                         </dd>
@@ -993,17 +988,15 @@ function InitialRequestWaitingCard({
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)}>
-            <div className="border-b border-border/70 pb-4 text-sm text-muted-foreground">
+            <div className="border-b border-border/70 pb-4 text-sm text-muted">
                 <div className="flex items-center gap-3">
                     <PulsatingCircle size="sm" color="blue" />
                     <div className="min-w-0">
                         <div>
                             <span className="font-medium">{label}</span>
-                            <span className="ms-2 text-muted-foreground/75">for {formatDuration(elapsed)}</span>
+                            <span className="ms-2 text-muted/75">for {formatDuration(elapsed)}</span>
                         </div>
-                        <div className="mt-1 truncate text-muted-foreground/80">
-                            {ThinkingMessages[thinkingMessageIndex]}
-                        </div>
+                        <div className="mt-1 truncate text-muted/80">{ThinkingMessages[thinkingMessageIndex]}</div>
                     </div>
                 </div>
                 <div className="mt-3 ps-6">
@@ -1800,7 +1793,7 @@ function ToolDetailMetadata({ hasDetailContent, item }: { hasDetailContent: bool
         >
             {entries.map((entry) => (
                 <div key={entry.label} className="flex min-w-0 items-baseline gap-1.5">
-                    <dt className="shrink-0 text-muted-foreground">{entry.label}</dt>
+                    <dt className="shrink-0 text-muted">{entry.label}</dt>
                     <dd className="min-w-0 wrap-break-word font-medium text-foreground/80">{entry.value}</dd>
                 </div>
             ))}
@@ -1822,7 +1815,7 @@ function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
                 {fileLabels.map((fileLabel) => (
                     <span
                         key={fileLabel}
-                        className="rounded-md bg-mixer-muted/15 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
+                        className="rounded-md bg-mixer-muted/15 px-1.5 py-0.5 font-mono text-[11px] text-muted"
                     >
                         {compactInlineText(fileLabel, 64)}
                     </span>
@@ -1831,16 +1824,13 @@ function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
         );
     }
 
-    const labelClassName = cn(
-        'text-xs font-medium',
-        section.tone === 'error' ? 'text-destructive-foreground' : 'text-muted-foreground',
-    );
+    const labelClassName = cn('text-xs font-medium', section.tone === 'error' ? 'text-destructive' : 'text-muted');
     const content =
         isPrimitive && !String(value).includes('\n') && String(value).length < 180 ? (
             <div
                 className={cn(
                     'break-words text-xs',
-                    section.tone === 'error' ? 'text-destructive-foreground' : 'text-foreground/75',
+                    section.tone === 'error' ? 'text-destructive' : 'text-foreground/75',
                 )}
             >
                 {String(value)}
@@ -1850,7 +1840,7 @@ function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
                 className={cn(
                     'max-h-52 overflow-auto whitespace-pre-wrap rounded-lg px-3 py-2 font-mono text-[11px] leading-relaxed',
                     section.tone === 'error'
-                        ? 'bg-destructive-foreground/5 text-destructive-foreground'
+                        ? 'bg-destructive/5 text-destructive'
                         : 'bg-mixer-muted/10 text-foreground/75',
                 )}
             >
@@ -1956,10 +1946,10 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
                     <button
                         type="button"
                         className={cn(
-                            'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-70 transition',
+                            'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition',
                             'hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                            copyState === 'copied' && 'text-success-foreground opacity-100',
-                            copyState === 'failed' && 'text-destructive-foreground opacity-100',
+                            copyState === 'copied' && 'text-success opacity-100',
+                            copyState === 'failed' && 'text-destructive opacity-100',
                         )}
                         onClick={copyDetails}
                         aria-label="Copy tool details"
@@ -1988,7 +1978,7 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
                 ) : null}
             </div>
             {copyState === 'failed' && hasDetailContent ? (
-                <div className="mt-3 text-xs text-destructive-foreground">Copy failed</div>
+                <div className="mt-3 text-xs text-destructive">Copy failed</div>
             ) : null}
         </div>
     );
@@ -2010,7 +2000,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
         <span
             className={cn(
                 'flex size-5 items-center justify-center pt-0.5',
-                isAttention ? 'text-attention-foreground' : 'text-muted-foreground',
+                isAttention ? 'text-attention' : 'text-muted',
             )}
         >
             <ToolDetailIcon kind={item.kind} status={iconStatus} />
@@ -2019,10 +2009,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
 
     const chevron = (
         <ChevronDown
-            className={cn(
-                'size-4 shrink-0 text-muted-foreground opacity-50 transition-transform',
-                !isExpanded && '-rotate-90',
-            )}
+            className={cn('size-4 shrink-0 text-muted opacity-50 transition-transform', !isExpanded && '-rotate-90')}
             aria-hidden="true"
         />
     );
@@ -2038,7 +2025,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                             <Button
                                 variant="ghost"
                                 size="xs"
-                                className="size-6 p-0 text-muted-foreground"
+                                className="size-6 p-0 text-muted"
                                 onClick={() => setIsExpanded((current) => !current)}
                                 aria-expanded={isExpanded}
                                 aria-label={`${toggleDetailsLabel}: ${detailsSubject}`}
@@ -2061,13 +2048,10 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                     disabled={!hasDetails}
                 >
                     {icon}
-                    <span className="min-w-0 text-sm text-muted-foreground">
+                    <span className="min-w-0 text-sm text-muted">
                         <span className="break-words">{item.title}</span>
                         {item.decisionText ? (
-                            <Badge
-                                variant="destructive"
-                                className="ms-2 rounded-full shadow-sm shadow-destructive-foreground/10"
-                            >
+                            <Badge variant="destructive" className="ms-2 rounded-full shadow-sm shadow-destructive/10">
                                 {item.decisionText}
                             </Badge>
                         ) : null}
@@ -2120,7 +2104,7 @@ function SummaryThoughtProseItem({
                         type="button"
                         aria-expanded={isExpanded}
                         className={cn(
-                            'inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors',
+                            'inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors',
                             '[text-decoration:none] hover:text-foreground hover:[text-decoration:none]',
                             'focus-visible:text-foreground focus-visible:[text-decoration:none]',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -2206,7 +2190,7 @@ function SummaryStoppedMessage({
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)} data-testid="summary-stopped-message">
-            <div className="flex items-center justify-end gap-2 text-sm font-medium text-muted-foreground">
+            <div className="flex items-center justify-end gap-2 text-sm font-medium text-muted">
                 <span>{t('agent.youStoppedAfter', { duration })}</span>
                 <MessageDeliveryStatus message={message} className="h-4 w-4" />
             </div>
@@ -2268,7 +2252,7 @@ function SummaryActivityRow({
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)}>
-            <div className="border-b border-border/70 pb-3 text-sm text-muted-foreground">
+            <div className="border-b border-border/70 pb-3 text-sm text-muted">
                 <button
                     type="button"
                     className={cn(
@@ -2282,7 +2266,7 @@ function SummaryActivityRow({
                 >
                     <span className="min-w-0 truncate font-medium">{label}</span>
                     {shouldShowElapsed ? (
-                        <span className="shrink-0 text-muted-foreground/75">for {formatDuration(elapsed)}</span>
+                        <span className="shrink-0 text-muted/75">for {formatDuration(elapsed)}</span>
                     ) : null}
                     {canExpand ? (
                         isExpanded ? (
@@ -2352,7 +2336,7 @@ function SummaryActivityRow({
                             ) : null}
                         </>
                     ) : (
-                        <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="mt-3 flex items-center gap-2 text-sm text-muted">
                             <Terminal className="size-4 opacity-70" aria-hidden="true" />
                             <span>{emptyDetailsLabel}</span>
                         </div>
@@ -2407,13 +2391,11 @@ class MessageErrorBoundary extends Component<{ children: ReactNode }, { hasError
     render() {
         if (this.state.hasError) {
             return (
-                <div className="border-s-4 border-s-destructive bg-destructive-foreground/10 px-4 py-2 my-2 rounded-e">
-                    <p className="text-sm text-destructive-foreground font-medium">
+                <div className="border-s-4 border-s-destructive bg-destructive/10 px-4 py-2 my-2 rounded-e">
+                    <p className="text-sm text-destructive font-medium">
                         {i18nInstance.getFixedT(null, NAMESPACE)('agent.failedToRenderMessage')}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
-                        {this.state.error?.message || 'Unknown error'}
-                    </p>
+                    <p className="text-xs text-muted mt-1 truncate">{this.state.error?.message || 'Unknown error'}</p>
                 </div>
             );
         }
@@ -3139,7 +3121,7 @@ function AllMessagesMixedComponent({
                 .vprose thead th {
                     background: transparent;
                     font-weight: 600;
-                    color: var(--muted-foreground);
+                    color: var(--muted);
                     font-size: 0.75rem;
                     text-transform: none;
                     letter-spacing: 0;
@@ -3154,7 +3136,7 @@ function AllMessagesMixedComponent({
                 }
                 .dark .vprose thead th {
                     background: transparent;
-                    color: var(--muted-foreground);
+                    color: var(--muted);
                 }
                 .dark .vprose tbody tr:hover {
                     background: transparent;
@@ -3251,7 +3233,7 @@ function AllMessagesMixedComponent({
                     color: inherit;
                 }
                 .agent-markdown li::marker {
-                    color: var(--muted-foreground);
+                    color: var(--muted);
                 }
                 .agent-markdown strong {
                     color: var(--foreground);
@@ -3262,7 +3244,7 @@ function AllMessagesMixedComponent({
                 }
                 .agent-markdown a {
                     color: var(--foreground);
-                    text-decoration-color: var(--muted-foreground);
+                    text-decoration-color: var(--muted);
                     text-underline-offset: 3px;
                 }
                 .agent-markdown blockquote {
@@ -3270,7 +3252,7 @@ function AllMessagesMixedComponent({
                     margin-bottom: 0.85rem;
                     padding-left: 0.875rem;
                     border-left: 2px solid var(--border);
-                    color: var(--muted-foreground);
+                    color: var(--muted);
                     font-style: normal;
                 }
                 .agent-markdown :not(pre) > code {
@@ -3330,7 +3312,7 @@ function AllMessagesMixedComponent({
                     white-space: normal;
                 }
                 .agent-markdown th {
-                    color: var(--muted-foreground);
+                    color: var(--muted);
                     font-size: 0.75rem;
                     font-weight: 600;
                     letter-spacing: 0;
@@ -3387,7 +3369,7 @@ function AllMessagesMixedComponent({
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+                            className="size-8 shrink-0 text-muted hover:text-foreground"
                             title={t('agent.backToMainAgent')}
                             aria-label={t('agent.backToMainAgent')}
                             onClick={handleShowMainAgentChat}
@@ -3415,7 +3397,7 @@ function AllMessagesMixedComponent({
                     </div>
                 ) : (
                     <div className="flex items-center justify-center h-full text-center py-8">
-                        <div className="flex items-center px-3 py-2 text-sm text-muted-foreground">
+                        <div className="flex items-center px-3 py-2 text-sm text-muted">
                             {activeWorkstream === 'all'
                                 ? t('agent.waitingForAgentResponse')
                                 : t('agent.noMessagesInWorkstream')}
@@ -3627,7 +3609,7 @@ function AllMessagesMixedComponent({
                                 <TimelineEntry>
                                     <div
                                         className={cn(
-                                            'flex items-center gap-2 py-2 text-sm text-muted-foreground',
+                                            'flex items-center gap-2 py-2 text-sm text-muted',
                                             workingIndicatorClassName,
                                         )}
                                     >
@@ -3735,7 +3717,7 @@ function AllMessagesMixedComponent({
                             {showPostToolThinking && (
                                 <div
                                     className={cn(
-                                        'mx-auto w-full max-w-3xl px-1 text-sm text-muted-foreground',
+                                        'mx-auto w-full max-w-3xl px-1 text-sm text-muted',
                                         workingIndicatorClassName,
                                     )}
                                     data-testid="post-tool-thinking-indicator"

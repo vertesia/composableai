@@ -48,11 +48,11 @@ export function CreateOrUpdateTypeModal({
             <ModalBody className="pt-0">
                 <div className="h-full flex flex-col gap-4 content-between">
                     <div>
-                        <div className="block text-sm font-medium text-muted-foreground">{t('type.name')}</div>
+                        <div className="block text-sm font-medium text-muted">{t('type.name')}</div>
                         <Input value={name} onChange={setName} />
                     </div>
                     <div>
-                        <div className="block text-sm font-medium text-muted-foreground">{t('type.description')}</div>
+                        <div className="block text-sm font-medium text-muted">{t('type.description')}</div>
                         <Textarea value={description} onChange={(e) => setDescription(e.target.value)} minLines={5} />
                     </div>
                 </div>

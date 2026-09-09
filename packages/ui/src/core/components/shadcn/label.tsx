@@ -17,7 +17,7 @@ const Label: React.ForwardRefExoticComponent<
     ({ className, required, ...props }, ref) => (
         <LabelPrimitive.Root ref={ref} className={cn(labelVariants(), className)} {...props}>
             {props.children}
-            {required && <span className="text-destructive-foreground ms-1">*</span>}
+            {required && <span className="text-destructive ms-1">*</span>}
         </LabelPrimitive.Root>
     ),
 );

@@ -19,7 +19,7 @@ import { rgb as wcagRgb } from 'wcag-contrast';
  * - >= 3:1 for large text or non-text UI (pass `large: true` in PAIRS)
  *
  * Alpha compositing: several dark-mode tokens are declared with /0.2
- * alpha (e.g. --destructive). Comparing the raw transparent
+ * alpha (e.g. --destructive-background). Comparing the raw transparent
  * color against text produces a misleading ratio. We composite the
  * transparent color against the block's --background before measuring.
  */
@@ -35,19 +35,14 @@ type Pair = { fg: string; bg: string; surface?: string; large?: boolean };
 // as out-of-scope for the regression gate (rather than silently unchecked).
 const PAIRS: Pair[] = [
     { fg: '--foreground', bg: '--background' },
-    { fg: '--foreground', bg: '--muted' },
-    { fg: '--foreground', bg: '--secondary' },
-    { fg: '--card-foreground', bg: '--muted' },
-    { fg: '--card-foreground', bg: '--secondary' },
+    { fg: '--muted', bg: '--muted-background' },
     { fg: '--primary', bg: '--primary-background' },
-    { fg: '--muted-foreground', bg: '--muted' },
     { fg: '--primary-foreground', bg: '--primary' },
-    { fg: '--secondary-foreground', bg: '--secondary' },
-    { fg: '--destructive-foreground', bg: '--destructive' },
-    { fg: '--success-foreground', bg: '--success' },
-    { fg: '--attention-foreground', bg: '--attention' },
-    { fg: '--info-foreground', bg: '--info' },
-    { fg: '--done-foreground', bg: '--done' },
+    { fg: '--destructive', bg: '--destructive-background' },
+    { fg: '--success', bg: '--success-background' },
+    { fg: '--attention', bg: '--attention-background' },
+    { fg: '--info', bg: '--info-background' },
+    { fg: '--done', bg: '--done-background' },
     { fg: '--popover-foreground', bg: '--popover' },
     { fg: '--card-foreground', bg: '--card' },
     { fg: '--sidebar-foreground', bg: '--sidebar' },

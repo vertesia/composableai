@@ -30,13 +30,13 @@ describe('@vertesia/ui accessibility (axe)', () => {
         const { container } = renderWithProviders(
             <div>
                 <Button>Save</Button>
-                <Button className="bg-info text-info-foreground">Custom action</Button>
+                <Button className="bg-info text-info">Custom action</Button>
                 <Button variant="outline">Cancel</Button>
             </div>,
         );
         const [primary, custom, outline] = container.querySelectorAll('button');
         expect(primary.classList.contains('text-primary-foreground')).toBe(true);
-        expect(custom.classList.contains('text-info-foreground')).toBe(true);
+        expect(custom.classList.contains('text-info')).toBe(true);
         expect(custom.classList.contains('text-primary-foreground')).toBe(false);
         expect(custom.classList.contains('bg-primary')).toBe(false);
         expect(outline.classList.contains('text-foreground')).toBe(true);

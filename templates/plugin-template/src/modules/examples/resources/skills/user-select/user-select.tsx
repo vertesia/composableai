@@ -49,9 +49,9 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
         }
     } catch {
         return (
-            <div className="border border-destructive-foreground bg-destructive-foreground/10 rounded-lg p-4">
-                <p className="text-destructive-foreground font-medium">Error: Invalid selection data</p>
-                <p className="text-sm text-muted-foreground mt-2">Failed to parse selection JSON</p>
+            <div className="border border-destructive bg-destructive/10 rounded-lg p-4">
+                <p className="text-destructive font-medium">Error: Invalid selection data</p>
+                <p className="text-sm text-muted mt-2">Failed to parse selection JSON</p>
             </div>
         );
     }
@@ -59,9 +59,9 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
     // Validate data structure
     if (!data.options || !Array.isArray(data.options) || data.options.length === 0) {
         return (
-            <div className="border border-destructive-foreground bg-destructive-foreground/10 rounded-lg p-4">
-                <p className="text-destructive-foreground font-medium">Error: Invalid selection structure</p>
-                <p className="text-sm text-muted-foreground mt-2">Selection must have at least one option</p>
+            <div className="border border-destructive bg-destructive/10 rounded-lg p-4">
+                <p className="text-destructive font-medium">Error: Invalid selection structure</p>
+                <p className="text-sm text-muted mt-2">Selection must have at least one option</p>
             </div>
         );
     }
@@ -70,9 +70,9 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
     const invalidOption = data.options.find((opt) => !opt.text || !opt.value);
     if (invalidOption) {
         return (
-            <div className="border border-destructive-foreground bg-destructive-foreground/10 rounded-lg p-4">
-                <p className="text-destructive-foreground font-medium">Error: Invalid option format</p>
-                <p className="text-sm text-muted-foreground mt-2">Each option must have 'text' and 'value' fields</p>
+            <div className="border border-destructive bg-destructive/10 rounded-lg p-4">
+                <p className="text-destructive font-medium">Error: Invalid option format</p>
+                <p className="text-sm text-muted mt-2">Each option must have 'text' and 'value' fields</p>
             </div>
         );
     }
@@ -120,9 +120,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
             {/* Header */}
             <div className="mb-4">
                 <h3 className="text-lg font-semibold mb-2">{isMultiple ? 'Select Options' : 'Select an Option'}</h3>
-                {isMultiple && !submitted && (
-                    <p className="text-sm text-info-foreground">ℹ️ You can select multiple options</p>
-                )}
+                {isMultiple && !submitted && <p className="text-sm text-info">ℹ️ You can select multiple options</p>}
             </div>
 
             {/* Options */}
@@ -144,8 +142,8 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                                         ? 'cursor-default'
                                         : 'cursor-pointer hover:border-mixer-10 hover:bg-mixer-2'
                                 }
-                                ${isSelected && !submitted ? 'border-info-foreground bg-info-foreground/10' : 'border-mixer-5'}
-                                ${submitted && isSelected ? 'border-success-foreground bg-success-foreground/10' : ''}
+                                ${isSelected && !submitted ? 'border-info bg-info/10' : 'border-mixer-5'}
+                                ${submitted && isSelected ? 'border-success bg-success/10' : ''}
                             `}
                         >
                             <div className="flex items-center gap-3">
@@ -155,7 +153,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                                         className={`
                                         w-5 h-5 border-2 flex items-center justify-center
                                         ${isMultiple ? 'rounded' : 'rounded-full'}
-                                        ${isSelected ? 'border-info-foreground bg-info' : 'border-mixer-10'}
+                                        ${isSelected ? 'border-info bg-info' : 'border-mixer-10'}
                                     `}
                                     >
                                         {isSelected && <span className="text-white text-xs">✓</span>}
@@ -163,12 +161,10 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                                 )}
                                 {submitted && isSelected && (
                                     <div className="w-5 h-5 flex items-center justify-center">
-                                        <span className="text-success-foreground text-lg">✓</span>
+                                        <span className="text-success text-lg">✓</span>
                                     </div>
                                 )}
-                                <span
-                                    className={`font-medium ${submitted && isSelected ? 'text-success-foreground' : ''}`}
-                                >
+                                <span className={`font-medium ${submitted && isSelected ? 'text-success' : ''}`}>
                                     {option.text}
                                 </span>
                             </div>
@@ -189,8 +185,8 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                                 px-4 py-2 rounded-lg font-medium transition-all
                                 ${
                                     selected.size > 0
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                        : 'bg-mixer-3 text-muted-foreground cursor-not-allowed'
+                                        ? 'bg-primary text-white hover:bg-primary'
+                                        : 'bg-mixer-3 text-muted cursor-not-allowed'
                                 }
                             `}
                         >
@@ -208,7 +204,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                     </>
                 ) : (
                     <>
-                        <div className="flex-1 flex items-center text-success-foreground">
+                        <div className="flex-1 flex items-center text-success">
                             <span className="font-medium">✓ Selection confirmed</span>
                         </div>
                         <Button
@@ -225,7 +221,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
             {/* Selected values display */}
             {submitted && (
                 <div className="mt-4 p-3 bg-mixer-2 rounded-lg">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                    <p className="text-sm font-medium text-muted mb-1">
                         Selected value{isMultiple && selected.size > 1 ? 's' : ''}:
                     </p>
                     <code className="text-sm">

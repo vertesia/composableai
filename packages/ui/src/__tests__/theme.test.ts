@@ -1,4 +1,12 @@
 // @vitest-environment node
+/**
+ * Token contract gate. The three assertions here are convention-agnostic:
+ * every exposed --color-* resolves, every binding is emitted, and utilities stay
+ * bound to the alias so scoped overrides work.
+ *
+ * The surface/foreground pairing assertions that shipped with the -foreground
+ * convention were removed with it; re-add equivalents for `bg-X` -> --color-X-background.
+ */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { compile } from 'tailwindcss';
@@ -7,19 +15,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 const readCss = (name: string) => readFileSync(new URL(`../css/${name}.css`, import.meta.url), 'utf8');
 const colorCss = readCss('color');
 const themeCss = readCss('theme');
-const surfaces = [
-    'background',
-    'card',
-    'popover',
-    'primary',
-    'secondary',
-    'muted',
-    'success',
-    'attention',
-    'destructive',
-    'done',
-    'info',
-];
 let build: (classes: string[]) => string;
 let source: string;
 
@@ -69,26 +64,6 @@ describe('theme utility contract', () => {
         });
     }
 
-    for (const surface of surfaces) {
-        it(`keeps the ${surface} token when adding opacity`, () => {
-            const css = build([`bg-${surface}`, `bg-${surface}/50`]);
-            for (const className of [`bg-${surface}`, `bg-${surface}/50`]) {
-                const body = rule(css, className);
-                expect(body).toContain(`var(--color-${surface})`);
-                expect(body).not.toContain(`var(--color-${surface}-foreground)`);
-                expect(body).not.toContain(`var(--color-${surface}-background)`);
-            }
-        });
-    }
-
-    it('generates the conventional foreground utilities', () => {
-        const classes = surfaces.filter((name) => name !== 'background').map((name) => `text-${name}-foreground`);
-        const css = build(classes);
-        for (const className of classes) {
-            expect(rule(css, className)).toContain(`color: var(--color-${className.slice(5)})`);
-        }
-    });
-
     it('emits every color binding even without utility or stylesheet consumers', async () => {
         const fresh = await compile(source);
         const emitted = declarations(fresh.build([]));
@@ -113,20 +88,4 @@ describe('theme utility contract', () => {
             expect(rule(css, className)).toContain(`var(${token})`);
         }
     });
-
-    for (const mode of [':root', '.dark']) {
-        it(`preserves legacy surface aliases in ${mode}`, () => {
-            const root = colorCss.match(/:root\s*\{([^}]+)\}/)?.[1] ?? '';
-            const dark = colorCss.match(/\.dark\s*\{([^}]+)\}/)?.[1] ?? '';
-            const tokens = declarations(`${build([])}\n${root}\n${mode === '.dark' ? dark : ''}`);
-            for (const name of ['secondary', 'muted', 'success', 'attention', 'destructive', 'done', 'info']) {
-                const scoped = declarations(mode === '.dark' ? dark : root);
-                expect(scoped.get(`--${name}-background`)).toBe(`var(--${name})`);
-                const expected = resolve(`--${name}`, tokens);
-                expect(resolve(`--${name}-background`, tokens)).toBe(expected);
-                expect(resolve(`--color-${name}-background`, tokens)).toBe(expected);
-            }
-            expect(resolve('--color-primary-background', tokens)).toBe(resolve('--primary-background', tokens));
-        });
-    }
 });

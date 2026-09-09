@@ -11,11 +11,11 @@ describe('JSONCode', () => {
     it('colors keys, string values, literals and numbers distinctly', () => {
         const html = renderJson({ name: 'value', count: 42, flag: true, missing: null });
         // key (string immediately followed by a colon)
-        expect(html).toContain('<span class="text-info-foreground">&quot;name&quot;</span>');
+        expect(html).toContain('<span class="text-info">&quot;name&quot;</span>');
         // string value (string NOT followed by a colon)
-        expect(html).toContain('<span class="text-success-foreground">&quot;value&quot;</span>');
+        expect(html).toContain('<span class="text-success">&quot;value&quot;</span>');
         // number
-        expect(html).toContain('<span class="text-attention-foreground">42</span>');
+        expect(html).toContain('<span class="text-attention">42</span>');
         // literals
         expect(html).toContain('<span class="text-primary">true</span>');
         expect(html).toContain('<span class="text-primary">null</span>');
@@ -23,7 +23,7 @@ describe('JSONCode', () => {
 
     it('treats a string with escaped quotes as a single token', () => {
         const html = renderJson({ esc: 'a"b' });
-        expect(html).toContain('<span class="text-success-foreground">&quot;a\\&quot;b&quot;</span>');
+        expect(html).toContain('<span class="text-success">&quot;a\\&quot;b&quot;</span>');
     });
 
     it('renders invalid JSON gracefully', () => {
@@ -36,8 +36,8 @@ describe('JSONCode', () => {
 describe('renderJsonLine', () => {
     it('classifies a key/value pair', () => {
         const html = renderToStaticMarkup(React.createElement('pre', null, renderJsonLine('  "k": "v",')));
-        expect(html).toContain('<span class="text-info-foreground">&quot;k&quot;</span>');
-        expect(html).toContain('<span class="text-success-foreground">&quot;v&quot;</span>');
+        expect(html).toContain('<span class="text-info">&quot;k&quot;</span>');
+        expect(html).toContain('<span class="text-success">&quot;v&quot;</span>');
     });
 
     // Regression guard for CodeQL js/polynomial-redos: collapsing the duplicated

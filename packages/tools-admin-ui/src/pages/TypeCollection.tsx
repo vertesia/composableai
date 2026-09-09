@@ -20,14 +20,10 @@ export function TypeCollection() {
     );
 
     if (error)
-        return (
-            <div className="p-6 text-destructive-foreground">
-                Failed to load type collection &ldquo;{collection}&rdquo;.
-            </div>
-        );
+        return <div className="p-6 text-destructive">Failed to load type collection &ldquo;{collection}&rdquo;.</div>;
     if (!types)
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );
@@ -51,9 +47,7 @@ export function TypeCollection() {
                                         type
                                     </span>
                                     <div className="font-semibold text-card-foreground">{t.name}</div>
-                                    <div className="mt-1 text-sm text-muted-foreground">
-                                        {t.description || 'No description'}
-                                    </div>
+                                    <div className="mt-1 text-sm text-muted">{t.description || 'No description'}</div>
                                     {t.tags && t.tags.length > 0 && (
                                         <div className="mt-3 flex flex-wrap gap-1.5">
                                             {t.tags.map((tag) => (
@@ -64,7 +58,7 @@ export function TypeCollection() {
                                         </div>
                                     )}
                                     {(t.is_chunkable || t.strict_mode) && (
-                                        <div className="mt-2 truncate font-mono text-xs text-muted-foreground">
+                                        <div className="mt-2 truncate font-mono text-xs text-muted">
                                             {t.is_chunkable && 'chunkable'}
                                             {t.is_chunkable && t.strict_mode && ' · '}
                                             {t.strict_mode && 'strict'}

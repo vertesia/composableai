@@ -14,13 +14,13 @@ export type OverflowTabsVariant = 'tabs' | 'pills';
 const VARIANT_CLASSES: Record<OverflowTabsVariant, { base: string; active: string; inactive: string; icon: string }> = {
     tabs: {
         base: 'flex items-center border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer shrink-0',
-        inactive: 'border-transparent text-foreground hover:border-border hover:text-foreground',
+        inactive: 'border-transparent text-muted hover:border-border hover:text-foreground',
         active: 'border-primary text-primary',
         icon: 'ms-1 size-4',
     },
     pills: {
         base: 'flex items-center rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap cursor-pointer shrink-0',
-        inactive: 'text-foreground hover:bg-muted-foreground/60',
+        inactive: 'text-muted hover:bg-muted/60',
         active: 'bg-muted text-foreground',
         icon: 'ms-0.5 size-3.5',
     },

@@ -111,7 +111,7 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
                             permanently removed.
                         </p>
                         <p>
-                            <span className="text-destructive-foreground">This action cannot be undone.</span>
+                            <span className="text-destructive">This action cannot be undone.</span>
                         </p>
                     </div>
                 }

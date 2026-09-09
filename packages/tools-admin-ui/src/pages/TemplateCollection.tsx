@@ -21,13 +21,11 @@ export function TemplateCollection() {
 
     if (error)
         return (
-            <div className="p-6 text-destructive-foreground">
-                Failed to load template collection &ldquo;{collection}&rdquo;.
-            </div>
+            <div className="p-6 text-destructive">Failed to load template collection &ldquo;{collection}&rdquo;.</div>
         );
     if (!templates)
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );
@@ -49,9 +47,7 @@ export function TemplateCollection() {
                                     {tmpl.type || 'template'}
                                 </span>
                                 <div className="font-semibold text-card-foreground">{tmpl.title || tmpl.name}</div>
-                                <div className="mt-1 text-sm text-muted-foreground">
-                                    {tmpl.description || 'No description'}
-                                </div>
+                                <div className="mt-1 text-sm text-muted">{tmpl.description || 'No description'}</div>
                                 {tmpl.tags && tmpl.tags.length > 0 && (
                                     <div className="mt-3 flex flex-wrap gap-1.5">
                                         {tmpl.tags.map((tag) => (

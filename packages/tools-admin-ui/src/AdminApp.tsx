@@ -58,14 +58,14 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
 
     if (isLoading) {
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );
     }
 
     if (error) {
-        return <div className="p-6 text-destructive-foreground">Failed to load server info. Is the API running?</div>;
+        return <div className="p-6 text-destructive">Failed to load server info. Is the API running?</div>;
     }
 
     if (!serverInfo || !resourceData) return null;

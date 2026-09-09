@@ -319,9 +319,7 @@ export function ConversationsView() {
                             ))}
                         </TBody>
                     </Table>
-                    {showEmpty && (
-                        <div className="text-center text-sm text-muted-foreground py-8">{t('conversations.empty')}</div>
-                    )}
+                    {showEmpty && <div className="text-center text-sm text-muted py-8">{t('conversations.empty')}</div>}
                 </div>
             </div>
         </div>

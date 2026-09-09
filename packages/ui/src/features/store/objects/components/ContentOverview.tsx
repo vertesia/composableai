@@ -109,7 +109,7 @@ const createMarkdownComponents = () => ({
         const href = props.href || '';
         if (href.includes('/store/objects/')) {
             return (
-                <NavLink topLevelNav href={href} className="text-info-foreground">
+                <NavLink topLevelNav href={href} className="text-info">
                     {props.children}
                 </NavLink>
             );
@@ -122,7 +122,7 @@ const createMarkdownComponents = () => ({
         const match = /language-(\w+)/.exec(className || '');
         const isInline = !match;
         return (
-            <code {...props} className={isInline ? 'px-1.5 py-0.5 rounded' : 'text-muted-foreground'}>
+            <code {...props} className={isInline ? 'px-1.5 py-0.5 rounded' : 'text-muted'}>
                 {children}
             </code>
         );
@@ -1011,8 +1011,8 @@ const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextP
     return text ? (
         <>
             {isTextCropped && (
-                <div className="px-2 py-2 bg-attention-foreground/10 border-s-4 border-attention-foreground mx-2 mb-2 rounded">
-                    <div className="flex items-center gap-2 text-attention-foreground">
+                <div className="px-2 py-2 bg-attention/10 border-s-4 border-attention mx-2 mb-2 rounded">
+                    <div className="flex items-center gap-2 text-attention">
                         <AlertTriangle className="size-4" />
                         <span className="text-sm font-semibold">{t('store.showingFirst128K')}</span>
                     </div>
@@ -1079,7 +1079,7 @@ function TranscriptPanel({
                     <div className="space-y-2">
                         {segments.map((segment, idx) => (
                             <div key={`segment-${idx}`} className="flex gap-3 text-sm">
-                                <span className="text-muted-foreground font-mono text-xs shrink-0 pt-0.5">
+                                <span className="text-muted font-mono text-xs shrink-0 pt-0.5">
                                     {formatTimestamp(segment.start)}
                                     {segment.end && ` - ${formatTimestamp(segment.end)}`}
                                 </span>
@@ -1088,11 +1088,9 @@ function TranscriptPanel({
                         ))}
                     </div>
                 ) : transcriptText ? (
-                    <pre className="text-wrap bg-muted text-muted-foreground p-2 whitespace-pre-wrap">
-                        {transcriptText}
-                    </pre>
+                    <pre className="text-wrap bg-muted text-muted p-2 whitespace-pre-wrap">{transcriptText}</pre>
                 ) : (
-                    <div className="text-muted-foreground">{t('store.noTranscriptAvailable')}</div>
+                    <div className="text-muted">{t('store.noTranscriptAvailable')}</div>
                 )}
             </div>
         </div>
@@ -1227,14 +1225,14 @@ function OfficePdfPreviewPanel({
         return (
             <div className="flex flex-col justify-center items-center flex-1 gap-2">
                 <Spinner size="lg" />
-                <span className="text-muted-foreground">{t('store.convertingToPdf')}</span>
+                <span className="text-muted">{t('store.convertingToPdf')}</span>
             </div>
         );
     }
 
     if (officePdfError) {
         return (
-            <div className="flex flex-col justify-center items-center flex-1 gap-2 text-destructive-foreground">
+            <div className="flex flex-col justify-center items-center flex-1 gap-2 text-destructive">
                 <AlertTriangle className="size-8" />
                 <span>{officePdfError}</span>
             </div>
@@ -1320,7 +1318,7 @@ function PdfProcessingPanel({
                             </>
                         )}
                     </div>
-                    <div className="pt-2 text-sm text-muted-foreground">
+                    <div className="pt-2 text-sm text-muted">
                         Progress: {percent}%<span className="px-2">&bull;</span>
                         <span className={statusColor}>{statusName}</span>
                         {progress.started_at && (
@@ -1334,7 +1332,7 @@ function PdfProcessingPanel({
                 </div>
             )}
             {!progress && (
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="flex items-center gap-2 text-muted">
                     <Spinner size="sm" />
                     <span>{t('store.loadingProcessingStatus')}</span>
                 </div>
@@ -1346,7 +1344,7 @@ function PdfProcessingPanel({
 function ProgressLine({ name, progress }: { name: string; progress: { total: number; processed: number } }) {
     return (
         <div className="flex gap-2 text-sm">
-            <span className="text-muted-foreground min-w-36">{name}:</span>
+            <span className="text-muted min-w-36">{name}:</span>
             <span>
                 {progress.processed} of {progress.total}
             </span>

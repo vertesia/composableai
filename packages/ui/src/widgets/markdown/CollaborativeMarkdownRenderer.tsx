@@ -491,12 +491,11 @@ function createBlockComponent(
             isEditingContent
                 ? 'border-transparent'
                 : isSelected
-                  ? 'border-info-foreground bg-mixer-info/5'
+                  ? 'border-info bg-mixer-info/5'
                   : isEditable || isCommentable
-                    ? 'border-transparent hover:border-mixer-info-foreground/30 hover:bg-mixer-muted/10'
+                    ? 'border-transparent hover:border-mixer-info/30 hover:bg-mixer-muted/10'
                     : 'border-transparent',
-            isChanged &&
-                'border-mixer-success-foreground/50 bg-mixer-success/15 ring-1 ring-mixer-success-foreground/20',
+            isChanged && 'border-mixer-success/50 bg-mixer-success/15 ring-1 ring-mixer-success/20',
         );
         const showControls = isEditable || isCommentable || isSelected;
         const controls = showControls ? (
@@ -780,13 +779,13 @@ export function CollaborativeMarkdownRenderer({
     return (
         <CollaborativeMarkdownContext.Provider value={contextValue}>
             {orphanedDraft ? (
-                <div className="not-prose mb-3 rounded-md border border-mixer-attention-foreground/35 bg-mixer-attention/10 p-3">
+                <div className="not-prose mb-3 rounded-md border border-mixer-attention/35 bg-mixer-attention/10 p-3">
                     <div className="flex items-start justify-between gap-3">
                         <div>
                             <div className="text-sm font-semibold text-foreground">
                                 {t('agent.documentEditingDraftPreserved')}
                             </div>
-                            <div className="mt-0.5 text-xs leading-4 text-muted-foreground">
+                            <div className="mt-0.5 text-xs leading-4 text-muted">
                                 {t('agent.documentEditingDraftPreservedDescription')}
                             </div>
                         </div>

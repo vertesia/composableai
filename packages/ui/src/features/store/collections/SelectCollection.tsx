@@ -165,7 +165,7 @@ export function SelectCollection({
                 <Button
                     variant="unstyled"
                     aria-label="Clear selection"
-                    className="ms-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive-foreground cursor-pointer"
+                    className="ms-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive cursor-pointer"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleClear();
@@ -217,7 +217,7 @@ export function SelectCollection({
                             placeholder={resolvedSearchPlaceholder}
                             value={searchQuery}
                             onValueChange={handleSearchChange}
-                            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50"
                         />
                         {isSearching && (
                             <div className="me-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -232,11 +232,7 @@ export function SelectCollection({
                     </CommandEmpty>
                     <CommandGroup className="max-h-[300px] overflow-auto">
                         {showClearOption && !hasSearchQuery && (
-                            <CommandItem
-                                value="__clear__"
-                                onSelect={handleClear}
-                                className="text-destructive-foreground"
-                            >
+                            <CommandItem value="__clear__" onSelect={handleClear} className="text-destructive">
                                 Remove collection selection(s)
                             </CommandItem>
                         )}
@@ -244,7 +240,7 @@ export function SelectCollection({
                             <CommandItem
                                 value="__clear_search__"
                                 onSelect={() => setSearchQuery('')}
-                                className="text-muted-foreground"
+                                className="text-muted"
                             >
                                 {t('store.clearSelection')}
                             </CommandItem>
