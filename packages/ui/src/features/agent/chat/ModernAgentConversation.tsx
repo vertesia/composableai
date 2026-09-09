@@ -977,6 +977,39 @@ function StartWorkflowView({
     const visibleStagedFiles = areStagedFilesExpanded ? stagedFiles : stagedFiles.slice(0, COLLAPSED_STAGED_FILE_COUNT);
     const hiddenStagedFileCount = stagedFiles.length - COLLAPSED_STAGED_FILE_COUNT;
 
+    // Thumbnails for staged images, read off the local File so a preview costs nothing and shows
+    // before the upload finishes. Held in a ref because each URL must be revoked exactly once.
+    const stagedPreviewsRef = useRef<Map<string, string>>(new Map());
+    const [stagedPreviews, setStagedPreviews] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        if (typeof URL === 'undefined' || !URL.createObjectURL) return;
+        const staged = new Set(stagedFiles.map(stagedFileKey));
+        let changed = false;
+        for (const [key, url] of stagedPreviewsRef.current) {
+            if (staged.has(key)) continue;
+            URL.revokeObjectURL(url);
+            stagedPreviewsRef.current.delete(key);
+            changed = true;
+        }
+        for (const file of stagedFiles) {
+            const key = stagedFileKey(file);
+            if (!file.type.startsWith('image/') || stagedPreviewsRef.current.has(key)) continue;
+            stagedPreviewsRef.current.set(key, URL.createObjectURL(file));
+            changed = true;
+        }
+        // Keyed on the staged files, never on the previews it writes, so this settles in one pass.
+        if (changed) setStagedPreviews(Object.fromEntries(stagedPreviewsRef.current));
+    }, [stagedFiles]);
+
+    useEffect(() => {
+        const urls = stagedPreviewsRef.current;
+        return () => {
+            for (const url of urls.values()) URL.revokeObjectURL(url);
+            urls.clear();
+        };
+    }, []);
+
     useEffect(() => {
         onAgentWorkingChange?.(isSending);
     }, [isSending, onAgentWorkingChange]);
@@ -1580,6 +1613,7 @@ function StartWorkflowView({
                             <div className="flex flex-wrap gap-2">
                                 {visibleStagedFiles.map((file, index) => {
                                     const upload = stagedUploads[stagedFileKey(file)];
+                                    const previewUrl = stagedPreviews[stagedFileKey(file)];
                                     const tone =
                                         upload?.status === 'error'
                                             ? 'destructive'
@@ -1597,7 +1631,15 @@ function StartWorkflowView({
                                             )}
                                             title={upload?.error ?? t('agent.fileStagedTooltip')}
                                         >
-                                            <FileTextIcon className="size-3.5" />
+                                            {previewUrl ? (
+                                                <img
+                                                    src={previewUrl}
+                                                    alt=""
+                                                    className="size-5 shrink-0 rounded-sm object-cover"
+                                                />
+                                            ) : (
+                                                <FileTextIcon className="size-3.5" />
+                                            )}
                                             <span className="max-w-[120px] truncate">{file.name}</span>
                                             <span className="text-xs opacity-70">
                                                 {upload?.status === 'uploading'
