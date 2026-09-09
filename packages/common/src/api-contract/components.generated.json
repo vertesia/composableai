@@ -23226,6 +23226,11 @@
       "continuation_token": {
         "type": "string"
       },
+      "delegation_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
       "audience": {
         "type": "string"
       },

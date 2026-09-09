@@ -62,6 +62,7 @@ export const AgentTokenRequestSchema = z
         delegation_grant_id: z.string().optional(),
         delegation_policy_hash: z.string().optional(),
         continuation_token: z.string().optional(),
+        delegation_run_id: z.string().min(1).max(128).optional(),
         ...baseTokenRequestShape,
         account_id: z.string(),
         project_id: z.string(),
