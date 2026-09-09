@@ -38,7 +38,7 @@
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "jose": "^6.2.10",
-        "zod": "^4.4.3"
+        "zod": "^4.5.4"
     },
     "repository": {
         "type": "git",
