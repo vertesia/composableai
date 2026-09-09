@@ -183,11 +183,6 @@ export async function embeddingBatchWorkflow(payload: WorkflowExecutionPayload) 
         }
         const prepared = await longBatch.prepareEmbeddingBatch(payload, params);
         subjobs = prepared.subjobs;
-        if (subjobs.length === 0) {
-            await refreshAuthToken(payload);
-            await batch.updateEmbeddingBatch(payload, { run_id: params.run_id, state: 'applying', subjobs: [] });
-            return finish(await longBatch.applyEmbeddingBatch(payload, { run_id: params.run_id }));
-        }
         for (const subjob of subjobs) {
             await refreshAuthToken(payload);
             // Preserve an accepted submission's identity before cancellation can discard its activity result.
