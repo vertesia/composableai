@@ -311,8 +311,8 @@ export default [
   each with a `label` and no `hideFromNav`. This file maps existing routes; it does not create them.
 - `children` nests a sub-page, which needs its own `/parent/child` route — nesting is never inferred
   from the path. `topLevel: true` promotes an entry to a sidebar root sibling.
-- Leave `preferredSection` unset for the main section; `"settings"` for settings/admin, `"footer"` only
-  when the user asks. `icon` is the Lucide name, not the imported identifier.
+- Use `preferredSection: "settings"` for settings/admin and `"footer"` only when the user asks; otherwise
+  leave it unset for the main section. `icon` is the Lucide name, not the imported identifier.
 - `uiConfig.available_in` decides whether the app is offered in the Composite App at all.
 
 ## Completion Check

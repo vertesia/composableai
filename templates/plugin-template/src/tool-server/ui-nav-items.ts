@@ -9,7 +9,7 @@ import type { AppUINavItem } from '@vertesia/common';
  * their routes too, so this default starts incomplete for those apps.
  *
  * Nest a sub-page under its parent with `children`; it needs its own `/parent/child` route, and
- * nesting never comes from the path. `icon` is a Lucide name. Leave `preferredSection` unset for the
- * main section; `'settings'` for settings/admin, `'footer'` only when asked.
+ * nesting never comes from the path. `icon` is a Lucide name. Use `preferredSection: 'settings'` for
+ * settings/admin and `'footer'` only when asked; otherwise leave it unset for the main section.
  */
 export default [{ label: 'Home', icon: 'Home', route: '/' }] satisfies AppUINavItem[];

@@ -136,9 +136,9 @@ Both are configured in `src/tool-server/config.ts` under `uiConfig` and publishe
 - Nest a sub-page under its parent with `children`; it needs its own `/parent/child` route to be listed,
   and nesting is never inferred from the path. A view switched by parent-local state is not a page.
 - `icon` is the Lucide NAME, not the identifier a route file imported it as.
-- Leave `preferredSection` unset so an entry lands in the main section. Use `"settings"` for settings and
-  admin surfaces, and `"footer"` only when the user asks for it. `topLevel: true` lifts an entry to the
-  sidebar root.
+- Use `preferredSection: "settings"` for settings and admin surfaces and `"footer"` only when the user
+  asks; otherwise leave it unset so an entry lands in the main section. `topLevel: true` lifts an entry
+  to the sidebar root.
 - An administrator can rearrange the composite menu afterwards and their edits are preserved; Studio
   reconciles the stored menu against this list, so an accurate list is what makes that correct.
 
