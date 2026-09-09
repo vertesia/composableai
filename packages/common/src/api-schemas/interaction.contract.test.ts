@@ -282,3 +282,14 @@ describe('user message payload contract', () => {
         expect(validateApiRequest('UserMessagePayload', { ...base, unsupported: true }).valid).toBe(false);
     });
 });
+
+describe('inference workflow attribution', () => {
+    it('accepts root agent attribution on execution and clone requests', () => {
+        const workflow = { run_id: 'child-run', workflow_id: 'workstream:parent:child', agent_run_id: 'root-agent' };
+        expect(validateApiRequest('ExecutionRunWorkflow', workflow).valid).toBe(true);
+        expect(validateApiRequest('RunClonePayload', { source_run_id: 'source', workflow }).valid).toBe(true);
+        expect(
+            validateApiRequest('ExecutionRunWorkflow', { run_id: 'legacy', workflow_id: 'AgentRun:legacy' }).valid,
+        ).toBe(true);
+    });
+});

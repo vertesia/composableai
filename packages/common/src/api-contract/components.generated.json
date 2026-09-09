@@ -11040,6 +11040,10 @@
   "ExecutionRunWorkflow": {
     "type": "object",
     "properties": {
+      "agent_run_id": {
+        "type": "string",
+        "description": "Root agent run owning this inference, including inference performed by child workstreams."
+      },
       "rate_limit_id": {
         "type": "string",
         "description": "Stable identifier pairing an interaction rate-limit admission with its completion feedback."
@@ -13960,10 +13964,20 @@
         "type": "object",
         "properties": {
           "run_id": {
-            "type": "string"
+            "type": "string",
+            "deprecated": true,
+            "x-deprecated-message": "For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions.",
+            "description": "The Temporal Workflow Run ID related to this Interaction Run.\n\nA Run ID is a globally unique, platform-level identifier for a Workflow Execution.\n\nDeprecated: For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions."
           },
           "workflow_id": {
-            "type": "string"
+            "type": "string",
+            "deprecated": true,
+            "x-deprecated-message": "For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions.",
+            "description": "The Temporal Workflow ID related to this Interaction Run.\n\nDeprecated: For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions."
+          },
+          "agent_run_id": {
+            "type": "string",
+            "description": "Root agent run owning this inference, including inference performed by child workstreams."
           }
         },
         "required": [
