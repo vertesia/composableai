@@ -5,6 +5,8 @@
  * Schedules are stored in MongoDB with execution handled by Temporal.
  */
 
+import type { ProcessRunType } from './agent-run.js';
+
 /**
  * Represents a scheduled agent execution configuration.
  */
@@ -35,6 +37,18 @@ export interface AgentSchedule {
 
     /** Process definition ID to execute */
     process?: string;
+
+    /**
+     * Initial process context the schedule fires with, as supplied at creation. Process schedules
+     * only; the agent equivalent is `vars`.
+     */
+    context?: Record<string, unknown>;
+
+    /**
+     * Process execution mode the schedule fires with. Process schedules only. Absent on schedules
+     * created before this field was reported, which run as "programmatic".
+     */
+    run_type?: ProcessRunType;
 
     /**
      * Cron expression defining when to run.
@@ -129,7 +143,7 @@ export interface CreateProcessSchedulePayload extends CreateSchedulePayloadBase 
     context?: Record<string, unknown>;
 
     /** Process execution mode (defaults to "programmatic") */
-    run_type?: 'programmatic' | 'supervised';
+    run_type?: ProcessRunType;
 }
 
 /** Payload for creating a new schedule. */
@@ -137,6 +151,11 @@ export type CreateSchedulePayload = CreateAgentSchedulePayload | CreateProcessSc
 
 /**
  * Payload for updating an existing schedule.
+ *
+ * Deliberately narrower than the create payload. The inputs a schedule executes with — `vars` for
+ * agents, `context` and `run_type` for processes, and `task_queue` for both — are baked into the
+ * scheduler's job specification when the schedule is created, and update does not re-publish it.
+ * Accepting them here would record a change that never takes effect. Recreate the schedule instead.
  */
 export interface UpdateSchedulePayload {
     /** Updated name */
@@ -172,6 +191,9 @@ export interface ScheduleListItem {
     interaction?: string;
     interaction_name?: string;
     process?: string;
+    /** Process schedules only. `context` is omitted here for the same reason `vars` is: it is
+     *  caller-sized payload, not summary information. Fetch the schedule to see it. */
+    run_type?: ProcessRunType;
     cron_expression: string;
     timezone?: string;
     enabled: boolean;
