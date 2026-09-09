@@ -12813,6 +12813,10 @@
         },
         "description": "Tool calls executed before the first model turn. Results are injected into the initial context. These run sequentially with the caller's authority before the first model turn. Only a bounded set of read/hydration tools is accepted."
       },
+      "staged_batch_id": {
+        "type": "string",
+        "description": "A batch of files staged before this run existed. The workflow adopts it before the first model turn: the files are copied into the run's artifact space with their already-extracted text, and the turn waits until every file in the batch has settled. Start-only — it describes work in flight at run creation and is dropped when the run continues as new."
+      },
       "excluded_tools": {
         "type": "array",
         "items": {
@@ -34167,6 +34171,108 @@
     },
     "additionalProperties": false,
     "description": "Report that a staged file could not be uploaded, so the batch stops waiting for it."
+  },
+  "AddStagedFilesPayload": {
+    "type": "object",
+    "properties": {
+      "files": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "content_type": {
+              "type": "string"
+            },
+            "size": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "name",
+            "content_type"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Files added to an open batch after it was created."
+      }
+    },
+    "required": [
+      "files"
+    ],
+    "additionalProperties": false,
+    "description": "Append files to a batch that has not been adopted yet. Attaching is incremental — a user drops two files, types, then drops three more — and each drop starts extracting immediately rather than waiting for the rest."
+  },
+  "AdoptStagedFileBatchPayload": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "The agent run taking ownership of the batch."
+      }
+    },
+    "required": [
+      "run_id"
+    ],
+    "additionalProperties": false,
+    "description": "Hand a staged batch to the run that will use it."
+  },
+  "AdoptedStagedFile": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Original filename."
+      },
+      "content_type": {
+        "type": "string"
+      },
+      "status": {
+        "$ref": "#/components/schemas/FileProcessingStatus",
+        "description": "Terminal state: ready, or error with a reason."
+      },
+      "artifact_path": {
+        "type": "string",
+        "description": "Where the file now lives in the run, e.g. \"files/report.pdf\"."
+      },
+      "md_path": {
+        "type": "string",
+        "description": "Companion markdown of the extracted text, if there was any."
+      },
+      "error": {
+        "type": "string",
+        "description": "Why this file is not usable."
+      }
+    },
+    "required": [
+      "name",
+      "content_type",
+      "status"
+    ],
+    "additionalProperties": false,
+    "description": "One staged file after it has been moved into a run."
+  },
+  "AdoptStagedFileBatchResponse": {
+    "type": "object",
+    "properties": {
+      "batch_id": {
+        "type": "string"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AdoptedStagedFile"
+        }
+      }
+    },
+    "required": [
+      "batch_id",
+      "files"
+    ],
+    "additionalProperties": false,
+    "description": "A staged batch after its files were copied into the run's artifact space."
   },
   "WorkflowQueryResult": {
     "$ref": "#/components/schemas/JSONValue"

@@ -1,6 +1,9 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
     type ActiveWorkstreamsQueryResult,
+    type AddStagedFilesPayload,
+    type AdoptStagedFileBatchPayload,
+    type AdoptStagedFileBatchResponse,
     type AgentArtifactContentResponse,
     type AgentArtifactUrlResponse,
     type AgentEvent,
@@ -888,6 +891,27 @@ export class AgentsApi extends ApiTopic {
         return this.markStagedFileUploaded(batchId, target.id);
     }
 
+    /**
+     * Append files to a batch that has not been adopted yet.
+     *
+     * Attaching is incremental — files are dropped, then more are dropped while the first are still
+     * extracting — so the batch stays open until a run takes it. Members already uploading or
+     * extracting are untouched.
+     */
+    addStagedFiles(batchId: string, payload: AddStagedFilesPayload): Promise<CreateStagedFileBatchResponse> {
+        return this.post(`/staged-files/${batchId}/files`, { payload });
+    }
+
+    /**
+     * Remove a file the user retracted, deleting its bytes and cancelling any extraction in flight.
+     *
+     * Not the same as reporting a failure: nothing went wrong, and the agent is never told about a
+     * file the user took back.
+     */
+    removeStagedFile(batchId: string, fileId: string): Promise<StagedFileBatch> {
+        return this.del(`/staged-files/${batchId}/files/${fileId}`);
+    }
+
     /** Report a staged file's bytes as landed, starting its text extraction. */
     markStagedFileUploaded(batchId: string, fileId: string): Promise<StagedFileBatch> {
         return this.post(`/staged-files/${batchId}/files/${fileId}/uploaded`);
@@ -896,6 +920,16 @@ export class AgentsApi extends ApiTopic {
     /** Report a staged file as unuploadable, so the batch stops waiting for it. */
     markStagedFileFailed(batchId: string, fileId: string, error?: string): Promise<StagedFileBatch> {
         return this.post(`/staged-files/${batchId}/files/${fileId}/failed`, { payload: { error } });
+    }
+
+    /**
+     * Move a settled staged batch into an agent run.
+     *
+     * Called by the conversation workflow, not by a composer: the run takes ownership once, and the
+     * batch records which run took it so a second cannot.
+     */
+    adoptStagedFileBatch(batchId: string, payload: AdoptStagedFileBatchPayload): Promise<AdoptStagedFileBatchResponse> {
+        return this.post(`/staged-files/${batchId}/adopt`, { payload });
     }
 
     /** Per-file status for a staged batch — the composer's progress surface before a run exists. */

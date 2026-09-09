@@ -287,6 +287,24 @@ export const CreateStagedFileBatchPayloadSchema = z
         description: 'Reserve a staged batch and obtain one signed upload URL per file.',
     });
 
+export const AddStagedFilesPayloadSchema = z
+    .strictObject({
+        files: z
+            .array(
+                z.strictObject({
+                    name: z.string(),
+                    content_type: z.string(),
+                    size: z.number().optional(),
+                }),
+            )
+            .meta({ description: 'Files added to an open batch after it was created.' }),
+    })
+    .meta({
+        id: 'AddStagedFilesPayload',
+        description:
+            'Append files to a batch that has not been adopted yet. Attaching is incremental — a user drops two files, types, then drops three more — and each drop starts extracting immediately rather than waiting for the rest.',
+    });
+
 export const StagedFileUploadTargetSchema = z
     .strictObject({
         id: z.string().meta({ description: 'Quote this id when reporting the upload finished or failed.' }),
@@ -304,6 +322,42 @@ export const CreateStagedFileBatchResponseSchema = z
     .meta({
         id: 'CreateStagedFileBatchResponse',
         description: 'A reserved staged batch and its per-file upload targets.',
+    });
+
+export const AdoptStagedFileBatchPayloadSchema = z
+    .strictObject({
+        run_id: z.string().meta({ description: 'The agent run taking ownership of the batch.' }),
+    })
+    .meta({
+        id: 'AdoptStagedFileBatchPayload',
+        description: 'Hand a staged batch to the run that will use it.',
+    });
+
+export const AdoptedStagedFileSchema = z
+    .strictObject({
+        name: z.string().meta({ description: 'Original filename.' }),
+        content_type: z.string(),
+        status: FileProcessingStatusSchema.meta({ description: 'Terminal state: ready, or error with a reason.' }),
+        artifact_path: z
+            .string()
+            .meta({ description: 'Where the file now lives in the run, e.g. "files/report.pdf".' })
+            .optional(),
+        md_path: z
+            .string()
+            .meta({ description: 'Companion markdown of the extracted text, if there was any.' })
+            .optional(),
+        error: z.string().meta({ description: 'Why this file is not usable.' }).optional(),
+    })
+    .meta({ id: 'AdoptedStagedFile', description: 'One staged file after it has been moved into a run.' });
+
+export const AdoptStagedFileBatchResponseSchema = z
+    .strictObject({
+        batch_id: z.string(),
+        files: z.array(AdoptedStagedFileSchema),
+    })
+    .meta({
+        id: 'AdoptStagedFileBatchResponse',
+        description: "A staged batch after its files were copied into the run's artifact space.",
     });
 
 export const StagedFileUploadFailedPayloadSchema = z

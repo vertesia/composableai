@@ -15,6 +15,10 @@
 import type { ReasoningEffort } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
+    AddStagedFilesPayloadSchema,
+    AdoptedStagedFileSchema,
+    AdoptStagedFileBatchPayloadSchema,
+    AdoptStagedFileBatchResponseSchema,
     AgentArtifactContentResponseSchema,
     AgentArtifactUrlResponseSchema,
     AgentRunArchiveStateSchema,
@@ -214,6 +218,10 @@ export type StagedFileUploadTarget = z.infer<typeof StagedFileUploadTargetSchema
 export type CreateStagedFileBatchPayload = z.infer<typeof CreateStagedFileBatchPayloadSchema>;
 export type CreateStagedFileBatchResponse = z.infer<typeof CreateStagedFileBatchResponseSchema>;
 export type StagedFileUploadFailedPayload = z.infer<typeof StagedFileUploadFailedPayloadSchema>;
+export type AddStagedFilesPayload = z.infer<typeof AddStagedFilesPayloadSchema>;
+export type AdoptStagedFileBatchPayload = z.infer<typeof AdoptStagedFileBatchPayloadSchema>;
+export type AdoptedStagedFile = z.infer<typeof AdoptedStagedFileSchema>;
+export type AdoptStagedFileBatchResponse = z.infer<typeof AdoptStagedFileBatchResponseSchema>;
 
 type CreateAgentRunWire = z.infer<typeof CreateAgentRunPayloadSchema>;
 export type CreateAgentRunPayload<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = Omit<

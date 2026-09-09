@@ -1795,6 +1795,10 @@ const AGENT_RUN_SCHEMAS = {
     CreateStagedFileBatchPayload: AgentRunSchemas.CreateStagedFileBatchPayloadSchema,
     CreateStagedFileBatchResponse: AgentRunSchemas.CreateStagedFileBatchResponseSchema,
     StagedFileUploadFailedPayload: AgentRunSchemas.StagedFileUploadFailedPayloadSchema,
+    AddStagedFilesPayload: AgentRunSchemas.AddStagedFilesPayloadSchema,
+    AdoptStagedFileBatchPayload: AgentRunSchemas.AdoptStagedFileBatchPayloadSchema,
+    AdoptedStagedFile: AgentRunSchemas.AdoptedStagedFileSchema,
+    AdoptStagedFileBatchResponse: AgentRunSchemas.AdoptStagedFileBatchResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const WORKFLOW_RUN_SCHEMAS = {
@@ -2393,6 +2397,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'CreateStagedFileBatchPayload',
     'CreateStagedFileBatchResponse',
     'StagedFileUploadFailedPayload',
+    'AddStagedFilesPayload',
+    'AdoptStagedFileBatchPayload',
+    'AdoptedStagedFile',
+    'AdoptStagedFileBatchResponse',
     // Process Test Lab request, fixture, and result contracts.
     'ProcessTestVirtualActor',
     'ProcessTestFixtureResult',
