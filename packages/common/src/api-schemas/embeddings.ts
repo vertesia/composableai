@@ -182,7 +182,15 @@ export const EmbeddingBatchCreateRequestSchema = z
     .meta({ id: 'EmbeddingBatchCreateRequest' });
 
 export const EmbeddingBatchJobRequestSchema = z
-    .strictObject({ embedding_type: SupportedEmbeddingTypesSchema, model: z.string(), name: z.string() })
+    .strictObject({
+        embedding_type: SupportedEmbeddingTypesSchema,
+        model: z.string(),
+        name: z.string(),
+        include_output_artifacts: z.boolean().optional().meta({
+            description:
+                'On get, resolve terminal result artifacts for application. Omit for lightweight status polling.',
+        }),
+    })
     .meta({ id: 'EmbeddingBatchJobRequest' });
 
 export const EmbeddingBatchJobResponseSchema = z
@@ -193,6 +201,10 @@ export const EmbeddingBatchJobResponseSchema = z
         model: z.string().optional(),
         input_uri: z.string().optional(),
         output_uri: z.string().optional(),
+        output_artifacts: z.array(z.string()).optional().meta({
+            description:
+                'Terminal job result artifacts in application storage, including partial results. Never provider file IDs.',
+        }),
         error_message: z.string().optional(),
     })
     .meta({ id: 'EmbeddingBatchJobResponse' });

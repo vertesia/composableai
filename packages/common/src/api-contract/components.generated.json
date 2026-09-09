@@ -40671,6 +40671,10 @@
       },
       "name": {
         "type": "string"
+      },
+      "include_output_artifacts": {
+        "type": "boolean",
+        "description": "On get, resolve terminal result artifacts for application. Omit for lightweight status polling."
       }
     },
     "required": [
@@ -40707,6 +40711,13 @@
       },
       "output_uri": {
         "type": "string"
+      },
+      "output_artifacts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Terminal job result artifacts in application storage, including partial results. Never provider file IDs."
       },
       "error_message": {
         "type": "string"
