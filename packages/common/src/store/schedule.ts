@@ -151,24 +151,25 @@ export interface UpdateSchedulePayload {
 /**
  * Summary information for listing schedules.
  */
-export interface ScheduleListItem {
-    owner?: string;
-    run_as?: ScheduleRunAs;
-    delegation_grant_id?: string;
-    delegation_expires_at?: string | null;
-    id: string;
-    name: string;
-    description?: string;
-    interaction: string;
-    interaction_name?: string;
-    cron_expression: string;
-    timezone?: string;
-    enabled: boolean;
-    last_run_at?: Date;
-    next_run_at?: Date;
-    created_by: string;
-    updated_at: Date;
-}
+export type ScheduleListItem = Pick<
+    AgentSchedule,
+    | 'owner'
+    | 'run_as'
+    | 'delegation_grant_id'
+    | 'delegation_expires_at'
+    | 'id'
+    | 'name'
+    | 'description'
+    | 'interaction'
+    | 'interaction_name'
+    | 'cron_expression'
+    | 'timezone'
+    | 'enabled'
+    | 'last_run_at'
+    | 'next_run_at'
+    | 'created_by'
+    | 'updated_at'
+>;
 
 /**
  * Extended schedule information including Temporal execution details.
