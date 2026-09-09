@@ -13,6 +13,8 @@ import {
     type BindRunWorkflowPayload,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
+    type CreateStagedFileBatchPayload,
+    type CreateStagedFileBatchResponse,
     type ErrorAnalyticsResponse,
     type FirstResponseBehaviorAnalyticsResponse,
     type IngestAgentEventsPayload,
@@ -35,6 +37,8 @@ import {
     type SearchAgentRunsResponse,
     type SignalAgentPayload,
     type SignalAgentResponse,
+    type StagedFileBatch,
+    type StagedFileUploadTarget,
     type TerminateAgentRunResponse,
     type TimeToFirstResponseAnalyticsResponse,
     type TokenUsageAnalyticsResponse,
@@ -839,6 +843,66 @@ export class AgentsApi extends ApiTopic {
      *
      * @returns The full storage path of the uploaded artifact.
      */
+    // ========================================================================
+    // Staged files — uploads that precede the conversation
+    // ========================================================================
+
+    /**
+     * Reserve a batch of files for a conversation that does not exist yet, and get one signed
+     * upload URL per file.
+     *
+     * Artifacts are addressed by run id, so files attached in a composer could previously only be
+     * uploaded after the run was created — which is what let the agent's first turn start before
+     * they arrived. Stage them instead: upload and extract while the user is still typing, then
+     * quote `batch_id` as `staged_batch_id` when starting the run.
+     */
+    createStagedFileBatch(payload: CreateStagedFileBatchPayload): Promise<CreateStagedFileBatchResponse> {
+        return this.post('/staged-files', { payload });
+    }
+
+    /**
+     * Upload one staged file and report it, which starts its text extraction.
+     *
+     * Report each file as it lands rather than the whole batch at the end: extraction is the slow
+     * part, and starting it early is what the user's composing time pays for.
+     */
+    async uploadStagedFile(
+        target: StagedFileUploadTarget,
+        batchId: string,
+        content: Blob | ReadableStream | ArrayBuffer | string,
+        contentType?: string,
+    ): Promise<StagedFileBatch> {
+        const mimeType = contentType || 'application/octet-stream';
+        const res = await fetchSignedUrl(target.upload_url, {
+            method: 'PUT',
+            body: content,
+            headers: { 'Content-Type': mimeType },
+        });
+        if (!res.ok) {
+            // Report it rather than throwing blind: a batch that never hears about a failed file
+            // waits for it, and the caller still needs the error to show the user.
+            const reason = `Failed to upload staged file: ${res.statusText}`;
+            await this.markStagedFileFailed(batchId, target.id, reason).catch(() => undefined);
+            throw new Error(reason);
+        }
+        return this.markStagedFileUploaded(batchId, target.id);
+    }
+
+    /** Report a staged file's bytes as landed, starting its text extraction. */
+    markStagedFileUploaded(batchId: string, fileId: string): Promise<StagedFileBatch> {
+        return this.post(`/staged-files/${batchId}/files/${fileId}/uploaded`);
+    }
+
+    /** Report a staged file as unuploadable, so the batch stops waiting for it. */
+    markStagedFileFailed(batchId: string, fileId: string, error?: string): Promise<StagedFileBatch> {
+        return this.post(`/staged-files/${batchId}/files/${fileId}/failed`, { payload: { error } });
+    }
+
+    /** Per-file status for a staged batch — the composer's progress surface before a run exists. */
+    getStagedFileBatch(batchId: string): Promise<StagedFileBatch> {
+        return this.get(`/staged-files/${batchId}`);
+    }
+
     async uploadArtifact(
         id: string,
         path: string,

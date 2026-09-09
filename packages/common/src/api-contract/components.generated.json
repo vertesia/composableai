@@ -32561,6 +32561,10 @@
         },
         "description": "Denylist of MCP tool-collection ids deactivated for this run. `undefined`/empty means all installed/connected MCP collections are active (back-compat, and new servers stay active by default). Listed collections are excluded even if connected."
       },
+      "staged_batch_id": {
+        "type": "string",
+        "description": "A batch of files staged before this run existed (see CreateStagedFileBatchResponse). The run adopts the batch: its files are copied into the run's artifact space and the first model turn waits until every one of them has finished uploading and extracting. The batch need not be settled when the run is created."
+      },
       "content_type": {
         "$ref": "#/components/schemas/ContentObjectTypeRef",
         "description": "Content type linked to this run — defines the schema for `properties`"
@@ -33997,6 +34001,172 @@
       "ingested"
     ],
     "additionalProperties": false
+  },
+  "StagedFile": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Server-assigned id for this staged file."
+      },
+      "name": {
+        "type": "string",
+        "description": "Original filename, as the user sees it."
+      },
+      "content_type": {
+        "type": "string",
+        "description": "MIME type."
+      },
+      "size": {
+        "type": "number",
+        "description": "Size in bytes, as declared by the client."
+      },
+      "status": {
+        "$ref": "#/components/schemas/FileProcessingStatus",
+        "description": "Lifecycle of this staged file. Shares the vocabulary of a file already attached to a run, so a composer renders one shape before and after the run exists."
+      },
+      "text_extracted": {
+        "type": "boolean",
+        "description": "Whether text extraction produced usable text."
+      },
+      "error": {
+        "type": "string",
+        "description": "Why the file failed to upload or to extract."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "content_type",
+      "status"
+    ],
+    "additionalProperties": false,
+    "description": "One file staged for a conversation that has not started yet."
+  },
+  "StagedFileBatch": {
+    "type": "object",
+    "properties": {
+      "batch_id": {
+        "type": "string",
+        "description": "Identifier the run quotes to adopt this batch."
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/StagedFile"
+        },
+        "description": "Every file in the batch, in the order staged."
+      },
+      "settled": {
+        "type": "boolean",
+        "description": "True once no file is still uploading or processing. A run may be started before this; its first turn waits."
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When an unclaimed batch is discarded."
+      }
+    },
+    "required": [
+      "batch_id",
+      "files",
+      "settled",
+      "expires_at"
+    ],
+    "additionalProperties": false,
+    "description": "A batch of files staged ahead of a conversation."
+  },
+  "StagedFileUploadTarget": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Quote this id when reporting the upload finished or failed."
+      },
+      "name": {
+        "type": "string"
+      },
+      "upload_url": {
+        "type": "string",
+        "description": "Signed URL to PUT the bytes to. Expires."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "upload_url"
+    ],
+    "additionalProperties": false,
+    "description": "Where to send one staged file."
+  },
+  "CreateStagedFileBatchPayload": {
+    "type": "object",
+    "properties": {
+      "files": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "content_type": {
+              "type": "string"
+            },
+            "size": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "name",
+            "content_type"
+          ],
+          "additionalProperties": false
+        },
+        "description": "The files about to be uploaded. Storage keys are assigned by the server."
+      }
+    },
+    "required": [
+      "files"
+    ],
+    "additionalProperties": false,
+    "description": "Reserve a staged batch and obtain one signed upload URL per file."
+  },
+  "CreateStagedFileBatchResponse": {
+    "type": "object",
+    "properties": {
+      "batch_id": {
+        "type": "string"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/StagedFileUploadTarget"
+        }
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "batch_id",
+      "files",
+      "expires_at"
+    ],
+    "additionalProperties": false,
+    "description": "A reserved staged batch and its per-file upload targets."
+  },
+  "StagedFileUploadFailedPayload": {
+    "type": "object",
+    "properties": {
+      "error": {
+        "type": "string",
+        "description": "What went wrong, shown to the user and to the agent."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Report that a staged file could not be uploaded, so the batch stops waiting for it."
   },
   "WorkflowQueryResult": {
     "$ref": "#/components/schemas/JSONValue"

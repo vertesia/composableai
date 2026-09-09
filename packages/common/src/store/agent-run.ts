@@ -29,6 +29,8 @@ import type {
     CreateProcessRunByIdPayloadSchema,
     CreateProcessRunWithDefinitionPayloadSchema,
     CreateRunPayloadSchema,
+    CreateStagedFileBatchPayloadSchema,
+    CreateStagedFileBatchResponseSchema,
     IngestAgentEventsPayloadSchema,
     IngestAgentEventsResponseSchema,
     ListAgentRunsQuerySchema,
@@ -37,6 +39,10 @@ import type {
     SearchAgentRunsQuerySchema,
     SearchAgentRunsResponseSchema,
     SignalAgentResponseSchema,
+    StagedFileBatchSchema,
+    StagedFileSchema,
+    StagedFileUploadFailedPayloadSchema,
+    StagedFileUploadTargetSchema,
     StreamAgentRunQuerySchema,
     TerminateAgentRunResponseSchema,
     UpdateAgentArtifactContentPayloadSchema,
@@ -193,6 +199,21 @@ export type AgentRunResponse<TData = Record<string, unknown>, TProperties = Reco
     | AutonomousRunResponse<TData, TProperties>
     | SupervisedRunResponse
     | ProgrammaticRunResponse;
+
+/**
+ * Files uploaded before the conversation that will use them exists.
+ *
+ * A run's artifacts are addressed by run id, so a composer that lets the user attach files before
+ * pressing send could only create the run first and upload afterwards — which is what let the
+ * agent's first turn start on a partial set. A staged batch is uploaded and text-extracted while
+ * the user is still typing, and the run adopts it by id.
+ */
+export type StagedFile = z.infer<typeof StagedFileSchema>;
+export type StagedFileBatch = z.infer<typeof StagedFileBatchSchema>;
+export type StagedFileUploadTarget = z.infer<typeof StagedFileUploadTargetSchema>;
+export type CreateStagedFileBatchPayload = z.infer<typeof CreateStagedFileBatchPayloadSchema>;
+export type CreateStagedFileBatchResponse = z.infer<typeof CreateStagedFileBatchResponseSchema>;
+export type StagedFileUploadFailedPayload = z.infer<typeof StagedFileUploadFailedPayloadSchema>;
 
 type CreateAgentRunWire = z.infer<typeof CreateAgentRunPayloadSchema>;
 export type CreateAgentRunPayload<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = Omit<

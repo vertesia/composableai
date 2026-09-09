@@ -235,6 +235,86 @@ export const ResourceRefSchema = z
     })
     .meta({ id: 'ResourceRef' });
 
+/**
+ * Staged files — uploads that belong to a conversation that does not exist yet.
+ *
+ * A file cannot be uploaded into a run before the run exists, so a composer that lets the user
+ * attach files before sending had to create the run first and upload afterwards, and the agent's
+ * first turn raced the uploads. Staging inverts that: the files are uploaded and their text
+ * extracted while the user is still typing, and the run adopts a finished batch by id.
+ */
+export const StagedFileSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Server-assigned id for this staged file.' }),
+        name: z.string().meta({ description: 'Original filename, as the user sees it.' }),
+        content_type: z.string().meta({ description: 'MIME type.' }),
+        size: z.number().meta({ description: 'Size in bytes, as declared by the client.' }).optional(),
+        status: FileProcessingStatusSchema.meta({
+            description:
+                'Lifecycle of this staged file. Shares the vocabulary of a file already attached to a run, so a composer renders one shape before and after the run exists.',
+        }),
+        text_extracted: z.boolean().meta({ description: 'Whether text extraction produced usable text.' }).optional(),
+        error: z.string().meta({ description: 'Why the file failed to upload or to extract.' }).optional(),
+    })
+    .meta({ id: 'StagedFile', description: 'One file staged for a conversation that has not started yet.' });
+
+export const StagedFileBatchSchema = z
+    .strictObject({
+        batch_id: z.string().meta({ description: 'Identifier the run quotes to adopt this batch.' }),
+        files: z.array(StagedFileSchema).meta({ description: 'Every file in the batch, in the order staged.' }),
+        settled: z.boolean().meta({
+            description:
+                'True once no file is still uploading or processing. A run may be started before this; its first turn waits.',
+        }),
+        expires_at: z.string().meta({ format: 'date-time', description: 'When an unclaimed batch is discarded.' }),
+    })
+    .meta({ id: 'StagedFileBatch', description: 'A batch of files staged ahead of a conversation.' });
+
+export const CreateStagedFileBatchPayloadSchema = z
+    .strictObject({
+        files: z
+            .array(
+                z.strictObject({
+                    name: z.string(),
+                    content_type: z.string(),
+                    size: z.number().optional(),
+                }),
+            )
+            .meta({ description: 'The files about to be uploaded. Storage keys are assigned by the server.' }),
+    })
+    .meta({
+        id: 'CreateStagedFileBatchPayload',
+        description: 'Reserve a staged batch and obtain one signed upload URL per file.',
+    });
+
+export const StagedFileUploadTargetSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Quote this id when reporting the upload finished or failed.' }),
+        name: z.string(),
+        upload_url: z.string().meta({ description: 'Signed URL to PUT the bytes to. Expires.' }),
+    })
+    .meta({ id: 'StagedFileUploadTarget', description: 'Where to send one staged file.' });
+
+export const CreateStagedFileBatchResponseSchema = z
+    .strictObject({
+        batch_id: z.string(),
+        files: z.array(StagedFileUploadTargetSchema),
+        expires_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({
+        id: 'CreateStagedFileBatchResponse',
+        description: 'A reserved staged batch and its per-file upload targets.',
+    });
+
+export const StagedFileUploadFailedPayloadSchema = z
+    .strictObject({
+        error: z.string().meta({ description: 'What went wrong, shown to the user and to the agent.' }).optional(),
+    })
+    .meta({
+        id: 'StagedFileUploadFailedPayload',
+        description: 'Report that a staged file could not be uploaded, so the batch stops waiting for it.',
+    });
+
 export const AgentArtifactContentResponseSchema = z
     .strictObject({
         path: z.string(),
@@ -627,6 +707,13 @@ export const CreateAgentRunPayloadSchema = z
             .meta({
                 description:
                     'Denylist of MCP tool-collection ids deactivated for this run. `undefined`/empty means all installed/connected MCP collections are active (back-compat, and new servers stay active by default). Listed collections are excluded even if connected.',
+            })
+            .optional(),
+        staged_batch_id: z
+            .string()
+            .meta({
+                description:
+                    "A batch of files staged before this run existed (see CreateStagedFileBatchResponse). The run adopts the batch: its files are copied into the run's artifact space and the first model turn waits until every one of them has finished uploading and extracting. The batch need not be settled when the run is created.",
             })
             .optional(),
         content_type: ContentObjectTypeRefSchema.meta({
