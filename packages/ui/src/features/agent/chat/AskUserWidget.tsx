@@ -78,22 +78,22 @@ export interface AskUserWidgetProps {
 const VARIANT_STYLES = {
     default: {
         border: 'border-s-attention',
-        bg: 'bg-amber-50 dark:bg-amber-900/20',
+        bg: 'bg-attention',
         icon: 'text-attention',
     },
     warning: {
         border: 'border-s-destructive',
-        bg: 'bg-red-50 dark:bg-red-900/20',
+        bg: 'bg-destructive',
         icon: 'text-destructive',
     },
     info: {
         border: 'border-s-info',
-        bg: 'bg-blue-50 dark:bg-blue-900/20',
+        bg: 'bg-info',
         icon: 'text-info',
     },
     success: {
         border: 'border-s-success',
-        bg: 'bg-green-50 dark:bg-green-900/20',
+        bg: 'bg-success',
         icon: 'text-success',
     },
 };
@@ -382,14 +382,12 @@ export function AskUserWidget({
                         <div className="min-w-0 flex-1">
                             <div className={SCROLLABLE_PROMPT_CLASS}>
                                 <div
-                                    className={`agent-ask-question prose prose-sm dark:prose-invert max-w-none text-gray-900 dark:text-gray-100 ${questionClassName || ''}`}
+                                    className={`agent-ask-question prose prose-sm dark:prose-invert max-w-none text-foreground ${questionClassName || ''}`}
                                 >
                                     <MarkdownRenderer>{question}</MarkdownRenderer>
                                 </div>
                                 {description && (
-                                    <p
-                                        className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${descriptionClassName || ''}`}
-                                    >
+                                    <p className={`mt-1 text-sm text-muted ${descriptionClassName || ''}`}>
                                         {description}
                                     </p>
                                 )}
@@ -410,8 +408,8 @@ export function AskUserWidget({
                                         className={`flex items-start gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors
                                             ${
                                                 selectedOptions.has(option.id)
-                                                    ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700'
-                                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                    ? 'bg-info border border-info'
+                                                    : 'bg-white dark:bg-muted border border-border hover:bg-muted'
                                             }
                                             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
@@ -420,15 +418,15 @@ export function AskUserWidget({
                                             checked={selectedOptions.has(option.id)}
                                             onChange={() => toggleOption(option.id)}
                                             disabled={isLoading}
-                                            className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                                            className="mt-0.5 w-4 h-4 rounded border-border text-info focus:ring-info dark:bg-muted"
                                         />
                                         <div className="flex-1 overflow-hidden">
-                                            <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100 break-words">
+                                            <div className="flex items-center gap-2 text-sm font-medium text-foreground break-words">
                                                 {option.icon}
                                                 <span className="break-words">{option.label}</span>
                                             </div>
                                             {option.description && (
-                                                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400 break-words whitespace-pre-wrap">
+                                                <div className="mt-1 text-sm text-muted break-words whitespace-pre-wrap">
                                                     {option.description}
                                                 </div>
                                             )}
@@ -458,26 +456,24 @@ export function AskUserWidget({
                                         key={option.id}
                                         onClick={() => onSelect?.(option.id)}
                                         disabled={isLoading}
-                                        className={`w-full h-auto whitespace-normal text-start px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700
-                                            bg-white dark:bg-gray-800
-                                            hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600
-                                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+                                        className={`w-full h-auto whitespace-normal text-start px-4 py-3 rounded-lg border border-border
+                                            bg-white dark:bg-muted
+                                            hover:bg-muted hover:border-border
+                                            focus:outline-none focus:ring-2 focus:ring-info focus:ring-offset-1
                                             transition-colors
                                             ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                                             ${buttonClassName || ''}`}
                                     >
                                         <div className="flex items-start gap-3">
                                             {option.icon && (
-                                                <span className="flex-shrink-0 mt-0.5 text-gray-500 dark:text-gray-400">
-                                                    {option.icon}
-                                                </span>
+                                                <span className="flex-shrink-0 mt-0.5 text-muted">{option.icon}</span>
                                             )}
                                             <div className="flex-1 overflow-hidden">
-                                                <div className="font-medium text-sm text-gray-900 dark:text-gray-100 break-words text-center">
+                                                <div className="font-medium text-sm text-foreground break-words text-center">
                                                     {option.label}
                                                 </div>
                                                 {option.description && (
-                                                    <div className="mt-1 text-sm text-gray-500 dark:text-gray-400 break-words whitespace-pre-wrap">
+                                                    <div className="mt-1 text-sm text-muted break-words whitespace-pre-wrap">
                                                         {option.description}
                                                     </div>
                                                 )}
@@ -502,7 +498,7 @@ export function AskUserWidget({
                                 onKeyDown={handleKeyDown}
                                 placeholder={resolvedPlaceholder}
                                 disabled={isLoading}
-                                className={`flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${inputClassName || ''}`}
+                                className={`flex-1 px-3 py-2 text-sm border border-border rounded-md bg-white dark:bg-muted focus:ring-2 focus:ring-info focus:border-transparent ${inputClassName || ''}`}
                             />
                             <Button
                                 size="sm"

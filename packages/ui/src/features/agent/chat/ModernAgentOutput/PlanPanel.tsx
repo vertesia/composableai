@@ -14,8 +14,8 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
     if (!isVisible) return null;
 
     return (
-        <div className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3 shadow-sm transition-all duration-300 ease-in-out transform">
-            <div className="text-xs font-medium mb-2 text-gray-800 dark:text-gray-200">{t('agent.agentPlan')}</div>
+        <div className="border-b border-border bg-muted p-3 shadow-sm transition-all duration-300 ease-in-out transform">
+            <div className="text-xs font-medium mb-2 text-foreground">{t('agent.agentPlan')}</div>
 
             {/* Plan Steps */}
             {plan.plan && plan.plan.length > 0 ? (
@@ -34,14 +34,14 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
 
                         // Determine status icon and style
                         let StatusIcon = Circle;
-                        let statusColor = 'text-gray-400';
+                        let statusColor = 'text-muted';
 
                         if (status === 'in_progress') {
                             StatusIcon = Clock;
-                            statusColor = 'text-blue-500';
+                            statusColor = 'text-info';
                         } else if (status === 'completed') {
                             StatusIcon = CheckCircle;
-                            statusColor = 'text-green-500';
+                            statusColor = 'text-success';
                         }
 
                         return (
@@ -50,8 +50,8 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                                     <StatusIcon className="h-3.5 w-3.5" />
                                 </div>
                                 <div className="text-xs">
-                                    <span className="text-gray-700 dark:text-gray-300">{taskGoal}</span>
-                                    <span className="ms-1 bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-[10px] font-mono">
+                                    <span className="text-foreground">{taskGoal}</span>
+                                    <span className="ms-1 bg-muted px-1 py-0.5 rounded text-[10px] font-mono">
                                         {taskId}
                                     </span>
                                 </div>
@@ -60,18 +60,16 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                     })}
                 </div>
             ) : (
-                <div className="text-xs text-gray-500 dark:text-gray-400 italic flex items-center">
-                    <AlertCircle className="h-3.5 w-3.5 me-1.5 text-amber-500" />
+                <div className="text-xs text-muted italic flex items-center">
+                    <AlertCircle className="h-3.5 w-3.5 me-1.5 text-attention" />
                     {t('agent.noPlanDetected')}
                 </div>
             )}
 
             {/* Workstream Status Summary */}
             {workstreamStatus.size > 1 && (
-                <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <div className="text-xs font-medium mb-1.5 text-gray-800 dark:text-gray-200">
-                        {t('agent.workstreams')}
-                    </div>
+                <div className="mt-3 pt-2 border-t border-border">
+                    <div className="text-xs font-medium mb-1.5 text-foreground">{t('agent.workstreams')}</div>
                     <div className="grid grid-cols-2 gap-1.5">
                         {Array.from(workstreamStatus.entries())
                             // Filter to only show real workstreams (main or those with valid names - not numeric IDs)
@@ -91,16 +89,16 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                             })
                             .map(([id, status]) => {
                                 let StatusIcon = Circle;
-                                let statusColor = 'text-gray-400';
+                                let statusColor = 'text-muted';
                                 let statusText = t('agent.pending');
 
                                 if (status === 'in_progress') {
                                     StatusIcon = Clock;
-                                    statusColor = 'text-blue-500';
+                                    statusColor = 'text-info';
                                     statusText = t('agent.inProgress');
                                 } else if (status === 'completed') {
                                     StatusIcon = CheckCircle;
-                                    statusColor = 'text-green-500';
+                                    statusColor = 'text-success';
                                     statusText = t('agent.completed');
                                 }
 
@@ -112,12 +110,8 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                                         <div className={`me-1.5 ${statusColor}`}>
                                             <StatusIcon className="h-3 w-3" />
                                         </div>
-                                        <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">
-                                            {displayId}
-                                        </span>
-                                        <span className="text-[10px] text-gray-500 dark:text-gray-500 ms-1">
-                                            {statusText}
-                                        </span>
+                                        <span className="text-[10px] font-medium text-muted">{displayId}</span>
+                                        <span className="text-[10px] text-muted ms-1">{statusText}</span>
                                     </div>
                                 );
                             })}

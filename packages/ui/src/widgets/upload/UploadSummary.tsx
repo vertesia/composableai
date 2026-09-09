@@ -77,7 +77,7 @@ export function UploadSummary({ files, className = '', location, collection }: U
                     <UploadResultCategory
                         title={t('upload.successfullyUploaded')}
                         count={successCount}
-                        icon={<CheckCircleIcon className="h-4 w-4 text-green-500" />}
+                        icon={<CheckCircleIcon className="h-4 w-4 text-success" />}
                         items={successFiles.map((f) => f.name)}
                     />
                 )}
@@ -87,7 +87,7 @@ export function UploadSummary({ files, className = '', location, collection }: U
                     <UploadResultCategory
                         title={t('upload.successfullyUpdated')}
                         count={updatedCount}
-                        icon={<CheckCircleIcon className="h-4 w-4 text-blue-500" />}
+                        icon={<CheckCircleIcon className="h-4 w-4 text-info" />}
                         items={updatedFiles.map((f) => f.name)}
                     />
                 )}
@@ -97,7 +97,7 @@ export function UploadSummary({ files, className = '', location, collection }: U
                     <UploadResultCategory
                         title={t('upload.skippedAlreadyExisted')}
                         count={skippedCount}
-                        icon={<AlertCircleIcon className="h-4 w-4 text-amber-500" />}
+                        icon={<AlertCircleIcon className="h-4 w-4 text-attention" />}
                         items={skippedFiles.map((f) => f.name)}
                     />
                 )}
@@ -107,7 +107,7 @@ export function UploadSummary({ files, className = '', location, collection }: U
                     <UploadResultCategory
                         title={t('upload.failedToUpload')}
                         count={failedCount}
-                        icon={<XCircleIcon className="h-4 w-4 text-red-500" />}
+                        icon={<XCircleIcon className="h-4 w-4 text-destructive" />}
                         items={failedFiles.map((f) => f.name)}
                     />
                 )}

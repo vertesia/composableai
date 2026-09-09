@@ -140,8 +140,8 @@ export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleCo
     },
     [AgentMessageType.QUESTION]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
     [AgentMessageType.THOUGHT]: {
-        borderColor: 'border-s-purple-500',
-        iconColor: 'text-purple-600 dark:text-purple-400',
+        borderColor: 'border-s-done',
+        iconColor: 'text-done',
         sender: 'Agent',
         Icon: Bot,
     },
@@ -183,8 +183,8 @@ export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleCo
         Icon: Bot,
     },
     [AgentMessageType.BATCH_PROGRESS]: {
-        borderColor: 'border-s-blue-500',
-        iconColor: 'text-blue-600 dark:text-blue-400',
+        borderColor: 'border-s-info',
+        iconColor: 'text-info',
         sender: 'Batch',
         Icon: Layers,
     },
@@ -412,7 +412,7 @@ function MessageItemComponent({
         // Handle object content (JSON)
         if (typeof content === 'object') {
             return (
-                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700">
+                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-foreground">
                     {JSON.stringify(content, null, 2)}
                 </pre>
             );
@@ -548,7 +548,7 @@ function MessageItemComponent({
         <div className={cn('w-full max-w-full', resolvedStyle.className)}>
             <div
                 className={cn(
-                    'border-s-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden',
+                    'border-s-4 bg-white dark:bg-muted mb-4 w-full max-w-full overflow-hidden',
                     resolvedStyle.borderColor,
                     resolvedStyle.cardClassName,
                 )}
@@ -611,12 +611,7 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div
-                    className={cn(
-                        'px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden',
-                        resolvedStyle.contentClassName,
-                    )}
-                >
+                <div className={cn('px-4 pb-3 bg-white dark:bg-muted overflow-hidden', resolvedStyle.contentClassName)}>
                     {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                     {askUserUx ? (
                         <AskUserWidget

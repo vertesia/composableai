@@ -37,6 +37,7 @@ const PAIRS: Pair[] = [
     { fg: '--foreground', bg: '--background' },
     { fg: '--muted', bg: '--muted-background' },
     { fg: '--primary', bg: '--primary-background' },
+    { fg: '--primary-foreground', bg: '--primary' },
     { fg: '--destructive', bg: '--destructive-background' },
     { fg: '--success', bg: '--success-background' },
     { fg: '--attention', bg: '--attention-background' },

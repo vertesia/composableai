@@ -23,14 +23,14 @@ export interface UploadResultCategoryProps {
  * <UploadResultCategory
  *   title="Successfully Uploaded"
  *   count={3}
- *   icon={<CheckCircleIcon className="h-4 w-4 text-green-500" />}
+ *   icon={<CheckCircleIcon className="h-4 w-4 text-success" />}
  *   items={["document1.pdf", "document2.pdf", "document3.pdf"]}
  * />
  */
 export function UploadResultCategory({
     title,
     count,
-    icon = <CheckCircleIcon className="h-4 w-4 text-green-500" />,
+    icon = <CheckCircleIcon className="h-4 w-4 text-success" />,
     items,
 }: UploadResultCategoryProps) {
     const { t } = useUITranslation();
@@ -38,20 +38,20 @@ export function UploadResultCategory({
     const panelId = useId();
 
     return (
-        <div className="border border-color-border rounded-md overflow-hidden">
+        <div className="border border-border rounded-md overflow-hidden">
             {/* The header IS the toggle: a real <button> with aria-expanded/aria-controls so
                 keyboard users can operate it (Enter / Space) and screen readers announce state. */}
             <button
                 type="button"
                 aria-expanded={isExpanded}
                 aria-controls={panelId}
-                className="w-full flex items-center justify-between p-3 bg-color-muted/10 cursor-pointer text-start bg-transparent border-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full flex items-center justify-between p-3 bg-muted/10 cursor-pointer text-start bg-transparent border-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <span className="flex items-center">
                     <span className="me-2">{icon}</span>
                     <span className="font-medium">{title}</span>
-                    <span className="ms-2 px-2 py-0.5 bg-color-muted/20 rounded-full text-xs">{count}</span>
+                    <span className="ms-2 px-2 py-0.5 bg-muted/20 rounded-full text-xs">{count}</span>
                 </span>
                 <span className="text-muted" aria-hidden="true">
                     <svg
@@ -67,11 +67,11 @@ export function UploadResultCategory({
             </button>
 
             {isExpanded && (
-                <div id={panelId} className="p-3 border-t border-color-border max-h-48 overflow-y-auto">
+                <div id={panelId} className="p-3 border-t border-border max-h-48 overflow-y-auto">
                     {items.length > 0 ? (
                         <ul className="space-y-1">
                             {items.map((item) => (
-                                <li key={item} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
+                                <li key={item} className="text-sm py-1 px-2 rounded hover:bg-muted/10">
                                     {item}
                                 </li>
                             ))}

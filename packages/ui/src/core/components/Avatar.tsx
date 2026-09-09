@@ -25,7 +25,7 @@ interface AvatarProps {
     color?: string; // the color class
     className?: string;
 }
-export function Avatar({ size, src, name, shape = 'circle', color = 'bg-gray-500', className }: AvatarProps) {
+export function Avatar({ size, src, name, shape = 'circle', color = 'bg-muted', className }: AvatarProps) {
     const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-md';
     const sizeClass = getRealSize(size || 'md');
 
@@ -57,7 +57,7 @@ export function Avatar({ size, src, name, shape = 'circle', color = 'bg-gray-500
 
     return (
         <span className={`inline-block ${sizeClass} overflow-hidden ${rounded} ${color}`}>
-            <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="h-full w-full text-foreground" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
         </span>
@@ -67,7 +67,7 @@ interface SvgAvatarProps extends Omit<AvatarProps, 'src' | 'name'> {
     children?: React.ReactNode;
     className?: string;
 }
-export function SvgAvatar({ size, shape = 'circle', color = 'bg-gray-500', className, children }: SvgAvatarProps) {
+export function SvgAvatar({ size, shape = 'circle', color = 'bg-muted', className, children }: SvgAvatarProps) {
     const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-md';
     const sizeClass = getRealSize(size || 'md');
     return (

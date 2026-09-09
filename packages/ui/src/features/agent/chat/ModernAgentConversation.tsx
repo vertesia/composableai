@@ -2970,7 +2970,7 @@ function ModernAgentConversationInner({
                     ref={conversationLayoutRef}
                     className={cn(
                         'flex flex-col lg:flex-row gap-2 w-full h-full relative overflow-hidden',
-                        canUploadFiles && isDragOver && 'ring-2 ring-blue-400 ring-inset',
+                        canUploadFiles && isDragOver && 'ring-2 ring-info ring-inset',
                         className,
                     )}
                     onDragEnter={canUploadFiles ? handleDragEnter : undefined}
@@ -2980,8 +2980,8 @@ function ModernAgentConversationInner({
                 >
                     {/* Drag overlay for full-panel file drop */}
                     {canUploadFiles && isDragOver && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
-                            <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
+                        <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 z-50 pointer-events-none rounded-lg">
+                            <div className="text-info font-medium flex items-center gap-2 text-lg">
                                 <UploadIcon className="size-6" />
                                 Drop files to upload
                             </div>
