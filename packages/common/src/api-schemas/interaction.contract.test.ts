@@ -299,3 +299,9 @@ describe('inference workflow attribution', () => {
         ).toBe(true);
     });
 });
+
+describe('background inference telemetry contract', () => {
+    it('accepts the background call type in the generated runtime contract', () => {
+        expect(validateApiRequest('LlmCallType', 'background').valid).toBe(true);
+    });
+});

@@ -10236,7 +10236,8 @@
       "resume_tools",
       "resume_user",
       "checkpoint",
-      "nested_interaction"
+      "nested_interaction",
+      "background"
     ],
     "description": "Types of LLM calls in a conversation"
   },
@@ -34226,7 +34227,8 @@
               "resume_tools",
               "resume_user",
               "checkpoint",
-              "nested_interaction"
+              "nested_interaction",
+              "background"
             ]
           },
           "attemptNumber": {
