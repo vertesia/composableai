@@ -659,6 +659,69 @@ describe('ModernAgentConversation send handling', () => {
             });
         });
 
+        it('does not re-upload a file forever when the draft run is unavailable', async () => {
+            // The upload effect used to key off the same state its outcome wrote. When the
+            // no-draft path resolved by clearing the file's entry, the next render saw the file as
+            // new again and picked it up — an infinite render loop that hung the composer.
+            const draftRun = {
+                create: vi.fn().mockResolvedValue(undefined),
+                start: vi.fn(),
+            };
+            mockStreamState({
+                messages: [],
+                isCompleted: false,
+                initialHistoryStatus: 'empty',
+                agentRunStatus: 'RUNNING',
+            });
+
+            const { container } = renderWithProviders(
+                <ModernAgentConversation startWorkflow={vi.fn()} draftRun={draftRun} hideHeader initialMessage="" />,
+            );
+            attach(container, draftFile());
+
+            await waitFor(() => expect(draftRun.create).toHaveBeenCalled());
+            // Settle: any re-entrancy would keep calling it.
+            await new Promise((resolve) => setTimeout(resolve, 120));
+            expect(draftRun.create).toHaveBeenCalledTimes(1);
+            expect(mocks.uploadArtifact).not.toHaveBeenCalled();
+        });
+
+        it('keeps polling while a file is still extracting', async () => {
+            // A poll that found nothing changed used to return the same state reference, so an
+            // effect keyed on that state never ran again and progress stopped at the first quiet
+            // tick — chips sat on "Processing" forever while the server had long finished.
+            const draftRun = {
+                create: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
+                start: vi.fn(),
+            };
+            const processing = {
+                id: 'file-1',
+                name: 'report.pdf',
+                content_type: 'application/pdf',
+                artifact_path: 'files/report.pdf',
+                status: 'processing',
+            };
+            mocks.registerFile.mockResolvedValue({ files: [processing], settled: false });
+            mocks.getFiles.mockResolvedValue({ files: [processing], settled: false });
+            mockStreamState({
+                messages: [],
+                isCompleted: false,
+                initialHistoryStatus: 'empty',
+                agentRunStatus: 'RUNNING',
+            });
+
+            const { container } = renderWithProviders(
+                <ModernAgentConversation startWorkflow={vi.fn()} draftRun={draftRun} hideHeader initialMessage="" />,
+            );
+            attach(container, draftFile());
+            await waitFor(() => expect(mocks.registerFile).toHaveBeenCalled());
+
+            // Nothing changes between polls, which is exactly the case that used to stop it.
+            await waitFor(() => expect(mocks.getFiles.mock.calls.length).toBeGreaterThanOrEqual(2), {
+                timeout: 6000,
+            });
+        });
+
         it('falls back to the previous behaviour when the draft run cannot be created', async () => {
             const startWorkflow = vi.fn().mockResolvedValue({ agent_run_id: 'agent-run-9' });
             const draftRun = {

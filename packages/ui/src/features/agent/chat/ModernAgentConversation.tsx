@@ -965,7 +965,15 @@ function StartWorkflowView({
         creating: null,
     });
     const artifactPathsRef = useRef<Set<string>>(new Set());
+    // Keys already handed to the uploader. The upload effect is driven off this rather than off
+    // `stagedUploads`, because an upload that resolves by REMOVING its entry would otherwise look
+    // like a new file to the next render and be picked up again, forever.
+    const handledKeysRef = useRef<Set<string>>(new Set());
     const usingDraftRun = !!draftRun && canStageFiles;
+    // A boolean, so a poll that changes nothing does not change this effect's dependency.
+    const hasUnsettledUploads = Object.values(stagedUploads).some(
+        (upload) => upload.status === 'uploading' || upload.status === 'processing',
+    );
     const visibleStagedFiles = areStagedFilesExpanded ? stagedFiles : stagedFiles.slice(0, COLLAPSED_STAGED_FILE_COUNT);
     const hiddenStagedFileCount = stagedFiles.length - COLLAPSED_STAGED_FILE_COUNT;
 
@@ -1104,11 +1112,10 @@ function StartWorkflowView({
             const key = stagedFileKey(file);
             const runId = await ensureDraftRun();
             if (!runId) {
-                // No draft run: the file stays staged locally and rides the legacy send path.
-                setStagedUploads((prev) => {
-                    const { [key]: _dropped, ...rest } = prev;
-                    return rest;
-                });
+                // No draft run — the consumer opted out, or creation failed against a server that
+                // does not know about them. The file stays staged locally and rides the legacy
+                // send path. Its entry is left in place, marked as it started: removing it would
+                // hand the file straight back to the effect that just picked it up.
                 return;
             }
             const artifactPath = stagedArtifactPath(file, artifactPathsRef.current);
@@ -1140,11 +1147,15 @@ function StartWorkflowView({
     );
 
     // Upload anything newly staged. Keyed on the file rather than an index so a removal mid-upload
-    // cannot make a later file take an earlier one's slot.
+    // cannot make a later file take an earlier one's slot, and gated on a ref rather than on
+    // `stagedUploads` so this cannot re-enter on its own state update.
     useEffect(() => {
         if (!usingDraftRun || stagedFiles.length === 0) return;
-        const pending = stagedFiles.filter((file) => !(stagedFileKey(file) in stagedUploads));
+        const pending = stagedFiles.filter((file) => !handledKeysRef.current.has(stagedFileKey(file)));
         if (pending.length === 0) return;
+        for (const file of pending) {
+            handledKeysRef.current.add(stagedFileKey(file));
+        }
         setStagedUploads((prev) => {
             const next = { ...prev };
             for (const file of pending) {
@@ -1155,18 +1166,14 @@ function StartWorkflowView({
         for (const file of pending) {
             void uploadStagedFile(file);
         }
-    }, [usingDraftRun, stagedFiles, stagedUploads, uploadStagedFile]);
+    }, [usingDraftRun, stagedFiles, uploadStagedFile]);
 
     // Follow extraction to completion. Text extraction is the slow part — minutes for a large
     // scanned PDF — and this is what turns that into progress the user can see while they type.
     useEffect(() => {
-        if (!draftRunId) return;
-        const waiting = Object.values(stagedUploads).some(
-            (upload) => upload.status === 'uploading' || upload.status === 'processing',
-        );
-        if (!waiting) return;
+        if (!draftRunId || !hasUnsettledUploads) return;
         let cancelled = false;
-        const timer = setTimeout(async () => {
+        const poll = async () => {
             try {
                 const result = await client.agents.getFiles(draftRunId);
                 if (cancelled) return;
@@ -1186,12 +1193,16 @@ function StartWorkflowView({
                 // A failed poll is not a failed upload. Leave the chips as they are and try again.
                 console.warn('Could not read staged file progress', err);
             }
-        }, 1500);
+        };
+        // An interval, not a self-rescheduling timeout: a poll that finds nothing changed returns
+        // the same state reference, so an effect keyed on that state would never run again and
+        // progress would stop at the first quiet tick.
+        const timer = setInterval(poll, 1500);
         return () => {
             cancelled = true;
-            clearTimeout(timer);
+            clearInterval(timer);
         };
-    }, [client, draftRunId, stagedUploads]);
+    }, [client, draftRunId, hasUnsettledUploads]);
 
     const removeStagedFile = useCallback(
         (index: number) => {
@@ -1200,6 +1211,7 @@ function StartWorkflowView({
             if (!file) return;
             const key = stagedFileKey(file);
             const upload = stagedUploads[key];
+            handledKeysRef.current.delete(key);
             setStagedUploads((prev) => {
                 const { [key]: _removed, ...rest } = prev;
                 return rest;
@@ -1359,6 +1371,7 @@ function StartWorkflowView({
                 setDraftRunId(null);
                 draftRunRef.current = { id: null, creating: null };
                 artifactPathsRef.current = new Set();
+                handledKeysRef.current = new Set();
             }
 
             // Clear attachments after successful start
