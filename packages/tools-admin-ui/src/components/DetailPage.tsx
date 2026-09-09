@@ -37,7 +37,7 @@ export function DetailPage({ type, title, description, tags, backHref = '/', chi
                     {type}
                 </span>
                 <h1 className="-tracking-wide text-3xl font-bold text-foreground">{title}</h1>
-                {description && <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>}
+                {description && <p className="mt-1 text-sm leading-relaxed text-muted">{description}</p>}
                 {tags && tags.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                         {tags.map((tag) => (

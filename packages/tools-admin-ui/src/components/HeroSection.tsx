@@ -51,14 +51,12 @@ export function HeroSection({ title, version, resources }: HeroSectionProps) {
                             {getInitials(title)}
                         </div>
                         <div>
-                            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                                Tools Server
-                            </p>
+                            <p className="text-xs font-medium uppercase tracking-widest text-muted">Tools Server</p>
                             <h1 className="-tracking-wide text-2xl font-bold text-foreground">{title}</h1>
                         </div>
                     </div>
 
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted">
                         Discover the tools, skills, interactions, and content types exposed by this server.
                     </p>
 
@@ -91,12 +89,12 @@ export function HeroSection({ title, version, resources }: HeroSectionProps) {
                 <aside className="min-w-55 max-w-65 shrink-0">
                     <EndpointPanel label="Base endpoint" path="/api" />
                     <EndpointPanel label="Package endpoint" path="/api/package" />
-                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                    <p className="mt-2 text-xs leading-relaxed text-muted">
                         Use <strong className="text-foreground">POST /api/tools/&lt;collection&gt;</strong> or{' '}
                         <strong className="text-foreground">POST /api/skills/&lt;collection&gt;</strong> to call these
                         from your apps or agents.
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">v{version}</p>
+                    <p className="mt-1 text-xs text-muted">v{version}</p>
                 </aside>
             </div>
         </Card>

@@ -326,9 +326,7 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
             aria-pressed={isSelected}
             className={clsx(
                 'p-1 rounded cursor-pointer transition-colors',
-                isSelected
-                    ? 'text-primary bg-primary/10'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                isSelected ? 'text-primary bg-primary/10' : 'text-muted hover:text-foreground hover:bg-muted',
             )}
             onClick={onClick}
         >
@@ -355,25 +353,21 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                 variant="unstyled"
                 className={clsx(
                     'p-1 rounded cursor-pointer transition-colors',
-                    canZoomOut
-                        ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        : 'text-muted-foreground/40 cursor-not-allowed',
+                    canZoomOut ? 'text-muted hover:text-foreground hover:bg-muted' : 'text-muted/40 cursor-not-allowed',
                 )}
                 onClick={onZoomOut}
                 disabled={!canZoomOut}
             >
                 <Minus className="size-4" />
             </Button>
-            <span className="text-xs text-muted-foreground min-w-[32px] text-center">{zoom}%</span>
+            <span className="text-xs text-muted min-w-[32px] text-center">{zoom}%</span>
             <Button
                 title={t('pdf.zoomIn')}
                 tooltipPlacement="bottom"
                 variant="unstyled"
                 className={clsx(
                     'p-1 rounded cursor-pointer transition-colors',
-                    canZoomIn
-                        ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        : 'text-muted-foreground/40 cursor-not-allowed',
+                    canZoomIn ? 'text-muted hover:text-foreground hover:bg-muted' : 'text-muted/40 cursor-not-allowed',
                 )}
                 onClick={onZoomIn}
                 disabled={!canZoomIn}
@@ -386,9 +380,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                 variant="unstyled"
                 className={clsx(
                     'p-1 rounded cursor-pointer transition-colors',
-                    zoom !== DEFAULT_ZOOM
-                        ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        : 'text-muted-foreground/40',
+                    zoom !== DEFAULT_ZOOM ? 'text-muted hover:text-foreground hover:bg-muted' : 'text-muted/40',
                 )}
                 onClick={onFitToView}
             >
@@ -431,10 +423,10 @@ function PageThumbnail({ pageNumber, currentPage, aspectRatio, zoom, url, onSele
                 {url ? (
                     <img src={url} alt={`Page ${pageNumber}`} className="w-full" />
                 ) : (
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <Loader2 className="w-6 h-6 animate-spin text-muted" />
                 )}
             </Button>
-            <Center className="text-sm text-muted-foreground pt-1 font-semibold">{pageNumber}</Center>
+            <Center className="text-sm text-muted pt-1 font-semibold">{pageNumber}</Center>
         </div>
     );
 }
@@ -479,7 +471,7 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
     };
 
     return (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1 text-xs text-muted">
             <span>{t('pdf.page')}</span>
             <input
                 ref={inputRef}

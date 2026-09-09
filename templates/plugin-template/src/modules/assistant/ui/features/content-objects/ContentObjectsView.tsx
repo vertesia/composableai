@@ -379,9 +379,7 @@ export function ContentObjectsView() {
                         </div>
                     )}
                     <div ref={loadMoreRef} className="h-4 w-full" />
-                    {showEmpty && (
-                        <div className="text-center text-sm text-muted-foreground py-8">{t('objects.empty')}</div>
-                    )}
+                    {showEmpty && <div className="text-center text-sm text-muted py-8">{t('objects.empty')}</div>}
                 </div>
             </div>
         </div>

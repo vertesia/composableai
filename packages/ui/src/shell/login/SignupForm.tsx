@@ -126,7 +126,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
                 <>
                     <FormItem label={t('signup.companySize')}>
                         <SelectBox
-                            className="w-full border border-accent bg-muted"
+                            className="w-full border border-muted bg-muted"
                             value={companySize}
                             options={companySizeOptions}
                             onChange={setCompanySize}
@@ -144,7 +144,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             )}
             <FormItem label={t('signup.projectMaturity')}>
                 <SelectBox
-                    className="w-full border border-accent bg-muted"
+                    className="w-full border border-muted bg-muted"
                     options={projectMaturityOptions}
                     value={projectMaturityOptions.find((option) => option.id === projectMaturity)}
                     optionLabel={(option) => option?.label}

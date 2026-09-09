@@ -38,7 +38,7 @@ export function SkillDetail() {
     if (error) return <div className="p-6 text-destructive">Failed to load skill &ldquo;{name}&rdquo;.</div>;
     if (!skill)
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );

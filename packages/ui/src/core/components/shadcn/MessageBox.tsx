@@ -61,7 +61,7 @@ export function MessageBox({ icon, status, title, children, className }: Message
             <div className="flex">
                 <div className="shrink-0">{icon ?? defaultIcon}</div>
                 <div className="w-full ms-2 px-1">
-                    {title && <h3 className={`text-md font-medium mb-2 ${titleColor}`}>{title}</h3>}
+                    {title && <h3 className={`text-base font-medium mb-2 ${titleColor}`}>{title}</h3>}
                     <div className={`text-sm ${textColor} break-words`}>{children}</div>
                 </div>
             </div>

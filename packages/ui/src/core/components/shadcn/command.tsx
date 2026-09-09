@@ -27,7 +27,7 @@ const CommandDialog = ({ children, ...props }: DialogProps) => {
     return (
         <Dialog {...props}>
             <DialogContent className="shadow-lg p-0 overflow-hidden">
-                <Command className="[&_[cmdk-group]]:px-2 [&_[cmdk-item]]:px-2 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-item]_svg]:w-5 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground">
+                <Command className="[&_[cmdk-group]]:px-2 [&_[cmdk-item]]:px-2 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-item]_svg]:w-5 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted">
                     {children}
                 </Command>
             </DialogContent>
@@ -46,7 +46,7 @@ const CommandInput: React.ForwardRefExoticComponent<
                 ref={ref}
                 className={cn(
                     'focus:ring-0',
-                    'border-0 flex h-8 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                    'border-0 flex h-8 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50',
                     className,
                 )}
                 {...props}
@@ -86,7 +86,7 @@ const CommandGroup: React.ForwardRefExoticComponent<
             ref={ref}
             className={cn(
                 'overflow-y-auto overflow-x-hidden p-1 text-foreground',
-                '[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground',
+                '[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted',
                 className,
             )}
             {...props}
@@ -115,7 +115,7 @@ const CommandItem: React.ForwardRefExoticComponent<
         <CommandPrimitive.Item
             ref={ref}
             className={cn(
-                "hover:bg-muted cursor-pointer relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+                "hover:bg-muted cursor-pointer relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-muted data-[selected=true]:text-muted data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
                 className,
             )}
             {...props}
@@ -126,7 +126,7 @@ const CommandItem: React.ForwardRefExoticComponent<
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
 const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
-    return <span className={cn('ms-auto text-xs tracking-widest text-muted-foreground', className)} {...props} />;
+    return <span className={cn('ms-auto text-xs tracking-widest text-muted', className)} {...props} />;
 };
 CommandShortcut.displayName = 'CommandShortcut';
 

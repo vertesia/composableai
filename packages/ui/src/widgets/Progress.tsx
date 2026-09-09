@@ -3,8 +3,8 @@ interface ProgressProps {
 }
 export function Progress({ percent }: ProgressProps) {
     return (
-        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-            <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${percent}%` }}></div>
+        <div className="w-full bg-muted rounded-full h-2.5">
+            <div className="bg-primary h-2.5 rounded-full" style={{ width: `${percent}%` }}></div>
         </div>
     );
 }
