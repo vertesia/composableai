@@ -31,7 +31,7 @@ import {
     ToolUseSchema,
     VideoResultSchema,
 } from '@llumiverse/common/schemas';
-import { z } from 'zod';
+import type { z } from 'zod';
 import type {
     CreateEventSubscriptionPayload,
     EventDeliveryTarget,
@@ -374,6 +374,7 @@ import {
     EmbeddingsStatusResponseSchema,
     ProjectConfigurationEmbeddingEnablePayloadSchema,
 } from './embeddings.js';
+import { emitJsonSchema } from './emit-json-schema.js';
 import {
     EnableEnvironmentModelPayloadSchema,
     ExecutionEnvironmentArraySchema,
@@ -3386,12 +3387,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
  * not be used to express contract rules — they would be invisible to both the spec and AJV.
  */
 function emitRawSchemas(): Record<string, unknown> {
-    return Object.fromEntries(
-        Object.entries(API_SCHEMAS).map(([name, schema]) => [
-            name,
-            z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }),
-        ]),
-    );
+    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitJsonSchema(schema)]));
 }
 
 /**
