@@ -34033,6 +34033,10 @@
         "type": "string",
         "description": "Companion markdown of the extracted text, once there is any."
       },
+      "started_at": {
+        "type": "number",
+        "description": "When the file was registered on the run. Required because a progress snapshot of these files is posted to the run timeline, which validates it against ConversationFile."
+      },
       "status": {
         "$ref": "#/components/schemas/FileProcessingStatus",
         "description": "Lifecycle of this attachment. Shares the vocabulary of a file attached mid-conversation, so a composer renders one shape either side of the run starting."
@@ -34051,6 +34055,7 @@
       "name",
       "content_type",
       "artifact_path",
+      "started_at",
       "status"
     ],
     "additionalProperties": false,

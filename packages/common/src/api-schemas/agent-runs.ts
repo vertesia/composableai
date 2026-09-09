@@ -255,6 +255,10 @@ export const AgentRunFileSchema = z
             .string()
             .meta({ description: 'Companion markdown of the extracted text, once there is any.' })
             .optional(),
+        started_at: z.number().meta({
+            description:
+                'When the file was registered on the run. Required because a progress snapshot of these files is posted to the run timeline, which validates it against ConversationFile.',
+        }),
         status: FileProcessingStatusSchema.meta({
             description:
                 'Lifecycle of this attachment. Shares the vocabulary of a file attached mid-conversation, so a composer renders one shape either side of the run starting.',
