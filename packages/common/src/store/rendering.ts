@@ -43,6 +43,15 @@ export function getRenditionsPath(contentEtag: string, params: ImageRenditionPar
     return `renditions/${contentEtag}/${params.max_hw}`;
 }
 
+export function getRenditionPagePath(
+    contentEtag: string,
+    params: ImageRenditionParams,
+    pageNumber: number | string = 0,
+) {
+    const page = typeof pageNumber === 'number' ? String(pageNumber).padStart(4, '0') : pageNumber;
+    return `${getRenditionsPath(contentEtag, params)}/${page}.${params.format}`;
+}
+
 /** Metadata for PDF rendering, inferred from the published API schema. */
 export type PdfRenderingMetadata = z.infer<typeof PdfRenderingMetadataSchema>;
 

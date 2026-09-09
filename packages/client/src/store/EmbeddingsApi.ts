@@ -1,8 +1,16 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    EmbeddingBatchApplyRequest,
+    EmbeddingBatchApplyResponse,
+    EmbeddingBatchPrepareRequest,
+    EmbeddingBatchPrepareResponse,
+    EmbeddingBatchRenditionPageRequest,
+    EmbeddingBatchRenditionPageResponse,
+    EmbeddingBatchUpdateRequest,
     EmbeddingsStatusResponse,
     GenericCommandResponse,
     ProjectConfigurationEmbeddingEnablePayload,
+    RecalculateEmbeddingsQuery,
     SupportedEmbeddingTypes,
 } from '@vertesia/common';
 
@@ -33,7 +41,44 @@ export class EmbeddingsApi extends ApiTopic {
         return this.post(`${type}/disable`);
     }
 
-    async recalculate(type: SupportedEmbeddingTypes): Promise<GenericCommandResponse> {
-        return this.post(`${type}/recalculate`);
+    async recalculate(
+        type: SupportedEmbeddingTypes,
+        query: RecalculateEmbeddingsQuery = {},
+    ): Promise<GenericCommandResponse> {
+        return this.post(`${type}/recalculate`, Object.keys(query).length ? { query } : undefined);
+    }
+
+    async prepareBatch(
+        payload: EmbeddingBatchPrepareRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<EmbeddingBatchPrepareResponse> {
+        return this.post('/batch/prepare', { payload, timeoutMs });
+    }
+
+    async updateBatch(payload: EmbeddingBatchUpdateRequest): Promise<GenericCommandResponse> {
+        return this.post('/batch/update', { payload });
+    }
+
+    async prepareBatchRenditionPage(
+        payload: EmbeddingBatchRenditionPageRequest,
+    ): Promise<EmbeddingBatchRenditionPageResponse> {
+        return this.post('/batch/renditions/prepare', { payload });
+    }
+
+    async pollBatchRenditionPage(
+        payload: EmbeddingBatchRenditionPageRequest,
+    ): Promise<EmbeddingBatchRenditionPageResponse> {
+        return this.post('/batch/renditions/status', { payload });
+    }
+
+    async cancelBatchRenditionPage(payload: EmbeddingBatchRenditionPageRequest): Promise<GenericCommandResponse> {
+        return this.post('/batch/renditions/cancel', { payload });
+    }
+
+    async applyBatch(
+        payload: EmbeddingBatchApplyRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<EmbeddingBatchApplyResponse> {
+        return this.post('/batch/apply', { payload, timeoutMs });
     }
 }
