@@ -2559,6 +2559,10 @@ export const ComputeRunFacetsResponseSchema = z
 export const RunClonePayloadSchema = z
     .strictObject({
         source_run_id: z.string(),
-        workflow: ExecutionRunWorkflowSchema.pick({ run_id: true, workflow_id: true, agent_run_id: true }),
+        workflow: z.strictObject({
+            run_id: z.string(),
+            workflow_id: z.string(),
+            agent_run_id: ExecutionRunWorkflowSchema.shape.agent_run_id,
+        }),
     })
     .meta({ id: 'RunClonePayload' });

@@ -14,6 +14,7 @@ import {
     InteractionUpdatePayloadSchema,
     PromptSegmentDefSchema,
     ResolvedCatalogInteractionSchema,
+    RunClonePayloadSchema,
 } from './interaction.js';
 import { validateApiRequest } from './registry.js';
 
@@ -284,6 +285,11 @@ describe('user message payload contract', () => {
 });
 
 describe('inference workflow attribution', () => {
+    it('keeps required clone workflow identifiers free of execution deprecation metadata', () => {
+        const workflow = RunClonePayloadSchema.shape.workflow.shape;
+        expect(workflow.run_id.meta()?.deprecated).toBeUndefined();
+        expect(workflow.workflow_id.meta()?.deprecated).toBeUndefined();
+    });
     it('accepts root agent attribution on execution and clone requests', () => {
         const workflow = { run_id: 'child-run', workflow_id: 'workstream:parent:child', agent_run_id: 'root-agent' };
         expect(validateApiRequest('ExecutionRunWorkflow', workflow).valid).toBe(true);
