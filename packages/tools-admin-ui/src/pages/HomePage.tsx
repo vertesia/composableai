@@ -70,12 +70,12 @@ export function HomePage() {
                               <div>
                                   <h2 className="text-xl font-semibold text-foreground">
                                       {section.title}
-                                      <span className="ml-2 text-sm font-normal text-muted-foreground">
+                                      <span className="ml-2 text-sm font-normal text-muted">
                                           ({sectionCollections.length}
                                           {sectionCollections.length === 1 ? ' collection' : ' collections'})
                                       </span>
                                   </h2>
-                                  <p className="mb-4 text-sm text-muted-foreground">{section.subtitle}</p>
+                                  <p className="mb-4 text-sm text-muted">{section.subtitle}</p>
                               </div>
                               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                                   {sectionCollections.map((col) => (
@@ -92,13 +92,11 @@ export function HomePage() {
                                               mcp
                                           </span>
                                           <div className="font-semibold text-card-foreground">{r.title}</div>
-                                          <div className="mt-1 text-sm text-muted-foreground">
+                                          <div className="mt-1 text-sm text-muted">
                                               {r.description || 'No description'}
                                           </div>
                                           {r.url && (
-                                              <div className="mt-2 truncate font-mono text-xs text-muted-foreground">
-                                                  {r.url}
-                                              </div>
+                                              <div className="mt-2 truncate font-mono text-xs text-muted">{r.url}</div>
                                           )}
                                       </div>
                                   ))}

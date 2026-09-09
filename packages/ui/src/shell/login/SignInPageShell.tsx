@@ -32,7 +32,7 @@ export function SignInPageShell({ lightLogo, darkLogo, notice, children }: SignI
 
                 {notice}
 
-                <div className="flex items-center gap-5 mt-10 text-xs text-muted-foreground">
+                <div className="flex items-center gap-5 mt-10 text-xs text-muted">
                     <a href="https://vertesiahq.com/privacy" className="hover:text-foreground transition">
                         {t('auth.privacyPolicy')}
                     </a>

@@ -1,7 +1,7 @@
 /**
- * Agent Schedule Types
+ * Schedule Types
  *
- * Defines types for scheduling agents to run on a recurring basis using cron expressions.
+ * Defines types for scheduling agents or processes to run on a recurring basis using cron expressions.
  * Schedules are stored in MongoDB with execution handled by Temporal.
  */
 
@@ -32,11 +32,17 @@ export interface AgentSchedule {
     /** Account ID this schedule belongs to */
     account: string;
 
+    /** The kind of workflow started by the schedule. Older agent schedules may omit this field. */
+    target?: 'agent' | 'process';
+
     /** Interaction ID or endpoint name to execute (e.g., "MyAgent" or ObjectId) */
-    interaction: string;
+    interaction?: string;
 
     /** Cached interaction name for display purposes */
     interaction_name?: string;
+
+    /** Process definition ID to execute */
+    process?: string;
 
     /**
      * Cron expression defining when to run.
@@ -82,10 +88,7 @@ export interface AgentSchedule {
     next_run_at?: Date;
 }
 
-/**
- * Payload for creating a new schedule.
- */
-export interface CreateSchedulePayload {
+interface CreateSchedulePayloadBase {
     run_as: ScheduleRunAs;
     delegation_expires_at?: string | null;
     request_id?: string;
@@ -94,9 +97,6 @@ export interface CreateSchedulePayload {
 
     /** Optional description of what the schedule does */
     description?: string;
-
-    /** Interaction ID or endpoint name to execute */
-    interaction: string;
 
     /**
      * Cron expression defining when to run.
@@ -107,18 +107,44 @@ export interface CreateSchedulePayload {
     /** Timezone for the cron expression (defaults to "UTC") */
     timezone?: string;
 
-    /** Variables to pass to the agent workflow */
-    vars?: Record<string, unknown>;
-
     /** Optional task queue override */
     task_queue?: string;
 
     /** Whether the schedule should be enabled immediately (defaults to true) */
     enabled?: boolean;
+}
+
+/** Payload for creating an agent schedule. */
+export interface CreateAgentSchedulePayload extends CreateSchedulePayloadBase {
+    /** Agent schedules are the default for backwards compatibility. */
+    target?: 'agent';
+
+    /** Interaction ID or endpoint name to execute */
+    interaction: string;
+
+    /** Variables to pass to the agent workflow */
+    vars?: Record<string, unknown>;
 
     /** Visibility of the conversation (defaults to "project") */
     visibility?: 'project' | 'private';
 }
+
+/** Payload for creating a process schedule. */
+export interface CreateProcessSchedulePayload extends CreateSchedulePayloadBase {
+    target: 'process';
+
+    /** Process definition ID to execute */
+    process: string;
+
+    /** Initial process context merged with the definition's initial context */
+    context?: Record<string, unknown>;
+
+    /** Process execution mode (defaults to "programmatic") */
+    run_type?: 'programmatic' | 'supervised';
+}
+
+/** Payload for creating a new schedule. */
+export type CreateSchedulePayload = CreateAgentSchedulePayload | CreateProcessSchedulePayload;
 
 /**
  * Payload for updating an existing schedule.
@@ -160,6 +186,8 @@ export type ScheduleListItem = Pick<
     | 'id'
     | 'name'
     | 'description'
+    | 'target'
+    | 'process'
     | 'interaction'
     | 'interaction_name'
     | 'cron_expression'

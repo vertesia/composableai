@@ -59,14 +59,10 @@ export function SkillCollection() {
     }, [widgetsData, collection]);
 
     if (error)
-        return (
-            <div className="p-6 text-destructive-foreground">
-                Failed to load skill collection &ldquo;{collection}&rdquo;.
-            </div>
-        );
+        return <div className="p-6 text-destructive">Failed to load skill collection &ldquo;{collection}&rdquo;.</div>;
     if (!data)
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );
@@ -111,7 +107,7 @@ export function SkillCollection() {
                                         skill
                                     </span>
                                     <div className="font-semibold text-card-foreground">{displayName}</div>
-                                    <div className="mt-1 text-sm text-muted-foreground">
+                                    <div className="mt-1 text-sm text-muted">
                                         {skill.description || 'No description'}
                                     </div>
                                     {skill.tools && skill.tools.length > 0 && (

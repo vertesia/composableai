@@ -149,7 +149,7 @@ function canUsePdfRendition(context: UniversalDocumentViewerContext): boolean {
 
 function CodeViewer({ content, extension }: { content?: string; extension: string }) {
     return (
-        <pre className="h-full overflow-auto rounded-md bg-muted-foreground/10 p-3 text-xs leading-5">
+        <pre className="h-full overflow-auto rounded-md bg-muted/10 p-3 text-xs leading-5">
             <code className={extension ? `language-${extension}` : undefined}>{content || ''}</code>
         </pre>
     );
@@ -157,7 +157,7 @@ function CodeViewer({ content, extension }: { content?: string; extension: strin
 
 function EmptyState({ message }: { message: string }) {
     return (
-        <div className="flex h-full min-h-64 flex-col items-center justify-center gap-2 text-muted-foreground">
+        <div className="flex h-full min-h-64 flex-col items-center justify-center gap-2 text-muted">
             <FileIcon className="size-8" />
             <span className="text-sm">{message}</span>
         </div>
@@ -327,7 +327,7 @@ function TsxRenderDetails({ metadata }: { metadata?: TsxRenderMetadata }) {
                 {metadata.status && <Badge variant="secondary">HTTP {metadata.status}</Badge>}
                 {issueCount > 0 && <Badge variant="attention">{issueCount} browser issue(s)</Badge>}
             </div>
-            <div className="grid gap-1 text-muted-foreground sm:grid-cols-2">
+            <div className="grid gap-1 text-muted sm:grid-cols-2">
                 {metadata.viewport?.width && metadata.viewport.height && (
                     <div>
                         Viewport {metadata.viewport.width} x {metadata.viewport.height}
@@ -337,7 +337,7 @@ function TsxRenderDetails({ metadata }: { metadata?: TsxRenderMetadata }) {
                 {metadata.rendered_at && <div>Rendered {new Date(metadata.rendered_at).toLocaleString()}</div>}
                 {metadata.title && <div className="truncate">Title {metadata.title}</div>}
             </div>
-            {typeof metadata.error === 'string' && <div className="text-destructive-foreground">{metadata.error}</div>}
+            {typeof metadata.error === 'string' && <div className="text-destructive">{metadata.error}</div>}
         </div>
     );
 }
@@ -421,7 +421,7 @@ function TsxSandboxRenderPreview({ context }: { context: UniversalDocumentViewer
     return (
         <div className="flex h-full min-h-0 flex-col">
             <div className="flex min-h-10 flex-wrap items-center gap-2 border-b px-3 py-2 text-sm">
-                <ImageIcon className="size-4 text-info-foreground" />
+                <ImageIcon className="size-4 text-info" />
                 <span className="font-medium">Sandbox render</span>
                 {state.isLoading ? (
                     <Badge variant="secondary">loading</Badge>
@@ -431,20 +431,18 @@ function TsxSandboxRenderPreview({ context }: { context: UniversalDocumentViewer
                     <Badge variant="attention">source only</Badge>
                 )}
                 {state.metadata?.rendered_at && (
-                    <span className="text-xs text-muted-foreground">
-                        {new Date(state.metadata.rendered_at).toLocaleString()}
-                    </span>
+                    <span className="text-xs text-muted">{new Date(state.metadata.rendered_at).toLocaleString()}</span>
                 )}
             </div>
 
             {state.isLoading ? (
-                <div className="flex h-full min-h-64 items-center justify-center gap-2 text-muted-foreground">
+                <div className="flex h-full min-h-64 items-center justify-center gap-2 text-muted">
                     <Loader2Icon className="size-5 animate-spin" />
                     <span className="text-sm">Loading sandbox render...</span>
                 </div>
             ) : state.imageUrl ? (
                 <div className="grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(24rem,0.7fr)]">
-                    <div className="flex min-h-0 items-center justify-center overflow-auto bg-muted-foreground/10 p-3">
+                    <div className="flex min-h-0 items-center justify-center overflow-auto bg-muted/10 p-3">
                         <img
                             src={state.imageUrl}
                             alt={`${context.fileName} sandbox render`}
@@ -460,7 +458,7 @@ function TsxSandboxRenderPreview({ context }: { context: UniversalDocumentViewer
                 </div>
             ) : (
                 <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)]">
-                    <div className="border-b px-3 py-2 text-xs text-muted-foreground">
+                    <div className="border-b px-3 py-2 text-xs text-muted">
                         No sandbox-rendered PNG was found for this TSX artifact. Showing the source without executing it
                         in Studio.
                         {state.previewError && <span className="ms-1">Preview lookup: {state.previewError}</span>}
@@ -665,14 +663,14 @@ export function UniversalDocumentViewer({
     let body: ReactNode;
     if (isLoading) {
         body = (
-            <div className="flex h-full min-h-64 items-center justify-center gap-2 text-muted-foreground">
+            <div className="flex h-full min-h-64 items-center justify-center gap-2 text-muted">
                 <Loader2Icon className="size-5 animate-spin" />
                 <span className="text-sm">Loading preview...</span>
             </div>
         );
     } else if (error) {
         body = (
-            <div className="flex h-full min-h-64 flex-col items-center justify-center gap-2 text-destructive-foreground">
+            <div className="flex h-full min-h-64 flex-col items-center justify-center gap-2 text-destructive">
                 <AlertCircleIcon className="size-7" />
                 <span className="max-w-xl text-center text-sm">{error}</span>
                 <Button variant="outline" size="sm" onClick={context.reload}>
@@ -686,7 +684,7 @@ export function UniversalDocumentViewer({
         body = <SimplePdfViewer url={context.url} className="h-full" />;
     } else if (isImage(context) && context.url) {
         body = (
-            <div className="flex h-full min-h-0 items-center justify-center overflow-auto bg-muted-foreground/10 p-3">
+            <div className="flex h-full min-h-0 items-center justify-center overflow-auto bg-muted/10 p-3">
                 <img src={context.url} alt={fileName} className="max-h-full max-w-full rounded-md object-contain" />
             </div>
         );
@@ -732,7 +730,7 @@ export function UniversalDocumentViewer({
                             {fileName}
                         </div>
                         {context.contentType && (
-                            <div className="truncate text-xs text-muted-foreground">{context.contentType}</div>
+                            <div className="truncate text-xs text-muted">{context.contentType}</div>
                         )}
                     </div>
                     {onDownload && (

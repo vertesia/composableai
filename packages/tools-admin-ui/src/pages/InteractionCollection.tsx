@@ -20,14 +20,12 @@ export function InteractionCollection() {
     );
 
     if (error) {
-        return (
-            <div className="p-6 text-destructive-foreground">Failed to load collection &ldquo;{collection}&rdquo;.</div>
-        );
+        return <div className="p-6 text-destructive">Failed to load collection &ldquo;{collection}&rdquo;.</div>;
     }
 
     if (!interactions) {
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );
@@ -54,9 +52,7 @@ export function InteractionCollection() {
                                     interaction
                                 </span>
                                 <div className="font-semibold text-card-foreground">{inter.title || inter.name}</div>
-                                <div className="mt-1 text-sm text-muted-foreground">
-                                    {inter.description || 'No description'}
-                                </div>
+                                <div className="mt-1 text-sm text-muted">{inter.description || 'No description'}</div>
                                 {inter.tags && inter.tags.length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-1">
                                         {inter.tags.map((tag) => (

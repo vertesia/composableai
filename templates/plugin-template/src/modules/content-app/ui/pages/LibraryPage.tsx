@@ -44,7 +44,7 @@ export function LibraryPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h1 className="text-xl font-semibold">Guide Library</h1>
-                        <p className="text-sm text-muted-foreground">Store objects typed as {GUIDE_TYPE}</p>
+                        <p className="text-sm text-muted">Store objects typed as {GUIDE_TYPE}</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => void loadGuides()}>
                         <RefreshCw className="me-2 size-4" />
@@ -52,7 +52,7 @@ export function LibraryPage() {
                     </Button>
                 </div>
                 <div className="mt-4 flex max-w-xl items-center gap-2">
-                    <Search className="size-4 text-muted-foreground" />
+                    <Search className="size-4 text-muted" />
                     <Input
                         value={query}
                         onChange={setQuery}
@@ -64,9 +64,7 @@ export function LibraryPage() {
 
             <section className="min-h-0 flex-1 overflow-auto p-4">
                 {error && (
-                    <div className="rounded-md border border-destructive-foreground p-3 text-sm text-destructive-foreground">
-                        {error}
-                    </div>
+                    <div className="rounded-md border border-destructive p-3 text-sm text-destructive">{error}</div>
                 )}
                 {isLoading ? (
                     <div className="flex h-40 items-center justify-center">
@@ -75,7 +73,7 @@ export function LibraryPage() {
                 ) : (
                     <div className="overflow-hidden rounded-md border border-border">
                         <table className="w-full table-fixed text-left text-sm">
-                            <thead className="bg-muted-foreground/30 text-xs uppercase text-muted-foreground">
+                            <thead className="bg-muted/30 text-xs uppercase text-muted">
                                 <tr>
                                     <th className="w-[32%] px-3 py-2 font-medium">Title</th>
                                     <th className="w-[18%] px-3 py-2 font-medium">Status</th>
@@ -88,12 +86,12 @@ export function LibraryPage() {
                                 {guides.map((guide) => (
                                     <tr
                                         key={guide.id}
-                                        className="cursor-pointer hover:bg-muted-foreground/20"
+                                        className="cursor-pointer hover:bg-muted/20"
                                         onClick={() => navigate(`/content/library/${guide.id}`)}
                                     >
                                         <td className="px-3 py-3">
                                             <div className="truncate font-medium">{guide.properties.title}</div>
-                                            <div className="truncate text-xs text-muted-foreground">
+                                            <div className="truncate text-xs text-muted">
                                                 {guide.properties.summary}
                                             </div>
                                         </td>
@@ -113,7 +111,7 @@ export function LibraryPage() {
                                 ))}
                                 {guides.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                                        <td colSpan={5} className="px-3 py-8 text-center text-muted">
                                             No guides found. Run the content app setup script from the project
                                             workspace.
                                         </td>

@@ -127,13 +127,13 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
 
     return (
         <div
-            className={`fixed inset-y-0 end-0 w-2/5 dark:bg-slate-900 shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${panelTranslateClass}`}
+            className={`fixed inset-y-0 end-0 w-2/5 dark:bg-muted shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${panelTranslateClass}`}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center justify-between px-4 py-3 border-b dark:border-border bg-gradient-to-r from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
                 <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-indigo-600 me-2" />
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 truncate">
+                    <FileText className="h-5 w-5 text-primary me-2" />
+                    <h2 className="text-lg font-semibold text-foreground truncate">
                         {isLoading ? t('store.loadingDocument') : object?.name || t('store.documentPreview')}
                     </h2>
                 </div>
@@ -142,7 +142,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                         variant="ghost"
                         size="sm"
                         onClick={handleViewFullDocument}
-                        className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800"
+                        className="flex items-center gap-1 text-primary hover:text-primary"
                     >
                         <Maximize2 className="h-4 w-4" />
                         <span>{t('store.fullView')}</span>
@@ -151,7 +151,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                         variant="ghost"
                         size="sm"
                         onClick={onClose}
-                        className="flex items-center text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
+                        className="flex items-center text-muted hover:text-foreground dark:text-foreground"
                     >
                         <X className="h-5 w-5" />
                     </Button>
@@ -162,8 +162,8 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
             {isLoading ? (
                 <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                        <Spinner size="lg" className="text-indigo-600 dark:text-indigo-400 mb-2" />
-                        <p className="text-gray-600 dark:text-gray-400">{t('store.loadingDocument')}</p>
+                        <Spinner size="lg" className="text-primary mb-2" />
+                        <p className="text-muted">{t('store.loadingDocument')}</p>
                     </div>
                 </div>
             ) : (
@@ -175,8 +175,8 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 variant="unstyled"
                                 className={`py-2 px-4 font-medium border-b-2 ${
                                     currentTab === 'preview'
-                                        ? 'border-indigo-600 text-indigo-700 dark:text-indigo-300'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted hover:text-foreground'
                                 }`}
                                 onClick={() => setCurrentTab('preview')}
                             >
@@ -189,8 +189,8 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 variant="unstyled"
                                 className={`py-2 px-4 font-medium border-b-2 ${
                                     currentTab === 'properties'
-                                        ? 'border-indigo-600 text-indigo-700 dark:text-indigo-300'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted hover:text-foreground'
                                 }`}
                                 onClick={() => setCurrentTab('properties')}
                             >
@@ -209,16 +209,16 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 {/* Text/Markdown Content */}
                                 {loadingText ? (
                                     <div className="flex items-center justify-center h-40">
-                                        <Spinner size="md" className="text-indigo-600 dark:text-indigo-400" />
+                                        <Spinner size="md" className="text-primary" />
                                     </div>
                                 ) : text ? (
-                                    <div className="shadow rounded-md p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                    <div className="shadow rounded-md p-4 border border-border bg-white dark:bg-muted">
                                         {seemsMarkdown ? (
-                                            <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-gray-800 prose-pre:my-2 prose-headings:text-indigo-700 dark:prose-invert dark:prose-headings:text-indigo-300">
+                                            <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-muted prose-pre:my-2 prose-headings:text-primary dark:prose-invert">
                                                 <MarkdownRenderer>{text}</MarkdownRenderer>
                                             </div>
                                         ) : (
-                                            <pre className="text-wrap whitespace-pre-wrap dark:text-gray-200">
+                                            <pre className="text-wrap whitespace-pre-wrap dark:text-foreground">
                                                 {text}
                                             </pre>
                                         )}
@@ -229,7 +229,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 {isImage && (
                                     <div className="mt-4">
                                         {imageUrl ? (
-                                            <div className="border border-gray-200 dark:border-gray-700 rounded-md p-2 bg-white dark:bg-gray-800">
+                                            <div className="border border-border rounded-md p-2 bg-white dark:bg-muted">
                                                 <img
                                                     src={imageUrl}
                                                     alt={object?.name}
@@ -238,7 +238,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-center h-40">
-                                                <Spinner size="md" className="text-indigo-600 dark:text-indigo-400" />
+                                                <Spinner size="md" className="text-primary" />
                                             </div>
                                         )}
                                     </div>
@@ -246,14 +246,12 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
 
                                 {/* PDF Content Notice */}
                                 {isPdf && (
-                                    <div className="flex flex-col items-center justify-center h-64 border border-gray-200 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
-                                        <FileText className="h-16 w-16 text-indigo-300 dark:text-indigo-400 mb-4" />
-                                        <p className="text-gray-600 dark:text-gray-400 text-center mb-4">
-                                            {t('store.pdfPreviewFullView')}
-                                        </p>
+                                    <div className="flex flex-col items-center justify-center h-64 border border-border rounded-md p-4 bg-muted">
+                                        <FileText className="h-16 w-16 text-primary mb-4" />
+                                        <p className="text-muted text-center mb-4">{t('store.pdfPreviewFullView')}</p>
                                         <Button
                                             onClick={handleViewFullDocument}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                            className="bg-primary hover:bg-primary text-white"
                                         >
                                             {t('store.openFullDocumentView')}
                                         </Button>
@@ -262,11 +260,9 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
 
                                 {/* No Content Notice */}
                                 {!isImage && !text && !isPdf && !loadingText && (
-                                    <div className="flex flex-col items-center justify-center h-64 border border-gray-200 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
-                                        <FileText className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
-                                        <p className="text-gray-600 dark:text-gray-400 text-center">
-                                            {t('store.noPreviewAvailable')}
-                                        </p>
+                                    <div className="flex flex-col items-center justify-center h-64 border border-border rounded-md p-4 bg-muted">
+                                        <FileText className="h-16 w-16 text-foreground dark:text-muted mb-4" />
+                                        <p className="text-muted text-center">{t('store.noPreviewAvailable')}</p>
                                     </div>
                                 )}
                             </div>
@@ -275,56 +271,50 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                         {currentTab === 'properties' && object && (
                             <div className="h-full">
                                 {object.properties ? (
-                                    <div className="shadow rounded-md p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                    <div className="shadow rounded-md p-4 border border-border bg-white dark:bg-muted">
                                         <JSONDisplay value={object.properties} />
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-64 border border-gray-200 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
-                                        <Info className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
-                                        <p className="text-gray-600 dark:text-gray-400 text-center">
-                                            {t('store.noPropertiesAvailable')}
-                                        </p>
+                                    <div className="flex flex-col items-center justify-center h-64 border border-border rounded-md p-4 bg-muted">
+                                        <Info className="h-16 w-16 text-foreground dark:text-muted mb-4" />
+                                        <p className="text-muted text-center">{t('store.noPropertiesAvailable')}</p>
                                     </div>
                                 )}
 
                                 <div className="mt-4">
-                                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                    <h3 className="text-sm font-semibold text-foreground mb-2">
                                         {t('store.documentInformation')}
                                     </h3>
-                                    <div className="shadow rounded-md p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                    <div className="shadow rounded-md p-4 border border-border bg-white dark:bg-muted">
                                         <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                                            <div className="text-gray-500 dark:text-gray-400">{t('store.id')}</div>
-                                            <div className="font-medium dark:text-gray-200">{object.id}</div>
+                                            <div className="text-muted">{t('store.id')}</div>
+                                            <div className="font-medium dark:text-foreground">{object.id}</div>
 
-                                            <div className="text-gray-500 dark:text-gray-400">
-                                                {t('store.contentType')}
-                                            </div>
-                                            <div className="font-medium dark:text-gray-200">
+                                            <div className="text-muted">{t('store.contentType')}</div>
+                                            <div className="font-medium dark:text-foreground">
                                                 {object.type?.name || t('store.unknown')}
                                             </div>
 
-                                            <div className="text-gray-500 dark:text-gray-400">
-                                                {t('store.contentType')}
-                                            </div>
-                                            <div className="font-medium dark:text-gray-200">
+                                            <div className="text-muted">{t('store.contentType')}</div>
+                                            <div className="font-medium dark:text-foreground">
                                                 {object.content?.type || t('store.na')}
                                             </div>
 
-                                            <div className="text-gray-500">{t('store.size')}</div>
+                                            <div className="text-muted">{t('store.size')}</div>
                                             <div className="font-medium">
                                                 {object.content && 'size' in object.content
                                                     ? formatFileSize(object.content.size as number)
                                                     : t('store.unknown')}
                                             </div>
 
-                                            <div className="text-gray-500">{t('store.created')}</div>
+                                            <div className="text-muted">{t('store.created')}</div>
                                             <div className="font-medium">
                                                 {object.created_at
                                                     ? new Date(object.created_at).toLocaleString()
                                                     : t('store.na')}
                                             </div>
 
-                                            <div className="text-gray-500">{t('store.updated')}</div>
+                                            <div className="text-muted">{t('store.updated')}</div>
                                             <div className="font-medium">
                                                 {object.updated_at
                                                     ? new Date(object.updated_at).toLocaleString()
@@ -340,7 +330,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
             )}
 
             {/* Footer actions */}
-            <div className="flex items-center justify-between p-4 border-t bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+            <div className="flex items-center justify-between p-4 border-t bg-muted dark:border-border">
                 <div>
                     {object?.content?.source && (
                         <Button
@@ -363,14 +353,14 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 }
                             }}
                             variant="outline"
-                            className="text-indigo-600 border-indigo-300 hover:bg-indigo-50"
+                            className="text-primary border-primary hover:bg-info"
                         >
                             <Download className="h-4 w-4 me-2" />
                             {t('pdf.download')}
                         </Button>
                     )}
                 </div>
-                <Button onClick={handleViewFullDocument} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button onClick={handleViewFullDocument} className="bg-primary hover:bg-primary text-white">
                     {t('store.openFullDocument')}
                     <ChevronRight className="h-4 w-4 ms-2 cn-rtl-flip" />
                 </Button>

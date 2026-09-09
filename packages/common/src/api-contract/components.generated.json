@@ -10364,7 +10364,8 @@
       "resume_tools",
       "resume_user",
       "checkpoint",
-      "nested_interaction"
+      "nested_interaction",
+      "background"
     ],
     "description": "Types of LLM calls in a conversation"
   },
@@ -11168,6 +11169,10 @@
   "ExecutionRunWorkflow": {
     "type": "object",
     "properties": {
+      "agent_run_id": {
+        "type": "string",
+        "description": "Root agent run owning this inference, including inference performed by child workstreams."
+      },
       "rate_limit_id": {
         "type": "string",
         "description": "Stable identifier pairing an interaction rate-limit admission with its completion feedback."
@@ -14092,6 +14097,10 @@
           },
           "workflow_id": {
             "type": "string"
+          },
+          "agent_run_id": {
+            "type": "string",
+            "description": "Root agent run owning this inference, including inference performed by child workstreams."
           }
         },
         "required": [
@@ -30246,6 +30255,12 @@
       "run_type": {
         "$ref": "#/components/schemas/ProcessRunType"
       },
+      "schedule_id": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/AgentRunType"
+      },
       "process_id": {
         "type": "string"
       },
@@ -34355,7 +34370,8 @@
               "resume_tools",
               "resume_user",
               "checkpoint",
-              "nested_interaction"
+              "nested_interaction",
+              "background"
             ]
           },
           "attemptNumber": {

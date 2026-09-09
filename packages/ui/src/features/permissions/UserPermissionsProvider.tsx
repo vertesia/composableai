@@ -112,7 +112,7 @@ export function UserPermissionProvider({ children, loadingIcon }: UserPermission
                         className="space-y-2"
                     >
                         <h1 className="text-xl font-semibold">{title}</h1>
-                        <p className="text-muted-foreground">
+                        <p className="text-muted">
                             {needsSignIn
                                 ? t('auth.recovery.credential.body')
                                 : denied
@@ -132,7 +132,7 @@ export function UserPermissionProvider({ children, loadingIcon }: UserPermission
                                     : t('auth.recovery.tryAgain')}
                             </Button>
                             {state.error != null && (
-                                <details className="text-start text-sm text-muted-foreground">
+                                <details className="text-start text-sm text-muted">
                                     <summary className="cursor-pointer">{t('auth.recovery.technicalDetails')}</summary>
                                     <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap wrap-break-word">
                                         {errorMessage(state.error)}

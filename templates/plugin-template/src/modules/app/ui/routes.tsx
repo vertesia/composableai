@@ -19,6 +19,6 @@ export const routes = [
     {
         path: '*',
         hideFromNav: true,
-        Component: () => <div className="p-4 text-destructive-foreground">Not found</div>,
+        Component: () => <div className="p-4 text-destructive">Not found</div>,
     },
 ];

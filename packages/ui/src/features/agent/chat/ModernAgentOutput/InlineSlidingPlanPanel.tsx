@@ -45,7 +45,7 @@ function InlineSlidingPlanPanelComponent({
     if (planTasks.length === 0) {
         return (
             <div className="h-full overflow-hidden">
-                <Center className="h-full min-h-[240px] flex-col text-center text-muted-foreground">
+                <Center className="h-full min-h-[240px] flex-col text-center text-muted">
                     <ClipboardList className="mb-2 size-8" />
                     <span className="text-sm">{t('agent.noPlanAvailable')}</span>
                 </Center>
@@ -61,13 +61,13 @@ function InlineSlidingPlanPanelComponent({
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                             <div className="text-sm font-medium text-foreground">{t('agent.taskProgress')}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-muted">
                                 {t('agent.tasksCompleted', { completed: completedTasks, total: totalTasks })}
                             </div>
                         </div>
 
                         {plans.length > 1 && (
-                            <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                            <div className="flex shrink-0 items-center gap-1 text-xs text-muted">
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -133,13 +133,13 @@ function InlineSlidingPlanPanelComponent({
                         }
 
                         let StatusIcon = Circle;
-                        let statusColor = 'text-muted-foreground';
+                        let statusColor = 'text-muted';
                         if (status === 'in_progress') {
                             StatusIcon = Clock;
-                            statusColor = 'text-info-foreground';
+                            statusColor = 'text-info';
                         } else if (status === 'completed') {
                             StatusIcon = CheckCircle;
-                            statusColor = 'text-success-foreground';
+                            statusColor = 'text-success';
                         }
 
                         const statusLabel =
@@ -154,7 +154,7 @@ function InlineSlidingPlanPanelComponent({
                                 key={taskKey}
                                 className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-1 py-3"
                             >
-                                <span className="mt-0.5 min-w-5 text-center text-xs font-medium tabular-nums text-muted-foreground/80">
+                                <span className="mt-0.5 min-w-5 text-center text-xs font-medium tabular-nums text-muted/80">
                                     {taskId}
                                 </span>
                                 <span className="min-w-0 text-sm leading-5 text-foreground/85">{taskGoal}</span>
@@ -175,22 +175,20 @@ function InlineSlidingPlanPanelComponent({
 
                     return workstreamEntries.length > 0 ? (
                         <div className="mt-1 px-1 py-2">
-                            <div className="mb-2 text-xs font-medium text-muted-foreground">
-                                {t('agent.workstreams')}
-                            </div>
+                            <div className="mb-2 text-xs font-medium text-muted">{t('agent.workstreams')}</div>
                             <div className="divide-y divide-border/60">
                                 {workstreamEntries.map(([id, status]) => {
                                     let StatusIcon = Circle;
-                                    let statusColor = 'text-muted-foreground';
+                                    let statusColor = 'text-muted';
                                     let statusText = t('agent.pending');
 
                                     if (status === 'in_progress') {
                                         StatusIcon = Clock;
-                                        statusColor = 'text-info-foreground';
+                                        statusColor = 'text-info';
                                         statusText = t('agent.inProgress');
                                     } else if (status === 'completed') {
                                         StatusIcon = CheckCircle;
-                                        statusColor = 'text-success-foreground';
+                                        statusColor = 'text-success';
                                         statusText = t('agent.completed');
                                     }
 
@@ -200,9 +198,7 @@ function InlineSlidingPlanPanelComponent({
                                             <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground/80">
                                                 {id}
                                             </span>
-                                            <span className="text-xs font-medium text-muted-foreground">
-                                                {statusText}
-                                            </span>
+                                            <span className="text-xs font-medium text-muted">{statusText}</span>
                                         </div>
                                     );
                                 })}

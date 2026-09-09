@@ -35,12 +35,12 @@ export function InteractionDetail() {
     );
 
     if (error) {
-        return <div className="p-6 text-destructive-foreground">Failed to load interaction &ldquo;{name}&rdquo;.</div>;
+        return <div className="p-6 text-destructive">Failed to load interaction &ldquo;{name}&rdquo;.</div>;
     }
 
     if (!interaction) {
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );
@@ -71,9 +71,7 @@ export function InteractionDetail() {
                                     >
                                         {prompt.role}
                                     </span>
-                                    {prompt.name && (
-                                        <span className="text-sm italic text-muted-foreground">{prompt.name}</span>
-                                    )}
+                                    {prompt.name && <span className="text-sm italic text-muted">{prompt.name}</span>}
                                 </div>
                                 <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                     {prompt.content}

@@ -27,13 +27,11 @@ export function ActivityCollection() {
 
     if (error)
         return (
-            <div className="p-6 text-destructive-foreground">
-                Failed to load activity collection &ldquo;{collection}&rdquo;.
-            </div>
+            <div className="p-6 text-destructive">Failed to load activity collection &ldquo;{collection}&rdquo;.</div>
         );
     if (!data)
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );
@@ -58,10 +56,10 @@ export function ActivityCollection() {
                             </span>
                             <span className="font-semibold text-card-foreground">{activity.name}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground">{activity.description || 'No description'}</div>
+                        <div className="text-sm text-muted">{activity.description || 'No description'}</div>
                         {activity.input_schema && (
                             <div className="mt-3">
-                                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
                                     Input Schema
                                 </p>
                                 <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
@@ -71,7 +69,7 @@ export function ActivityCollection() {
                         )}
                         {activity.output_schema && (
                             <div className="mt-3">
-                                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
                                     Output Schema
                                 </p>
                                 <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">

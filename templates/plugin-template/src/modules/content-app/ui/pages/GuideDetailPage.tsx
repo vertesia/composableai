@@ -63,7 +63,7 @@ export function GuideDetailPage() {
     }
 
     if (!guide) {
-        return <main className="p-6 text-destructive-foreground">{error ?? 'Guide not found.'}</main>;
+        return <main className="p-6 text-destructive">{error ?? 'Guide not found.'}</main>;
     }
 
     return (
@@ -84,10 +84,10 @@ export function GuideDetailPage() {
                             >
                                 {guide.properties.status}
                             </span>
-                            <span className="text-sm text-muted-foreground">{guide.properties.category}</span>
+                            <span className="text-sm text-muted">{guide.properties.category}</span>
                         </div>
                         <h1 className="text-2xl font-semibold">{guide.properties.title}</h1>
-                        <p className="mt-2 text-muted-foreground">{guide.properties.summary}</p>
+                        <p className="mt-2 text-muted">{guide.properties.summary}</p>
                     </div>
                     <div className="whitespace-pre-wrap rounded-md border border-border bg-card p-4 text-sm leading-6">
                         {guide.properties.body}
@@ -98,13 +98,13 @@ export function GuideDetailPage() {
                     <div className="rounded-md border border-border bg-card p-4">
                         <h2 className="text-sm font-semibold">Metadata</h2>
                         <dl className="mt-3 grid grid-cols-[110px_1fr] gap-2 text-sm">
-                            <dt className="text-muted-foreground">Owner</dt>
+                            <dt className="text-muted">Owner</dt>
                             <dd>{guide.properties.owner}</dd>
-                            <dt className="text-muted-foreground">Audience</dt>
+                            <dt className="text-muted">Audience</dt>
                             <dd>{guide.properties.audience}</dd>
-                            <dt className="text-muted-foreground">Location</dt>
+                            <dt className="text-muted">Location</dt>
                             <dd>{guide.properties.location_slug}</dd>
-                            <dt className="text-muted-foreground">Slug</dt>
+                            <dt className="text-muted">Slug</dt>
                             <dd>{guide.properties.slug}</dd>
                         </dl>
                     </div>
@@ -116,7 +116,7 @@ export function GuideDetailPage() {
                                 Run
                             </Button>
                         </div>
-                        {error && <p className="mt-3 text-sm text-destructive-foreground">{error}</p>}
+                        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
                         {summary ? (
                             <div className="mt-3 space-y-3 text-sm">
                                 <p>{summary.summary}</p>
@@ -125,12 +125,10 @@ export function GuideDetailPage() {
                                         <li key={bullet}>{bullet}</li>
                                     ))}
                                 </ul>
-                                <p className="text-muted-foreground">Recommended: {summary.recommended_status}</p>
+                                <p className="text-muted">Recommended: {summary.recommended_status}</p>
                             </div>
                         ) : (
-                            <p className="mt-3 text-sm text-muted-foreground">
-                                Run the packaged guide summarizer interaction.
-                            </p>
+                            <p className="mt-3 text-sm text-muted">Run the packaged guide summarizer interaction.</p>
                         )}
                     </div>
                 </aside>

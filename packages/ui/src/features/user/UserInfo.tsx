@@ -107,7 +107,7 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = 'md' }: Ser
     const description = (
         <>
             <div>{t('user.serviceAccountDescription')}</div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-muted text-sm">
                 <span className="font-semibold">ID:</span> {accountId}
             </div>
         </>
@@ -136,7 +136,7 @@ function EmailAgentAvatar({ email, showTitle = false, size = 'md' }: EmailAgentA
     const description = (
         <>
             <div>{t('user.agentOnBehalfOf')}</div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-muted text-sm">
                 <span className="font-semibold">Email:</span> {email}
             </div>
         </>
@@ -148,10 +148,10 @@ function EmailAgentAvatar({ email, showTitle = false, size = 'md' }: EmailAgentA
                     <Avatar
                         src="/cloud.svg"
                         color="bg-amber-500"
-                        className="px-[5px] text-white border-2 border-white dark:border-gray-800"
+                        className="px-[5px] text-white border-2 border-background"
                         size={size}
                     />
-                    <Avatar name={email} size={size} className="border-2 border-white dark:border-gray-800" />
+                    <Avatar name={email} size={size} className="border-2 border-background" />
                 </div>
                 {showTitle && <div className="text-sm font-semibold truncate">Agent&#8194;({email})</div>}
             </div>
@@ -201,20 +201,20 @@ function AgentAvatar({
                     <Avatar src={user.picture} name={user.name} size="sm" />
                     <div>
                         <div className="font-medium">{user.name || user.email}</div>
-                        {user.email && user.name && <div className="text-xs text-muted-foreground">{user.email}</div>}
+                        {user.email && user.name && <div className="text-xs text-muted">{user.email}</div>}
                     </div>
                 </div>
             )}
             {apiKey && (
                 <div>
                     <div className="font-medium">{apiKey.name}</div>
-                    <div className="text-xs text-muted-foreground">Key ID: {apiKey.id}</div>
+                    <div className="text-xs text-muted">Key ID: {apiKey.id}</div>
                 </div>
             )}
             {!user && !apiKey && (
                 <>
                     <div>{t('user.serviceAccountDescription')}</div>
-                    <div className="text-gray-800 dark:text-gray-500 text-sm">
+                    <div className="text-foreground dark:text-muted text-sm">
                         <span className="font-semibold">ID:</span> {agentId}
                     </div>
                 </>
@@ -229,7 +229,7 @@ function AgentAvatar({
                     <Avatar
                         src="/cloud.svg"
                         color="bg-amber-500"
-                        className="px-[5px] text-white border-2 border-white dark:border-gray-800"
+                        className="px-[5px] text-white border-2 border-background"
                         size={size}
                     />
                     {user && (
@@ -237,16 +237,11 @@ function AgentAvatar({
                             src={user.picture}
                             name={user.name}
                             size={size}
-                            className="border-2 border-white dark:border-gray-800"
+                            className="border-2 border-background"
                         />
                     )}
                     {apiKey && (
-                        <Avatar
-                            name="API"
-                            color="bg-gray-400"
-                            size={size}
-                            className="border-2 border-white dark:border-gray-800"
-                        />
+                        <Avatar name="API" color="bg-gray-400" size={size} className="border-2 border-background" />
                     )}
                 </div>
                 {showTitle && (
@@ -455,7 +450,7 @@ function GroupAvatar({ userId, showTitle = false, size = 'md' }: GroupAvatarProp
     const description = (
         <div className="space-y-1">
             {group.description && <div className="text-sm">{group.description}</div>}
-            <div className="text-xs text-muted-foreground">{t('user.groupId', { id: group.id })}</div>
+            <div className="text-xs text-muted">{t('user.groupId', { id: group.id })}</div>
             {group.tags && group.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                     {group.tags.map((tag) => (
@@ -471,7 +466,7 @@ function GroupAvatar({ userId, showTitle = false, size = 'md' }: GroupAvatarProp
     return (
         <UserPopoverPanel title={group.name || t('user.unnamedGroup')} description={description}>
             <div className="flex flex-row items-center gap-2">
-                <Users className="size-6 text-indigo-500" size={size} />
+                <Users className="size-6 text-primary" size={size} />
                 {showTitle && <div className="text-sm font-semibold ps-2">{group.name || t('user.unnamedGroup')}</div>}
             </div>
         </UserPopoverPanel>
@@ -540,7 +535,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = 'md' }: ApiKeyAv
     const title = t('user.privateKey');
     const avatar = <Avatar name={'PK'} color="bg-pink-500" size={size} />;
     const description = (
-        <Table className="dark:bg-gray-800 dark:text-gray-200 table-fixed w-full">
+        <Table className="dark:bg-muted dark:text-foreground table-fixed w-full">
             <tr>
                 <td className="font-semibold w-20">{t('user.key')}</td>
                 <td className="truncate max-w-0">{data?.name}</td>
@@ -583,7 +578,7 @@ function UserPopoverPanel({ title, description, children }: UserPopoverPanelProp
             </PopoverTrigger>
             <PopoverContent align="center" sideOffset={8} side="right">
                 <div className="flex flex-col gap-1 rounded-md shadow-md p-2">
-                    <div className="text-md font-semibold">{title}</div>
+                    <div className="text-base font-semibold">{title}</div>
                     {description}
                 </div>
             </PopoverContent>

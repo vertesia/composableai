@@ -60,7 +60,7 @@ export function McpConnectionsButton({
         <>
             <div className="flex min-w-0 items-center gap-2">
                 {summary && (
-                    <span className="max-w-48 truncate text-muted-foreground" title={activeLabels.join(', ')}>
+                    <span className="max-w-48 truncate text-muted" title={activeLabels.join(', ')}>
                         {summary}
                     </span>
                 )}
@@ -116,7 +116,7 @@ export function McpConnectionsInlineList({
 
     if (loading && groups.length === 0) {
         return (
-            <div className="flex items-center gap-2 border-y border-border/70 py-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 border-y border-border/70 py-2 text-sm text-muted">
                 <Spinner className="size-4" />
                 <span>{t('mcpConnections.label')}</span>
             </div>
@@ -134,7 +134,7 @@ export function McpConnectionsInlineList({
                     <div key={group.key} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2 text-sm">
                         <div className="flex min-w-36 flex-1 items-center gap-2">
                             <StatusIcon
-                                className={`size-4 shrink-0 ${connected ? 'text-success-foreground' : 'text-muted-foreground'}`}
+                                className={`size-4 shrink-0 ${connected ? 'text-success' : 'text-muted'}`}
                                 aria-hidden="true"
                             />
                             <VTooltip
@@ -142,9 +142,7 @@ export function McpConnectionsInlineList({
                                     <div className="space-y-0.5">
                                         <div className="font-medium">{group.appName}</div>
                                         {group.memberNames.length > 1 && (
-                                            <div className="text-xs text-muted-foreground">
-                                                {group.memberNames.join(' · ')}
-                                            </div>
+                                            <div className="text-xs text-muted">{group.memberNames.join(' · ')}</div>
                                         )}
                                     </div>
                                 }
@@ -152,7 +150,7 @@ export function McpConnectionsInlineList({
                                 asChild
                             >
                                 <span
-                                    className={`block truncate ${active ? 'text-foreground' : 'text-muted-foreground line-through'}`}
+                                    className={`block truncate ${active ? 'text-foreground' : 'text-muted line-through'}`}
                                 >
                                     {group.label}
                                 </span>
@@ -188,7 +186,7 @@ export function McpConnectionsInlineList({
                         )}
                         {onChange && (
                             <div className="flex min-w-24 items-center justify-end gap-2 text-xs">
-                                <span className={active ? 'text-muted-foreground' : 'text-attention-foreground'}>
+                                <span className={active ? 'text-muted' : 'text-attention'}>
                                     {active ? t('mcpConnections.enabled') : t('mcpConnections.disabled')}
                                 </span>
                                 <Switch
@@ -241,12 +239,12 @@ export function McpConnectionsActionMenu({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8 rounded-md text-muted-foreground hover:bg-muted"
+                        className="size-8 rounded-md text-muted hover:bg-muted"
                         title={t('mcpConnections.settings')}
                         disabled={loading}
                     >
                         <span
-                            className="flex size-5 items-center justify-center rounded-[3px] border border-muted-foreground text-sm font-semibold leading-none"
+                            className="flex size-5 items-center justify-center rounded-[3px] border border-muted text-sm font-semibold leading-none"
                             aria-hidden="true"
                         >
                             /

@@ -65,15 +65,15 @@ export function ConfirmModal({
     return (
         <Modal isOpen={isOpen} onClose={onCancel} description="Confirm Modal">
             <div className="sm:flex sm:items-start p-2">
-                <div className="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <TriangleAlert className="size-6 text-red-600" aria-hidden="true" />
+                <div className="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-destructive sm:mx-0 sm:h-10 sm:w-10">
+                    <TriangleAlert className="size-6 text-destructive" aria-hidden="true" />
                 </div>
                 <div className="mt-3 text-center sm:ms-4 sm:mt-0 sm:text-start">
                     <ModalTitle className="leading-6" show>
                         {title}
                     </ModalTitle>
                     <div className="mt-2">
-                        <div className="prose text-sm text-gray-500">{content}</div>
+                        <div className="prose text-sm text-muted">{content}</div>
                     </div>
                 </div>
             </div>

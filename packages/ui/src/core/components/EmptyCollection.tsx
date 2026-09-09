@@ -27,7 +27,7 @@ export function EmptyCollection({ buttonLabel, title, children, onClick }: Empty
                     />
                 </svg>
                 <h3 className="mt-2 text-sm font-semibold">{title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{children}</p>
+                <p className="mt-1 text-sm text-muted">{children}</p>
                 <div className="mt-6">
                     <Button onClick={onClick}>
                         <Plus className="-ms-0.5 me-1.5 size-5" aria-hidden="true" />

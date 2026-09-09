@@ -352,7 +352,7 @@ function GroundedExtractionViewImpl({
                         >
                             <ChevronLeft className="size-4" />
                         </Button>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted">
                             {t('pdf.pageOf', { pageNumber: page, totalPages: pageNumbers.length })}
                         </span>
                         <Button
@@ -467,48 +467,42 @@ function GroundedExtractionViewImpl({
                         <div className="mb-1 flex items-center gap-1">
                             <span className="font-medium">{t('grounded.breakdownTitle')}</span>
                             <VTooltip description={t('grounded.breakdownVerificationHelp')} size="xs">
-                                <Info className="size-3 text-muted-foreground" />
+                                <Info className="size-3 text-muted" />
                             </VTooltip>
                         </div>
                         <div className="grid grid-cols-2 gap-x-4 text-xs">
-                            <span className="col-span-2 mt-1 font-medium text-success-foreground">
+                            <span className="col-span-2 mt-1 font-medium text-success">
                                 {t('grounded.digitalVerifiedOf', {
                                     count: breakdown.digitallyVerified,
                                     total: totalCitations,
                                 })}
                             </span>
-                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownDigital')}</span>
-                            <span className="text-end text-success-foreground">{breakdown.groups.digital}</span>
-                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownOcr')}</span>
-                            <span className="text-end text-success-foreground">{breakdown.groups.ocr}</span>
-                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownSnapped')}</span>
-                            <span className="text-end text-success-foreground">{breakdown.groups.snapped}</span>
-                            <span className="col-span-2 mt-2 font-medium text-success-foreground">
+                            <span className="ps-2 text-muted">{t('grounded.breakdownDigital')}</span>
+                            <span className="text-end text-success">{breakdown.groups.digital}</span>
+                            <span className="ps-2 text-muted">{t('grounded.breakdownOcr')}</span>
+                            <span className="text-end text-success">{breakdown.groups.ocr}</span>
+                            <span className="ps-2 text-muted">{t('grounded.breakdownSnapped')}</span>
+                            <span className="text-end text-success">{breakdown.groups.snapped}</span>
+                            <span className="col-span-2 mt-2 font-medium text-success">
                                 {t('grounded.modelVerifiedOf', {
                                     count: breakdown.modelVerified,
                                     total: totalCitations,
                                 })}
                             </span>
-                            <span className="ps-2 text-muted-foreground">{t('grounded.breakdownReviewer')}</span>
-                            <span className="text-end text-success-foreground">
-                                {breakdown.groups.reviewerConfirmed}
-                            </span>
+                            <span className="ps-2 text-muted">{t('grounded.breakdownReviewer')}</span>
+                            <span className="text-end text-success">{breakdown.groups.reviewerConfirmed}</span>
                             {breakdown.groups.imageRead > 0 && (
                                 <>
-                                    <span className="col-span-2 mt-2 font-medium text-attention-foreground">
+                                    <span className="col-span-2 mt-2 font-medium text-attention">
                                         {t('grounded.unverifiedCount', { count: breakdown.groups.imageRead })}
                                     </span>
-                                    <span className="ps-2 text-muted-foreground">
-                                        {t('grounded.breakdownImageRead')}
-                                    </span>
-                                    <span className="text-end text-attention-foreground">
-                                        {breakdown.groups.imageRead}
-                                    </span>
+                                    <span className="ps-2 text-muted">{t('grounded.breakdownImageRead')}</span>
+                                    <span className="text-end text-attention">{breakdown.groups.imageRead}</span>
                                 </>
                             )}
                         </div>
                         {typeof extraction.hardness?.score === 'number' && (
-                            <p className="mt-2 text-xs text-muted-foreground" title={t('grounded.hardnessHint')}>
+                            <p className="mt-2 text-xs text-muted" title={t('grounded.hardnessHint')}>
                                 {t('grounded.hardness', {
                                     percent: Math.round(extraction.hardness.score * 100),
                                 })}
@@ -521,14 +515,14 @@ function GroundedExtractionViewImpl({
                             </p>
                         )}
                         {extraction.review?.summary && (
-                            <p className="mt-2 text-xs text-muted-foreground">
+                            <p className="mt-2 text-xs text-muted">
                                 <span className="font-medium text-foreground">{t('grounded.reviewSummary')}: </span>
                                 {extraction.review.summary}
                             </p>
                         )}
                         {typeof extraction.review?.corrections_applied === 'number' &&
                             extraction.review.corrections_applied > 0 && (
-                                <p className="mt-1 text-xs text-info-foreground">
+                                <p className="mt-1 text-xs text-info">
                                     {t('grounded.reviewCorrections', {
                                         count: extraction.review.corrections_applied,
                                     })}
@@ -536,7 +530,7 @@ function GroundedExtractionViewImpl({
                             )}
                         {breakdown.unverified.length > 0 && (
                             <div className="mt-2">
-                                <div className="text-xs font-medium text-muted-foreground mb-1">
+                                <div className="text-xs font-medium text-muted mb-1">
                                     {t('grounded.breakdownUnverifiedList')}
                                 </div>
                                 <ul className="space-y-0.5">
@@ -550,7 +544,7 @@ function GroundedExtractionViewImpl({
                                                     setShowDetails(false);
                                                 }}
                                             >
-                                                <span className="text-muted-foreground">{c.path}</span>{' '}
+                                                <span className="text-muted">{c.path}</span>{' '}
                                                 <span>{String(c.value ?? '')}</span>
                                             </button>
                                         </li>
@@ -570,7 +564,7 @@ function GroundedExtractionViewImpl({
                         onSelect={selectPath}
                     />
                     {extraction.conflicts && extraction.conflicts.length > 0 && (
-                        <div className="mt-4 text-xs text-attention-foreground">
+                        <div className="mt-4 text-xs text-attention">
                             {t('grounded.conflicts', { count: extraction.conflicts.length })}
                         </div>
                     )}
@@ -667,10 +661,10 @@ function PageWithOverlay({
                             isSelected
                                 ? 'border-2 border-primary bg-primary/20 z-10'
                                 : citation.verified
-                                  ? 'border-success-foreground/70 hover:bg-success-foreground/20'
+                                  ? 'border-success/70 hover:bg-success/20'
                                   : citation.reviewed
-                                    ? 'border-info-foreground/70 hover:bg-info-foreground/20'
-                                    : 'border-attention-foreground/80 hover:bg-attention-foreground/20',
+                                    ? 'border-info/70 hover:bg-info/20'
+                                    : 'border-attention/80 hover:bg-attention/20',
                         )}
                         style={{
                             // inline position: the app's button base styles override the
@@ -836,7 +830,7 @@ function ArrayTable({
             <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                     <thead>
-                        <tr className="text-start text-muted-foreground">
+                        <tr className="text-start text-muted">
                             {columns.map((col) => (
                                 <th key={col} scope="col" className="py-1 pe-2 font-medium">
                                     {propertyTitle(col)}
@@ -862,7 +856,7 @@ function ArrayTable({
                                                         ? 'bg-primary/15 ring-1 ring-primary'
                                                         : citation
                                                           ? 'hover:bg-muted cursor-pointer'
-                                                          : 'text-muted-foreground cursor-default',
+                                                          : 'text-muted cursor-default',
                                                 )}
                                             >
                                                 {formatValue(item[col])}
@@ -931,20 +925,11 @@ function LeafRow({
             )}
             {citation &&
                 (citation.verified ? (
-                    <CheckCircle2
-                        aria-label={t('grounded.verified')}
-                        className="size-3.5 shrink-0 text-success-foreground"
-                    />
+                    <CheckCircle2 aria-label={t('grounded.verified')} className="size-3.5 shrink-0 text-success" />
                 ) : citation.reviewed ? (
-                    <Sparkles
-                        aria-label={t('grounded.aiVerified')}
-                        className="size-3.5 shrink-0 text-info-foreground"
-                    />
+                    <Sparkles aria-label={t('grounded.aiVerified')} className="size-3.5 shrink-0 text-info" />
                 ) : (
-                    <Eye
-                        aria-label={t('grounded.readFromImage')}
-                        className="size-3.5 shrink-0 text-attention-foreground"
-                    />
+                    <Eye aria-label={t('grounded.readFromImage')} className="size-3.5 shrink-0 text-attention" />
                 ))}
         </button>
     );
@@ -977,9 +962,9 @@ function formatScore(confidence: number): string {
 }
 
 function scoreColor(confidence: number): string {
-    if (confidence >= 0.95) return 'text-success-foreground';
-    if (confidence >= 0.7) return 'text-attention-foreground';
-    return 'text-destructive-foreground';
+    if (confidence >= 0.95) return 'text-success';
+    if (confidence >= 0.7) return 'text-attention';
+    return 'text-destructive';
 }
 
 function formatValue(value: unknown): string {

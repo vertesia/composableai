@@ -39,7 +39,7 @@ export function IdeasPage() {
                 <div className="space-y-4">
                     <div>
                         <h1 className="text-xl font-semibold">Topic Ideas</h1>
-                        <p className="text-sm text-muted-foreground">Runs the packaged field suggester interaction.</p>
+                        <p className="text-sm text-muted">Runs the packaged field suggester interaction.</p>
                     </div>
                     <div className="space-y-3 rounded-md border border-border bg-card p-4">
                         <div className="block text-sm">
@@ -74,13 +74,13 @@ export function IdeasPage() {
 
                 <div className="rounded-md border border-border bg-card p-4">
                     <h2 className="text-sm font-semibold">Suggestions</h2>
-                    {error && <p className="mt-3 text-sm text-destructive-foreground">{error}</p>}
+                    {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
                     {result ? (
                         <div className="mt-4 grid gap-3">
                             {result.suggestions.map((suggestion) => (
                                 <article key={suggestion.title} className="rounded-md border border-border p-3">
                                     <h3 className="font-medium">{suggestion.title}</h3>
-                                    <p className="mt-1 text-sm text-muted-foreground">{suggestion.rationale}</p>
+                                    <p className="mt-1 text-sm text-muted">{suggestion.rationale}</p>
                                     <div className="mt-2 flex flex-wrap gap-1">
                                         {suggestion.tags.map((tag) => (
                                             <span
@@ -95,7 +95,7 @@ export function IdeasPage() {
                             ))}
                         </div>
                     ) : (
-                        <p className="mt-3 text-sm text-muted-foreground">No suggestions yet.</p>
+                        <p className="mt-3 text-sm text-muted">No suggestions yet.</p>
                     )}
                 </div>
             </section>

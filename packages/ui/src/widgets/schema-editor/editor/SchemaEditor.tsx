@@ -23,7 +23,7 @@ export function SchemaEditor({ schema, readonly = false }: SchemaTreeProps) {
     const { t } = useUITranslation();
     return (
         <div className="space-y-1">
-            <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-muted-foreground border-b border-border">
+            <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-muted border-b border-border">
                 <div className="flex-1 min-w-0">{t('widgets.schema.propertyColumn')}</div>
                 {!readonly && (
                     <div className="shrink-0 w-28 text-end pe-1" title={t('widgets.schema.extractFromDocumentHint')}>
@@ -89,7 +89,7 @@ function ParentItem({ property, readonly }: ParentItemProps) {
                 </Button>
             </div>
             {isOpen && (
-                <ul className="ms-4 border-s border-gray-400 border-dashed">
+                <ul className="ms-4 border-s border-border border-dashed">
                     {(property.children || []).map((prop) => renderProperty(prop, readonly))}
                     {!readonly ? <AddPropertyButton parent={property} /> : null}
                 </ul>
@@ -186,7 +186,7 @@ function PropertyTitleBar({ property, readonly }: PropertyTitleBarProps) {
             ) : property.extractable === false ? (
                 <div className="shrink-0 w-28 flex justify-end pe-1">
                     <span
-                        className="text-[10px] uppercase tracking-wide text-attention-foreground border border-attention-foreground/40 bg-attention-foreground/10 rounded px-1.5 py-0.5"
+                        className="text-[10px] uppercase tracking-wide text-attention border border-attention/40 bg-attention/10 rounded px-1.5 py-0.5"
                         title={t('widgets.schema.extractFromDocumentHint')}
                     >
                         {t('widgets.schema.noExtract')}

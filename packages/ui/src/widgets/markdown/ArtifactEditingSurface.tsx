@@ -76,7 +76,7 @@ function MarkdownChangeRuler({
 
     return (
         <nav
-            className="absolute inset-y-12 end-1 z-10 w-3 rounded-full border border-mixer-muted-foreground/25 bg-muted-foreground/20"
+            className="absolute inset-y-12 end-1 z-10 w-3 rounded-full border border-mixer-muted/25 bg-muted/20"
             aria-label={t('agent.changeRuler')}
         >
             {regions.map((region) => {
@@ -90,7 +90,7 @@ function MarkdownChangeRuler({
                     >
                         <button
                             type="button"
-                            className="absolute inset-x-0 rounded-full bg-attention transition-colors hover:bg-info focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info-foreground"
+                            className="absolute inset-x-0 rounded-full bg-attention transition-colors hover:bg-info focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info"
                             style={{ top: `${Math.min(98.5, top)}%`, height: `${Math.min(100 - top, height)}%` }}
                             onClick={() => onNavigate(region.startLine)}
                             aria-label={t('agent.changedRegion', { line: region.startLine + 1 })}
@@ -787,7 +787,7 @@ export function ArtifactEditingSurface({
                     <Spinner size="lg" />
                 </Center>
             ) : loadError && !content ? (
-                <Center className="h-full min-h-[200px] flex-col gap-3 text-center text-muted-foreground">
+                <Center className="h-full min-h-[200px] flex-col gap-3 text-center text-muted">
                     <span>{loadError}</span>
                     <Button variant="outline" size="sm" onClick={() => void loadContent(false)}>
                         {t('agent.retry')}
@@ -835,10 +835,8 @@ export function ArtifactEditingSurface({
                                 <div
                                     className={cn(
                                         'pointer-events-none absolute bottom-3 end-6 flex items-center gap-1.5 rounded-full',
-                                        'border border-mixer-muted-foreground/25 bg-background/90 px-2.5 py-1 text-[11px] shadow-sm',
-                                        isSavingDocument || isDocumentSavePending
-                                            ? 'text-muted-foreground'
-                                            : 'text-success-foreground',
+                                        'border border-mixer-muted/25 bg-background/90 px-2.5 py-1 text-[11px] shadow-sm',
+                                        isSavingDocument || isDocumentSavePending ? 'text-muted' : 'text-success',
                                     )}
                                 >
                                     {isSavingDocument || isDocumentSavePending ? (
@@ -872,7 +870,7 @@ export function ArtifactEditingSurface({
             )}
             {isLoading && content ? (
                 <div className="absolute end-3 top-3 rounded-full bg-background/80 p-2 shadow-sm">
-                    <GitCommitHorizontal className="size-4 animate-pulse text-muted-foreground" />
+                    <GitCommitHorizontal className="size-4 animate-pulse text-muted" />
                 </div>
             ) : null}
         </div>

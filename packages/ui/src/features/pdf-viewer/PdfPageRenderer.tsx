@@ -11,7 +11,7 @@ function LoadingSpinner({ className, size = 'md' }: { className?: string; size?:
     };
     return (
         <div className={`flex items-center justify-center ${className || ''}`}>
-            <Loader2 className={`${sizeClasses[size]} animate-spin text-muted-foreground`} />
+            <Loader2 className={`${sizeClasses[size]} animate-spin text-muted`} />
         </div>
     );
 }
@@ -53,7 +53,7 @@ export function PdfPageRenderer({
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-destructive-foreground text-sm ${className || ''}`}>
+            <div className={`flex items-center justify-center text-destructive text-sm ${className || ''}`}>
                 Failed to load PDF
             </div>
         );
@@ -167,11 +167,7 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
     );
 
     if (error) {
-        return (
-            <div className="flex items-center justify-center text-destructive-foreground text-sm py-4">
-                Failed to load PDF
-            </div>
-        );
+        return <div className="flex items-center justify-center text-destructive text-sm py-4">Failed to load PDF</div>;
     }
 
     return (
@@ -331,7 +327,7 @@ function VirtualizedThumbnail({
             className="flex items-center justify-center bg-muted"
             style={{ height: placeholderHeight, width: width || '100%' }}
         >
-            <span className="text-muted-foreground text-xs">{pageNumber}</span>
+            <span className="text-muted text-xs">{pageNumber}</span>
         </div>
     );
 
@@ -468,11 +464,7 @@ export function PdfThumbnailList({
     }, [itemHeight, pageCount, scrollContainerRef]);
 
     if (error) {
-        return (
-            <div className="flex items-center justify-center text-destructive-foreground text-sm py-4">
-                Failed to load PDF
-            </div>
-        );
+        return <div className="flex items-center justify-center text-destructive text-sm py-4">Failed to load PDF</div>;
     }
 
     if (urlLoading || !pdfUrl) {
@@ -577,7 +569,7 @@ export function PdfDocumentRenderer({
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-destructive-foreground ${className || ''}`}>
+            <div className={`flex items-center justify-center text-destructive ${className || ''}`}>
                 <span>Failed to load PDF: {error.message}</span>
             </div>
         );

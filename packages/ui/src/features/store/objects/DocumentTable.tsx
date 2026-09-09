@@ -213,7 +213,7 @@ function ObjectTableWithDropZone({
             {/* Loading overlay */}
             <div
                 className={clsx(
-                    'bg-white dark:bg-gray-800 opacity-40 absolute inset-0 z-50 flex justify-center items-center',
+                    'bg-white dark:bg-muted opacity-40 absolute inset-0 z-50 flex justify-center items-center',
                     isLoading ? 'block' : 'hidden',
                 )}
             >
@@ -230,7 +230,7 @@ function ObjectTableWithDropZone({
                         onDrop={handleFileDrop}
                         message="Drop files or folders here to upload"
                         className={clsx(
-                            'absolute inset-0 bg-white/90 dark:bg-gray-800/90 pointer-events-auto',
+                            'absolute inset-0 bg-white/90 dark:bg-muted/90 pointer-events-auto',
                             isDragging ? 'flex' : 'hidden',
                         )}
                         buttonLabel="Select Files or Folders"

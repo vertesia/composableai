@@ -14,13 +14,13 @@ function PanelErrorFallback({ error }: ErrorFallbackComponentProps) {
         <MessageBox status="error" title={t('errors.somethingWentWrong')}>
             <div className="mb-4">
                 {t('errors.teamNotifiedLine1')} {t('errors.teamNotifiedLine2')}&nbsp;
-                <a className="text-info-foreground" href="mailto:support@vertesiahq.com">
+                <a className="text-info" href="mailto:support@vertesiahq.com">
                     support@vertesiahq.com
                 </a>
                 .
             </div>
 
-            {message && <code className="w-full mt-4 text-sm text-muted-foreground break-words">{message}</code>}
+            {message && <code className="w-full mt-4 text-sm text-muted break-words">{message}</code>}
         </MessageBox>
     );
 }

@@ -14,19 +14,19 @@ interface MessageDeliveryStatusConfig {
 const STATUS_CONFIG: Record<MessageDeliveryStatusValue, MessageDeliveryStatusConfig> = {
     sending: {
         icon: Clock,
-        className: 'text-muted-foreground/70',
+        className: 'text-muted/70',
     },
     received: {
         icon: Check,
-        className: 'text-info-foreground',
+        className: 'text-info',
     },
     consumed: {
         icon: CheckCheck,
-        className: 'text-success-foreground',
+        className: 'text-success',
     },
     failed: {
         icon: AlertCircle,
-        className: 'text-destructive-foreground',
+        className: 'text-destructive',
     },
 };
 
