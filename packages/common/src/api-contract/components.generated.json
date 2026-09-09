@@ -40471,6 +40471,71 @@
     ],
     "additionalProperties": false
   },
+  "EmbeddingBatchRunSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "model": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "applied": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "skipped": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "stale": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "id",
+      "state",
+      "model",
+      "created_at",
+      "applied",
+      "skipped",
+      "failed",
+      "stale"
+    ],
+    "additionalProperties": false,
+    "description": "Latest batch run for this embedding type, without provider payloads or input content."
+  },
   "EmbeddingsStatusResponse": {
     "type": "object",
     "properties": {
@@ -40479,6 +40544,9 @@
       },
       "embeddingRunsInProgress": {
         "type": "number"
+      },
+      "latestBatchRun": {
+        "$ref": "#/components/schemas/EmbeddingBatchRunSummary"
       },
       "totalIndexableObjects": {
         "type": "number"
@@ -40532,10 +40600,8 @@
         "description": "Force synchronous per-object recalculation. When omitted, batch inference is used when supported."
       },
       "force": {
-        "type": "boolean"
-      },
-      "force_renditions": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Recalculate all eligible objects, including current embeddings. Token limits still apply; existing renditions are reused."
       }
     },
     "additionalProperties": false

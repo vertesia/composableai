@@ -102,10 +102,40 @@ export const EmbeddingsApiRequestSchema = z
     })
     .meta({ id: 'EmbeddingsApiRequest' });
 
+export const EmbeddingBatchRunStateSchema = z.enum([
+    'preparing',
+    'submitted',
+    'running',
+    'applying',
+    'completed',
+    'completed_with_errors',
+    'cancelled',
+    'stale',
+    'failed',
+]);
+
+export const EmbeddingBatchRunSummarySchema = z
+    .strictObject({
+        id: z.string(),
+        state: EmbeddingBatchRunStateSchema,
+        model: z.string(),
+        created_at: z.string().meta({ format: 'date-time' }),
+        completed_at: z.string().meta({ format: 'date-time' }).optional(),
+        applied: z.number().int().nonnegative(),
+        skipped: z.number().int().nonnegative(),
+        failed: z.number().int().nonnegative(),
+        stale: z.number().int().nonnegative(),
+    })
+    .meta({
+        id: 'EmbeddingBatchRunSummary',
+        description: 'Latest batch run for this embedding type, without provider payloads or input content.',
+    });
+
 export const EmbeddingsStatusResponseSchema = z
     .strictObject({
         status: z.string(),
         embeddingRunsInProgress: z.number().optional(),
+        latestBatchRun: EmbeddingBatchRunSummarySchema.optional(),
         totalIndexableObjects: z.number().optional(),
         embeddingsModels: z.array(z.string()).optional(),
         objectsWithEmbeddings: z.number().optional(),
@@ -126,10 +156,13 @@ export const RecalculateEmbeddingsQuerySchema = z
                     'Force synchronous per-object recalculation. When omitted, batch inference is used when supported.',
             })
             .optional(),
-        // TEMPORARY TEST CONTROL: include objects that already have a current embedding.
-        force: z.boolean().optional(),
-        // TEMPORARY TEST CONTROL: regenerate JPEG renditions even when one already exists.
-        force_renditions: z.boolean().optional(),
+        force: z
+            .boolean()
+            .meta({
+                description:
+                    'Recalculate all eligible objects, including current embeddings. Token limits still apply; existing renditions are reused.',
+            })
+            .optional(),
     })
     .meta({ id: 'RecalculateEmbeddingsQuery' });
 
@@ -208,18 +241,6 @@ export const EmbeddingBatchJobResponseSchema = z
         error_message: z.string().optional(),
     })
     .meta({ id: 'EmbeddingBatchJobResponse' });
-
-export const EmbeddingBatchRunStateSchema = z.enum([
-    'preparing',
-    'submitted',
-    'running',
-    'applying',
-    'completed',
-    'completed_with_errors',
-    'cancelled',
-    'stale',
-    'failed',
-]);
 
 export const EmbeddingBatchPrepareRequestSchema = z
     .strictObject({

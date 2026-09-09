@@ -14,6 +14,7 @@ import type {
     EmbeddingBatchRenditionPageRequestSchema,
     EmbeddingBatchRenditionPageResponseSchema,
     EmbeddingBatchRunStateSchema,
+    EmbeddingBatchRunSummarySchema,
     EmbeddingBatchSubjobSchema,
     EmbeddingBatchUpdateRequestSchema,
     EmbeddingsApiAudioInputSchema,
@@ -60,6 +61,7 @@ export type EmbeddingBatchJobRequest = z.infer<typeof EmbeddingBatchJobRequestSc
 export type EmbeddingBatchJobResponse = z.infer<typeof EmbeddingBatchJobResponseSchema>;
 export type EmbeddingBatchProviderState = z.infer<typeof EmbeddingBatchProviderStateSchema>;
 export type EmbeddingBatchRunState = z.infer<typeof EmbeddingBatchRunStateSchema>;
+export type EmbeddingBatchRunSummary = z.infer<typeof EmbeddingBatchRunSummarySchema>;
 export type EmbeddingBatchSubjob = z.infer<typeof EmbeddingBatchSubjobSchema>;
 export type EmbeddingBatchPrepareRequest = z.infer<typeof EmbeddingBatchPrepareRequestSchema>;
 export type EmbeddingBatchPrepareResponse = z.infer<typeof EmbeddingBatchPrepareResponseSchema>;
