@@ -659,7 +659,7 @@ function PageWithOverlay({
                             'absolute cursor-pointer border rounded-[1px] transition-colors',
                             citation.misaligned && 'border-dashed',
                             isSelected
-                                ? 'border-2 border-primary bg-primary/20 z-10'
+                                ? 'border-2 border-info bg-info z-10'
                                 : citation.verified
                                   ? 'border-success/70 hover:bg-success/20'
                                   : citation.reviewed
@@ -853,7 +853,7 @@ function ArrayTable({
                                                 className={cn(
                                                     'text-start rounded px-1 w-full',
                                                     isSelected
-                                                        ? 'bg-primary/15 ring-1 ring-primary'
+                                                        ? 'bg-info ring-1 ring-primary'
                                                         : citation
                                                           ? 'hover:bg-muted cursor-pointer'
                                                           : 'text-muted cursor-default',
@@ -909,7 +909,7 @@ function LeafRow({
             onClick={() => citation && onSelect(path)}
             className={cn(
                 'flex items-center gap-2 w-full text-start text-sm rounded px-1.5 py-0.5',
-                isSelected ? 'bg-primary/15 ring-1 ring-primary' : citation ? 'hover:bg-muted' : '',
+                isSelected ? 'bg-info ring-1 ring-primary' : citation ? 'hover:bg-muted' : '',
                 !citation && 'cursor-default',
             )}
         >
