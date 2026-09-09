@@ -304,6 +304,9 @@ export const TemplateTypeSchema = z.enum(TemplateType).meta({ id: 'TemplateType'
 
 export const ExecutionRunWorkflowSchema = z
     .strictObject({
+        agent_run_id: z.string().optional().meta({
+            description: 'Root agent run owning this inference, including inference performed by child workstreams.',
+        }),
         rate_limit_id: z
             .string()
             .meta({
@@ -2544,6 +2547,10 @@ export const ComputeRunFacetsResponseSchema = z
 export const RunClonePayloadSchema = z
     .strictObject({
         source_run_id: z.string(),
-        workflow: z.strictObject({ run_id: z.string(), workflow_id: z.string() }),
+        workflow: z.strictObject({
+            run_id: z.string(),
+            workflow_id: z.string(),
+            agent_run_id: ExecutionRunWorkflowSchema.shape.agent_run_id,
+        }),
     })
     .meta({ id: 'RunClonePayload' });
