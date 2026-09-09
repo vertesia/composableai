@@ -4,6 +4,7 @@ import { JSONObjectSchema, JSONSchemaSchema, ModelOptionsSchema } from '@llumive
 import type { StringValue } from 'ms';
 import { z } from 'zod';
 import { PermissionSchema } from './access-control.js';
+import { AgentRunTypeSchema } from './app-lifecycle.js';
 import { StringValueMapSchema } from './files.js';
 import { ConversationVisibilitySchema, RunSourceSchema } from './interaction.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
@@ -985,6 +986,8 @@ export const RecordProcessRunPayloadSchema = z
         first_workflow_run_id: z.string().optional(),
         run_kind: z.literal('process'),
         run_type: ProcessRunTypeSchema.optional(),
+        schedule_id: z.string().optional(),
+        type: AgentRunTypeSchema.optional(),
         process_id: z.string().optional(),
         process_version: z.number().optional(),
         process_definition: ProcessDefinitionBodySchema.optional(),

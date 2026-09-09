@@ -8,9 +8,9 @@ import type {
 } from '@vertesia/common';
 
 /**
- * Client API for managing agent schedules.
+ * Client API for managing recurring schedules.
  *
- * Schedules allow agents to run on a recurring basis using cron expressions.
+ * Schedules allow agents or processes to run on a recurring basis using cron expressions.
  */
 export class SchedulesApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -35,7 +35,7 @@ export class SchedulesApi extends ApiTopic {
     /**
      * Create a new schedule.
      *
-     * @param payload - Schedule configuration including name, interaction, and cron expression
+     * @param payload - Agent or process schedule configuration
      * @returns The created schedule
      *
      * @example
@@ -46,6 +46,18 @@ export class SchedulesApi extends ApiTopic {
      *   cron_expression: '0 9 * * MON', // Every Monday at 9am
      *   timezone: 'America/New_York',
      *   vars: { reportType: 'summary' }
+     * });
+     * ```
+     *
+     * @example
+     * ```typescript
+     * const schedule = await client.schedules.create({
+     *   name: 'Nightly Refresh',
+     *   target: 'process',
+     *   process: '68c01a23456789abcdef0123',
+     *   cron_expression: '0 2 * * *',
+     *   timezone: 'UTC',
+     *   context: { collection: 'reports' }
      * });
      * ```
      */
@@ -77,9 +89,9 @@ export class SchedulesApi extends ApiTopic {
     }
 
     /**
-     * Trigger an immediate execution of the scheduled agent.
+     * Trigger an immediate execution of the scheduled workflow.
      *
-     * This runs the agent immediately without waiting for the next scheduled time.
+     * This runs the agent or process immediately without waiting for the next scheduled time.
      *
      * @param id - Schedule ID
      * @returns Success message
