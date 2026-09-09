@@ -40,7 +40,8 @@ function getExecutableProvider(provider: ExecutionEnvironmentRef['provider']): M
 
 export interface ScheduledWorkflowConfig {
     run_as?: import('@vertesia/common').ScheduleRunAs;
-    delegation_expiry?: string;
+    /** Local datetime input; serialize as delegation_expires_at (ISO or null) for schedule requests. */
+    delegation_expiry_input?: string;
     request_id?: string;
     name: string;
     description?: string;

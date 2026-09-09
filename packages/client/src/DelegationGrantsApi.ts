@@ -5,10 +5,10 @@ export default class DelegationGrantsApi extends ApiTopic {
         super(parent, '/api/v1/iam/delegation-grants');
     }
     create(payload: CreateDelegationGrantPayload): Promise<DelegationGrant> {
-        return this.post('', { payload });
+        return this.post('/', { payload });
     }
     list(): Promise<DelegationGrant[]> {
-        return this.get('');
+        return this.get('/');
     }
     mine(): Promise<DelegationGrant[]> {
         return this.get('/me');
