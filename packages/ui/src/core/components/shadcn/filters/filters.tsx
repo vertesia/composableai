@@ -130,7 +130,7 @@ export default function Filters({ filters, setFilters, filterGroups }: FiltersPr
                             onClick={() => {
                                 setFilters((prev) => prev.filter((f) => f !== filter));
                             }}
-                            className="bg-muted rounded-s-none rounded-e-sm size-8 hover:text-primary hover:bg-muted-foreground/50 transition shrink-0"
+                            className="bg-muted rounded-s-none rounded-e-sm size-8 hover:text-primary hover:bg-muted/50 transition shrink-0"
                         >
                             <X className="size-6" />
                         </Button>

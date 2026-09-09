@@ -19,38 +19,30 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
-    --color-primary-background: var(--primary-background); /* Legacy primary tint */
 
     --color-link: var(--primary);
     --color-link-foreground: var(--primary-foreground);
 
     --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary-background: var(--secondary); /* Compatibility alias */
+    --color-secondary-background: var(--secondary-background);
 
     --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted-background: var(--muted); /* Compatibility alias */
+    --color-muted-background: var(--muted-background);
 
     --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-    --color-destructive-background: var(--destructive); /* Compatibility alias */
+    --color-destructive-background: var(--destructive-background);
 
     --color-success: var(--success);
-    --color-success-foreground: var(--success-foreground);
-    --color-success-background: var(--success); /* Compatibility alias */
+    --color-success-background: var(--success-background);
 
     --color-attention: var(--attention);
-    --color-attention-foreground: var(--attention-foreground);
-    --color-attention-background: var(--attention); /* Compatibility alias */
+    --color-attention-background: var(--attention-background);
 
     --color-done: var(--done);
-    --color-done-foreground: var(--done-foreground);
-    --color-done-background: var(--done); /* Compatibility alias */
+    --color-done-background: var(--done-background);
 
     --color-info: var(--info);
-    --color-info-foreground: var(--info-foreground);
-    --color-info-background: var(--info); /* Compatibility alias */
+    --color-info-background: var(--info-background);
 
     --color-border: var(--border);
     --color-input: var(--input);
@@ -83,6 +75,7 @@
     --color-preprod: var(--preprod);
     --color-preview: var(--preview);
     --color-development: var(--development);
+    --color-production: var(--production);
 
     --font-sans:
         Inter, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",

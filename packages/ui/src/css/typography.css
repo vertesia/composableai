@@ -7,12 +7,12 @@
 }
 
 .vprose a {
-    @apply text-info-foreground hover:text-info-foreground/80;
+    @apply text-info hover:text-info/80;
 }
 
 .vprose pre,
 .vprose code {
-    @apply !bg-muted text-muted-foreground my-2;
+    @apply !bg-muted text-muted my-2;
 }
 
 .vprose h1,
@@ -45,11 +45,11 @@
 }
 
 .vprose blockquote {
-    @apply border-s-4 border-muted-foreground/30 dark:border-muted-foreground ps-4 italic text-muted-foreground my-3;
+    @apply border-s-4 border-muted/30 ps-4 italic text-muted my-3;
 }
 
 .vprose hr {
-    @apply border-muted-foreground/30 dark:border-muted-foreground my-4;
+    @apply border-muted/30 my-4;
 }
 
 .vprose h1 {
@@ -65,15 +65,15 @@
 }
 
 .vprose table {
-    @apply min-w-full border-collapse border border-muted-foreground/30 my-4;
+    @apply min-w-full border-collapse border border-muted/30 my-4;
 }
 
 .vprose th {
-    @apply border border-muted-foreground/30 bg-mixer-muted/50 px-4 py-2 text-start text-muted-foreground font-bold;
+    @apply border border-muted/30 bg-mixer-muted/50 px-4 py-2 text-start text-muted font-bold;
 }
 
 .vprose td {
-    @apply border border-muted-foreground/30 px-4 py-2 text-muted-foreground;
+    @apply border border-muted/30 px-4 py-2 text-muted;
 }
 
 .vprose code {
@@ -81,7 +81,7 @@
 }
 
 .vprose :not(pre) > code {
-    @apply px-1.5 py-0.5 rounded text-muted-foreground bg-muted-foreground/20 dark:bg-muted-foreground/30;
+    @apply px-1.5 py-0.5 rounded text-muted bg-muted/20 dark:bg-muted/30;
 }
 
 .vprose .code-language-indicator {

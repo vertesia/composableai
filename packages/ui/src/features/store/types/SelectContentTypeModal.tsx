@@ -71,7 +71,7 @@ export function SelectContentTypeModal({
                 <div className="mb-4 mt-4">
                     <div className="block text-sm font-medium mb-2">
                         {t('store.contentType')}{' '}
-                        {allowNone && <span className="text-gray-500 font-normal">{t('store.optional')}</span>}
+                        {allowNone && <span className="text-muted font-normal">{t('store.optional')}</span>}
                     </div>
                     {allowNone ? (
                         <SelectBox
@@ -100,7 +100,7 @@ export function SelectContentTypeModal({
                 </div>
 
                 {!selectedType && (
-                    <div className="flex items-center text-attention-foreground">
+                    <div className="flex items-center text-attention">
                         <CheckCircleIcon className="size-4 me-1" />
                         {t('store.automaticTypeDetection')}
                         <VTooltip description={t('store.automaticTypeDetectionDescription')} placement="top" size="xs">

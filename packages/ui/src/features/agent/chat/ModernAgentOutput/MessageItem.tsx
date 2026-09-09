@@ -126,95 +126,95 @@ export interface MessageItemProps extends MessageItemClassNames {
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
     [AgentMessageType.ANSWER]: {
         borderColor: 'border-s-info',
-        iconColor: 'text-info-foreground',
+        iconColor: 'text-info',
         sender: 'Agent',
         Icon: Bot,
     },
     [AgentMessageType.COMPLETE]: {
         borderColor: 'border-s-success',
-        iconColor: 'text-success-foreground',
+        iconColor: 'text-success',
         sender: 'Completed',
         Icon: CheckCircle,
     },
     [AgentMessageType.IDLE]: {
         borderColor: 'border-s-info',
-        iconColor: 'text-info-foreground',
+        iconColor: 'text-info',
         sender: 'Ready',
         Icon: Clock,
     },
     [AgentMessageType.REQUEST_INPUT]: {
         borderColor: 'border-s-attention',
-        iconColor: 'text-attention-foreground',
+        iconColor: 'text-attention',
         sender: 'Input',
         Icon: User,
     },
     [AgentMessageType.QUESTION]: {
         borderColor: 'border-s-muted',
-        iconColor: 'text-muted-foreground',
+        iconColor: 'text-muted',
         sender: 'User',
         Icon: User,
     },
     [AgentMessageType.THOUGHT]: {
-        borderColor: 'border-s-purple-500',
-        iconColor: 'text-purple-600 dark:text-purple-400',
+        borderColor: 'border-s-done',
+        iconColor: 'text-done',
         sender: 'Agent',
         Icon: Bot,
     },
     [AgentMessageType.ERROR]: {
         borderColor: 'border-s-destructive',
-        iconColor: 'text-destructive-foreground',
+        iconColor: 'text-destructive',
         sender: 'Error',
         Icon: AlertCircle,
     },
     [AgentMessageType.UPDATE]: {
         borderColor: 'border-s-success',
-        iconColor: 'text-success-foreground',
+        iconColor: 'text-success',
         sender: 'Update',
         Icon: Info,
     },
     [AgentMessageType.PLAN]: {
         borderColor: 'border-s-attention',
-        iconColor: 'text-attention-foreground',
+        iconColor: 'text-attention',
         sender: 'Plan',
         Icon: MessageSquare,
     },
     [AgentMessageType.TERMINATED]: {
         borderColor: 'border-s-muted',
-        iconColor: 'text-muted-foreground',
+        iconColor: 'text-muted',
         sender: 'Terminated',
         Icon: CheckCircle,
     },
     [AgentMessageType.WARNING]: {
         borderColor: 'border-s-attention',
-        iconColor: 'text-attention-foreground',
+        iconColor: 'text-attention',
         sender: 'Warning',
         Icon: AlertCircle,
     },
     [AgentMessageType.SYSTEM]: {
         borderColor: 'border-s-muted',
-        iconColor: 'text-muted-foreground',
+        iconColor: 'text-muted',
         sender: 'System',
         Icon: Info,
     },
     [AgentMessageType.STREAMING_CHUNK]: {
         borderColor: 'border-s-info',
-        iconColor: 'text-info-foreground',
+        iconColor: 'text-info',
         sender: 'Agent',
         Icon: Bot,
     },
     [AgentMessageType.BATCH_PROGRESS]: {
-        borderColor: 'border-s-blue-500',
-        iconColor: 'text-blue-600 dark:text-blue-400',
+        borderColor: 'border-s-info',
+        iconColor: 'text-info',
         sender: 'Batch',
         Icon: Layers,
     },
     [AgentMessageType.RESTARTING]: {
         borderColor: 'border-s-attention',
-        iconColor: 'text-attention-foreground',
+        iconColor: 'text-attention',
         sender: 'Restarting',
         Icon: RefreshCcw,
     },
-    default: { borderColor: 'border-s-muted', iconColor: 'text-muted-foreground', sender: 'Agent', Icon: Bot },
+    default: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
 function MessageItemComponent({
@@ -432,7 +432,7 @@ function MessageItemComponent({
         // Handle object content (JSON)
         if (typeof content === 'object') {
             return (
-                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700">
+                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-foreground">
                     {JSON.stringify(content, null, 2)}
                 </pre>
             );
@@ -568,7 +568,7 @@ function MessageItemComponent({
         <div className={cn('w-full max-w-full', resolvedStyle.className)}>
             <div
                 className={cn(
-                    'border-s-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden',
+                    'border-s-4 bg-white dark:bg-muted mb-4 w-full max-w-full overflow-hidden',
                     resolvedStyle.borderColor,
                     resolvedStyle.cardClassName,
                 )}
@@ -580,29 +580,27 @@ function MessageItemComponent({
                         <div className={cn(showPulsatingCircle ? 'animate-fadeIn' : '', resolvedStyle.iconClassName)}>
                             {renderIcon()}
                         </div>
-                        <span
-                            className={cn('text-xs font-medium text-muted-foreground', resolvedStyle.senderClassName)}
-                        >
+                        <span className={cn('text-xs font-medium text-muted', resolvedStyle.senderClassName)}>
                             {SENDER_I18N_KEYS[resolvedStyle.sender]
                                 ? t(SENDER_I18N_KEYS[resolvedStyle.sender])
                                 : resolvedStyle.sender}
                         </span>
                         {workstreamId !== 'main' && workstreamId !== 'all' && (
-                            <Badge variant="default" className="text-xs text-muted-foreground ms-1">
+                            <Badge variant="default" className="text-xs text-muted ms-1">
                                 {workstreamId}
                             </Badge>
                         )}
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
                         <MessageDeliveryStatus message={message} />
-                        <span className={cn('text-[11px] text-muted-foreground/70', resolvedStyle.timestampClassName)}>
+                        <span className={cn('text-[11px] text-muted/70', resolvedStyle.timestampClassName)}>
                             {dayjs(message.timestamp).format('HH:mm:ss')}
                         </span>
                         <Button
                             variant="ghost"
                             size="xs"
                             onClick={copyToClipboard}
-                            className="text-muted-foreground/50 hover:text-muted-foreground h-5 w-5 p-0"
+                            className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                             title={t('agent.copyMessage')}
                         >
                             <CopyIcon className="size-3" />
@@ -613,7 +611,7 @@ function MessageItemComponent({
                                     <Button
                                         variant="ghost"
                                         size="xs"
-                                        className="text-muted-foreground/50 hover:text-muted-foreground h-5 w-5 p-0"
+                                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                                         title={t('agent.exportMessage')}
                                         disabled={isExportingFile}
                                     >
@@ -633,12 +631,7 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div
-                    className={cn(
-                        'px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden',
-                        resolvedStyle.contentClassName,
-                    )}
-                >
+                <div className={cn('px-4 pb-3 bg-white dark:bg-muted overflow-hidden', resolvedStyle.contentClassName)}>
                     {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                     {askUserUx ? (
                         <AskUserWidget
@@ -700,7 +693,7 @@ function MessageItemComponent({
                     {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                     {artifactLinks.length > 0 && (
                         <div className={cn('mt-3 text-xs', resolvedStyle.artifactsClassName)}>
-                            <div className="font-medium text-muted-foreground mb-1">Artifacts</div>
+                            <div className="font-medium text-muted mb-1">Artifacts</div>
 
                             {/* Inline previews for image artifacts */}
                             {artifactLinks.some((a) => a.isImage) && (
@@ -720,7 +713,7 @@ function MessageItemComponent({
                                                     alt={displayName}
                                                     className="max-w-full h-auto rounded-lg shadow-sm hover:shadow-md transition-shadow"
                                                 />
-                                                <div className="mt-1 text-[11px] text-muted-foreground truncate">
+                                                <div className="mt-1 text-[11px] text-muted truncate">
                                                     {displayName}
                                                 </div>
                                             </Button>
@@ -758,7 +751,7 @@ function MessageItemComponent({
                             <Button
                                 variant="unstyled"
                                 onClick={() => setShowDetails(!showDetails)}
-                                className="text-[11px] text-muted-foreground flex items-center"
+                                className="text-[11px] text-muted flex items-center"
                             >
                                 {showDetails ? t('agent.hideDetails') : t('agent.showDetails')}
                                 <svg
@@ -779,11 +772,11 @@ function MessageItemComponent({
                             </Button>
 
                             {showDetails && (
-                                <div className="mt-1 p-1.5 bg-muted border border-mixer-muted-foreground/40 rounded text-sm">
+                                <div className="mt-1 p-1.5 bg-muted border border-mixer-muted/40 rounded text-sm">
                                     {typeof message.details === 'string' ? (
                                         renderContent(message.details)
                                     ) : (
-                                        <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted-foreground">
+                                        <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted">
                                             {JSON.stringify(message.details, null, 2)}
                                         </pre>
                                     )}

@@ -29,12 +29,12 @@ export function HomePage() {
     return (
         <main className="p-6 space-y-6">
             <section className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-muted">
                     <Lightbulb className="size-4" />
                     Content app preset
                 </div>
                 <h1 className="text-2xl font-semibold">Field Guide Library</h1>
-                <p className="max-w-3xl text-muted-foreground">
+                <p className="max-w-3xl text-muted">
                     A service app scaffold with packaged content types, interactions, review process, and real Store
                     object screens.
                 </p>
@@ -46,10 +46,10 @@ export function HomePage() {
                     return (
                         <article key={card.to} className="rounded-md border border-border bg-card p-4">
                             <div className="mb-3 flex items-center gap-2">
-                                <Icon className="size-4 text-info-foreground" />
+                                <Icon className="size-4 text-info" />
                                 <h2 className="text-base font-semibold">{card.title}</h2>
                             </div>
-                            <p className="min-h-12 text-sm text-muted-foreground">{card.description}</p>
+                            <p className="min-h-12 text-sm text-muted">{card.description}</p>
                             <Button className="mt-4" variant="outline" size="sm" onClick={() => navigate(card.to)}>
                                 Open
                             </Button>

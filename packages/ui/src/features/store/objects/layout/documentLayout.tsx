@@ -53,7 +53,7 @@ export function DocumentTableView({
                     return (
                         <tr
                             key={obj.id}
-                            className={`group cursor-pointer hover:bg-muted ${selectedObject?.id === obj.id ? 'bg-muted' : ''} ${isHighlighted ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                            className={`group cursor-pointer hover:bg-muted ${selectedObject?.id === obj.id ? 'bg-muted' : ''} ${isHighlighted ? 'bg-info' : ''}`}
                             onClick={() => {
                                 onRowClick?.(obj);
                             }}
@@ -71,9 +71,7 @@ export function DocumentTableView({
                             )}
                             {columns.map((col, index) => col.render(obj, index))}
                             <td className="w-8 text-center">
-                                {isHighlighted && (
-                                    <CheckIcon className="size-4 text-blue-600 dark:text-blue-400 inline-block" />
-                                )}
+                                {isHighlighted && <CheckIcon className="size-4 text-info inline-block" />}
                             </td>
                         </tr>
                     );

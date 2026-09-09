@@ -36,7 +36,7 @@ export function createUserFilterGroup({ buckets, name, placeholder }: UserFacetP
                     <div className="flex-1 min-w-0 flex items-center truncate">
                         <UserInfo userRef={userRef} showTitle={true} size="sm" />
                     </div>
-                    <span className="text-muted-foreground flex-shrink-0">({bucket?.count || 0})</span>
+                    <span className="text-muted flex-shrink-0">({bucket?.count || 0})</span>
                 </div>
             );
         },

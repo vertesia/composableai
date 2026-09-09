@@ -78,7 +78,7 @@ function DocumentPanelComponent({
                     <ArrowLeftIcon className="size-4 cn-rtl-flip" />
                 </Button>
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <FileTextIcon className="size-4 text-muted-foreground shrink-0" />
+                    <FileTextIcon className="size-4 text-muted shrink-0" />
                     <span className="truncate text-sm font-medium" title={docName || title}>
                         {docName || title || t('agent.document')}
                     </span>
@@ -86,7 +86,7 @@ function DocumentPanelComponent({
                 <NavLink
                     href={`/store/objects/${documentId}#overview`}
                     topLevelNav
-                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted hover:bg-muted/20 hover:text-foreground"
                 >
                     <VTooltip description={t('agent.openDocument')} placement="top" size="xs" asChild>
                         <ExternalLinkIcon className="size-4" aria-hidden="true" />
@@ -99,19 +99,17 @@ function DocumentPanelComponent({
             <div className="flex-1 overflow-y-auto px-4 py-4">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
-                        <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
-                        <span className="ms-2 text-sm text-muted-foreground">{t('agent.loadingDocument')}</span>
+                        <Loader2Icon className="size-5 animate-spin text-muted" />
+                        <span className="ms-2 text-sm text-muted">{t('agent.loadingDocument')}</span>
                     </div>
                 ) : error ? (
-                    <div className="p-4 rounded-md bg-destructive-foreground/10 text-destructive-foreground text-sm">
-                        {error}
-                    </div>
+                    <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">{error}</div>
                 ) : content ? (
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                         <MarkdownRenderer artifactRunId={runId}>{content}</MarkdownRenderer>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center py-12 text-muted">
                         <FileTextIcon className="size-8 mb-2" />
                         <span className="text-sm">{t('agent.noContentAvailable')}</span>
                     </div>

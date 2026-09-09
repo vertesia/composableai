@@ -133,7 +133,7 @@ function ChangeDiff({ before, after }: { before: string; after: string }) {
                     return (
                         <del
                             key={index}
-                            className="rounded-xs bg-mixer-destructive/15 text-destructive-foreground line-through decoration-destructive-foreground/50"
+                            className="rounded-xs bg-mixer-destructive/15 text-destructive line-through decoration-destructive/50"
                         >
                             {segment.text}
                         </del>
@@ -141,10 +141,7 @@ function ChangeDiff({ before, after }: { before: string; after: string }) {
                 }
                 if (segment.type === 'added') {
                     return (
-                        <ins
-                            key={index}
-                            className="rounded-xs bg-mixer-success/15 text-success-foreground no-underline"
-                        >
+                        <ins key={index} className="rounded-xs bg-mixer-success/15 text-success no-underline">
                             {segment.text}
                         </ins>
                     );
@@ -165,7 +162,7 @@ export function DocumentEditingActionCard({ action }: { action: MarkdownEditingA
 
     return (
         <div className="min-w-0 space-y-2 text-start" data-document-edit-action={action.action}>
-            <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
                 <Icon className="size-4 shrink-0" aria-hidden="true" />
                 <span className="shrink-0 font-medium text-foreground">
                     {isComment
@@ -195,7 +192,7 @@ export function DocumentEditingActionCard({ action }: { action: MarkdownEditingA
                         artifactRunId={artifactRunId}
                         disableCollapse
                         className={cn(
-                            'border-s-2 border-mixer-muted-foreground/30 ps-3 text-foreground/70',
+                            'border-s-2 border-mixer-muted/30 ps-3 text-foreground/70',
                             COMPACT_MARKDOWN_CLASS,
                         )}
                     >

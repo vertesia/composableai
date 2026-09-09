@@ -152,7 +152,7 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                 <thead>
                     <tr className="border-b">
                         {headers.map((h) => (
-                            <th key={h} className="px-3 py-2 text-start font-medium text-muted-foreground">
+                            <th key={h} className="px-3 py-2 text-start font-medium text-muted">
                                 {h}
                             </th>
                         ))}
@@ -160,7 +160,7 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                 </thead>
                 <tbody>
                     {rows.slice(0, 100).map((row, i) => (
-                        <tr key={`row-${i}`} className="border-b border-muted-foreground/20">
+                        <tr key={`row-${i}`} className="border-b border-muted/20">
                             {row.map((cell, j) => (
                                 <td key={`cell-${j}`} className="px-3 py-2">
                                     {cell}
@@ -170,9 +170,7 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                     ))}
                 </tbody>
             </table>
-            {rows.length > 100 && (
-                <div className="text-sm text-muted-foreground py-2">Showing 100 of {rows.length} rows</div>
-            )}
+            {rows.length > 100 && <div className="text-sm text-muted py-2">Showing 100 of {rows.length} rows</div>}
         </div>
     );
 }
@@ -185,7 +183,7 @@ function CodeRenderer({ content, path }: { content: unknown; path: string }): Re
     const code = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
 
     return (
-        <pre className="overflow-x-auto p-3 bg-muted-foreground/10 rounded text-sm">
+        <pre className="overflow-x-auto p-3 bg-muted/10 rounded text-sm">
             <code className={`language-${ext}`}>{code}</code>
         </pre>
     );
@@ -366,7 +364,7 @@ export function ArtifactContentRenderer({
                     {MarkdownRenderer ? (
                         <MarkdownRenderer artifactRunId={runId}>{markdownContent}</MarkdownRenderer>
                     ) : (
-                        <pre className="overflow-x-auto p-3 bg-muted-foreground/10 rounded text-sm">
+                        <pre className="overflow-x-auto p-3 bg-muted/10 rounded text-sm">
                             <code>{markdownContent}</code>
                         </pre>
                     )}

@@ -58,11 +58,11 @@ export function UploadSummary({ files, className = '', location, collection }: U
     return (
         <div className={`flex flex-col py-2 ${className}`}>
             <div className="flex items-center mb-4">
-                <div className="size-8 me-4 rounded-full bg-success-foreground/10 flex items-center justify-center">
-                    <CheckCircleIcon className="size-4 text-success-foreground" />
+                <div className="size-8 me-4 rounded-full bg-success/10 flex items-center justify-center">
+                    <CheckCircleIcon className="size-4 text-success" />
                 </div>
                 <div>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted">
                         {t('upload.filesProcessed', { count: totalCount })}
                         {collection ? t('upload.inCollection', { collection }) : ''}
                         {location ? t('upload.inFolder', { location }) : ''}
@@ -77,7 +77,7 @@ export function UploadSummary({ files, className = '', location, collection }: U
                     <UploadResultCategory
                         title={t('upload.successfullyUploaded')}
                         count={successCount}
-                        icon={<CheckCircleIcon className="h-4 w-4 text-green-500" />}
+                        icon={<CheckCircleIcon className="h-4 w-4 text-success" />}
                         items={successFiles.map((f) => f.name)}
                     />
                 )}
@@ -87,7 +87,7 @@ export function UploadSummary({ files, className = '', location, collection }: U
                     <UploadResultCategory
                         title={t('upload.successfullyUpdated')}
                         count={updatedCount}
-                        icon={<CheckCircleIcon className="h-4 w-4 text-blue-500" />}
+                        icon={<CheckCircleIcon className="h-4 w-4 text-info" />}
                         items={updatedFiles.map((f) => f.name)}
                     />
                 )}
@@ -97,7 +97,7 @@ export function UploadSummary({ files, className = '', location, collection }: U
                     <UploadResultCategory
                         title={t('upload.skippedAlreadyExisted')}
                         count={skippedCount}
-                        icon={<AlertCircleIcon className="h-4 w-4 text-amber-500" />}
+                        icon={<AlertCircleIcon className="h-4 w-4 text-attention" />}
                         items={skippedFiles.map((f) => f.name)}
                     />
                 )}
@@ -107,7 +107,7 @@ export function UploadSummary({ files, className = '', location, collection }: U
                     <UploadResultCategory
                         title={t('upload.failedToUpload')}
                         count={failedCount}
-                        icon={<XCircleIcon className="h-4 w-4 text-red-500" />}
+                        icon={<XCircleIcon className="h-4 w-4 text-destructive" />}
                         items={failedFiles.map((f) => f.name)}
                     />
                 )}

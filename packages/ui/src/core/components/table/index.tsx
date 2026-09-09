@@ -4,7 +4,7 @@ import type React from 'react';
 const defaultTableCass = `
 divide-y divide-border
 [&>tbody]:divide-y [&>tbody]:divide-border
-[&_th]:text-start [&_th]:px-3 [&_th]:py-3.5 [&_th]:text-sm [&_th]:font-normal [&_th]:text-foreground
+[&_th]:text-start [&_th]:px-3 [&_th]:py-3.5 [&_th]:text-sm [&_th]:font-normal [&_th]:text-muted
 [&_td]:px-3 [&_td]:py-4 [&_td]:text-sm
 `;
 
@@ -21,7 +21,7 @@ interface THeadProps {
 }
 export function THead({ children }: Readonly<THeadProps>) {
     return (
-        <thead className="sticky top-0 bg-background z-10 after:absolute after:bottom-0 after:start-0 after:w-full after:h-px after:bg-muted-foreground/20">
+        <thead className="sticky top-0 bg-background z-10 after:absolute after:bottom-0 after:start-0 after:w-full after:h-px after:bg-muted/20">
             {children}
         </thead>
     );

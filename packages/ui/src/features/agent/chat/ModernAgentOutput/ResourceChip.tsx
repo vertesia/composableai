@@ -54,7 +54,7 @@ export function ResourceChip({ resource, workflowRunId, showAction = true, class
             <NavLink
                 href={target.href}
                 topLevelNav
-                className={cn(baseClass, 'font-medium transition-colors hover:bg-muted-foreground/60')}
+                className={cn(baseClass, 'font-medium transition-colors hover:bg-muted/60')}
             >
                 {body}
             </NavLink>
@@ -66,7 +66,7 @@ export function ResourceChip({ resource, workflowRunId, showAction = true, class
             <Button
                 variant="unstyled"
                 onClick={target.onActivate}
-                className={cn(baseClass, 'font-medium transition-colors hover:bg-muted-foreground/60')}
+                className={cn(baseClass, 'font-medium transition-colors hover:bg-muted/60')}
             >
                 {body}
             </Button>
@@ -74,7 +74,7 @@ export function ResourceChip({ resource, workflowRunId, showAction = true, class
     }
 
     // Deleted or unresolvable resource: no navigation target, render a non-interactive chip.
-    return <span className={cn(baseClass, 'text-muted-foreground')}>{body}</span>;
+    return <span className={cn(baseClass, 'text-muted')}>{body}</span>;
 }
 
 interface ResourceActivityLinkListProps {
@@ -105,7 +105,7 @@ export function ResourceActivityLinkList({ resources, workflowRunId, className }
                         key={`${resource.type}:${resource.id}:${resource.action}`}
                         className="inline-flex min-w-0 items-center gap-1.5"
                     >
-                        <span className="shrink-0 text-sm text-muted-foreground">{actionLabel}</span>
+                        <span className="shrink-0 text-sm text-muted">{actionLabel}</span>
                         <ResourceChip
                             resource={resource}
                             workflowRunId={workflowRunId}

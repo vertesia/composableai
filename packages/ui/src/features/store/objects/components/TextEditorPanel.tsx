@@ -136,7 +136,7 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
     return (
         <>
             <div className="flex items-center gap-2 px-2 py-1 shrink-0">
-                {isDirty && <span className="text-xs text-attention-foreground">{t('store.unsavedChanges')}</span>}
+                {isDirty && <span className="text-xs text-attention">{t('store.unsavedChanges')}</span>}
                 <div className="flex-1" />
                 <Button variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
                     {t('store.cancelEdit')}

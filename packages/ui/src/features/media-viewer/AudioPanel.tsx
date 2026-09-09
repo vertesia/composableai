@@ -79,9 +79,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
 
     if (showsObjectFallbackEmpty) {
         return (
-            <div
-                className={`flex justify-center items-center h-[200px] text-muted-foreground ${className ?? ''}`.trim()}
-            >
+            <div className={`flex justify-center items-center h-[200px] text-muted ${className ?? ''}`.trim()}>
                 <div className="text-center">
                     <p>{t('store.noAudioRendition')}</p>
                     <p className="text-sm mt-2">{t('store.audioFormatRequired')}</p>
@@ -100,9 +98,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
 
     if (!audioUrl) {
         return (
-            <div
-                className={`flex justify-center items-center h-[200px] text-muted-foreground ${className ?? ''}`.trim()}
-            >
+            <div className={`flex justify-center items-center h-[200px] text-muted ${className ?? ''}`.trim()}>
                 Failed to load audio
             </div>
         );
@@ -115,7 +111,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
                 Your browser does not support the audio tag.
             </audio>
             {metadata?.duration && (
-                <div className="text-sm text-muted-foreground">Duration: {formatDuration(metadata.duration)}</div>
+                <div className="text-sm text-muted">Duration: {formatDuration(metadata.duration)}</div>
             )}
         </div>
     );

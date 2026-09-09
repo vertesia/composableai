@@ -44,12 +44,7 @@ interface BlockElementProps {
 }
 function BlockElement({ children, className }: BlockElementProps) {
     return (
-        <div
-            className={clsx(
-                'flex flex-col gap-4 py-2 ps-4 border-s-4 border-s-solid border-s-slate-100 dark:border-s-slate-600',
-                className,
-            )}
-        >
+        <div className={clsx('flex flex-col gap-4 py-2 ps-4 border-s-4 border-s-solid border-s-border', className)}>
             {children}
         </div>
     );
@@ -165,7 +160,7 @@ function ItemProperty({ index, value, useBullet }: ItemPropertyProps) {
     }
     return (
         <div className="flex gap-4 hover:bg-muted py-2 pe-2 ps-4">
-            <div className="font-semibold text-muted-foreground">{bullet}</div>
+            <div className="font-semibold text-muted">{bullet}</div>
             <div>{content}</div>
         </div>
     );

@@ -100,14 +100,14 @@ export function SaveVersionConfirmModal({
             <ModalBody>
                 <div className="space-y-4">
                     {uploadedFileName && (
-                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                            <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                        <div className="mb-4 p-3 bg-info rounded-md">
+                            <p className="text-sm text-info font-medium">
                                 {t('modal.saveVersion.replaceFile')}{' '}
                                 <span className="font-bold">{uploadedFileName}</span>
                             </p>
                         </div>
                     )}
-                    <p className="text-sm text-mixer-muted-foreground/5">{t('modal.saveVersion.howToSave')}</p>
+                    <p className="text-sm text-mixer-muted/5">{t('modal.saveVersion.howToSave')}</p>
 
                     <RadioGroup
                         adapter={optionAdapter}

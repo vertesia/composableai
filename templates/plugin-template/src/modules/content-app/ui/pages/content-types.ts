@@ -45,16 +45,15 @@ export type GuideObject = ContentObjectItem<GuideProperties>;
 export type ReviewTaskObject = ContentObjectItem<ReviewTaskProperties>;
 
 export function statusClass(status: string): string {
-    if (status === 'published' || status === 'done')
-        return 'text-success-foreground bg-mixer-success/10 border-success-foreground';
+    if (status === 'published' || status === 'done') return 'text-success bg-mixer-success/10 border-success';
     if (status === 'in_review' || status === 'in_progress') {
-        return 'text-attention-foreground bg-mixer-attention/10 border-attention-foreground';
+        return 'text-attention bg-mixer-attention/10 border-attention';
     }
-    return 'text-muted-foreground bg-mixer-muted/10 border-border';
+    return 'text-muted bg-mixer-muted/10 border-border';
 }
 
 export function priorityClass(priority: string): string {
-    if (priority === 'high') return 'text-destructive-foreground bg-mixer-destructive/10 border-destructive-foreground';
-    if (priority === 'medium') return 'text-attention-foreground bg-mixer-attention/10 border-attention-foreground';
-    return 'text-muted-foreground bg-mixer-muted/10 border-border';
+    if (priority === 'high') return 'text-destructive bg-mixer-destructive/10 border-destructive';
+    if (priority === 'medium') return 'text-attention bg-mixer-attention/10 border-attention';
+    return 'text-muted bg-mixer-muted/10 border-border';
 }

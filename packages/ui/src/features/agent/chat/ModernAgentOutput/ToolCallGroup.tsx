@@ -117,13 +117,13 @@ function areMessagesRenderEqual(prevMessage: AgentMessage, nextMessage: AgentMes
 function statusBadgeClass(status?: ToolExecutionStatus): string {
     switch (status) {
         case 'completed':
-            return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
+            return 'bg-success text-success border-success';
         case 'running':
-            return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+            return 'bg-info text-info border-info';
         case 'error':
-            return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
+            return 'bg-destructive text-destructive border-destructive';
         case 'warning':
-            return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
+            return 'bg-attention text-attention border-attention';
         default:
             return '';
     }
@@ -301,7 +301,7 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
                         href={file}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted-foreground/80"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
                     >
                         📎 {fileName}
                     </a>
@@ -320,10 +320,9 @@ const getFilesFromDetails = (
     return Array.isArray(files) ? files : undefined;
 };
 
-const TOOL_BADGE_CLASS =
-    'text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium';
+const TOOL_BADGE_CLASS = 'text-[10px] px-1.5 py-0.5 rounded-md bg-done text-done border border-done font-medium';
 const ASSISTANT_BADGE_CLASS =
-    'text-[10px] px-1.5 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-medium';
+    'text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-foreground border border-border font-medium';
 
 const isToolPreambleMessage = (message: AgentMessage): boolean => {
     const details = message.details as { display_role?: string } | undefined;
@@ -452,14 +451,14 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     };
 
     return (
-        <div className={cn('border-b border-gray-100 dark:border-gray-800 last:border-b-0', classNames.itemClassName)}>
+        <div className={cn('border-b border-border last:border-b-0', classNames.itemClassName)}>
             {/* Collapsed header - always visible */}
             {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons (copy); button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
                 role="button"
                 tabIndex={0}
                 className={cn(
-                    'flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
+                    'flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-muted transition-colors',
                     classNames.itemHeaderClassName,
                 )}
                 onClick={onToggle}
@@ -468,9 +467,9 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                 <div className="flex items-start gap-2 flex-1 min-w-0">
                     <div className="flex-shrink-0 pt-0.5">
                         {isExpanded ? (
-                            <ChevronDown className="size-3 text-muted-foreground" />
+                            <ChevronDown className="size-3 text-muted" />
                         ) : (
-                            <ChevronRight className="size-3 text-muted-foreground cn-rtl-flip" />
+                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -478,7 +477,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                         {messageContent ? (
                             <span className="text-xs text-foreground line-clamp-2">{messageContent}</span>
                         ) : (
-                            <span className="text-xs text-muted-foreground italic">Activity: {toolName}</span>
+                            <span className="text-xs text-muted italic">Activity: {toolName}</span>
                         )}
                     </div>
                 </div>
@@ -492,7 +491,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                             e.stopPropagation();
                             copyToClipboard();
                         }}
-                        className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-muted opacity-0 group-hover:opacity-100 transition-opacity"
                         title={t('agent.copyMessage')}
                     >
                         <CopyIcon className="size-3" />
@@ -518,12 +517,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                     );
                     const progressDetails = getProgressDetails(details as Record<string, unknown> | undefined);
                     return (
-                        <div
-                            className={cn(
-                                'px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30',
-                                classNames.itemContentClassName,
-                            )}
-                        >
+                        <div className={cn('px-4 py-2 bg-muted/50 dark:bg-muted/30', classNames.itemContentClassName)}>
                             {/* Badges row: tool name + status + timestamp */}
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <span className={cn(badgeClass, classNames.toolBadgeClassName)}>{toolName}</span>
@@ -537,7 +531,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                         {toolStatusValue}
                                     </span>
                                 )}
-                                <span className="text-[10px] text-muted-foreground/70">
+                                <span className="text-[10px] text-muted/70">
                                     {dayjs(message.timestamp).format('HH:mm:ss')}
                                 </span>
                             </div>
@@ -547,7 +541,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                 <div className="mb-2 space-y-0.5">
                                     {interestingDetails.map(([key, value]) => (
                                         <div key={key} className="flex gap-1.5 text-xs">
-                                            <span className="text-muted-foreground font-medium flex-shrink-0">
+                                            <span className="text-muted font-medium flex-shrink-0">
                                                 {formatDetailKey(key)}:
                                             </span>
                                             <span className="text-foreground break-all">
@@ -560,13 +554,13 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
 
                             {progressDetails.length > 0 && (
                                 <div className="mb-2 space-y-1">
-                                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 font-medium">
+                                    <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
                                         {t('agent.progress')}
                                     </div>
                                     {progressDetails.map((item) => (
-                                        <div key={getProgressDetailKey(item)} className="text-xs text-muted-foreground">
+                                        <div key={getProgressDetailKey(item)} className="text-xs text-muted">
                                             {item.timestamp && (
-                                                <span className="me-1 text-muted-foreground/60">
+                                                <span className="me-1 text-muted/60">
                                                     {dayjs(item.timestamp).format('HH:mm:ss')}
                                                 </span>
                                             )}
@@ -769,7 +763,7 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
     if (resolvedImages.length === 0) return null;
 
     return (
-        <div className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-800">
+        <div className="px-3 py-1.5 border-b border-border">
             <FileDisplay files={resolvedImages} />
         </div>
     );
@@ -829,18 +823,18 @@ function ToolCallGroupComponent({
             return <PulsatingCircle size="sm" color="blue" />;
         }
         if (toolStatus === 'running') {
-            return <span className="size-2 rounded-full bg-blue-500 inline-block" />;
+            return <span className="size-2 rounded-full bg-primary inline-block" />;
         }
         if (toolStatus === 'completed') {
-            return <CheckCircle className="size-4 text-success-foreground" />;
+            return <CheckCircle className="size-4 text-success" />;
         }
         if (toolStatus === 'error') {
-            return <AlertCircle className="size-4 text-destructive-foreground" />;
+            return <AlertCircle className="size-4 text-destructive" />;
         }
         if (toolStatus === 'warning') {
-            return <AlertTriangle className="size-4 text-attention-foreground" />;
+            return <AlertTriangle className="size-4 text-attention" />;
         }
-        return <Bot className="size-4 text-purple-600 dark:text-purple-400" />;
+        return <Bot className="size-4 text-done" />;
     };
 
     // Get border color based on status
@@ -848,7 +842,7 @@ function ToolCallGroupComponent({
         if (toolStatus === 'completed') return 'border-s-success';
         if (toolStatus === 'error') return 'border-s-destructive';
         if (toolStatus === 'warning') return 'border-s-attention';
-        return 'border-s-purple-500';
+        return 'border-s-done';
     };
 
     // Animate new messages when they're added
@@ -914,9 +908,7 @@ function ToolCallGroupComponent({
     };
 
     return (
-        <div
-            className={cn('border-s-4 overflow-hidden bg-white dark:bg-gray-900 mb-4', getBorderColor(), rootClassName)}
-        >
+        <div className={cn('border-s-4 overflow-hidden bg-white dark:bg-muted mb-4', getBorderColor(), rootClassName)}>
             {/* Compact header */}
             {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
@@ -924,7 +916,7 @@ function ToolCallGroupComponent({
                 tabIndex={0}
                 aria-expanded={!isCollapsed}
                 className={cn(
-                    'flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
+                    'flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-muted transition-colors',
                     headerClassName,
                 )}
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -940,38 +932,26 @@ function ToolCallGroupComponent({
                         </span>
                     ) : (
                         <>
-                            <span className={cn('text-xs font-medium text-muted-foreground', senderClassName)}>
-                                Agent
-                            </span>
-                            <span
-                                className={cn(
-                                    'text-xs text-purple-600 dark:text-purple-400 font-medium',
-                                    toolSummaryClassName,
-                                )}
-                            >
+                            <span className={cn('text-xs font-medium text-muted', senderClassName)}>Agent</span>
+                            <span className={cn('text-xs text-done font-medium', toolSummaryClassName)}>
                                 {toolSummary}
                             </span>
                         </>
                     )}
                     {isCollapsed ? (
-                        <ChevronRight className="size-3 text-muted-foreground flex-shrink-0 cn-rtl-flip" />
+                        <ChevronRight className="size-3 text-muted flex-shrink-0 cn-rtl-flip" />
                     ) : (
-                        <ChevronDown className="size-3 text-muted-foreground flex-shrink-0" />
+                        <ChevronDown className="size-3 text-muted flex-shrink-0" />
                     )}
                 </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {preambleText && (
-                        <span
-                            className={cn(
-                                'text-[10px] text-purple-600 dark:text-purple-400 font-medium',
-                                toolSummaryClassName,
-                            )}
-                        >
+                        <span className={cn('text-[10px] text-done font-medium', toolSummaryClassName)}>
                             {toolSummary}
                         </span>
                     )}
-                    <span className="text-[11px] text-muted-foreground/70">
+                    <span className="text-[11px] text-muted/70">
                         {dayjs(firstTimestamp).format('HH:mm:ss')}
                         {messages.length > 1 && ` - ${dayjs(lastTimestamp).format('HH:mm:ss')}`}
                     </span>
@@ -982,7 +962,7 @@ function ToolCallGroupComponent({
                             e.stopPropagation();
                             copyAllToClipboard();
                         }}
-                        className="text-muted-foreground/50 hover:text-muted-foreground h-5 w-5 p-0"
+                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                         title={t('agent.copyAllToolCalls')}
                     >
                         <CopyIcon className="size-3" />
@@ -1018,10 +998,7 @@ function ToolCallGroupComponent({
                         return (
                             <div
                                 key={itemKey}
-                                className={cn(
-                                    'border-b border-gray-100 dark:border-gray-800 last:border-b-0',
-                                    itemClassName,
-                                )}
+                                className={cn('border-b border-border last:border-b-0', itemClassName)}
                                 style={{
                                     opacity: isAnimating ? 0 : 1,
                                     transform: isAnimating ? 'translateX(-10px)' : 'translateX(0)',
@@ -1038,7 +1015,7 @@ function ToolCallGroupComponent({
                                     tabIndex={0}
                                     aria-expanded={isItemExpanded}
                                     className={cn(
-                                        'flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                        'flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-muted',
                                         itemHeaderClassName,
                                     )}
                                     onClick={() => toggleItem(itemKey)}
@@ -1047,9 +1024,9 @@ function ToolCallGroupComponent({
                                 >
                                     <div className="flex-shrink-0 pt-0.5">
                                         {isItemExpanded ? (
-                                            <ChevronDown className="size-3 text-muted-foreground" />
+                                            <ChevronDown className="size-3 text-muted" />
                                         ) : (
-                                            <ChevronRight className="size-3 text-muted-foreground cn-rtl-flip" />
+                                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -1057,7 +1034,7 @@ function ToolCallGroupComponent({
                                         {fullMessage ? (
                                             <span className="text-foreground line-clamp-2">{fullMessage}</span>
                                         ) : (
-                                            <span className="text-muted-foreground italic">Activity: {toolName}</span>
+                                            <span className="text-muted italic">Activity: {toolName}</span>
                                         )}
                                     </div>
                                     {/* Tool name badge on the right */}
@@ -1097,7 +1074,7 @@ function ToolCallGroupComponent({
                                                             {toolStatusValue}
                                                         </span>
                                                     )}
-                                                    <span className="text-[10px] text-muted-foreground/70">
+                                                    <span className="text-[10px] text-muted/70">
                                                         {dayjs(m.timestamp).format('HH:mm:ss')}
                                                     </span>
                                                 </div>
@@ -1107,7 +1084,7 @@ function ToolCallGroupComponent({
                                                     <div className="mb-1.5 space-y-0.5">
                                                         {interestingDetails.map(([key, value]) => (
                                                             <div key={key} className="flex gap-1.5 text-xs">
-                                                                <span className="text-muted-foreground font-medium flex-shrink-0">
+                                                                <span className="text-muted font-medium flex-shrink-0">
                                                                     {formatDetailKey(key)}:
                                                                 </span>
                                                                 <span className="text-foreground break-all">
@@ -1122,16 +1099,16 @@ function ToolCallGroupComponent({
 
                                                 {progressDetails.length > 0 && (
                                                     <div className="mb-1.5 space-y-1">
-                                                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70 font-medium">
+                                                        <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
                                                             {t('agent.progress')}
                                                         </div>
                                                         {progressDetails.map((item) => (
                                                             <div
                                                                 key={getProgressDetailKey(item)}
-                                                                className="text-xs text-muted-foreground"
+                                                                className="text-xs text-muted"
                                                             >
                                                                 {item.timestamp && (
-                                                                    <span className="me-1 text-muted-foreground/60">
+                                                                    <span className="me-1 text-muted/60">
                                                                         {dayjs(item.timestamp).format('HH:mm:ss')}
                                                                     </span>
                                                                 )}

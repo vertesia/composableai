@@ -44,11 +44,11 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 destructive:
-                    'bg-destructive dark:bg-destructive-foreground/10 text-destructive-foreground ring-1 ring-inset ring-destructive-foreground/50 dark:ring-destructive-foreground/50 shadow-xs hover:bg-destructive-foreground/10 dark:hover:bg-destructive-foreground/20',
+                    'bg-destructive text-destructive ring-1 ring-inset ring-destructive/50 shadow-xs hover:bg-destructive/50',
                 outline: 'border border-input bg-background text-foreground shadow-xs hover:bg-muted ring-inset',
                 secondary:
                     'bg-primary/5 dark:bg-primary/10 text-primary shadow-xs hover:bg-primary/10 dark:hover:bg-primary/20 ring-inset',
-                ghost: 'text-foreground hover:bg-muted-foreground/50 dark:hover:bg-muted-foreground/20 ring-inset',
+                ghost: 'text-foreground hover:bg-muted/50 dark:hover:bg-muted/20 ring-inset',
                 link: 'text-foreground underline-offset-4 hover:underline ring-inset',
                 primary: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 ring-inset',
                 unstyled: '',
@@ -247,7 +247,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
                 {...props}
                 title={label}
             >
-                {isCopied ? <Check className="text-success-foreground" /> : <CopyIcon className="size-4" />}
+                {isCopied ? <Check className="text-success" /> : <CopyIcon className="size-4" />}
             </Button>
         );
     },

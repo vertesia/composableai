@@ -9,11 +9,11 @@
     }
 
     body {
-        @apply bg-background text-foreground selection:bg-blue-300 selection:text-blue-900;
+        @apply bg-background text-foreground selection:bg-info selection:text-info;
         min-height: 100%;
         margin: 0;
         padding: 0;
-        scrollbar-color: var(--color-muted-foreground) var(--color-background);
+        scrollbar-color: var(--color-muted) var(--color-background);
     }
 
     #root {

@@ -447,7 +447,7 @@ export default function MessageInput({
         <div
             className={cn(
                 'px-3 py-3 flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background/95 backdrop-blur z-10',
-                isDragOver && canDropFiles && 'bg-info-foreground/10 border-info-foreground',
+                isDragOver && canDropFiles && 'bg-info/10 border-info',
                 className,
             )}
             onDragOver={canDropFiles ? handleDragOver : undefined}
@@ -456,8 +456,8 @@ export default function MessageInput({
         >
             {/* Drag overlay */}
             {isDragOver && canDropFiles && (
-                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 rounded-lg z-10 pointer-events-none">
-                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2">
+                <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 rounded-lg z-10 pointer-events-none">
+                    <div className="text-info font-medium flex items-center gap-2">
                         <UploadIcon className="size-5" />
                         {t('agent.dropFilesToUpload')}
                     </div>
@@ -524,7 +524,7 @@ export default function MessageInput({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="size-8 rounded-full text-muted-foreground hover:bg-muted"
+                                        className="size-8 rounded-full text-muted hover:bg-muted"
                                         title={t('agent.addAttachment')}
                                     >
                                         <PlusIcon className="size-4" />
@@ -548,7 +548,7 @@ export default function MessageInput({
                                         <FileTextIcon className="size-4" />
                                         <span>{t('agent.searchDocuments')}</span>
                                         {selectedDocuments.length > 0 && (
-                                            <span className="ms-auto inline-flex items-center justify-center rounded-full bg-info-foreground/20 px-1.5 py-0.5 text-[10px] font-medium text-info-foreground">
+                                            <span className="ms-auto inline-flex items-center justify-center rounded-full bg-info/20 px-1.5 py-0.5 text-[10px] font-medium text-info">
                                                 {selectedDocuments.length}
                                             </span>
                                         )}
@@ -584,8 +584,8 @@ export default function MessageInput({
                                     variant="ghost"
                                     size="icon"
                                     className={cn(
-                                        'size-8 rounded-lg text-info-foreground hover:bg-muted hover:text-info-foreground disabled:opacity-60',
-                                        'focus-visible:ring-2 focus-visible:ring-info-foreground/40',
+                                        'size-8 rounded-lg text-info hover:bg-muted hover:text-info disabled:opacity-60',
+                                        'focus-visible:ring-2 focus-visible:ring-info/40',
                                     )}
                                     aria-label={contextUsageLabel}
                                     onClick={onCompactContext}
@@ -599,10 +599,10 @@ export default function MessageInput({
                                             className={cn(
                                                 'size-8 -rotate-90',
                                                 contextWindowUsage.usedPercent >= 90
-                                                    ? 'text-destructive-foreground'
+                                                    ? 'text-destructive'
                                                     : contextWindowUsage.usedPercent >= 70
-                                                      ? 'text-attention-foreground'
-                                                      : 'text-info-foreground',
+                                                      ? 'text-attention'
+                                                      : 'text-info',
                                             )}
                                             aria-hidden="true"
                                         >
@@ -612,7 +612,7 @@ export default function MessageInput({
                                                 r="9.75"
                                                 fill="none"
                                                 strokeWidth="4.5"
-                                                className="stroke-current text-muted-foreground/50"
+                                                className="stroke-current text-muted/50"
                                             />
                                             <circle
                                                 cx="12"
@@ -633,8 +633,8 @@ export default function MessageInput({
                         )}
                         {runningWorkstreams.length === 0 && activeWorkstreamCount > 0 && (
                             <output className="flex min-w-0 flex-wrap items-center gap-1.5" aria-live="polite">
-                                <span className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted-foreground">
-                                    <Activity className="size-3 text-attention-foreground" />
+                                <span className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted">
+                                    <Activity className="size-3 text-attention" />
                                     {t('agent.activeWorkstreams', { count: activeWorkstreamCount })}
                                 </span>
                             </output>
@@ -651,8 +651,8 @@ export default function MessageInput({
                             className={cn(
                                 'size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm',
                                 'hover:bg-foreground/90 hover:text-background',
-                                'disabled:bg-mixer-muted/25 disabled:text-muted-foreground disabled:opacity-100',
-                                '[&_svg]:text-destructive-foreground disabled:[&_svg]:text-muted-foreground',
+                                'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
+                                '[&_svg]:text-destructive disabled:[&_svg]:text-muted',
                             )}
                             title={t('agent.stopTooltip')}
                         >
@@ -671,7 +671,7 @@ export default function MessageInput({
                             className={cn(
                                 'size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm',
                                 'hover:bg-foreground/90 hover:text-background',
-                                'disabled:bg-mixer-muted/25 disabled:text-muted-foreground disabled:opacity-100',
+                                'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                             )}
                             title={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.sendTooltip')}
                             aria-label={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.send')}

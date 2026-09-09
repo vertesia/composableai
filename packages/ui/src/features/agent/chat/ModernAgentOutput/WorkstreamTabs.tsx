@@ -16,8 +16,8 @@ interface WorkstreamTabsProps {
 // count badges and completion icons (distinct from the right panel's underline tabs).
 const TAB_ITEM_BASE =
     'flex items-center gap-1.5 px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors border-b-2 shrink-0 cursor-pointer';
-const TAB_ITEM_INACTIVE = 'border-transparent text-muted-foreground hover:bg-muted';
-const TAB_ITEM_ACTIVE = 'border-info-foreground bg-info text-info-foreground';
+const TAB_ITEM_INACTIVE = 'border-transparent text-muted hover:bg-muted';
+const TAB_ITEM_ACTIVE = 'border-info bg-info text-info';
 
 // Shorten long workstream names for the tab row.
 function truncateName(name: string) {
@@ -60,20 +60,20 @@ function WorkstreamMoreMenu({
                     <DropdownMenuItem
                         key={id}
                         onClick={() => onSelect(id)}
-                        className={cn('flex items-center gap-2', id === current && 'text-info-foreground')}
+                        className={cn('flex items-center gap-2', id === current && 'text-info')}
                     >
                         <span className="truncate">{name}</span>
                         {showCount && (
                             <span className="ms-auto inline-flex items-center gap-1">
-                                <span className="inline-flex items-center justify-center rounded-full bg-muted px-1.5 text-[10px] text-muted-foreground">
+                                <span className="inline-flex items-center justify-center rounded-full bg-muted px-1.5 text-[10px] text-muted">
                                     {count?.get(id)}
                                 </span>
                                 {completionStatus &&
                                     id !== 'all' &&
                                     (completionStatus.get(id) ? (
-                                        <CheckCircle className="size-3 text-success-foreground" />
+                                        <CheckCircle className="size-3 text-success" />
                                     ) : (
-                                        <Clock className="size-3 text-attention-foreground" />
+                                        <Clock className="size-3 text-attention" />
                                     ))}
                             </span>
                         )}
@@ -123,7 +123,7 @@ function WorkstreamOverflowBar({
                         <span
                             className={cn(
                                 'inline-flex items-center justify-center p-1 text-xs rounded-full',
-                                isActive ? 'bg-info text-info-foreground' : 'bg-muted text-muted-foreground',
+                                isActive ? 'bg-info text-info' : 'bg-muted text-muted',
                             )}
                         >
                             {count?.get(id)}
@@ -132,9 +132,9 @@ function WorkstreamOverflowBar({
                         {completionStatus &&
                             id !== 'all' &&
                             (completionStatus.get(id) ? (
-                                <CheckCircle className="size-3 text-success-foreground" />
+                                <CheckCircle className="size-3 text-success" />
                             ) : (
-                                <Clock className="size-3 text-attention-foreground" />
+                                <Clock className="size-3 text-attention" />
                             ))}
                     </span>
                 )}
@@ -143,7 +143,7 @@ function WorkstreamOverflowBar({
     };
 
     return (
-        <div ref={containerRef} className="relative mb-1 bg-muted border-b border-muted-foreground/20">
+        <div ref={containerRef} className="relative mb-1 bg-muted border-b border-muted/20">
             {/* Hidden measurement row: all tabs + More at natural width, kept separate
                 from the visible row so measuring can't feed back into the layout. */}
             <div aria-hidden className="pointer-events-none invisible absolute start-0 top-0 flex w-max gap-1">

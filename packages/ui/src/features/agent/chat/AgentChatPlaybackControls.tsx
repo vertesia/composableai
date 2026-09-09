@@ -88,13 +88,13 @@ export function AgentChatPlaybackControls({
     const canScrub = messageCount > 1;
     const sliderMin = canScrub ? 1 : 0;
     const sliderMax = Math.max(1, messageCount);
-    const iconButtonClassName = 'size-7 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-35';
+    const iconButtonClassName = 'size-7 rounded-lg text-muted hover:text-foreground disabled:opacity-35';
     const positionInputWidth = `${Math.max(3, String(messageCount).length + 1)}ch`;
 
     return (
         <div
             className={cn(
-                'inline-flex max-w-full flex-col gap-1 rounded-xl border border-border/70 bg-background/95 px-2 py-1 text-sm leading-none text-muted-foreground shadow-lg shadow-black/10 backdrop-blur',
+                'inline-flex max-w-full flex-col gap-1 rounded-xl border border-border/70 bg-background/95 px-2 py-1 text-sm leading-none text-muted shadow-lg shadow-black/10 backdrop-blur',
                 className,
             )}
             data-testid="agent-test-playback-controls"
@@ -152,12 +152,12 @@ export function AgentChatPlaybackControls({
                             }
                         }}
                         style={{ width: positionInputWidth }}
-                        className="h-7 w-auto rounded-md border border-transparent bg-transparent px-1 text-center text-sm font-medium leading-none tabular-nums text-foreground outline-none transition-colors hover:border-border focus:border-ring focus:bg-muted-foreground/30 disabled:opacity-50"
+                        className="h-7 w-auto rounded-md border border-transparent bg-transparent px-1 text-center text-sm font-medium leading-none tabular-nums text-foreground outline-none transition-colors hover:border-border focus:border-ring focus:bg-muted/30 disabled:opacity-50"
                     />
-                    <span aria-hidden="true" className="text-muted-foreground">
+                    <span aria-hidden="true" className="text-muted">
                         /
                     </span>
-                    <span className="text-muted-foreground">{messageCount}</span>
+                    <span className="text-muted">{messageCount}</span>
                 </span>
                 <Button
                     type="button"

@@ -174,13 +174,11 @@ export function DefaultViewSearch({
                 <div className="grid gap-3 lg:grid-cols-2">
                     {fieldTerms.length > 0 && (
                         <fieldset
-                            className={`rounded-md border border-mixer-muted-foreground/30 bg-mixer-muted/5 p-3 ${
+                            className={`rounded-md border border-mixer-muted/30 bg-mixer-muted/5 p-3 ${
                                 rangeTerms.length === 0 ? 'lg:col-span-2' : ''
                             }`}
                         >
-                            <legend className="px-1 text-xs font-medium text-muted-foreground">
-                                {t('view.searchFields')}
-                            </legend>
+                            <legend className="px-1 text-xs font-medium text-muted">{t('view.searchFields')}</legend>
                             <div
                                 className={`grid gap-3 sm:grid-cols-2 ${
                                     rangeTerms.length === 0 ? 'lg:grid-cols-4' : ''
@@ -192,13 +190,11 @@ export function DefaultViewSearch({
                     )}
                     {rangeTerms.length > 0 && (
                         <fieldset
-                            className={`rounded-md border border-mixer-muted-foreground/30 bg-mixer-muted/5 p-3 ${
+                            className={`rounded-md border border-mixer-muted/30 bg-mixer-muted/5 p-3 ${
                                 fieldTerms.length === 0 ? 'lg:col-span-2' : ''
                             }`}
                         >
-                            <legend className="px-1 text-xs font-medium text-muted-foreground">
-                                {t('view.ranges')}
-                            </legend>
+                            <legend className="px-1 text-xs font-medium text-muted">{t('view.ranges')}</legend>
                             <div className="grid gap-3 sm:grid-cols-2">{rangeTerms.map(renderRange)}</div>
                         </fieldset>
                     )}

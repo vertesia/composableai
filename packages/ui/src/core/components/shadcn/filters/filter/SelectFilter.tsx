@@ -118,7 +118,7 @@ export default function SelectFilter({
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center p-1.5 text-xs text-muted-foreground shrink-0">
+            <div className="flex items-center p-1.5 text-xs text-muted shrink-0">
                 <span>{groupTitle}</span>
             </div>
             <div className="flex-1 overflow-hidden min-h-0">
@@ -141,7 +141,7 @@ export default function SelectFilter({
                                         fallbackLabel={option.label}
                                     />
                                     {selectedGroup?.multiple && isSelected && (
-                                        <span className="ms-auto text-xs text-success-foreground">✓</span>
+                                        <span className="ms-auto text-xs text-success">✓</span>
                                     )}
                                 </CommandItem>
                             );

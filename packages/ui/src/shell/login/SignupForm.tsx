@@ -110,10 +110,10 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
     return (
         <div className="flex flex-col space-y-2">
             <div className="prose">
-                <p className="prose text-sm text-muted-foreground pt-4">
+                <p className="prose text-sm text-muted pt-4">
                     {t('signup.welcomeMessage', { name: fbUser?.displayName, email: fbUser?.email })}
                 </p>
-                {error && <div className="text-destructive-foreground">{error}</div>}
+                {error && <div className="text-destructive">{error}</div>}
             </div>
             <FormItem label={t('signup.accountType')}>
                 <RadioGroup
@@ -126,7 +126,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
                 <>
                     <FormItem label={t('signup.companySize')}>
                         <SelectBox
-                            className="w-full border border-accent bg-muted"
+                            className="w-full border border-muted bg-muted"
                             value={companySize}
                             options={companySizeOptions}
                             onChange={setCompanySize}
@@ -144,7 +144,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             )}
             <FormItem label={t('signup.projectMaturity')}>
                 <SelectBox
-                    className="w-full border border-accent bg-muted"
+                    className="w-full border border-muted bg-muted"
                     options={projectMaturityOptions}
                     value={projectMaturityOptions.find((option) => option.id === projectMaturity)}
                     optionLabel={(option) => option?.label}
@@ -167,7 +167,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
 function FormItem({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div className="flex flex-col space-y-2 pt-4">
-            <div className="text-sm text-muted-foreground">{label}</div>
+            <div className="text-sm text-muted">{label}</div>
             {children}
         </div>
     );

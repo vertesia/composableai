@@ -13,45 +13,45 @@ export function MessageBox({ icon, status, title, children, className }: Message
     let defaultIcon: React.ReactNode, titleColor: string, textColor: string, bgColor: string;
     switch (status) {
         case 'error': {
-            defaultIcon = <CircleX className="size-5 text-destructive-foreground" aria-hidden="true" />;
-            titleColor = 'text-destructive-foreground';
+            defaultIcon = <CircleX className="size-5 text-destructive" aria-hidden="true" />;
+            titleColor = 'text-destructive';
             textColor = 'text-foreground';
-            bgColor = 'bg-destructive border border-destructive-foreground';
+            bgColor = 'bg-destructive border border-destructive';
             break;
         }
         case 'warning': {
-            defaultIcon = <AlertTriangle className="size-5 text-attention-foreground" aria-hidden="true" />;
+            defaultIcon = <AlertTriangle className="size-5 text-attention" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-attention border border-attention-foreground';
+            bgColor = 'bg-attention border border-attention';
             break;
         }
         case 'success': {
-            defaultIcon = <CircleCheck className="size-5 text-success-foreground" aria-hidden="true" />;
+            defaultIcon = <CircleCheck className="size-5 text-success" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-success border border-success-foreground';
+            bgColor = 'bg-success border border-success';
             break;
         }
         case 'info': {
-            defaultIcon = <Info className="size-5 text-info-foreground" aria-hidden="true" />;
+            defaultIcon = <Info className="size-5 text-info" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-info border border-info-foreground';
+            bgColor = 'bg-info border border-info';
             break;
         }
         case 'default': {
-            defaultIcon = <Info className="size-5 text-muted-foreground" aria-hidden="true" />;
+            defaultIcon = <Info className="size-5 text-muted" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-muted border border-muted-foreground';
+            bgColor = 'bg-muted border border-muted';
             break;
         }
         case 'done': {
-            defaultIcon = <Info className="size-5 text-done-foreground" aria-hidden="true" />;
+            defaultIcon = <Info className="size-5 text-done" aria-hidden="true" />;
             titleColor = '';
             textColor = 'text-foreground';
-            bgColor = 'bg-done border border-done-foreground';
+            bgColor = 'bg-done border border-done';
             break;
         }
     }
@@ -61,7 +61,7 @@ export function MessageBox({ icon, status, title, children, className }: Message
             <div className="flex">
                 <div className="shrink-0">{icon ?? defaultIcon}</div>
                 <div className="w-full ms-2 px-1">
-                    {title && <h3 className={`text-md font-medium mb-2 ${titleColor}`}>{title}</h3>}
+                    {title && <h3 className={`text-base font-medium mb-2 ${titleColor}`}>{title}</h3>}
                     <div className={`text-sm ${textColor} break-words`}>{children}</div>
                 </div>
             </div>

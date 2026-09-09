@@ -30,7 +30,7 @@ export const StringListCombobox = ({
                 }
             }}
         >
-            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted-foreground/50 text-muted-foreground hover:text-primary shrink-0 transition">
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition">
                 <div className="flex gap-1.5 items-center">
                     {filterValues.length > 0
                         ? filterValues.length === 1
@@ -41,7 +41,7 @@ export const StringListCombobox = ({
             </PopoverTrigger>
             <PopoverContent className="w-[300px] p-3">
                 <div className="flex flex-col gap-3">
-                    <div className="flex items-center p-1.5 text-xs text-muted-foreground">
+                    <div className="flex items-center p-1.5 text-xs text-muted">
                         <span>{filterType}</span>
                     </div>
                     <InputList value={tags} onChange={setTags} placeholder={`Add ${filterType.toLowerCase()}...`} />

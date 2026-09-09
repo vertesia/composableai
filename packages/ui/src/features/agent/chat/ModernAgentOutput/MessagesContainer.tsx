@@ -50,7 +50,7 @@ export default function MessagesContainer({
         >
             {sortedMessages.length === 0 ? (
                 <div className={`flex items-center justify-center h-full text-center py-8 ${emptyClassName || ''}`}>
-                    <div className="flex items-center px-4 py-3 text-gray-500">Waiting for agent response...</div>
+                    <div className="flex items-center px-4 py-3 text-muted">Waiting for agent response...</div>
                 </div>
             ) : (
                 <div className={`flex-1 flex flex-col justify-start h-full min-h-0 ${messagesClassName || ''}`}>

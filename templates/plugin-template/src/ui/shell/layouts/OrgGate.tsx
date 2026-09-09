@@ -17,7 +17,7 @@ export function OrgGate({ children }: { children: React.ReactNode }) {
             <div className="flex h-screen items-center justify-center p-8">
                 <div className="max-w-md text-center">
                     <h1 className="mb-2 text-2xl font-semibold">{t('access.denied')}</h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted">
                         {t('access.orgNotAuthorized', {
                             name: session.account?.name ?? '',
                             interpolation: { escapeValue: false },

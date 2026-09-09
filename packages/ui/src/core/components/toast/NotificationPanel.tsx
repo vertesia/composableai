@@ -11,10 +11,10 @@ const icons = {
 };
 
 const colors = {
-    success: 'text-success-foreground',
-    error: 'text-destructive-foreground',
-    warning: 'text-attention-foreground',
-    info: 'text-info-foreground',
+    success: 'text-success',
+    error: 'text-destructive',
+    warning: 'text-attention',
+    info: 'text-info',
 };
 
 interface NotificationPanelProps {
@@ -45,7 +45,7 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
     }, [clearCurrentTimeout, resetTimeout]);
 
     const Icon = icons[data.status] || Info;
-    const color = colors[data.status] || 'text-info-foreground';
+    const color = colors[data.status] || 'text-info';
 
     // Global notification live region, render this permanently at the end of the document
     return (
@@ -75,7 +75,7 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                                             {data.title}
                                         </p>
                                         {data.description && (
-                                            <p className="mt-2 text-sm text-muted-foreground break-words whitespace-pre-wrap leading-relaxed">
+                                            <p className="mt-2 text-sm text-muted break-words whitespace-pre-wrap leading-relaxed">
                                                 {data.description}
                                             </p>
                                         )}
@@ -83,7 +83,7 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                                     <div className="ms-4 flex shrink-0">
                                         <button
                                             type="button"
-                                            className="inline-flex rounded-md bg-muted text-muted-foreground hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                                            className="inline-flex rounded-md bg-muted text-muted hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
                                             onClick={() => setShow(false)}
                                         >
                                             <span className="sr-only">Close</span>

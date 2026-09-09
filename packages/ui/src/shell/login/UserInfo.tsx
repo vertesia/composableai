@@ -17,18 +17,15 @@ export function InfoItems({ title, value }: { title: string; value: string }) {
     return (
         <div className="w-full flex justify-between items-center mb-1">
             <div className="flex flex-col w-[calc(100%-3rem)]">
-                <div className="text-sm px-2 dark:text-slate-200">{title}</div>
+                <div className="text-sm px-2 dark:text-foreground">{title}</div>
                 <VTooltip description={value} size="xs" placement="left">
-                    <div className="text-xs truncate text-muted-foreground w-full text-start px-2">{value} </div>
+                    <div className="text-xs truncate text-muted w-full text-start px-2">{value} </div>
                 </VTooltip>
             </div>
             {isCopied ? (
-                <Check className="size-4 cursor-pointer text-success-foreground" />
+                <Check className="size-4 cursor-pointer text-success" />
             ) : (
-                <CopyIcon
-                    className="size-4 cursor-pointer text-gray-400 dark:text-slate-400"
-                    onClick={() => copyToClipboard(value)}
-                />
+                <CopyIcon className="size-4 cursor-pointer text-muted" onClick={() => copyToClipboard(value)} />
             )}
         </div>
     );
