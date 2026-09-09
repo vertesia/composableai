@@ -1,45 +1,4 @@
 {
-  "AccountType": {
-    "type": "string",
-    "enum": [
-      "vertesia",
-      "partner",
-      "free",
-      "customer",
-      "prospect",
-      "unknown"
-    ]
-  },
-  "AccountBilling": {
-    "type": "object",
-    "properties": {
-      "method": {
-        "$ref": "#/components/schemas/BillingMethod"
-      },
-      "stripe_customer_id": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "method"
-    ],
-    "additionalProperties": false
-  },
-  "BillingMethod": {
-    "type": "string",
-    "enum": [
-      "stripe",
-      "invoice"
-    ]
-  },
-  "QuotaTier": {
-    "type": "string",
-    "enum": [
-      "standard",
-      "enterprise"
-    ],
-    "description": "Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota` (`QUOTA_TIERS`); these names must match its keys.\n- `standard` — protective baseline limits (the default for most accounts).\n- `enterprise` — high limits for contracted customers / internal / partners.\n\nAn account with no explicit `quota_tier` derives its tier from its `account_type`."
-  },
   "Account": {
     "type": "object",
     "properties": {
@@ -127,6 +86,47 @@
       "updated_at"
     ],
     "additionalProperties": false
+  },
+  "AccountType": {
+    "type": "string",
+    "enum": [
+      "vertesia",
+      "partner",
+      "free",
+      "customer",
+      "prospect",
+      "unknown"
+    ]
+  },
+  "AccountBilling": {
+    "type": "object",
+    "properties": {
+      "method": {
+        "$ref": "#/components/schemas/BillingMethod"
+      },
+      "stripe_customer_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "method"
+    ],
+    "additionalProperties": false
+  },
+  "BillingMethod": {
+    "type": "string",
+    "enum": [
+      "stripe",
+      "invoice"
+    ]
+  },
+  "QuotaTier": {
+    "type": "string",
+    "enum": [
+      "standard",
+      "enterprise"
+    ],
+    "description": "Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota` (`QUOTA_TIERS`); these names must match its keys.\n- `standard` — protective baseline limits (the default for most accounts).\n- `enterprise` — high limits for contracted customers / internal / partners.\n\nAn account with no explicit `quota_tier` derives its tier from its `account_type`."
   },
   "UpdateAccountPayload": {
     "type": "object",
@@ -234,6 +234,76 @@
     },
     "additionalProperties": false
   },
+  "QuotaStandingResponse": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {
+        "type": "string"
+      },
+      "available": {
+        "type": "boolean",
+        "description": "False when the limiter store (Redis) was unavailable, so `api`/`admission` are empty because standing could not be read — NOT because there are no limits. Limiters fail open in this case."
+      },
+      "base_tier": {
+        "type": "string",
+        "description": "Deployment base tier (env QUOTA_BASE_TIER); `default` = the static limits stand."
+      },
+      "effective_tier": {
+        "$ref": "#/components/schemas/QuotaEffectiveTier",
+        "description": "Tier used to compute the API limits below: explicit account `quota_tier`, else account_type derived tier, else `base_tier` when the account tier could not be resolved."
+      },
+      "api": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/QuotaStandingResource"
+        },
+        "description": "Per-resource API rate-limit standing (effective limits + current usage)."
+      },
+      "admission": {
+        "type": "object",
+        "properties": {
+          "classes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuotaStandingAdmissionClass"
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "classes",
+          "note"
+        ],
+        "additionalProperties": false,
+        "description": "Workflow admission: per-tenant active slots per probed class. The budget itself is global and discovered (AIMD), not a per-tenant number — this is occupancy, not a limit."
+      },
+      "llm": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "additionalProperties": false,
+        "description": "The LLM interaction limiter is shared per environment/model, not per tenant."
+      }
+    },
+    "required": [
+      "tenant_id",
+      "available",
+      "base_tier",
+      "effective_tier",
+      "api",
+      "admission",
+      "llm"
+    ],
+    "additionalProperties": false
+  },
   "QuotaEffectiveTier": {
     "type": "string",
     "description": "Effective quota tier name after account-level overrides and account-type derivation. Code-defined tier names are currently `QuotaTier`, but this remains a string because deployments can introduce quota tiers through configuration."
@@ -305,76 +375,6 @@
     "required": [
       "class",
       "tenant_active"
-    ],
-    "additionalProperties": false
-  },
-  "QuotaStandingResponse": {
-    "type": "object",
-    "properties": {
-      "tenant_id": {
-        "type": "string"
-      },
-      "available": {
-        "type": "boolean",
-        "description": "False when the limiter store (Redis) was unavailable, so `api`/`admission` are empty because standing could not be read — NOT because there are no limits. Limiters fail open in this case."
-      },
-      "base_tier": {
-        "type": "string",
-        "description": "Deployment base tier (env QUOTA_BASE_TIER); `default` = the static limits stand."
-      },
-      "effective_tier": {
-        "$ref": "#/components/schemas/QuotaEffectiveTier",
-        "description": "Tier used to compute the API limits below: explicit account `quota_tier`, else account_type derived tier, else `base_tier` when the account tier could not be resolved."
-      },
-      "api": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/QuotaStandingResource"
-        },
-        "description": "Per-resource API rate-limit standing (effective limits + current usage)."
-      },
-      "admission": {
-        "type": "object",
-        "properties": {
-          "classes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/QuotaStandingAdmissionClass"
-            }
-          },
-          "note": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "classes",
-          "note"
-        ],
-        "additionalProperties": false,
-        "description": "Workflow admission: per-tenant active slots per probed class. The budget itself is global and discovered (AIMD), not a per-tenant number — this is occupancy, not a limit."
-      },
-      "llm": {
-        "type": "object",
-        "properties": {
-          "note": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "note"
-        ],
-        "additionalProperties": false,
-        "description": "The LLM interaction limiter is shared per environment/model, not per tenant."
-      }
-    },
-    "required": [
-      "tenant_id",
-      "available",
-      "base_tier",
-      "effective_tier",
-      "api",
-      "admission",
-      "llm"
     ],
     "additionalProperties": false
   },
@@ -614,6 +614,12 @@
     ],
     "additionalProperties": false
   },
+  "UserRefArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/UserRef"
+    }
+  },
   "UserRef": {
     "type": "object",
     "properties": {
@@ -636,12 +642,6 @@
       "email"
     ],
     "additionalProperties": false
-  },
-  "UserRefArray": {
-    "type": "array",
-    "items": {
-      "$ref": "#/components/schemas/UserRef"
-    }
   },
   "UserGroup": {
     "type": "object",
@@ -859,62 +859,6 @@
     ],
     "additionalProperties": false
   },
-  "AccessControlResourceType": {
-    "type": "string",
-    "enum": [
-      "project",
-      "environment",
-      "account",
-      "interaction",
-      "application",
-      "content_set"
-    ]
-  },
-  "AccessControlPrincipalType": {
-    "type": "string",
-    "enum": [
-      "user",
-      "group",
-      "apikey",
-      "principal_set"
-    ]
-  },
-  "PropertyConditionValue": {
-    "description": "A single condition value. Resolved and evaluated dynamically by token/content security code."
-  },
-  "PropertyConditions": {
-    "type": "object",
-    "additionalProperties": {
-      "$ref": "#/components/schemas/PropertyConditionValue"
-    }
-  },
-  "AbacScope": {
-    "type": "string",
-    "enum": [
-      "document",
-      "collection",
-      "task"
-    ]
-  },
-  "AceConditions": {
-    "type": "object",
-    "properties": {
-      "principal_props": {
-        "$ref": "#/components/schemas/PropertyConditions",
-        "description": "Property conditions matched against user/group properties at token time (PrincipalSet)."
-      },
-      "resource_props": {
-        "$ref": "#/components/schemas/PropertyConditions",
-        "description": "Property conditions matched against object properties at query time (ResourceSet)."
-      },
-      "scope": {
-        "$ref": "#/components/schemas/AbacScope",
-        "description": "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles apply (e.g. content roles vs task roles) and to form the JWT `content_security` key prefix (`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys for backward compatibility)."
-      }
-    },
-    "additionalProperties": false,
-    "description": "Conditions attached to an ACE for dynamic matching.\n- `principal_props`: matched against user/group properties at token time (PrincipalSet).\n- `resource_props`: matched against object properties at query time (ResourceSet)."
-  },
   "AccessControlEntry": {
     "type": "object",
     "properties": {
@@ -974,6 +918,62 @@
       "id"
     ],
     "additionalProperties": false
+  },
+  "AccessControlResourceType": {
+    "type": "string",
+    "enum": [
+      "project",
+      "environment",
+      "account",
+      "interaction",
+      "application",
+      "content_set"
+    ]
+  },
+  "AccessControlPrincipalType": {
+    "type": "string",
+    "enum": [
+      "user",
+      "group",
+      "apikey",
+      "principal_set"
+    ]
+  },
+  "PropertyConditionValue": {
+    "description": "A single condition value. Resolved and evaluated dynamically by token/content security code."
+  },
+  "PropertyConditions": {
+    "type": "object",
+    "additionalProperties": {
+      "$ref": "#/components/schemas/PropertyConditionValue"
+    }
+  },
+  "AbacScope": {
+    "type": "string",
+    "enum": [
+      "document",
+      "collection",
+      "task"
+    ]
+  },
+  "AceConditions": {
+    "type": "object",
+    "properties": {
+      "principal_props": {
+        "$ref": "#/components/schemas/PropertyConditions",
+        "description": "Property conditions matched against user/group properties at token time (PrincipalSet)."
+      },
+      "resource_props": {
+        "$ref": "#/components/schemas/PropertyConditions",
+        "description": "Property conditions matched against object properties at query time (ResourceSet)."
+      },
+      "scope": {
+        "$ref": "#/components/schemas/AbacScope",
+        "description": "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles apply (e.g. content roles vs task roles) and to form the JWT `content_security` key prefix (`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys for backward compatibility)."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Conditions attached to an ACE for dynamic matching.\n- `principal_props`: matched against user/group properties at token time (PrincipalSet).\n- `resource_props`: matched against object properties at query time (ResourceSet)."
   },
   "AccessControlEntryArray": {
     "type": "array",
@@ -1074,6 +1074,12 @@
     },
     "additionalProperties": false
   },
+  "ProjectRefArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ProjectRef"
+    }
+  },
   "ProjectRef": {
     "type": "object",
     "properties": {
@@ -1098,10 +1104,10 @@
     ],
     "additionalProperties": false
   },
-  "ProjectRefArray": {
+  "RoleDefinitionArray": {
     "type": "array",
     "items": {
-      "$ref": "#/components/schemas/ProjectRef"
+      "$ref": "#/components/schemas/RoleDefinition"
     }
   },
   "RoleDefinition": {
@@ -1137,10 +1143,10 @@
     ],
     "description": "Logical grouping of roles by the service area that owns them. One domain may declare roles applicable to multiple scopes (e.g. the `content` domain owns roles applicable to both `document` and `collection` scopes). The `system` domain owns the built-in foundational roles (currently exposed as `SystemRoles`) — registered first so domain partitions cannot shadow them."
   },
-  "RoleDefinitionArray": {
+  "SystemRoleDefinitionArray": {
     "type": "array",
     "items": {
-      "$ref": "#/components/schemas/RoleDefinition"
+      "$ref": "#/components/schemas/SystemRoleDefinition"
     }
   },
   "SystemRoleDefinition": {
@@ -1208,37 +1214,6 @@
       "task:manage",
       "iam:impersonate",
       "studio:access"
-    ]
-  },
-  "SystemRoleDefinitionArray": {
-    "type": "array",
-    "items": {
-      "$ref": "#/components/schemas/SystemRoleDefinition"
-    }
-  },
-  "ApiKeyTypes": {
-    "type": "string",
-    "const": "sk"
-  },
-  "SystemRoles": {
-    "type": "string",
-    "enum": [
-      "owner",
-      "admin",
-      "manager",
-      "developer",
-      "application",
-      "automation",
-      "content_processor",
-      "consumer",
-      "executor",
-      "reader",
-      "auditor",
-      "support",
-      "billing",
-      "member",
-      "app_member",
-      "content_superadmin"
     ]
   },
   "ApiKey": {
@@ -1320,6 +1295,31 @@
       "updated_at"
     ],
     "additionalProperties": false
+  },
+  "ApiKeyTypes": {
+    "type": "string",
+    "const": "sk"
+  },
+  "SystemRoles": {
+    "type": "string",
+    "enum": [
+      "owner",
+      "admin",
+      "manager",
+      "developer",
+      "application",
+      "automation",
+      "content_processor",
+      "consumer",
+      "executor",
+      "reader",
+      "auditor",
+      "support",
+      "billing",
+      "member",
+      "app_member",
+      "content_superadmin"
+    ]
   },
   "ApiKeyArray": {
     "type": "array",
@@ -1698,6 +1698,12 @@
     ],
     "additionalProperties": false
   },
+  "TransientToken_UserInviteTokenData_Array": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/TransientToken_UserInviteTokenData_"
+    }
+  },
   "TransientToken_UserInviteTokenData_": {
     "type": "object",
     "properties": {
@@ -1786,12 +1792,6 @@
     ],
     "additionalProperties": false
   },
-  "TransientToken_UserInviteTokenData_Array": {
-    "type": "array",
-    "items": {
-      "$ref": "#/components/schemas/TransientToken_UserInviteTokenData_"
-    }
-  },
   "ListProjectsQuery": {
     "type": "object",
     "properties": {
@@ -1859,6 +1859,21 @@
     ],
     "additionalProperties": false
   },
+  "ProjectIntegrationListResponse": {
+    "type": "object",
+    "properties": {
+      "integrations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProjectIntegrationListEntry"
+        }
+      }
+    },
+    "required": [
+      "integrations"
+    ],
+    "additionalProperties": false
+  },
   "ProjectIntegrationListEntry": {
     "type": "object",
     "properties": {
@@ -1888,21 +1903,6 @@
       "resend",
       "ask_user_webhook"
     ]
-  },
-  "ProjectIntegrationListResponse": {
-    "type": "object",
-    "properties": {
-      "integrations": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ProjectIntegrationListEntry"
-        }
-      }
-    },
-    "required": [
-      "integrations"
-    ],
-    "additionalProperties": false
   },
   "ProjectToolInfo": {
     "type": "object",
@@ -2055,6 +2055,25 @@
     ],
     "additionalProperties": false
   },
+  "ProjectModelDefaults": {
+    "type": "object",
+    "properties": {
+      "base": {
+        "$ref": "#/components/schemas/ModelDefault",
+        "description": "Base default model - used when no other default applies"
+      },
+      "modality": {
+        "$ref": "#/components/schemas/ModalityDefaults",
+        "description": "Modality-based overrides (image, video) - override base when specific input modalities detected"
+      },
+      "system": {
+        "$ref": "#/components/schemas/SystemDefaults",
+        "description": "System interaction category defaults"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Extensible project defaults using map/dictionary pattern."
+  },
   "ModelDefault": {
     "type": "object",
     "properties": {
@@ -2108,25 +2127,6 @@
     },
     "additionalProperties": false
   },
-  "ProjectModelDefaults": {
-    "type": "object",
-    "properties": {
-      "base": {
-        "$ref": "#/components/schemas/ModelDefault",
-        "description": "Base default model - used when no other default applies"
-      },
-      "modality": {
-        "$ref": "#/components/schemas/ModalityDefaults",
-        "description": "Modality-based overrides (image, video) - override base when specific input modalities detected"
-      },
-      "system": {
-        "$ref": "#/components/schemas/SystemDefaults",
-        "description": "System interaction category defaults"
-      }
-    },
-    "additionalProperties": false,
-    "description": "Extensible project defaults using map/dictionary pattern."
-  },
   "ResourceVisibility": {
     "type": "string",
     "enum": [
@@ -2134,6 +2134,28 @@
       "account",
       "project"
     ]
+  },
+  "ProjectIndexingConfiguration": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Enable indexing for content objects in this project. When enabled, content changes trigger indexing workflows. Defaults to true - indexing is always on when ES infrastructure is available."
+      },
+      "search_tier": {
+        "$ref": "#/components/schemas/ProjectSearchTier",
+        "description": "Search tier for this project. standard uses the regional hosted Elasticsearch deployment. performance uses the regional serverless Elasticsearch project. Defaults to standard when omitted."
+      },
+      "backend": {
+        "$ref": "#/components/schemas/ElasticsearchBackend",
+        "description": "Elasticsearch backend override for this project. Prefer search_tier for project configuration unless an explicit backend override is needed."
+      },
+      "property_mappings": {
+        "$ref": "#/components/schemas/ProjectSearchPropertyMappingMap",
+        "description": "Explicit mappings for selected content-object property paths.\n\nKeys are dot-separated paths relative to `properties`, for example `order_total` or `customer.account_number`. Unlisted fields are mapped dynamically from their JSON values. Changing this value requires a full reindex."
+      }
+    },
+    "additionalProperties": false
   },
   "ProjectSearchTier": {
     "type": "string",
@@ -2193,28 +2215,6 @@
     ],
     "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are relative to the object's `properties` field."
   },
-  "ProjectIndexingConfiguration": {
-    "type": "object",
-    "properties": {
-      "enabled": {
-        "type": "boolean",
-        "description": "Enable indexing for content objects in this project. When enabled, content changes trigger indexing workflows. Defaults to true - indexing is always on when ES infrastructure is available."
-      },
-      "search_tier": {
-        "$ref": "#/components/schemas/ProjectSearchTier",
-        "description": "Search tier for this project. standard uses the regional hosted Elasticsearch deployment. performance uses the regional serverless Elasticsearch project. Defaults to standard when omitted."
-      },
-      "backend": {
-        "$ref": "#/components/schemas/ElasticsearchBackend",
-        "description": "Elasticsearch backend override for this project. Prefer search_tier for project configuration unless an explicit backend override is needed."
-      },
-      "property_mappings": {
-        "$ref": "#/components/schemas/ProjectSearchPropertyMappingMap",
-        "description": "Explicit mappings for selected content-object property paths.\n\nKeys are dot-separated paths relative to `properties`, for example `order_total` or `customer.account_number`. Unlisted fields are mapped dynamically from their JSON values. Changing this value requires a full reindex."
-      }
-    },
-    "additionalProperties": false
-  },
   "ProjectConfigurationEmbedding": {
     "type": "object",
     "properties": {
@@ -2238,23 +2238,6 @@
       "enabled"
     ],
     "additionalProperties": false
-  },
-  "BrowserUseRiskPolicy": {
-    "type": "string",
-    "enum": [
-      "read_only",
-      "low_write",
-      "requires_approval",
-      "unrestricted"
-    ]
-  },
-  "BrowserUseScreenshotCapture": {
-    "type": "string",
-    "enum": [
-      "off",
-      "on_action",
-      "each_turn"
-    ]
   },
   "BrowserUseProjectConfiguration": {
     "type": "object",
@@ -2297,6 +2280,23 @@
     },
     "additionalProperties": false
   },
+  "BrowserUseRiskPolicy": {
+    "type": "string",
+    "enum": [
+      "read_only",
+      "low_write",
+      "requires_approval",
+      "unrestricted"
+    ]
+  },
+  "BrowserUseScreenshotCapture": {
+    "type": "string",
+    "enum": [
+      "off",
+      "on_action",
+      "each_turn"
+    ]
+  },
   "ProjectIntakeSniffConfiguration": {
     "type": "object",
     "properties": {
@@ -2319,12 +2319,6 @@
     },
     "additionalProperties": false,
     "description": "Fast pre-conversion type identification (the \"sniff\") for untyped documents. The sniff classifies a document from cheap local evidence (first/last page text, a low-res first-page image, office docProps) BEFORE any conversion, so a high-confidence match can apply the type's intake policy — including skipping conversion — without paying for it first."
-  },
-  "JSONSchemaProperties": {
-    "type": "object",
-    "additionalProperties": {
-      "$ref": "#/components/schemas/JSONSchema"
-    }
   },
   "JSONSchema": {
     "type": "object",
@@ -2360,6 +2354,12 @@
           "type": "string"
         }
       }
+    }
+  },
+  "JSONSchemaProperties": {
+    "type": "object",
+    "additionalProperties": {
+      "$ref": "#/components/schemas/JSONSchema"
     }
   },
   "TextFallbackOptions": {
@@ -4116,238 +4116,6 @@
     "additionalProperties": false,
     "description": "HTTP timeouts applied to a driver's upstream LLM-provider calls.\n\nAll values are in milliseconds. Drivers should map these onto whatever HTTP client their SDK uses; the defaults applied in `@llumiverse/core/createDriverHttpAgent` are:   - headersTimeout:   900_000   - bodyTimeout:      900_000   - connectTimeout:   60_000   - keepAliveTimeout: 300_000\n\nThe response defaults are deliberately longer than the hosting request boundary. Application-level cancellation should end user work first; driver timeouts are bounded-resource safety nets."
   },
-  "IntakePageScope": {
-    "type": "string",
-    "enum": [
-      "all",
-      "located"
-    ],
-    "description": "Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because scalar-or-collection unions generate unstable API clients."
-  },
-  "IntakePageRanges": {
-    "type": "array",
-    "items": {
-      "minItems": 2,
-      "maxItems": 2,
-      "type": "array",
-      "items": {
-        "type": "integer",
-        "minimum": -2147483648,
-        "maximum": 2147483647
-      }
-    },
-    "description": "Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the document ([[1, 2], [-1, -1]] = first two pages plus the last page)."
-  },
-  "InteractionExecutionConfiguration": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "environment": {
-        "type": "string"
-      },
-      "model": {
-        "type": "string"
-      },
-      "do_validate": {
-        "type": "boolean"
-      },
-      "run_data": {
-        "$ref": "#/components/schemas/RunDataStorageLevel"
-      },
-      "configMode": {
-        "$ref": "#/components/schemas/ConfigModes"
-      },
-      "model_options": {
-        "$ref": "#/components/schemas/ModelOptions"
-      },
-      "prompt_cache_key": {
-        "type": "string",
-        "description": "Stable provider-side routing key for automatic prompt caching."
-      },
-      "prompt_cache_mode": {
-        "$ref": "#/components/schemas/PromptCacheMode",
-        "description": "Controls provider-side explicit caching: auto falls back safely, off disables it, and required surfaces cache preparation failures for diagnostics."
-      },
-      "prompt_cache_ttl_seconds": {
-        "type": "integer",
-        "minimum": 60,
-        "maximum": 9007199254740991,
-        "description": "Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; Vertex Gemini requires at least 60 seconds."
-      },
-      "prompt_cache_schema_suffix": {
-        "type": "boolean",
-        "description": "Put the result schema after the cached prefix; Vertesia still validates the returned JSON against it."
-      },
-      "http_timeout": {
-        "$ref": "#/components/schemas/HttpTimeoutOptions",
-        "description": "Per-run HTTP timeouts for upstream LLM-provider calls."
-      }
-    },
-    "additionalProperties": false
-  },
-  "RunDataStorageLevel": {
-    "type": "string",
-    "enum": [
-      "STANDARD",
-      "RESTRICTED",
-      "DEBUG"
-    ]
-  },
-  "ConfigModes": {
-    "type": "string",
-    "enum": [
-      "RUN_AND_INTERACTION_CONFIG",
-      "RUN_CONFIG_ONLY",
-      "INTERACTION_CONFIG_ONLY"
-    ]
-  },
-  "PromptCacheMode": {
-    "type": "string",
-    "enum": [
-      "auto",
-      "off",
-      "required"
-    ]
-  },
-  "IntakeVisionDetail": {
-    "type": "string",
-    "enum": [
-      "low",
-      "standard",
-      "high"
-    ],
-    "description": "Vision detail level names referenced by intake policies. The rendering profiles behind the names (dpi, max size, quality, color mode) are PLATFORM-defined and project-overridable — a type only ever references a detail name."
-  },
-  "ContentTypeExtractionGroundingPolicy": {
-    "type": "object",
-    "properties": {
-      "enabled": {
-        "type": "boolean",
-        "description": "Enable PDF block-level citation grounding for property extraction."
-      },
-      "interaction": {
-        "type": "string",
-        "description": "Grounded extraction interaction. Defaults to the system grounded extractor."
-      },
-      "max_pages": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 2147483647,
-        "description": "Maximum pages to process."
-      },
-      "force_ocr": {
-        "type": "boolean",
-        "description": "Run OCR on every page even when a text layer exists."
-      },
-      "use_vision": {
-        "type": "boolean",
-        "description": "Attach instrumented page images to the grounded extraction prompt."
-      },
-      "raster_mode": {
-        "type": "string",
-        "enum": [
-          "vision",
-          "ocr"
-        ],
-        "description": "How to read pages with no digital text layer (scans / image-only pages). 'vision' (default): read them off the page image and skip OCR. 'ocr': legacy path — OCR those pages and block-ground on the (lossy) OCR text."
-      },
-      "grid_cell_pt": {
-        "type": "number",
-        "minimum": 1,
-        "description": "A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid (more cells, tighter boxes) but can trip weaker models into over-reading; tune per the model in `config`. Default 15."
-      },
-      "omit_block_boxes": {
-        "type": "boolean",
-        "description": "Drop block bounding boxes from the extraction prompt. Only sound with use_vision (layout comes from the image)."
-      },
-      "window_pages": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 2147483647,
-        "description": "Maximum pages per grounded extraction call before windowing."
-      },
-      "update_properties": {
-        "type": "boolean",
-        "description": "Update object properties with grounded extraction data. Default true."
-      },
-      "config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
-        "description": "Model execution configuration for the main grounded extraction interaction."
-      },
-      "hard_config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
-        "description": "Model execution configuration used for hard-to-read content."
-      },
-      "hardness_threshold": {
-        "type": "number",
-        "minimum": 0,
-        "maximum": 1,
-        "description": "Hardness score at or above which hard_config is used. Default 0.5."
-      },
-      "min_citation_density": {
-        "type": "number",
-        "minimum": 0,
-        "maximum": 1,
-        "description": "Minimum citations-per-leaf-value ratio; completions below it retry with escalation. Default 0.3."
-      },
-      "refresh_ocr": {
-        "type": "boolean",
-        "description": "Re-run OCR instead of restoring durable OCR artifacts (stale pipeline output)."
-      },
-      "review": {
-        "$ref": "#/components/schemas/ContentTypeExtractionGroundingReviewPolicy",
-        "description": "Optional post-extraction review pass."
-      }
-    },
-    "additionalProperties": false
-  },
-  "ContentTypeExtractionGroundingReviewPolicy": {
-    "type": "object",
-    "properties": {
-      "enabled": {
-        "type": "boolean",
-        "description": "Set false to disable an inherited grounding review pass for this type."
-      },
-      "config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
-        "description": "Model execution configuration for the review interaction."
-      },
-      "threshold": {
-        "type": "number",
-        "minimum": 0,
-        "maximum": 1,
-        "description": "Hardness score at or above which review runs. Defaults to hardness_threshold."
-      },
-      "coverage_threshold": {
-        "type": "number",
-        "minimum": 0,
-        "maximum": 1,
-        "description": "Review also runs when any page's citation coverage falls below this floor (evidence of missed content). Default 0.2."
-      },
-      "force": {
-        "type": "boolean",
-        "description": "Run review regardless of hardness."
-      }
-    },
-    "additionalProperties": false
-  },
-  "EmbeddingTypeEnabledMap": {
-    "type": "object",
-    "properties": {
-      "text": {
-        "type": "boolean"
-      },
-      "image": {
-        "type": "boolean"
-      },
-      "properties": {
-        "type": "boolean"
-      }
-    },
-    "additionalProperties": false
-  },
   "ContentTypeIntakePolicy": {
     "type": "object",
     "properties": {
@@ -4607,43 +4375,234 @@
     "additionalProperties": false,
     "description": "Per-content-type policy for the standard intake workflows."
   },
-  "IntakeVisionProfileSettingsMap": {
+  "IntakePageScope": {
+    "type": "string",
+    "enum": [
+      "all",
+      "located"
+    ],
+    "description": "Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because scalar-or-collection unions generate unstable API clients."
+  },
+  "IntakePageRanges": {
+    "type": "array",
+    "items": {
+      "minItems": 2,
+      "maxItems": 2,
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": -2147483648,
+        "maximum": 2147483647
+      }
+    },
+    "description": "Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the document ([[1, 2], [-1, -1]] = first two pages plus the last page)."
+  },
+  "InteractionExecutionConfiguration": {
     "type": "object",
     "properties": {
-      "low": {
-        "$ref": "#/components/schemas/IntakeVisionProfileSettingsUpdate"
+      "id": {
+        "type": "string"
       },
-      "standard": {
-        "$ref": "#/components/schemas/IntakeVisionProfileSettingsUpdate"
+      "environment": {
+        "type": "string"
       },
-      "high": {
-        "$ref": "#/components/schemas/IntakeVisionProfileSettingsUpdate"
+      "model": {
+        "type": "string"
+      },
+      "do_validate": {
+        "type": "boolean"
+      },
+      "run_data": {
+        "$ref": "#/components/schemas/RunDataStorageLevel"
+      },
+      "configMode": {
+        "$ref": "#/components/schemas/ConfigModes"
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions"
+      },
+      "prompt_cache_key": {
+        "type": "string",
+        "description": "Stable provider-side routing key for automatic prompt caching."
+      },
+      "prompt_cache_mode": {
+        "$ref": "#/components/schemas/PromptCacheMode",
+        "description": "Controls provider-side explicit caching: auto falls back safely, off disables it, and required surfaces cache preparation failures for diagnostics."
+      },
+      "prompt_cache_ttl_seconds": {
+        "type": "integer",
+        "minimum": 60,
+        "maximum": 9007199254740991,
+        "description": "Caller-selected explicit cache lifetime in seconds. Defaults remain provider-specific; Vertex Gemini requires at least 60 seconds."
+      },
+      "prompt_cache_schema_suffix": {
+        "type": "boolean",
+        "description": "Put the result schema after the cached prefix; Vertesia still validates the returned JSON against it."
+      },
+      "http_timeout": {
+        "$ref": "#/components/schemas/HttpTimeoutOptions",
+        "description": "Per-run HTTP timeouts for upstream LLM-provider calls."
       }
     },
     "additionalProperties": false
   },
-  "IntakeVisionProfileSettingsUpdate": {
+  "RunDataStorageLevel": {
+    "type": "string",
+    "enum": [
+      "STANDARD",
+      "RESTRICTED",
+      "DEBUG"
+    ]
+  },
+  "ConfigModes": {
+    "type": "string",
+    "enum": [
+      "RUN_AND_INTERACTION_CONFIG",
+      "RUN_CONFIG_ONLY",
+      "INTERACTION_CONFIG_ONLY"
+    ]
+  },
+  "PromptCacheMode": {
+    "type": "string",
+    "enum": [
+      "auto",
+      "off",
+      "required"
+    ]
+  },
+  "IntakeVisionDetail": {
+    "type": "string",
+    "enum": [
+      "low",
+      "standard",
+      "high"
+    ],
+    "description": "Vision detail level names referenced by intake policies. The rendering profiles behind the names (dpi, max size, quality, color mode) are PLATFORM-defined and project-overridable — a type only ever references a detail name."
+  },
+  "ContentTypeExtractionGroundingPolicy": {
     "type": "object",
     "properties": {
-      "dpi": {
-        "type": "number",
-        "description": "Render resolution in dots per inch."
+      "enabled": {
+        "type": "boolean",
+        "description": "Enable PDF block-level citation grounding for property extraction."
       },
-      "max_hw": {
-        "type": "number",
-        "description": "Maximum height/width of the rendered page image in pixels."
+      "interaction": {
+        "type": "string",
+        "description": "Grounded extraction interaction. Defaults to the system grounded extractor."
       },
-      "quality": {
-        "type": "number",
-        "description": "JPEG quality (0-100)."
+      "max_pages": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 2147483647,
+        "description": "Maximum pages to process."
       },
-      "color_mode": {
+      "force_ocr": {
+        "type": "boolean",
+        "description": "Run OCR on every page even when a text layer exists."
+      },
+      "use_vision": {
+        "type": "boolean",
+        "description": "Attach instrumented page images to the grounded extraction prompt."
+      },
+      "raster_mode": {
         "type": "string",
         "enum": [
-          "grayscale",
-          "auto"
+          "vision",
+          "ocr"
         ],
-        "description": "grayscale renders gray always; auto keeps color when the plan asks for it."
+        "description": "How to read pages with no digital text layer (scans / image-only pages). 'vision' (default): read them off the page image and skip OCR. 'ocr': legacy path — OCR those pages and block-ground on the (lossy) OCR text."
+      },
+      "grid_cell_pt": {
+        "type": "number",
+        "minimum": 1,
+        "description": "A1 locate-grid cell size in PDF points for vision pages. Smaller = finer grid (more cells, tighter boxes) but can trip weaker models into over-reading; tune per the model in `config`. Default 15."
+      },
+      "omit_block_boxes": {
+        "type": "boolean",
+        "description": "Drop block bounding boxes from the extraction prompt. Only sound with use_vision (layout comes from the image)."
+      },
+      "window_pages": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 2147483647,
+        "description": "Maximum pages per grounded extraction call before windowing."
+      },
+      "update_properties": {
+        "type": "boolean",
+        "description": "Update object properties with grounded extraction data. Default true."
+      },
+      "config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
+        "description": "Model execution configuration for the main grounded extraction interaction."
+      },
+      "hard_config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
+        "description": "Model execution configuration used for hard-to-read content."
+      },
+      "hardness_threshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "Hardness score at or above which hard_config is used. Default 0.5."
+      },
+      "min_citation_density": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "Minimum citations-per-leaf-value ratio; completions below it retry with escalation. Default 0.3."
+      },
+      "refresh_ocr": {
+        "type": "boolean",
+        "description": "Re-run OCR instead of restoring durable OCR artifacts (stale pipeline output)."
+      },
+      "review": {
+        "$ref": "#/components/schemas/ContentTypeExtractionGroundingReviewPolicy",
+        "description": "Optional post-extraction review pass."
+      }
+    },
+    "additionalProperties": false
+  },
+  "ContentTypeExtractionGroundingReviewPolicy": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Set false to disable an inherited grounding review pass for this type."
+      },
+      "config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
+        "description": "Model execution configuration for the review interaction."
+      },
+      "threshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "Hardness score at or above which review runs. Defaults to hardness_threshold."
+      },
+      "coverage_threshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "Review also runs when any page's citation coverage falls below this floor (evidence of missed content). Default 0.2."
+      },
+      "force": {
+        "type": "boolean",
+        "description": "Run review regardless of hardness."
+      }
+    },
+    "additionalProperties": false
+  },
+  "EmbeddingTypeEnabledMap": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "boolean"
+      },
+      "image": {
+        "type": "boolean"
+      },
+      "properties": {
+        "type": "boolean"
       }
     },
     "additionalProperties": false
@@ -4690,27 +4649,43 @@
     },
     "additionalProperties": false
   },
-  "AgentProjectConfiguration": {
+  "IntakeVisionProfileSettingsMap": {
     "type": "object",
     "properties": {
-      "checkpoint": {
-        "$ref": "#/components/schemas/AgentCheckpointConfiguration",
-        "description": "Conversation checkpoint (context compaction) tuning."
+      "low": {
+        "$ref": "#/components/schemas/IntakeVisionProfileSettingsUpdate"
+      },
+      "standard": {
+        "$ref": "#/components/schemas/IntakeVisionProfileSettingsUpdate"
+      },
+      "high": {
+        "$ref": "#/components/schemas/IntakeVisionProfileSettingsUpdate"
       }
     },
-    "additionalProperties": false,
-    "description": "Agent runtime configuration, scoped under project configuration so agent settings have one home (`configuration.agent`)."
+    "additionalProperties": false
   },
-  "AgentCheckpointConfiguration": {
+  "IntakeVisionProfileSettingsUpdate": {
     "type": "object",
     "properties": {
-      "context_threshold": {
+      "dpi": {
         "type": "number",
-        "description": "Fraction of the model's context window to use before the conversation is summarized and compacted (0-1, e.g. 0.95). Model-independent: applies to whatever model each run uses. Setting it replaces the default hard cap — a project asking for 0.95 of a 1M-window model checkpoints at 950k. Clamped at runtime to 0.95 so the prompt still fits."
+        "description": "Render resolution in dots per inch."
       },
-      "max_tokens": {
+      "max_hw": {
         "type": "number",
-        "description": "Absolute hard cap in tokens, regardless of the window fraction. Alone it acts as the threshold; combined with context_threshold the lower of the two wins. Clamped at runtime to 95% of the model's window. Unset means the default cap (500k), or no cap beyond the 95% clamp when context_threshold is set."
+        "description": "Maximum height/width of the rendered page image in pixels."
+      },
+      "quality": {
+        "type": "number",
+        "description": "JPEG quality (0-100)."
+      },
+      "color_mode": {
+        "type": "string",
+        "enum": [
+          "grayscale",
+          "auto"
+        ],
+        "description": "grayscale renders gray always; auto keeps color when the plan asks for it."
       }
     },
     "additionalProperties": false
@@ -4782,13 +4757,9 @@
         "description": "Project defaults and caps for browser_use agent workstreams."
       },
       "pdf_template_object_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Object ID of a content object containing a custom LaTeX template (.latex file) to use as the branded PDF template. When set, \"Export as Branded PDF\" uses this template instead of the built-in Vertesia default template. `null` clears it."
       }
@@ -4796,6 +4767,31 @@
     "required": [
       "embeddings"
     ],
+    "additionalProperties": false
+  },
+  "AgentProjectConfiguration": {
+    "type": "object",
+    "properties": {
+      "checkpoint": {
+        "$ref": "#/components/schemas/AgentCheckpointConfiguration",
+        "description": "Conversation checkpoint (context compaction) tuning."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Agent runtime configuration, scoped under project configuration so agent settings have one home (`configuration.agent`)."
+  },
+  "AgentCheckpointConfiguration": {
+    "type": "object",
+    "properties": {
+      "context_threshold": {
+        "type": "number",
+        "description": "Fraction of the model's context window to use before the conversation is summarized and compacted (0-1, e.g. 0.95). Model-independent: applies to whatever model each run uses. Setting it replaces the default hard cap — a project asking for 0.95 of a 1M-window model checkpoints at 950k. Clamped at runtime to 0.95 so the prompt still fits."
+      },
+      "max_tokens": {
+        "type": "number",
+        "description": "Absolute hard cap in tokens, regardless of the window fraction. Alone it acts as the threshold; combined with context_threshold the lower of the two wins. Clamped at runtime to 95% of the model's window. Unset means the default cap (500k), or no cap beyond the 95% clamp when context_threshold is set."
+      }
+    },
     "additionalProperties": false
   },
   "Project": {
@@ -4973,13 +4969,9 @@
         "description": "Project defaults and caps for browser_use agent workstreams."
       },
       "pdf_template_object_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Object ID of a content object containing a custom LaTeX template (.latex file) to use as the branded PDF template. When set, \"Export as Branded PDF\" uses this template instead of the built-in Vertesia default template. `null` clears it."
       }
@@ -5188,6 +5180,46 @@
       "type"
     ]
   },
+  "AppUIConfig": {
+    "type": "object",
+    "properties": {
+      "src": {
+        "type": "string",
+        "description": "The source URL of the app. The src can be a template which contain a variable named `buildId` which will be replaced with the current build id. For example: `/plugins/vertesia-review-center-${buildId}`"
+      },
+      "isolation": {
+        "type": "string",
+        "enum": [
+          "shadow",
+          "css",
+          "iframe"
+        ],
+        "description": "The isolation strategy. If not specified it defaults to shadow.\n- shadow - use Shadow DOM to fully isolate the plugin from the host.\n- css - inject the plugin's styles (minus the preflight) into the host document; lighter but styles may conflict with the host.\n- iframe - load a standalone application in a sandboxed iframe so it owns its JavaScript and dependency graph."
+      },
+      "css_rebuild": {
+        "type": "boolean",
+        "description": "When true the host modifies the app's css at load time to attempt to fix broken or missing styles. Only takes effect in css isolation mode. Defaults to false."
+      },
+      "navigation": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppUINavItem"
+        },
+        "description": "Navigation items for the app's sidebar UI. Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell)."
+      },
+      "available_in": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppAvailableIn"
+        },
+        "description": "Where this app's UI can be displayed.\n- 'app_portal': Available in the main app portal (standalone)\n- 'composite_app': Available within a CompositeApp shell Defaults to ['app_portal', 'composite_app'] for new apps."
+      }
+    },
+    "required": [
+      "src"
+    ],
+    "additionalProperties": false
+  },
   "AppUINavItem": {
     "type": "object",
     "properties": {
@@ -5243,46 +5275,6 @@
       "composite_app"
     ]
   },
-  "AppUIConfig": {
-    "type": "object",
-    "properties": {
-      "src": {
-        "type": "string",
-        "description": "The source URL of the app. The src can be a template which contain a variable named `buildId` which will be replaced with the current build id. For example: `/plugins/vertesia-review-center-${buildId}`"
-      },
-      "isolation": {
-        "type": "string",
-        "enum": [
-          "shadow",
-          "css",
-          "iframe"
-        ],
-        "description": "The isolation strategy. If not specified it defaults to shadow.\n- shadow - use Shadow DOM to fully isolate the plugin from the host.\n- css - inject the plugin's styles (minus the preflight) into the host document; lighter but styles may conflict with the host.\n- iframe - load a standalone application in a sandboxed iframe so it owns its JavaScript and dependency graph."
-      },
-      "css_rebuild": {
-        "type": "boolean",
-        "description": "When true the host modifies the app's css at load time to attempt to fix broken or missing styles. Only takes effect in css isolation mode. Defaults to false."
-      },
-      "navigation": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AppUINavItem"
-        },
-        "description": "Navigation items for the app's sidebar UI. Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell)."
-      },
-      "available_in": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AppAvailableIn"
-        },
-        "description": "Where this app's UI can be displayed.\n- 'app_portal': Available in the main app portal (standalone)\n- 'composite_app': Available within a CompositeApp shell Defaults to ['app_portal', 'composite_app'] for new apps."
-      }
-    },
-    "required": [
-      "src"
-    ],
-    "additionalProperties": false
-  },
   "AppCapabilities": {
     "type": "string",
     "enum": [
@@ -5305,6 +5297,22 @@
     ],
     "description": "Access control policy for an app installation. Declares which access surfaces are gated by per-user ACEs.\n\n- 'all' (default): every surface (UI portal, tool/endpoint use, contributions) requires   an explicit app_member ACE — the historical behavior.\n- 'ui': UI portal visibility requires an ACE, but tool/endpoint use and contributions   are open to anyone in the project.\n- 'none': fully open within the project — no ACE required for any surface.\n\nDeclared on the manifest as the app's default. May be overridden per-installation."
   },
+  "AppSourceConfig": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "git"
+      },
+      "git": {
+        "$ref": "#/components/schemas/AppGitSourceConfig"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  },
   "AppGitSourceConfig": {
     "type": "object",
     "properties": {
@@ -5321,22 +5329,6 @@
         "type": "string"
       }
     },
-    "additionalProperties": false
-  },
-  "AppSourceConfig": {
-    "type": "object",
-    "properties": {
-      "kind": {
-        "type": "string",
-        "const": "git"
-      },
-      "git": {
-        "$ref": "#/components/schemas/AppGitSourceConfig"
-      }
-    },
-    "required": [
-      "kind"
-    ],
     "additionalProperties": false
   },
   "AppManifestSource": {
@@ -6709,6 +6701,64 @@
       "test"
     ]
   },
+  "ExecutionEnvironmentRef": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "provider": {
+        "$ref": "#/components/schemas/SupportedProviders"
+      },
+      "enabled_models": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AIModel"
+        }
+      },
+      "default_model": {
+        "type": "string"
+      },
+      "endpoint_url": {
+        "type": "string"
+      },
+      "allowed_projects": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "account": {
+        "type": "string"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "updated_at": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "provider",
+      "account",
+      "created_by",
+      "updated_by",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false
+  },
   "AIModel": {
     "type": "object",
     "properties": {
@@ -6810,82 +6860,6 @@
       "legacy"
     ]
   },
-  "ExecutionEnvironmentRef": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "provider": {
-        "$ref": "#/components/schemas/SupportedProviders"
-      },
-      "enabled_models": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AIModel"
-        }
-      },
-      "default_model": {
-        "type": "string"
-      },
-      "endpoint_url": {
-        "type": "string"
-      },
-      "allowed_projects": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "account": {
-        "type": "string"
-      },
-      "created_by": {
-        "type": "string"
-      },
-      "updated_by": {
-        "type": "string"
-      },
-      "created_at": {
-        "type": "string"
-      },
-      "updated_at": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "provider",
-      "account",
-      "created_by",
-      "updated_by",
-      "created_at",
-      "updated_at"
-    ],
-    "additionalProperties": false
-  },
-  "StringValueMap": {
-    "type": "object",
-    "additionalProperties": {
-      "type": "string"
-    }
-  },
-  "ExecutionEnvironmentSettings": {
-    "type": "object",
-    "properties": {
-      "bucket_access_principal": {
-        "type": "string"
-      },
-      "default_headers": {
-        "$ref": "#/components/schemas/StringValueMap",
-        "description": "Custom HTTP headers sent by OpenAI-compatible environments."
-      }
-    }
-  },
   "ExecutionEnvironment": {
     "type": "object",
     "properties": {
@@ -6958,6 +6932,24 @@
       "updated_at"
     ],
     "additionalProperties": false
+  },
+  "StringValueMap": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "string"
+    }
+  },
+  "ExecutionEnvironmentSettings": {
+    "type": "object",
+    "properties": {
+      "bucket_access_principal": {
+        "type": "string"
+      },
+      "default_headers": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Custom HTTP headers sent by OpenAI-compatible environments."
+      }
+    }
   },
   "ExecutionEnvironmentArray": {
     "type": "array",
@@ -7051,6 +7043,28 @@
     },
     "additionalProperties": false
   },
+  "ExecutionEnvironmentConfigUpdatePayload": {
+    "type": "object",
+    "properties": {
+      "enabled_models": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AIModel"
+        }
+      },
+      "config": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/MediatorEnvConfig"
+          },
+          {
+            "$ref": "#/components/schemas/LoadBalancingEnvConfig"
+          }
+        ]
+      }
+    },
+    "additionalProperties": false
+  },
   "MediatorEnvConfig": {
     "type": "object",
     "properties": {
@@ -7117,28 +7131,6 @@
       "model",
       "weight"
     ],
-    "additionalProperties": false
-  },
-  "ExecutionEnvironmentConfigUpdatePayload": {
-    "type": "object",
-    "properties": {
-      "enabled_models": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AIModel"
-        }
-      },
-      "config": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/MediatorEnvConfig"
-          },
-          {
-            "$ref": "#/components/schemas/LoadBalancingEnvConfig"
-          }
-        ]
-      }
-    },
     "additionalProperties": false
   },
   "EnableEnvironmentModelPayload": {
@@ -7232,6 +7224,43 @@
     },
     "additionalProperties": false
   },
+  "RunAnalyticsQuery": {
+    "type": "object",
+    "properties": {
+      "filterBy": {
+        "$ref": "#/components/schemas/AnalyticsAxis",
+        "description": "filters to apply to the query"
+      },
+      "groupBy": {
+        "$ref": "#/components/schemas/RunAnalyticsGroupBy",
+        "description": "The field to group by"
+      },
+      "from": {
+        "type": "number",
+        "description": "The start date of the query in EPOCH format"
+      },
+      "to": {
+        "type": "number",
+        "description": "The end date of the query in EPOCH format"
+      },
+      "resolution": {
+        "$ref": "#/components/schemas/TimeResolution",
+        "description": "The time resolution unit of the analytics query"
+      },
+      "resolutionStep": {
+        "type": "number",
+        "description": "The step size for the resolution (e.g., 4 with resolution='hour' means 4-hour intervals). Defaults to 1."
+      },
+      "virtual": {
+        "type": "boolean",
+        "description": "The field to sort by"
+      }
+    },
+    "required": [
+      "filterBy"
+    ],
+    "additionalProperties": false
+  },
   "AnalyticsAxis": {
     "type": "object",
     "properties": {
@@ -7293,43 +7322,6 @@
       "year"
     ]
   },
-  "RunAnalyticsQuery": {
-    "type": "object",
-    "properties": {
-      "filterBy": {
-        "$ref": "#/components/schemas/AnalyticsAxis",
-        "description": "filters to apply to the query"
-      },
-      "groupBy": {
-        "$ref": "#/components/schemas/RunAnalyticsGroupBy",
-        "description": "The field to group by"
-      },
-      "from": {
-        "type": "number",
-        "description": "The start date of the query in EPOCH format"
-      },
-      "to": {
-        "type": "number",
-        "description": "The end date of the query in EPOCH format"
-      },
-      "resolution": {
-        "$ref": "#/components/schemas/TimeResolution",
-        "description": "The time resolution unit of the analytics query"
-      },
-      "resolutionStep": {
-        "type": "number",
-        "description": "The step size for the resolution (e.g., 4 with resolution='hour' means 4-hour intervals). Defaults to 1."
-      },
-      "virtual": {
-        "type": "boolean",
-        "description": "The field to sort by"
-      }
-    },
-    "required": [
-      "filterBy"
-    ],
-    "additionalProperties": false
-  },
   "RunAnalyticsResult": {
     "type": "object",
     "properties": {
@@ -7380,6 +7372,35 @@
     "items": {
       "$ref": "#/components/schemas/RunAnalyticsResult"
     }
+  },
+  "EmbeddingsApiRequest": {
+    "type": "object",
+    "properties": {
+      "inputs": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EmbeddingsApiInput"
+        }
+      },
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes",
+        "description": "Logical project embedding type. This distinguishes properties embeddings from text inputs when the server resolves an omitted model from project settings."
+      },
+      "model": {
+        "type": "string",
+        "description": "Explicit model override intended for validating a configuration before it is saved. Normal callers should omit this field and provide embedding_type so the project model is resolved."
+      },
+      "task_type": {
+        "$ref": "#/components/schemas/EmbeddingTaskType"
+      },
+      "dimensions": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "inputs"
+    ],
+    "additionalProperties": false
   },
   "EmbeddingsApiTextInput": {
     "type": "object",
@@ -7555,32 +7576,28 @@
     ],
     "description": "Wire-format inputs accepted by the studio-server embeddings endpoint. Mirror of @llumiverse/common's EmbeddingInput, but binary modalities carry a JSON-friendly source (URL or base64) instead of a DataSource. The server wraps each source in a Base64DataSource or URLDataSource before passing the request to the llumiverse driver."
   },
-  "EmbeddingsApiRequest": {
+  "EmbeddingsResult": {
     "type": "object",
     "properties": {
-      "inputs": {
+      "results": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/EmbeddingsApiInput"
-        }
-      },
-      "embedding_type": {
-        "$ref": "#/components/schemas/SupportedEmbeddingTypes",
-        "description": "Logical project embedding type. This distinguishes properties embeddings from text inputs when the server resolves an omitted model from project settings."
+          "$ref": "#/components/schemas/EmbeddingResultItem"
+        },
+        "description": "One result item per input, in the same order as EmbeddingsOptions.inputs."
       },
       "model": {
         "type": "string",
-        "description": "Explicit model override intended for validating a configuration before it is saved. Normal callers should omit this field and provide embedding_type so the project model is resolved."
+        "description": "The provider model id that produced the result."
       },
-      "task_type": {
-        "$ref": "#/components/schemas/EmbeddingTaskType"
-      },
-      "dimensions": {
-        "type": "number"
+      "usage": {
+        "$ref": "#/components/schemas/EmbeddingsTokenUsage",
+        "description": "Aggregate token usage when reported by the provider."
       }
     },
     "required": [
-      "inputs"
+      "results",
+      "model"
     ],
     "additionalProperties": false
   },
@@ -7654,31 +7671,6 @@
         "type": "number"
       }
     },
-    "additionalProperties": false
-  },
-  "EmbeddingsResult": {
-    "type": "object",
-    "properties": {
-      "results": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/EmbeddingResultItem"
-        },
-        "description": "One result item per input, in the same order as EmbeddingsOptions.inputs."
-      },
-      "model": {
-        "type": "string",
-        "description": "The provider model id that produced the result."
-      },
-      "usage": {
-        "$ref": "#/components/schemas/EmbeddingsTokenUsage",
-        "description": "Aggregate token usage when reported by the provider."
-      }
-    },
-    "required": [
-      "results",
-      "model"
-    ],
     "additionalProperties": false
   },
   "JSONValue": {},
@@ -8559,89 +8551,6 @@
     ],
     "additionalProperties": false
   },
-  "AgentRunnerOptions": {
-    "type": "object",
-    "properties": {
-      "is_agent": {
-        "type": "boolean",
-        "description": "Whether this interaction is an agent (executable in Agent Runner)."
-      },
-      "is_tool": {
-        "type": "boolean",
-        "description": "Whether this interaction is available as a tool (sub-agent)."
-      },
-      "is_skill": {
-        "type": "boolean",
-        "description": "Whether this interaction is a skill (provides instructions without execution). Skills are injected into the agent's context based on context_triggers."
-      },
-      "context_triggers": {
-        "$ref": "#/components/schemas/SkillContextTriggers",
-        "description": "Context triggers for auto-injection of this skill. Only used when is_skill is true."
-      },
-      "skill_priority": {
-        "type": "number",
-        "description": "Injection priority for skills (higher = more likely to be selected when multiple match). Only used when is_skill is true."
-      },
-      "tool_names": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Array of default tool names available to this agent. For interactions: defines default tools. For execution payloads: you can use + and - to add or remove from default, if no sign, then list replaces default."
-      },
-      "search_scope": {
-        "$ref": "#/components/schemas/AgentSearchScope",
-        "description": "On which scope should the search be applied by the search_tool. Only supports 'collection' scope or undefined for now."
-      },
-      "collection_id": {
-        "type": "string",
-        "description": "The ID of the collection to restrict agent operations to. When specified, the agent's search and retrieval operations are limited to documents within this collection'."
-      },
-      "request_template": {
-        "type": "string",
-        "description": "Optional user-facing template for rendering run input as the first conversation entry. Supports {{field_name}}, {{nested.field}}, {{items.0.name}}, and {{json}} placeholders resolved from the run data."
-      },
-      "checkpoint": {
-        "$ref": "#/components/schemas/AgentCheckpointConfiguration",
-        "description": "Per-agent context checkpoint configuration. Field-wise it overrides the project's `configuration.agent.checkpoint`; a per-run `checkpoint_tokens` override still wins over both."
-      }
-    },
-    "additionalProperties": false,
-    "description": "Configuration options for Agent Runner functionality. These options control how interactions are exposed and executed in the Agent Runner."
-  },
-  "SkillContextTriggers": {
-    "type": "object",
-    "properties": {
-      "keywords": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Keywords in user input that should trigger this skill"
-      },
-      "tool_names": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "If these tools are being used, suggest this skill"
-      },
-      "data_patterns": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Regex patterns to match against input data"
-      }
-    },
-    "additionalProperties": false,
-    "description": "Context triggers for auto-injection of skills. When these conditions match, the skill is automatically injected into the agent context."
-  },
-  "AgentSearchScope": {
-    "type": "string",
-    "const": "collection",
-    "description": "Defines the scope for agent search operations."
-  },
   "Interaction": {
     "type": "object",
     "properties": {
@@ -8790,6 +8699,89 @@
       "updated_at"
     ],
     "additionalProperties": false
+  },
+  "AgentRunnerOptions": {
+    "type": "object",
+    "properties": {
+      "is_agent": {
+        "type": "boolean",
+        "description": "Whether this interaction is an agent (executable in Agent Runner)."
+      },
+      "is_tool": {
+        "type": "boolean",
+        "description": "Whether this interaction is available as a tool (sub-agent)."
+      },
+      "is_skill": {
+        "type": "boolean",
+        "description": "Whether this interaction is a skill (provides instructions without execution). Skills are injected into the agent's context based on context_triggers."
+      },
+      "context_triggers": {
+        "$ref": "#/components/schemas/SkillContextTriggers",
+        "description": "Context triggers for auto-injection of this skill. Only used when is_skill is true."
+      },
+      "skill_priority": {
+        "type": "number",
+        "description": "Injection priority for skills (higher = more likely to be selected when multiple match). Only used when is_skill is true."
+      },
+      "tool_names": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Array of default tool names available to this agent. For interactions: defines default tools. For execution payloads: you can use + and - to add or remove from default, if no sign, then list replaces default."
+      },
+      "search_scope": {
+        "$ref": "#/components/schemas/AgentSearchScope",
+        "description": "On which scope should the search be applied by the search_tool. Only supports 'collection' scope or undefined for now."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "The ID of the collection to restrict agent operations to. When specified, the agent's search and retrieval operations are limited to documents within this collection'."
+      },
+      "request_template": {
+        "type": "string",
+        "description": "Optional user-facing template for rendering run input as the first conversation entry. Supports {{field_name}}, {{nested.field}}, {{items.0.name}}, and {{json}} placeholders resolved from the run data."
+      },
+      "checkpoint": {
+        "$ref": "#/components/schemas/AgentCheckpointConfiguration",
+        "description": "Per-agent context checkpoint configuration. Field-wise it overrides the project's `configuration.agent.checkpoint`; a per-run `checkpoint_tokens` override still wins over both."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Configuration options for Agent Runner functionality. These options control how interactions are exposed and executed in the Agent Runner."
+  },
+  "SkillContextTriggers": {
+    "type": "object",
+    "properties": {
+      "keywords": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Keywords in user input that should trigger this skill"
+      },
+      "tool_names": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "If these tools are being used, suggest this skill"
+      },
+      "data_patterns": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Regex patterns to match against input data"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Context triggers for auto-injection of skills. When these conditions match, the skill is automatically injected into the agent context."
+  },
+  "AgentSearchScope": {
+    "type": "string",
+    "const": "collection",
+    "description": "Defines the scope for agent search operations."
   },
   "InteractionArray": {
     "type": "array",
@@ -9790,26 +9782,6 @@
     "additionalProperties": false,
     "description": "Resolved environment information"
   },
-  "ResolvedRuntimeConfig": {
-    "type": "object",
-    "properties": {
-      "environment": {
-        "$ref": "#/components/schemas/ResolvedEnvironmentInfo"
-      },
-      "model": {
-        "type": "string"
-      },
-      "model_source": {
-        "$ref": "#/components/schemas/ModelSource"
-      }
-    },
-    "required": [
-      "environment",
-      "model_source"
-    ],
-    "additionalProperties": false,
-    "description": "Resolved runtime configuration for an interaction"
-  },
   "ResolvedInteractionExecutionInfo": {
     "type": "object",
     "properties": {
@@ -9855,6 +9827,26 @@
     ],
     "additionalProperties": false,
     "description": "Resolved execution info for an interaction. Contains the interaction ID, basic metadata, and the resolved runtime configuration (environment, model) that would be used at execution time."
+  },
+  "ResolvedRuntimeConfig": {
+    "type": "object",
+    "properties": {
+      "environment": {
+        "$ref": "#/components/schemas/ResolvedEnvironmentInfo"
+      },
+      "model": {
+        "type": "string"
+      },
+      "model_source": {
+        "$ref": "#/components/schemas/ModelSource"
+      }
+    },
+    "required": [
+      "environment",
+      "model_source"
+    ],
+    "additionalProperties": false,
+    "description": "Resolved runtime configuration for an interaction"
   },
   "FacetSpec": {
     "type": "object",
@@ -10023,6 +10015,51 @@
     ],
     "additionalProperties": false
   },
+  "GeneratedInteractionDefinition": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "temperature": {
+        "type": "number"
+      },
+      "prompts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GeneratedInteractionPromptSegment"
+        }
+      },
+      "max_tokens": {
+        "type": "number"
+      },
+      "result_schema": {
+        "$ref": "#/components/schemas/JSONSchema"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "generated",
+            "agent"
+          ]
+        }
+      }
+    },
+    "required": [
+      "name",
+      "description",
+      "temperature",
+      "prompts",
+      "result_schema",
+      "tags"
+    ],
+    "additionalProperties": false
+  },
   "GeneratedInteractionPromptSegment": {
     "type": "object",
     "properties": {
@@ -10071,51 +10108,6 @@
       "content",
       "content_type",
       "inputSchema"
-    ],
-    "additionalProperties": false
-  },
-  "GeneratedInteractionDefinition": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string"
-      },
-      "description": {
-        "type": "string"
-      },
-      "temperature": {
-        "type": "number"
-      },
-      "prompts": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/GeneratedInteractionPromptSegment"
-        }
-      },
-      "max_tokens": {
-        "type": "number"
-      },
-      "result_schema": {
-        "$ref": "#/components/schemas/JSONSchema"
-      },
-      "tags": {
-        "type": "array",
-        "items": {
-          "type": "string",
-          "enum": [
-            "generated",
-            "agent"
-          ]
-        }
-      }
-    },
-    "required": [
-      "name",
-      "description",
-      "temperature",
-      "prompts",
-      "result_schema",
-      "tags"
     ],
     "additionalProperties": false
   },
@@ -10206,17 +10198,6 @@
     "additionalProperties": false,
     "description": "Streaming-specific options (only needed when stream=true)"
   },
-  "LlmCallType": {
-    "type": "string",
-    "enum": [
-      "start",
-      "resume_tools",
-      "resume_user",
-      "checkpoint",
-      "nested_interaction"
-    ],
-    "description": "Types of LLM calls in a conversation"
-  },
   "StreamingTelemetryContext": {
     "type": "object",
     "properties": {
@@ -10239,6 +10220,17 @@
     ],
     "additionalProperties": false,
     "description": "Telemetry context for streaming mode. Contains info not available in current_state needed to send LlmCallEvent."
+  },
+  "LlmCallType": {
+    "type": "string",
+    "enum": [
+      "start",
+      "resume_tools",
+      "resume_user",
+      "checkpoint",
+      "nested_interaction"
+    ],
+    "description": "Types of LLM calls in a conversation"
   },
   "InteractiveChannel": {
     "type": "object",
@@ -10333,6 +10325,48 @@
     ],
     "additionalProperties": false,
     "description": "Lightweight tool reference for activity payloads. References tools stored in GCP instead of embedding full tool definitions."
+  },
+  "ToolResult": {
+    "type": "object",
+    "properties": {
+      "content": {
+        "type": "string"
+      },
+      "content_ref": {
+        "$ref": "#/components/schemas/TextArtifactReference",
+        "description": "Reference to text content stored outside Temporal/API payloads. Servers that execute the next model turn should resolve this before constructing the provider prompt."
+      },
+      "is_error": {
+        "type": "boolean"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "display_message": {
+        "type": "string",
+        "description": "Optional message to display in the UI instead of the content. Use this when the content is large or technical (e.g., document text) and you want to show a friendly message to the user."
+      },
+      "meta": {
+        "$ref": "#/components/schemas/ToolResultMeta",
+        "description": "Can contain metadata returned by the tool executor."
+      },
+      "tool_use_id": {
+        "type": "string"
+      },
+      "thought_signature": {
+        "type": "string",
+        "description": "Gemini thinking models require thought_signature to be passed back with tool results. Copy this from the ToolUse.thought_signature that requested this tool call."
+      }
+    },
+    "required": [
+      "content",
+      "is_error",
+      "tool_use_id"
+    ],
+    "additionalProperties": false
   },
   "TextArtifactReference": {
     "type": "object",
@@ -10435,48 +10469,6 @@
       }
     },
     "description": "Metadata a tool executor may attach to its result. Kept as an open record for forward compatibility while typing the fields the runtime interprets."
-  },
-  "ToolResult": {
-    "type": "object",
-    "properties": {
-      "content": {
-        "type": "string"
-      },
-      "content_ref": {
-        "$ref": "#/components/schemas/TextArtifactReference",
-        "description": "Reference to text content stored outside Temporal/API payloads. Servers that execute the next model turn should resolve this before constructing the provider prompt."
-      },
-      "is_error": {
-        "type": "boolean"
-      },
-      "files": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "display_message": {
-        "type": "string",
-        "description": "Optional message to display in the UI instead of the content. Use this when the content is large or technical (e.g., document text) and you want to show a friendly message to the user."
-      },
-      "meta": {
-        "$ref": "#/components/schemas/ToolResultMeta",
-        "description": "Can contain metadata returned by the tool executor."
-      },
-      "tool_use_id": {
-        "type": "string"
-      },
-      "thought_signature": {
-        "type": "string",
-        "description": "Gemini thinking models require thought_signature to be passed back with tool results. Copy this from the ToolUse.thought_signature that requested this tool call."
-      }
-    },
-    "required": [
-      "content",
-      "is_error",
-      "tool_use_id"
-    ],
-    "additionalProperties": false
   },
   "ExternalizedToolInputRef": {
     "type": "object",
@@ -10728,27 +10720,6 @@
     ],
     "additionalProperties": false
   },
-  "ExecutionRunDocRef": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "account": {
-        "type": "string"
-      },
-      "project": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "id",
-      "account",
-      "project"
-    ],
-    "additionalProperties": false,
-    "description": "The run ref is used to identify a run document in the storage"
-  },
   "ConversationState": {
     "type": "object",
     "properties": {
@@ -10979,6 +10950,27 @@
     "additionalProperties": false,
     "description": "Conversation state passed between workflow activities: the activity-safe, per-turn dynamic subset of a multi-turn agent conversation. Rides every conversation activity payload, so it deliberately excludes anything large or fetchable — the conversation history and tool definitions live in artifact storage (referenced via `tool_reference` / the conversation storage id), and catalog/activation data lives in the workflow-memory  {@link  ConversationCatalogState }  (persisted as catalog.json)."
   },
+  "ExecutionRunDocRef": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "account": {
+        "type": "string"
+      },
+      "project": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "account",
+      "project"
+    ],
+    "additionalProperties": false,
+    "description": "The run ref is used to identify a run document in the storage"
+  },
   "ExecutionRunStatus": {
     "type": "string",
     "enum": [
@@ -11070,94 +11062,6 @@
   "ExecutionRunInteraction": {
     "$ref": "#/components/schemas/InteractionRef",
     "description": "Interaction reference. Stored interactions may be populated as full Interaction documents; in-code interactions are represented as refs whose `id` is the namespaced interaction id."
-  },
-  "PromptCacheDiagnostic": {
-    "type": "object",
-    "properties": {
-      "path": {
-        "$ref": "#/components/schemas/PromptCachePath"
-      },
-      "explicit_cache_used": {
-        "type": "boolean"
-      },
-      "content_hash_prefix": {
-        "type": "string"
-      },
-      "model": {
-        "type": "string"
-      },
-      "scope": {
-        "type": "string"
-      },
-      "cacheable_part_count": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "preparation_latency_ms": {
-        "type": "number",
-        "minimum": 0
-      },
-      "wait_latency_ms": {
-        "type": "number",
-        "minimum": 0
-      },
-      "provider_status": {
-        "type": "integer",
-        "minimum": -9007199254740991,
-        "maximum": 9007199254740991
-      }
-    },
-    "required": [
-      "path",
-      "explicit_cache_used",
-      "model",
-      "preparation_latency_ms"
-    ],
-    "description": "Safe diagnostic for one provider-side explicit prompt-cache attempt. It never contains prompt contents, images, credentials, or full provider resource names."
-  },
-  "PromptCachePath": {
-    "type": "string",
-    "enum": [
-      "disabled",
-      "no_key",
-      "local_memo_hit",
-      "distributed_registry_hit",
-      "provider_list_recovery",
-      "created",
-      "waited_for_creator",
-      "refreshed",
-      "fallback_quota",
-      "fallback_provider_error",
-      "fallback_coordination_unavailable",
-      "fallback_wait_timeout",
-      "minimum_token_rejection",
-      "unusable_resource_recreated"
-    ]
-  },
-  "InteractionExecutionError": {
-    "type": "object",
-    "properties": {
-      "code": {
-        "type": "string"
-      },
-      "message": {
-        "type": "string"
-      },
-      "data": {},
-      "retryable": {
-        "type": "boolean"
-      },
-      "retry_after_ms": {
-        "type": "number",
-        "description": "Provider-supplied retry delay preserved across synchronous and async workflow execution."
-      }
-    },
-    "required": [
-      "code",
-      "message"
-    ],
-    "additionalProperties": false
   },
   "ExecutionRun": {
     "type": "object",
@@ -11299,6 +11203,94 @@
       "source",
       "created_by",
       "updated_by"
+    ],
+    "additionalProperties": false
+  },
+  "PromptCacheDiagnostic": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "$ref": "#/components/schemas/PromptCachePath"
+      },
+      "explicit_cache_used": {
+        "type": "boolean"
+      },
+      "content_hash_prefix": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "scope": {
+        "type": "string"
+      },
+      "cacheable_part_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "preparation_latency_ms": {
+        "type": "number",
+        "minimum": 0
+      },
+      "wait_latency_ms": {
+        "type": "number",
+        "minimum": 0
+      },
+      "provider_status": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "path",
+      "explicit_cache_used",
+      "model",
+      "preparation_latency_ms"
+    ],
+    "description": "Safe diagnostic for one provider-side explicit prompt-cache attempt. It never contains prompt contents, images, credentials, or full provider resource names."
+  },
+  "PromptCachePath": {
+    "type": "string",
+    "enum": [
+      "disabled",
+      "no_key",
+      "local_memo_hit",
+      "distributed_registry_hit",
+      "provider_list_recovery",
+      "created",
+      "waited_for_creator",
+      "refreshed",
+      "fallback_quota",
+      "fallback_provider_error",
+      "fallback_coordination_unavailable",
+      "fallback_wait_timeout",
+      "minimum_token_rejection",
+      "unusable_resource_recreated"
+    ]
+  },
+  "InteractionExecutionError": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "data": {},
+      "retryable": {
+        "type": "boolean"
+      },
+      "retry_after_ms": {
+        "type": "number",
+        "description": "Provider-supplied retry delay preserved across synchronous and async workflow execution."
+      }
+    },
+    "required": [
+      "code",
+      "message"
     ],
     "additionalProperties": false
   },
@@ -11575,6 +11567,76 @@
     },
     "additionalProperties": false
   },
+  "RunCreatePayload": {
+    "type": "object",
+    "properties": {
+      "data": {
+        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping."
+      },
+      "config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
+      },
+      "result_schema": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/JSONSchema"
+          },
+          {
+            "$ref": "#/components/schemas/SchemaRef"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "stream": {
+        "type": "boolean"
+      },
+      "do_validate": {
+        "type": "boolean"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "conversation": {
+        "description": "The conversation state to be used in the execution if any. If the `true` is passed then the conversation will be returned in the result. The true value must be used for the first execution that starts the conversation. If conversation is falsy then no conversation is returned back. For regular executions the conversation is not returned back to save memory."
+      },
+      "tool_definitions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolDefinition"
+        },
+        "description": "The tools to be used in the execution"
+      },
+      "workflow": {
+        "$ref": "#/components/schemas/ExecutionRunWorkflow",
+        "description": "The workflow related to this Interaction Run."
+      },
+      "prompts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/InCodePrompt"
+        },
+        "description": "Only used by ad-hoc interactions which defines the prompt in the execution payload itself These are temporary interactions using \"tmp:\" suffix."
+      },
+      "asyncCompletion": {
+        "$ref": "#/components/schemas/AsyncCompletionOptions",
+        "description": "Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming."
+      },
+      "interaction": {
+        "type": "string",
+        "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
+      }
+    },
+    "required": [
+      "interaction"
+    ],
+    "additionalProperties": false,
+    "description": "Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run"
+  },
   "ResultStorageOptions": {
     "type": "object",
     "properties": {
@@ -11645,76 +11707,6 @@
     ],
     "additionalProperties": false,
     "description": "Options for async completion and/or streaming LLM responses"
-  },
-  "RunCreatePayload": {
-    "type": "object",
-    "properties": {
-      "data": {
-        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping."
-      },
-      "config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
-      },
-      "result_schema": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/JSONSchema"
-          },
-          {
-            "$ref": "#/components/schemas/SchemaRef"
-          },
-          {
-            "type": "null"
-          }
-        ]
-      },
-      "stream": {
-        "type": "boolean"
-      },
-      "do_validate": {
-        "type": "boolean"
-      },
-      "tags": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "conversation": {
-        "description": "The conversation state to be used in the execution if any. If the `true` is passed then the conversation will be returned in the result. The true value must be used for the first execution that starts the conversation. If conversation is falsy then no conversation is returned back. For regular executions the conversation is not returned back to save memory."
-      },
-      "tool_definitions": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ToolDefinition"
-        },
-        "description": "The tools to be used in the execution"
-      },
-      "workflow": {
-        "$ref": "#/components/schemas/ExecutionRunWorkflow",
-        "description": "The workflow related to this Interaction Run."
-      },
-      "prompts": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/InCodePrompt"
-        },
-        "description": "Only used by ad-hoc interactions which defines the prompt in the execution payload itself These are temporary interactions using \"tmp:\" suffix."
-      },
-      "asyncCompletion": {
-        "$ref": "#/components/schemas/AsyncCompletionOptions",
-        "description": "Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming."
-      },
-      "interaction": {
-        "type": "string",
-        "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
-      }
-    },
-    "required": [
-      "interaction"
-    ],
-    "additionalProperties": false,
-    "description": "Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run"
   },
   "SortOrder": {
     "type": "string",
@@ -13565,13 +13557,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13600,13 +13588,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13635,13 +13619,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13670,13 +13650,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13705,13 +13681,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -14256,43 +14228,6 @@
     "additionalProperties": false,
     "description": "Per-name resolution result for `POST /tools/validate`."
   },
-  "MCPToolAnnotations": {
-    "type": "object",
-    "properties": {
-      "title": {
-        "type": "string",
-        "description": "Human-readable display name for the tool"
-      },
-      "readOnlyHint": {
-        "type": "boolean",
-        "description": "If true, the tool does not modify any state"
-      },
-      "destructiveHint": {
-        "type": "boolean",
-        "description": "If true, the tool may perform irreversible destructive operations"
-      },
-      "idempotentHint": {
-        "type": "boolean",
-        "description": "If true, calling the tool multiple times with the same args has no additional effect"
-      },
-      "openWorldHint": {
-        "type": "boolean",
-        "description": "If true, the tool interacts with external entities outside the local environment"
-      }
-    },
-    "additionalProperties": false,
-    "description": "Metadata hints from MCP tool annotations (per MCP spec)."
-  },
-  "AgentToolApprovalClass": {
-    "type": "string",
-    "enum": [
-      "read_only",
-      "side_effecting",
-      "control",
-      "requires_confirmation"
-    ],
-    "description": "Approval behavior class for a tool exposed to agents.\n\n- `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.\n- `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.\n- `control`: affects agent control flow or tool availability, not user data or external systems.\n- `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode."
-  },
   "AggregatedTool": {
     "type": "object",
     "properties": {
@@ -14352,6 +14287,43 @@
     ],
     "additionalProperties": false,
     "description": "A single tool entry in the unified registry, regardless of where it came from. Returned by `GET /tools` and the resolution map of `POST /tools/validate`."
+  },
+  "MCPToolAnnotations": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "Human-readable display name for the tool"
+      },
+      "readOnlyHint": {
+        "type": "boolean",
+        "description": "If true, the tool does not modify any state"
+      },
+      "destructiveHint": {
+        "type": "boolean",
+        "description": "If true, the tool may perform irreversible destructive operations"
+      },
+      "idempotentHint": {
+        "type": "boolean",
+        "description": "If true, calling the tool multiple times with the same args has no additional effect"
+      },
+      "openWorldHint": {
+        "type": "boolean",
+        "description": "If true, the tool interacts with external entities outside the local environment"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Metadata hints from MCP tool annotations (per MCP spec)."
+  },
+  "AgentToolApprovalClass": {
+    "type": "string",
+    "enum": [
+      "read_only",
+      "side_effecting",
+      "control",
+      "requires_confirmation"
+    ],
+    "description": "Approval behavior class for a tool exposed to agents.\n\n- `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.\n- `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.\n- `control`: affects agent control flow or tool availability, not user data or external systems.\n- `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode."
   },
   "ValidateToolNamesResponse": {
     "type": "object",
@@ -14629,13 +14601,9 @@
         "description": "Whether a key is stored for this collection."
       },
       "hint": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Last few characters of the stored key, for display only. Null when unset."
       }
@@ -14705,113 +14673,69 @@
     "type": "object",
     "properties": {
       "time": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "action": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "resource_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "event_category": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "provider": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.pipeline": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.verdict": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.workflow_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.rule_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "model": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       }
     },
@@ -14971,13 +14895,9 @@
         "$ref": "#/components/schemas/EventCategory"
       },
       "source": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "root_event_id": {
@@ -15023,33 +14943,21 @@
         "type": "boolean"
       },
       "principal_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "principal_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "effective_principal_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "roles": {
@@ -15059,63 +14967,39 @@
         }
       },
       "account_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "tenant_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "account_name": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_name": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "provider": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Provider type for billable/provider-backed events, e.g. vertexai, bedrock."
       },
@@ -17241,33 +17125,21 @@
         "type": "string"
       },
       "account_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "tenant_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       }
     },
@@ -19792,6 +19664,50 @@
     ],
     "additionalProperties": false
   },
+  "RemoteActivityDefinition": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Activity name (snake_case, unique within the collection)"
+      },
+      "collection": {
+        "type": "string",
+        "description": "Collection name this activity belongs to"
+      },
+      "title": {
+        "type": "string",
+        "description": "Display title"
+      },
+      "description": {
+        "type": "string",
+        "description": "Description of what the activity does"
+      },
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "JSON Schema for the activity input parameters"
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "JSON Schema for the activity output"
+      },
+      "url": {
+        "type": "string",
+        "description": "The activity execution URL. Can be absolute or relative to the tool server base URL. If not provided, the collection-specific activities endpoint is used."
+      },
+      "options": {
+        "$ref": "#/components/schemas/DSLActivityOptions",
+        "description": "Suggested timeout and retry configuration"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "Definition of a remote activity exposed by a tool server for use in DSL workflows. Remote activities are identified in workflow steps using colon-separated names: `app:<app_name>:<collection>:<activity_name>` (e.g. `app:my-nlp-app:examples:word_count`)."
+  },
   "DurationValue": {
     "type": [
       "string",
@@ -19844,50 +19760,6 @@
     },
     "additionalProperties": false,
     "description": "The payload for a DSL activity options."
-  },
-  "RemoteActivityDefinition": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string",
-        "description": "Activity name (snake_case, unique within the collection)"
-      },
-      "collection": {
-        "type": "string",
-        "description": "Collection name this activity belongs to"
-      },
-      "title": {
-        "type": "string",
-        "description": "Display title"
-      },
-      "description": {
-        "type": "string",
-        "description": "Description of what the activity does"
-      },
-      "input_schema": {
-        "type": "object",
-        "additionalProperties": true,
-        "description": "JSON Schema for the activity input parameters"
-      },
-      "output_schema": {
-        "type": "object",
-        "additionalProperties": true,
-        "description": "JSON Schema for the activity output"
-      },
-      "url": {
-        "type": "string",
-        "description": "The activity execution URL. Can be absolute or relative to the tool server base URL. If not provided, the collection-specific activities endpoint is used."
-      },
-      "options": {
-        "$ref": "#/components/schemas/DSLActivityOptions",
-        "description": "Suggested timeout and retry configuration"
-      }
-    },
-    "required": [
-      "name"
-    ],
-    "additionalProperties": false,
-    "description": "Definition of a remote activity exposed by a tool server for use in DSL workflows. Remote activities are identified in workflow steps using colon-separated names: `app:<app_name>:<collection>:<activity_name>` (e.g. `app:my-nlp-app:examples:word_count`)."
   },
   "AskUserWebhookConfigurationInput": {
     "type": "object",
@@ -20800,6 +20672,78 @@
     ],
     "additionalProperties": false
   },
+  "AppDashboardDefinition": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Local app dashboard ID."
+      },
+      "name": {
+        "type": "string",
+        "description": "Machine-friendly dashboard name. Defaults to `id`."
+      },
+      "title": {
+        "type": "string",
+        "description": "Display title. Defaults to `name` or `id`."
+      },
+      "description": {
+        "type": "string",
+        "description": "User-facing description."
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Tags for discovery and filtering."
+      },
+      "dataSource": {
+        "$ref": "#/components/schemas/DashboardDataSource",
+        "description": "Data source used to populate Vega `data.values`."
+      },
+      "query": {
+        "type": "string",
+        "description": "SQL query shortcut for app dashboards backed by data stores."
+      },
+      "queryLimit": {
+        "type": "number",
+        "description": "Maximum SQL rows to return."
+      },
+      "queryParameters": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Default values for SQL {{param}} placeholders."
+      },
+      "spec": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Complete Vega-Lite specification for the dashboard."
+      },
+      "queries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DashboardQuery"
+        },
+        "description": "Legacy named SQL queries."
+      },
+      "panels": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DashboardPanel"
+        },
+        "description": "Legacy panel definitions."
+      },
+      "layout": {
+        "$ref": "#/components/schemas/DashboardLayout",
+        "description": "Legacy dashboard layout."
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "additionalProperties": false,
+    "description": "Dashboard definition contributed by an app package.\n\nApp dashboard IDs are local to the app. The platform exposes them as `app:<app_name>:<id>` when listing or retrieving dashboards."
+  },
   "DashboardSqlDataSource": {
     "type": "object",
     "properties": {
@@ -21078,78 +21022,6 @@
       "kind"
     ],
     "description": "Data source for a Vega dashboard."
-  },
-  "AppDashboardDefinition": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string",
-        "description": "Local app dashboard ID."
-      },
-      "name": {
-        "type": "string",
-        "description": "Machine-friendly dashboard name. Defaults to `id`."
-      },
-      "title": {
-        "type": "string",
-        "description": "Display title. Defaults to `name` or `id`."
-      },
-      "description": {
-        "type": "string",
-        "description": "User-facing description."
-      },
-      "tags": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Tags for discovery and filtering."
-      },
-      "dataSource": {
-        "$ref": "#/components/schemas/DashboardDataSource",
-        "description": "Data source used to populate Vega `data.values`."
-      },
-      "query": {
-        "type": "string",
-        "description": "SQL query shortcut for app dashboards backed by data stores."
-      },
-      "queryLimit": {
-        "type": "number",
-        "description": "Maximum SQL rows to return."
-      },
-      "queryParameters": {
-        "$ref": "#/components/schemas/StringValueMap",
-        "description": "Default values for SQL {{param}} placeholders."
-      },
-      "spec": {
-        "type": "object",
-        "additionalProperties": true,
-        "description": "Complete Vega-Lite specification for the dashboard."
-      },
-      "queries": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/DashboardQuery"
-        },
-        "description": "Legacy named SQL queries."
-      },
-      "panels": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/DashboardPanel"
-        },
-        "description": "Legacy panel definitions."
-      },
-      "layout": {
-        "$ref": "#/components/schemas/DashboardLayout",
-        "description": "Legacy dashboard layout."
-      }
-    },
-    "required": [
-      "id"
-    ],
-    "additionalProperties": false,
-    "description": "Dashboard definition contributed by an app package.\n\nApp dashboard IDs are local to the app. The platform exposes them as `app:<app_name>:<id>` when listing or retrieving dashboards."
   },
   "AppManifestData": {
     "type": "object",
@@ -21595,6 +21467,97 @@
     "required": [
       "version"
     ],
+    "additionalProperties": false
+  },
+  "AppPackage": {
+    "type": "object",
+    "properties": {
+      "ui": {
+        "$ref": "#/components/schemas/AppUIConfig",
+        "description": "The UI configuration of the app"
+      },
+      "tools": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AgentToolDefinition"
+        },
+        "description": "A list of tools exposed by the app."
+      },
+      "skills": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AgentToolDefinition"
+        },
+        "description": "A list of skills (`learn_*` tools) exposed by the app. Kept separate from `tools` so clients can render them distinctly — consumers that don't care (e.g. the worker building a combined tool registry) should concatenate the two lists."
+      },
+      "interactions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CatalogInteractionRef"
+        },
+        "description": "A list of interactions exposed by the app"
+      },
+      "types": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/InCodeTypeDefinition"
+        },
+        "description": "A list of types."
+      },
+      "processes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/InCodeProcessDefinition"
+        },
+        "description": "A list of process definitions exposed by the app."
+      },
+      "views": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/InCodeViewDefinition"
+        },
+        "description": "View Experiences exposed by the app as in-code definitions."
+      },
+      "templates": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RenderingTemplateDefinitionRef"
+        },
+        "description": "Templates provided by the app."
+      },
+      "dashboards": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppDashboardDefinition"
+        },
+        "description": "Dashboards provided by the app."
+      },
+      "widgets": {
+        "$ref": "#/components/schemas/AppWidgetInfoMap",
+        "description": "Widgets provided by the app."
+      },
+      "activities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RemoteActivityDefinition"
+        },
+        "description": "Remote activities exposed by the app for use in DSL workflows. Activities are discovered via `?scope=activities` and referenced in workflow steps using colon-separated names: `app:<app_name>:<collection>:<activity_name>`."
+      },
+      "settings_schema": {
+        "$ref": "#/components/schemas/JSONSchema",
+        "description": "A JSON chema for the app installation settings."
+      },
+      "hooks": {
+        "$ref": "#/components/schemas/AppPackageHooks"
+      },
+      "subscriptions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppEventSubscriptionDefinition"
+        },
+        "description": "Event subscriptions contributed by the app."
+      }
+    },
     "additionalProperties": false
   },
   "InCodeTypeDefinition": {
@@ -22617,97 +22580,6 @@
     "required": [
       "type"
     ]
-  },
-  "AppPackage": {
-    "type": "object",
-    "properties": {
-      "ui": {
-        "$ref": "#/components/schemas/AppUIConfig",
-        "description": "The UI configuration of the app"
-      },
-      "tools": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AgentToolDefinition"
-        },
-        "description": "A list of tools exposed by the app."
-      },
-      "skills": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AgentToolDefinition"
-        },
-        "description": "A list of skills (`learn_*` tools) exposed by the app. Kept separate from `tools` so clients can render them distinctly — consumers that don't care (e.g. the worker building a combined tool registry) should concatenate the two lists."
-      },
-      "interactions": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/CatalogInteractionRef"
-        },
-        "description": "A list of interactions exposed by the app"
-      },
-      "types": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/InCodeTypeDefinition"
-        },
-        "description": "A list of types."
-      },
-      "processes": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/InCodeProcessDefinition"
-        },
-        "description": "A list of process definitions exposed by the app."
-      },
-      "views": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/InCodeViewDefinition"
-        },
-        "description": "View Experiences exposed by the app as in-code definitions."
-      },
-      "templates": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/RenderingTemplateDefinitionRef"
-        },
-        "description": "Templates provided by the app."
-      },
-      "dashboards": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AppDashboardDefinition"
-        },
-        "description": "Dashboards provided by the app."
-      },
-      "widgets": {
-        "$ref": "#/components/schemas/AppWidgetInfoMap",
-        "description": "Widgets provided by the app."
-      },
-      "activities": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/RemoteActivityDefinition"
-        },
-        "description": "Remote activities exposed by the app for use in DSL workflows. Activities are discovered via `?scope=activities` and referenced in workflow steps using colon-separated names: `app:<app_name>:<collection>:<activity_name>`."
-      },
-      "settings_schema": {
-        "$ref": "#/components/schemas/JSONSchema",
-        "description": "A JSON chema for the app installation settings."
-      },
-      "hooks": {
-        "$ref": "#/components/schemas/AppPackageHooks"
-      },
-      "subscriptions": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AppEventSubscriptionDefinition"
-        },
-        "description": "Event subscriptions contributed by the app."
-      }
-    },
-    "additionalProperties": false
   },
   "ProjectPluginArray": {
     "type": "array",
@@ -24463,13 +24335,9 @@
         "$ref": "#/components/schemas/DurableTaskStatus"
       },
       "assignee": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "fields": {
@@ -25025,6 +24893,92 @@
     ],
     "additionalProperties": false
   },
+  "DSLWorkflowDefinition": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Human-readable name or title"
+      },
+      "description": {
+        "type": "string",
+        "description": "Optional detailed description of the object"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Optional array of categorization tags"
+      },
+      "steps": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DSLWorkflowStep"
+        }
+      },
+      "activities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DSLActivitySpec"
+        }
+      },
+      "vars": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "options": {
+        "$ref": "#/components/schemas/DSLActivityOptions"
+      },
+      "result": {
+        "type": "string"
+      },
+      "debug_mode": {
+        "type": "boolean"
+      },
+      "id": {
+        "type": "string",
+        "description": "Unique identifier for the object"
+      },
+      "edit_revision": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic edit revision used to detect concurrent updates."
+      },
+      "updated_by": {
+        "type": "string",
+        "description": "Identifier of the user who last modified the object"
+      },
+      "created_by": {
+        "type": "string",
+        "description": "Identifier of the user who created the object"
+      },
+      "created_at": {
+        "type": "string",
+        "description": "ISO timestamp of when the object was created"
+      },
+      "updated_at": {
+        "type": "string",
+        "description": "ISO timestamp of when the object was last updated"
+      },
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "required": [
+      "name",
+      "vars",
+      "id",
+      "edit_revision",
+      "updated_by",
+      "created_by",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false
+  },
   "DSLActivityStep": {
     "type": "object",
     "properties": {
@@ -25473,92 +25427,6 @@
       "spec_format"
     ]
   },
-  "DSLWorkflowDefinition": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string",
-        "description": "Human-readable name or title"
-      },
-      "description": {
-        "type": "string",
-        "description": "Optional detailed description of the object"
-      },
-      "tags": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Optional array of categorization tags"
-      },
-      "steps": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/DSLWorkflowStep"
-        }
-      },
-      "activities": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/DSLActivitySpec"
-        }
-      },
-      "vars": {
-        "type": "object",
-        "additionalProperties": true
-      },
-      "options": {
-        "$ref": "#/components/schemas/DSLActivityOptions"
-      },
-      "result": {
-        "type": "string"
-      },
-      "debug_mode": {
-        "type": "boolean"
-      },
-      "id": {
-        "type": "string",
-        "description": "Unique identifier for the object"
-      },
-      "edit_revision": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 9007199254740991,
-        "description": "Monotonic edit revision used to detect concurrent updates."
-      },
-      "updated_by": {
-        "type": "string",
-        "description": "Identifier of the user who last modified the object"
-      },
-      "created_by": {
-        "type": "string",
-        "description": "Identifier of the user who created the object"
-      },
-      "created_at": {
-        "type": "string",
-        "description": "ISO timestamp of when the object was created"
-      },
-      "updated_at": {
-        "type": "string",
-        "description": "ISO timestamp of when the object was last updated"
-      },
-      "input_schema": {
-        "type": "object",
-        "additionalProperties": true
-      }
-    },
-    "required": [
-      "name",
-      "vars",
-      "id",
-      "edit_revision",
-      "updated_by",
-      "created_by",
-      "created_at",
-      "updated_at"
-    ],
-    "additionalProperties": false
-  },
   "DSLWorkflowDefinitionResponse": {
     "type": "object",
     "properties": {
@@ -25971,16 +25839,6 @@
       14
     ]
   },
-  "FileProcessingStatus": {
-    "type": "string",
-    "enum": [
-      "uploading",
-      "processing",
-      "ready",
-      "error"
-    ],
-    "description": "Status of a file being processed for conversation use."
-  },
   "ConversationFile": {
     "type": "object",
     "properties": {
@@ -26047,6 +25905,16 @@
     ],
     "additionalProperties": false,
     "description": "Represents a file being processed in a conversation workflow."
+  },
+  "FileProcessingStatus": {
+    "type": "string",
+    "enum": [
+      "uploading",
+      "processing",
+      "ready",
+      "error"
+    ],
+    "description": "Status of a file being processed for conversation use."
   },
   "AgentMessageDetails": {
     "type": "object",
@@ -26746,78 +26614,6 @@
     },
     "additionalProperties": false
   },
-  "ContentEmbeddingMap": {
-    "type": "object",
-    "properties": {
-      "text": {
-        "$ref": "#/components/schemas/Embedding"
-      },
-      "image": {
-        "$ref": "#/components/schemas/Embedding"
-      },
-      "properties": {
-        "$ref": "#/components/schemas/Embedding"
-      }
-    },
-    "additionalProperties": false
-  },
-  "Embedding": {
-    "type": "object",
-    "properties": {
-      "model": {
-        "type": "string"
-      },
-      "values": {
-        "type": "array",
-        "items": {
-          "type": "number"
-        }
-      },
-      "etag": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "model",
-      "values"
-    ],
-    "additionalProperties": false
-  },
-  "StringArrayMap": {
-    "type": "object",
-    "additionalProperties": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    }
-  },
-  "RevisionInfo": {
-    "type": "object",
-    "properties": {
-      "parent": {
-        "type": "string",
-        "description": "Direct parent revision id (omit on the first revision)"
-      },
-      "root": {
-        "type": "string",
-        "description": "The root revision id (omit on the first revision)"
-      },
-      "head": {
-        "type": "boolean",
-        "description": "True if this revision is the head revision"
-      },
-      "label": {
-        "type": "string",
-        "description": "Human‑friendly tag or state (\"v1.2\", \"approved\")"
-      }
-    },
-    "required": [
-      "root",
-      "head"
-    ],
-    "additionalProperties": false
-  },
   "CreateContentObjectPayload": {
     "type": "object",
     "properties": {
@@ -26963,6 +26759,78 @@
     },
     "additionalProperties": false,
     "description": "When creating from an uploaded file the content should be an URL to the uploaded file"
+  },
+  "ContentEmbeddingMap": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "$ref": "#/components/schemas/Embedding"
+      },
+      "image": {
+        "$ref": "#/components/schemas/Embedding"
+      },
+      "properties": {
+        "$ref": "#/components/schemas/Embedding"
+      }
+    },
+    "additionalProperties": false
+  },
+  "Embedding": {
+    "type": "object",
+    "properties": {
+      "model": {
+        "type": "string"
+      },
+      "values": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      },
+      "etag": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "model",
+      "values"
+    ],
+    "additionalProperties": false
+  },
+  "StringArrayMap": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "RevisionInfo": {
+    "type": "object",
+    "properties": {
+      "parent": {
+        "type": "string",
+        "description": "Direct parent revision id (omit on the first revision)"
+      },
+      "root": {
+        "type": "string",
+        "description": "The root revision id (omit on the first revision)"
+      },
+      "head": {
+        "type": "boolean",
+        "description": "True if this revision is the head revision"
+      },
+      "label": {
+        "type": "string",
+        "description": "Human‑friendly tag or state (\"v1.2\", \"approved\")"
+      }
+    },
+    "required": [
+      "root",
+      "head"
+    ],
+    "additionalProperties": false
   },
   "UpdateContentObjectPayload": {
     "type": "object",
@@ -27112,34 +26980,6 @@
   },
   "ContentObjectApiTypeRef": {
     "$ref": "#/components/schemas/ContentObjectTypeRef"
-  },
-  "ContentObjectApiRevision": {
-    "type": "object",
-    "properties": {
-      "parent": {
-        "type": "string"
-      },
-      "root": {
-        "type": "string"
-      },
-      "head": {
-        "type": "boolean"
-      },
-      "label": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "root",
-      "head"
-    ],
-    "additionalProperties": false
-  },
-  "EmbeddingMap": {
-    "type": "object",
-    "additionalProperties": {
-      "$ref": "#/components/schemas/Embedding"
-    }
   },
   "ContentObjectApiResponse": {
     "type": "object",
@@ -27320,6 +27160,34 @@
       "revision"
     ],
     "additionalProperties": false
+  },
+  "ContentObjectApiRevision": {
+    "type": "object",
+    "properties": {
+      "parent": {
+        "type": "string"
+      },
+      "root": {
+        "type": "string"
+      },
+      "head": {
+        "type": "boolean"
+      },
+      "label": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "root",
+      "head"
+    ],
+    "additionalProperties": false
+  },
+  "EmbeddingMap": {
+    "type": "object",
+    "additionalProperties": {
+      "$ref": "#/components/schemas/Embedding"
+    }
   },
   "ProjectedContentObjectApiResponse": {
     "type": "object",
@@ -27637,13 +27505,9 @@
         "$ref": "#/components/schemas/StringArrayMap"
       },
       "sensitivity": {
-        "anyOf": [
-          {
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "number",
+          "null"
         ]
       },
       "compartments": {
@@ -28159,6 +28023,34 @@
     ],
     "additionalProperties": false
   },
+  "ExportPropertiesPayload": {
+    "type": "object",
+    "properties": {
+      "objectIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "type": {
+        "type": "string"
+      },
+      "query": {
+        "$ref": "#/components/schemas/ComplexSearchQuery"
+      },
+      "table_layout": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ColumnLayout"
+        }
+      }
+    },
+    "required": [
+      "objectIds",
+      "type"
+    ],
+    "additionalProperties": false
+  },
   "ComplexSearchQuery": {
     "type": "object",
     "properties": {
@@ -28292,34 +28184,6 @@
       "rsf",
       "smart"
     ]
-  },
-  "ExportPropertiesPayload": {
-    "type": "object",
-    "properties": {
-      "objectIds": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "type": {
-        "type": "string"
-      },
-      "query": {
-        "$ref": "#/components/schemas/ComplexSearchQuery"
-      },
-      "table_layout": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ColumnLayout"
-        }
-      }
-    },
-    "required": [
-      "objectIds",
-      "type"
-    ],
-    "additionalProperties": false
   },
   "CostExportCsvResponse": {
     "type": "string"
@@ -28786,41 +28650,6 @@
     },
     "description": "Fields to change on a workflow rule. All optional."
   },
-  "EventDeliveryIntentStatus": {
-    "type": "string",
-    "enum": [
-      "pending",
-      "evaluating",
-      "starting",
-      "running",
-      "succeeded",
-      "retrying",
-      "failed",
-      "cancelled",
-      "skipped"
-    ]
-  },
-  "EventOutboxStatus": {
-    "type": "string",
-    "enum": [
-      "pending",
-      "routing",
-      "routed",
-      "partially_routed",
-      "failed",
-      "dropped"
-    ]
-  },
-  "EventDeliverySortField": {
-    "type": "string",
-    "enum": [
-      "created_at",
-      "status",
-      "resource_type",
-      "event_category",
-      "action"
-    ]
-  },
   "ListEventDeliveriesPayload": {
     "type": "object",
     "properties": {
@@ -28884,11 +28713,61 @@
     },
     "additionalProperties": false
   },
+  "EventDeliveryIntentStatus": {
+    "type": "string",
+    "enum": [
+      "pending",
+      "evaluating",
+      "starting",
+      "running",
+      "succeeded",
+      "retrying",
+      "failed",
+      "cancelled",
+      "skipped"
+    ]
+  },
+  "EventOutboxStatus": {
+    "type": "string",
+    "enum": [
+      "pending",
+      "routing",
+      "routed",
+      "partially_routed",
+      "failed",
+      "dropped"
+    ]
+  },
+  "EventDeliverySortField": {
+    "type": "string",
+    "enum": [
+      "created_at",
+      "status",
+      "resource_type",
+      "event_category",
+      "action"
+    ]
+  },
   "WorkflowRuleItemArray": {
     "type": "array",
     "items": {
       "$ref": "#/components/schemas/WorkflowRuleItem"
     }
+  },
+  "ListEventDeliveriesResponse": {
+    "type": "object",
+    "properties": {
+      "deliveries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EventDeliverySummary"
+        }
+      }
+    },
+    "required": [
+      "deliveries"
+    ],
+    "additionalProperties": false
   },
   "EventDeliverySummary": {
     "type": "object",
@@ -29135,18 +29014,44 @@
       "error"
     ]
   },
-  "ListEventDeliveriesResponse": {
+  "CreateEventSubscriptionPayload": {
     "type": "object",
     "properties": {
-      "deliveries": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/EventDeliverySummary"
-        }
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "scope": {
+        "type": "string",
+        "enum": [
+          "account",
+          "project"
+        ]
+      },
+      "filter": {
+        "$ref": "#/components/schemas/EventSubscriptionFilter"
+      },
+      "target": {
+        "$ref": "#/components/schemas/EventDeliveryTargetInput"
+      },
+      "run_as_role": {
+        "$ref": "#/components/schemas/SystemRoles",
+        "description": "Identity the delivery runs as. Required at creation so a subscription never silently runs as the originating (possibly deleted) user. Use \"automation\" for the standard identity."
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "priority": {
+        "$ref": "#/components/schemas/EventPriority"
       }
     },
     "required": [
-      "deliveries"
+      "name",
+      "filter",
+      "target",
+      "run_as_role"
     ],
     "additionalProperties": false
   },
@@ -29508,13 +29413,22 @@
       "type"
     ]
   },
-  "CreateEventSubscriptionPayload": {
+  "EventSubscription": {
     "type": "object",
     "properties": {
+      "id": {
+        "type": "string"
+      },
       "name": {
         "type": "string"
       },
       "description": {
+        "type": "string"
+      },
+      "account_id": {
+        "type": "string"
+      },
+      "project_id": {
         "type": "string"
       },
       "scope": {
@@ -29528,24 +29442,67 @@
         "$ref": "#/components/schemas/EventSubscriptionFilter"
       },
       "target": {
-        "$ref": "#/components/schemas/EventDeliveryTargetInput"
+        "$ref": "#/components/schemas/EventDeliveryTarget"
       },
       "run_as_role": {
-        "$ref": "#/components/schemas/SystemRoles",
-        "description": "Identity the delivery runs as. Required at creation so a subscription never silently runs as the originating (possibly deleted) user. Use \"automation\" for the standard identity."
+        "$ref": "#/components/schemas/SystemRoles"
+      },
+      "is_system": {
+        "type": "boolean"
+      },
+      "protected": {
+        "type": "boolean"
       },
       "enabled": {
         "type": "boolean"
       },
       "priority": {
         "$ref": "#/components/schemas/EventPriority"
+      },
+      "app_installation_id": {
+        "type": "string"
+      },
+      "app_id": {
+        "type": "string"
+      },
+      "app_subscription_id": {
+        "type": "string"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string"
+      },
+      "updated_at": {
+        "type": "string"
+      },
+      "migrated_from_workflow_rule_id": {
+        "type": "string"
+      },
+      "overrides_system_subscription_id": {
+        "type": "string",
+        "description": "System subscription ID replaced by this stored subscription. Set only for tenant-specific system overrides created by migrations or platform code."
+      },
+      "customer_override": {
+        "type": "boolean",
+        "description": "True when this system subscription was created from a legacy customer override."
       }
     },
     "required": [
+      "id",
       "name",
+      "account_id",
+      "scope",
       "filter",
       "target",
-      "run_as_role"
+      "run_as_role",
+      "is_system",
+      "protected",
+      "enabled"
     ],
     "additionalProperties": false
   },
@@ -29693,99 +29650,6 @@
     "required": [
       "type"
     ]
-  },
-  "EventSubscription": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "description": {
-        "type": "string"
-      },
-      "account_id": {
-        "type": "string"
-      },
-      "project_id": {
-        "type": "string"
-      },
-      "scope": {
-        "type": "string",
-        "enum": [
-          "account",
-          "project"
-        ]
-      },
-      "filter": {
-        "$ref": "#/components/schemas/EventSubscriptionFilter"
-      },
-      "target": {
-        "$ref": "#/components/schemas/EventDeliveryTarget"
-      },
-      "run_as_role": {
-        "$ref": "#/components/schemas/SystemRoles"
-      },
-      "is_system": {
-        "type": "boolean"
-      },
-      "protected": {
-        "type": "boolean"
-      },
-      "enabled": {
-        "type": "boolean"
-      },
-      "priority": {
-        "$ref": "#/components/schemas/EventPriority"
-      },
-      "app_installation_id": {
-        "type": "string"
-      },
-      "app_id": {
-        "type": "string"
-      },
-      "app_subscription_id": {
-        "type": "string"
-      },
-      "created_by": {
-        "type": "string"
-      },
-      "updated_by": {
-        "type": "string"
-      },
-      "created_at": {
-        "type": "string"
-      },
-      "updated_at": {
-        "type": "string"
-      },
-      "migrated_from_workflow_rule_id": {
-        "type": "string"
-      },
-      "overrides_system_subscription_id": {
-        "type": "string",
-        "description": "System subscription ID replaced by this stored subscription. Set only for tenant-specific system overrides created by migrations or platform code."
-      },
-      "customer_override": {
-        "type": "boolean",
-        "description": "True when this system subscription was created from a legacy customer override."
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "account_id",
-      "scope",
-      "filter",
-      "target",
-      "run_as_role",
-      "is_system",
-      "protected",
-      "enabled"
-    ],
-    "additionalProperties": false
   },
   "EventSubscriptionArray": {
     "type": "array",
@@ -34514,19 +34378,6 @@
     ],
     "additionalProperties": false
   },
-  "WorkflowExecutionStatus": {
-    "type": "number",
-    "enum": [
-      0,
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7
-    ]
-  },
   "WorkflowRun": {
     "type": "object",
     "properties": {
@@ -34622,6 +34473,19 @@
       "closed_at"
     ],
     "additionalProperties": false
+  },
+  "WorkflowExecutionStatus": {
+    "type": "number",
+    "enum": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
   },
   "EventError": {
     "type": "object",
@@ -35418,35 +35282,6 @@
     "additionalProperties": false,
     "description": "Agent task information for workflow history UI representation. This is separate from the analytics AgentEvent types. Consistent with WorkflowTask naming convention.\n\nCurrently represents tool calls, but designed to be extensible for other task types (LLM calls, checkpoints, etc.)"
   },
-  "WorkflowTask": {
-    "oneOf": [
-      {
-        "$ref": "#/components/schemas/ActivityTask"
-      },
-      {
-        "$ref": "#/components/schemas/ChildWorkflowTask"
-      },
-      {
-        "$ref": "#/components/schemas/SignalTask"
-      },
-      {
-        "$ref": "#/components/schemas/TimerTask"
-      }
-    ],
-    "type": "object",
-    "required": [
-      "type"
-    ],
-    "discriminator": {
-      "propertyName": "type",
-      "mapping": {
-        "activity": "#/components/schemas/ActivityTask",
-        "childWorkflow": "#/components/schemas/ChildWorkflowTask",
-        "signal": "#/components/schemas/SignalTask",
-        "timer": "#/components/schemas/TimerTask"
-      }
-    }
-  },
   "WorkflowHistory": {
     "oneOf": [
       {
@@ -35518,43 +35353,34 @@
       "propertyName": "type"
     }
   },
-  "PendingActivity": {
-    "type": "object",
-    "properties": {
-      "activityId": {
-        "type": "string"
+  "WorkflowTask": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ActivityTask"
       },
-      "activityType": {
-        "type": "string"
+      {
+        "$ref": "#/components/schemas/ChildWorkflowTask"
       },
-      "attempt": {
-        "type": "number"
+      {
+        "$ref": "#/components/schemas/SignalTask"
       },
-      "maximumAttempts": {
-        "type": "number"
-      },
-      "lastFailure": {
-        "type": "string"
-      },
-      "lastStartedTime": {
-        "type": [
-          "string",
-          "null"
-        ]
-      },
-      "lastHeartbeatTime": {
-        "type": [
-          "string",
-          "null"
-        ]
+      {
+        "$ref": "#/components/schemas/TimerTask"
       }
-    },
-    "required": [
-      "attempt",
-      "maximumAttempts",
-      "lastStartedTime"
     ],
-    "additionalProperties": false
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "activity": "#/components/schemas/ActivityTask",
+        "childWorkflow": "#/components/schemas/ChildWorkflowTask",
+        "signal": "#/components/schemas/SignalTask",
+        "timer": "#/components/schemas/TimerTask"
+      }
+    }
   },
   "WorkflowRunWithDetails": {
     "type": "object",
@@ -35667,6 +35493,44 @@
     ],
     "additionalProperties": false
   },
+  "PendingActivity": {
+    "type": "object",
+    "properties": {
+      "activityId": {
+        "type": "string"
+      },
+      "activityType": {
+        "type": "string"
+      },
+      "attempt": {
+        "type": "number"
+      },
+      "maximumAttempts": {
+        "type": "number"
+      },
+      "lastFailure": {
+        "type": "string"
+      },
+      "lastStartedTime": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "lastHeartbeatTime": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "attempt",
+      "maximumAttempts",
+      "lastStartedTime"
+    ],
+    "additionalProperties": false
+  },
   "BindRunWorkflowPayload": {
     "type": "object",
     "properties": {
@@ -35726,29 +35590,6 @@
       }
     }
   },
-  "ActivityPropertyDefinition": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string"
-      },
-      "type": {
-        "$ref": "#/components/schemas/ActivityTypeDefinition"
-      },
-      "optional": {
-        "type": "boolean"
-      },
-      "doc": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "name",
-      "type",
-      "optional"
-    ],
-    "additionalProperties": false
-  },
   "ActivityTypeDefinition": {
     "type": "object",
     "properties": {
@@ -35770,19 +35611,11 @@
         ]
       },
       "value": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "boolean"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "boolean",
+          "number",
+          "null"
         ]
       },
       "members": {
@@ -35826,6 +35659,29 @@
     "required": [
       "name",
       "value"
+    ],
+    "additionalProperties": false
+  },
+  "ActivityPropertyDefinition": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "type": {
+        "$ref": "#/components/schemas/ActivityTypeDefinition"
+      },
+      "optional": {
+        "type": "boolean"
+      },
+      "doc": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "type",
+      "optional"
     ],
     "additionalProperties": false
   },

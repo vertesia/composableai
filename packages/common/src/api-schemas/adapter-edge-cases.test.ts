@@ -2,6 +2,25 @@ import { describe, expect, it } from 'vitest';
 import { type JsonObject, SchemaAdapterError, toOpenApiComponents } from './adapter.js';
 
 describe('reference integrity', () => {
+    it('uses the definition when a named root references its own $defs entry', () => {
+        const definition = {
+            type: 'object',
+            properties: { child: { $ref: '#/$defs/Account' } },
+        };
+        expect(toOpenApiComponents({ Account: { $ref: '#/$defs/Account', $defs: { Account: definition } } })).toEqual({
+            Account: { type: 'object', properties: { child: { $ref: '#/components/schemas/Account' } } },
+        });
+    });
+
+    it('still rejects conflicting definitions behind a named root reference', () => {
+        expect(() =>
+            toOpenApiComponents({
+                Holder: { type: 'object', $defs: { Account: { type: 'string' } } },
+                Account: { $ref: '#/$defs/Account', $defs: { Account: { type: 'number' } } },
+            }),
+        ).toThrow(SchemaAdapterError);
+    });
+
     it('rejects a reference to a component that does not exist', () => {
         // A dangling pointer produces a spec that validates structurally but breaks every
         // generated client at deserialization time.
