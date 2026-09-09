@@ -39,6 +39,9 @@ function getExecutableProvider(provider: ExecutionEnvironmentRef['provider']): M
 }
 
 export interface ScheduledWorkflowConfig {
+    run_as?: import('@vertesia/common').ScheduleRunAs;
+    delegation_expiry?: string;
+    request_id?: string;
     name: string;
     description?: string;
     cron_expression: string;

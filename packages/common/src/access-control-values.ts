@@ -12,6 +12,7 @@
  */
 
 export enum Permission {
+    schedule_delegate = 'schedule:delegate',
     int_read = 'interaction:read',
     int_write = 'interaction:write',
     int_delete = 'interaction:delete',

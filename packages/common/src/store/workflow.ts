@@ -62,6 +62,8 @@ export interface Queue {
 export type WorkflowAncestor = z.infer<typeof WorkflowAncestorSchema>;
 
 export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
+    /** Effective principal for private scheduled runs; server supplied. */
+    subject?: string;
     /**
      * The ref of the user who initiated the workflow.
      */

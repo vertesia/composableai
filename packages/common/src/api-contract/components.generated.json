@@ -1,4 +1,131 @@
 {
+  "CreateDelegationGrantPayload": {
+    "type": "object",
+    "properties": {
+      "schedule_id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "subject": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "output_collection_id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "policy_hash": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "expires_at": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "schedule_id",
+      "subject",
+      "output_collection_id",
+      "policy_hash",
+      "expires_at"
+    ],
+    "additionalProperties": false
+  },
+  "DelegationGrant": {
+    "type": "object",
+    "properties": {
+      "schedule_id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "subject": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "output_collection_id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "policy_hash": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "expires_at": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "account_id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "project_id": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "granter": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{24}$"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      },
+      "revoked_at": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "schedule_id",
+      "subject",
+      "output_collection_id",
+      "policy_hash",
+      "expires_at",
+      "id",
+      "account_id",
+      "project_id",
+      "granter",
+      "created_at",
+      "revoked_at"
+    ],
+    "additionalProperties": false
+  },
+  "DelegationGrantArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/DelegationGrant"
+    }
+  },
   "Account": {
     "type": "object",
     "properties": {
@@ -1176,6 +1303,7 @@
   "Permission": {
     "type": "string",
     "enum": [
+      "schedule:delegate",
       "interaction:read",
       "interaction:write",
       "interaction:delete",
@@ -23088,6 +23216,15 @@
       "type": {
         "type": "string",
         "const": "agent"
+      },
+      "delegation_grant_id": {
+        "type": "string"
+      },
+      "delegation_policy_hash": {
+        "type": "string"
+      },
+      "continuation_token": {
+        "type": "string"
       },
       "audience": {
         "type": "string"

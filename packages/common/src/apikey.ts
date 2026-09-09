@@ -80,6 +80,7 @@ export type ApiKeyListQuery = z.infer<typeof ApiKeyListQuerySchema>;
 export type ApiKeyReadQuery = z.infer<typeof ApiKeyReadQuerySchema>;
 
 export interface AuthTokenPayload {
+    delegation?: import('./delegation.js').DelegationTokenClaim;
     sub: string;
     name: string;
     email?: string;

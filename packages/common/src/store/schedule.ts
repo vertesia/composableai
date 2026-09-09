@@ -8,7 +8,15 @@
 /**
  * Represents a scheduled agent execution configuration.
  */
+export type ScheduleRunAs = { mode: 'creator' } | { mode: 'user'; user_id: string };
+
 export interface AgentSchedule {
+    owner?: string;
+    run_as?: ScheduleRunAs;
+    visibility?: 'project' | 'private';
+    delegation_grant_id?: string;
+    delegation_expires_at?: string | null;
+    output_collection_id?: string;
     /** Unique identifier for the schedule */
     id: string;
 
@@ -78,6 +86,9 @@ export interface AgentSchedule {
  * Payload for creating a new schedule.
  */
 export interface CreateSchedulePayload {
+    run_as: ScheduleRunAs;
+    delegation_expires_at?: string | null;
+    request_id?: string;
     /** Human-readable name for the schedule */
     name: string;
 
@@ -113,6 +124,8 @@ export interface CreateSchedulePayload {
  * Payload for updating an existing schedule.
  */
 export interface UpdateSchedulePayload {
+    run_as?: ScheduleRunAs;
+    delegation_expires_at?: string | null;
     /** Updated name */
     name?: string;
 
@@ -139,6 +152,10 @@ export interface UpdateSchedulePayload {
  * Summary information for listing schedules.
  */
 export interface ScheduleListItem {
+    owner?: string;
+    run_as?: ScheduleRunAs;
+    delegation_grant_id?: string;
+    delegation_expires_at?: string | null;
     id: string;
     name: string;
     description?: string;
