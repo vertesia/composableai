@@ -11,7 +11,7 @@ function LoadingSpinner({ className, size = 'md' }: { className?: string; size?:
     };
     return (
         <div className={`flex items-center justify-center ${className || ''}`}>
-            <Loader2 className={`${sizeClasses[size]} animate-spin text-muted-foreground`} />
+            <Loader2 className={`${sizeClasses[size]} animate-spin text-muted`} />
         </div>
     );
 }
@@ -327,7 +327,7 @@ function VirtualizedThumbnail({
             className="flex items-center justify-center bg-muted"
             style={{ height: placeholderHeight, width: width || '100%' }}
         >
-            <span className="text-muted-foreground text-xs">{pageNumber}</span>
+            <span className="text-muted text-xs">{pageNumber}</span>
         </div>
     );
 

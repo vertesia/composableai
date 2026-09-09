@@ -51,7 +51,7 @@ export function ConversationRow({ hit, t, onAddFilter, onOpen }: ConversationRow
                     )}
                 </div>
             </td>
-            <td className="text-sm text-muted-foreground">{started}</td>
+            <td className="text-sm text-muted">{started}</td>
         </tr>
     );
 }

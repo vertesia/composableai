@@ -246,7 +246,9 @@ const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
                 className={cn(
                     fullWidth ? 'w-full' : '',
                     sticky && 'sticky top-0 bg-background z-10',
-                    direction === 'vertical' ? 'flex-col items-start' : 'flex-row',
+                    // TabsList's `border-b -mb-px` is the rail under a ROW of tabs. In vertical
+                    // mode it renders as a stray line beneath the column, so drop it here only.
+                    direction === 'vertical' ? 'flex-col items-start border-b-0 mb-0' : 'flex-row',
                     responsive ? 'hidden lg:flex' : '',
                     className,
                 )}
@@ -341,7 +343,7 @@ const TabsTrigger: React.ForwardRefExoticComponent<
                     variant === 'tabs'
                         ? cn(
                               'border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer',
-                              'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
+                              'border-transparent text-muted hover:border-border hover:text-foreground',
                               'data-[state=active]:border-primary data-[state=active]:text-primary',
                               'disabled:pointer-events-none disabled:opacity-50',
                           )

@@ -23,9 +23,16 @@ import { type EditorApi, type Monaco, MonacoEditor } from '@vertesia/ui/widgets'
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import type { TFunction } from 'i18next';
-import { Braces, CheckCircle2, FileText, RotateCcw, Save, WandSparkles } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { Braces, CheckCircle2, FileText, RotateCcw, WandSparkles } from 'lucide-react';
+import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { IntakePolicyForm, type IntakePolicyFormSection } from './IntakePolicyForm.js';
+
+/** A tab rendered above the policy tabs. The owner supplies its own Panel and actions. */
+export interface IntakePolicyEditorTab {
+    name: string;
+    label: string;
+    content: ReactNode;
+}
 
 interface IntakePolicyEditorProps {
     /** Content type whose intake policy is edited; omit when editing a standalone policy. */
@@ -36,6 +43,8 @@ interface IntakePolicyEditorProps {
      *  Defaults to saving the objectType's intake when objectType is provided. */
     onSave?: (policy: ContentTypeIntakePolicy) => Promise<ContentTypeIntakePolicy | undefined>;
     onIntakeUpdate?: (value: ContentTypeIntakePolicy | undefined) => void;
+    /** Extra tabs shown above the policy tabs, each owning its panel and actions. */
+    leadingTabs?: IntakePolicyEditorTab[];
     readonly?: boolean;
 }
 
@@ -279,6 +288,7 @@ export function IntakePolicyEditor({
     value,
     onSave: onSaveProp,
     onIntakeUpdate,
+    leadingTabs,
     readonly = false,
 }: IntakePolicyEditorProps) {
     const { store } = useUserSession();
@@ -293,7 +303,9 @@ export function IntakePolicyEditor({
     const [editorValue, setEditorValue] = useState(() => stringifyPolicy(initialPolicy));
     const [savedValue, setSavedValue] = useState(() => stringifyPolicy(initialPolicy));
     const [validationMessage, setValidationMessage] = useState<string | undefined>(undefined);
-    const [activeTab, setActiveTab] = useState<IntakePolicyFormSection | 'json'>('overview');
+    // Open on the first leading tab when a consumer supplies one (settings opens on General);
+    // otherwise the policy sections start at their first tab.
+    const [activeTab, setActiveTab] = useState<string>(leadingTabs?.[0]?.name ?? 'classification');
 
     const isDirty = editorValue !== savedValue;
     const currentPolicy = useMemo(() => {
@@ -421,7 +433,7 @@ export function IntakePolicyEditor({
         setEditorValue(value);
         editorRef.current?.setValue(value);
         setValidationMessage(undefined);
-        setActiveTab('overview');
+        setActiveTab('classification');
     };
 
     const onFormChange = (policy: ContentTypeIntakePolicy) => {
@@ -430,6 +442,11 @@ export function IntakePolicyEditor({
     };
 
     const onTabChange = (tab: string) => {
+        // Leading tabs are not policy sections, so invalid policy JSON must not trap the user there.
+        if (leadingTabs?.some((leading) => leading.name === tab)) {
+            setActiveTab(tab);
+            return;
+        }
         const nextTab = tab as IntakePolicyFormSection | 'json';
         if (nextTab !== 'json' && !currentPolicy) {
             setValidationMessage(t('intakePolicy.error.fixJsonBeforeForm'));
@@ -441,7 +458,7 @@ export function IntakePolicyEditor({
 
     const title = (
         <div className="flex items-center gap-2">
-            <div className="text-base font-semibold">{t('intakePolicy.title')}</div>
+            <div>{t('intakePolicy.title')}</div>
             {isDirty && <Badge variant="attention">{t('intakePolicy.status.unsaved')}</Badge>}
         </div>
     );
@@ -451,7 +468,7 @@ export function IntakePolicyEditor({
             <Dropdown
                 align="right"
                 trigger={
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="md">
                         <WandSparkles className="size-4" />
                         {t('intakePolicy.action.examples')}
                     </Button>
@@ -473,57 +490,73 @@ export function IntakePolicyEditor({
             </Dropdown>
             {activeTab === 'json' && (
                 <>
-                    <Button variant="outline" size="sm" onClick={onFormat}>
+                    <Button variant="outline" size="md" onClick={onFormat}>
                         <Braces className="size-4" />
                         {t('intakePolicy.action.format')}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={onValidate}>
+                    <Button variant="outline" size="md" onClick={onValidate}>
                         <CheckCircle2 className="size-4" />
                         {t('intakePolicy.action.validate')}
                     </Button>
                 </>
             )}
-            <Button variant="outline" size="sm" onClick={onRevert} disabled={!isDirty}>
+            <Button variant="outline" size="md" onClick={onRevert} disabled={!isDirty}>
                 <RotateCcw className="size-4" />
                 {t('intakePolicy.action.revert')}
             </Button>
-            <Button isLoading={isUpdating} size="sm" onClick={onSave} disabled={!isDirty}>
-                <Save className="size-4" />
+            <Button isLoading={isUpdating} size="md" onClick={onSave} disabled={!isDirty}>
                 {t('intakePolicy.action.save')}
             </Button>
         </>
     ) : undefined;
 
-    return (
+    /** Panel chrome for the policy tabs. Each tab owns its panel now that the switcher is outside. */
+    const withPolicyPanel = (content: ReactNode) => (
         <Panel title={title} className="bg-background! h-full" action={action}>
             <div className="flex h-full min-h-0 flex-col gap-3">
-                <IntakeSummary policy={summaryPolicy} />
                 {validationMessage && (
                     <div className="rounded-sm border border-destructive bg-mixer-destructive/10 px-3 py-2 text-sm whitespace-pre-line text-destructive">
                         {validationMessage}
                     </div>
                 )}
-                <Tabs
-                    tabs={createEditorTabs(t, currentPolicy ?? EMPTY_POLICY, readonly, onFormChange, editorValue, {
-                        editorRef,
-                        beforeMount,
-                        onChange: (value) => {
-                            setEditorValue(value);
-                            setValidationMessage(undefined);
-                        },
-                        theme,
-                    })}
-                    current={activeTab}
-                    onTabChange={onTabChange}
-                    updateHash={false}
-                    fullHeight
-                    className="px-0 flex-row!"
-                >
-                    <TabsBar className="py-2 w-48 shrink-0" direction="vertical" />
-                    <TabsPanel className="min-h-0 min-w-0 flex-1 overflow-auto pt-1 ps-4" />
-                </Tabs>
+                {content}
             </div>
         </Panel>
+    );
+
+    const policyTabs = createEditorTabs(
+        t,
+        currentPolicy ?? EMPTY_POLICY,
+        readonly,
+        onFormChange,
+        editorValue,
+        {
+            editorRef,
+            beforeMount,
+            onChange: (value) => {
+                setEditorValue(value);
+                setValidationMessage(undefined);
+            },
+            theme,
+        },
+        withPolicyPanel,
+    );
+
+    return (
+        <div className="flex h-full min-h-0 w-full flex-col gap-3">
+            <IntakeSummary policy={summaryPolicy} />
+            <Tabs
+                tabs={leadingTabs ? [...leadingTabs, ...policyTabs] : policyTabs}
+                current={activeTab}
+                onTabChange={onTabChange}
+                updateHash={false}
+                fullHeight
+                className="px-0 min-h-0 flex-1 flex-row!"
+            >
+                <TabsBar className="py-2 w-48 shrink-0" direction="vertical" />
+                <TabsPanel className="min-h-0 min-w-0 flex-1 overflow-auto ps-4" />
+            </Tabs>
+        </div>
     );
 }
 
@@ -539,15 +572,16 @@ function createEditorTabs(
         onChange: (value: string) => void;
         theme: string;
     },
+    wrap: (content: ReactNode) => ReactNode,
 ) {
     const formTab = (name: IntakePolicyFormSection, label: string) => ({
         name,
         label,
-        content: <IntakePolicyForm policy={policy} section={name} onChange={onChange} readonly={readonly} />,
+        content: wrap(<IntakePolicyForm policy={policy} section={name} onChange={onChange} readonly={readonly} />),
     });
 
     return [
-        formTab('overview', t('intakePolicy.tab.overview')),
+        formTab('classification', t('intakePolicy.tab.classification')),
         formTab('conversion', t('intakePolicy.tab.conversion')),
         formTab('extraction', t('intakePolicy.tab.extraction')),
         formTab('grounding', t('intakePolicy.tab.grounding')),
@@ -555,7 +589,7 @@ function createEditorTabs(
         {
             name: 'json',
             label: t('intakePolicy.tab.json'),
-            content: (
+            content: wrap(
                 <div className="flex h-full min-h-[36rem] gap-4 py-3">
                     <div className="min-w-0 flex-1 overflow-hidden rounded-sm border">
                         <MonacoEditor
@@ -579,7 +613,7 @@ function createEditorTabs(
                         />
                     </div>
                     <IntakeHelp />
-                </div>
+                </div>,
             ),
         },
     ];

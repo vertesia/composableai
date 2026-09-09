@@ -185,7 +185,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                                 px-4 py-2 rounded-lg font-medium transition-all
                                 ${
                                     selected.size > 0
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        ? 'bg-primary text-white hover:bg-primary'
                                         : 'bg-mixer-3 text-muted cursor-not-allowed'
                                 }
                             `}

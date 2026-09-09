@@ -46,7 +46,7 @@ export const DateCombobox = ({
                 return (
                     <span className="flex items-center gap-1.5">
                         <span className="font-medium">{dayjs(dateRange[0]).format('MMMM DD, YYYY')}</span>
-                        <span className="text-xs text-muted-foreground">-</span>
+                        <span className="text-xs text-muted">-</span>
                         <span className="font-medium">{dayjs(dateRange[1]).format('MMMM DD, YYYY')}</span>
                     </span>
                 );
@@ -54,11 +54,11 @@ export const DateCombobox = ({
                 return (
                     <span className="flex items-center gap-1.5">
                         <span className="font-medium">{dayjs(dateRange[0]).format('MMMM DD, YYYY')}</span>
-                        <span className="text-xs text-muted-foreground">- Select end</span>
+                        <span className="text-xs text-muted">- Select end</span>
                     </span>
                 );
             } else {
-                return <span className="text-muted-foreground">{t('filter.selectRange')}</span>;
+                return <span className="text-muted">{t('filter.selectRange')}</span>;
             }
         } else {
             return selectedDate ? dayjs(selectedDate).format('MMMM DD, YYYY') : 'Pick a date';

@@ -18,9 +18,7 @@ function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProp
             <td>
                 <div className="flex flex-col">
                     <span className="font-medium">{row.title}</span>
-                    {row.description && (
-                        <span className="text-xs text-muted-foreground line-clamp-1">{row.description}</span>
-                    )}
+                    {row.description && <span className="text-xs text-muted line-clamp-1">{row.description}</span>}
                 </div>
             </td>
             <td className="group/type">
@@ -47,7 +45,7 @@ function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProp
                     )}
                 </div>
             </td>
-            <td className="text-sm text-muted-foreground">{row.updatedLabel}</td>
+            <td className="text-sm text-muted">{row.updatedLabel}</td>
         </tr>
     );
 }

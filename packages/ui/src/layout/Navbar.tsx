@@ -42,12 +42,12 @@ function SearchBox(_props: SearchBoxProps) {
                 {t('layout.search')}
             </label>
             <Search
-                className="pointer-events-none absolute inset-y-0 start-0 h-full w-5 text-gray-400"
+                className="pointer-events-none absolute inset-y-0 start-0 h-full w-5 text-muted"
                 aria-hidden="true"
             />
             <input
                 id="search-field"
-                className="block h-full w-full border-0 py-0 ps-8 pe-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
+                className="block h-full w-full border-0 py-0 ps-8 pe-0 text-foreground placeholder:text-muted focus:ring-0 sm:text-sm"
                 placeholder={t('layout.searchPlaceholder')}
                 type="search"
                 name="search"
@@ -85,7 +85,7 @@ export function NavbarSeparator({ visible }: NavbarSeparatorProps) {
     if (visible) {
         visibility = visible === 'mobile' ? 'lg:hidden' : 'hidden lg:block';
     }
-    return <div className={`h-6 w-px bg-gray-900/10 dark:bg-slate-900/0.1 ${visibility}`} aria-hidden="true" />;
+    return <div className={`h-6 w-px bg-muted/10 dark:bg-muted/0.1 ${visibility}`} aria-hidden="true" />;
 }
 
 interface NavbarIconButtonProps {
@@ -97,7 +97,7 @@ export function NavbarIconButton({ title, icon: Icon, onClick }: NavbarIconButto
     return (
         <button
             type="button"
-            className="-m-2.5 p-2.5 text-gray-400 dark:text-slate-50 hover:text-gray-500"
+            className="-m-2.5 p-2.5 text-muted dark:text-foreground hover:text-muted"
             onClick={onClick}
         >
             <span className="sr-only">{title}</span>
@@ -120,7 +120,7 @@ interface NavbarLinkProps {
 }
 export function NavbarLink({ href, onClick, children }: NavbarLinkProps) {
     return (
-        <a className="dark:text-slate-50" href={href} onClick={onClick}>
+        <a className="dark:text-foreground" href={href} onClick={onClick}>
             {children}
         </a>
     );

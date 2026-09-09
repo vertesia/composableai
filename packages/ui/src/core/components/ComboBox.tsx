@@ -70,7 +70,7 @@ export function getDefaultComboBoxLayout<T>(fullWidth?: boolean, unstyledInput?:
         menuClass: 'w-72 mt-1 border-popover bg-popover text-popover-foreground shadow-md overflow-auto p-0 z-10',
         inputClass: clsx(unstyledInput ? INPUT_UNSTYLED : INPUT, fullWidth ? 'w-full' : '!w-auto'),
         optionClass:
-            'py-2 px-3 shadow-sm flex flex-col [&.option-selected]:font-semibold [&.option-highlighted]:bg-blue-300',
+            'py-2 px-3 shadow-sm flex flex-col [&.option-selected]:font-semibold [&.option-highlighted]:bg-info',
         Input: ComboInput<T>,
         Menu: ComboMenu<T>,
         Toggle: ComboToggle<T>,

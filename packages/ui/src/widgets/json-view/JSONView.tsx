@@ -44,12 +44,7 @@ interface BlockElementProps {
 }
 function BlockElement({ children, className }: BlockElementProps) {
     return (
-        <div
-            className={clsx(
-                'flex flex-col gap-4 py-2 ps-4 border-s-4 border-s-solid border-s-slate-100 dark:border-s-slate-600',
-                className,
-            )}
-        >
+        <div className={clsx('flex flex-col gap-4 py-2 ps-4 border-s-4 border-s-solid border-s-border', className)}>
             {children}
         </div>
     );

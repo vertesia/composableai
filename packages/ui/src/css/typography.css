@@ -45,11 +45,11 @@
 }
 
 .vprose blockquote {
-    @apply border-s-4 border-muted/30 dark:border-muted ps-4 italic text-muted my-3;
+    @apply border-s-4 border-muted/30 ps-4 italic text-muted my-3;
 }
 
 .vprose hr {
-    @apply border-muted/30 dark:border-muted my-4;
+    @apply border-muted/30 my-4;
 }
 
 .vprose h1 {

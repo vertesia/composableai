@@ -135,7 +135,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
                         title={t('pdf.fullscreen')}
                         tooltipPlacement="bottom"
                         variant="unstyled"
-                        className="p-1 rounded cursor-pointer transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+                        className="p-1 rounded cursor-pointer transition-colors text-muted hover:text-foreground hover:bg-muted"
                         onClick={() => setIsFullscreen(true)}
                     >
                         <Maximize2 className="size-4" />

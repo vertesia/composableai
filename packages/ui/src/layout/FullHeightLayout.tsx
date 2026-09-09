@@ -27,11 +27,11 @@ FullHeightLayout.Body = function Body({ className, children }: BodyProps) {
 };
 
 FullHeightLayout.VR = function VDivider() {
-    return <div className="w-[1px] border border-red-200"></div>;
+    return <div className="w-[1px] border border-destructive"></div>;
 };
 
 FullHeightLayout.HR = function HDivider() {
-    return <div className="w-full h-1 border-b border-red-200"></div>;
+    return <div className="w-full h-1 border-b border-destructive"></div>;
 };
 
 FullHeightLayout.Flex = function Flex({ className, children }: BodyProps) {

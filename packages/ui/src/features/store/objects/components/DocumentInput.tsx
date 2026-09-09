@@ -73,21 +73,21 @@ export function DocumentInput({ object }: DocumentInputProps) {
                         <Button
                             onClick={clearValue}
                             variant="unstyled"
-                            className="hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                            className="hover:text-destructive hover:bg-muted"
                         >
                             <X className="size-5" />
                         </Button>
                     </div>
                 )}
                 <div className="absolute inset-y-0 end-0 flex items-center justify-center">
-                    <Button onClick={on} variant="unstyled" className="hover:bg-gray-100 dark:hover:bg-gray-600">
+                    <Button onClick={on} variant="unstyled" className="hover:bg-muted">
                         <ChevronsUpDown className="size-5" />
                     </Button>
                 </div>
                 <SelectDocumentModal value={actualValue} isOpen={isOn} onClose={onSelect} />
             </div>
             {doc && (
-                <div className="p-1 semibold text-sm text-gray-600 dark:text-slate-300">
+                <div className="p-1 semibold text-sm text-muted dark:text-foreground">
                     {typeof doc.properties?.title === 'string' ? doc.properties.title : doc.name}
                 </div>
             )}
