@@ -1,19 +1,17 @@
 import type { AbacScope, RoleDomain } from '@vertesia/common';
 import { AbacRole, type Role, type RolePartition, SystemRole } from './classes.js';
 import { contentPartition } from './content.js';
-import { sharedContentPartition } from './shared-content.js';
 import { systemPartition } from './system.js';
 
 export { AbacRole, Role, type RolePartition, SystemRole } from './classes.js';
 export { ContentRoleNames } from './content.js';
-export { SharedContentRoleNames } from './shared-content.js';
 
 /**
  * The ordered partition registry. Partitions are queried in this order — first
  * match wins. The `system` partition is registered first so domain-specific
  * partitions (added later) cannot shadow built-in system roles.
  */
-const partitions: RolePartition[] = [systemPartition, contentPartition, sharedContentPartition];
+const partitions: RolePartition[] = [systemPartition, contentPartition];
 
 /** Look up a role by its name across all registered partitions. */
 export function getRoleByName(name: string): Role {

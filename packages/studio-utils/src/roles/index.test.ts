@@ -46,23 +46,20 @@ describe('getRoleByName', () => {
 describe('listRoles', () => {
     it('returns every role across all partitions', () => {
         const roles = listRoles();
-        // 16 system roles + 3 content roles + 1 shared_content role
-        expect(roles).toHaveLength(20);
+        // 16 system roles + 3 content roles
+        expect(roles).toHaveLength(19);
     });
 
-    it('lists roles in partition registration order (system, content, shared_content)', () => {
+    it('lists roles in partition registration order (system, content)', () => {
         const roles = listRoles();
         const systemCount = roles.filter((r) => r.domain === 'system').length;
         const contentCount = roles.filter((r) => r.domain === 'content').length;
-        const sharedContentCount = roles.filter((r) => r.domain === 'shared_content').length;
         expect(systemCount).toBe(16);
         expect(contentCount).toBe(3);
-        expect(sharedContentCount).toBe(1);
 
-        // First 16 are system, next 3 are content, last 1 is shared_content
+        // First 16 are system, next 3 are content
         for (let i = 0; i < 16; i++) expect(roles[i].domain).toBe('system');
         for (let i = 16; i < 19; i++) expect(roles[i].domain).toBe('content');
-        for (let i = 19; i < 20; i++) expect(roles[i].domain).toBe('shared_content');
     });
 });
 
@@ -79,10 +76,8 @@ describe('listRolesByDomain', () => {
         expect(roles.every((r) => r.domain === 'content')).toBe(true);
     });
 
-    it('returns the single read-only role for "shared_content"', () => {
-        const roles = listRolesByDomain('shared_content');
-        expect(roles).toHaveLength(1);
-        expect(roles[0].name).toBe('shared_content:reader');
+    it('returns empty for "shared_content" (a scope over content, not its own domain)', () => {
+        expect(listRolesByDomain('shared_content')).toEqual([]);
     });
 
     it('returns empty for an unregistered domain', () => {
@@ -116,9 +111,9 @@ describe('listAbacRolesForScope', () => {
         expect(roles.every((r) => r.applicableScopes.includes('collection'))).toBe(true);
     });
 
-    it('returns only the read-only role for "shared_content" scope', () => {
+    it('returns only content:reader for "shared_content" scope (shared content is read-only)', () => {
         const roles = listAbacRolesForScope('shared_content');
-        expect(roles.map((r) => r.name)).toEqual(['shared_content:reader']);
+        expect(roles.map((r) => r.name)).toEqual(['content:reader']);
         expect(roles.every((r) => r.applicableScopes.includes('shared_content'))).toBe(true);
     });
 
@@ -135,10 +130,9 @@ describe('listAbacRolesForScope', () => {
 describe('getAllRoleNames', () => {
     it('returns names of every registered role', () => {
         const names = getAllRoleNames();
-        expect(names).toHaveLength(20);
+        expect(names).toHaveLength(19);
         expect(names).toContain('owner');
         expect(names).toContain('content:reader');
-        expect(names).toContain('shared_content:reader');
     });
 
     it('produces a flat list suited for mongoose enum constraints', () => {
@@ -192,7 +186,8 @@ describe('Role instances', () => {
 
     it('AbacRole carries applicableScopes', () => {
         const reader = getRoleByName(ContentRoleNames.content_reader) as AbacRole;
-        expect(reader.applicableScopes).toEqual(['document', 'collection']);
+        // content:reader also serves the shared_content scope (cross-project sharing reuses content read).
+        expect(reader.applicableScopes).toEqual(['document', 'collection', 'shared_content']);
     });
 
     it('AbacRole permissions are bare verbs, not Permission enum values', () => {
