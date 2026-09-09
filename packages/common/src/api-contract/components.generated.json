@@ -4757,9 +4757,13 @@
         "description": "Project defaults and caps for browser_use agent workstreams."
       },
       "pdf_template_object_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ],
         "description": "Object ID of a content object containing a custom LaTeX template (.latex file) to use as the branded PDF template. When set, \"Export as Branded PDF\" uses this template instead of the built-in Vertesia default template. `null` clears it."
       }
@@ -4969,9 +4973,13 @@
         "description": "Project defaults and caps for browser_use agent workstreams."
       },
       "pdf_template_object_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ],
         "description": "Object ID of a content object containing a custom LaTeX template (.latex file) to use as the branded PDF template. When set, \"Export as Branded PDF\" uses this template instead of the built-in Vertesia default template. `null` clears it."
       }
@@ -13557,9 +13565,13 @@
           "type": "object",
           "properties": {
             "_id": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "count": {
@@ -13588,9 +13600,13 @@
           "type": "object",
           "properties": {
             "_id": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "count": {
@@ -13619,9 +13635,13 @@
           "type": "object",
           "properties": {
             "_id": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "count": {
@@ -13650,9 +13670,13 @@
           "type": "object",
           "properties": {
             "_id": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "count": {
@@ -13681,9 +13705,13 @@
           "type": "object",
           "properties": {
             "_id": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "count": {
@@ -14601,9 +14629,13 @@
         "description": "Whether a key is stored for this collection."
       },
       "hint": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ],
         "description": "Last few characters of the stored key, for display only. Null when unset."
       }
@@ -14673,69 +14705,113 @@
     "type": "object",
     "properties": {
       "time": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "action": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "resource_type": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "event_category": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "provider": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "project_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "details.pipeline": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "details.verdict": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "details.workflow_type": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "details.rule_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "model": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       }
     },
@@ -14895,9 +14971,13 @@
         "$ref": "#/components/schemas/EventCategory"
       },
       "source": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "root_event_id": {
@@ -14943,21 +15023,33 @@
         "type": "boolean"
       },
       "principal_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "principal_type": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "effective_principal_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "roles": {
@@ -14967,39 +15059,63 @@
         }
       },
       "account_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "project_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "tenant_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "account_name": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "project_name": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "provider": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ],
         "description": "Provider type for billable/provider-backed events, e.g. vertexai, bedrock."
       },
@@ -17125,21 +17241,33 @@
         "type": "string"
       },
       "account_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "project_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "tenant_id": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       }
     },
@@ -24335,9 +24463,13 @@
         "$ref": "#/components/schemas/DurableTaskStatus"
       },
       "assignee": {
-        "type": [
-          "string",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "fields": {
@@ -27505,9 +27637,13 @@
         "$ref": "#/components/schemas/StringArrayMap"
       },
       "sensitivity": {
-        "type": [
-          "number",
-          "null"
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "compartments": {
@@ -35611,11 +35747,19 @@
         ]
       },
       "value": {
-        "type": [
-          "string",
-          "boolean",
-          "number",
-          "null"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
         ]
       },
       "members": {
