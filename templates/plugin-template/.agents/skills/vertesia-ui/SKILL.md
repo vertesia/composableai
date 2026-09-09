@@ -291,8 +291,7 @@ Use `find` only for simple exact-match fetches that do not require backend sort,
 ### Composite App Navigation
 
 Routes declared in the router are visible inside the app. To also surface them in the Vertesia
-Composite App sidebar, list them in `src/tool-server/ui-nav-items.ts`, which is published in the app
-manifest as `ui.navigation`:
+Composite App sidebar, list them in `src/tool-server/ui-nav-items.ts`, published as `ui.navigation`:
 
 ```ts
 export default [
@@ -308,24 +307,13 @@ export default [
 ] satisfies AppUINavItem[];
 ```
 
-- `icon` is a Lucide icon name or an SVG element as a string; `route` is relative to the app base.
-- `children` nests sub-items; `topLevel: true` promotes an entry to a sidebar root sibling. Use
-  `preferredSection: "settings"` for settings/admin surfaces and `"footer"` for about/help/support;
-  leave it unset for ordinary pages.
-- A nested sub-item needs its OWN route, as `/admin/members` does above, and must be placed in the
-  parent's `children`: nesting is never inferred from the path, so listing `/admin/members` at the top
-  level makes it a sibling of `/admin`, not a child. A sub-view rendered from parent-local state with
-  no route cannot be listed here at all — that is a missing route in the app, not an entry to omit.
-- Not every route belongs here, and this module's routes file is not the whole list. Mirror the
-  COMPOSED routes — what `src/ui/app-ui-modules.tsx` exports, concatenating every active UI module —
-  taking each one that carries a `label` and is not `hideFromNav`, whichever module declares it. A
-  scaffold selected with an assistant or content-app module serves those routes too. With no extra
-  modules the composed list is just the app module's own. Catch-alls and redirects stay out.
-- This file **maps existing routes, it does not create them**. Add, rename, and remove entries in the
-  same change as the routes themselves — a listed route that does not resolve is a broken sidebar
-  link, and an unlisted route is invisible to composite users.
-- `uiConfig.available_in` in `src/tool-server/config.ts` decides whether the app is offered in the
-  Composite App shell at all (`app_portal`, `composite_app`, or both).
+- Mirror the composed routes `src/ui/app-ui-modules.tsx` exports across every active UI module, taking
+  each with a `label` and no `hideFromNav`. This file maps existing routes; it does not create them.
+- `children` nests a sub-page, which needs its own `/parent/child` route — nesting is never inferred
+  from the path. `topLevel: true` promotes an entry to a sidebar root sibling.
+- Leave `preferredSection` unset for the main section; `"settings"` for settings/admin, `"footer"` only
+  when the user asks. `icon` is the Lucide name, not the imported identifier.
+- `uiConfig.available_in` decides whether the app is offered in the Composite App at all.
 
 ## Completion Check
 

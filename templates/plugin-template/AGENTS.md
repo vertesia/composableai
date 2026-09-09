@@ -125,44 +125,22 @@ Rules of thumb:
 
 ## Composite App Surface
 
-An app is shown either standalone in the App Portal or as one section of the Vertesia Composite App
-shell. Both surfaces are configured in `src/tool-server/config.ts` under `uiConfig`, and both are
-published in the app manifest — the Composite App reads them from there, so a route that is not
-declared is a route its sidebar cannot offer.
+An app is shown standalone in the App Portal or as one section of the Vertesia Composite App shell.
+Both are configured in `src/tool-server/config.ts` under `uiConfig` and published in the app manifest.
 
 - `available_in` lists the surfaces the UI may appear on: `app_portal`, `composite_app`, or both.
-  Keep both unless the app is genuinely meaningless on one of them.
-- `navigation` (from `src/tool-server/ui-nav-items.ts`) is the app's sidebar entries. **It maps
-  routes that already exist; it does not create them.** Update it in the same change that adds,
-  renames, or removes a user-facing route, or the Composite App will advertise a route that 404s or
-  hide one the app actually has. An entry whose `route` resolves nowhere at all is a bug in this list,
-  not a missing page to go and build — delete it. But a surface that DOES exist and is simply reached
-  from inside a parent page belongs under that parent as a `children` entry rather than being deleted.
-  A sub-page needs its own route (`/parent/child`) to be listable, so a nested view rendered from
-  parent-local state with no route is a missing route first: add the route, then list the child.
-  Nesting is expressed by `children` and is NEVER inferred from the route path — the shell copies
-  `route` verbatim, so `/projects` and `/projects/timeline` listed side by side are two siblings.
-  Not every route earns an entry: mirror the routes that carry a `label` and are not `hideFromNav`,
-  which is the same set the app's own sidebar renders.
-- **The app's own sidebar components do not render the Composite App sidebar.** In that surface the
-  shell renders navigation from the published `navigation` list and the app's own layout/sidebar is
-  not mounted at all, so changing `PluginSidebar` or similar components cannot affect what composite
-  users see. Fix composite navigation in `ui-nav-items.ts`.
-- Sub-items nest with `children`. `topLevel: true` lifts an entry out of its app group into the
-  sidebar root. Use `preferredSection: "settings"` for settings and admin surfaces and `"footer"` for
-  about/help/support; leave it unset for ordinary pages so they stay in the app's own group.
-- `icon` is the Lucide icon NAME, not the local identifier a route file imported it as: `routes.tsx`
-  may say `import { Home as HomeIcon }`, and the nav entry still says `'Home'`.
-- **Mirror the COMPOSED route list, not just this module's routes file.** `src/ui/app-ui-modules.tsx`
-  concatenates every active UI module's routes, and all of them are served by the app. Take each route
-  there that carries a `label` and is not `hideFromNav`, whichever module declares it — a scaffold
-  selected with extra modules (an assistant, a content app) serves their routes too, and they belong
-  in the sidebar just as much as the ones you wrote. With no extra modules the composed list is simply
-  `src/modules/app/ui/routes.tsx` and the two are identical.
-- An administrator can rearrange the composite menu afterwards, and their edits are preserved.
-  Studio reconciles the stored menu against this list — new routes are offered, and entries whose
-  route disappeared are flagged as stale — so an accurate list is what makes that reconciliation
-  correct.
+- `navigation` (from `src/tool-server/ui-nav-items.ts`) is the shell's ONLY source of sidebar entries —
+  the app's own sidebar components cannot change it. Mirror the composed routes that
+  `src/ui/app-ui-modules.tsx` exports across every active UI module, taking each with a `label` and no
+  `hideFromNav`. An entry whose route resolves nowhere is a bug in the list, not a page to build.
+- Nest a sub-page under its parent with `children`; it needs its own `/parent/child` route to be listed,
+  and nesting is never inferred from the path. A view switched by parent-local state is not a page.
+- `icon` is the Lucide NAME, not the identifier a route file imported it as.
+- Leave `preferredSection` unset so an entry lands in the main section. Use `"settings"` for settings and
+  admin surfaces, and `"footer"` only when the user asks for it. `topLevel: true` lifts an entry to the
+  sidebar root.
+- An administrator can rearrange the composite menu afterwards and their edits are preserved; Studio
+  reconciles the stored menu against this list, so an accurate list is what makes that correct.
 
 ## App Identity And Portable IDs
 
