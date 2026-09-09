@@ -14,6 +14,9 @@ const mocks = vi.hoisted(() => ({
     restart: vi.fn(),
     sendSignal: vi.fn(),
     uploadArtifact: vi.fn(),
+    registerFile: vi.fn(),
+    getFiles: vi.fn(),
+    removeFile: vi.fn(),
     headerProps: vi.fn(),
     allMessagesMixedProps: vi.fn(),
     messageInputProps: vi.fn(),
@@ -33,6 +36,9 @@ vi.mock('@vertesia/ui/session', () => ({
                 restart: mocks.restart,
                 sendSignal: mocks.sendSignal,
                 uploadArtifact: mocks.uploadArtifact,
+                registerFile: mocks.registerFile,
+                getFiles: mocks.getFiles,
+                removeFile: mocks.removeFile,
                 getActiveWorkstreams: mocks.getActiveWorkstreams,
                 retrieve: mocks.retrieve,
             },
@@ -265,6 +271,9 @@ describe('ModernAgentConversation send handling', () => {
         mocks.restart.mockResolvedValue({ id: 'agent-run-1' });
         mocks.sendSignal.mockResolvedValue({});
         mocks.uploadArtifact.mockResolvedValue({});
+        mocks.registerFile.mockResolvedValue({ files: [], settled: true });
+        mocks.getFiles.mockResolvedValue({ files: [], settled: true });
+        mocks.removeFile.mockResolvedValue({ files: [], settled: true });
         mocks.getActiveWorkstreams.mockResolvedValue({ running: [] });
         mocks.retrieve.mockResolvedValue({ disabled_mcp_collections: undefined });
         mocks.useAgentPlans.mockReturnValue({
@@ -501,6 +510,193 @@ describe('ModernAgentConversation send handling', () => {
         expect(userInputPayload?.message).toContain('[report.pdf](artifact:files/report.pdf)');
         await waitFor(() => {
             expect(clearProcessingFiles).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('files attached to a draft run', () => {
+        // The run is created when the user attaches a file, so the upload and its text extraction
+        // happen while they are still typing. Before this, the run could only be created on send
+        // and the agent's first turn raced the uploads.
+        const draftFile = () => new File(['pdf'], 'report.pdf', { type: 'application/pdf' });
+
+        function attach(container: HTMLElement, file: File) {
+            const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+            expect(fileInput).not.toBeNull();
+            fireEvent.change(fileInput, { target: { files: [file] } });
+        }
+
+        it('creates the run on attach and uploads into it before the user has sent anything', async () => {
+            const draftRun = {
+                create: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
+                start: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
+            };
+            mocks.registerFile.mockResolvedValue({
+                files: [
+                    {
+                        id: 'file-1',
+                        name: 'report.pdf',
+                        content_type: 'application/pdf',
+                        artifact_path: 'files/report.pdf',
+                        status: 'processing',
+                    },
+                ],
+                settled: false,
+            });
+            mockStreamState({
+                messages: [],
+                isCompleted: false,
+                initialHistoryStatus: 'empty',
+                agentRunStatus: 'RUNNING',
+            });
+
+            const { container } = renderWithProviders(
+                <ModernAgentConversation startWorkflow={vi.fn()} draftRun={draftRun} hideHeader initialMessage="" />,
+            );
+            attach(container, draftFile());
+
+            await waitFor(() => {
+                expect(mocks.uploadArtifact).toHaveBeenCalledWith(
+                    'draft-run-1',
+                    'files/report.pdf',
+                    expect.anything(),
+                    'application/pdf',
+                );
+            });
+            await waitFor(() => {
+                expect(mocks.registerFile).toHaveBeenCalledWith(
+                    'draft-run-1',
+                    expect.objectContaining({ name: 'report.pdf', artifact_path: 'files/report.pdf' }),
+                );
+            });
+            // Nothing was sent — the user has not typed yet.
+            expect(draftRun.start).not.toHaveBeenCalled();
+        });
+
+        it('promotes the draft on send, with no warning about files the agent already has', async () => {
+            const startWorkflow = vi.fn();
+            const draftRun = {
+                create: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
+                start: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
+            };
+            mocks.registerFile.mockResolvedValue({
+                files: [
+                    {
+                        id: 'file-1',
+                        name: 'report.pdf',
+                        content_type: 'application/pdf',
+                        artifact_path: 'files/report.pdf',
+                        status: 'ready',
+                    },
+                ],
+                settled: true,
+            });
+            mockStreamState({
+                messages: [],
+                isCompleted: false,
+                initialHistoryStatus: 'empty',
+                agentRunStatus: 'RUNNING',
+            });
+
+            const { container } = renderWithProviders(
+                <ModernAgentConversation
+                    startWorkflow={startWorkflow}
+                    draftRun={draftRun}
+                    hideHeader
+                    initialMessage=""
+                />,
+            );
+            attach(container, draftFile());
+            await waitFor(() => expect(mocks.registerFile).toHaveBeenCalled());
+
+            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Summarise this' } });
+            fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+
+            await waitFor(() => {
+                expect(draftRun.start).toHaveBeenCalledWith('draft-run-1', 'Summarise this', expect.anything());
+            });
+            // The run already has the files and its first turn waits for them, so the old
+            // "please wait for Files Ready" note would be both wrong and noise in the bubble.
+            expect(draftRun.start.mock.calls[0][1]).not.toContain('are being uploaded');
+            // The legacy path must not also fire: no second run, no FileUploaded signals.
+            expect(startWorkflow).not.toHaveBeenCalled();
+            expect(mocks.sendSignal).not.toHaveBeenCalledWith(expect.anything(), 'FileUploaded', expect.anything());
+        });
+
+        it('tells the run to forget a file the user retracted', async () => {
+            const draftRun = {
+                create: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
+                start: vi.fn(),
+            };
+            mocks.registerFile.mockResolvedValue({
+                files: [
+                    {
+                        id: 'file-1',
+                        name: 'report.pdf',
+                        content_type: 'application/pdf',
+                        artifact_path: 'files/report.pdf',
+                        status: 'ready',
+                    },
+                ],
+                settled: true,
+            });
+            mockStreamState({
+                messages: [],
+                isCompleted: false,
+                initialHistoryStatus: 'empty',
+                agentRunStatus: 'RUNNING',
+            });
+
+            const { container } = renderWithProviders(
+                <ModernAgentConversation startWorkflow={vi.fn()} draftRun={draftRun} hideHeader initialMessage="" />,
+            );
+            attach(container, draftFile());
+            await waitFor(() => expect(mocks.registerFile).toHaveBeenCalled());
+
+            fireEvent.click(await screen.findByRole('button', { name: 'Remove staged file report.pdf' }));
+
+            await waitFor(() => {
+                expect(mocks.removeFile).toHaveBeenCalledWith('draft-run-1', 'file-1');
+            });
+        });
+
+        it('falls back to the previous behaviour when the draft run cannot be created', async () => {
+            const startWorkflow = vi.fn().mockResolvedValue({ agent_run_id: 'agent-run-9' });
+            const draftRun = {
+                // An older server rejects the unknown `draft` field; the composer must still work.
+                create: vi.fn().mockRejectedValue(new Error('400 Bad Request')),
+                start: vi.fn(),
+            };
+            mockStreamState({
+                messages: [],
+                isCompleted: false,
+                initialHistoryStatus: 'empty',
+                agentRunStatus: 'RUNNING',
+            });
+
+            const { container } = renderWithProviders(
+                <ModernAgentConversation
+                    startWorkflow={startWorkflow}
+                    draftRun={draftRun}
+                    hideHeader
+                    initialMessage=""
+                />,
+            );
+            attach(container, draftFile());
+            await waitFor(() => expect(draftRun.create).toHaveBeenCalled());
+
+            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Look at these' } });
+            fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+
+            await waitFor(() => {
+                expect(startWorkflow).toHaveBeenCalledWith(
+                    expect.stringContaining('1 file(s) are being uploaded'),
+                    expect.anything(),
+                );
+            });
+            await waitFor(() => {
+                expect(mocks.uploadArtifact).toHaveBeenCalledWith('agent-run-9', 'files/report.pdf', expect.anything());
+            });
+            expect(draftRun.start).not.toHaveBeenCalled();
         });
     });
 
