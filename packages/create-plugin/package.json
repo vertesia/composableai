@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-plugin",
-    "version": "1.5.0-dev.20260905.011013Z",
+    "version": "1.5.0-dev.20260910.051115Z",
     "description": "CLI to create Vertesia plugins: UI plugins or tool servers",
     "type": "module",
     "bin": {
@@ -29,8 +29,8 @@
     "author": "Vertesia",
     "license": "Apache-2.0",
     "templateVersions": {
-        "@vertesia": "1.5.0-dev.20260905.011013Z",
-        "@llumiverse": "1.5.0-dev.20260905.004250Z"
+        "@vertesia": "1.5.0-dev.20260910.051115Z",
+        "@llumiverse": "1.5.0-dev.20260910.044936Z"
     },
     "repository": {
         "type": "git",
@@ -49,5 +49,5 @@
         "@types/prompts": "^2.4.9",
         "typescript": "^7.0.2"
     },
-    "gitHead": "ea74a29f6885cec132eec4b6b319e40137df3b40"
+    "gitHead": "c02f799dc499a665ab6b2083bfa6708a05995d5f"
 }
