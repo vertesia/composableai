@@ -28,8 +28,8 @@ importers:
   .:
     dependencies:
       '@aws-sdk/client-iam':
-        specifier: ^3.1119.0
-        version: 3.1121.0
+        specifier: ^3.1125.0
+        version: 3.1127.0
       '@vertesia/client':
         specifier: 1.4.1
         version: 1.4.1
@@ -64,8 +64,8 @@ importers:
 
 packages:
 
-  '@aws-sdk/client-iam@3.1121.0':
-    resolution: {integrity: sha512-FeIx8+zXeGMlrm6TcAoc/GMf7KwAAo2ntdyiOUgR3Xmc4JndKBDpWLJ5jdtpcxLC5chD7xMExtyoJSj1RfUSqg==}
+  '@aws-sdk/client-iam@3.1127.0':
+    resolution: {integrity: sha512-7pJzUCAB1pvFMbv4+tw7feJvKQ+cOYYxFmD46ikvwPvcBX9mTDcRzlE7FF89+Gf5zFjufhyYbuiDJhP0y+97nA==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.977.9':
@@ -88,8 +88,8 @@ packages:
     resolution: {integrity: sha512-Jb59xfEISoN5mmbnA+HYqdtrSX3CgCtJoof+V5D8/TgUI56W63GEEd5Y58WijU3Ou6+WEgaLD1feVzaRXV5IDQ==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/credential-provider-node@3.972.81':
-    resolution: {integrity: sha512-Rml+WitoFvXmv6JZ18U/xGdGDGGvB/mOin0ya0lTnTrdC0Z1lrVxTYh7iNklZBcvcRMrs4DoEf6xy1KWyrLQQw==}
+  '@aws-sdk/credential-provider-node@3.972.82':
+    resolution: {integrity: sha512-znDkEOGXB8W3kG1LJUKP3foBZY/9qLM0eil/DxWXSp37XsdsRLQHE/d/OaCGGVgKpA6znR38h/+INk8do1FjiA==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/credential-provider-process@3.972.70':
@@ -493,10 +493,10 @@ packages:
 
 snapshots:
 
-  '@aws-sdk/client-iam@3.1121.0':
+  '@aws-sdk/client-iam@3.1127.0':
     dependencies:
       '@aws-sdk/core': 3.977.9
-      '@aws-sdk/credential-provider-node': 3.972.81
+      '@aws-sdk/credential-provider-node': 3.972.82
       '@aws-sdk/types': 3.974.5
       '@smithy/core': 3.33.3
       '@smithy/fetch-http-handler': 5.7.2
@@ -558,7 +558,7 @@ snapshots:
       '@smithy/types': 4.17.2
       tslib: 2.8.1
 
-  '@aws-sdk/credential-provider-node@3.972.81':
+  '@aws-sdk/credential-provider-node@3.972.82':
     dependencies:
       '@aws-sdk/credential-provider-env': 3.972.70
       '@aws-sdk/credential-provider-http': 3.972.72
