@@ -14,8 +14,12 @@ export interface AttachmentPreparationFile {
 export interface AttachmentPreparation {
     /** The heading: how far along the set is. */
     label: string;
-    /** Every attachment, so the per-file states read as one list rather than only the stragglers. */
-    files: AttachmentPreparationFile[];
+    /**
+     * Only the attachments still outstanding. A file that is done needs no row — the heading's
+     * count already says how many got there, and listing them pushes the ones being waited on
+     * down the list.
+     */
+    outstanding: AttachmentPreparationFile[];
 }
 
 /**
@@ -89,11 +93,11 @@ export function useAttachmentPreparation(
 
     if (!files) return undefined;
     const t = i18nInstance.getFixedT(null, NAMESPACE);
-    const ready = files.filter(
-        (file) => file.status !== FileProcessingStatus.UPLOADING && file.status !== FileProcessingStatus.PROCESSING,
-    ).length;
+    const ready = files.filter((file) => file.status === FileProcessingStatus.READY).length;
     return {
         label: t('agent.attachmentsPreparing', { ready, total: files.length }),
-        files: files.map((file) => ({ id: file.id, name: file.name, status: file.status })),
+        outstanding: files
+            .filter((file) => file.status !== FileProcessingStatus.READY)
+            .map((file) => ({ id: file.id, name: file.name, status: file.status })),
     };
 }

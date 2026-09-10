@@ -3015,26 +3015,20 @@ function AllMessagesMixedComponent({
         isAgentWorking,
         incompleteStreaming.length > 0,
     );
-    // The attachments as rows under the waiting heading, reusing the tool-timeline vocabulary so
-    // this reads like every other expandable activity in the view. Every file is listed, not just
-    // the stragglers, so the set reads as a whole while it fills in.
+    // The outstanding attachments as rows under the waiting heading, reusing the tool-timeline
+    // vocabulary so this reads like every other expandable activity in the view.
     const attachmentDetailItems = useMemo((): SummaryToolDetailItem[] | undefined => {
-        if (!attachmentPreparation) return undefined;
-        return attachmentPreparation.files.map((file): SummaryToolDetailItem => {
-            const isPending =
-                file.status === FileProcessingStatus.UPLOADING || file.status === FileProcessingStatus.PROCESSING;
+        if (!attachmentPreparation || attachmentPreparation.outstanding.length === 0) return undefined;
+        return attachmentPreparation.outstanding.map((file): SummaryToolDetailItem => {
             const hasFailed = file.status === FileProcessingStatus.ERROR;
-            const titleKey = hasFailed
-                ? 'agent.attachmentFileFailed'
-                : isPending
-                  ? 'agent.attachmentFileReading'
-                  : 'agent.attachmentFileReady';
             return {
                 key: file.id,
                 kind: 'read',
                 label: file.name,
-                title: t(titleKey, { name: file.name }),
-                status: hasFailed ? 'error' : isPending ? 'running' : 'completed',
+                title: t(hasFailed ? 'agent.attachmentFileFailed' : 'agent.attachmentFileProcessing', {
+                    name: file.name,
+                }),
+                status: hasFailed ? 'error' : 'running',
                 resources: [],
                 sections: [],
             };

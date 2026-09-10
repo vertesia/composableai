@@ -23,7 +23,7 @@ function createClient(responses: AgentRunFilesResponse[]) {
 }
 
 describe('useAttachmentPreparation', () => {
-    it('says how far along the set is, and lists every attachment with its state', async () => {
+    it('counts the finished attachments and lists only the ones still outstanding', async () => {
         const { client } = createClient([
             {
                 files: [file('a.pdf', FileProcessingStatus.READY), file('b.docx', FileProcessingStatus.PROCESSING)],
@@ -34,14 +34,30 @@ describe('useAttachmentPreparation', () => {
         const { result } = renderHook(() => useAttachmentPreparation(client, 'run-1', true));
 
         await waitFor(() => {
-            expect(result.current?.label).toBe('Reading attachments — 1 of 2 ready');
+            expect(result.current?.label).toBe('Processing attachments — 1 of 2 ready');
         });
-        // Every attachment is listed, not only the ones still outstanding.
-        expect(result.current?.files.map((f) => f.name)).toEqual(['a.pdf', 'b.docx']);
-        expect(result.current?.files.map((f) => f.status)).toEqual([
-            FileProcessingStatus.READY,
-            FileProcessingStatus.PROCESSING,
+        // Only what is still outstanding gets a row; the finished one is counted, not listed.
+        expect(result.current?.outstanding.map((f) => f.name)).toEqual(['b.docx']);
+    });
+
+    it('keeps a failed attachment listed, since it explains a count that will not complete', async () => {
+        const { client } = createClient([
+            {
+                files: [
+                    file('a.pdf', FileProcessingStatus.READY),
+                    file('b.docx', FileProcessingStatus.ERROR),
+                    file('c.pdf', FileProcessingStatus.PROCESSING),
+                ],
+                settled: false,
+            },
         ]);
+
+        const { result } = renderHook(() => useAttachmentPreparation(client, 'run-1', true));
+
+        await waitFor(() => expect(result.current).toBeDefined());
+        // The failure is listed too: it is why the count will never reach the total.
+        expect(result.current?.outstanding.map((f) => f.name)).toEqual(['b.docx', 'c.pdf']);
+        expect(result.current?.label).toBe('Processing attachments — 1 of 3 ready');
     });
 
     it('goes quiet and stops asking once every attachment has settled', async () => {
