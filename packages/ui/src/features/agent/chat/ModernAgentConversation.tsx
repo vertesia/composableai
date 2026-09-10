@@ -2152,7 +2152,7 @@ function ModernAgentConversationInner({
     // The first turn of a run started with attachments waits for their text to be extracted. The
     // workflow says so only into the activity stream, which the summary view buckets away, so the
     // waiting indicator reads the run's file states itself. Settles to undefined and stops polling.
-    const waitingDetail = useAttachmentPreparation(client, agentRunId, isAgentWorking);
+    const attachmentPreparation = useAttachmentPreparation(client, agentRunId, isAgentWorking);
     const pendingRequestInputMessage = useMemo(() => {
         const answeredRequestInputKeys = new Set<string>();
         for (const message of displayedMessages) {
@@ -3145,7 +3145,7 @@ function ModernAgentConversationInner({
             ) : (
                 <AllMessagesMixed
                     messages={renderedMessages}
-                    waitingDetail={waitingDetail}
+                    attachmentPreparation={attachmentPreparation}
                     workstreamSourceMessages={renderedWorkstreamSourceMessages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                     isCompleted={displayedIsCompleted}

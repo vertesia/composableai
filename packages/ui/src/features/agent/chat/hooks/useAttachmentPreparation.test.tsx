@@ -23,7 +23,7 @@ function createClient(responses: AgentRunFilesResponse[]) {
 }
 
 describe('useAttachmentPreparation', () => {
-    it('says how many attachments are ready and which are still being read', async () => {
+    it('says how far along the set is, and lists every attachment with its state', async () => {
         const { client } = createClient([
             {
                 files: [file('a.pdf', FileProcessingStatus.READY), file('b.docx', FileProcessingStatus.PROCESSING)],
@@ -34,8 +34,14 @@ describe('useAttachmentPreparation', () => {
         const { result } = renderHook(() => useAttachmentPreparation(client, 'run-1', true));
 
         await waitFor(() => {
-            expect(result.current).toBe('1 of 2 attachments ready — still reading b.docx');
+            expect(result.current?.label).toBe('Reading attachments — 1 of 2 ready');
         });
+        // Every attachment is listed, not only the ones still outstanding.
+        expect(result.current?.files.map((f) => f.name)).toEqual(['a.pdf', 'b.docx']);
+        expect(result.current?.files.map((f) => f.status)).toEqual([
+            FileProcessingStatus.READY,
+            FileProcessingStatus.PROCESSING,
+        ]);
     });
 
     it('goes quiet and stops asking once every attachment has settled', async () => {

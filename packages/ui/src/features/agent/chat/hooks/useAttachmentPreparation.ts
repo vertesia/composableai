@@ -1,18 +1,25 @@
 import type { VertesiaClient } from '@vertesia/client';
-import { FileProcessingStatus } from '@vertesia/common';
+import { type AgentRunFile, FileProcessingStatus } from '@vertesia/common';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useEffect, useRef, useState } from 'react';
 
 const POLL_INTERVAL_MS = 1_500;
 
-interface PendingAttachments {
-    ready: number;
-    total: number;
-    names: string;
+export interface AttachmentPreparationFile {
+    id: string;
+    name: string;
+    status: FileProcessingStatus;
+}
+
+export interface AttachmentPreparation {
+    /** The heading: how far along the set is. */
+    label: string;
+    /** Every attachment, so the per-file states read as one list rather than only the stragglers. */
+    files: AttachmentPreparationFile[];
 }
 
 /**
- * Why the first turn has not started yet, as a line the waiting indicator can show.
+ * Why the first turn has not started yet.
  *
  * A run created from staged files holds its first turn until their text has been extracted, which
  * can take a minute for a large PDF. The workflow does announce this, but only into the activity
@@ -26,11 +33,11 @@ export function useAttachmentPreparation(
     client: VertesiaClient,
     agentRunId: string | undefined,
     active: boolean,
-): string | undefined {
-    // State holds the counts, never the sentence. i18nInstance.getFixedT returns a new function
-    // on every render, so translating inside the effect would put an unstable value in its deps —
-    // the effect would re-run each render and its cleanup would cancel the poll still in flight.
-    const [pending, setPending] = useState<PendingAttachments | undefined>(undefined);
+): AttachmentPreparation | undefined {
+    // State holds the files, never the sentence. i18nInstance.getFixedT returns a new function on
+    // every render, so translating inside the effect would put an unstable value in its deps — the
+    // effect would re-run each render and its cleanup would cancel the poll still in flight.
+    const [files, setFiles] = useState<AgentRunFile[] | undefined>(undefined);
     // Set once this run has nothing left to report, so a settled run stops polling for good
     // instead of asking again every interval for as long as the agent works.
     const settledRunRef = useRef<string | undefined>(undefined);
@@ -39,7 +46,7 @@ export function useAttachmentPreparation(
         if (!agentRunId) return;
         if (settledRunRef.current !== agentRunId) {
             settledRunRef.current = undefined;
-            setPending(undefined);
+            setFiles(undefined);
         }
         if (!active || settledRunRef.current === agentRunId) return;
 
@@ -65,15 +72,11 @@ export function useAttachmentPreparation(
             );
             if (unsettled.length === 0) {
                 settledRunRef.current = agentRunId;
-                setPending(undefined);
+                setFiles(undefined);
                 stop();
                 return;
             }
-            setPending({
-                ready: response.files.length - unsettled.length,
-                total: response.files.length,
-                names: unsettled.map((file) => file.name).join(', '),
-            });
+            setFiles(response.files);
         };
 
         void poll();
@@ -84,10 +87,13 @@ export function useAttachmentPreparation(
         };
     }, [active, agentRunId, client]);
 
-    if (!pending) return undefined;
-    return i18nInstance.getFixedT(null, NAMESPACE)('agent.attachmentsPreparing', {
-        ready: pending.ready,
-        total: pending.total,
-        names: pending.names,
-    });
+    if (!files) return undefined;
+    const t = i18nInstance.getFixedT(null, NAMESPACE);
+    const ready = files.filter(
+        (file) => file.status !== FileProcessingStatus.UPLOADING && file.status !== FileProcessingStatus.PROCESSING,
+    ).length;
+    return {
+        label: t('agent.attachmentsPreparing', { ready, total: files.length }),
+        files: files.map((file) => ({ id: file.id, name: file.name, status: file.status })),
+    };
 }

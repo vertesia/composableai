@@ -4,6 +4,7 @@ import {
     type AgentResourceReference,
     type AskUserMessageDetails,
     type BatchProgressDetails,
+    FileProcessingStatus,
     getResourcesFromMessage,
     type JSONSchema,
     type Plan,
@@ -32,6 +33,7 @@ import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useR
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
+import type { AttachmentPreparation } from '../hooks/useAttachmentPreparation';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
     formatWorkstreamName,
@@ -2210,6 +2212,7 @@ function SummaryActivityRow({
     durationSeconds,
     showElapsed,
     details,
+    detailItems: providedDetailItems,
     emptyDetailsLabel,
     defaultExpanded = false,
     disablePreambleCollapse = false,
@@ -2225,6 +2228,8 @@ function SummaryActivityRow({
     durationSeconds?: number;
     showElapsed?: boolean;
     details?: AgentMessage[];
+    /** Rows to list under the heading, when the caller has them already built. */
+    detailItems?: SummaryToolDetailItem[];
     emptyDetailsLabel?: string;
     defaultExpanded?: boolean;
     disablePreambleCollapse?: boolean;
@@ -2239,7 +2244,8 @@ function SummaryActivityRow({
     const liveElapsed = useLiveElapsedSeconds(timestamp, isLiveElapsed);
     const elapsed = durationSeconds ?? liveElapsed;
     const shouldShowElapsed = showElapsed && timestamp !== undefined;
-    const detailItems = useMemo(() => buildSummaryToolDetailItems(details ?? []), [details]);
+    const builtDetailItems = useMemo(() => buildSummaryToolDetailItems(details ?? []), [details]);
+    const detailItems = providedDetailItems ?? builtDetailItems;
     const requestInputMessages = useMemo(
         () =>
             (details ?? []).filter(
@@ -2500,7 +2506,7 @@ interface AllMessagesMixedProps {
     /** Message types to exclude from the conversation view */
     hiddenMessageTypes?: AgentMessageType[];
     /** Why the first turn has not started yet, shown on the waiting indicator. */
-    waitingDetail?: string;
+    attachmentPreparation?: AttachmentPreparation;
     /** Test/playback mode: keep the current scroll position while the rendered message slice changes. */
     disableAutoScroll?: boolean;
     /** Whether REQUEST_INPUT messages render their active controls in the transcript. */
@@ -2542,7 +2548,7 @@ function AllMessagesMixedComponent({
     initialRequestTemplate,
     showInitialRequest,
     hiddenMessageTypes,
-    waitingDetail,
+    attachmentPreparation,
     disableAutoScroll = false,
     renderRequestInputControls = true,
     activeWorkstream: controlledActiveWorkstream,
@@ -3009,6 +3015,32 @@ function AllMessagesMixedComponent({
         isAgentWorking,
         incompleteStreaming.length > 0,
     );
+    // The attachments as rows under the waiting heading, reusing the tool-timeline vocabulary so
+    // this reads like every other expandable activity in the view. Every file is listed, not just
+    // the stragglers, so the set reads as a whole while it fills in.
+    const attachmentDetailItems = useMemo((): SummaryToolDetailItem[] | undefined => {
+        if (!attachmentPreparation) return undefined;
+        return attachmentPreparation.files.map((file): SummaryToolDetailItem => {
+            const isPending =
+                file.status === FileProcessingStatus.UPLOADING || file.status === FileProcessingStatus.PROCESSING;
+            const hasFailed = file.status === FileProcessingStatus.ERROR;
+            const titleKey = hasFailed
+                ? 'agent.attachmentFileFailed'
+                : isPending
+                  ? 'agent.attachmentFileReading'
+                  : 'agent.attachmentFileReady';
+            return {
+                key: file.id,
+                kind: 'read',
+                label: file.name,
+                title: t(titleKey, { name: file.name }),
+                status: hasFailed ? 'error' : isPending ? 'running' : 'completed',
+                resources: [],
+                sections: [],
+            };
+        });
+    }, [attachmentPreparation, t]);
+
     const summaryActivityFallbackLabel = isInitialSummaryActivityFallback(summaryConversationItems)
         ? t('agent.preparing')
         : t('agent.working');
@@ -3378,7 +3410,7 @@ function AllMessagesMixedComponent({
                     <div className="flex-1 px-2 py-6 sm:px-4">
                         <InitialRequestWaitingCard
                             label={t('agent.preparing')}
-                            detail={waitingDetail}
+                            detail={attachmentPreparation?.label}
                             timestamp={fallbackWorkingStartedAtRef.current}
                             className={workingIndicatorClassName}
                         />
@@ -3440,7 +3472,7 @@ function AllMessagesMixedComponent({
                     {showInitialRequestWaitingCard && (
                         <InitialRequestWaitingCard
                             label={summaryActivityFallbackLabel}
-                            detail={waitingDetail}
+                            detail={attachmentPreparation?.label}
                             timestamp={activityStartedTimestamp}
                             className={workingIndicatorClassName}
                         />
@@ -3737,12 +3769,18 @@ function AllMessagesMixedComponent({
                             {/* Activity fallback - shown before any tool/thought message has arrived */}
                             {showActivityFallback && !showInitialRequestWaitingCard && (
                                 <SummaryActivityRow
-                                    // The fallback label says only "Preparing". When the caller
-                                    // knows what is being waited on, that is the better label.
-                                    label={waitingDetail ?? summaryActivityFallbackLabel}
+                                    // Remounts when the attachment rows first arrive, so the list
+                                    // starts expanded rather than hidden behind a chevron the user
+                                    // has no reason to suspect.
+                                    key={attachmentDetailItems ? 'attachments' : 'activity'}
+                                    // The fallback label says only "Preparing". When the run can
+                                    // say what it is waiting on, that is the better heading.
+                                    label={attachmentPreparation?.label ?? summaryActivityFallbackLabel}
                                     status="running"
                                     timestamp={activityStartedTimestamp}
                                     showElapsed
+                                    detailItems={attachmentDetailItems}
+                                    defaultExpanded={Boolean(attachmentDetailItems)}
                                     className={workingIndicatorClassName}
                                 />
                             )}
