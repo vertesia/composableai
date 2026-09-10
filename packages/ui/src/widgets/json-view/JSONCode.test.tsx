@@ -17,8 +17,8 @@ describe('JSONCode', () => {
         // number
         expect(html).toContain('<span class="text-attention">42</span>');
         // literals
-        expect(html).toContain('<span class="text-primary">true</span>');
-        expect(html).toContain('<span class="text-primary">null</span>');
+        expect(html).toContain('<span class="text-info">true</span>');
+        expect(html).toContain('<span class="text-info">null</span>');
     });
 
     it('treats a string with escaped quotes as a single token', () => {

@@ -45,12 +45,11 @@ const buttonVariants = cva(
             variant: {
                 destructive:
                     'bg-destructive text-destructive ring-1 ring-inset ring-destructive/50 shadow-xs hover:bg-destructive/50',
-                outline: 'border border-input bg-background text-foreground shadow-xs hover:bg-muted ring-inset',
-                secondary:
-                    'bg-primary/5 dark:bg-primary/10 text-primary shadow-xs hover:bg-primary/10 dark:hover:bg-primary/20 ring-inset',
-                ghost: 'text-foreground hover:bg-muted/50 dark:hover:bg-muted/20 ring-inset',
+                outline: 'border border-input bg-background shadow-xs hover:bg-muted ring-inset',
+                secondary: 'bg-info text-info shadow-xs hover:bg-mixer-info/10 ring-inset',
+                ghost: 'hover:bg-muted/50 dark:hover:bg-muted/20 ring-inset',
                 link: 'text-foreground underline-offset-4 hover:underline ring-inset',
-                primary: 'bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 ring-inset',
+                primary: 'bg-primary text-primary shadow-xs hover:bg-primary/90 ring-inset',
                 unstyled: '',
             },
             size: {

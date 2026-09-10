@@ -78,7 +78,7 @@ export function HeroSection({ title, version, resources }: HeroSectionProps) {
                         </a>
                         <a
                             href="/lib/plugin.js"
-                            className="inline-flex h-8 items-center gap-2 rounded bg-primary/5 px-3 text-xs font-medium text-primary shadow-xs hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20"
+                            className="inline-flex h-8 items-center gap-2 rounded bg-info px-3 text-xs font-medium text-info shadow-xs hover:bg-info dark:bg-info dark:hover:bg-info"
                         >
                             <Download className="size-4" />
                             Plugin Bundle

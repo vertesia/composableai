@@ -104,7 +104,7 @@ export function UserPermissionProvider({ children, loadingIcon }: UserPermission
             <div className="flex min-h-dvh items-center justify-center bg-background px-6 text-foreground">
                 <div className="w-full max-w-md space-y-6 text-center">
                     <div aria-hidden="true" className="flex justify-center">
-                        {loadingIcon || (!failed && <Spinner size="2xl" className="text-primary" />)}
+                        {loadingIcon || (!failed && <Spinner size="2xl" className="text-info" />)}
                     </div>
                     <div
                         role={failed ? 'alert' : 'status'}
