@@ -87,7 +87,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
                 <SelectDocumentModal value={actualValue} isOpen={isOn} onClose={onSelect} />
             </div>
             {doc && (
-                <div className="p-1 semibold text-sm text-muted dark:text-foreground">
+                <div className="p-1 font-semibold text-sm text-muted dark:text-foreground">
                     {typeof doc.properties?.title === 'string' ? doc.properties.title : doc.name}
                 </div>
             )}

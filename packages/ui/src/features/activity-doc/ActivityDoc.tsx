@@ -6,7 +6,7 @@ import type React from 'react';
 import { useMemo, useState } from 'react';
 
 function Badge({ children, secondary = false }: { children: React.ReactNode; secondary?: boolean }) {
-    const className = secondary ? 'bg-secondary text-primary' : 'text-foreground bg-muted';
+    const className = secondary ? 'bg-secondary text-info' : 'text-foreground bg-muted';
     return <span className={className}>{children}</span>;
 }
 

@@ -4,6 +4,13 @@
 .dark {
     --mixer: oklch(0 0 0);
 }
+/* PROTOTYPE: mirror of `bg-*`. Resolves --color-<name>-foreground first so `text-info`
+ * yields white on the solid primary surface; tokens without a -foreground (the six status
+ * semantics) fall through to the built-in utility and keep their current meaning. */
+@utility text-* {
+    color: --value(--color-* -foreground, [*]);
+}
+
 @utility text-mixer-* {
     color: color-mix(
         in oklab,
