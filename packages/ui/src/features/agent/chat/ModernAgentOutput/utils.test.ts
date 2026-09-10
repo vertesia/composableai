@@ -141,6 +141,20 @@ describe('ModernAgentOutput utils - tool preamble behavior', () => {
 });
 
 describe('ModernAgentOutput summary - ask_user review content', () => {
+    it('preserves process progress visibility alongside tool preamble classification', () => {
+        const progress = makeMessage({
+            message: 'The process completed its review step.',
+            details: {
+                process_event: 'progress',
+                kind: 'process',
+                display_role: 'tool_preamble',
+                tools: ['update_plan'],
+            },
+        });
+
+        expect(buildSummaryConversationItems([progress], false)).toEqual([{ type: 'message', message: progress }]);
+    });
+
     const draft = '## Draft agenda\n9:00 Welcome\n9:15 Platform foundations';
     const tool = makeMessage({
         timestamp: 3000,
