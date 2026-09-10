@@ -15,7 +15,7 @@
         "gcp": "npx bun ./src/index.ts gcp"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.10",
+        "@biomejs/biome": "2.5.12",
         "@tsconfig/node-lts": "^24.0.1",
         "@types/bun": "^1.4.0",
         "globals": "^17.12.0",
