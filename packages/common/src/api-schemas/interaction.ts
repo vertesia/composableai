@@ -2204,7 +2204,7 @@ export const AsyncConversationExecutionPayloadSchema = z
             .boolean()
             .meta({
                 description:
-                    'The run has files attached before its first turn, uploaded into its artifact space while the user was composing. The first model turn waits until every one has finished processing and then opens with them in hand. Start-only — it describes work in flight at promotion and is dropped when the run continues as new.',
+                    "Wait for the run's pre-turn attachments to finish processing before the first model turn. Start-only; dropped when the run continues as new.",
             })
             .optional(),
         excluded_tools: z

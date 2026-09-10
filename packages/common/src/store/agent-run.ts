@@ -198,23 +198,7 @@ export type AgentRunResponse<TData = Record<string, unknown>, TProperties = Reco
     | SupervisedRunResponse
     | ProgrammaticRunResponse;
 
-/**
- * Files uploaded before the conversation that will use them exists.
- *
- * A run's artifacts are addressed by run id, so a composer that lets the user attach files before
- * pressing send could only create the run first and upload afterwards — which is what let the
- * agent's first turn start on a partial set. A staged batch is uploaded and text-extracted while
- * the user is still typing, and the run adopts it by id.
- */
-
-/**
- * Files attached to a conversation before its first turn.
- *
- * A run's artifacts are addressed by run id, so a composer that lets the user attach before sending
- * could only create the run and upload afterwards — which is what let the agent's first turn start
- * on a partial set. The run is created when the first file is attached instead, so the uploads and
- * their text extraction happen in the run's own artifact space while the user is still typing.
- */
+/** Files attached to a run before its first turn. */
 export type AgentRunFile = z.infer<typeof AgentRunFileSchema>;
 export type AgentRunFilesResponse = z.infer<typeof AgentRunFilesResponseSchema>;
 export type RegisterAgentRunFilePayload = z.infer<typeof RegisterAgentRunFilePayloadSchema>;

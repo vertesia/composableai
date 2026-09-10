@@ -113,16 +113,9 @@ export interface StartWorkflowOptions {
 export type AgentMessageFilter = (message: AgentMessage) => boolean;
 
 /**
- * How a consumer creates and later starts a run whose files are attached before it begins.
- *
- * A run's artifacts are addressed by run id, so files attached in a composer can only be uploaded
- * once the run exists. Creating it up front and starting it on send lets the uploads and their text
- * extraction happen while the user is still typing, instead of racing the agent's first turn.
- *
- * These are supplied by the consumer rather than called here because the shape of a run's `data` is
- * interaction-specific — this component does not know whether the prompt belongs under
- * `user_prompt`, `task` or something else. A consumer that does not provide them keeps the previous
- * behaviour exactly: the run is created on send and the files are uploaded into it afterwards.
+ * Consumer hooks for a run created when files are attached and started on send. Supplied by the
+ * consumer because the shape of a run's `data` is interaction-specific. Optional: without it the
+ * run is created on send and the files are uploaded afterwards.
  */
 export interface DraftRunHandlers {
     /** Create the run and its artifact space without starting the conversation. */
@@ -135,25 +128,19 @@ export interface DraftRunHandlers {
     ) => Promise<{ agent_run_id: string } | undefined>;
 }
 
-/** Where one staged file has got to, for its chip. */
 interface StagedUpload {
-    /** Server-assigned id, once the file has been reported to the run. */
+    /** Set once the file is registered on the run. */
     fileId?: string;
     status: 'uploading' | 'processing' | 'ready' | 'error';
     error?: string;
 }
 
-/** Stable per-file key. Matches the key the chip list already renders with. */
+/** Matches the key the chip list renders with. */
 function stagedFileKey(file: File): string {
     return `${file.name}-${file.size}-${file.lastModified}`;
 }
 
-/**
- * Artifact path for a staged file, kept unique within the batch.
- *
- * Two attachments can legitimately share a name, and one artifact path for both would upload the
- * second over the first and deliver one file twice.
- */
+/** Artifact path, kept unique within the batch so two files with one name do not overwrite. */
 function stagedArtifactPath(file: File, taken: Set<string>): string {
     const base = `files/${file.name}`;
     if (!taken.has(base)) {
@@ -672,10 +659,7 @@ export interface ModernAgentConversationProps {
     fullWidth?: boolean;
     initialMessage?: string;
     startWorkflow?: StartWorkflowFn;
-    /**
-     * Opt-in: upload files into a run created when the user attaches them, rather than into a run
-     * created on send. Without it this component behaves exactly as it did before.
-     */
+    /** Opt-in: upload staged files into a run created on attach instead of on send. */
     draftRun?: DraftRunHandlers;
     startButtonText?: string;
     placeholder?: string;
@@ -954,35 +938,29 @@ function StartWorkflowView({
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
     const [areStagedFilesExpanded, setAreStagedFilesExpanded] = useState(false);
 
-    // The run the staged files are being uploaded into, created on the first attachment. Null when
-    // the consumer opted out of draft runs, or when creating one failed — in both cases the send
-    // path falls back to creating the run itself, exactly as it always did.
+    // Run the staged files upload into; null when draft runs are unavailable, in which case send
+    // creates the run as before.
     const [draftRunId, setDraftRunId] = useState<string | null>(null);
     const [stagedUploads, setStagedUploads] = useState<Record<string, StagedUpload>>({});
-    // Guards against a second drop creating a second draft while the first create is still in
-    // flight, and holds the id for callbacks that fire before state has settled.
+    // Dedupes concurrent creates and holds the id for callbacks that run before state settles.
     const draftRunRef = useRef<{ id: string | null; creating: Promise<string | null> | null }>({
         id: null,
         creating: null,
     });
     const artifactPathsRef = useRef<Set<string>>(new Set());
-    // Keys already handed to the uploader. The upload effect is driven off this rather than off
-    // `stagedUploads`, because an upload that resolves by REMOVING its entry would otherwise look
-    // like a new file to the next render and be picked up again, forever.
+    // Keys already handed to the uploader; a ref, so the upload effect cannot re-enter on its own state.
     const handledKeysRef = useRef<Set<string>>(new Set());
-    // Uploads not yet registered on the run. Send waits for these: a registration after the run
-    // has started is refused.
+    // Uploads not yet registered; send waits for them, since registration after start is refused.
     const uploadsInFlightRef = useRef<Map<string, Promise<void>>>(new Map());
     const usingDraftRun = !!draftRun && canStageFiles;
-    // A boolean, so a poll that changes nothing does not change this effect's dependency.
+    // Boolean so an unchanged poll does not retrigger the effect below.
     const hasUnsettledUploads = Object.values(stagedUploads).some(
         (upload) => upload.status === 'uploading' || upload.status === 'processing',
     );
     const visibleStagedFiles = areStagedFilesExpanded ? stagedFiles : stagedFiles.slice(0, COLLAPSED_STAGED_FILE_COUNT);
     const hiddenStagedFileCount = stagedFiles.length - COLLAPSED_STAGED_FILE_COUNT;
 
-    // Thumbnails for staged images, read off the local File so a preview costs nothing and shows
-    // before the upload finishes. Held in a ref because each URL must be revoked exactly once.
+    // Object URLs for image thumbnails; in a ref so each is revoked exactly once.
     const stagedPreviewsRef = useRef<Map<string, string>>(new Map());
     const [stagedPreviews, setStagedPreviews] = useState<Record<string, string>>({});
 
@@ -1002,7 +980,6 @@ function StartWorkflowView({
             stagedPreviewsRef.current.set(key, URL.createObjectURL(file));
             changed = true;
         }
-        // Keyed on the staged files, never on the previews it writes, so this settles in one pass.
         if (changed) setStagedPreviews(Object.fromEntries(stagedPreviewsRef.current));
     }, [stagedFiles]);
 
@@ -1106,14 +1083,7 @@ function StartWorkflowView({
         [maxFiles],
     );
 
-    /**
-     * Create the draft run, once, however many files arrive at once.
-     *
-     * Returns null when draft runs are unavailable — the consumer did not opt in, or creation
-     * failed against a server that does not know about them. The caller then leaves the files
-     * staged locally and the send path creates the run the way it always has, so a composer never
-     * stops working because this could not be set up.
-     */
+    /** Create the draft run once. Null when unavailable; files then stay local and send creates the run. */
     const ensureDraftRun = useCallback(async (): Promise<string | null> => {
         if (!draftRun) return null;
         if (draftRunRef.current.id) return draftRunRef.current.id;
@@ -1139,20 +1109,14 @@ function StartWorkflowView({
         return creating;
     }, [draftRun]);
 
-    /**
-     * Upload one newly attached file into the draft run and report it, which starts its text
-     * extraction. Reporting per file as it lands — rather than once at the end — is what lets the
-     * slow part overlap the next upload and the user still writing their prompt.
-     */
+    /** Upload one staged file and register it, which starts its extraction. */
     const uploadStagedFile = useCallback(
         async (file: File) => {
             const key = stagedFileKey(file);
             const runId = await ensureDraftRun();
             if (!runId) {
-                // No draft run — the consumer opted out, or creation failed against a server that
-                // does not know about them. The file stays staged locally and rides the legacy
-                // send path. Its entry is left in place, marked as it started: removing it would
-                // hand the file straight back to the effect that just picked it up.
+                // No draft run: the file stays staged for the send path. Its entry stays too, or the
+                // upload effect would pick the file up again.
                 return;
             }
             const artifactPath = stagedArtifactPath(file, artifactPathsRef.current);
@@ -1170,8 +1134,7 @@ function StartWorkflowView({
                     [key]: { fileId: registered?.id, status: registered?.status ?? 'processing' },
                 }));
             } catch (err: unknown) {
-                // Surfaced on the chip rather than thrown: one bad file must not stop the user
-                // sending, and the run is simply never told about it.
+                // Shown on the chip; one bad file must not block sending.
                 console.error(`Failed to upload staged file ${file.name}:`, err);
                 artifactPathsRef.current.delete(artifactPath);
                 setStagedUploads((prev) => ({
@@ -1183,9 +1146,7 @@ function StartWorkflowView({
         [client, ensureDraftRun],
     );
 
-    // Upload anything newly staged. Keyed on the file rather than an index so a removal mid-upload
-    // cannot make a later file take an earlier one's slot, and gated on a ref rather than on
-    // `stagedUploads` so this cannot re-enter on its own state update.
+    // Upload newly staged files. Keyed by file, not index, so a removal mid-upload cannot shift slots.
     useEffect(() => {
         if (!usingDraftRun || stagedFiles.length === 0) return;
         const pending = stagedFiles.filter((file) => !handledKeysRef.current.has(stagedFileKey(file)));
@@ -1209,8 +1170,7 @@ function StartWorkflowView({
         }
     }, [usingDraftRun, stagedFiles, uploadStagedFile]);
 
-    // Follow extraction to completion. Text extraction is the slow part — minutes for a large
-    // scanned PDF — and this is what turns that into progress the user can see while they type.
+    // Follow extraction to completion.
     useEffect(() => {
         if (!draftRunId || !hasUnsettledUploads) return;
         let cancelled = false;
@@ -1231,13 +1191,11 @@ function StartWorkflowView({
                     return changed ? next : prev;
                 });
             } catch (err: unknown) {
-                // A failed poll is not a failed upload. Leave the chips as they are and try again.
+                // A failed poll is not a failed upload.
                 console.warn('Could not read staged file progress', err);
             }
         };
-        // An interval, not a self-rescheduling timeout: a poll that finds nothing changed returns
-        // the same state reference, so an effect keyed on that state would never run again and
-        // progress would stop at the first quiet tick.
+        // An interval: an unchanged poll returns the same state, which would not re-run an effect.
         const timer = setInterval(poll, 1500);
         return () => {
             cancelled = true;
@@ -1257,8 +1215,7 @@ function StartWorkflowView({
                 const { [key]: _removed, ...rest } = prev;
                 return rest;
             });
-            // Retracting is not the same as failing: the run is told to forget the file, and the
-            // agent is never told it existed.
+            // Retracted, not failed: the run forgets the file.
             const runId = draftRunRef.current.id;
             if (runId && upload?.fileId) {
                 void client.agents.removeFile(runId, upload.fileId).catch((err: unknown) => {
@@ -1313,10 +1270,8 @@ function StartWorkflowView({
                 messageContent = [message, '', 'Attachments:', ...lines].join('\n');
             }
 
-            // The files are already in the run and the first turn waits for them, so there is
-            // nothing to warn the agent about. Only the legacy path — where the run is created
-            // here and the uploads follow it — still needs the warning, and it never worked
-            // anyway: the agent was told to wait and went ahead regardless.
+            // A draft already holds its files and the first turn waits for them; only the
+            // upload-after-start path needs the note below.
             if (usingDraftRun) {
                 await draftRunRef.current.creating;
                 await Promise.allSettled(uploadsInFlightRef.current.values());
@@ -1331,8 +1286,6 @@ function StartWorkflowView({
                 ].join('\n');
             }
 
-            // Promoting a draft starts the conversation the files already belong to. Its first
-            // turn waits for anything still extracting, which by now is usually nothing.
             const newRun = promotingDraft
                 ? // biome-ignore lint/style/noNonNullAssertion: promotingDraft implies an id
                   await draftRun!.start(draftRunRef.current.id as string, messageContent, {
@@ -1410,7 +1363,6 @@ function StartWorkflowView({
             }
 
             if (promotingDraft) {
-                // The draft is now a running conversation; it is no longer this composer's to hold.
                 setStagedFiles([]);
                 setStagedUploads({});
                 setDraftRunId(null);
@@ -2161,9 +2113,8 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
     }, [isAgentWorking, onAgentWorkingChange]);
-    // The first turn of a run started with attachments waits for their text to be extracted. The
-    // workflow says so only into the activity stream, which the summary view buckets away, so the
-    // waiting indicator reads the run's file states itself. Settles to undefined and stops polling.
+    // The summary view hides the workflow's progress messages, so the waiting indicator reads the
+    // run's file states itself.
     const attachmentPreparation = useAttachmentPreparation(client, agentRunId, isAgentWorking);
     const pendingRequestInputMessage = useMemo(() => {
         const answeredRequestInputKeys = new Set<string>();

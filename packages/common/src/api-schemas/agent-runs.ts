@@ -235,15 +235,7 @@ export const ResourceRefSchema = z
     })
     .meta({ id: 'ResourceRef' });
 
-/**
- * Files attached to a conversation before its first turn.
- *
- * A run's artifacts are addressed by run id, so a composer offering "attach, then type, then send"
- * could only create the run and upload afterwards — and the agent's first turn raced the uploads.
- * The run is now created when the first file is attached, so the files are uploaded and their text
- * extracted into the run's own artifact space while the user is still typing, and the run is
- * promoted to a working conversation when they press send.
- */
+/** Files attached to a run before its first turn, uploaded while the user is still composing. */
 export const AgentRunFileSchema = z
     .strictObject({
         id: z.string().meta({ description: 'Server-assigned id for this attachment.' }),
@@ -255,13 +247,9 @@ export const AgentRunFileSchema = z
             .string()
             .meta({ description: 'Companion markdown of the extracted text, once there is any.' })
             .optional(),
-        started_at: z.number().meta({
-            description:
-                'When the file was registered on the run. Required because a progress snapshot of these files is posted to the run timeline, which validates it against ConversationFile.',
-        }),
+        started_at: z.number().meta({ description: 'When the file was registered on the run, in epoch milliseconds.' }),
         status: FileProcessingStatusSchema.meta({
-            description:
-                'Lifecycle of this attachment. Shares the vocabulary of a file attached mid-conversation, so a composer renders one shape either side of the run starting.',
+            description: 'Processing status, using the same vocabulary as a file attached mid-conversation.',
         }),
         text_extracted: z.boolean().meta({ description: 'Whether extraction produced usable text.' }).optional(),
         error: z.string().meta({ description: 'Why the file is not usable.' }).optional(),
@@ -271,10 +259,7 @@ export const AgentRunFileSchema = z
 export const AgentRunFilesResponseSchema = z
     .strictObject({
         files: z.array(AgentRunFileSchema),
-        settled: z.boolean().meta({
-            description:
-                'True once no attachment is still uploading or processing. A run may be started before this; its first turn waits.',
-        }),
+        settled: z.boolean().meta({ description: 'True once no attachment is still uploading or processing.' }),
     })
     .meta({ id: 'AgentRunFilesResponse', description: "A run's pre-turn attachments and their progress." });
 
@@ -289,8 +274,7 @@ export const RegisterAgentRunFilePayloadSchema = z
     })
     .meta({
         id: 'RegisterAgentRunFilePayload',
-        description:
-            "Report a file as uploaded into the run's artifact space, which starts its text extraction. Called once per file as its bytes land, so extraction overlaps the next upload and the user's typing.",
+        description: "Record a file uploaded into a draft run's artifact space and start its text extraction.",
     });
 
 export const StartAgentRunPayloadSchema = z
@@ -304,7 +288,7 @@ export const StartAgentRunPayloadSchema = z
     .meta({
         id: 'StartAgentRunPayload',
         description:
-            'Promote a draft run to a working conversation. Its first turn waits for any attachment still processing.',
+            'Start the conversation for a run created as a draft. The first turn waits for any attachment still processing.',
     });
 
 export const AgentArtifactContentResponseSchema = z
@@ -705,7 +689,7 @@ export const CreateAgentRunPayloadSchema = z
             .boolean()
             .meta({
                 description:
-                    'Create the run record and its artifact space without starting the conversation. A composer creates a draft when the user attaches their first file, uploads into it while they type, and promotes it with StartAgentRun when they send. Without attachments there is no reason to create a run early, so an ordinary conversation never uses this.',
+                    'Create the run and its artifact space without starting the conversation. Attach files with RegisterAgentRunFile, then start it with StartAgentRun.',
             })
             .optional(),
         content_type: ContentObjectTypeRefSchema.meta({

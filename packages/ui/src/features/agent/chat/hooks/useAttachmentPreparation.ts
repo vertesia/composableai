@@ -12,38 +12,23 @@ export interface AttachmentPreparationFile {
 }
 
 export interface AttachmentPreparation {
-    /** The heading: how far along the set is. */
     label: string;
-    /**
-     * Only the attachments still outstanding. A file that is done needs no row — the heading's
-     * count already says how many got there, and listing them pushes the ones being waited on
-     * down the list.
-     */
+    /** Attachments not yet ready. Finished ones are counted in the label, not listed. */
     outstanding: AttachmentPreparationFile[];
 }
 
 /**
- * Why the first turn has not started yet.
- *
- * A run created from staged files holds its first turn until their text has been extracted, which
- * can take a minute for a large PDF. The workflow does announce this, but only into the activity
- * stream, which the summary view — the default, and the one most people see — buckets away. So the
- * view asks the run directly rather than waiting to be told, reading the same file states the
- * workflow gates on.
- *
- * Returns undefined when there is nothing to explain: no attachments, or all of them settled.
+ * Progress of the attachments the first turn is waiting on, read from the run's file states.
+ * Undefined when nothing is outstanding; polling stops once the run has settled.
  */
 export function useAttachmentPreparation(
     client: VertesiaClient,
     agentRunId: string | undefined,
     active: boolean,
 ): AttachmentPreparation | undefined {
-    // State holds the files, never the sentence. i18nInstance.getFixedT returns a new function on
-    // every render, so translating inside the effect would put an unstable value in its deps — the
-    // effect would re-run each render and its cleanup would cancel the poll still in flight.
+    // Translated at render time: getFixedT returns a new function per render, and as an effect
+    // dependency it would cancel the poll in flight on every render.
     const [files, setFiles] = useState<AgentRunFile[] | undefined>(undefined);
-    // Set once this run has nothing left to report, so a settled run stops polling for good
-    // instead of asking again every interval for as long as the agent works.
     const settledRunRef = useRef<string | undefined>(undefined);
 
     useEffect(() => {
@@ -66,7 +51,7 @@ export function useAttachmentPreparation(
             try {
                 response = await client.agents.getFiles(agentRunId);
             } catch {
-                // The indicator keeps its generic label; a failed poll is not worth surfacing.
+                // A failed poll keeps the current label.
                 return;
             }
             if (cancelled) return;

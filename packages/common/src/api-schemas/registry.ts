@@ -2384,7 +2384,7 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
-    // Pre-turn run attachments: closed shapes, so a stray key is a client bug and not silent drift.
+    // Pre-turn run attachments.
     'AgentRunFile',
     'AgentRunFilesResponse',
     'RegisterAgentRunFilePayload',

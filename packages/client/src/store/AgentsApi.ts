@@ -834,6 +834,29 @@ export class AgentsApi extends ApiTopic {
     }
 
     /**
+     * Record a file uploaded into a draft run's artifact space and start its text extraction.
+     * Call once per file as each upload lands.
+     */
+    registerFile(runId: string, payload: RegisterAgentRunFilePayload): Promise<AgentRunFilesResponse> {
+        return this.post(`/${runId}/files`, { payload });
+    }
+
+    /** Per-file status of a draft run's attachments. */
+    getFiles(runId: string): Promise<AgentRunFilesResponse> {
+        return this.get(`/${runId}/files`);
+    }
+
+    /** Remove an attachment from a draft run, cancelling any extraction in flight. */
+    removeFile(runId: string, fileId: string): Promise<AgentRunFilesResponse> {
+        return this.del(`/${runId}/files/${fileId}`);
+    }
+
+    /** Start the conversation for a run created with `draft: true`. */
+    startDraft(runId: string, payload: StartAgentRunPayload = {}): Promise<AgentRun> {
+        return this.post(`/${runId}/start`, { payload });
+    }
+
+    /**
      * Upload an artifact to an agent run.
      * Works even before the workflow has started (pre-upload).
      *
@@ -842,46 +865,6 @@ export class AgentsApi extends ApiTopic {
      *
      * @returns The full storage path of the uploaded artifact.
      */
-    // ========================================================================
-    // Pre-turn attachments — files added before the conversation starts
-    // ========================================================================
-
-    /**
-     * Report a file as uploaded into the run's artifact space, which starts its text extraction.
-     *
-     * `uploadArtifact` only mints a signed URL and the bytes go straight to storage, so the server
-     * does not learn an upload finished unless it is told. Call this per file as each one lands
-     * rather than once at the end: extraction is the slow part, and starting it early is what the
-     * user's composing time pays for.
-     */
-    registerFile(runId: string, payload: RegisterAgentRunFilePayload): Promise<AgentRunFilesResponse> {
-        return this.post(`/${runId}/files`, { payload });
-    }
-
-    /** Per-file status for a run's pre-turn attachments — the composer's progress surface. */
-    getFiles(runId: string): Promise<AgentRunFilesResponse> {
-        return this.get(`/${runId}/files`);
-    }
-
-    /**
-     * Remove a file the user retracted before sending, cancelling any extraction in flight.
-     *
-     * Not the same as a file that failed: nothing went wrong, and the agent is never told about it.
-     */
-    removeFile(runId: string, fileId: string): Promise<AgentRunFilesResponse> {
-        return this.del(`/${runId}/files/${fileId}`);
-    }
-
-    /**
-     * Start the conversation for a run created as a draft.
-     *
-     * The prompt arrives here rather than at creation, because the run was created when the user
-     * attached their first file — before they had written anything.
-     */
-    startDraft(runId: string, payload: StartAgentRunPayload = {}): Promise<AgentRun> {
-        return this.post(`/${runId}/start`, { payload });
-    }
-
     async uploadArtifact(
         id: string,
         path: string,

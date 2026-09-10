@@ -514,9 +514,6 @@ describe('ModernAgentConversation send handling', () => {
     });
 
     describe('files attached to a draft run', () => {
-        // The run is created when the user attaches a file, so the upload and its text extraction
-        // happen while they are still typing. Before this, the run could only be created on send
-        // and the agent's first turn raced the uploads.
         const draftFile = () => new File(['pdf'], 'report.pdf', { type: 'application/pdf' });
 
         function attach(container: HTMLElement, file: File) {
@@ -614,10 +611,8 @@ describe('ModernAgentConversation send handling', () => {
             await waitFor(() => {
                 expect(draftRun.start).toHaveBeenCalledWith('draft-run-1', 'Summarise this', expect.anything());
             });
-            // The run already has the files and its first turn waits for them, so the old
-            // "please wait for Files Ready" note would be both wrong and noise in the bubble.
             expect(draftRun.start.mock.calls[0][1]).not.toContain('are being uploaded');
-            // The legacy path must not also fire: no second run, no FileUploaded signals.
+            // The upload-after-start path must not also fire.
             expect(startWorkflow).not.toHaveBeenCalled();
             expect(mocks.sendSignal).not.toHaveBeenCalledWith(expect.anything(), 'FileUploaded', expect.anything());
         });
@@ -711,9 +706,7 @@ describe('ModernAgentConversation send handling', () => {
         });
 
         it('does not re-upload a file forever when the draft run is unavailable', async () => {
-            // The upload effect used to key off the same state its outcome wrote. When the
-            // no-draft path resolved by clearing the file's entry, the next render saw the file as
-            // new again and picked it up — an infinite render loop that hung the composer.
+            // Regression: the upload effect re-picked a file whose entry had been cleared.
             const draftRun = {
                 create: vi.fn().mockResolvedValue(undefined),
                 start: vi.fn(),
@@ -738,9 +731,7 @@ describe('ModernAgentConversation send handling', () => {
         });
 
         it('keeps polling while a file is still extracting', async () => {
-            // A poll that found nothing changed used to return the same state reference, so an
-            // effect keyed on that state never ran again and progress stopped at the first quiet
-            // tick — chips sat on "Processing" forever while the server had long finished.
+            // Regression: an unchanged poll returned the same state and the effect never ran again.
             const draftRun = {
                 create: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
                 start: vi.fn(),
@@ -767,7 +758,6 @@ describe('ModernAgentConversation send handling', () => {
             attach(container, draftFile());
             await waitFor(() => expect(mocks.registerFile).toHaveBeenCalled());
 
-            // Nothing changes between polls, which is exactly the case that used to stop it.
             await waitFor(() => expect(mocks.getFiles.mock.calls.length).toBeGreaterThanOrEqual(2), {
                 timeout: 6000,
             });

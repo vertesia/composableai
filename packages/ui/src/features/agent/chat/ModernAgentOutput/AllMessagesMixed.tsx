@@ -3015,8 +3015,7 @@ function AllMessagesMixedComponent({
         isAgentWorking,
         incompleteStreaming.length > 0,
     );
-    // The outstanding attachments as rows under the waiting heading, reusing the tool-timeline
-    // vocabulary so this reads like every other expandable activity in the view.
+    // Outstanding attachments as rows under the waiting heading.
     const attachmentDetailItems = useMemo((): SummaryToolDetailItem[] | undefined => {
         if (!attachmentPreparation || attachmentPreparation.outstanding.length === 0) return undefined;
         return attachmentPreparation.outstanding.map((file): SummaryToolDetailItem => {
@@ -3763,12 +3762,8 @@ function AllMessagesMixedComponent({
                             {/* Activity fallback - shown before any tool/thought message has arrived */}
                             {showActivityFallback && !showInitialRequestWaitingCard && (
                                 <SummaryActivityRow
-                                    // Remounts when the attachment rows first arrive, so the list
-                                    // starts expanded rather than hidden behind a chevron the user
-                                    // has no reason to suspect.
+                                    // Remounts when attachment rows first arrive, so the list starts expanded.
                                     key={attachmentDetailItems ? 'attachments' : 'activity'}
-                                    // The fallback label says only "Preparing". When the run can
-                                    // say what it is waiting on, that is the better heading.
                                     label={attachmentPreparation?.label ?? summaryActivityFallbackLabel}
                                     status="running"
                                     timestamp={activityStartedTimestamp}
