@@ -178,6 +178,39 @@ describe('ModernAgentOutput summary - ask_user review content', () => {
         expect(items[2]).toEqual({ type: 'message', message: question });
     });
 
+    it.each([
+        { tools: [{ name: 'ask_user' }] },
+        { tools: [{ tool: 'ask_user' }] },
+        { tool: 'ask_user' },
+        { tools: [null, 42, {}, 'search_documents', { name: 'ask_user' }] },
+    ])('keeps review prose visible for supported tool metadata: %j', (details) => {
+        const preamble = makeMessage({
+            timestamp: 2000,
+            message: draft,
+            // Exercise legacy wire shapes outside the current string[] contract.
+            details: { display_role: 'tool_preamble', ...details } as unknown as AgentMessage['details'],
+        });
+        expect(buildSummaryConversationItems([preamble, tool, question], false)[0]).toEqual({
+            type: 'message',
+            message: preamble,
+        });
+    });
+
+    it.each([
+        { display_role: 'tool_preamble', tools: [null, {}, { name: 'search_documents' }] },
+        { tool: 'ask_user', tool_status: 'running' },
+        { tool: 'think' },
+    ])('keeps non-review activity collapsed: %j', (details) => {
+        const activity = makeMessage({
+            message: 'Working on the draft',
+            details: details as unknown as AgentMessage['details'],
+        });
+        expect(buildSummaryConversationItems([activity, question], false)[0]).toMatchObject({
+            type: 'work',
+            messages: [activity],
+        });
+    });
+
     it.each([false, true])('keeps reconstructed review streams visible with isComplete=%s', (isComplete) => {
         const messages = buildSummaryDisplayMessages(
             [tool, question],
