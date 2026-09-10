@@ -10,7 +10,15 @@ import type { ProcessRunType } from './agent-run.js';
 /**
  * Represents a scheduled agent execution configuration.
  */
+export type ScheduleRunAs = { mode: 'creator' } | { mode: 'user'; user_id: string };
+
 export interface AgentSchedule {
+    owner?: string;
+    run_as?: ScheduleRunAs;
+    visibility?: 'project' | 'private';
+    delegation_grant_id?: string;
+    delegation_expires_at?: string | null;
+    output_collection_id?: string;
     /** Unique identifier for the schedule */
     id: string;
 
@@ -95,6 +103,9 @@ export interface AgentSchedule {
 }
 
 interface CreateSchedulePayloadBase {
+    run_as: ScheduleRunAs;
+    delegation_expires_at?: string | null;
+    request_id?: string;
     /** Human-readable name for the schedule */
     name: string;
 
@@ -152,12 +163,12 @@ export type CreateSchedulePayload = CreateAgentSchedulePayload | CreateProcessSc
 /**
  * Payload for updating an existing schedule.
  *
- * Deliberately narrower than the create payload. The inputs a schedule executes with — `vars` for
- * agents, `context` and `run_type` for processes, and `task_queue` for both — are baked into the
- * scheduler's job specification when the schedule is created, and update does not re-publish it.
- * Accepting them here would record a change that never takes effect. Recreate the schedule instead.
+ * Agent vars and delegation changes re-publish the execution specification. Process context,
+ * run_type, and task queues remain fixed at creation.
  */
 export interface UpdateSchedulePayload {
+    run_as?: ScheduleRunAs;
+    delegation_expires_at?: string | null;
     /** Updated name */
     name?: string;
 
@@ -183,25 +194,28 @@ export interface UpdateSchedulePayload {
 /**
  * Summary information for listing schedules.
  */
-export interface ScheduleListItem {
-    id: string;
-    name: string;
-    description?: string;
-    target?: 'agent' | 'process';
-    interaction?: string;
-    interaction_name?: string;
-    process?: string;
-    /** Process schedules only. `context` is omitted here for the same reason `vars` is: it is
-     *  caller-sized payload, not summary information. Fetch the schedule to see it. */
-    run_type?: ProcessRunType;
-    cron_expression: string;
-    timezone?: string;
-    enabled: boolean;
-    last_run_at?: Date;
-    next_run_at?: Date;
-    created_by: string;
-    updated_at: Date;
-}
+export type ScheduleListItem = Pick<
+    AgentSchedule,
+    | 'owner'
+    | 'run_as'
+    | 'delegation_grant_id'
+    | 'delegation_expires_at'
+    | 'id'
+    | 'name'
+    | 'description'
+    | 'target'
+    | 'process'
+    | 'run_type'
+    | 'interaction'
+    | 'interaction_name'
+    | 'cron_expression'
+    | 'timezone'
+    | 'enabled'
+    | 'last_run_at'
+    | 'next_run_at'
+    | 'created_by'
+    | 'updated_at'
+>;
 
 /**
  * Extended schedule information including Temporal execution details.

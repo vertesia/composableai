@@ -12,6 +12,7 @@ export const OAUTH_STANDARD_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, O
  * hand out secret material, or are internal to the platform's own consoles.
  */
 const NON_OAUTH_PERMISSION_SCOPES = new Set<Permission>([
+    Permission.schedule_delegate,
     Permission.api_key_create,
     Permission.api_key_update,
     Permission.api_key_delete,

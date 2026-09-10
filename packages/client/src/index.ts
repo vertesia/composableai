@@ -3,6 +3,7 @@ import type { AsyncExecutionResult } from '@vertesia/common';
 export type { EnableEnvironmentModelPayload, OrphanedAppInstallation } from '@vertesia/common';
 export { getOAuthPermissionScopes, Permission } from '@vertesia/common';
 export * from './client.js';
+export { default as DelegationGrantsApi } from './DelegationGrantsApi.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';
 export * from './InteractionOutput.js';

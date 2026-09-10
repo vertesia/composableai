@@ -343,6 +343,7 @@ import {
     SemanticColumnTypeSchema,
     UpdateSchemaPayloadSchema,
 } from './data-store.js';
+import { CreateDelegationGrantPayloadSchema, DelegationGrantArraySchema, DelegationGrantSchema } from './delegation.js';
 import {
     DocAnalyzeRunStatusResponseSchema,
     DocAnalyzerProgressSchema,
@@ -2247,7 +2248,13 @@ const CONTENT_QUERY_SCHEMAS = {
     ContentQueryResult: ContentQuerySchemas.ContentQueryResultSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const DELEGATION_SCHEMAS = {
+    CreateDelegationGrantPayload: CreateDelegationGrantPayloadSchema,
+    DelegationGrant: DelegationGrantSchema,
+    DelegationGrantArray: DelegationGrantArraySchema,
+};
 const API_SCHEMA_GROUPS = [
+    DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
     OAUTH_SCHEMAS,
@@ -2310,7 +2317,8 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
+type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
+    typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
     typeof OAUTH_SCHEMAS &
     typeof ENVIRONMENT_SCHEMAS &
@@ -2381,6 +2389,8 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'CreateDelegationGrantPayload',
+    'DelegationGrant',
     // Process Test Lab request, fixture, and result contracts.
     'ProcessTestVirtualActor',
     'ProcessTestFixtureResult',
