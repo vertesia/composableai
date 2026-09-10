@@ -8,9 +8,10 @@
  *   :::note / :::warning / :::tip / :::caution / :::important → callout <div>s
  *   :::name             → <div class="md-name"> (generic fallback)
  */
-import { type VisitorResult, visit } from 'unist-util-visit';
+import { SKIP, type VisitorResult, visit } from 'unist-util-visit';
 
-type RemarkTree = Parameters<typeof visit>[0];
+type RemarkNode = Parameters<typeof visit>[0];
+type RemarkTree = RemarkNode & { children: RemarkNode[] };
 
 // Callout types mapped to CSS modifier classes (semantic design system)
 const CALLOUT_TYPES: Record<string, string> = {
@@ -41,9 +42,24 @@ interface DirectiveNode {
 }
 
 export function remarkDirectiveHandler() {
-    return (tree: RemarkTree) => {
-        visit(tree, (node): VisitorResult => {
-            if (node.type !== 'containerDirective' && node.type !== 'leafDirective' && node.type !== 'textDirective') {
+    return (tree: RemarkTree, file: { toString(): string }) => {
+        visit(tree, (node, index, parent): VisitorResult => {
+            if (node.type === 'textDirective') {
+                // Only block directives are supported. The parser also recognizes ordinary
+                // colon text such as the minutes in 9:15; preserve its exact source spelling.
+                const start = node.position?.start.offset;
+                const end = node.position?.end.offset;
+                if (parent && index !== undefined && start !== undefined && end !== undefined) {
+                    const textNode = {
+                        type: 'text',
+                        value: file.toString().slice(start, end),
+                        position: node.position,
+                    };
+                    parent.children[index] = textNode;
+                }
+                return SKIP;
+            }
+            if (node.type !== 'containerDirective' && node.type !== 'leafDirective') {
                 return;
             }
 

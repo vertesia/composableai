@@ -475,11 +475,15 @@ function getTableColumnLayouts(node?: Element): AgentMarkdownTableColumnLayout[]
         return clampNumber(avgLength * 0.7 + maxLength * 0.25 + longestTokenLength * 0.45, 18, 90);
     });
 
-    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    const totalWeight = weights.reduce((sum, weight, index) => sum + (compactColumns.has(index) ? 0 : weight), 0);
     if (totalWeight <= 0) return [];
 
     return weights.map((weight, columnIndex) => {
-        const width = `${((weight / totalWeight) * 100).toFixed(3)}%`;
+        const share = weight / totalWeight;
+        // Reserve actual space for short values and headers before distributing prose columns.
+        const width = compactColumns.has(columnIndex)
+            ? '8rem'
+            : `calc(${(share * 100).toFixed(3)}% - ${(compactColumns.size * 8 * share).toFixed(3)}rem)`;
         return {
             key: `agent-markdown-table-column-${columnIndex}`,
             compact: compactColumns.has(columnIndex),
@@ -500,24 +504,30 @@ function AgentMarkdownTable({
     const columnLayouts = getTableColumnLayouts(node);
 
     return (
-        <table {...props} className={className}>
-            {columnLayouts.length > 0 ? (
-                <colgroup>
-                    {columnLayouts.map((columnLayout) => (
-                        <col
-                            key={columnLayout.key}
-                            className={columnLayout.compact ? 'agent-markdown-table-compact-col' : undefined}
-                            style={
-                                {
-                                    '--agent-markdown-table-column-width': columnLayout.width,
-                                } as React.CSSProperties
-                            }
-                        />
-                    ))}
-                </colgroup>
-            ) : null}
-            {children}
-        </table>
+        <div className="overflow-x-auto">
+            <table
+                {...props}
+                className={className}
+                style={{ minWidth: `${columnLayouts.length * 8}rem`, ...props.style }}
+            >
+                {columnLayouts.length > 0 ? (
+                    <colgroup>
+                        {columnLayouts.map((columnLayout) => (
+                            <col
+                                key={columnLayout.key}
+                                className={columnLayout.compact ? 'agent-markdown-table-compact-col' : undefined}
+                                style={
+                                    {
+                                        '--agent-markdown-table-column-width': columnLayout.width,
+                                    } as React.CSSProperties
+                                }
+                            />
+                        ))}
+                    </colgroup>
+                ) : null}
+                {children}
+            </table>
+        </div>
     );
 }
 
@@ -3334,9 +3344,6 @@ function AllMessagesMixedComponent({
                 }
                 .agent-markdown col {
                     width: var(--agent-markdown-table-column-width);
-                }
-                .agent-markdown .agent-markdown-table-compact-col {
-                    width: clamp(4.75rem, var(--agent-markdown-table-column-width), 7rem);
                 }
                 .agent-markdown tr:last-child td {
                     border-bottom: 0;
