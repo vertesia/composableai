@@ -452,7 +452,7 @@ importers:
     devDependencies:
       '@hono/node-server':
         specifier: ^2.1.1
-        version: 2.1.1(hono@4.13.5)
+        version: 2.1.1(hono@4.12.34)
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -5254,6 +5254,10 @@ packages:
     resolution: {integrity: sha512-EQfezRg0NCZGNlhlDR3Evrw1FVL2G3LhU7EgPoxufQKruNBSYA8MiRPHeWbU+36o+Fhel0wMwM+sLEiBAlNLJA==}
     engines: {node: '>=10.0.0'}
 
+  hono@4.12.34:
+    resolution: {integrity: sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA==}
+    engines: {node: '>=16.9.0'}
+
   hono@4.13.5:
     resolution: {integrity: sha512-O6+/eCYRkzzzy0rPWwKLiGBR1nFuUPZynnwjxN1MBA62NNqbT0wQEzQyK2gSO5yDIDB336sXQleAhOHrzlYyKw==}
     engines: {node: '>=16.9.0'}
@@ -8165,6 +8169,10 @@ snapshots:
   '@hono/node-server@2.0.10(hono@4.13.5)':
     dependencies:
       hono: 4.13.5
+
+  '@hono/node-server@2.1.1(hono@4.12.34)':
+    dependencies:
+      hono: 4.12.34
 
   '@hono/node-server@2.1.1(hono@4.13.5)':
     dependencies:
@@ -11277,6 +11285,8 @@ snapshots:
       space-separated-tokens: 2.0.2
 
   heap-js@2.7.1: {}
+
+  hono@4.12.34: {}
 
   hono@4.13.5: {}
 
