@@ -3737,7 +3737,9 @@ function AllMessagesMixedComponent({
                             {/* Activity fallback - shown before any tool/thought message has arrived */}
                             {showActivityFallback && !showInitialRequestWaitingCard && (
                                 <SummaryActivityRow
-                                    label={summaryActivityFallbackLabel}
+                                    // The fallback label says only "Preparing". When the caller
+                                    // knows what is being waited on, that is the better label.
+                                    label={waitingDetail ?? summaryActivityFallbackLabel}
                                     status="running"
                                     timestamp={activityStartedTimestamp}
                                     showElapsed
