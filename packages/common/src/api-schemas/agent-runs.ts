@@ -988,6 +988,14 @@ export const AgentRunArtifactQuerySchema = z
 
 export const AgentRunDetailsQuerySchema = z
     .object({
+        from: z
+            .string()
+            .max(12000)
+            .meta({
+                description:
+                    'Opaque history cursor from next_from; requires include_history. Invalid or expired cursors return a snapshot.',
+            })
+            .optional(),
         include_history: z.boolean().optional(),
         hydrate_payloads: z.boolean().optional(),
     })
