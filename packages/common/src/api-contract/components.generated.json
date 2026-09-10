@@ -33665,6 +33665,11 @@
   "AgentRunDetailsQuery": {
     "type": "object",
     "properties": {
+      "from": {
+        "type": "string",
+        "maxLength": 12000,
+        "description": "Opaque history cursor from next_from; requires include_history. Invalid or expired cursors return a snapshot."
+      },
       "include_history": {
         "type": "boolean"
       },
@@ -35288,6 +35293,10 @@
   "AgentTask": {
     "type": "object",
     "properties": {
+      "history_id": {
+        "type": "string",
+        "description": "Stable observability row identity across refreshes."
+      },
       "taskType": {
         "type": "string",
         "enum": [
@@ -35482,6 +35491,18 @@
           "type": {
             "type": "string",
             "const": "agent"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "snapshot",
+              "delta"
+            ],
+            "description": "Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows."
+          },
+          "next_from": {
+            "type": "string",
+            "description": "Pass as from on the next refresh with the same options. Absence disables incremental refresh."
           },
           "agentTasks": {
             "type": "array",
