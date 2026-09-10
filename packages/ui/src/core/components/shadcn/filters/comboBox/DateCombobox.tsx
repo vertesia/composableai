@@ -91,7 +91,7 @@ export const DateCombobox = ({
 
     return (
         <Popover _open={open} onOpenChange={setOpen}>
-            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition">
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-info shrink-0 transition">
                 <div className="flex gap-1.5 items-center min-h-[20px]">{getDisplayText()}</div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-4} sideOffset={6}>
@@ -137,7 +137,7 @@ export const DateCombobox = ({
                                                         return 'bg-primary text-primary-foreground rounded-e-md font-semibold';
                                                     }
                                                     if (currentDate > startDate && currentDate < endDate) {
-                                                        return 'bg-primary/20 text-primary font-medium';
+                                                        return 'bg-info text-info font-medium';
                                                     }
                                                 } else {
                                                     // Only start date selected

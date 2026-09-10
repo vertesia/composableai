@@ -678,7 +678,7 @@ export function DocumentUploadModal({
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="flex flex-col items-center">
                                             <div className="flex items-center gap-2">
-                                                <UploadIcon className="size-5 text-primary" />
+                                                <UploadIcon className="size-5 text-info" />
                                                 <span className="font-medium">{t('upload.new')}</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toCreate}</div>
