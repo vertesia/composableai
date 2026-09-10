@@ -12815,7 +12815,7 @@
       },
       "wait_for_attached_files": {
         "type": "boolean",
-        "description": "The run has files attached before its first turn, uploaded into its artifact space while the user was composing. The first model turn waits until every one has finished processing and then opens with them in hand. Start-only — it describes work in flight at promotion and is dropped when the run continues as new."
+        "description": "Wait for the run's pre-turn attachments to finish processing before the first model turn. Start-only; dropped when the run continues as new."
       },
       "excluded_tools": {
         "type": "array",
@@ -32567,7 +32567,7 @@
       },
       "draft": {
         "type": "boolean",
-        "description": "Create the run record and its artifact space without starting the conversation. A composer creates a draft when the user attaches their first file, uploads into it while they type, and promotes it with StartAgentRun when they send. Without attachments there is no reason to create a run early, so an ordinary conversation never uses this."
+        "description": "Create the run and its artifact space without starting the conversation. Attach files with RegisterAgentRunFile, then start it with StartAgentRun."
       },
       "content_type": {
         "$ref": "#/components/schemas/ContentObjectTypeRef",
@@ -34035,11 +34035,11 @@
       },
       "started_at": {
         "type": "number",
-        "description": "When the file was registered on the run. Required because a progress snapshot of these files is posted to the run timeline, which validates it against ConversationFile."
+        "description": "When the file was registered on the run, in epoch milliseconds."
       },
       "status": {
         "$ref": "#/components/schemas/FileProcessingStatus",
-        "description": "Lifecycle of this attachment. Shares the vocabulary of a file attached mid-conversation, so a composer renders one shape either side of the run starting."
+        "description": "Processing status, using the same vocabulary as a file attached mid-conversation."
       },
       "text_extracted": {
         "type": "boolean",
@@ -34072,7 +34072,7 @@
       },
       "settled": {
         "type": "boolean",
-        "description": "True once no attachment is still uploading or processing. A run may be started before this; its first turn waits."
+        "description": "True once no attachment is still uploading or processing."
       }
     },
     "required": [
@@ -34106,7 +34106,7 @@
       "artifact_path"
     ],
     "additionalProperties": false,
-    "description": "Report a file as uploaded into the run's artifact space, which starts its text extraction. Called once per file as its bytes land, so extraction overlaps the next upload and the user's typing."
+    "description": "Record a file uploaded into a draft run's artifact space and start its text extraction."
   },
   "StartAgentRunPayload": {
     "type": "object",
@@ -34121,7 +34121,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "Promote a draft run to a working conversation. Its first turn waits for any attachment still processing."
+    "description": "Start the conversation for a run created as a draft. The first turn waits for any attachment still processing."
   },
   "WorkflowQueryResult": {
     "$ref": "#/components/schemas/JSONValue"
