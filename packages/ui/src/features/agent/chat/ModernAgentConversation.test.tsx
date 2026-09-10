@@ -622,6 +622,57 @@ describe('ModernAgentConversation send handling', () => {
             expect(mocks.sendSignal).not.toHaveBeenCalledWith(expect.anything(), 'FileUploaded', expect.anything());
         });
 
+        it('waits for an upload still in flight before promoting the draft', async () => {
+            let finishUpload: () => void = () => {};
+            mocks.uploadArtifact.mockReturnValue(
+                new Promise<void>((resolve) => {
+                    finishUpload = resolve;
+                }),
+            );
+            const draftRun = {
+                create: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
+                start: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),
+            };
+            mocks.registerFile.mockResolvedValue({
+                files: [
+                    {
+                        id: 'file-1',
+                        name: 'report.pdf',
+                        content_type: 'application/pdf',
+                        artifact_path: 'files/report.pdf',
+                        status: 'processing',
+                    },
+                ],
+                settled: false,
+            });
+            mockStreamState({
+                messages: [],
+                isCompleted: false,
+                initialHistoryStatus: 'empty',
+                agentRunStatus: 'RUNNING',
+            });
+
+            const { container } = renderWithProviders(
+                <ModernAgentConversation startWorkflow={vi.fn()} draftRun={draftRun} hideHeader initialMessage="" />,
+            );
+            attach(container, draftFile());
+            await waitFor(() => expect(mocks.uploadArtifact).toHaveBeenCalled());
+
+            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Summarise this' } });
+            fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+
+            // A registration after the run has started is refused, so send must not outrun it.
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            expect(draftRun.start).not.toHaveBeenCalled();
+            expect(mocks.registerFile).not.toHaveBeenCalled();
+
+            finishUpload();
+            await waitFor(() => expect(mocks.registerFile).toHaveBeenCalled());
+            await waitFor(() => {
+                expect(draftRun.start).toHaveBeenCalledWith('draft-run-1', 'Summarise this', expect.anything());
+            });
+        });
+
         it('tells the run to forget a file the user retracted', async () => {
             const draftRun = {
                 create: vi.fn().mockResolvedValue({ agent_run_id: 'draft-run-1' }),

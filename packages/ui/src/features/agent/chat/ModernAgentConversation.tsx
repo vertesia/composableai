@@ -970,6 +970,9 @@ function StartWorkflowView({
     // `stagedUploads`, because an upload that resolves by REMOVING its entry would otherwise look
     // like a new file to the next render and be picked up again, forever.
     const handledKeysRef = useRef<Set<string>>(new Set());
+    // Uploads not yet registered on the run. Send waits for these: a registration after the run
+    // has started is refused.
+    const uploadsInFlightRef = useRef<Map<string, Promise<void>>>(new Map());
     const usingDraftRun = !!draftRun && canStageFiles;
     // A boolean, so a poll that changes nothing does not change this effect's dependency.
     const hasUnsettledUploads = Object.values(stagedUploads).some(
@@ -1198,7 +1201,11 @@ function StartWorkflowView({
             return next;
         });
         for (const file of pending) {
-            void uploadStagedFile(file);
+            const key = stagedFileKey(file);
+            const upload = uploadStagedFile(file).finally(() => {
+                if (uploadsInFlightRef.current.get(key) === upload) uploadsInFlightRef.current.delete(key);
+            });
+            uploadsInFlightRef.current.set(key, upload);
         }
     }, [usingDraftRun, stagedFiles, uploadStagedFile]);
 
@@ -1310,6 +1317,10 @@ function StartWorkflowView({
             // nothing to warn the agent about. Only the legacy path — where the run is created
             // here and the uploads follow it — still needs the warning, and it never worked
             // anyway: the agent was told to wait and went ahead regardless.
+            if (usingDraftRun) {
+                await draftRunRef.current.creating;
+                await Promise.allSettled(uploadsInFlightRef.current.values());
+            }
             const promotingDraft = usingDraftRun && !!draftRunRef.current.id;
             if (canStageFiles && stagedFiles.length > 0 && !promotingDraft) {
                 const fileNames = stagedFiles.map((f) => f.name).join(', ');
@@ -1406,6 +1417,7 @@ function StartWorkflowView({
                 draftRunRef.current = { id: null, creating: null };
                 artifactPathsRef.current = new Set();
                 handledKeysRef.current = new Set();
+                uploadsInFlightRef.current = new Map();
             }
 
             // Clear attachments after successful start
