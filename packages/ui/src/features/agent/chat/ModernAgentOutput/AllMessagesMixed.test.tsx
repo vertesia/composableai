@@ -1144,12 +1144,36 @@ describe('AllMessagesMixed summary view', () => {
 
         const columns = Array.from(screen.getByRole('table').querySelectorAll('col'));
         const contentWidths = [columns[0], columns[2]].map((column) =>
-            Number.parseFloat(column.style.getPropertyValue('--agent-markdown-table-column-width')),
+            Number.parseFloat(
+                column.style.getPropertyValue('--agent-markdown-table-column-width').replace('calc(', ''),
+            ),
         );
 
         expect(columns).toHaveLength(3);
         expect(columns[1]?.classList.contains('agent-markdown-table-compact-col')).toBe(true);
         expect(contentWidths[1]).toBeGreaterThan(contentWidths[0]);
+    });
+
+    it('reserves readable widths for agenda columns beside long descriptions', () => {
+        renderSummary([
+            makeMessage({
+                type: AgentMessageType.ANSWER,
+                message: [
+                    '| Time | Duration | Topic | Facilitator |',
+                    '| --- | --- | --- | --- |',
+                    '| 9:15 a.m. | 90 min | Advanced capabilities: sub-agents, workstreams, skills, tools and human review | Vertesia |',
+                    '| 10:45 a.m. | 15 min | Break | All |',
+                ].join('\n'),
+            }),
+        ]);
+
+        const table = screen.getByRole('table');
+        const widths = Array.from(table.querySelectorAll('col')).map((column) =>
+            column.style.getPropertyValue('--agent-markdown-table-column-width'),
+        );
+        expect(widths).toEqual(['8rem', '8rem', 'calc(100.000% - 24.000rem)', '8rem']);
+        expect(table.style.minWidth).toBe('32rem');
+        expect(table.parentElement?.classList.contains('overflow-x-auto')).toBe(true);
     });
 
     it('merges legacy activity progress rows with different tool run ids', () => {
