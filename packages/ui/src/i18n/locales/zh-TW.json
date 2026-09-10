@@ -210,6 +210,7 @@
     "agent.plan": "計劃",
     "agent.planProgress": "計劃進度",
     "agent.plansWillAppear": "當代理建立計劃時，將在此處顯示",
+    "agent.attachmentsPreparing": "{{total}} 個附件中已備妥 {{ready}} 個 — 仍在讀取 {{names}}",
     "agent.preparing": "準備中",
     "agent.printDialogDescription": "使用瀏覽器的列印對話框儲存為 PDF",
     "agent.processing": "處理中...",

@@ -49,6 +49,7 @@ import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
+import { useAttachmentPreparation } from './hooks/useAttachmentPreparation';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
 import { useFileProcessing } from './hooks/useFileProcessing.js';
 import { ImageLightboxProvider } from './ImageLightbox';
@@ -2148,6 +2149,10 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
     }, [isAgentWorking, onAgentWorkingChange]);
+    // The first turn of a run started with attachments waits for their text to be extracted. The
+    // workflow says so only into the activity stream, which the summary view buckets away, so the
+    // waiting indicator reads the run's file states itself. Settles to undefined and stops polling.
+    const waitingDetail = useAttachmentPreparation(client, agentRunId, isAgentWorking);
     const pendingRequestInputMessage = useMemo(() => {
         const answeredRequestInputKeys = new Set<string>();
         for (const message of displayedMessages) {
@@ -3140,6 +3145,7 @@ function ModernAgentConversationInner({
             ) : (
                 <AllMessagesMixed
                     messages={renderedMessages}
+                    waitingDetail={waitingDetail}
                     workstreamSourceMessages={renderedWorkstreamSourceMessages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                     isCompleted={displayedIsCompleted}

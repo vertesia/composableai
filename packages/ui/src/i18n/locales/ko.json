@@ -210,6 +210,7 @@
     "agent.plan": "계획",
     "agent.planProgress": "계획 진행률",
     "agent.plansWillAppear": "에이전트가 계획을 생성하면 여기에 표시됩니다",
+    "agent.attachmentsPreparing": "첨부 파일 {{total}}개 중 {{ready}}개 준비 완료 — {{names}} 읽는 중",
     "agent.preparing": "준비 중",
     "agent.printDialogDescription": "브라우저의 인쇄 대화 상자를 사용하여 PDF로 저장하세요",
     "agent.processing": "처리 중...",

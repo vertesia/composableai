@@ -211,6 +211,7 @@
     "agent.plan": "Plan",
     "agent.planProgress": "Progreso del plan",
     "agent.plansWillAppear": "Los planes aparecerán aquí cuando el agente cree uno",
+    "agent.attachmentsPreparing": "{{ready}} de {{total}} archivos adjuntos listos: aún se está leyendo {{names}}",
     "agent.preparing": "Preparando",
     "agent.printDialogDescription": "Use el diálogo de impresión de su navegador para guardar como PDF",
     "agent.processing": "Procesando...",

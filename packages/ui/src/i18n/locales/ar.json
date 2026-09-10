@@ -218,6 +218,7 @@
     "agent.plan": "خطة",
     "agent.planProgress": "تقدم الخطة",
     "agent.plansWillAppear": "ستظهر الخطط هنا عندما يقوم الوكيل بإنشاء واحدة",
+    "agent.attachmentsPreparing": "{{ready}} من {{total}} من المرفقات جاهزة — ما زال يجري قراءة {{names}}",
     "agent.preparing": "جارٍ التحضير",
     "agent.printDialogDescription": "استخدم مربع حوار الطباعة في متصفحك للحفظ كـ PDF",
     "agent.processing": "جارٍ المعالجة...",

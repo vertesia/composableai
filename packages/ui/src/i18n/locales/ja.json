@@ -210,6 +210,7 @@
     "agent.plan": "プラン",
     "agent.planProgress": "プランの進捗",
     "agent.plansWillAppear": "エージェントがプランを作成するとここに表示されます",
+    "agent.attachmentsPreparing": "{{total}} 件中 {{ready}} 件の添付ファイルの準備が完了 — {{names}} を読み取り中",
     "agent.preparing": "準備中",
     "agent.printDialogDescription": "ブラウザの印刷ダイアログを使用してPDFとして保存してください",
     "agent.processing": "処理中...",

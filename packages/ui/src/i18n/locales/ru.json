@@ -214,6 +214,7 @@
     "agent.plan": "План",
     "agent.planProgress": "Прогресс плана",
     "agent.plansWillAppear": "Планы появятся здесь, когда агент создаст один",
+    "agent.attachmentsPreparing": "Готово вложений: {{ready}} из {{total}} — ещё читается {{names}}",
     "agent.preparing": "Подготовка",
     "agent.printDialogDescription": "Используйте диалог печати браузера для сохранения в PDF",
     "agent.processing": "Обработка...",

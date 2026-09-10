@@ -976,10 +976,13 @@ function InitialRequestMessage({
 
 function InitialRequestWaitingCard({
     label,
+    detail,
     timestamp,
     className,
 }: {
     label: string;
+    /** What is actually being waited on. Replaces the rotating filler when the caller knows. */
+    detail?: string;
     timestamp?: number | string;
     className?: string;
 }) {
@@ -996,7 +999,9 @@ function InitialRequestWaitingCard({
                             <span className="font-medium">{label}</span>
                             <span className="ms-2 text-muted/75">for {formatDuration(elapsed)}</span>
                         </div>
-                        <div className="mt-1 truncate text-muted/80">{ThinkingMessages[thinkingMessageIndex]}</div>
+                        <div className="mt-1 truncate text-muted/80">
+                            {detail ?? ThinkingMessages[thinkingMessageIndex]}
+                        </div>
                     </div>
                 </div>
                 <div className="mt-3 ps-6">
@@ -2494,6 +2499,8 @@ interface AllMessagesMixedProps {
     showInitialRequest?: boolean;
     /** Message types to exclude from the conversation view */
     hiddenMessageTypes?: AgentMessageType[];
+    /** Why the first turn has not started yet, shown on the waiting indicator. */
+    waitingDetail?: string;
     /** Test/playback mode: keep the current scroll position while the rendered message slice changes. */
     disableAutoScroll?: boolean;
     /** Whether REQUEST_INPUT messages render their active controls in the transcript. */
@@ -2535,6 +2542,7 @@ function AllMessagesMixedComponent({
     initialRequestTemplate,
     showInitialRequest,
     hiddenMessageTypes,
+    waitingDetail,
     disableAutoScroll = false,
     renderRequestInputControls = true,
     activeWorkstream: controlledActiveWorkstream,
@@ -3370,6 +3378,7 @@ function AllMessagesMixedComponent({
                     <div className="flex-1 px-2 py-6 sm:px-4">
                         <InitialRequestWaitingCard
                             label={t('agent.preparing')}
+                            detail={waitingDetail}
                             timestamp={fallbackWorkingStartedAtRef.current}
                             className={workingIndicatorClassName}
                         />
@@ -3431,6 +3440,7 @@ function AllMessagesMixedComponent({
                     {showInitialRequestWaitingCard && (
                         <InitialRequestWaitingCard
                             label={summaryActivityFallbackLabel}
+                            detail={waitingDetail}
                             timestamp={activityStartedTimestamp}
                             className={workingIndicatorClassName}
                         />

@@ -210,6 +210,7 @@
     "agent.plan": "Plan",
     "agent.planProgress": "Plan ilerlemesi",
     "agent.plansWillAppear": "Ajan bir plan oluşturduğunda burada görünecek",
+    "agent.attachmentsPreparing": "{{total}} ekin {{ready}} tanesi hazır – {{names}} hâlâ okunuyor",
     "agent.preparing": "Hazırlanıyor",
     "agent.printDialogDescription": "PDF olarak kaydetmek için tarayıcınızın yazdırma iletişim kutusunu kullanın",
     "agent.processing": "İşleniyor...",
