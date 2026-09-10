@@ -133,6 +133,41 @@ describe('AllMessagesMixed summary view', () => {
         vi.useRealTimers();
     });
 
+    it('keeps the draft accompanying ask_user visible outside collapsed work', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1000,
+                message: '## Draft agenda\n9:00 Welcome\n9:15 Platform foundations',
+                details: {
+                    event_class: 'activity',
+                    display_role: 'tool_preamble',
+                    tools: ['ask_user'],
+                    activity_group_id: 'review-1',
+                    streamed: true,
+                },
+            }),
+            makeMessage({
+                timestamp: 2000,
+                message: 'Waiting for review...',
+                details: {
+                    tool: 'ask_user',
+                    tool_status: 'running',
+                    activity_group_id: 'review-1',
+                },
+            }),
+            makeMessage({
+                timestamp: 3000,
+                type: AgentMessageType.REQUEST_INPUT,
+                message: 'Does this agenda work?',
+                details: { tool: 'ask_user', request_id: 'ask-1' },
+            }),
+        ]);
+
+        expect(screen.getByRole('heading', { name: 'Draft agenda' })).not.toBeNull();
+        expect(screen.getByText('Does this agenda work?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Worked\s*for/ }).getAttribute('aria-expanded')).toBe('false');
+    });
+
     it('renders delivery status on user bubbles in summary view', () => {
         renderSummary([
             makeMessage({
@@ -1208,12 +1243,36 @@ describe('AllMessagesMixed summary view', () => {
 
         const columns = Array.from(screen.getByRole('table').querySelectorAll('col'));
         const contentWidths = [columns[0], columns[2]].map((column) =>
-            Number.parseFloat(column.style.getPropertyValue('--agent-markdown-table-column-width')),
+            Number.parseFloat(
+                column.style.getPropertyValue('--agent-markdown-table-column-width').replace('calc(', ''),
+            ),
         );
 
         expect(columns).toHaveLength(3);
         expect(columns[1]?.classList.contains('agent-markdown-table-compact-col')).toBe(true);
         expect(contentWidths[1]).toBeGreaterThan(contentWidths[0]);
+    });
+
+    it('reserves readable widths for agenda columns beside long descriptions', () => {
+        renderSummary([
+            makeMessage({
+                type: AgentMessageType.ANSWER,
+                message: [
+                    '| Time | Duration | Topic | Facilitator |',
+                    '| --- | --- | --- | --- |',
+                    '| 9:15 a.m. | 90 min | Advanced capabilities: sub-agents, workstreams, skills, tools and human review | Vertesia |',
+                    '| 10:45 a.m. | 15 min | Break | All |',
+                ].join('\n'),
+            }),
+        ]);
+
+        const table = screen.getByRole('table');
+        const widths = Array.from(table.querySelectorAll('col')).map((column) =>
+            column.style.getPropertyValue('--agent-markdown-table-column-width'),
+        );
+        expect(widths).toEqual(['8rem', '8rem', 'calc(100.000% - 24.000rem)', '8rem']);
+        expect(table.style.minWidth).toBe('32rem');
+        expect(table.parentElement?.classList.contains('overflow-x-auto')).toBe(true);
     });
 
     it('merges legacy activity progress rows with different tool run ids', () => {
