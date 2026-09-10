@@ -140,6 +140,66 @@ describe('ModernAgentOutput utils - tool preamble behavior', () => {
     });
 });
 
+describe('ModernAgentOutput summary - ask_user review content', () => {
+    const draft = '## Draft agenda\n9:00 Welcome\n9:15 Platform foundations';
+    const tool = makeMessage({
+        timestamp: 3000,
+        message: 'Waiting for your review...',
+        details: {
+            tool: 'ask_user',
+            tool_status: 'running',
+            tool_run_id: 'ask-1',
+            activity_group_id: 'review-1',
+        },
+    });
+    const question = makeMessage({
+        timestamp: 4000,
+        type: AgentMessageType.REQUEST_INPUT,
+        message: 'Does this agenda work?',
+        details: { tool: 'ask_user' },
+    });
+
+    it.each([false, true])('keeps persisted review prose visible with streamed=%s', (streamed) => {
+        const preamble = makeMessage({
+            timestamp: 2000,
+            message: draft,
+            details: {
+                event_class: 'activity',
+                display_role: 'tool_preamble',
+                tools: ['update_plan', 'ask_user'],
+                activity_group_id: 'review-1',
+                streamed,
+            },
+        });
+        const items = buildSummaryConversationItems([preamble, tool, question], false);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work', 'message']);
+        expect(items[0]).toEqual({ type: 'message', message: preamble });
+        expect(items[2]).toEqual({ type: 'message', message: question });
+    });
+
+    it.each([false, true])('keeps reconstructed review streams visible with isComplete=%s', (isComplete) => {
+        const messages = buildSummaryDisplayMessages(
+            [tool, question],
+            new Map([
+                [
+                    'review-stream',
+                    {
+                        text: draft,
+                        startTimestamp: 2000,
+                        activityId: 'review-1',
+                        isComplete,
+                    },
+                ],
+            ]),
+        );
+        const items = buildSummaryConversationItems(messages, false);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work', 'message']);
+        expect(items[0]).toMatchObject({ type: 'message', message: { message: draft } });
+    });
+});
+
 describe('ModernAgentOutput utils - progress state', () => {
     it('treats a new user turn after an older idle message as in progress', () => {
         const idle = makeMessage({

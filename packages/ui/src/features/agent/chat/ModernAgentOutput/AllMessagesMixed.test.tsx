@@ -133,6 +133,41 @@ describe('AllMessagesMixed summary view', () => {
         vi.useRealTimers();
     });
 
+    it('keeps the draft accompanying ask_user visible outside collapsed work', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1000,
+                message: '## Draft agenda\n9:00 Welcome\n9:15 Platform foundations',
+                details: {
+                    event_class: 'activity',
+                    display_role: 'tool_preamble',
+                    tools: ['ask_user'],
+                    activity_group_id: 'review-1',
+                    streamed: true,
+                },
+            }),
+            makeMessage({
+                timestamp: 2000,
+                message: 'Waiting for review...',
+                details: {
+                    tool: 'ask_user',
+                    tool_status: 'running',
+                    activity_group_id: 'review-1',
+                },
+            }),
+            makeMessage({
+                timestamp: 3000,
+                type: AgentMessageType.REQUEST_INPUT,
+                message: 'Does this agenda work?',
+                details: { tool: 'ask_user', request_id: 'ask-1' },
+            }),
+        ]);
+
+        expect(screen.getByRole('heading', { name: 'Draft agenda' })).not.toBeNull();
+        expect(screen.getByText('Does this agenda work?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Worked\s*for/ }).getAttribute('aria-expanded')).toBe('false');
+    });
+
     it('renders delivery status on user bubbles in summary view', () => {
         renderSummary([
             makeMessage({
