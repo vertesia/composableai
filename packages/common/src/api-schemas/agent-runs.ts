@@ -2,6 +2,7 @@
 
 import { ExecutionTokenUsageSchema, ReasoningEffortSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
+import { AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH } from '../store/agent-run-values.js';
 import type { AgentMessageType, FileProcessingStatus } from '../store/workflow.js';
 import { type AgentEvent, AgentEventType, LlmCallType, TelemetryToolType } from '../workflow-analytics.js';
 import * as AppLifecycleSchemas from './app-lifecycle.js';
@@ -1142,3 +1143,89 @@ export const AgentRunInternalsSchema = z
         updated_at: z.string().meta({ format: 'date-time' }),
     })
     .meta({ id: 'AgentRunInternals' });
+
+/**
+ * How the user rated an agent run's work. Two values on purpose: a rating is a signal, not a score,
+ * and a wider scale invites a precision the reader does not have.
+ */
+export const AgentRunFeedbackRatingSchema = z
+    .enum(['up', 'down'])
+    .meta({ id: 'AgentRunFeedbackRating', description: 'Thumbs up or thumbs down on an agent run.' });
+
+/**
+ * The closed reason vocabulary. Closed rather than free text because the reason is the part that
+ * gets counted; the free-text `comment` stays with the tenant and is never aggregated.
+ */
+export const AgentRunFeedbackReasonCodeSchema = z
+    .enum([
+        'accurate',
+        'helpful',
+        'fast',
+        'well_explained',
+        'wrong_result',
+        'incomplete',
+        'misunderstood_request',
+        'too_slow',
+        'tool_failure',
+        'unsafe_action',
+        'other',
+    ])
+    .meta({ id: 'AgentRunFeedbackReasonCode', description: 'Why the run was rated the way it was.' });
+
+export const AgentRunFeedbackPayloadSchema = z
+    .strictObject({
+        rating: AgentRunFeedbackRatingSchema,
+        reason_code: AgentRunFeedbackReasonCodeSchema.optional(),
+        comment: z.string().max(AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH).optional().meta({
+            description: 'Free-text comment. Stored with the tenant; only its presence is ever counted.',
+        }),
+        message_id: z.string().optional().meta({
+            description: 'Rate one message rather than the run as a whole.',
+        }),
+        message_seq: z.number().int().min(0).optional().meta({
+            description: 'Position of the rated message in the run, when a message is rated.',
+        }),
+        episode_seq: z
+            .number()
+            .int()
+            .min(1)
+            .optional()
+            .meta({
+                description:
+                    'The episode this rating is for, echoed from a previous response. Send it when ' +
+                    'adding a reason or a comment to a rating already given, so both land on the same ' +
+                    'episode; the request is refused when it names an episode the run does not have.',
+            }),
+    })
+    .meta({ id: 'AgentRunFeedbackPayload', description: 'A user rating on an agent run.' });
+
+/**
+ * What happened to the rating, said plainly rather than inferred from a status code.
+ *
+ * `recorded` is the only one that means the rating reached a diagnosis. The other three are the
+ * honest ways it can fail to: the deployment does not run product diagnostics at all, this run has
+ * no diagnosis to attach it to, or — `episode_unavailable` — the run is between episodes and which
+ * one is being rated is not knowable yet. They all answer 200, because a rating the user gave is
+ * never an error on their side, and they are distinguishable because "we counted it", "we dropped
+ * it" and "ask again in a moment" must not look the same to the caller.
+ *
+ * `episode_unavailable` is the one that is worth RETRYING, and it exists because the alternative was
+ * guessing. A rating given in the gap between one episode closing and the next one opening used to
+ * be filed on an episode number nothing had run, which is worse than not filing it: the row exists,
+ * it is counted, and it describes work that never happened.
+ */
+export const AgentRunFeedbackStatusSchema = z
+    .enum(['recorded', 'no_diagnosis', 'disabled', 'episode_unavailable'])
+    .meta({ id: 'AgentRunFeedbackStatus', description: 'Whether the rating reached a diagnosis record.' });
+
+export const AgentRunFeedbackResponseSchema = z
+    .strictObject({
+        status: AgentRunFeedbackStatusSchema,
+        episode_seq: z.number().int().optional().meta({
+            description: 'The episode the rating was attached to, when one was.',
+        }),
+        revision: z.number().int().optional().meta({
+            description: 'The diagnosis revision the rating produced, when it produced one.',
+        }),
+    })
+    .meta({ id: 'AgentRunFeedbackResponse', description: 'Result of rating an agent run.' });

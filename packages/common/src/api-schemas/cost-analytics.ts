@@ -152,7 +152,10 @@ export const ModelPricingSchema = z
 export const CostTimeSeriesPointSchema = z
     .strictObject({
         timestamp: z.string(),
-        cost: z.number(),
+        cost: z
+            .number()
+            .nullable()
+            .meta({ description: 'Estimated cost, or null when pricing is unavailable for any usage in this bucket.' }),
         input_tokens: z.number(),
         cached_input_tokens: z.number().optional(),
         cache_write_input_tokens: z.number().optional(),
@@ -163,7 +166,10 @@ export const CostTimeSeriesPointSchema = z
 
 export const CostSummarySchema = z
     .strictObject({
-        total_cost: z.number(),
+        total_cost: z
+            .number()
+            .nullable()
+            .meta({ description: 'Estimated cost, or null when pricing is unavailable for any usage in this bucket.' }),
         total_input_tokens: z.number(),
         total_cached_input_tokens: z.number().optional(),
         total_cache_write_input_tokens: z.number().optional(),
@@ -200,7 +206,10 @@ export const CostByDimensionSchema = z
         label: z.string().optional(),
         provider: z.string().optional(),
         service_tier: z.string().optional(),
-        cost: z.number(),
+        cost: z
+            .number()
+            .nullable()
+            .meta({ description: 'Estimated cost, or null when pricing is unavailable for any usage in this bucket.' }),
         input_tokens: z.number(),
         cached_input_tokens: z.number().optional(),
         cache_write_input_tokens: z.number().optional(),

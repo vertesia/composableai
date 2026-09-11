@@ -19,6 +19,7 @@ import {
     XIcon,
 } from 'lucide-react';
 import { PayloadBuilderProvider, usePayloadBuilder } from '../../PayloadBuilder';
+import { AgentRunFeedback } from '../AgentRunFeedback';
 import type { AgentConversationViewMode } from './AllMessagesMixed';
 import { getConversationUrl } from './utils';
 
@@ -208,6 +209,11 @@ export default function Header({
                     )}
                 </Button>
             )}
+
+            {/* Keyed by run so a switch remounts the control. The component also resets itself —
+                it is exported and cannot assume a parent does this — but a remount here makes the
+                intent local and obvious at the one site that knows a new run is being shown. */}
+            {agentRunId && <AgentRunFeedback key={agentRunId} agentRunId={agentRunId} variant={variant} />}
 
             {agentRunId && (
                 <Button

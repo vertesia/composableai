@@ -22,6 +22,11 @@ import type {
     AgentRunArtifactsQuerySchema,
     AgentRunArtifactUploadHeadersSchema,
     AgentRunDetailsQuerySchema,
+    AgentRunFeedbackPayloadSchema,
+    AgentRunFeedbackRatingSchema,
+    AgentRunFeedbackReasonCodeSchema,
+    AgentRunFeedbackResponseSchema,
+    AgentRunFeedbackStatusSchema,
     AgentRunSchema,
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
@@ -63,6 +68,8 @@ import type {
     ConversationFileRemovedRef,
     WorkflowRunEvent,
 } from './workflow.js';
+
+export * from './agent-run-values.js';
 
 export type AgentRunStatus = z.infer<typeof AgentRunStatusSchema>;
 
@@ -278,6 +285,12 @@ export type RecordRunPayload<TData = Record<string, unknown>, TSource = RunSourc
 export type BindRunWorkflowPayload = z.infer<typeof BindRunWorkflowPayloadSchema>;
 
 export type TerminateAgentRunResponse = z.infer<typeof TerminateAgentRunResponseSchema>;
+
+export type AgentRunFeedbackRating = z.infer<typeof AgentRunFeedbackRatingSchema>;
+export type AgentRunFeedbackReasonCode = z.infer<typeof AgentRunFeedbackReasonCodeSchema>;
+export type AgentRunFeedbackPayload = z.infer<typeof AgentRunFeedbackPayloadSchema>;
+export type AgentRunFeedbackStatus = z.infer<typeof AgentRunFeedbackStatusSchema>;
+export type AgentRunFeedbackResponse = z.infer<typeof AgentRunFeedbackResponseSchema>;
 
 /**
  * Payload for updating an AgentRun's lifecycle and derived metadata.

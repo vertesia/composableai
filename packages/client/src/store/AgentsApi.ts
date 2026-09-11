@@ -7,6 +7,8 @@ import {
     type AgentMessage,
     type AgentRun,
     type AgentRunDetailsStreamEvent,
+    type AgentRunFeedbackPayload,
+    type AgentRunFeedbackResponse,
     type AgentRunInternals,
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
@@ -304,6 +306,18 @@ export class AgentsApi extends ApiTopic {
      */
     postMessage(id: string, msg: PostAgentRunUpdatePayload): Promise<PostAgentRunUpdateResponse> {
         return this.post(`/${id}/updates`, { payload: msg });
+    }
+
+    /**
+     * Rate an agent run: thumbs up or down, with an optional reason code and comment.
+     *
+     * Answers `status: 'recorded'` only when the rating reached a diagnosis. `no_diagnosis` (the run
+     * has no episode to carry it) and `disabled` (this deployment does not run product diagnostics)
+     * are 200s too — a rating is never the user's error — so a caller that wants to know whether it
+     * counted must read the status rather than the HTTP code.
+     */
+    recordFeedback(id: string, payload: AgentRunFeedbackPayload): Promise<AgentRunFeedbackResponse> {
+        return this.post(`/${id}/feedback`, { payload });
     }
 
     // ========================================================================
