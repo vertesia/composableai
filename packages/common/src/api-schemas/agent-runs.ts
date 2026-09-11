@@ -2,11 +2,13 @@
 
 import { ExecutionTokenUsageSchema, ReasoningEffortSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
+import { AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH, AGENT_RUN_FEEDBACK_ID_MAX_LENGTH } from '../store/agent-run-values.js';
 import type { AgentMessageType, FileProcessingStatus } from '../store/workflow.js';
 import { type AgentEvent, AgentEventType, LlmCallType, TelemetryToolType } from '../workflow-analytics.js';
 import * as AppLifecycleSchemas from './app-lifecycle.js';
 import {
     AgentRunStatusSchema,
+    AgentToolApprovalClassSchema,
     ContentObjectTypeRefSchema,
     ConversationActivityStateSchema,
     EventRefSchema,
@@ -36,6 +38,244 @@ import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { nullableStringSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
+// ----------------------------------------------------------------------------
+// Evaluation vocabularies
+// ----------------------------------------------------------------------------
+
+export const TurnTerminalTypeSchema = z
+    .enum(['answer', 'user_stopped', 'completed', 'failed', 'cancelled', 'interrupted'])
+    .meta({ id: 'TurnTerminalType', description: 'How an agent turn ended.' });
+
+export const EvaluationSeveritySchema = z.enum(['none', 'low', 'medium', 'high']).meta({
+    id: 'EvaluationSeverity',
+    description: 'Worst deterministic detector level. `none` means no detector fired, not success.',
+});
+
+export const TurnEvaluationFlagSchema = z
+    .enum([
+        'user_stopped_after_failure',
+        'mutation_unsuccessful',
+        'run_failed',
+        'unrecovered_tool',
+        'fail_streak',
+        'identical_retry',
+        'reread',
+        'high_gather',
+        'overhead',
+        'followup_after_answer',
+        'approval_denied',
+    ])
+    .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
+
+export const ToolErrorClassSchema = z
+    .enum(['schema', 'platform', 'config', 'environment', 'other'])
+    .meta({ id: 'ToolErrorClass', description: 'Coarse class of a tool error, derived from the error text.' });
+
+const ToolErrorClassCountsSchema = z.strictObject({
+    schema: z.number().int().min(0),
+    platform: z.number().int().min(0),
+    config: z.number().int().min(0),
+    environment: z.number().int().min(0),
+    other: z.number().int().min(0),
+});
+
+const TelemetryDeploymentSchema = z.strictObject({
+    env: z.string(),
+    group: z.string(),
+    version: z.string(),
+    region: z.string().optional(),
+});
+
+const TelemetryProducerSchema = z.strictObject({
+    version: z.string(),
+});
+
+export const JudgeGateReasonSchema = z
+    .enum(['signal', 'sample'])
+    .meta({ id: 'JudgeGateReason', description: 'Why the judge looked at a run.' });
+
+export const JudgeOutcomeSchema = z
+    .enum(['judged', 'skipped_unarchived', 'failed'])
+    .meta({ id: 'JudgeOutcome', description: 'What a judge run produced.' });
+
+export const JudgeVerdictSchema = z
+    .enum(['success', 'partial', 'failure'])
+    .meta({ id: 'JudgeVerdict', description: "The judge's reading of a turn." });
+
+// ----------------------------------------------------------------------------
+// User feedback
+// ----------------------------------------------------------------------------
+
+/**
+ * How the user rated an agent run's work. Two values on purpose: a rating is a signal, not a score,
+ * and a wider scale invites a precision the reader does not have.
+ */
+export const AgentRunFeedbackRatingSchema = z
+    .enum(['up', 'down'])
+    .meta({ id: 'AgentRunFeedbackRating', description: 'Thumbs up or thumbs down on an agent run.' });
+
+/**
+ * The closed reason vocabulary. Closed rather than free text because the reason is the part that
+ * gets counted; the free-text `comment` stays with the tenant and is never aggregated.
+ */
+export const AgentRunFeedbackReasonCodeSchema = z
+    .enum([
+        'accurate',
+        'helpful',
+        'fast',
+        'well_explained',
+        'wrong_result',
+        'incomplete',
+        'misunderstood_request',
+        'too_slow',
+        'tool_failure',
+        'unsafe_action',
+        'other',
+    ])
+    .meta({ id: 'AgentRunFeedbackReasonCode', description: 'Why the run was rated the way it was.' });
+
+export const AgentRunFeedbackPayloadSchema = z
+    .strictObject({
+        feedback_id: z.string().min(1).max(AGENT_RUN_FEEDBACK_ID_MAX_LENGTH).meta({
+            description: 'Client-generated idempotency key (a UUID). A retried request with the same id is a no-op.',
+        }),
+        rating: AgentRunFeedbackRatingSchema,
+        reason_code: AgentRunFeedbackReasonCodeSchema.optional(),
+        comment: z.string().max(AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH).optional().meta({
+            description: 'Free-text comment. Stored with the tenant; only its presence is ever counted.',
+        }),
+        message_id: z.string().optional().meta({
+            description: 'Rate one message rather than the run as a whole.',
+        }),
+        message_seq: z.number().int().min(0).optional().meta({
+            description: 'Position of the rated message in the run, when a message is rated.',
+        }),
+    })
+    .meta({ id: 'AgentRunFeedbackPayload', description: 'A user rating on an agent run.' });
+
+/**
+ * What happened to the rating. `recorded` and `replaced` both mean it counts; `replaced` says an
+ * earlier rating by the same user on the same scope was superseded. `disabled` means this
+ * deployment does not record feedback; it answers 200 because a rating is never the user's error.
+ */
+export const AgentRunFeedbackStatusSchema = z
+    .enum(['recorded', 'replaced', 'disabled'])
+    .meta({ id: 'AgentRunFeedbackStatus', description: 'Whether the rating was recorded.' });
+
+export const AgentRunFeedbackCountsSchema = z
+    .strictObject({
+        up: z.number().int().min(0),
+        down: z.number().int().min(0),
+        last_rating: AgentRunFeedbackRatingSchema.optional(),
+        last_reason_code: AgentRunFeedbackReasonCodeSchema.optional(),
+    })
+    .meta({ id: 'AgentRunFeedbackCounts', description: 'Ratings over the retained feedback entries.' });
+
+export const AgentRunFeedbackResponseSchema = z
+    .strictObject({
+        status: AgentRunFeedbackStatusSchema,
+        feedback_counts: AgentRunFeedbackCountsSchema.optional(),
+    })
+    .meta({ id: 'AgentRunFeedbackResponse', description: 'Result of rating an agent run.' });
+
+export const AgentRunFeedbackEntrySchema = z
+    .strictObject({
+        feedback_id: z.string(),
+        rating: AgentRunFeedbackRatingSchema,
+        reason_code: AgentRunFeedbackReasonCodeSchema.optional(),
+        comment: z.string().optional(),
+        message_id: z.string().optional(),
+        message_seq: z.number().int().optional(),
+        message_scoped: z.boolean(),
+        user_id: z.string(),
+        rated_at: z.string().meta({ format: 'date-time' }),
+        replaced_at: z.string().meta({ format: 'date-time' }).optional(),
+    })
+    .meta({ id: 'AgentRunFeedbackEntry', description: 'One recorded rating on an agent run.' });
+
+// ----------------------------------------------------------------------------
+// Evaluation summary
+// ----------------------------------------------------------------------------
+
+const AgentRunEvaluationTotalsSchema = z.strictObject({
+    tool_calls: z.number().int(),
+    error_tool_results: z.number().int(),
+    unrecovered_tools: z.array(z.string()),
+    llm_calls: z.number().int(),
+    prompt_tokens: z.number(),
+    completion_tokens: z.number(),
+    cached_tokens: z.number(),
+    retry_completion_tokens: z.number(),
+    active_ms: z.number(),
+    ask_user_wait_ms: z.number(),
+    approval_wait_ms: z.number(),
+    followups: z.number().int(),
+    approvals_requested: z.number().int(),
+    approvals_denied: z.number().int(),
+    stop_requests: z.number().int(),
+});
+
+/**
+ * What the workflow reports about a run: the fold of its turn evaluations. Owned by the workflow;
+ * it never carries feedback or judge fields, which the server owns.
+ */
+export const AgentRunEvaluationRollupSchema = z
+    .strictObject({
+        seq: z.number().int().min(1).meta({
+            description: 'Monotonic per run; the server ignores a rollup older than the one it holds.',
+        }),
+        detector_version: z.number().int(),
+        turns: z.number().int(),
+        severity: EvaluationSeveritySchema,
+        flags: z.array(TurnEvaluationFlagSchema),
+        worst_turn_seq: z.number().int().optional(),
+        last_terminal_type: TurnTerminalTypeSchema.optional(),
+        terminal_error_class: z.string().optional(),
+        partial: z.boolean().optional(),
+        totals: AgentRunEvaluationTotalsSchema,
+        updated_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'AgentRunEvaluationRollup', description: 'Fold of the turn evaluations of a run.' });
+
+export const AgentRunJudgeResultSchema = z
+    .strictObject({
+        rev: z.number().int(),
+        gate: JudgeGateReasonSchema,
+        sample_rate: z.number(),
+        selected_probability: z.number(),
+        outcome: JudgeOutcomeSchema,
+        verdict: JudgeVerdictSchema.optional(),
+        score: z.number().optional(),
+        model: z.string().optional(),
+        prompt_version: z.string(),
+        turns_judged: z.array(z.number().int()).optional(),
+        judged_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'AgentRunJudgeResult', description: 'Latest judge result for a run.' });
+
+export const AgentRunContradictionReasonSchema = z
+    .enum(['feedback_down_on_clean_run', 'judge_failure_on_clean_run'])
+    .meta({ id: 'AgentRunContradictionReason' });
+
+/**
+ * The server-owned evaluation summary of a run: the workflow rollup, the feedback counts and the
+ * judge result, plus the derived severity, flags and contradiction the run list filters on.
+ */
+export const AgentRunEvaluationSchema = z
+    .strictObject({
+        rev: z.number().int().meta({ description: 'Bumped on every change to any part of the summary.' }),
+        rollup: AgentRunEvaluationRollupSchema.optional(),
+        feedback_counts: AgentRunFeedbackCountsSchema.optional(),
+        judge: AgentRunJudgeResultSchema.optional(),
+        severity: EvaluationSeveritySchema,
+        flags: z.array(TurnEvaluationFlagSchema),
+        contradicted: z.boolean(),
+        contradiction_reasons: z.array(AgentRunContradictionReasonSchema).optional(),
+        deployment_env: z.string().optional(),
+        updated_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'AgentRunEvaluation', description: 'Evaluation summary of an agent run.' });
+
 const agentEventBase = {
     timestamp: z.string(),
     runId: z.string(),
@@ -46,6 +286,9 @@ const agentEventBase = {
     interactionId: z.string(),
     parentRunId: z.string().optional(),
     ancestorRunIds: z.array(z.string()).optional(),
+    eventId: z.string().optional(),
+    deployment: TelemetryDeploymentSchema.optional(),
+    producer: TelemetryProducerSchema.optional(),
 };
 
 const AgentRunStartedEventSchema = z.strictObject({
@@ -123,6 +366,96 @@ const ToolCallEventSchema = z.strictObject({
     errorType: z.string().optional(),
     errorMessage: z.string().optional(),
     spawnedChildWorkflow: z.boolean().optional(),
+    approvalClass: AgentToolApprovalClassSchema.optional(),
+    errorClass: ToolErrorClassSchema.optional(),
+    signatureHash: z.string().optional(),
+    workstreamId: z.string().optional(),
+});
+
+const TurnToolObservationSchema = z.strictObject({
+    seq: z.number().int().min(1),
+    toolUseId: z.string(),
+    name: z.string(),
+    approvalClass: AgentToolApprovalClassSchema.optional(),
+    ok: z.boolean(),
+    errorClass: ToolErrorClassSchema.optional(),
+    sig: z.string(),
+    durationMs: z.number(),
+});
+
+const TurnEvaluationEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.TurnEvaluation),
+    schemaVersion: z.number().int(),
+    detectorVersion: z.number().int(),
+    workstreamId: z.string(),
+    turnSeq: z.number().int().min(1),
+    terminalType: TurnTerminalTypeSchema,
+    partial: z.boolean().optional(),
+    startedAt: z.string(),
+    endedAt: z.string(),
+    durationMs: z.number(),
+    activeMs: z.number(),
+    askUserWaitMs: z.number(),
+    approvalWaitMs: z.number(),
+    timeToFirstAnswerMs: z.number().optional(),
+    toolCalls: z.number().int(),
+    errorToolResults: z.number().int(),
+    maxFailStreak: z.number().int(),
+    identicalRetryCount: z.number().int(),
+    unrecoveredTools: z.array(z.string()),
+    errorClasses: ToolErrorClassCountsSchema,
+    gatherCalls: z.number().int(),
+    gatherRatio: z.number().optional(),
+    mutationAttempted: z.boolean(),
+    mutationSucceeded: z.boolean(),
+    rereadCount: z.number().int(),
+    overheadCalls: z.number().int(),
+    skillsLoaded: z.number().int(),
+    interruptedToolCalls: z.number().int(),
+    llmCalls: z.number().int(),
+    promptTokens: z.number(),
+    completionTokens: z.number(),
+    cachedTokens: z.number(),
+    retryCompletionTokens: z.number(),
+    approvalsRequested: z.number().int(),
+    approvalsDenied: z.number().int(),
+    stopRequests: z.number().int(),
+    followupAfterAnswer: z.boolean(),
+    severity: EvaluationSeveritySchema,
+    flags: z.array(TurnEvaluationFlagSchema),
+    terminalErrorClass: z.string().optional(),
+    tools: z.array(TurnToolObservationSchema),
+    toolsTruncated: z.number().int(),
+});
+
+const FeedbackEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.Feedback),
+    feedbackId: z.string(),
+    rating: AgentRunFeedbackRatingSchema,
+    reasonCode: AgentRunFeedbackReasonCodeSchema.optional(),
+    hasComment: z.boolean(),
+    messageScoped: z.boolean(),
+    messageSeq: z.number().int().optional(),
+    replaced: z.boolean(),
+});
+
+const TurnJudgementEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.TurnJudgement),
+    evaluationRev: z.number().int(),
+    workstreamId: z.string(),
+    turnSeq: z.number().int().min(0),
+    gate: JudgeGateReasonSchema,
+    sampleRate: z.number(),
+    selectedProbability: z.number(),
+    outcome: JudgeOutcomeSchema,
+    verdict: JudgeVerdictSchema.optional(),
+    score: z.number().optional(),
+    reasons: z.array(z.string()).optional(),
+    promptVersion: z.string(),
+    detectorVersion: z.number().int().optional(),
 });
 
 export const AgentEventSchema: z.ZodType<AgentEvent> = z
@@ -131,6 +464,9 @@ export const AgentEventSchema: z.ZodType<AgentEvent> = z
         AgentRunCompletedEventSchema,
         LlmCallEventSchema,
         ToolCallEventSchema,
+        TurnEvaluationEventSchema,
+        FeedbackEventSchema,
+        TurnJudgementEventSchema,
     ])
     .meta({ id: 'AgentEvent' });
 
@@ -420,6 +756,11 @@ export const AutonomousRunResponseSchema = z
             .array(z.string())
             .meta({ description: 'Lessons learned from the conversation (extracted at completion)' })
             .optional(),
+        evaluation: AgentRunEvaluationSchema.meta({ description: 'Evaluation summary of the run.' }).optional(),
+        feedback: z
+            .array(AgentRunFeedbackEntrySchema)
+            .meta({ description: 'Retained user ratings on the run.' })
+            .optional(),
         archived_at: z
             .string()
             .meta({ description: 'When the last successful archive completed', format: 'date-time' })
@@ -567,6 +908,11 @@ export const AgentRunSchema = z
         lessons_learned: z
             .array(z.string())
             .meta({ description: 'Lessons learned from the conversation (extracted at completion)' })
+            .optional(),
+        evaluation: AgentRunEvaluationSchema.meta({ description: 'Evaluation summary of the run.' }).optional(),
+        feedback: z
+            .array(AgentRunFeedbackEntrySchema)
+            .meta({ description: 'Retained user ratings on the run.' })
             .optional(),
         archived_at: z
             .string()
@@ -1007,6 +1353,10 @@ export const AgentRunArtifactsQuerySchema = z
     })
     .meta({ id: 'AgentRunArtifactsQuery' });
 
+export const ListAgentRunsEvaluationSeveritySchema = z
+    .enum(['unrated', 'none', 'low', 'medium', 'high'])
+    .meta({ id: 'ListAgentRunsEvaluationSeverity' });
+
 export const ListAgentRunsQuerySchema = z
     .object({
         id: z.string().meta({ description: 'Filter by agent run ID' }).optional(),
@@ -1030,6 +1380,21 @@ export const ListAgentRunsQuerySchema = z
         run_kind: RunKindSchema.meta({ description: 'Filter by internal run discriminator' }).optional(),
         sort: z.enum(['started_at', 'updated_at']).meta({ description: 'Field to sort by' }).optional(),
         order: z.enum(['asc', 'desc']).meta({ description: 'Sort order' }).optional(),
+        evaluation_severity: z
+            .array(ListAgentRunsEvaluationSeveritySchema)
+            .meta({ description: 'Filter by evaluation severity; `unrated` selects runs without an evaluation' })
+            .optional(),
+        evaluation_flag: z
+            .array(TurnEvaluationFlagSchema)
+            .meta({ description: 'Filter by evaluation flag (any of)' })
+            .optional(),
+        feedback_rating: AgentRunFeedbackRatingSchema.meta({
+            description: 'Filter by last feedback rating',
+        }).optional(),
+        contradicted: z
+            .boolean()
+            .meta({ description: 'Only runs whose feedback or judge contradicts the detectors' })
+            .optional(),
     })
     .meta({ id: 'ListAgentRunsQuery' });
 
@@ -1115,6 +1480,8 @@ export const UpdateAgentRunStatusPayloadSchema = z
         last_archive_error: z.string().optional(),
         sequence: z.number().optional(),
         process_state: ProcessStateSchema.optional(),
+        evaluation_rollup: AgentRunEvaluationRollupSchema.optional(),
+        evaluation_judge: AgentRunJudgeResultSchema.optional(),
     })
     .meta({ id: 'UpdateAgentRunStatusPayload' });
 
