@@ -1,9 +1,11 @@
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
-import { describe, expect, it } from 'vitest';
-import { setupActivity } from './ActivityContext.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setActivityAuthProvider, setupActivity } from './ActivityContext.js';
 
 const MOCK_AUTH_TOKEN =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature';
+const REFRESHED_AUTH_TOKEN =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJyZWZyZXNoZWQifQ.signature';
 
 function basePayload<T extends object>(
     activity: DSLActivityExecutionPayload<T>['activity'],
@@ -23,6 +25,28 @@ function basePayload<T extends object>(
 }
 
 describe('setupActivity', () => {
+    afterEach(() => {
+        setActivityAuthProvider(undefined);
+    });
+
+    it('uses a registered host auth provider before constructing the activity client', async () => {
+        const provider = vi.fn(() => vi.fn().mockResolvedValue(`Bearer ${REFRESHED_AUTH_TOKEN}`));
+        setActivityAuthProvider(provider);
+        const payload = basePayload({ name: 'testActivity' }, {});
+
+        await setupActivity(payload);
+
+        expect(provider).toHaveBeenCalledWith(payload);
+        expect(payload.auth_token).toBe(REFRESHED_AUTH_TOKEN);
+    });
+
+    it('propagates host auth provider failures', async () => {
+        const revoked = new Error('Delegation is no longer authorized');
+        setActivityAuthProvider(() => vi.fn().mockRejectedValue(revoked));
+
+        await expect(setupActivity(basePayload({ name: 'testActivity' }, {}))).rejects.toBe(revoked);
+    });
+
     // Regression guard: user-supplied strings containing "${...}" must be preserved
     // verbatim when the activity is dispatched from TypeScript code (no activity.params,
     // no activity.fetch). Previously Vars.parse/resolve would treat any "${...}" as a

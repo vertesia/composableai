@@ -148,8 +148,25 @@ export class ActivityContext<ParamsT extends object> {
     }
 }
 
+export type ActivityAuthCallback = () => Promise<string>;
+export type ActivityAuthProvider = (payload: DSLActivityExecutionPayload<object>) => ActivityAuthCallback | undefined;
+
+let activityAuthProvider: ActivityAuthProvider | undefined;
+
+/** Install the host worker's trusted auth provider without coupling this public package to its STS implementation. */
+export function setActivityAuthProvider(provider: ActivityAuthProvider | undefined): void {
+    activityAuthProvider = provider;
+}
+
 export async function setupActivity<ParamsT extends object>(payload: DSLActivityExecutionPayload<ParamsT>) {
+    const authCallback = activityAuthProvider?.(payload);
+    if (authCallback) {
+        payload.auth_token = (await authCallback()).replace(/^Bearer\s+/i, '');
+    }
     const client = await getVertesiaClient(payload);
+    if (authCallback) {
+        client.withAuthCallback(authCallback);
+    }
 
     // Activities dispatched from TypeScript code (via dslProxyActivities) set
     // only `activity.name`; their params are a plain TS object that must not
