@@ -758,11 +758,12 @@ function SummaryMessage({
     const requestInputDetails = message.details as AskUserMessageDetails | undefined;
     if (message.type === AgentMessageType.REQUEST_INPUT && requestInputDetails?.ux) {
         const uxConfig = requestInputDetails.ux;
+        const hasSelectableOptions = Array.isArray(uxConfig.options) && uxConfig.options.length > 0;
         return (
             <div className="mx-auto w-full max-w-3xl px-1">
                 <AskUserWidget
                     question={content}
-                    options={uxConfig.options}
+                    options={hasSelectableOptions ? uxConfig.options : undefined}
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}
                     onSelect={(optionId) =>
@@ -776,7 +777,7 @@ function SummaryMessage({
                     onMultiSelect={(optionIds) =>
                         sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
                     }
-                    allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                    allowFreeResponse={!hasSelectableOptions || !!uxConfig.free_response}
                     placeholder={uxConfig.free_response?.placeholder}
                     submitLabel={uxConfig.free_response?.submit_label}
                     onSubmit={(value) =>
@@ -2300,11 +2301,13 @@ function SummaryActivityRow({
                                 <div className="mt-3 space-y-3">
                                     {requestInputMessages.map((message) => {
                                         const uxConfig = message.details.ux;
+                                        const hasSelectableOptions =
+                                            Array.isArray(uxConfig.options) && uxConfig.options.length > 0;
                                         return (
                                             <AskUserWidget
                                                 key={getAgentMessageRenderKey(message, 'work-request-input')}
                                                 question={getRequestInputDisplayText(message)}
-                                                options={uxConfig.options}
+                                                options={hasSelectableOptions ? uxConfig.options : undefined}
                                                 variant={uxConfig.variant}
                                                 multiSelect={uxConfig.multiSelect}
                                                 onSelect={(optionId) =>
@@ -2322,9 +2325,7 @@ function SummaryActivityRow({
                                                         optionIds.join(', '),
                                                     )
                                                 }
-                                                allowFreeResponse={
-                                                    !uxConfig.options?.length || !!uxConfig.free_response
-                                                }
+                                                allowFreeResponse={!hasSelectableOptions || !!uxConfig.free_response}
                                                 placeholder={uxConfig.free_response?.placeholder}
                                                 submitLabel={uxConfig.free_response?.submit_label}
                                                 onSubmit={(value) =>

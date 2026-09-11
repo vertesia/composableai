@@ -375,6 +375,7 @@ function MessageItemComponent({
     // UX config for REQUEST_INPUT messages (narrowed const so it stays typed inside the JSX closures below)
     const askUserUx =
         message.type === AgentMessageType.REQUEST_INPUT ? (message.details as AskUserMessageDetails)?.ux : undefined;
+    const hasSelectableAskUserOptions = Array.isArray(askUserUx?.options) && askUserUx.options.length > 0;
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(
@@ -616,7 +617,7 @@ function MessageItemComponent({
                     {askUserUx ? (
                         <AskUserWidget
                             question={typeof messageContent === 'string' ? messageContent : ''}
-                            options={askUserUx.options}
+                            options={hasSelectableAskUserOptions ? askUserUx.options : undefined}
                             variant={askUserUx.variant}
                             multiSelect={askUserUx.multiSelect}
                             onSelect={(optionId) =>
@@ -630,7 +631,7 @@ function MessageItemComponent({
                             onMultiSelect={(optionIds) =>
                                 sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
                             }
-                            allowFreeResponse={!askUserUx.options?.length || !!askUserUx.free_response}
+                            allowFreeResponse={!hasSelectableAskUserOptions || !!askUserUx.free_response}
                             placeholder={askUserUx.free_response?.placeholder}
                             submitLabel={askUserUx.free_response?.submit_label}
                             onSubmit={(value) =>
