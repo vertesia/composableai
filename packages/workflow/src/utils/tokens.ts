@@ -18,12 +18,16 @@ export function truncByMaxTokens(content: string, by: TruncateSpec) {
         encoding = by.encoding || 'cl100k_base';
     }
     const enc = get_encoding(encoding);
-    let tokens = enc.encode(content);
-    if (tokens.length > maxTokens) {
-        tokens = tokens.slice(0, maxTokens);
-        return new TextDecoder().decode(enc.decode(tokens));
-    } else {
-        return content;
+    try {
+        let tokens = enc.encode(content);
+        if (tokens.length > maxTokens) {
+            tokens = tokens.slice(0, maxTokens);
+            return new TextDecoder().decode(enc.decode(tokens));
+        } else {
+            return content;
+        }
+    } finally {
+        enc.free();
     }
 }
 
@@ -33,10 +37,14 @@ export function countTokens(text: string, encoding: TiktokenEncoding = 'cl100k_b
         throw new Error(`Unknown encoding ${encoding}`);
     }
 
-    const tokens = encoder.encode(text);
+    try {
+        const tokens = encoder.encode(text);
 
-    return {
-        count: tokens.length,
-        encoding: encoding,
-    };
+        return {
+            count: tokens.length,
+            encoding: encoding,
+        };
+    } finally {
+        encoder.free();
+    }
 }

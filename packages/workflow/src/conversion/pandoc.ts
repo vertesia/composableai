@@ -5,6 +5,9 @@ import { dirname, join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { log } from '@temporalio/activity';
+import pLimit from 'p-limit';
+
+const pandocLimit = pLimit(1);
 
 function getCompactHtmlFilterPath(): string {
     const colocatedPath = fileURLToPath(new URL('./compact-html.lua', import.meta.url));
@@ -22,11 +25,16 @@ function getCompactHtmlFilterPath(): string {
     throw new Error('Pandoc HTML compaction filter is missing from the runtime package');
 }
 
-export function markdownWithPandoc(buffer: Buffer, fromFormat: string): Promise<string> {
-    const fromType = undefined;
+export function markdownWithPandoc(buffer: Buffer, fromFormat: string, signal?: AbortSignal): Promise<string> {
+    return pandocLimit(async () => {
+        signal?.throwIfAborted();
+        return spawnPandoc(buffer, fromFormat, signal);
+    });
+}
 
+function spawnPandoc(buffer: Buffer, fromFormat: string, signal?: AbortSignal): Promise<string> {
     return new Promise((resolve, reject) => {
-        log.info(`Converting ${fromType} to markdown`);
+        log.debug(`Converting ${fromFormat} to markdown`);
         const input = new PassThrough();
         input.end(buffer);
 
@@ -38,27 +46,40 @@ export function markdownWithPandoc(buffer: Buffer, fromFormat: string): Promise<
         }
         const command = spawn('pandoc', args, {
             stdio: 'pipe',
+            signal,
         });
         input.pipe(command.stdin);
 
+        let commandError: Error | undefined;
+
+        command.stdout.setEncoding('utf8');
         command.stdout.on('data', (data: string) => {
-            result.push(data.toString());
+            result.push(data);
         });
-        command.on('exit', (code) => {
-            if (code) {
+        // Pandoc can emit many warnings. Always consume stderr so its bounded OS pipe
+        // cannot stall the conversion while stdout is being collected.
+        command.stderr.resume();
+        command.on('close', (code, childSignal) => {
+            if (signal?.aborted) {
+                reject(signal.reason);
+            } else if (commandError) {
+                reject(commandError);
+            } else if (code) {
                 reject(new Error(`pandoc exited with code ${code}`));
-            }
-        });
-        command.on('close', (code) => {
-            if (code) {
-                reject(new Error(`pandoc exited with code ${code}`));
+            } else if (childSignal) {
+                reject(new Error(`pandoc exited due to signal ${childSignal}`));
             } else {
                 resolve(result.join(''));
             }
         });
 
         command.on('error', (err) => {
-            reject(err);
+            // Wait for `close` before settling so the limiter never starts another
+            // memory-heavy conversion while this child's stdio is still closing.
+            commandError = err;
+        });
+        command.stdin.on('error', (err) => {
+            commandError ??= err;
         });
     });
 }

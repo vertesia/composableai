@@ -1,4 +1,4 @@
-import { log } from '@temporalio/activity';
+import { Context, log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import type {
     ContentObject,
@@ -36,16 +36,17 @@ export async function extractDocumentText(
     const context = await setupActivity(payload);
     const { client, inputType, params } = context;
     const { output_storage_path } = params;
+    const signal = Context.current().cancellationSignal;
 
     if (inputType === 'files') {
         // File mode: extract from file source
         if (!output_storage_path) {
             throw new Error('output_storage_path is required when extracting text from file sources');
         }
-        return extractFromFileSource(client, context.file, output_storage_path);
+        return extractFromFileSource(client, context.file, output_storage_path, signal);
     } else {
         // Object mode: fetch from object store
-        return extractFromObject(client, context.objectId, context.objectIds || []);
+        return extractFromObject(client, context.objectId, context.objectIds || [], signal);
     }
 }
 
@@ -53,6 +54,7 @@ async function extractFromObject(
     client: VertesiaClient,
     objectId: string,
     objectIds: string[],
+    signal?: AbortSignal,
 ): Promise<TextExtractionResult> {
     // Fetch the exact revision by id rather than `find({_id, revision.head:true})`.
     // `find` filters to HEAD revisions, so if a newer revision is created while this
@@ -101,7 +103,7 @@ async function extractFromObject(
     // retry policy will retry. Let that classification through.
     const fileBuffer = await fetchBlobAsBuffer(client, doc.content.source);
 
-    const txt = await extractTextFromBuffer(fileBuffer, doc.content.type);
+    const txt = await extractTextFromBuffer(fileBuffer, doc.content.type, signal);
     if (!txt) {
         return createResponse(
             doc,
@@ -132,6 +134,7 @@ async function extractFromFileSource(
     client: VertesiaClient,
     input_file: WorkflowInputFile,
     output_storage_path: string,
+    signal?: AbortSignal,
 ): Promise<TextExtractionResult> {
     log.info(`Extracting text from ${input_file}`);
 
@@ -141,7 +144,7 @@ async function extractFromFileSource(
     // the retry policy sees it.
     const fileBuffer = await fetchBlobAsBuffer(client, input_file.url);
 
-    const txt = await extractTextFromBuffer(fileBuffer, input_file.mimetype);
+    const txt = await extractTextFromBuffer(fileBuffer, input_file.mimetype, signal);
 
     // Upload extracted text to storage
     if (txt && output_storage_path) {
@@ -151,7 +154,11 @@ async function extractFromFileSource(
     return createFileSourceResult(input_file.url, output_storage_path, txt);
 }
 
-async function extractTextFromBuffer(fileBuffer: Buffer, mimeType: string): Promise<string | null> {
+async function extractTextFromBuffer(
+    fileBuffer: Buffer,
+    mimeType: string,
+    signal?: AbortSignal,
+): Promise<string | null> {
     let txt: string;
 
     switch (mimeType) {
@@ -175,17 +182,17 @@ async function extractTextFromBuffer(fileBuffer: Buffer, mimeType: string): Prom
 
         //html
         case 'text/html':
-            txt = await markdownWithPandoc(fileBuffer, 'html');
+            txt = await markdownWithPandoc(fileBuffer, 'html', signal);
             break;
 
         //opendocument
         case 'application/vnd.oasis.opendocument.text':
-            txt = await markdownWithPandoc(fileBuffer, 'odt');
+            txt = await markdownWithPandoc(fileBuffer, 'odt', signal);
             break;
 
         //rtf
         case 'application/rtf':
-            txt = await markdownWithPandoc(fileBuffer, 'rtf');
+            txt = await markdownWithPandoc(fileBuffer, 'rtf', signal);
             break;
 
         //markdown
