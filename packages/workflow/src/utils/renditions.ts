@@ -58,9 +58,12 @@ export async function uploadRenditionPages(
     );
 
     const limit = pLimit(concurrency ?? 20);
+    let failed = false;
+    let firstError: unknown;
 
     const uploads = files.map((file, i) =>
         limit(async () => {
+            if (failed) throw firstError;
             const pageId = params.outputPath
                 ? files.length === 1
                     ? params.outputPath
@@ -99,6 +102,10 @@ export async function uploadRenditionPages(
 
                 return result;
             } catch (err: unknown) {
+                if (!failed) {
+                    failed = true;
+                    firstError = err;
+                }
                 log.error(`Failed to upload rendition for ${contentEtag} page ${i}`, {
                     error: err,
                 });
@@ -115,5 +122,12 @@ export async function uploadRenditionPages(
         }),
     );
 
-    return Promise.all(uploads);
+    // The caller may delete source files as soon as this function rejects. Drain running
+    // work first, while queued pages skip execution, and preserve the original failure.
+    const results = await Promise.allSettled(uploads);
+    if (failed) throw firstError;
+    return results.map((result) => {
+        if (result.status === 'rejected') throw result.reason;
+        return result.value;
+    });
 }
