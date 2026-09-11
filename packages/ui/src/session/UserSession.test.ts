@@ -84,3 +84,21 @@ describe('UserSession.fetchOnboardingStatus', () => {
         expect(setSession.mock.calls[0]?.[0]?.onboardingComplete).toBe(false);
     });
 });
+
+describe('UserSession.signOut', () => {
+    it('keeps the receiver when used as a callback, including cloned sessions', () => {
+        const { session } = createSession(async () => ({}));
+        const clone = session.clone();
+        const logout = vi.spyOn(session, 'logout').mockImplementation(() => undefined);
+        const cloneLogout = vi.spyOn(clone, 'logout').mockImplementation(() => undefined);
+        const { signOut } = session;
+        const { signOut: signOutClone } = clone;
+
+        signOut();
+        expect(logout).toHaveBeenCalledOnce();
+        expect(cloneLogout).not.toHaveBeenCalled();
+        signOutClone();
+        expect(cloneLogout).toHaveBeenCalledOnce();
+        expect(logout).toHaveBeenCalledOnce();
+    });
+});

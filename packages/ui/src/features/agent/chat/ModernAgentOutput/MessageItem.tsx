@@ -28,7 +28,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from '../../../../core/utils/dayjs.js';
 import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
-import { AskUserWidget } from '../AskUserWidget';
+import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
@@ -375,7 +375,7 @@ function MessageItemComponent({
     // UX config for REQUEST_INPUT messages (narrowed const so it stays typed inside the JSX closures below)
     const askUserUx =
         message.type === AgentMessageType.REQUEST_INPUT ? (message.details as AskUserMessageDetails)?.ux : undefined;
-    const hasSelectableAskUserOptions = Array.isArray(askUserUx?.options) && askUserUx.options.length > 0;
+    const hasSelectableAskUserOptions = isAskUserOptions(askUserUx?.options) && askUserUx.options.length > 0;
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(
