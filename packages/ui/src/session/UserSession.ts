@@ -249,6 +249,9 @@ class UserSession {
     }
 
     async fetchOnboardingStatus(): Promise<boolean> {
+        if (!this.project?.id) {
+            return false;
+        }
         if (this.onboardingComplete) {
             console.log('Onboarding already completed');
             return false;
