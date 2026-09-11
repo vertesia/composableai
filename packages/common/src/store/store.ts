@@ -527,6 +527,9 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     /** The object properties. This is a JSON object that describes the object, matching the object type schema */
     properties: T; // a JSON object that describes the object
 
+    /** Additional typed schema instances keyed by immutable content type id/key. */
+    domains?: ContentObjectDomainMap;
+
     /** Technical metadata of the object */
     metadata?:
         | VideoMetadata
