@@ -6,6 +6,7 @@ import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { log } from '@temporalio/activity';
 import pLimit from 'p-limit';
+import { compactHtmlBeforePandoc } from './compact-html.js';
 
 const pandocLimit = pLimit(1);
 
@@ -36,7 +37,7 @@ function spawnPandoc(buffer: Buffer, fromFormat: string, signal?: AbortSignal): 
     return new Promise((resolve, reject) => {
         log.debug(`Converting ${fromFormat} to markdown`);
         const input = new PassThrough();
-        input.end(buffer);
+        input.end(fromFormat === 'html' ? compactHtmlBeforePandoc(buffer) : buffer);
 
         const result: string[] = [];
 
