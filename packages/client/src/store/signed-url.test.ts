@@ -173,9 +173,13 @@ describe('fetchSignedUrl', () => {
 
     it('honors a numeric Retry-After header when scheduling the retry', async () => {
         fetchMock
-            .mockResolvedValueOnce(response(503, 'slow down', { 'retry-after': '2' }))
+            .mockResolvedValueOnce(response(503, 'slow down', { 'retry-after': '30' }))
             .mockResolvedValueOnce(response(200, 'ok'));
-        const res = await runAllTimers(fetchSignedUrl('https://storage/x'));
+        const pending = fetchSignedUrl('https://storage/x');
+        await vi.advanceTimersByTimeAsync(29999);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(1);
+        const res = await pending;
         expect(res.status).toBe(200);
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });

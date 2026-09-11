@@ -29,7 +29,7 @@ export interface SignedUrlFetchOptions {
     attempts?: number;
     /** Base delay for exponential backoff, in milliseconds. Defaults to 500. */
     baseDelayMs?: number;
-    /** Upper bound for a single backoff delay, in milliseconds. Defaults to 8000. */
+    /** Upper bound for exponential backoff, in milliseconds. Defaults to 8000. Retry-After takes precedence. */
     maxDelayMs?: number;
     /** HTTP statuses to retry on. Defaults to 429, 500, 502, 503, 504. */
     retryableStatuses?: ReadonlySet<number>;
@@ -58,7 +58,7 @@ function retryAfterMs(res: Response): number | undefined {
 function backoffMs(attempt: number, baseDelayMs: number, maxDelayMs: number, res?: Response): number {
     const retryAfter = res ? retryAfterMs(res) : undefined;
     if (retryAfter !== undefined) {
-        return Math.min(maxDelayMs, retryAfter);
+        return retryAfter;
     }
     // Exponential backoff with full jitter.
     const capped = Math.min(maxDelayMs, baseDelayMs * 2 ** attempt);
