@@ -63,6 +63,7 @@ use uniquely owned fixtures with cleanup; never rely on mutable shared-project d
 |-------------------------------|------------------------------------------------------|
 | `src/tool-server/config.ts`   | Registers generated module collections               |
 | `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
+| `src/tool-server/ui-nav-items.ts` | Composite App sidebar entries published in the manifest |
 | `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
 | `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
 | `src/ui/shell/App.tsx`        | Shared app runtime (module providers + router)       |
@@ -121,6 +122,25 @@ Rules of thumb:
 - Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files
+
+## Composite App Surface
+
+An app is shown standalone in the App Portal or as one section of the Vertesia Composite App shell.
+Both are configured in `src/tool-server/config.ts` under `uiConfig` and published in the app manifest.
+
+- `available_in` lists the surfaces the UI may appear on: `app_portal`, `composite_app`, or both.
+- `navigation` (from `src/tool-server/ui-nav-items.ts`) is the shell's ONLY source of sidebar entries —
+  the app's own sidebar components cannot change it. Mirror the composed routes that
+  `src/ui/app-ui-modules.tsx` exports across every active UI module, taking each with a `label` and no
+  `hideFromNav`. An entry whose route resolves nowhere is a bug in the list, not a page to build.
+- Nest a sub-page under its parent with `children`; it needs its own `/parent/child` route to be listed,
+  and nesting is never inferred from the path. A view switched by parent-local state is not a page.
+- `icon` is the Lucide NAME, not the identifier a route file imported it as.
+- Use `preferredSection: "settings"` for settings and admin surfaces and `"footer"` only when the user
+  asks; otherwise leave it unset so an entry lands in the main section. `topLevel: true` lifts an entry
+  to the sidebar root.
+- An administrator can rearrange the composite menu afterwards and their edits are preserved; Studio
+  reconciles the stored menu against this list, so an accurate list is what makes that correct.
 
 ## App Identity And Portable IDs
 
