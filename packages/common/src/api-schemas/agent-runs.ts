@@ -1481,7 +1481,6 @@ export const UpdateAgentRunStatusPayloadSchema = z
         sequence: z.number().optional(),
         process_state: ProcessStateSchema.optional(),
         evaluation_rollup: AgentRunEvaluationRollupSchema.optional(),
-        evaluation_judge: AgentRunJudgeResultSchema.optional(),
     })
     .meta({ id: 'UpdateAgentRunStatusPayload' });
 

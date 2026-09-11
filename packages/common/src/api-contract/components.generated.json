@@ -34611,9 +34611,6 @@
       },
       "evaluation_rollup": {
         "$ref": "#/components/schemas/AgentRunEvaluationRollup"
-      },
-      "evaluation_judge": {
-        "$ref": "#/components/schemas/AgentRunJudgeResult"
       }
     }
   },

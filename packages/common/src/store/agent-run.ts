@@ -341,11 +341,6 @@ export interface UpdateAgentRunStatusPayload {
      * it atomically and ignores a rollup whose `seq` is not newer than the one it holds.
      */
     evaluation_rollup?: AgentRunEvaluationRollup;
-    /**
-     * Latest judge result, written by the judge workflow. Applied atomically; a result for an
-     * older `rev` than the one stored is ignored.
-     */
-    evaluation_judge?: AgentRunJudgeResult;
 }
 
 // The wire contract is deliberately open because signal payloads are selected by `signalName`.
