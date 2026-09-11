@@ -618,6 +618,7 @@ function SummaryUserBubble({
                     'break-words [overflow-wrap:anywhere]',
                     className,
                 )}
+                data-agent-user-bubble
                 data-workstream-id={workstreamId}
             >
                 <div

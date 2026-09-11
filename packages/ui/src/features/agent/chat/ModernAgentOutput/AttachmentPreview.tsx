@@ -392,7 +392,11 @@ export function AttachmentPreviewList({
     if (items.length === 0) return null;
 
     return (
-        <div id={attachmentListId} className={cn('flex flex-wrap gap-2', align === 'end' && 'justify-end', className)}>
+        <div
+            id={attachmentListId}
+            className={cn('flex flex-wrap gap-2', align === 'end' && 'justify-end', className)}
+            data-agent-attachment-list
+        >
             {visibleItems.map((item) => (
                 <AttachmentPreview
                     key={item.id}
