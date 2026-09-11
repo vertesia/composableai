@@ -49,6 +49,7 @@ import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
+import { useAttachmentPreparation } from './hooks/useAttachmentPreparation';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
 import { useFileProcessing } from './hooks/useFileProcessing.js';
 import { ImageLightboxProvider } from './ImageLightbox';
@@ -110,6 +111,53 @@ export interface StartWorkflowOptions {
 
 /** Controls whether a persisted message is included in the rendered conversation transcript. */
 export type AgentMessageFilter = (message: AgentMessage) => boolean;
+
+/**
+ * Consumer hooks for a run created when files are attached and started on send. Supplied by the
+ * consumer because the shape of a run's `data` is interaction-specific. Optional: without it the
+ * run is created on send and the files are uploaded afterwards.
+ */
+export interface DraftRunHandlers {
+    /** Create the run and its artifact space without starting the conversation. */
+    create: () => Promise<{ agent_run_id: string } | undefined>;
+    /** Start a created run with the user's message. */
+    start: (
+        agentRunId: string,
+        message: string,
+        options?: StartWorkflowOptions,
+    ) => Promise<{ agent_run_id: string } | undefined>;
+}
+
+interface StagedUpload {
+    /** Set once the file is registered on the run. */
+    fileId?: string;
+    status: 'uploading' | 'processing' | 'ready' | 'error';
+    error?: string;
+}
+
+/** Matches the key the chip list renders with. */
+function stagedFileKey(file: File): string {
+    return `${file.name}-${file.size}-${file.lastModified}`;
+}
+
+/** Artifact path, kept unique within the batch so two files with one name do not overwrite. */
+function stagedArtifactPath(file: File, taken: Set<string>): string {
+    const base = `files/${file.name}`;
+    if (!taken.has(base)) {
+        taken.add(base);
+        return base;
+    }
+    const dot = file.name.lastIndexOf('.');
+    const stem = dot > 0 ? file.name.slice(0, dot) : file.name;
+    const ext = dot > 0 ? file.name.slice(dot) : '';
+    for (let n = 2; ; n++) {
+        const candidate = `files/${stem}-${n}${ext}`;
+        if (!taken.has(candidate)) {
+            taken.add(candidate);
+            return candidate;
+        }
+    }
+}
 
 export type StartWorkflowFn = (
     initialMessage?: string,
@@ -611,6 +659,8 @@ export interface ModernAgentConversationProps {
     fullWidth?: boolean;
     initialMessage?: string;
     startWorkflow?: StartWorkflowFn;
+    /** Opt-in: upload staged files into a run created on attach instead of on send. */
+    draftRun?: DraftRunHandlers;
     startButtonText?: string;
     placeholder?: string;
     hideUserInput?: boolean;
@@ -839,6 +889,7 @@ function StartWorkflowView({
     initialMessage,
     interactive = true,
     startWorkflow,
+    draftRun,
     onClose,
     isModal = false,
     fullWidth = false,
@@ -886,8 +937,59 @@ function StartWorkflowView({
     // Staged files - stored locally until workflow starts
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
     const [areStagedFilesExpanded, setAreStagedFilesExpanded] = useState(false);
+
+    // Run the staged files upload into; null when draft runs are unavailable, in which case send
+    // creates the run as before.
+    const [draftRunId, setDraftRunId] = useState<string | null>(null);
+    const [stagedUploads, setStagedUploads] = useState<Record<string, StagedUpload>>({});
+    // Dedupes concurrent creates and holds the id for callbacks that run before state settles.
+    const draftRunRef = useRef<{ id: string | null; creating: Promise<string | null> | null }>({
+        id: null,
+        creating: null,
+    });
+    const artifactPathsRef = useRef<Set<string>>(new Set());
+    // Keys already handed to the uploader; a ref, so the upload effect cannot re-enter on its own state.
+    const handledKeysRef = useRef<Set<string>>(new Set());
+    // Uploads not yet registered; send waits for them, since registration after start is refused.
+    const uploadsInFlightRef = useRef<Map<string, Promise<void>>>(new Map());
+    const usingDraftRun = !!draftRun && canStageFiles;
+    // Boolean so an unchanged poll does not retrigger the effect below.
+    const hasUnsettledUploads = Object.values(stagedUploads).some(
+        (upload) => upload.status === 'uploading' || upload.status === 'processing',
+    );
     const visibleStagedFiles = areStagedFilesExpanded ? stagedFiles : stagedFiles.slice(0, COLLAPSED_STAGED_FILE_COUNT);
     const hiddenStagedFileCount = stagedFiles.length - COLLAPSED_STAGED_FILE_COUNT;
+
+    // Object URLs for image thumbnails; in a ref so each is revoked exactly once.
+    const stagedPreviewsRef = useRef<Map<string, string>>(new Map());
+    const [stagedPreviews, setStagedPreviews] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        if (typeof URL === 'undefined' || !URL.createObjectURL) return;
+        const staged = new Set(stagedFiles.map(stagedFileKey));
+        let changed = false;
+        for (const [key, url] of stagedPreviewsRef.current) {
+            if (staged.has(key)) continue;
+            URL.revokeObjectURL(url);
+            stagedPreviewsRef.current.delete(key);
+            changed = true;
+        }
+        for (const file of stagedFiles) {
+            const key = stagedFileKey(file);
+            if (!file.type.startsWith('image/') || stagedPreviewsRef.current.has(key)) continue;
+            stagedPreviewsRef.current.set(key, URL.createObjectURL(file));
+            changed = true;
+        }
+        if (changed) setStagedPreviews(Object.fromEntries(stagedPreviewsRef.current));
+    }, [stagedFiles]);
+
+    useEffect(() => {
+        const urls = stagedPreviewsRef.current;
+        return () => {
+            for (const url of urls.values()) URL.revokeObjectURL(url);
+            urls.clear();
+        };
+    }, []);
 
     useEffect(() => {
         onAgentWorkingChange?.(isSending);
@@ -981,9 +1083,148 @@ function StartWorkflowView({
         [maxFiles],
     );
 
-    const removeStagedFile = useCallback((index: number) => {
-        setStagedFiles((prev) => prev.filter((_, i) => i !== index));
-    }, []);
+    /** Create the draft run once. Null when unavailable; files then stay local and send creates the run. */
+    const ensureDraftRun = useCallback(async (): Promise<string | null> => {
+        if (!draftRun) return null;
+        if (draftRunRef.current.id) return draftRunRef.current.id;
+        if (draftRunRef.current.creating) return draftRunRef.current.creating;
+
+        const creating = draftRun
+            .create()
+            .then((run) => {
+                const id = run?.agent_run_id ?? null;
+                draftRunRef.current.id = id;
+                if (id) setDraftRunId(id);
+                return id;
+            })
+            .catch((err: unknown) => {
+                console.warn('Could not create a draft run; falling back to uploading on send', err);
+                draftRunRef.current.id = null;
+                return null;
+            })
+            .finally(() => {
+                draftRunRef.current.creating = null;
+            });
+        draftRunRef.current.creating = creating;
+        return creating;
+    }, [draftRun]);
+
+    /** Upload one staged file and register it, which starts its extraction. */
+    const uploadStagedFile = useCallback(
+        async (file: File) => {
+            const key = stagedFileKey(file);
+            const runId = await ensureDraftRun();
+            if (!runId) {
+                // No draft run: the file stays staged for the send path. Its entry stays too, or the
+                // upload effect would pick the file up again.
+                return;
+            }
+            const artifactPath = stagedArtifactPath(file, artifactPathsRef.current);
+            try {
+                await client.agents.uploadArtifact(runId, artifactPath, file, file.type || undefined);
+                const result = await client.agents.registerFile(runId, {
+                    name: file.name,
+                    content_type: file.type || 'application/octet-stream',
+                    artifact_path: artifactPath,
+                    size: file.size,
+                });
+                const registered = result.files.find((f) => f.artifact_path === artifactPath);
+                setStagedUploads((prev) => ({
+                    ...prev,
+                    [key]: { fileId: registered?.id, status: registered?.status ?? 'processing' },
+                }));
+            } catch (err: unknown) {
+                // Shown on the chip; one bad file must not block sending.
+                console.error(`Failed to upload staged file ${file.name}:`, err);
+                artifactPathsRef.current.delete(artifactPath);
+                setStagedUploads((prev) => ({
+                    ...prev,
+                    [key]: { status: 'error', error: err instanceof Error ? err.message : String(err) },
+                }));
+            }
+        },
+        [client, ensureDraftRun],
+    );
+
+    // Upload newly staged files. Keyed by file, not index, so a removal mid-upload cannot shift slots.
+    useEffect(() => {
+        if (!usingDraftRun || stagedFiles.length === 0) return;
+        const pending = stagedFiles.filter((file) => !handledKeysRef.current.has(stagedFileKey(file)));
+        if (pending.length === 0) return;
+        for (const file of pending) {
+            handledKeysRef.current.add(stagedFileKey(file));
+        }
+        setStagedUploads((prev) => {
+            const next = { ...prev };
+            for (const file of pending) {
+                next[stagedFileKey(file)] = { status: 'uploading' };
+            }
+            return next;
+        });
+        for (const file of pending) {
+            const key = stagedFileKey(file);
+            const upload = uploadStagedFile(file).finally(() => {
+                if (uploadsInFlightRef.current.get(key) === upload) uploadsInFlightRef.current.delete(key);
+            });
+            uploadsInFlightRef.current.set(key, upload);
+        }
+    }, [usingDraftRun, stagedFiles, uploadStagedFile]);
+
+    // Follow extraction to completion.
+    useEffect(() => {
+        if (!draftRunId || !hasUnsettledUploads) return;
+        let cancelled = false;
+        const poll = async () => {
+            try {
+                const result = await client.agents.getFiles(draftRunId);
+                if (cancelled) return;
+                const byId = new Map(result.files.map((f) => [f.id, f]));
+                setStagedUploads((prev) => {
+                    const next = { ...prev };
+                    let changed = false;
+                    for (const [key, upload] of Object.entries(prev)) {
+                        const server = upload.fileId ? byId.get(upload.fileId) : undefined;
+                        if (!server || server.status === upload.status) continue;
+                        next[key] = { ...upload, status: server.status, error: server.error };
+                        changed = true;
+                    }
+                    return changed ? next : prev;
+                });
+            } catch (err: unknown) {
+                // A failed poll is not a failed upload.
+                console.warn('Could not read staged file progress', err);
+            }
+        };
+        // An interval: an unchanged poll returns the same state, which would not re-run an effect.
+        const timer = setInterval(poll, 1500);
+        return () => {
+            cancelled = true;
+            clearInterval(timer);
+        };
+    }, [client, draftRunId, hasUnsettledUploads]);
+
+    const removeStagedFile = useCallback(
+        (index: number) => {
+            const file = stagedFiles[index];
+            setStagedFiles((prev) => prev.filter((_, i) => i !== index));
+            if (!file) return;
+            const key = stagedFileKey(file);
+            const upload = stagedUploads[key];
+            handledKeysRef.current.delete(key);
+            setStagedUploads((prev) => {
+                const { [key]: _removed, ...rest } = prev;
+                return rest;
+            });
+            // Retracted, not failed: the run forgets the file.
+            const runId = draftRunRef.current.id;
+            if (runId && upload?.fileId) {
+                void client.agents.removeFile(runId, upload.fileId).catch((err: unknown) => {
+                    console.warn(`Could not remove staged file ${file.name}`, err);
+                });
+            }
+        },
+        [client, stagedFiles, stagedUploads],
+    );
 
     useEffect(() => {
         if (stagedFiles.length <= COLLAPSED_STAGED_FILE_COUNT) {
@@ -1029,8 +1270,14 @@ function StartWorkflowView({
                 messageContent = [message, '', 'Attachments:', ...lines].join('\n');
             }
 
-            // If files are staged, add a note to the message so the agent knows files are coming
-            if (canStageFiles && stagedFiles.length > 0) {
+            // A draft already holds its files and the first turn waits for them; only the
+            // upload-after-start path needs the note below.
+            if (usingDraftRun) {
+                await draftRunRef.current.creating;
+                await Promise.allSettled(uploadsInFlightRef.current.values());
+            }
+            const promotingDraft = usingDraftRun && !!draftRunRef.current.id;
+            if (canStageFiles && stagedFiles.length > 0 && !promotingDraft) {
                 const fileNames = stagedFiles.map((f) => f.name).join(', ');
                 messageContent = [
                     messageContent,
@@ -1039,7 +1286,12 @@ function StartWorkflowView({
                 ].join('\n');
             }
 
-            const newRun = await startWorkflow(messageContent, { tool_approval_mode: toolApprovalMode });
+            const newRun = promotingDraft
+                ? // biome-ignore lint/style/noNonNullAssertion: promotingDraft implies an id
+                  await draftRun!.start(draftRunRef.current.id as string, messageContent, {
+                      tool_approval_mode: toolApprovalMode,
+                  })
+                : await startWorkflow(messageContent, { tool_approval_mode: toolApprovalMode });
             if (!newRun) {
                 setPendingStartMessage(null);
                 setPendingStartTimestamp(null);
@@ -1063,7 +1315,7 @@ function StartWorkflowView({
             // reload. The upload loop below still does — a tab closed mid-loop never closes
             // the batch, which is why the send is retried and its failure surfaced.
             let stagedBatchDelivered = true;
-            if (canStageFiles && stagedFiles.length > 0) {
+            if (canStageFiles && stagedFiles.length > 0 && !promotingDraft) {
                 const batchId = `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                 const uploadedFileIds: string[] = [];
                 const failedUploads: { name: string; error?: string }[] = [];
@@ -1108,6 +1360,16 @@ function StartWorkflowView({
                         description: failedUploads.map((f) => f.name).join(', '),
                     });
                 }
+            }
+
+            if (promotingDraft) {
+                setStagedFiles([]);
+                setStagedUploads({});
+                setDraftRunId(null);
+                draftRunRef.current = { id: null, creating: null };
+                artifactPathsRef.current = new Set();
+                handledKeysRef.current = new Set();
+                uploadsInFlightRef.current = new Map();
             }
 
             // Clear attachments after successful start
@@ -1314,25 +1576,58 @@ function StartWorkflowView({
                         {/* Staged files display */}
                         {canStageFiles && stagedFiles.length > 0 && (
                             <div className="flex flex-wrap gap-2">
-                                {visibleStagedFiles.map((file, index) => (
-                                    <div
-                                        key={`${file.name}-${file.size}-${file.lastModified}`}
-                                        className="flex items-center gap-1.5 rounded-md bg-attention/10 px-2 py-1 text-sm text-attention"
-                                        title={t('agent.fileStagedTooltip')}
-                                    >
-                                        <FileTextIcon className="size-3.5" />
-                                        <span className="max-w-[120px] truncate">{file.name}</span>
-                                        <span className="text-xs opacity-70">{t('agent.staged')}</span>
-                                        <Button
-                                            variant="unstyled"
-                                            aria-label={`Remove staged file ${file.name}`}
-                                            onClick={() => removeStagedFile(index)}
-                                            className="ms-1 rounded p-0.5 hover:bg-attention/20"
+                                {visibleStagedFiles.map((file, index) => {
+                                    const upload = stagedUploads[stagedFileKey(file)];
+                                    const previewUrl = stagedPreviews[stagedFileKey(file)];
+                                    const tone =
+                                        upload?.status === 'error'
+                                            ? 'destructive'
+                                            : upload?.status === 'ready'
+                                              ? 'success'
+                                              : 'attention';
+                                    return (
+                                        <div
+                                            key={`${file.name}-${file.size}-${file.lastModified}`}
+                                            className={cn(
+                                                'flex items-center gap-1.5 rounded-md px-2 py-1 text-sm',
+                                                tone === 'destructive' && 'bg-destructive/10 text-destructive',
+                                                tone === 'success' && 'bg-success/10 text-success',
+                                                tone === 'attention' && 'bg-attention/10 text-attention',
+                                            )}
+                                            title={upload?.error ?? t('agent.fileStagedTooltip')}
                                         >
-                                            <XIcon className="size-3" />
-                                        </Button>
-                                    </div>
-                                ))}
+                                            {previewUrl ? (
+                                                <img
+                                                    src={previewUrl}
+                                                    alt=""
+                                                    className="size-5 shrink-0 rounded-sm object-cover"
+                                                />
+                                            ) : (
+                                                <FileTextIcon className="size-3.5" />
+                                            )}
+                                            <span className="max-w-[120px] truncate">{file.name}</span>
+                                            <span className="text-xs opacity-70">
+                                                {upload?.status === 'uploading'
+                                                    ? t('agent.fileUploading')
+                                                    : upload?.status === 'processing'
+                                                      ? t('agent.fileProcessing')
+                                                      : upload?.status === 'ready'
+                                                        ? t('agent.fileReady')
+                                                        : upload?.status === 'error'
+                                                          ? t('agent.fileFailed')
+                                                          : t('agent.staged')}
+                                            </span>
+                                            <Button
+                                                variant="unstyled"
+                                                aria-label={`Remove staged file ${file.name}`}
+                                                onClick={() => removeStagedFile(index)}
+                                                className="ms-1 rounded p-0.5 hover:bg-mixer-foreground/10"
+                                            >
+                                                <XIcon className="size-3" />
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
                                 {stagedFiles.length > COLLAPSED_STAGED_FILE_COUNT && (
                                     <Button
                                         type="button"
@@ -1818,6 +2113,9 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
     }, [isAgentWorking, onAgentWorkingChange]);
+    // The summary view hides the workflow's progress messages, so the waiting indicator reads the
+    // run's file states itself.
+    const attachmentPreparation = useAttachmentPreparation(client, agentRunId, isAgentWorking);
     const pendingRequestInputMessage = useMemo(() => {
         const answeredRequestInputKeys = new Set<string>();
         for (const message of displayedMessages) {
@@ -2810,6 +3108,7 @@ function ModernAgentConversationInner({
             ) : (
                 <AllMessagesMixed
                     messages={renderedMessages}
+                    attachmentPreparation={attachmentPreparation}
                     workstreamSourceMessages={renderedWorkstreamSourceMessages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                     isCompleted={displayedIsCompleted}

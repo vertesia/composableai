@@ -2200,6 +2200,13 @@ export const AsyncConversationExecutionPayloadSchema = z
                     "Tool calls executed before the first model turn. Results are injected into the initial context. These run sequentially with the caller's authority before the first model turn. Only a bounded set of read/hydration tools is accepted.",
             })
             .optional(),
+        wait_for_attached_files: z
+            .boolean()
+            .meta({
+                description:
+                    "Wait for the run's pre-turn attachments to finish processing before the first model turn. Start-only; dropped when the run continues as new.",
+            })
+            .optional(),
         excluded_tools: z
             .array(z.string())
             .meta({

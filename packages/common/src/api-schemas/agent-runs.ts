@@ -235,6 +235,62 @@ export const ResourceRefSchema = z
     })
     .meta({ id: 'ResourceRef' });
 
+/** Files attached to a run before its first turn, uploaded while the user is still composing. */
+export const AgentRunFileSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'Server-assigned id for this attachment.' }),
+        name: z.string().meta({ description: 'Original filename, as the user sees it.' }),
+        content_type: z.string().meta({ description: 'MIME type.' }),
+        size: z.number().meta({ description: 'Size in bytes, as reported by the client.' }).optional(),
+        artifact_path: z.string().meta({ description: 'Where the file sits in the run, e.g. "files/report.pdf".' }),
+        md_path: z
+            .string()
+            .meta({ description: 'Companion markdown of the extracted text, once there is any.' })
+            .optional(),
+        started_at: z.number().meta({ description: 'When the file was registered on the run, in epoch milliseconds.' }),
+        status: FileProcessingStatusSchema.meta({
+            description: 'Processing status, using the same vocabulary as a file attached mid-conversation.',
+        }),
+        text_extracted: z.boolean().meta({ description: 'Whether extraction produced usable text.' }).optional(),
+        error: z.string().meta({ description: 'Why the file is not usable.' }).optional(),
+    })
+    .meta({ id: 'AgentRunFile', description: 'One file attached to a run before its first turn.' });
+
+export const AgentRunFilesResponseSchema = z
+    .strictObject({
+        files: z.array(AgentRunFileSchema),
+        settled: z.boolean().meta({ description: 'True once no attachment is still uploading or processing.' }),
+    })
+    .meta({ id: 'AgentRunFilesResponse', description: "A run's pre-turn attachments and their progress." });
+
+export const RegisterAgentRunFilePayloadSchema = z
+    .strictObject({
+        name: z.string().meta({ description: 'Original filename.' }),
+        content_type: z.string(),
+        artifact_path: z
+            .string()
+            .meta({ description: 'Where the file was uploaded, as returned by the artifact upload.' }),
+        size: z.number().optional(),
+    })
+    .meta({
+        id: 'RegisterAgentRunFilePayload',
+        description: "Record a file uploaded into a draft run's artifact space and start its text extraction.",
+    });
+
+export const StartAgentRunPayloadSchema = z
+    .strictObject({
+        data: z
+            .looseObject({})
+            .meta({ description: "The interaction's input, including the user's prompt." })
+            .optional(),
+        tool_approval_mode: AgentToolApprovalModeSchema.optional(),
+    })
+    .meta({
+        id: 'StartAgentRunPayload',
+        description:
+            'Start the conversation for a run created as a draft. The first turn waits for any attachment still processing.',
+    });
+
 export const AgentArtifactContentResponseSchema = z
     .strictObject({
         path: z.string(),
@@ -627,6 +683,13 @@ export const CreateAgentRunPayloadSchema = z
             .meta({
                 description:
                     'Denylist of MCP tool-collection ids deactivated for this run. `undefined`/empty means all installed/connected MCP collections are active (back-compat, and new servers stay active by default). Listed collections are excluded even if connected.',
+            })
+            .optional(),
+        draft: z
+            .boolean()
+            .meta({
+                description:
+                    'Create the run and its artifact space without starting the conversation. Attach files with RegisterAgentRunFile, then start it with StartAgentRun.',
             })
             .optional(),
         content_type: ContentObjectTypeRefSchema.meta({

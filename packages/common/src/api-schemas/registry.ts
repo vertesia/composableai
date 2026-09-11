@@ -1789,6 +1789,10 @@ const AGENT_RUN_SCHEMAS = {
     AgentEvent: AgentRunSchemas.AgentEventSchema,
     IngestAgentEventsPayload: AgentRunSchemas.IngestAgentEventsPayloadSchema,
     IngestAgentEventsResponse: AgentRunSchemas.IngestAgentEventsResponseSchema,
+    AgentRunFile: AgentRunSchemas.AgentRunFileSchema,
+    AgentRunFilesResponse: AgentRunSchemas.AgentRunFilesResponseSchema,
+    RegisterAgentRunFilePayload: AgentRunSchemas.RegisterAgentRunFilePayloadSchema,
+    StartAgentRunPayload: AgentRunSchemas.StartAgentRunPayloadSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const WORKFLOW_RUN_SCHEMAS = {
@@ -2380,6 +2384,11 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    // Pre-turn run attachments.
+    'AgentRunFile',
+    'AgentRunFilesResponse',
+    'RegisterAgentRunFilePayload',
+    'StartAgentRunPayload',
     // Process Test Lab request, fixture, and result contracts.
     'ProcessTestVirtualActor',
     'ProcessTestFixtureResult',
