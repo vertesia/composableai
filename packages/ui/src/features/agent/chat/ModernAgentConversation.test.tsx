@@ -1278,7 +1278,7 @@ describe('ModernAgentConversation send handling', () => {
             expect.objectContaining({ workstream_id: 'beta', status: 'running' }),
             expect.objectContaining({ workstream_id: 'gamma', status: 'completed' }),
         ]);
-        expect(latestRightPanelProps.activeTab).toBe('plan');
+        expect(latestRightPanelProps.activeTab).toBe('workstreams');
         expect(latestMessageInputProps.activeTaskCount).toBe(2);
         expect(latestMessageInputProps.activeWorkstreams).toEqual([
             expect.objectContaining({ workstream_id: 'alpha', status: 'running' }),
