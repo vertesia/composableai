@@ -18,6 +18,7 @@ export * from './apps.js';
 export * from './ask-user.js';
 export * from './audit-trail.js';
 export * from './browser-credentials.js';
+export * from './canonical-conversation.js';
 export * from './common.js';
 export * from './content-query.js';
 export * from './cost-analytics.js';

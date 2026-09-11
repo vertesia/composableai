@@ -641,6 +641,9 @@ importers:
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
+      '@llumiverse/conversation':
+        specifier: workspace:*
+        version: link:../../llumiverse/conversation
       ajv:
         specifier: ^8.20.0
         version: 8.20.0

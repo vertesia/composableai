@@ -22,3 +22,19 @@ describe('RunsApi resume request options', () => {
         ]);
     });
 });
+
+describe('RunsApi canonical retrieval', () => {
+    it('uses the dedicated endpoint and preserves the unavailable result', async () => {
+        const requests: Request[] = [];
+        const response = { status: 'unavailable', reason: 'retention_policy', retention: 'STANDARD' };
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json(response)),
+            onRequest: (request) => requests.push(request),
+        });
+        expect(await client.runs.retrieveConversation('run-1')).toEqual(response);
+        expect(new URL(requests[0]!.url).pathname).toBe('/api/v1/runs/run-1/conversation');
+        expect(requests[0]!.method).toBe('GET');
+    });
+});

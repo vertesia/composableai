@@ -225,6 +225,7 @@ import {
     BulkOperationResponseSchema,
     BulkOperationResultSchema,
 } from './bulk-operation.js';
+import { CANONICAL_CONVERSATION_SCHEMAS } from './canonical-conversation.js';
 import {
     DeleteCountResultSchema,
     GenericCommandResponseSchema,
@@ -676,6 +677,7 @@ import {
     RenderPromptResponseSchema,
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
+import { RunConversationResponseSchema } from './run-conversation.js';
 import * as SecretSchemas from './secrets.js';
 import {
     ColumnLayoutSchema,
@@ -2253,7 +2255,12 @@ const DELEGATION_SCHEMAS = {
     DelegationGrant: DelegationGrantSchema,
     DelegationGrantArray: DelegationGrantArraySchema,
 };
+const RUN_CONVERSATION_SCHEMAS = {
+    RunConversationResponse: RunConversationResponseSchema,
+} as const;
+
 const API_SCHEMA_GROUPS = [
+    RUN_CONVERSATION_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2317,7 +2324,8 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
+type ApiSchemaMap = typeof RUN_CONVERSATION_SCHEMAS &
+    typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
     typeof OAUTH_SCHEMAS &
@@ -2389,6 +2397,11 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    ...Object.entries(CANONICAL_CONVERSATION_SCHEMAS)
+        .filter(([, schema]) => schema.def.type === 'object')
+        .map(([name]) => name),
+    'AvailableRunConversation',
+    'UnavailableRunConversation',
     'CreateDelegationGrantPayload',
     'DelegationGrant',
     // Process Test Lab request, fixture, and result contracts.
