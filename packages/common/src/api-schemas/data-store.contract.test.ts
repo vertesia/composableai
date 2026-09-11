@@ -28,6 +28,12 @@ describe('data-store API contracts', () => {
         >();
     });
 
+    it('accepts a recoverable import ID at the HTTP request boundary', () => {
+        const input = { mode: 'append', message: 'Import rows', tables: {}, import_id: '6aa400001234567890abcdef' };
+        expect(validateApiRequest('ImportDataPayload', input).valid).toBe(true);
+        expect(validateApiRequest('ImportDataPayload', { ...input, import_id: 'invalid' }).valid).toBe(false);
+    });
+
     it('rejects undeclared request fields through the published component', () => {
         expect(
             validateApiRequest('CreateDataStorePayload', {

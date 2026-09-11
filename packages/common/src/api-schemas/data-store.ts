@@ -520,6 +520,14 @@ export const DataStoreVersionArraySchema = z.array(DataStoreVersionSchema).meta(
 
 export const ImportDataPayloadSchema = z
     .strictObject({
+        import_id: z
+            .string()
+            .regex(/^[0-9a-f]{24}$/)
+            .meta({
+                description:
+                    'Optional client-generated Mongo ObjectId for idempotent retries. Generate once before submitting, then reuse with identical input. New IDs must be less than 24 hours old; existing jobs are returned without executing again. Poll GET /data/:storeId/import/:importId after a timeout.',
+            })
+            .optional(),
         tables: ImportTableDataMapSchema.meta({ description: 'Map of table name to data specification' }),
         mode: z.enum(['append', 'replace']).meta({ description: 'Import mode' }),
         message: z.string().meta({ description: 'Commit message' }),

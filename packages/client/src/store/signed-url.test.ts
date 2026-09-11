@@ -173,10 +173,32 @@ describe('fetchSignedUrl', () => {
 
     it('honors a numeric Retry-After header when scheduling the retry', async () => {
         fetchMock
-            .mockResolvedValueOnce(response(503, 'slow down', { 'retry-after': '2' }))
+            .mockResolvedValueOnce(response(503, 'slow down', { 'retry-after': '30' }))
             .mockResolvedValueOnce(response(200, 'ok'));
-        const res = await runAllTimers(fetchSignedUrl('https://storage/x'));
+        const pending = fetchSignedUrl('https://storage/x');
+        await vi.advanceTimersByTimeAsync(29999);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(1);
+        const res = await pending;
         expect(res.status).toBe(200);
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
+});
+
+describe('Retry-After request budget', () => {
+    it.each(['3600', '2147484', '1e308', new Date(Date.now() + 3600000).toUTCString()])(
+        'returns the intact response without an early retry for %s',
+        async (retryAfter) => {
+            const res = new Response('retry later', { status: 503, headers: { 'Retry-After': retryAfter } });
+            const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(res);
+            try {
+                const result = await fetchSignedUrl('https://storage/x');
+                expect(result).toBe(res);
+                expect(await result.text()).toBe('retry later');
+                expect(fetch).toHaveBeenCalledTimes(1);
+            } finally {
+                fetch.mockRestore();
+            }
+        },
+    );
 });
