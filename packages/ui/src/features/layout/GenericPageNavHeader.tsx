@@ -124,7 +124,7 @@ export function GenericPageNavHeader({
         }
 
         // Add current page breadcrumbs
-        if (breadcrumbs && breadcrumbs.length > 0) {
+        if (Array.isArray(breadcrumbs)) {
             breadcrumbs.forEach((breadcrumb) => {
                 // Preserve the entire React element as label
                 const label = breadcrumb.props?.children || breadcrumb;
