@@ -7736,6 +7736,16 @@
         "type": "string",
         "description": "The tool use id if the segment is a tool response"
       },
+      "tool_result_status": {
+        "type": "string",
+        "enum": [
+          "success",
+          "error",
+          "cancelled",
+          "denied"
+        ],
+        "description": "Terminal status of a tool response supplied by the application"
+      },
       "thought_signature": {
         "type": "string",
         "description": "Gemini thinking models require thought_signature to be passed back with tool results. This should be copied from the ToolUse.thought_signature when sending tool responses."
