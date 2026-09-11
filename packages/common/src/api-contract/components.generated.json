@@ -35999,6 +35999,17 @@
         },
         "description": "Lessons learned from the conversation (extracted at completion)"
       },
+      "evaluation": {
+        "$ref": "#/components/schemas/AgentRunEvaluation",
+        "description": "Evaluation summary of the run."
+      },
+      "feedback": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AgentRunFeedbackEntry"
+        },
+        "description": "Retained user ratings on the run."
+      },
       "archived_at": {
         "type": "string",
         "format": "date-time",
@@ -36033,6 +36044,433 @@
     ],
     "additionalProperties": false,
     "description": "AgentRun — the client-facing stable identity for a running or completed agent.\n\nAll operations use `id` as the sole identifier. Temporal workflow internals are never exposed to clients."
+  },
+  "AgentRunEvaluationRollup": {
+    "type": "object",
+    "properties": {
+      "seq": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Monotonic per run; the server ignores a rollup older than the one it holds."
+      },
+      "detector_version": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "turns": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "severity": {
+        "$ref": "#/components/schemas/EvaluationSeverity"
+      },
+      "flags": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TurnEvaluationFlag"
+        }
+      },
+      "worst_turn_seq": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "last_terminal_type": {
+        "$ref": "#/components/schemas/TurnTerminalType"
+      },
+      "terminal_error_class": {
+        "type": "string"
+      },
+      "partial": {
+        "type": "boolean"
+      },
+      "totals": {
+        "type": "object",
+        "properties": {
+          "tool_calls": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "error_tool_results": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "unrecovered_tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "llm_calls": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "prompt_tokens": {
+            "type": "number"
+          },
+          "completion_tokens": {
+            "type": "number"
+          },
+          "cached_tokens": {
+            "type": "number"
+          },
+          "retry_completion_tokens": {
+            "type": "number"
+          },
+          "active_ms": {
+            "type": "number"
+          },
+          "ask_user_wait_ms": {
+            "type": "number"
+          },
+          "approval_wait_ms": {
+            "type": "number"
+          },
+          "followups": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "approvals_requested": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "approvals_denied": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stop_requests": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "tool_calls",
+          "error_tool_results",
+          "unrecovered_tools",
+          "llm_calls",
+          "prompt_tokens",
+          "completion_tokens",
+          "cached_tokens",
+          "retry_completion_tokens",
+          "active_ms",
+          "ask_user_wait_ms",
+          "approval_wait_ms",
+          "followups",
+          "approvals_requested",
+          "approvals_denied",
+          "stop_requests"
+        ],
+        "additionalProperties": false
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "seq",
+      "detector_version",
+      "turns",
+      "severity",
+      "flags",
+      "totals",
+      "updated_at"
+    ],
+    "additionalProperties": false,
+    "description": "Fold of the turn evaluations of a run."
+  },
+  "EvaluationSeverity": {
+    "type": "string",
+    "enum": [
+      "none",
+      "low",
+      "medium",
+      "high"
+    ],
+    "description": "Worst deterministic detector level. `none` means no detector fired, not success."
+  },
+  "TurnEvaluationFlag": {
+    "type": "string",
+    "enum": [
+      "user_stopped_after_failure",
+      "mutation_unsuccessful",
+      "run_failed",
+      "unrecovered_tool",
+      "fail_streak",
+      "identical_retry",
+      "reread",
+      "high_gather",
+      "overhead",
+      "followup_after_answer",
+      "approval_denied"
+    ],
+    "description": "Reason behind an evaluation severity."
+  },
+  "TurnTerminalType": {
+    "type": "string",
+    "enum": [
+      "answer",
+      "user_stopped",
+      "completed",
+      "failed",
+      "cancelled",
+      "interrupted"
+    ],
+    "description": "How an agent turn ended."
+  },
+  "AgentRunFeedbackCounts": {
+    "type": "object",
+    "properties": {
+      "up": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "down": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "last_rating": {
+        "$ref": "#/components/schemas/AgentRunFeedbackRating"
+      },
+      "last_reason_code": {
+        "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
+      }
+    },
+    "required": [
+      "up",
+      "down"
+    ],
+    "additionalProperties": false,
+    "description": "Ratings over the retained feedback entries."
+  },
+  "AgentRunFeedbackRating": {
+    "type": "string",
+    "enum": [
+      "up",
+      "down"
+    ],
+    "description": "Thumbs up or thumbs down on an agent run."
+  },
+  "AgentRunFeedbackReasonCode": {
+    "type": "string",
+    "enum": [
+      "accurate",
+      "helpful",
+      "fast",
+      "well_explained",
+      "wrong_result",
+      "incomplete",
+      "misunderstood_request",
+      "too_slow",
+      "tool_failure",
+      "unsafe_action",
+      "other"
+    ],
+    "description": "Why the run was rated the way it was."
+  },
+  "AgentRunJudgeResult": {
+    "type": "object",
+    "properties": {
+      "rev": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "gate": {
+        "$ref": "#/components/schemas/JudgeGateReason"
+      },
+      "sample_rate": {
+        "type": "number"
+      },
+      "selected_probability": {
+        "type": "number"
+      },
+      "outcome": {
+        "$ref": "#/components/schemas/JudgeOutcome"
+      },
+      "verdict": {
+        "$ref": "#/components/schemas/JudgeVerdict"
+      },
+      "score": {
+        "type": "number"
+      },
+      "model": {
+        "type": "string"
+      },
+      "prompt_version": {
+        "type": "string"
+      },
+      "turns_judged": {
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      },
+      "judged_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "rev",
+      "gate",
+      "sample_rate",
+      "selected_probability",
+      "outcome",
+      "prompt_version",
+      "judged_at"
+    ],
+    "additionalProperties": false,
+    "description": "Latest judge result for a run."
+  },
+  "JudgeGateReason": {
+    "type": "string",
+    "enum": [
+      "signal",
+      "sample"
+    ],
+    "description": "Why the judge looked at a run."
+  },
+  "JudgeOutcome": {
+    "type": "string",
+    "enum": [
+      "judged",
+      "skipped_unarchived",
+      "failed"
+    ],
+    "description": "What a judge run produced."
+  },
+  "JudgeVerdict": {
+    "type": "string",
+    "enum": [
+      "success",
+      "partial",
+      "failure"
+    ],
+    "description": "The judge's reading of a turn."
+  },
+  "AgentRunContradictionReason": {
+    "type": "string",
+    "enum": [
+      "feedback_down_on_clean_run",
+      "judge_failure_on_clean_run"
+    ]
+  },
+  "AgentRunEvaluation": {
+    "type": "object",
+    "properties": {
+      "rev": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Bumped on every change to any part of the summary."
+      },
+      "rollup": {
+        "$ref": "#/components/schemas/AgentRunEvaluationRollup"
+      },
+      "feedback_counts": {
+        "$ref": "#/components/schemas/AgentRunFeedbackCounts"
+      },
+      "judge": {
+        "$ref": "#/components/schemas/AgentRunJudgeResult"
+      },
+      "severity": {
+        "$ref": "#/components/schemas/EvaluationSeverity"
+      },
+      "flags": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TurnEvaluationFlag"
+        }
+      },
+      "contradicted": {
+        "type": "boolean"
+      },
+      "contradiction_reasons": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AgentRunContradictionReason"
+        }
+      },
+      "deployment_env": {
+        "type": "string"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "rev",
+      "severity",
+      "flags",
+      "contradicted",
+      "updated_at"
+    ],
+    "additionalProperties": false,
+    "description": "Evaluation summary of an agent run."
+  },
+  "AgentRunFeedbackEntry": {
+    "type": "object",
+    "properties": {
+      "feedback_id": {
+        "type": "string"
+      },
+      "rating": {
+        "$ref": "#/components/schemas/AgentRunFeedbackRating"
+      },
+      "reason_code": {
+        "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
+      },
+      "comment": {
+        "type": "string"
+      },
+      "message_id": {
+        "type": "string"
+      },
+      "message_seq": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "message_scoped": {
+        "type": "boolean"
+      },
+      "user_id": {
+        "type": "string"
+      },
+      "rated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "replaced_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "feedback_id",
+      "rating",
+      "message_scoped",
+      "user_id",
+      "rated_at"
+    ],
+    "additionalProperties": false,
+    "description": "One recorded rating on an agent run."
   },
   "AgentRun": {
     "type": "object",
@@ -36261,6 +36699,17 @@
           "type": "string"
         },
         "description": "Lessons learned from the conversation (extracted at completion)"
+      },
+      "evaluation": {
+        "$ref": "#/components/schemas/AgentRunEvaluation",
+        "description": "Evaluation summary of the run."
+      },
+      "feedback": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AgentRunFeedbackEntry"
+        },
+        "description": "Retained user ratings on the run."
       },
       "archived_at": {
         "type": "string",
@@ -37160,8 +37609,40 @@
           "desc"
         ],
         "description": "Sort order"
+      },
+      "evaluation_severity": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ListAgentRunsEvaluationSeverity"
+        },
+        "description": "Filter by evaluation severity; `unrated` selects runs without an evaluation"
+      },
+      "evaluation_flag": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TurnEvaluationFlag"
+        },
+        "description": "Filter by evaluation flag (any of)"
+      },
+      "feedback_rating": {
+        "$ref": "#/components/schemas/AgentRunFeedbackRating",
+        "description": "Filter by last feedback rating"
+      },
+      "contradicted": {
+        "type": "boolean",
+        "description": "Only runs whose feedback or judge contradicts the detectors"
       }
     }
+  },
+  "ListAgentRunsEvaluationSeverity": {
+    "type": "string",
+    "enum": [
+      "unrated",
+      "none",
+      "low",
+      "medium",
+      "high"
+    ]
   },
   "RecordAgentRunPayload": {
     "type": "object",
@@ -37394,8 +37875,85 @@
       },
       "process_state": {
         "$ref": "#/components/schemas/ProcessState"
+      },
+      "evaluation_rollup": {
+        "$ref": "#/components/schemas/AgentRunEvaluationRollup"
       }
     }
+  },
+  "AgentRunFeedbackPayload": {
+    "type": "object",
+    "properties": {
+      "feedback_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "description": "Client-generated idempotency key (a UUID). A retried request with the same id is a no-op."
+      },
+      "rating": {
+        "$ref": "#/components/schemas/AgentRunFeedbackRating"
+      },
+      "reason_code": {
+        "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
+      },
+      "comment": {
+        "type": "string",
+        "maxLength": 2000,
+        "description": "Free-text comment. Stored with the tenant; only its presence is ever counted."
+      },
+      "message_id": {
+        "type": "string",
+        "description": "Rate one message rather than the run as a whole."
+      },
+      "message_seq": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Position of the rated message in the run, when a message is rated."
+      }
+    },
+    "required": [
+      "feedback_id",
+      "rating"
+    ],
+    "additionalProperties": false,
+    "description": "A user rating on an agent run."
+  },
+  "AgentRunFeedbackStatus": {
+    "type": "string",
+    "enum": [
+      "recorded",
+      "replaced",
+      "disabled"
+    ],
+    "description": "Whether the rating was recorded."
+  },
+  "AgentRunFeedbackResponse": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "$ref": "#/components/schemas/AgentRunFeedbackStatus"
+      },
+      "feedback_counts": {
+        "$ref": "#/components/schemas/AgentRunFeedbackCounts"
+      }
+    },
+    "required": [
+      "status"
+    ],
+    "additionalProperties": false,
+    "description": "Result of rating an agent run."
+  },
+  "ToolErrorClass": {
+    "type": "string",
+    "enum": [
+      "schema",
+      "platform",
+      "config",
+      "environment",
+      "other"
+    ],
+    "description": "Coarse class of a tool error, derived from the error text."
   },
   "AgentEvent": {
     "oneOf": [
@@ -37431,6 +37989,44 @@
             "items": {
               "type": "string"
             }
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
           },
           "eventType": {
             "type": "string",
@@ -37493,6 +38089,44 @@
             "items": {
               "type": "string"
             }
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
           },
           "eventType": {
             "type": "string",
@@ -37603,6 +38237,44 @@
             "items": {
               "type": "string"
             }
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
           },
           "eventType": {
             "type": "string",
@@ -37720,6 +38392,44 @@
               "type": "string"
             }
           },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
+          },
           "eventType": {
             "type": "string",
             "const": "tool_call"
@@ -37766,6 +38476,18 @@
           },
           "spawnedChildWorkflow": {
             "type": "boolean"
+          },
+          "approvalClass": {
+            "$ref": "#/components/schemas/AgentToolApprovalClass"
+          },
+          "errorClass": {
+            "$ref": "#/components/schemas/ToolErrorClass"
+          },
+          "signatureHash": {
+            "type": "string"
+          },
+          "workstreamId": {
+            "type": "string"
           }
         },
         "required": [
@@ -37782,6 +38504,623 @@
           "iteration",
           "success",
           "durationMs"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "agentRunId": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "environmentId": {
+            "type": "string"
+          },
+          "environmentType": {
+            "type": "string"
+          },
+          "interactionId": {
+            "type": "string"
+          },
+          "parentRunId": {
+            "type": "string"
+          },
+          "ancestorRunIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "eventType": {
+            "type": "string",
+            "const": "turn_evaluation"
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "detectorVersion": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "workstreamId": {
+            "type": "string"
+          },
+          "turnSeq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "terminalType": {
+            "$ref": "#/components/schemas/TurnTerminalType"
+          },
+          "partial": {
+            "type": "boolean"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "endedAt": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "number"
+          },
+          "activeMs": {
+            "type": "number"
+          },
+          "askUserWaitMs": {
+            "type": "number"
+          },
+          "approvalWaitMs": {
+            "type": "number"
+          },
+          "timeToFirstAnswerMs": {
+            "type": "number"
+          },
+          "toolCalls": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "errorToolResults": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "maxFailStreak": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "identicalRetryCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "unrecoveredTools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "errorClasses": {
+            "type": "object",
+            "properties": {
+              "schema": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "platform": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "config": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "environment": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "other": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "schema",
+              "platform",
+              "config",
+              "environment",
+              "other"
+            ],
+            "additionalProperties": false
+          },
+          "gatherCalls": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "gatherRatio": {
+            "type": "number"
+          },
+          "mutationAttempted": {
+            "type": "boolean"
+          },
+          "mutationSucceeded": {
+            "type": "boolean"
+          },
+          "rereadCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "overheadCalls": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "skillsLoaded": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "interruptedToolCalls": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "llmCalls": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "promptTokens": {
+            "type": "number"
+          },
+          "completionTokens": {
+            "type": "number"
+          },
+          "cachedTokens": {
+            "type": "number"
+          },
+          "retryCompletionTokens": {
+            "type": "number"
+          },
+          "approvalsRequested": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "approvalsDenied": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stopRequests": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "followupAfterAnswer": {
+            "type": "boolean"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/EvaluationSeverity"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TurnEvaluationFlag"
+            }
+          },
+          "terminalErrorClass": {
+            "type": "string"
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "seq": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "toolUseId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "approvalClass": {
+                  "$ref": "#/components/schemas/AgentToolApprovalClass"
+                },
+                "ok": {
+                  "type": "boolean"
+                },
+                "errorClass": {
+                  "$ref": "#/components/schemas/ToolErrorClass"
+                },
+                "sig": {
+                  "type": "string"
+                },
+                "durationMs": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "seq",
+                "toolUseId",
+                "name",
+                "ok",
+                "sig",
+                "durationMs"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "toolsTruncated": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "timestamp",
+          "runId",
+          "model",
+          "environmentId",
+          "environmentType",
+          "interactionId",
+          "eventType",
+          "schemaVersion",
+          "detectorVersion",
+          "workstreamId",
+          "turnSeq",
+          "terminalType",
+          "startedAt",
+          "endedAt",
+          "durationMs",
+          "activeMs",
+          "askUserWaitMs",
+          "approvalWaitMs",
+          "toolCalls",
+          "errorToolResults",
+          "maxFailStreak",
+          "identicalRetryCount",
+          "unrecoveredTools",
+          "errorClasses",
+          "gatherCalls",
+          "mutationAttempted",
+          "mutationSucceeded",
+          "rereadCount",
+          "overheadCalls",
+          "skillsLoaded",
+          "interruptedToolCalls",
+          "llmCalls",
+          "promptTokens",
+          "completionTokens",
+          "cachedTokens",
+          "retryCompletionTokens",
+          "approvalsRequested",
+          "approvalsDenied",
+          "stopRequests",
+          "followupAfterAnswer",
+          "severity",
+          "flags",
+          "tools",
+          "toolsTruncated"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "agentRunId": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "environmentId": {
+            "type": "string"
+          },
+          "environmentType": {
+            "type": "string"
+          },
+          "interactionId": {
+            "type": "string"
+          },
+          "parentRunId": {
+            "type": "string"
+          },
+          "ancestorRunIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "eventType": {
+            "type": "string",
+            "const": "feedback"
+          },
+          "feedbackId": {
+            "type": "string"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/AgentRunFeedbackRating"
+          },
+          "reasonCode": {
+            "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
+          },
+          "hasComment": {
+            "type": "boolean"
+          },
+          "messageScoped": {
+            "type": "boolean"
+          },
+          "messageSeq": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "replaced": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "timestamp",
+          "runId",
+          "model",
+          "environmentId",
+          "environmentType",
+          "interactionId",
+          "eventType",
+          "feedbackId",
+          "rating",
+          "hasComment",
+          "messageScoped",
+          "replaced"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "agentRunId": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "environmentId": {
+            "type": "string"
+          },
+          "environmentType": {
+            "type": "string"
+          },
+          "interactionId": {
+            "type": "string"
+          },
+          "parentRunId": {
+            "type": "string"
+          },
+          "ancestorRunIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "eventType": {
+            "type": "string",
+            "const": "turn_judgement"
+          },
+          "evaluationRev": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "workstreamId": {
+            "type": "string"
+          },
+          "turnSeq": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "gate": {
+            "$ref": "#/components/schemas/JudgeGateReason"
+          },
+          "sampleRate": {
+            "type": "number"
+          },
+          "selectedProbability": {
+            "type": "number"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/JudgeOutcome"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/JudgeVerdict"
+          },
+          "score": {
+            "type": "number"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "detectorVersion": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "timestamp",
+          "runId",
+          "model",
+          "environmentId",
+          "environmentType",
+          "interactionId",
+          "eventType",
+          "evaluationRev",
+          "workstreamId",
+          "turnSeq",
+          "gate",
+          "sampleRate",
+          "selectedProbability",
+          "outcome",
+          "promptVersion"
         ],
         "additionalProperties": false
       }
@@ -42128,6 +43467,11 @@
   "ImportDataPayload": {
     "type": "object",
     "properties": {
+      "import_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$",
+        "description": "Optional client-generated Mongo ObjectId for idempotent retries. Generate once before submitting, then reuse with identical input. New IDs must be less than 24 hours old; existing jobs are returned without executing again. Poll GET /data/:storeId/import/:importId after a timeout."
+      },
       "tables": {
         "$ref": "#/components/schemas/ImportTableDataMap",
         "description": "Map of table name to data specification"

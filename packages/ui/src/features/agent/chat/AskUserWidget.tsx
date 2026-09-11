@@ -13,6 +13,21 @@ export interface AskUserOption {
     icon?: React.ReactNode;
 }
 
+export function isAskUserOptions(value: unknown): value is AskUserOption[] {
+    return (
+        Array.isArray(value) &&
+        value.every((option: unknown) => {
+            if (!option || typeof option !== 'object' || Array.isArray(option)) return false;
+            const { id, label, description } = option as Partial<AskUserOption>;
+            return (
+                typeof id === 'string' &&
+                typeof label === 'string' &&
+                (description == null || typeof description === 'string')
+            );
+        })
+    );
+}
+
 /** Props for the AskUserWidget component */
 export interface AskUserWidgetProps {
     /** The question or prompt to display */
@@ -153,11 +168,12 @@ export function AskUserWidget({
 
     const styles = VARIANT_STYLES[variant];
     const DefaultIcon = VARIANT_ICONS[variant];
-    const safeOptions = Array.isArray(options) ? options : [];
+    const validOptions = isAskUserOptions(options);
+    const safeOptions = validOptions ? options : [];
     const invalidOptionsReported = React.useRef(false);
 
     React.useEffect(() => {
-        if (options === undefined || Array.isArray(options) || invalidOptionsReported.current) return;
+        if (options === undefined || validOptions || invalidOptionsReported.current) return;
 
         invalidOptionsReported.current = true;
         Env.logger.warn('AskUserWidget received invalid options; rendering without options', {
@@ -166,8 +182,7 @@ export function AskUserWidget({
                 received_type: typeof options,
             },
         });
-        console.warn('[AskUserWidget] Invalid options received; rendering without options.');
-    }, [options]);
+    }, [options, validOptions]);
 
     const toggleOption = (optionId: string) => {
         setSelectedOptions((prev) => {

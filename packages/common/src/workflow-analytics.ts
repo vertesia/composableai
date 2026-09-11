@@ -4,6 +4,9 @@
  * These types define the event-based model for agent observability.
  */
 
+import type { AgentToolApprovalClass } from './apps.js';
+import type { AgentRunFeedbackRating, AgentRunFeedbackReasonCode } from './store/agent-run.js';
+
 // ============================================================================
 // Enums
 // ============================================================================
@@ -16,6 +19,12 @@ export enum AgentEventType {
     AgentRunCompleted = 'agent_run_completed',
     LlmCall = 'llm_call',
     ToolCall = 'tool_call',
+    /** Deterministic evaluation of one agent turn, emitted when the turn ends */
+    TurnEvaluation = 'turn_evaluation',
+    /** A user rating on an agent run, emitted by the server when it is recorded */
+    Feedback = 'feedback',
+    /** Verdict of the LLM judge on one turn, emitted by the judge workflow */
+    TurnJudgement = 'turn_judgement',
 }
 
 /**
@@ -51,6 +60,60 @@ export enum TelemetryToolType {
 }
 
 // ============================================================================
+// Evaluation vocabularies
+// ============================================================================
+
+/** How an agent turn ended. `ask_user` never ends a turn; its wait is measured inside the turn. */
+export type TurnTerminalType = 'answer' | 'user_stopped' | 'completed' | 'failed' | 'cancelled' | 'interrupted';
+
+/** Worst deterministic detector level. `none` means no detector fired, not that the turn succeeded. */
+export type EvaluationSeverity = 'none' | 'low' | 'medium' | 'high';
+
+/** Reasons behind an evaluation severity. */
+export type TurnEvaluationFlag =
+    | 'user_stopped_after_failure'
+    | 'mutation_unsuccessful'
+    | 'run_failed'
+    | 'unrecovered_tool'
+    | 'fail_streak'
+    | 'identical_retry'
+    | 'reread'
+    | 'high_gather'
+    | 'overhead'
+    | 'followup_after_answer'
+    | 'approval_denied';
+
+/** Coarse class of a tool error, derived from the error text. */
+export type ToolErrorClass = 'schema' | 'platform' | 'config' | 'environment' | 'other';
+
+/** Number of tool errors per class in a turn. */
+export interface ToolErrorClassCounts {
+    schema: number;
+    platform: number;
+    config: number;
+    environment: number;
+    other: number;
+}
+
+/** The deployment that ingested an event; stamped by the server, never by the producer. */
+export interface TelemetryDeployment {
+    /** Environment name, e.g. `staging`, `dev-my-branch`, `production`, `preview`, `preprod` */
+    env: string;
+    /** Environment group: `dev`, `staging`, `preview` or `production` */
+    group: string;
+    /** Commit SHA of the ingesting server */
+    version: string;
+    /** Region short name when known */
+    region?: string;
+}
+
+/** The process that produced an event, for diagnosing worker versions. */
+export interface TelemetryProducer {
+    /** Commit SHA of the producer */
+    version: string;
+}
+
+// ============================================================================
 // Base Event
 // ============================================================================
 
@@ -60,6 +123,12 @@ export enum TelemetryToolType {
 interface BaseAgentEvent {
     /** Type of the event */
     eventType: AgentEventType;
+    /** Deterministic id for events that can be delivered more than once (activity retries) */
+    eventId?: string;
+    /** Set by the ingesting server; producers must leave it undefined */
+    deployment?: TelemetryDeployment;
+    /** Set by the producer from its own build metadata */
+    producer?: TelemetryProducer;
     /** ISO 8601 timestamp */
     timestamp: string;
     /** Globally unique ID for this agent run */
@@ -210,6 +279,167 @@ export interface ToolCallEvent extends BaseAgentEvent {
     errorMessage?: string;
     /** Whether this tool spawned a child workflow */
     spawnedChildWorkflow?: boolean;
+    /** Approval class of the resolved tool; undefined when the tool could not be resolved */
+    approvalClass?: AgentToolApprovalClass;
+    /** Error class derived from the error message when the call failed */
+    errorClass?: ToolErrorClass;
+    /** Hash of the tool name and raw input, the same one the turn evaluation uses */
+    signatureHash?: string;
+    /** Workstream the call belongs to (`main` for the primary conversation) */
+    workstreamId?: string;
+}
+
+// ============================================================================
+// Evaluation Events
+// ============================================================================
+
+/** One tool call as observed by the turn evaluation, in call order. */
+export interface TurnToolObservation {
+    /** Position of the call within the turn, starting at 1 */
+    seq: number;
+    /** Tool use ID from the LLM */
+    toolUseId: string;
+    /** Tool name */
+    name: string;
+    /** Approval class of the resolved tool; undefined when unresolved */
+    approvalClass?: AgentToolApprovalClass;
+    /** Whether the call succeeded */
+    ok: boolean;
+    /** Error class when the call failed */
+    errorClass?: ToolErrorClass;
+    /** Hash of the tool name and raw input */
+    sig: string;
+    /** Duration in milliseconds */
+    durationMs: number;
+}
+
+/**
+ * Emitted when an agent turn ends. One turn is the agent work between two user hand-offs.
+ * Deterministic: computed inside the workflow from what the workflow observed.
+ */
+export interface TurnEvaluationEvent extends BaseAgentEvent {
+    eventType: AgentEventType.TurnEvaluation;
+    /** Shape version of this event */
+    schemaVersion: number;
+    /** Version of the detector rules that produced severity and flags */
+    detectorVersion: number;
+    /** Workstream the turn belongs to (`main` for the primary conversation) */
+    workstreamId: string;
+    /** Turn number within the workstream, starting at 1 */
+    turnSeq: number;
+    /** How the turn ended */
+    terminalType: TurnTerminalType;
+    /** True when the turn started on a continuation whose predecessor recorded nothing */
+    partial?: boolean;
+    /** ISO 8601 start of the turn */
+    startedAt: string;
+    /** ISO 8601 end of the turn */
+    endedAt: string;
+    /** Wall time between start and end */
+    durationMs: number;
+    /** Time the agent was working, excluding user and approval waits */
+    activeMs: number;
+    /** Time spent blocked in `ask_user` */
+    askUserWaitMs: number;
+    /** Time spent waiting for tool approvals */
+    approvalWaitMs: number;
+    /** Time from turn start to the first answer, when one was given */
+    timeToFirstAnswerMs?: number;
+    toolCalls: number;
+    errorToolResults: number;
+    /** Longest run of consecutive failures of the same tool */
+    maxFailStreak: number;
+    /** Failed calls whose signature had already failed in this turn */
+    identicalRetryCount: number;
+    /** Tools that failed and never succeeded afterwards in this turn */
+    unrecoveredTools: string[];
+    errorClasses: ToolErrorClassCounts;
+    /** Calls to read-only tools */
+    gatherCalls: number;
+    /** gatherCalls / toolCalls; undefined when no tool was called */
+    gatherRatio?: number;
+    /** Whether a side-effecting tool was called */
+    mutationAttempted: boolean;
+    /** Whether at least one side-effecting call succeeded */
+    mutationSucceeded: boolean;
+    /** Read calls repeating an earlier read signature */
+    rereadCount: number;
+    /** Calls to planning/thinking/control tools */
+    overheadCalls: number;
+    skillsLoaded: number;
+    /** Tools cancelled because a stop or new input interrupted them */
+    interruptedToolCalls: number;
+    llmCalls: number;
+    promptTokens: number;
+    completionTokens: number;
+    cachedTokens: number;
+    /** Completion tokens of LLM calls that followed a failed tool batch */
+    retryCompletionTokens: number;
+    approvalsRequested: number;
+    approvalsDenied: number;
+    stopRequests: number;
+    /** An unprompted user message after an answer was followed by substantive tool work */
+    followupAfterAnswer: boolean;
+    severity: EvaluationSeverity;
+    flags: TurnEvaluationFlag[];
+    /** Class of the error that ended the run, on `failed` turns */
+    terminalErrorClass?: string;
+    /** Bounded list of tool observations in call order */
+    tools: TurnToolObservation[];
+    /** Observations dropped because the list was full */
+    toolsTruncated: number;
+}
+
+/**
+ * Emitted by the server when a user rating is recorded. Carries no comment text.
+ */
+export interface FeedbackEvent extends BaseAgentEvent {
+    eventType: AgentEventType.Feedback;
+    /** Client-generated idempotency key of the rating */
+    feedbackId: string;
+    rating: AgentRunFeedbackRating;
+    reasonCode?: AgentRunFeedbackReasonCode;
+    hasComment: boolean;
+    /** Whether the rating targets one message rather than the run */
+    messageScoped: boolean;
+    messageSeq?: number;
+    /** Whether this rating replaced an earlier one from the same user on the same scope */
+    replaced: boolean;
+}
+
+/** Why the judge looked at a run. */
+export type JudgeGateReason = 'signal' | 'sample';
+
+/** What the judge run produced. */
+export type JudgeOutcome = 'judged' | 'skipped_unarchived' | 'failed';
+
+/** The judge's reading of a turn. */
+export type JudgeVerdict = 'success' | 'partial' | 'failure';
+
+/**
+ * Emitted by the judge workflow for each turn it evaluated (or once with a non-judged outcome).
+ */
+export interface TurnJudgementEvent extends BaseAgentEvent {
+    eventType: AgentEventType.TurnJudgement;
+    /** Evaluation revision the judge run was started for */
+    evaluationRev: number;
+    workstreamId: string;
+    /** Turn judged; 0 when the outcome is not `judged` */
+    turnSeq: number;
+    gate: JudgeGateReason;
+    /** Sampling rate in force when the gate was evaluated */
+    sampleRate: number;
+    /** Probability that this run was selected, for weighted calibration */
+    selectedProbability: number;
+    outcome: JudgeOutcome;
+    verdict?: JudgeVerdict;
+    /** 0..1 */
+    score?: number;
+    reasons?: string[];
+    /** Version of the judge prompt */
+    promptVersion: string;
+    /** Detector version of the evaluation the judge was compared against */
+    detectorVersion?: number;
 }
 
 // ============================================================================
@@ -237,7 +467,14 @@ export interface NestedInteractionEvent extends LlmCallEvent {
 /**
  * @discriminator eventType
  */
-export type AgentEvent = AgentRunStartedEvent | AgentRunCompletedEvent | LlmCallEvent | ToolCallEvent;
+export type AgentEvent =
+    | AgentRunStartedEvent
+    | AgentRunCompletedEvent
+    | LlmCallEvent
+    | ToolCallEvent
+    | TurnEvaluationEvent
+    | FeedbackEvent
+    | TurnJudgementEvent;
 
 /**
  * Workflow Analytics Types
