@@ -29,7 +29,7 @@ import dayjs from '../../../../core/utils/dayjs.js';
 import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
 import { AgentRunFeedback, agentMessageFeedbackId } from '../AgentRunFeedback';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
-import { AskUserWidget } from '../AskUserWidget';
+import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
@@ -399,6 +399,7 @@ function MessageItemComponent({
     // UX config for REQUEST_INPUT messages (narrowed const so it stays typed inside the JSX closures below)
     const askUserUx =
         message.type === AgentMessageType.REQUEST_INPUT ? (message.details as AskUserMessageDetails)?.ux : undefined;
+    const hasSelectableAskUserOptions = isAskUserOptions(askUserUx?.options) && askUserUx.options.length > 0;
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(
@@ -640,7 +641,7 @@ function MessageItemComponent({
                     {askUserUx ? (
                         <AskUserWidget
                             question={typeof messageContent === 'string' ? messageContent : ''}
-                            options={askUserUx.options}
+                            options={hasSelectableAskUserOptions ? askUserUx.options : undefined}
                             variant={askUserUx.variant}
                             multiSelect={askUserUx.multiSelect}
                             onSelect={(optionId) =>
@@ -654,7 +655,7 @@ function MessageItemComponent({
                             onMultiSelect={(optionIds) =>
                                 sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
                             }
-                            allowFreeResponse={!askUserUx.options?.length || !!askUserUx.free_response}
+                            allowFreeResponse={!hasSelectableAskUserOptions || !!askUserUx.free_response}
                             placeholder={askUserUx.free_response?.placeholder}
                             submitLabel={askUserUx.free_response?.submit_label}
                             onSubmit={(value) =>

@@ -13,14 +13,13 @@ import {
 // between two lazy routes blanks the page for at least a frame, even when the module is loaded.
 const resolvedComponents = new Map<LazyComponentRoute['LazyComponent'], LazyRouteModule['default']>();
 
-function resolveLazyRoute(route: LazyComponentRoute): Promise<LazyRouteModule['default']> {
-    return route.LazyComponent().then((module) => {
-        if (!module.default) {
-            throw new Error(`Lazy module for ${route.path} does not have a default export`);
-        }
-        resolvedComponents.set(route.LazyComponent, module.default);
-        return module.default;
-    });
+async function resolveLazyRoute(route: LazyComponentRoute): Promise<LazyRouteModule['default']> {
+    const module = await route.LazyComponent();
+    if (!module?.default) {
+        throw new Error(`Lazy module for ${route.path} does not have a default export`);
+    }
+    resolvedComponents.set(route.LazyComponent, module.default);
+    return module.default;
 }
 
 /**
@@ -64,21 +63,25 @@ function LazyRouteComponent({ route, spinner }: LazyRouteComponentProps) {
     const [Component, setComponent] = useState<LazyRouteModule['default'] | null>(
         () => resolvedComponents.get(route.LazyComponent) ?? null,
     );
+    const [error, setError] = useState<unknown>();
     useEffect(() => {
         // A slow import must not land after this instance moved on (unmount, or a route object
         // swap without a path change): the stale module would overwrite the current one.
         let stale = false;
-        void resolveLazyRoute(route).then((component) => {
-            if (!stale) {
-                // we need to wrap the component type in an arrow function
-                // otherwise the setState function will execute the function as a state update function
-                setComponent(() => component);
-            }
-        });
+        void resolveLazyRoute(route).then(
+            (component) => {
+                if (!stale) setComponent(() => component);
+            },
+            (error: unknown) => {
+                // Render failures through the surrounding error boundary, including import failures.
+                if (!stale) setError(() => error);
+            },
+        );
         return () => {
             stale = true;
         };
     }, [route]);
 
+    if (error !== undefined) throw error;
     return Component ? <Component /> : spinner || null;
 }
