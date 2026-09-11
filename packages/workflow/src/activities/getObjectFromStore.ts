@@ -12,6 +12,8 @@ import { DocumentNotFoundError } from '../errors.js';
 
 export interface GetObjectParams {
     select?: string;
+    /** Return the stored text length without carrying the full text through Temporal history. */
+    summarize_text?: boolean;
 }
 
 export interface GetObject extends DSLActivitySpec<GetObjectParams> {
@@ -26,6 +28,7 @@ interface RetrievedContentObject {
     properties?: JSONObject;
     revision?: ContentObjectApiRevision;
     text?: string;
+    text_length?: number;
     text_etag?: string;
     tokens?: { count?: number; encoding?: string; etag?: string };
     type?: ContentObjectApiTypeRef;
@@ -67,6 +70,11 @@ export async function getObjectFromStore(
     }
 
     const projection = projectResult(payload, params, obj, obj) as Partial<RetrievedContentObject>;
+    const result = mergeProjection(obj, projection);
+    if (params.summarize_text) {
+        result.text_length = result.text?.length ?? 0;
+        delete result.text;
+    }
 
-    return mergeProjection(obj, projection);
+    return result;
 }
