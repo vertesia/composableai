@@ -1,6 +1,7 @@
 import {
     AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH,
     type AgentMessage,
+    type AgentRunFeedbackEntry,
     type AgentRunFeedbackPayload,
     type AgentRunFeedbackRating,
     type AgentRunFeedbackReasonCode,
@@ -22,7 +23,7 @@ import {
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * Which rating each reason code belongs to.
@@ -71,6 +72,118 @@ function isAccepted(status: AgentRunFeedbackStatus): boolean {
     return status === 'recorded' || status === 'replaced';
 }
 
+/** The subject of one rating: the run as a whole, or one message of it. */
+interface FeedbackScope {
+    agentRunId: string;
+    messageId?: string;
+    messageSeq?: number;
+}
+
+function scopeKeyOf({ agentRunId, messageId, messageSeq }: FeedbackScope): string {
+    return `${agentRunId}|${messageId ?? ''}|${messageSeq ?? ''}`;
+}
+
+function entryScopeKey(agentRunId: string, entry: Pick<AgentRunFeedbackEntry, 'message_id' | 'message_seq'>): string {
+    return scopeKeyOf({ agentRunId, messageId: entry.message_id, messageSeq: entry.message_seq });
+}
+
+/**
+ * The stored rating of the current user for every scope of one run, read once from the run
+ * document so a reload shows the thumbs where they were left.
+ *
+ * `null` while the run has not been read yet, so a control can tell "nothing recorded" from
+ * "not known yet".
+ */
+interface AgentRunFeedbackHydration {
+    agentRunId: string;
+    ratingFor(scope: FeedbackScope): AgentRunFeedbackRating | undefined;
+    /** A rating this session just recorded, so a remounted control shows it without a refetch. */
+    remember(scope: FeedbackScope, rating: AgentRunFeedbackRating): void;
+}
+
+const AgentRunFeedbackContext = createContext<AgentRunFeedbackHydration | null>(null);
+
+/**
+ * The server stores the rater as a principal ref (`user:<id>`), the same string the auth layer
+ * builds from the token: `user_id` when the token carries one, else `sub`.
+ */
+function currentPrincipalRef(user: { sub?: string; user_id?: string } | undefined): string | undefined {
+    const id = user?.user_id ?? user?.sub;
+    return id ? `user:${id}` : undefined;
+}
+
+/**
+ * The current user's active rating per scope. A replaced entry is history; among the rest the
+ * latest `rated_at` wins, which is also what the server's one-vote-per-scope rule keeps.
+ */
+export function activeRatingsByScope(
+    agentRunId: string,
+    entries: readonly AgentRunFeedbackEntry[] | undefined,
+    principalRef: string | undefined,
+): Map<string, AgentRunFeedbackRating> {
+    const latest = new Map<string, AgentRunFeedbackEntry>();
+    if (!principalRef) return new Map();
+    for (const entry of entries ?? []) {
+        if (entry.user_id !== principalRef || entry.replaced_at) continue;
+        const key = entryScopeKey(agentRunId, entry);
+        const seen = latest.get(key);
+        if (!seen || seen.rated_at < entry.rated_at) latest.set(key, entry);
+    }
+    return new Map(Array.from(latest, ([key, entry]) => [key, entry.rating]));
+}
+
+/**
+ * Loads the ratings the current user already gave on `agentRunId` and hands them to every
+ * {@link AgentRunFeedback} rendered underneath, so the thumbs survive a reload of the
+ * conversation. One read per run, however many messages carry a control.
+ *
+ * Without a provider the controls still work; they just start blank.
+ */
+export function AgentRunFeedbackProvider({ agentRunId, children }: { agentRunId: string; children: ReactNode }) {
+    const { client, user } = useUserSession();
+    const principalRef = currentPrincipalRef(user);
+    const [loaded, setLoaded] = useState<{ agentRunId: string; ratings: Map<string, AgentRunFeedbackRating> }>();
+    const [remembered, setRemembered] = useState<Map<string, AgentRunFeedbackRating>>(() => new Map());
+    // Read through a ref: the run is re-read when the run or the user changes, not whenever the
+    // session hands out a new client object.
+    const clientRef = useRef(client);
+    clientRef.current = client;
+
+    useEffect(() => {
+        let cancelled = false;
+        // The run document carries the retained entries; a failure here only costs the hydration,
+        // never the ability to rate.
+        clientRef.current.agents
+            .retrieve(agentRunId)
+            .then((run) => {
+                if (cancelled) return;
+                setLoaded({ agentRunId, ratings: activeRatingsByScope(agentRunId, run.feedback, principalRef) });
+            })
+            .catch(() => {
+                if (!cancelled) setLoaded({ agentRunId, ratings: new Map() });
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [agentRunId, principalRef]);
+
+    const value = useMemo<AgentRunFeedbackHydration>(
+        () => ({
+            agentRunId,
+            ratingFor: (scope) => {
+                const key = scopeKeyOf(scope);
+                return remembered.get(key) ?? (loaded?.agentRunId === agentRunId ? loaded.ratings.get(key) : undefined);
+            },
+            remember: (scope, rating) => {
+                setRemembered((previous) => new Map(previous).set(scopeKeyOf(scope), rating));
+            },
+        }),
+        [agentRunId, loaded, remembered],
+    );
+
+    return <AgentRunFeedbackContext.Provider value={value}>{children}</AgentRunFeedbackContext.Provider>;
+}
+
 export interface AgentRunFeedbackProps {
     /** The run being rated. */
     agentRunId: string;
@@ -116,7 +229,13 @@ export function AgentRunFeedback({
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
-    const [rating, setRating] = useState<AgentRunFeedbackRating>();
+    const hydration = useContext(AgentRunFeedbackContext);
+    const [ownRating, setOwnRating] = useState<AgentRunFeedbackRating>();
+    // What this session recorded wins over what the run document said at load time; a stored
+    // rating from a previous session fills in when nothing was clicked here yet.
+    const rating =
+        ownRating ??
+        (hydration?.agentRunId === agentRunId ? hydration.ratingFor({ agentRunId, messageId, messageSeq }) : undefined);
     const [pendingRating, setPendingRating] = useState<AgentRunFeedbackRating>();
     const [isUnavailable, setIsUnavailable] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -147,7 +266,7 @@ export function AgentRunFeedback({
     if (lastScopeKey !== scopeKey) {
         setLastScopeKey(scopeKey);
         currentScopeKey.current = scopeKey;
-        setRating(undefined);
+        setOwnRating(undefined);
         setPendingRating(undefined);
         setIsDetailOpen(false);
         setIsSubmittingDetail(false);
@@ -179,7 +298,8 @@ export function AgentRunFeedback({
             if (sentScopeKey !== currentScopeKey.current) return undefined;
             if (isAccepted(response.status)) {
                 onRecorded?.(payload, response.status);
-                setRating(value);
+                setOwnRating(value);
+                hydration?.remember({ agentRunId, messageId, messageSeq }, value);
                 return response.status;
             }
             // `disabled` means this deployment collects no ratings; there is nothing to retry, so

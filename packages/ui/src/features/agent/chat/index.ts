@@ -31,6 +31,7 @@ export { AgentChatPlaybackControls, type AgentChatPlaybackControlsProps } from '
 export {
     AgentRunFeedback,
     type AgentRunFeedbackProps,
+    AgentRunFeedbackProvider,
     agentRunFeedbackReasonCodes,
 } from './AgentRunFeedback';
 export * from './AnimatedThinkingDots';

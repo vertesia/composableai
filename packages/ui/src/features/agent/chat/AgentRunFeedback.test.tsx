@@ -1,14 +1,32 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import type { AgentRunFeedbackPayload, AgentRunFeedbackStatus } from '@vertesia/common';
+import type { AgentRunFeedbackEntry, AgentRunFeedbackPayload, AgentRunFeedbackStatus } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
-import { AgentRunFeedback, agentRunFeedbackReasonCodes } from './AgentRunFeedback';
+import { AgentRunFeedback, AgentRunFeedbackProvider, agentRunFeedbackReasonCodes } from './AgentRunFeedback';
 
-const mocks = vi.hoisted(() => ({ recordFeedback: vi.fn() }));
+const mocks = vi.hoisted(() => {
+    const recordFeedback = vi.fn();
+    const retrieve = vi.fn();
+    // One session object for the whole file: the real session is stable across renders, and the
+    // provider reads the run again only when the client or the user changes.
+    const session = { client: { agents: { recordFeedback, retrieve } }, user: { sub: 'me' } };
+    return { recordFeedback, retrieve, session };
+});
 
 vi.mock('@vertesia/ui/session', () => ({
-    useUserSession: () => ({ client: { agents: { recordFeedback: mocks.recordFeedback } } }),
+    useUserSession: () => mocks.session,
 }));
+
+function entry(overrides: Partial<AgentRunFeedbackEntry>): AgentRunFeedbackEntry {
+    return {
+        feedback_id: 'fb',
+        rating: 'up',
+        message_scoped: false,
+        user_id: 'user:me',
+        rated_at: '2026-09-11T10:00:00.000Z',
+        ...overrides,
+    };
+}
 
 function respondWith(...statuses: AgentRunFeedbackStatus[]) {
     for (const status of statuses) {
@@ -23,6 +41,7 @@ function payloadOf(call: number): AgentRunFeedbackPayload {
 describe('AgentRunFeedback', () => {
     beforeEach(() => {
         mocks.recordFeedback.mockReset();
+        mocks.retrieve.mockReset();
     });
 
     it('records the rating on the click itself, before asking for any detail', async () => {
@@ -196,6 +215,103 @@ describe('AgentRunFeedback', () => {
         const button = (await screen.findByRole('button', { name: 'Rate this run down' })) as HTMLButtonElement;
         await waitFor(() => expect(button.disabled).toBe(false));
         expect(button.getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('shows the rating the user already gave once the run is read back', async () => {
+        // The thumbs used to live only in component memory: a reload of the conversation showed
+        // them blank while the run list already carried the rating. The provider reads the run's
+        // retained entries once and every control under it picks up its own scope.
+        mocks.retrieve.mockResolvedValue({
+            feedback: [
+                entry({ feedback_id: 'a', rating: 'down', message_scoped: true, message_id: 'main:1' }),
+                entry({ feedback_id: 'b', rating: 'up' }),
+            ],
+        });
+        renderWithProviders(
+            <AgentRunFeedbackProvider agentRunId="run-1">
+                <AgentRunFeedback agentRunId="run-1" messageId="main:1" />
+                <AgentRunFeedback agentRunId="run-1" />
+            </AgentRunFeedbackProvider>,
+        );
+
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Rate this answer down' }).getAttribute('aria-pressed')).toBe(
+                'true',
+            ),
+        );
+        expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('true');
+        expect(screen.getByRole('button', { name: 'Rate this answer up' }).getAttribute('aria-pressed')).toBe('false');
+        // A stored rating is a rating: the detail link is offered on it too.
+        expect(screen.getAllByRole('button', { name: 'Tell us more' })).toHaveLength(2);
+        expect(mocks.retrieve).toHaveBeenCalledTimes(1);
+        expect(mocks.recordFeedback).not.toHaveBeenCalled();
+    });
+
+    it('ignores other raters, superseded entries and unrelated scopes when reading the run back', async () => {
+        mocks.retrieve.mockResolvedValue({
+            feedback: [
+                entry({ feedback_id: 'theirs', rating: 'up', user_id: 'user:someone-else' }),
+                entry({ feedback_id: 'old', rating: 'up', replaced_at: '2026-09-11T10:01:00.000Z' }),
+                entry({ feedback_id: 'other-message', rating: 'up', message_scoped: true, message_id: 'main:2' }),
+                entry({ feedback_id: 'first', rating: 'up', rated_at: '2026-09-11T09:00:00.000Z' }),
+                entry({ feedback_id: 'latest', rating: 'down', rated_at: '2026-09-11T10:00:00.000Z' }),
+            ],
+        });
+        renderWithProviders(
+            <AgentRunFeedbackProvider agentRunId="run-1">
+                <AgentRunFeedback agentRunId="run-1" />
+            </AgentRunFeedbackProvider>,
+        );
+
+        await waitFor(() => expect(mocks.retrieve).toHaveBeenCalledTimes(1));
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Rate this run down' }).getAttribute('aria-pressed')).toBe(
+                'true',
+            ),
+        );
+        expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('lets a click made now win over the stored rating, and keeps it for a remounted control', async () => {
+        mocks.retrieve.mockResolvedValue({ feedback: [entry({ rating: 'up' })] });
+        respondWith('replaced');
+        const { rerender } = renderWithProviders(
+            <AgentRunFeedbackProvider agentRunId="run-1">
+                <AgentRunFeedback agentRunId="run-1" key="a" />
+            </AgentRunFeedbackProvider>,
+        );
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('true'),
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Rate this run down' }));
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Rate this run down' }).getAttribute('aria-pressed')).toBe(
+                'true',
+            ),
+        );
+
+        // A fresh control for the same scope (the message list re-keyed, say) shows the new vote,
+        // not the one the run document held when it was read.
+        rerender(
+            <AgentRunFeedbackProvider agentRunId="run-1">
+                <AgentRunFeedback agentRunId="run-1" key="b" />
+            </AgentRunFeedbackProvider>,
+        );
+        expect(screen.getByRole('button', { name: 'Rate this run down' }).getAttribute('aria-pressed')).toBe('true');
+        expect(mocks.retrieve).toHaveBeenCalledTimes(1);
+    });
+
+    it('starts blank when the run cannot be read back', async () => {
+        mocks.retrieve.mockRejectedValue(new Error('403'));
+        renderWithProviders(
+            <AgentRunFeedbackProvider agentRunId="run-1">
+                <AgentRunFeedback agentRunId="run-1" />
+            </AgentRunFeedbackProvider>,
+        );
+        await waitFor(() => expect(mocks.retrieve).toHaveBeenCalledTimes(1));
+        expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('false');
+        expect(screen.queryByRole('button', { name: 'Tell us more' })).toBeNull();
     });
 
     it('offers every reason code the API accepts, on the side it belongs to', () => {
