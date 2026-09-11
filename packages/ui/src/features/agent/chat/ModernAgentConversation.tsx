@@ -2831,6 +2831,7 @@ function ModernAgentConversationInner({
                     streamingMessageClassNames={streamingMessageClassNames}
                     batchProgressPanelClassNames={batchProgressPanelClassNames}
                     artifactRunId={agentRunId}
+                    agentRunId={agentRunId}
                     viewMode={viewMode}
                     hideWorkstreamTabs={hideWorkstreamTabs}
                     workingIndicatorClassName={workingIndicatorClassName}

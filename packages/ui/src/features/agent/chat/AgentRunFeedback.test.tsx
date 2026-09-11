@@ -35,12 +35,28 @@ describe('AgentRunFeedback', () => {
         await waitFor(() => expect(mocks.recordFeedback).toHaveBeenCalledTimes(1));
         expect(mocks.recordFeedback).toHaveBeenCalledWith('run-1', { feedback_id: expect.any(String), rating: 'up' });
 
-        // Dismissing the detail dialog keeps the bare rating: it was already written.
-        await screen.findByText('Tell us more');
-        fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+        // Nothing opens on its own: the thumb lights and a quiet "Tell us more" link appears.
         await waitFor(() =>
             expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('true'),
         );
+        expect(screen.queryByPlaceholderText('What went well, or what went wrong?')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Tell us more' })).toBeTruthy();
+        expect(mocks.recordFeedback).toHaveBeenCalledTimes(1);
+    });
+
+    it('offers the detail dialog only behind the "Tell us more" link', async () => {
+        respondWith('recorded');
+        renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
+
+        expect(screen.queryByRole('button', { name: 'Tell us more' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Rate this run up' }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Tell us more' }));
+
+        await screen.findByPlaceholderText('What went well, or what went wrong?');
+        // Dismissing the dialog keeps the bare rating: it was already written.
+        fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+        await waitFor(() => expect(screen.queryByPlaceholderText('What went well, or what went wrong?')).toBeNull());
+        expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('true');
         expect(mocks.recordFeedback).toHaveBeenCalledTimes(1);
     });
 
@@ -51,9 +67,6 @@ describe('AgentRunFeedback', () => {
         const { rerender } = renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
 
         fireEvent.click(screen.getByRole('button', { name: 'Rate this run up' }));
-        // The dialog takes the page out of the a11y tree, so dismiss it before reading the thumb.
-        await screen.findByText('Tell us more');
-        fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
         await waitFor(() =>
             expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('true'),
         );
@@ -62,8 +75,8 @@ describe('AgentRunFeedback', () => {
 
         expect(screen.getByRole('button', { name: 'Rate this run up' }).getAttribute('aria-pressed')).toBe('false');
         expect(screen.getByRole('button', { name: 'Rate this run down' }).getAttribute('aria-pressed')).toBe('false');
-        // And the detail dialog does not survive the switch carrying the old run's draft.
-        expect(screen.queryByText('Tell us more')).toBeNull();
+        // And the "Tell us more" link does not survive the switch: there is no rating to add to.
+        expect(screen.queryByRole('button', { name: 'Tell us more' })).toBeNull();
     });
 
     it('does not send a comment written about one run against another', async () => {
@@ -73,15 +86,16 @@ describe('AgentRunFeedback', () => {
         const { rerender } = renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
 
         fireEvent.click(screen.getByRole('button', { name: 'Rate this run down' }));
-        await screen.findByText('Tell us more');
-        fireEvent.change(screen.getByPlaceholderText('What went well, or what went wrong?'), {
+        fireEvent.click(await screen.findByRole('button', { name: 'Tell us more' }));
+        fireEvent.change(await screen.findByPlaceholderText('What went well, or what went wrong?'), {
             target: { value: 'this was about run one' },
         });
 
         rerender(<AgentRunFeedback agentRunId="run-2" />);
 
         // The dialog is gone, so there is nothing left to submit the stale draft from.
-        expect(screen.queryByText('Tell us more')).toBeNull();
+        expect(screen.queryByPlaceholderText('What went well, or what went wrong?')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Tell us more' })).toBeNull();
         expect(mocks.recordFeedback).toHaveBeenCalledTimes(1);
         expect(mocks.recordFeedback).toHaveBeenCalledWith('run-1', {
             feedback_id: expect.any(String),
@@ -94,9 +108,9 @@ describe('AgentRunFeedback', () => {
         renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
 
         fireEvent.click(screen.getByRole('button', { name: 'Rate this run down' }));
-        await screen.findByText('Tell us more');
+        fireEvent.click(await screen.findByRole('button', { name: 'Tell us more' }));
 
-        fireEvent.change(screen.getByPlaceholderText('What went well, or what went wrong?'), {
+        fireEvent.change(await screen.findByPlaceholderText('What went well, or what went wrong?'), {
             target: { value: '  it deleted the wrong collection  ' },
         });
         fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -126,7 +140,7 @@ describe('AgentRunFeedback', () => {
 
     it('treats a replaced rating as accepted', async () => {
         // A second vote by the same user on the same scope supersedes the first server-side; the
-        // rating is in, so the thumb lights and the detail dialog opens exactly as for `recorded`.
+        // rating is in, so the thumb lights and "Tell us more" is offered exactly as for `recorded`.
         respondWith('replaced');
         const onRecorded = vi.fn();
         renderWithProviders(<AgentRunFeedback agentRunId="run-1" onRecorded={onRecorded} />);
@@ -136,13 +150,8 @@ describe('AgentRunFeedback', () => {
         await waitFor(() =>
             expect(onRecorded).toHaveBeenCalledWith({ feedback_id: expect.any(String), rating: 'down' }, 'replaced'),
         );
-        await screen.findByText('Tell us more');
-        fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
-        await waitFor(() =>
-            expect(screen.getByRole('button', { name: 'Rate this run down' }).getAttribute('aria-pressed')).toBe(
-                'true',
-            ),
-        );
+        await screen.findByRole('button', { name: 'Tell us more' });
+        expect(screen.getByRole('button', { name: 'Rate this run down' }).getAttribute('aria-pressed')).toBe('true');
     });
 
     it('gives every submission its own idempotency key', async () => {
@@ -152,8 +161,8 @@ describe('AgentRunFeedback', () => {
         renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
 
         fireEvent.click(screen.getByRole('button', { name: 'Rate this run down' }));
-        await screen.findByText('Tell us more');
-        fireEvent.change(screen.getByPlaceholderText('What went well, or what went wrong?'), {
+        fireEvent.click(await screen.findByRole('button', { name: 'Tell us more' }));
+        fireEvent.change(await screen.findByPlaceholderText('What went well, or what went wrong?'), {
             target: { value: 'it stopped halfway' },
         });
         fireEvent.click(screen.getByRole('button', { name: 'Send' }));

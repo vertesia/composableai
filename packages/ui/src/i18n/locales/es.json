@@ -121,6 +121,7 @@
     "agent.feedback.skip": "Ahora no",
     "agent.feedback.status.disabled": "En este entorno no se recogen valoraciones.",
     "agent.feedback.submit": "Enviar",
+    "agent.feedback.tellUsMore": "Cuéntanos más",
     "agent.feedback.thanks": "Gracias por tus comentarios",
     "agent.filesProcessing": "Archivos aún en procesamiento",
     "agent.fileStagedTooltip": "Archivo preparado - se subirá cuando la conversación comience",

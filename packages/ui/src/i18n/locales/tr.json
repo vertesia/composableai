@@ -120,6 +120,7 @@
     "agent.feedback.skip": "Şimdi değil",
     "agent.feedback.status.disabled": "Bu ortamda değerlendirmeler toplanmaz.",
     "agent.feedback.submit": "Gönder",
+    "agent.feedback.tellUsMore": "Bize daha fazlasını anlatın",
     "agent.feedback.thanks": "Geri bildiriminiz için teşekkürler",
     "agent.filesProcessing": "Dosyalar hâlâ işleniyor",
     "agent.fileStagedTooltip": "Dosya hazırlandı - konuşma başladığında yüklenecek",

@@ -120,6 +120,7 @@
     "agent.feedback.skip": "後で",
     "agent.feedback.status.disabled": "この環境では評価を収集していません。",
     "agent.feedback.submit": "送信",
+    "agent.feedback.tellUsMore": "詳しく教えてください",
     "agent.feedback.thanks": "フィードバックありがとうございます",
     "agent.filesProcessing": "ファイルを処理中",
     "agent.fileStagedTooltip": "ファイルがステージ済み - 会話開始時にアップロードされます",

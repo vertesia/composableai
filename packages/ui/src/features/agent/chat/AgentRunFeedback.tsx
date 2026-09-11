@@ -1,5 +1,6 @@
 import {
     AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH,
+    type AgentMessage,
     type AgentRunFeedbackPayload,
     type AgentRunFeedbackRating,
     type AgentRunFeedbackReasonCode,
@@ -50,6 +51,15 @@ export function agentRunFeedbackReasonCodes(rating: AgentRunFeedbackRating): Age
     return REASON_CODES.filter((code) => REASON_CODE_RATINGS[code].includes(rating));
 }
 
+/**
+ * Opaque identifier of one message inside its run, used as the feedback `message_id`. Agent
+ * messages carry no id of their own; the workstream plus the timestamp is what the transcript
+ * itself keys on.
+ */
+export function agentMessageFeedbackId(message: Pick<AgentMessage, 'workstream_id' | 'timestamp'>): string {
+    return `${message.workstream_id || 'main'}:${message.timestamp}`;
+}
+
 /** Idempotency key for one submission; the server counts a retried id once. */
 function newFeedbackId(): string {
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -70,6 +80,8 @@ export interface AgentRunFeedbackProps {
     messageSeq?: number;
     /** `compact` matches the icon-button sizing used by the conversation header's compact variant. */
     variant?: 'full' | 'compact';
+    /** `inline` fades the control until the pointer is over the message it belongs to. */
+    tone?: 'default' | 'inline';
     className?: string;
     /** Called after every accepted round trip, with what the server said it did with the rating. */
     onRecorded?: (payload: AgentRunFeedbackPayload, status: AgentRunFeedbackStatus) => void;
@@ -79,10 +91,10 @@ export interface AgentRunFeedbackProps {
  * Thumbs up / thumbs down on an agent run.
  *
  * The click records the rating on its own, immediately — that is the signal being collected, and
- * making the user fill a form first would cost most of it. The detail dialog then opens over the
- * top for the reason code and an optional comment; dismissing it keeps the bare rating, and
- * submitting it sends a revision of the same rating, which the server supersedes the first one
- * with.
+ * making the user fill a form first would cost most of it. Nothing opens on its own: once the
+ * rating is in, a quiet "Tell us more" link appears next to the thumbs, and only that opens the
+ * detail dialog for the reason code and an optional comment. Submitting it sends a revision of the
+ * same rating, which the server supersedes the first one with.
  *
  * Every submission carries a fresh `feedback_id`: it is the server's idempotency key, so a retried
  * request cannot count twice, and a second vote by the same user on the same scope replaces the
@@ -97,6 +109,7 @@ export function AgentRunFeedback({
     messageId,
     messageSeq,
     variant = 'full',
+    tone = 'default',
     className,
     onRecorded,
 }: AgentRunFeedbackProps) {
@@ -195,15 +208,15 @@ export function AgentRunFeedback({
         if (pendingRating) return;
         setPendingRating(value);
         try {
-            const status = await send(value, false);
-            if (status && isAccepted(status)) {
-                setReasonCode(undefined);
-                setComment('');
-                setIsDetailOpen(true);
-            }
+            await send(value, false);
         } finally {
             setPendingRating(undefined);
         }
+    };
+
+    const openDetail = () => {
+        if (!rating) return;
+        setIsDetailOpen(true);
     };
 
     const handleSubmitDetail = async () => {
@@ -248,9 +261,31 @@ export function AgentRunFeedback({
     );
 
     return (
-        <div className={cn('flex items-center gap-0.5', className)}>
+        <div
+            className={cn(
+                'flex items-center gap-0.5',
+                // Inline under an answer the control should not compete with the text: it sits
+                // faded until the pointer is over the message, and stays visible once a rating is
+                // in so the user can find "Tell us more" again.
+                tone === 'inline' &&
+                    !rating &&
+                    'opacity-40 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100',
+                className,
+            )}
+        >
             {thumb('up', upLabel, ThumbsUp)}
             {thumb('down', downLabel, ThumbsDown)}
+            {rating && !isDetailOpen && (
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={openDetail}
+                    className="ms-1 text-xs text-muted hover:text-foreground"
+                >
+                    {t('agent.feedback.tellUsMore')}
+                </Button>
+            )}
             <Modal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} size="md" disableCloseOnClickOutside>
                 <ModalTitle>{t('agent.feedback.detailTitle')}</ModalTitle>
                 <ModalBody>

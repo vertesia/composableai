@@ -120,6 +120,7 @@
     "agent.feedback.skip": "暂不填写",
     "agent.feedback.status.disabled": "此环境不收集评分。",
     "agent.feedback.submit": "发送",
+    "agent.feedback.tellUsMore": "告诉我们更多",
     "agent.feedback.thanks": "感谢你的反馈",
     "agent.filesProcessing": "文件处理中",
     "agent.fileStagedTooltip": "文件已暂存 - 对话开始时将上传",

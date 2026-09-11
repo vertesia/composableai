@@ -120,6 +120,7 @@
     "agent.feedback.skip": "나중에",
     "agent.feedback.status.disabled": "이 환경에서는 평가를 수집하지 않습니다.",
     "agent.feedback.submit": "보내기",
+    "agent.feedback.tellUsMore": "자세히 알려주세요",
     "agent.feedback.thanks": "의견 감사합니다",
     "agent.filesProcessing": "파일 처리 중",
     "agent.fileStagedTooltip": "파일이 준비됨 - 대화 시작 시 업로드됩니다",

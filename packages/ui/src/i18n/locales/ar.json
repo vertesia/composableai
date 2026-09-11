@@ -128,6 +128,7 @@
     "agent.feedback.skip": "ليس الآن",
     "agent.feedback.status.disabled": "لا يتم جمع التقييمات في هذه البيئة.",
     "agent.feedback.submit": "إرسال",
+    "agent.feedback.tellUsMore": "أخبرنا المزيد",
     "agent.feedback.thanks": "شكرًا على ملاحظاتك",
     "agent.filesProcessing": "لا تزال الملفات قيد المعالجة",
     "agent.fileStagedTooltip": "ملف مُعدّ - سيتم رفعه عند بدء المحادثة",

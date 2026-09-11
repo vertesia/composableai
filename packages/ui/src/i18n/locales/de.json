@@ -120,6 +120,7 @@
     "agent.feedback.skip": "Jetzt nicht",
     "agent.feedback.status.disabled": "In dieser Umgebung werden keine Bewertungen erfasst.",
     "agent.feedback.submit": "Senden",
+    "agent.feedback.tellUsMore": "Erzählen Sie uns mehr",
     "agent.feedback.thanks": "Danke für Ihr Feedback",
     "agent.filesProcessing": "Dateien werden noch verarbeitet",
     "agent.fileStagedTooltip": "Datei bereitgestellt - wird beim Start der Konversation hochgeladen",

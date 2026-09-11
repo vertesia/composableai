@@ -124,6 +124,7 @@
     "agent.feedback.skip": "Не сейчас",
     "agent.feedback.status.disabled": "В этой среде оценки не собираются.",
     "agent.feedback.submit": "Отправить",
+    "agent.feedback.tellUsMore": "Расскажите подробнее",
     "agent.feedback.thanks": "Спасибо за отзыв",
     "agent.filesProcessing": "Файлы ещё обрабатываются",
     "agent.fileStagedTooltip": "Файл подготовлен - будет загружен при начале разговора",

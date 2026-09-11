@@ -120,6 +120,7 @@
     "agent.feedback.skip": "暫不填寫",
     "agent.feedback.status.disabled": "此環境不會收集評分。",
     "agent.feedback.submit": "送出",
+    "agent.feedback.tellUsMore": "告訴我們更多",
     "agent.feedback.thanks": "感謝你的意見回饋",
     "agent.filesProcessing": "檔案處理中",
     "agent.fileStagedTooltip": "檔案已暫存 - 對話開始時將上傳",
