@@ -25055,6 +25055,10 @@
       },
       "include_deleted": {
         "type": "boolean"
+      },
+      "include_nodes": {
+        "type": "boolean",
+        "description": "Include the access-checked endpoint nodes for this relationship page."
       }
     },
     "additionalProperties": false
@@ -25066,6 +25070,12 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Relationship"
+        }
+      },
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GraphNode"
         }
       },
       "cursor": {

@@ -17,6 +17,12 @@ describe('graph store APIs', () => {
             start: [{ kind: 'subject', id: 'subject-1' }],
             steps: [{ relationship_types: ['employed_by'] }],
         });
+        await client.relationships.find({
+            endpoints: [{ kind: 'subject', id: 'subject-1' }],
+            direction: 'both',
+            limit: 50,
+            include_nodes: true,
+        });
         await client.objects.upsertDomain('document/1', 'schema/1', {
             domain: {
                 type: { ref_type: 'stored', id: 'schema/1', name: 'Risk' },
@@ -30,6 +36,7 @@ describe('graph store APIs', () => {
             'POST https://store.example.test/api/v1/subjects/resolve',
             'DELETE https://store.example.test/api/v1/relationships/edge%2F1?expected_revision=3',
             'POST https://store.example.test/api/v1/relationships/traverse',
+            'POST https://store.example.test/api/v1/relationships/find',
             'PUT https://store.example.test/api/v1/objects/document%2F1/domains/schema%2F1',
         ]);
     });

@@ -172,6 +172,15 @@ export const UpsertRelationshipsResponseSchema = z
 export const RelationshipDirectionSchema = z
     .enum(['both', 'incoming', 'outgoing'])
     .meta({ id: 'RelationshipDirection' });
+export const GraphNodeSchema = z
+    .strictObject({
+        ref: EndpointRefSchema,
+        resolved_ref: EndpointRefSchema.optional(),
+        type: z.string().optional(),
+        name: z.string().optional(),
+        properties: jsonObjectSchema.optional(),
+    })
+    .meta({ id: 'GraphNode' });
 export const FindRelationshipsPayloadSchema = z
     .strictObject({
         endpoints: z.array(EndpointRefSchema).min(1).max(100).optional(),
@@ -180,11 +189,16 @@ export const FindRelationshipsPayloadSchema = z
         limit: z.number().int().positive().max(1000).optional(),
         cursor: z.string().optional(),
         include_deleted: z.boolean().optional(),
+        include_nodes: z
+            .boolean()
+            .optional()
+            .meta({ description: 'Include the access-checked endpoint nodes for this relationship page.' }),
     })
     .meta({ id: 'FindRelationshipsPayload' });
 export const FindRelationshipsResponseSchema = z
     .strictObject({
         relationships: z.array(RelationshipSchema),
+        nodes: z.array(GraphNodeSchema).optional(),
         cursor: z.string().optional(),
         truncated: z.boolean(),
         truncation_reasons: z.array(z.string()).optional(),
@@ -206,15 +220,6 @@ export const TraverseRelationshipsPayloadSchema = z
         max_edges: z.number().int().positive().max(5000).optional(),
     })
     .meta({ id: 'TraverseRelationshipsPayload' });
-export const GraphNodeSchema = z
-    .strictObject({
-        ref: EndpointRefSchema,
-        resolved_ref: EndpointRefSchema.optional(),
-        type: z.string().optional(),
-        name: z.string().optional(),
-        properties: jsonObjectSchema.optional(),
-    })
-    .meta({ id: 'GraphNode' });
 export const TraverseRelationshipsResponseSchema = z
     .strictObject({
         nodes: z.array(GraphNodeSchema),
