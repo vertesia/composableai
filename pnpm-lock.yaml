@@ -348,6 +348,9 @@ importers:
 
   llumiverse/common:
     dependencies:
+      '@llumiverse/conversation':
+        specifier: workspace:*
+        version: link:../conversation
       zod:
         specifier: ^4.5.4
         version: 4.5.4
