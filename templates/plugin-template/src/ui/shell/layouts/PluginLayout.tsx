@@ -10,7 +10,8 @@ interface PluginLayoutProps {
 export function PluginLayout({ children }: PluginLayoutProps) {
     const sidebarBg = 'bg-sidebar text-sidebar-foreground border-e border-sidebar-border w-full';
     const { matchedRoutePath } = useRouterContext();
-    const basePath = Path.withMountBasename(matchedRoutePath);
+    // Keep plugins generated with this template compatible with older @vertesia/ui bundles.
+    const basePath = Path.withMountBasename?.(matchedRoutePath) ?? matchedRoutePath;
 
     return (
         <AppLayout
