@@ -184,3 +184,21 @@ describe('fetchSignedUrl', () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 });
+
+describe('Retry-After request budget', () => {
+    it.each(['3600', '2147484', '1e308', new Date(Date.now() + 3600000).toUTCString()])(
+        'returns the intact response without an early retry for %s',
+        async (retryAfter) => {
+            const res = new Response('retry later', { status: 503, headers: { 'Retry-After': retryAfter } });
+            const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(res);
+            try {
+                const result = await fetchSignedUrl('https://storage/x');
+                expect(result).toBe(res);
+                expect(await result.text()).toBe('retry later');
+                expect(fetch).toHaveBeenCalledTimes(1);
+            } finally {
+                fetch.mockRestore();
+            }
+        },
+    );
+});
