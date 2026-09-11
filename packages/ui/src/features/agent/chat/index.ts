@@ -37,6 +37,12 @@ export {
     ConfirmationWidget,
     type ConfirmationWidgetProps,
 } from './AskUserWidget';
+// Active-workstreams polling hook for external use
+export {
+    ACTIVE_WORKSTREAMS_POLL_INTERVAL_MS,
+    type UseActiveWorkstreamsResult,
+    useActiveWorkstreams,
+} from './hooks/useActiveWorkstreams.js';
 export * from './JumpingDots';
 export {
     type AgentMessageFilter,

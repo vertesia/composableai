@@ -47,6 +47,7 @@ import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
+import { useActiveWorkstreams } from './hooks/useActiveWorkstreams.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
@@ -1614,9 +1615,6 @@ function ModernAgentConversationInner({
     const [playbackCursor, setPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
     const [isPlaybackToggleEnabled, setIsPlaybackToggleEnabled] = useState(false);
     const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
-    const [queriedActiveWorkstreams, setQueriedActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
-    const [queriedCompletedWorkstreams, setQueriedCompletedWorkstreams] = useState<CompletedWorkstreamEntry[]>([]);
-    const [isWorkstreamQueryUnavailable, setIsWorkstreamQueryUnavailable] = useState(false);
     const initialResolvedToolApprovalMode = useMemo<AgentToolApprovalMode | undefined>(
         () =>
             initialToolApprovalMode === undefined && interactive
@@ -1627,7 +1625,6 @@ function ModernAgentConversationInner({
     const [toolApprovalMode, setToolApprovalMode] = useState<AgentToolApprovalMode | undefined>(
         initialResolvedToolApprovalMode,
     );
-    const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
     const pendingPlaybackScrollRef = useRef(false);
     const toolApprovalModeChangeVersionRef = useRef(0);
@@ -1670,6 +1667,16 @@ function ModernAgentConversationInner({
             normalizedStatus === 'TIMED_OUT'
         );
     }, [effectiveWorkflowStatus]);
+
+    const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
+
+    // Live enrichment on top of the message stream: poll the backend for workstream
+    // state while the run can still answer, then fall back to the persisted messages.
+    const { active: queriedActiveWorkstreams, completed: queriedCompletedWorkstreams } = useActiveWorkstreams(
+        client,
+        agentRunId,
+        initialHistoryStatus !== 'loading' && !effectiveIsCompleted && !isWorkflowTerminal,
+    );
 
     // When a terminal conversation can be restarted (host provided a restart handler),
     // we keep the composer visible and seamlessly resume the agent on the next message
@@ -1811,7 +1818,6 @@ function ModernAgentConversationInner({
         () => playbackDerivedWorkstreams.filter((ws) => isActiveWorkstreamStatus(ws.status)),
         [playbackDerivedWorkstreams],
     );
-    const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const isAgentWorking = !effectiveIsCompleted && !isWorkflowTerminal;
 
@@ -2108,92 +2114,7 @@ function ModernAgentConversationInner({
     useEffect(() => {
         void agentRunId;
         setSelectedArtifactPath(null);
-        workstreamFetchFailedRef.current = false;
-        setIsWorkstreamQueryUnavailable(false);
-        setQueriedActiveWorkstreams([]);
-        setQueriedCompletedWorkstreams([]);
     }, [agentRunId]);
-
-    // Poll the backend query only as live enrichment. Persisted messages remain the
-    // source of truth for the right-panel history once a workflow can no longer be queried.
-    useEffect(() => {
-        const shouldPoll =
-            initialHistoryStatus !== 'loading' &&
-            !effectiveIsCompleted &&
-            !isWorkflowTerminal &&
-            !isWorkstreamQueryUnavailable;
-        debugAgentChat('active workstreams poll state', {
-            agentRunId,
-            shouldPoll,
-            initialHistoryStatus,
-            effectiveIsCompleted,
-            isWorkflowTerminal,
-            isWorkstreamQueryUnavailable,
-        });
-        if (!shouldPoll) {
-            setQueriedActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
-            return;
-        }
-
-        let isCancelled = false;
-        let isFetchInFlight = false;
-
-        const fetchActiveWorkstreams = async () => {
-            if (isFetchInFlight) {
-                debugAgentChat('active workstreams fetch skipped while previous request is pending', { agentRunId });
-                return;
-            }
-
-            isFetchInFlight = true;
-            try {
-                debugAgentChat('active workstreams fetch start', { agentRunId });
-                const result = await client.agents.getActiveWorkstreams(agentRunId);
-                if (isCancelled) return;
-                debugAgentChat('active workstreams fetch success', {
-                    agentRunId,
-                    runningCount: result.running?.length ?? 0,
-                    completedCount: result.completed?.length ?? 0,
-                    unavailable: result.unavailable === true,
-                });
-                setQueriedActiveWorkstreams(result.running ?? []);
-                setQueriedCompletedWorkstreams(result.completed ?? []);
-                if (result.unavailable) {
-                    setIsWorkstreamQueryUnavailable(true);
-                    return;
-                }
-                workstreamFetchFailedRef.current = false;
-            } catch (error) {
-                if (isCancelled) return;
-                setQueriedActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
-                setIsWorkstreamQueryUnavailable(true);
-                debugAgentChat('active workstreams fetch failed', {
-                    agentRunId,
-                    error: error instanceof Error ? error.message : String(error),
-                });
-                if (!workstreamFetchFailedRef.current) {
-                    console.warn('Failed to fetch active workstreams:', error);
-                    workstreamFetchFailedRef.current = true;
-                }
-            } finally {
-                isFetchInFlight = false;
-            }
-        };
-
-        void fetchActiveWorkstreams();
-        const pollHandle = window.setInterval(fetchActiveWorkstreams, 10000);
-
-        return () => {
-            isCancelled = true;
-            window.clearInterval(pollHandle);
-        };
-    }, [
-        client.agents,
-        agentRunId,
-        effectiveIsCompleted,
-        initialHistoryStatus,
-        isWorkflowTerminal,
-        isWorkstreamQueryUnavailable,
-    ]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
