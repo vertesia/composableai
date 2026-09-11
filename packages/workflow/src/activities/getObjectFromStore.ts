@@ -1,3 +1,4 @@
+import { ApplicationFailure } from '@temporalio/workflow';
 import type {
     ContentObjectApiRevision,
     ContentObjectApiTypeRef,
@@ -63,8 +64,17 @@ export async function getObjectFromStore(
         obj = response;
     } catch (err: unknown) {
         const status = err && typeof err === 'object' && 'status' in err ? (err as { status: number }).status : 0;
-        if (status >= 400 && status < 500 && status !== 429) {
+        if (status === 403 || status === 404) {
             throw new DocumentNotFoundError(`Object retrieval failed (${status}): ${objectId}`, [objectId]);
+        }
+        if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+            throw ApplicationFailure.create({
+                message: `Object retrieval failed (${status}): ${objectId}`,
+                type: 'ObjectRetrievalError',
+                nonRetryable: true,
+                cause: err instanceof Error ? err : undefined,
+                details: [status, objectId],
+            });
         }
         throw err;
     }
