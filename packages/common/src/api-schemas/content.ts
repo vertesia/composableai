@@ -6,6 +6,7 @@ import type { CollectionStatus } from '../store/collections.js';
 import { ContentObjectStatus } from '../store/store.js';
 import { ContentObjectTypeRefSchema } from './app-lifecycle.js';
 import { StringArrayMapSchema } from './dashboard.js';
+import { SubjectRelationshipContextSchema } from './graph.js';
 import { ComputedFacetResponseSchema, FacetSpecSchema, SortOptionSchema } from './interaction.js';
 import { nullableStringSchema } from './schema-primitives.js';
 import { ColumnLayoutSchema, ContentObjectTypeSchema, EmbeddingTypeEnabledMapSchema } from './store.js';
@@ -17,6 +18,27 @@ export const dynamicScalingTypesSchema = z.enum(['off', 'on']).meta({ id: 'dynam
 export const ContentObjectProcessingPrioritySchema = z
     .enum(['normal', 'low'])
     .meta({ id: 'ContentObjectProcessingPriority' });
+
+export const ContentObjectDomainSchema = z
+    .strictObject({
+        type: ContentObjectTypeRefSchema,
+        version: z.string().optional(),
+        properties: JSONObjectSchema,
+    })
+    .meta({ id: 'ContentObjectDomain' });
+export const ContentObjectDomainMapSchema = z
+    .record(z.string(), ContentObjectDomainSchema)
+    .meta({ id: 'ContentObjectDomainMap' });
+export const UpsertContentObjectDomainPayloadSchema = z
+    .strictObject({ domain: ContentObjectDomainSchema })
+    .meta({ id: 'UpsertContentObjectDomainPayload' });
+export const ContentObjectReadQuerySchema = z
+    .strictObject({
+        select: z.string().optional(),
+        include: z.enum(['relationships']).optional(),
+        relationship_limit: z.number().int().positive().max(100).optional(),
+    })
+    .meta({ id: 'ContentObjectReadQuery' });
 
 export const CostExportCsvResponseSchema = z.string().meta({ id: 'CostExportCsvResponse' });
 
@@ -575,6 +597,7 @@ export const CreateContentObjectPayloadSchema = z
                     'The object properties. This is a JSON object that describes the object, matching the object type schema',
             })
             .optional(),
+        domains: ContentObjectDomainMapSchema.optional(),
         metadata: z.looseObject({}).meta({ description: 'Technical metadata of the object' }).optional(),
         tokens: z
             .strictObject({
@@ -675,6 +698,7 @@ export const UpdateContentObjectPayloadSchema = z
                     'The object properties. This is a JSON object that describes the object, matching the object type schema',
             })
             .optional(),
+        domains: ContentObjectDomainMapSchema.optional(),
         metadata: z.looseObject({}).meta({ description: 'Technical metadata of the object' }).optional(),
         tokens: z
             .strictObject({
@@ -799,6 +823,7 @@ export const ContentObjectApiResponseSchema = z
         content: ContentSourceSchema.optional(),
         external_id: z.string().optional(),
         properties: JSONObjectSchema,
+        domains: ContentObjectDomainMapSchema.optional(),
         metadata: z.looseObject({}).optional(),
         tokens: z
             .strictObject({
@@ -843,6 +868,7 @@ export const ContentObjectApiResponseSchema = z
             })
             .optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
+        relationship_context: SubjectRelationshipContextSchema.optional(),
     })
     .meta({ id: 'ContentObjectApiResponse' });
 
@@ -882,6 +908,7 @@ export const ContentObjectItemApiResponseSchema = z
         content: ContentSourceSchema.optional(),
         external_id: z.string().optional(),
         properties: JSONObjectSchema,
+        domains: ContentObjectDomainMapSchema.optional(),
         metadata: z.looseObject({}).optional(),
         tokens: z
             .strictObject({

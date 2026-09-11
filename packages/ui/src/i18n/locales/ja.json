@@ -1,4 +1,9 @@
 {
+    "type.nature": "種別",
+    "type.natureDocument": "ドキュメント",
+    "type.natureDynamic": "動的スキーマ",
+    "type.natureRelationship": "関係",
+    "type.natureSubject": "主体",
     "abac_perms.collection.content_manager": "コレクション管理者",
     "abac_perms.collection.content_reader": "コレクション閲覧者",
     "abac_perms.collection.content_writer": "コレクション編集者",

@@ -358,6 +358,25 @@ export const ProjectIntakeConfigurationSchema = z
                 'Fast pre-conversion type identification for untyped documents. Absent means enabled with ' +
                 'platform default thresholds.',
         }),
+        dynamic_schemas: z
+            .strictObject({
+                enabled: z.boolean().optional(),
+                max_types: z.number().int().min(1).max(12).optional(),
+                full_evidence_fallback: z.boolean().optional(),
+            })
+            .optional()
+            .meta({ description: 'Controls dynamic schema discovery during intake. Absent means disabled.' }),
+        relationship_extraction: z
+            .strictObject({
+                enabled: z.boolean().optional(),
+                mode: z.enum(['alongside', 'post_text']).optional(),
+            })
+            .optional()
+            .meta({ description: 'Controls relationship extraction during intake. Absent means disabled.' }),
+        schema_candidates: z
+            .strictObject({ enabled: z.boolean().optional() })
+            .optional()
+            .meta({ description: 'Controls ephemeral schema candidate creation. Absent means disabled.' }),
         default_policy: ContentTypeIntakePolicySchema.optional().meta({
             description:
                 "Project-level intake policy defaults. Same shape as the per-content-type policy; a type's " +

@@ -9,12 +9,15 @@ import type {
     ContentObjectApiResponseSchema,
     ContentObjectApiRevisionSchema,
     ContentObjectApiTypeRefSchema,
+    ContentObjectDomainMapSchema,
+    ContentObjectDomainSchema,
     ContentObjectExportArtifactFileSchema,
     ContentObjectExportArtifactSchema,
     ContentObjectExportProgressSchema,
     ContentObjectExportResultSchema,
     ContentObjectExportStatusResponseSchema,
     ContentObjectItemApiResponseSchema,
+    ContentObjectReadQuerySchema,
     ContentObjectTextResponseSchema,
     ContentObjectUserPermissionsSchema,
     ContentSourceSchema,
@@ -42,6 +45,7 @@ import type {
     UpdateContentObjectHeadersSchema,
     UpdateContentObjectPayloadSchema,
     UpdateContentObjectQuerySchema,
+    UpsertContentObjectDomainPayloadSchema,
 } from '../api-schemas/content.js';
 import type { MarkdownRenditionFormatSchema } from '../api-schemas/document-processing.js';
 import type {
@@ -80,6 +84,7 @@ import type {
     ContentObjectTypeCatalogQuerySchema,
     ContentObjectTypeItemSchema,
     ContentObjectTypeListQuerySchema,
+    ContentObjectTypeNatureSchema,
     ContentObjectTypeSchema,
     ContentObjectTypeStatusSchema,
     ContentTypeEditingPolicySchema,
@@ -87,12 +92,21 @@ import type {
     ContentTypeExtractionGroundingReviewPolicySchema,
     ContentTypeIntakePolicySchema,
     CreateContentObjectTypePayloadSchema,
+    DeleteSchemaCandidateResponseSchema,
+    GenerateSchemaCandidateDraftResponseSchema,
     InCodeTypeDefinitionSchema,
     IntakePageRangesSchema,
     IntakePageScopeSchema,
     IntakeVisionDetailSchema,
+    ListSchemaCandidatesResponseSchema,
+    ProposeSchemaCandidatePayloadSchema,
+    RelationshipEndpointConstraintSchema,
+    RelationshipTypeConfigurationSchema,
+    SchemaCandidateEvidenceSchema,
+    SchemaCandidateSchema,
     UpdateContentObjectTypePayloadSchema,
 } from '../api-schemas/store.js';
+import type { SubjectRelationshipContext } from '../graph.js';
 import type { JSONObject } from '../json.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
 import type { BaseObject } from './common.js';
@@ -249,6 +263,8 @@ export type FullObjectSearchResponse = Omit<ObjectSearchResponse, 'results'> & {
 };
 
 export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
+    domains?: ContentObjectDomainMap;
+    relationship_context?: SubjectRelationshipContext;
     text?: string; // the text representation of the object
     text_etag?: string;
     embeddings: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
@@ -576,6 +592,19 @@ export type ComplexSearchPayload = z.infer<typeof ComplexSearchPayloadSchema>;
 export type ColumnLayout = z.infer<typeof ColumnLayoutSchema>;
 
 export type ContentObjectTypeStatus = z.infer<typeof ContentObjectTypeStatusSchema>;
+export type ContentObjectTypeNature = z.infer<typeof ContentObjectTypeNatureSchema>;
+export type RelationshipEndpointConstraint = z.infer<typeof RelationshipEndpointConstraintSchema>;
+export type RelationshipTypeConfiguration = z.infer<typeof RelationshipTypeConfigurationSchema>;
+export type ContentObjectDomain = z.infer<typeof ContentObjectDomainSchema>;
+export type ContentObjectDomainMap = z.infer<typeof ContentObjectDomainMapSchema>;
+export type UpsertContentObjectDomainPayload = z.infer<typeof UpsertContentObjectDomainPayloadSchema>;
+export type ContentObjectReadQuery = z.infer<typeof ContentObjectReadQuerySchema>;
+export type SchemaCandidateEvidence = z.infer<typeof SchemaCandidateEvidenceSchema>;
+export type SchemaCandidate = z.infer<typeof SchemaCandidateSchema>;
+export type ProposeSchemaCandidatePayload = z.infer<typeof ProposeSchemaCandidatePayloadSchema>;
+export type ListSchemaCandidatesResponse = z.infer<typeof ListSchemaCandidatesResponseSchema>;
+export type GenerateSchemaCandidateDraftResponse = z.infer<typeof GenerateSchemaCandidateDraftResponseSchema>;
+export type DeleteSchemaCandidateResponse = z.infer<typeof DeleteSchemaCandidateResponseSchema>;
 
 export type IntakeVisionDetail = z.infer<typeof IntakeVisionDetailSchema>;
 

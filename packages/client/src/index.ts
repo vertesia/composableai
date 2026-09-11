@@ -16,6 +16,7 @@ export { default as OAuthServerApi } from './OAuthServerApi.js';
 export type { ComputePromptFacetsResponse, ListInteractionsResponse } from './PromptsApi.js';
 export { default as RemoteMcpConnectionsApi } from './RemoteMcpConnectionsApi.js';
 export type { ComputeRunFacetsResponse, FilterOption } from './RunsApi.js';
+export { default as SchemaCandidatesApi } from './SchemaCandidatesApi.js';
 export { default as SecretsApi } from './SecretsApi.js';
 export * from './StreamSource.js';
 export * from './store/index.js';

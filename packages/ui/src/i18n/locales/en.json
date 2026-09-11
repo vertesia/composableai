@@ -1,4 +1,9 @@
 {
+    "type.nature": "Nature",
+    "type.natureDocument": "Document",
+    "type.natureDynamic": "Dynamic schema",
+    "type.natureRelationship": "Relationship",
+    "type.natureSubject": "Subject",
     "abac_perms.collection.content_manager": "Collection Manager",
     "abac_perms.collection.content_reader": "Collection Reader",
     "abac_perms.collection.content_writer": "Collection Writer",

@@ -422,6 +422,7 @@ import {
     SetFileMetadataPayloadSchema,
     StringValueMapSchema,
 } from './files.js';
+import * as GraphSchemas from './graph.js';
 import {
     CreateUserGroupPayloadSchema,
     ListUserGroupsQuerySchema,
@@ -685,13 +686,22 @@ import {
     ContentObjectTypeItemArraySchema,
     ContentObjectTypeItemSchema,
     ContentObjectTypeListQuerySchema,
+    ContentObjectTypeNatureSchema,
     ContentObjectTypeSchema,
     ContentObjectTypeStatusSchema,
     ContentTypeEditingPolicySchema,
     ContentTypeIntakePolicySchema,
     CreateContentObjectTypePayloadSchema,
+    DeleteSchemaCandidateResponseSchema,
+    GenerateSchemaCandidateDraftResponseSchema,
     InCodeTypeDefinitionSchema,
     InteractionExecutionConfigurationSchema,
+    ListSchemaCandidatesResponseSchema,
+    ProposeSchemaCandidatePayloadSchema,
+    RelationshipEndpointConstraintSchema,
+    RelationshipTypeConfigurationSchema,
+    SchemaCandidateEvidenceSchema,
+    SchemaCandidateSchema,
     UpdateContentObjectTypePayloadSchema,
 } from './store.js';
 import * as StsSchemas from './sts.js';
@@ -1289,6 +1299,15 @@ const CONTENT_TYPE_CATALOG_SCHEMAS = {
     ColumnLayout: ColumnLayoutSchema,
     ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
     ContentObjectTypeStatus: ContentObjectTypeStatusSchema,
+    ContentObjectTypeNature: ContentObjectTypeNatureSchema,
+    RelationshipEndpointConstraint: RelationshipEndpointConstraintSchema,
+    RelationshipTypeConfiguration: RelationshipTypeConfigurationSchema,
+    SchemaCandidateEvidence: SchemaCandidateEvidenceSchema,
+    SchemaCandidate: SchemaCandidateSchema,
+    ProposeSchemaCandidatePayload: ProposeSchemaCandidatePayloadSchema,
+    ListSchemaCandidatesResponse: ListSchemaCandidatesResponseSchema,
+    GenerateSchemaCandidateDraftResponse: GenerateSchemaCandidateDraftResponseSchema,
+    DeleteSchemaCandidateResponse: DeleteSchemaCandidateResponseSchema,
     ContentObjectTypeItem: ContentObjectTypeItemSchema,
     ContentObjectTypeItemArray: ContentObjectTypeItemArraySchema,
     ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntrySchema,
@@ -1549,6 +1568,10 @@ const PROCESS_SCRIPT_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const CONTENT_OBJECT_SCHEMAS = {
+    ContentObjectDomain: ContentSchemas.ContentObjectDomainSchema,
+    ContentObjectDomainMap: ContentSchemas.ContentObjectDomainMapSchema,
+    UpsertContentObjectDomainPayload: ContentSchemas.UpsertContentObjectDomainPayloadSchema,
+    ContentObjectReadQuery: ContentSchemas.ContentObjectReadQuerySchema,
     GenerationRunMetadata: ContentSchemas.GenerationRunMetadataSchema,
     ContentObjectUserPermissions: ContentSchemas.ContentObjectUserPermissionsSchema,
     ContentSource: ContentSchemas.ContentSourceSchema,
@@ -2248,6 +2271,46 @@ const CONTENT_QUERY_SCHEMAS = {
     ContentQueryResult: ContentQuerySchemas.ContentQueryResultSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const GRAPH_SCHEMAS = {
+    SubjectEndpointRef: GraphSchemas.SubjectEndpointRefSchema,
+    DocumentEndpointRef: GraphSchemas.DocumentEndpointRefSchema,
+    DocumentVersionEndpointRef: GraphSchemas.DocumentVersionEndpointRefSchema,
+    ExternalEndpointRef: GraphSchemas.ExternalEndpointRefSchema,
+    EndpointRef: GraphSchemas.EndpointRefSchema,
+    SubjectIdentifier: GraphSchemas.SubjectIdentifierSchema,
+    SubjectIdentifierArray: GraphSchemas.SubjectIdentifierArraySchema,
+    Subject: GraphSchemas.SubjectSchema,
+    CreateSubjectPayload: GraphSchemas.CreateSubjectPayloadSchema,
+    SubjectReadQuery: GraphSchemas.SubjectReadQuerySchema,
+    UpdateSubjectPayload: GraphSchemas.UpdateSubjectPayloadSchema,
+    DeleteSubjectQuery: GraphSchemas.DeleteSubjectQuerySchema,
+    ResolveSubjectsPayload: GraphSchemas.ResolveSubjectsPayloadSchema,
+    SubjectResolution: GraphSchemas.SubjectResolutionSchema,
+    ResolveSubjectsResponse: GraphSchemas.ResolveSubjectsResponseSchema,
+    SubjectReadResponse: GraphSchemas.SubjectReadResponseSchema,
+    SubjectRelationshipContext: GraphSchemas.SubjectRelationshipContextSchema,
+    UpsertSubjectItem: GraphSchemas.UpsertSubjectItemSchema,
+    UpsertSubjectsPayload: GraphSchemas.UpsertSubjectsPayloadSchema,
+    SubjectMutationResult: GraphSchemas.SubjectMutationResultSchema,
+    UpsertSubjectsResponse: GraphSchemas.UpsertSubjectsResponseSchema,
+    RelationshipEvidence: GraphSchemas.RelationshipEvidenceSchema,
+    Relationship: GraphSchemas.RelationshipSchema,
+    CreateRelationshipPayload: GraphSchemas.CreateRelationshipPayloadSchema,
+    UpdateRelationshipPayload: GraphSchemas.UpdateRelationshipPayloadSchema,
+    DeleteRelationshipQuery: GraphSchemas.DeleteRelationshipQuerySchema,
+    UpsertRelationshipItem: GraphSchemas.UpsertRelationshipItemSchema,
+    UpsertRelationshipsPayload: GraphSchemas.UpsertRelationshipsPayloadSchema,
+    RelationshipMutationResult: GraphSchemas.RelationshipMutationResultSchema,
+    UpsertRelationshipsResponse: GraphSchemas.UpsertRelationshipsResponseSchema,
+    RelationshipDirection: GraphSchemas.RelationshipDirectionSchema,
+    FindRelationshipsPayload: GraphSchemas.FindRelationshipsPayloadSchema,
+    FindRelationshipsResponse: GraphSchemas.FindRelationshipsResponseSchema,
+    RelationshipTraversalStep: GraphSchemas.RelationshipTraversalStepSchema,
+    TraverseRelationshipsPayload: GraphSchemas.TraverseRelationshipsPayloadSchema,
+    GraphNode: GraphSchemas.GraphNodeSchema,
+    TraverseRelationshipsResponse: GraphSchemas.TraverseRelationshipsResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const DELEGATION_SCHEMAS = {
     CreateDelegationGrantPayload: CreateDelegationGrantPayloadSchema,
     DelegationGrant: DelegationGrantSchema,
@@ -2279,6 +2342,7 @@ const API_SCHEMA_GROUPS = [
     STS_SCHEMAS,
     AGENT_COMMUNICATION_SCHEMAS,
     CONTENT_QUERY_SCHEMAS,
+    GRAPH_SCHEMAS,
     FILE_STORAGE_SCHEMAS,
     DURABLE_TASK_SCHEMAS,
     CONTENT_TYPE_CATALOG_SCHEMAS,
@@ -2341,6 +2405,7 @@ type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
     typeof STS_SCHEMAS &
     typeof AGENT_COMMUNICATION_SCHEMAS &
     typeof CONTENT_QUERY_SCHEMAS &
+    typeof GRAPH_SCHEMAS &
     typeof FILE_STORAGE_SCHEMAS &
     typeof DURABLE_TASK_SCHEMAS &
     typeof CONTENT_TYPE_CATALOG_SCHEMAS &
@@ -2389,6 +2454,52 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    // Subject graph, relationship graph, and dynamic-schema contracts.
+    'SubjectEndpointRef',
+    'DocumentEndpointRef',
+    'DocumentVersionEndpointRef',
+    'ExternalEndpointRef',
+    'SubjectIdentifier',
+    'Subject',
+    'CreateSubjectPayload',
+    'SubjectReadQuery',
+    'UpdateSubjectPayload',
+    'DeleteSubjectQuery',
+    'ResolveSubjectsPayload',
+    'SubjectResolution',
+    'ResolveSubjectsResponse',
+    'SubjectReadResponse',
+    'SubjectRelationshipContext',
+    'UpsertSubjectItem',
+    'UpsertSubjectsPayload',
+    'SubjectMutationResult',
+    'UpsertSubjectsResponse',
+    'RelationshipEvidence',
+    'Relationship',
+    'CreateRelationshipPayload',
+    'UpdateRelationshipPayload',
+    'DeleteRelationshipQuery',
+    'UpsertRelationshipItem',
+    'UpsertRelationshipsPayload',
+    'RelationshipMutationResult',
+    'UpsertRelationshipsResponse',
+    'FindRelationshipsPayload',
+    'FindRelationshipsResponse',
+    'RelationshipTraversalStep',
+    'TraverseRelationshipsPayload',
+    'GraphNode',
+    'TraverseRelationshipsResponse',
+    'RelationshipEndpointConstraint',
+    'RelationshipTypeConfiguration',
+    'ContentObjectDomain',
+    'UpsertContentObjectDomainPayload',
+    'ContentObjectReadQuery',
+    'SchemaCandidateEvidence',
+    'SchemaCandidate',
+    'ProposeSchemaCandidatePayload',
+    'ListSchemaCandidatesResponse',
+    'GenerateSchemaCandidateDraftResponse',
+    'DeleteSchemaCandidateResponse',
     'CreateDelegationGrantPayload',
     'DelegationGrant',
     // Process Test Lab request, fixture, and result contracts.

@@ -1,4 +1,9 @@
 {
+    "type.nature": "性质",
+    "type.natureDocument": "文档",
+    "type.natureDynamic": "动态架构",
+    "type.natureRelationship": "关系",
+    "type.natureSubject": "主体",
     "abac_perms.collection.content_manager": "集合管理员",
     "abac_perms.collection.content_reader": "集合查看者",
     "abac_perms.collection.content_writer": "集合编辑者",

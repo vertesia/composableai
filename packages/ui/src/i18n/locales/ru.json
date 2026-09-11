@@ -1,4 +1,9 @@
 {
+    "type.nature": "Тип",
+    "type.natureDocument": "Документ",
+    "type.natureDynamic": "Динамическая схема",
+    "type.natureRelationship": "Связь",
+    "type.natureSubject": "Субъект",
     "abac_perms.collection.content_manager": "Менеджер коллекций",
     "abac_perms.collection.content_reader": "Читатель коллекций",
     "abac_perms.collection.content_writer": "Редактор коллекций",

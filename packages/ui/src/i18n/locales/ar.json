@@ -1,4 +1,9 @@
 {
+    "type.nature": "النوع",
+    "type.natureDocument": "مستند",
+    "type.natureDynamic": "مخطط ديناميكي",
+    "type.natureRelationship": "علاقة",
+    "type.natureSubject": "موضوع",
     "abac_perms.collection.content_manager": "مدير المجموعات",
     "abac_perms.collection.content_reader": "قارئ المجموعات",
     "abac_perms.collection.content_writer": "محرر المجموعات",

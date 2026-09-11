@@ -435,7 +435,7 @@ describe('the five content-type shapes are composed, not repeated', () => {
         // Order is contract: it decides the order of the generated clients' constructor arguments and
         // model fields. The five orders differ because they were derived from five different types.
         expect(properties('ContentObjectTypeItem')).toEqual(properties('ContentObjectType'));
-        expect(properties('ContentObjectTypeCatalogEntry').slice(0, 12)).toEqual(properties('InCodeTypeDefinition'));
+        expect(properties('ContentObjectTypeCatalogEntry').slice(0, 14)).toEqual(properties('InCodeTypeDefinition'));
         expect(properties('CreateContentObjectTypePayload')).toEqual([
             'status',
             'is_chunkable',
@@ -447,6 +447,8 @@ describe('the five content-type shapes are composed, not repeated', () => {
             'name',
             'description',
             'tags',
+            'nature',
+            'relationship',
         ]);
     });
 
@@ -469,6 +471,7 @@ describe('the five content-type shapes are composed, not repeated', () => {
             validateApiResponse('ContentObjectTypeCatalogEntry', {
                 id: 'sys:Invoice',
                 name: 'Invoice',
+                ref_type: 'incode',
                 is_chunkable: false,
             }).valid,
         ).toBe(true);

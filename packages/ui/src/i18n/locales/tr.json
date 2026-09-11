@@ -1,4 +1,9 @@
 {
+    "type.nature": "Tür",
+    "type.natureDocument": "Belge",
+    "type.natureDynamic": "Dinamik şema",
+    "type.natureRelationship": "İlişki",
+    "type.natureSubject": "Özne",
     "abac_perms.collection.content_manager": "Koleksiyon Yöneticisi",
     "abac_perms.collection.content_reader": "Koleksiyon Okuyucusu",
     "abac_perms.collection.content_writer": "Koleksiyon Yazarı",

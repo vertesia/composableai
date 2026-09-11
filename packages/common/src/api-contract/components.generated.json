@@ -4746,6 +4746,51 @@
         "$ref": "#/components/schemas/ProjectIntakeSniffConfiguration",
         "description": "Fast pre-conversion type identification for untyped documents. Absent means enabled with platform default thresholds."
       },
+      "dynamic_schemas": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "max_types": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "full_evidence_fallback": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Controls dynamic schema discovery during intake. Absent means disabled."
+      },
+      "relationship_extraction": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "alongside",
+              "post_text"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "description": "Controls relationship extraction during intake. Absent means disabled."
+      },
+      "schema_candidates": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Controls ephemeral schema candidate creation. Absent means disabled."
+      },
       "default_policy": {
         "$ref": "#/components/schemas/ContentTypeIntakePolicy",
         "description": "Project-level intake policy defaults. Same shape as the per-content-type policy; a type's `intake` block wins field-by-field over these defaults, which in turn win over the legacy flat fields below. `identification` is type-specific and ignored here."
@@ -21847,6 +21892,14 @@
         },
         "description": "Optional array of categorization tags"
       },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature",
+        "description": "Semantic nature of this type. A missing value is treated as document for compatibility."
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/RelationshipTypeConfiguration",
+        "description": "Allowed directed endpoints when this type has relationship nature."
+      },
       "object_schema": {
         "type": "object",
         "additionalProperties": true,
@@ -21885,6 +21938,49 @@
       "id",
       "name"
     ],
+    "additionalProperties": false
+  },
+  "ContentObjectTypeNature": {
+    "type": "string",
+    "enum": [
+      "document",
+      "dynamic",
+      "subject",
+      "relationship"
+    ]
+  },
+  "RelationshipTypeConfiguration": {
+    "type": "object",
+    "properties": {
+      "source": {
+        "$ref": "#/components/schemas/RelationshipEndpointConstraint",
+        "description": "Constraints applied to the directed source endpoint."
+      },
+      "target": {
+        "$ref": "#/components/schemas/RelationshipEndpointConstraint",
+        "description": "Constraints applied to the directed target endpoint."
+      }
+    },
+    "additionalProperties": false
+  },
+  "RelationshipEndpointConstraint": {
+    "type": "object",
+    "properties": {
+      "natures": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentObjectTypeNature"
+        },
+        "description": "Allowed endpoint content type natures."
+      },
+      "types": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Allowed endpoint content type IDs."
+      }
+    },
     "additionalProperties": false
   },
   "ColumnLayout": {
@@ -23930,6 +24026,15 @@
   "ContentQueryPayload": {
     "type": "object",
     "properties": {
+      "resource": {
+        "type": "string",
+        "enum": [
+          "documents",
+          "subjects",
+          "relationships"
+        ],
+        "description": "Resource index to query. Defaults to documents."
+      },
       "sql": {
         "type": "string"
       },
@@ -24048,6 +24153,1021 @@
     },
     "required": [
       "type"
+    ],
+    "additionalProperties": false
+  },
+  "SubjectEndpointRef": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "subject"
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "DocumentEndpointRef": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "document"
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "DocumentVersionEndpointRef": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "document_version"
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "ExternalEndpointRef": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "external"
+      },
+      "namespace": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "value": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "kind",
+      "namespace",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "EndpointRef": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/SubjectEndpointRef"
+      },
+      {
+        "$ref": "#/components/schemas/DocumentEndpointRef"
+      },
+      {
+        "$ref": "#/components/schemas/DocumentVersionEndpointRef"
+      },
+      {
+        "$ref": "#/components/schemas/ExternalEndpointRef"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "subject": "#/components/schemas/SubjectEndpointRef",
+        "document": "#/components/schemas/DocumentEndpointRef",
+        "document_version": "#/components/schemas/DocumentVersionEndpointRef",
+        "external": "#/components/schemas/ExternalEndpointRef"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
+  },
+  "SubjectIdentifier": {
+    "type": "object",
+    "properties": {
+      "namespace": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "value": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "namespace",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "SubjectIdentifierArray": {
+    "maxItems": 100,
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/SubjectIdentifier"
+    }
+  },
+  "Subject": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "identifiers": {
+        "$ref": "#/components/schemas/SubjectIdentifierArray"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "deleted_by": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "name",
+      "identifiers",
+      "properties",
+      "revision",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "updated_by"
+    ],
+    "additionalProperties": false
+  },
+  "CreateSubjectPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "identifiers": {
+        "$ref": "#/components/schemas/SubjectIdentifierArray"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "required": [
+      "type",
+      "name"
+    ],
+    "additionalProperties": false
+  },
+  "SubjectReadQuery": {
+    "type": "object",
+    "properties": {
+      "include": {
+        "type": "string",
+        "enum": [
+          "relationships"
+        ]
+      },
+      "relationship_limit": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 100
+      }
+    },
+    "additionalProperties": false
+  },
+  "UpdateSubjectPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "identifiers": {
+        "$ref": "#/components/schemas/SubjectIdentifierArray"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "expected_revision"
+    ],
+    "additionalProperties": false
+  },
+  "DeleteSubjectQuery": {
+    "type": "object",
+    "properties": {
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "expected_revision"
+    ],
+    "additionalProperties": false
+  },
+  "ResolveSubjectsPayload": {
+    "type": "object",
+    "properties": {
+      "identifiers": {
+        "$ref": "#/components/schemas/SubjectIdentifierArray"
+      },
+      "type": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "identifiers"
+    ],
+    "additionalProperties": false
+  },
+  "SubjectResolution": {
+    "type": "object",
+    "properties": {
+      "identifier": {
+        "$ref": "#/components/schemas/SubjectIdentifier"
+      },
+      "subject_ids": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "ambiguous": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "identifier",
+      "subject_ids",
+      "ambiguous"
+    ],
+    "additionalProperties": false
+  },
+  "ResolveSubjectsResponse": {
+    "type": "object",
+    "properties": {
+      "resolutions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SubjectResolution"
+        }
+      },
+      "subjects": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Subject"
+        }
+      }
+    },
+    "required": [
+      "resolutions",
+      "subjects"
+    ],
+    "additionalProperties": false
+  },
+  "SubjectReadResponse": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "identifiers": {
+        "$ref": "#/components/schemas/SubjectIdentifierArray"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "deleted_by": {
+        "type": "string"
+      },
+      "relationship_context": {
+        "$ref": "#/components/schemas/SubjectRelationshipContext"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "name",
+      "identifiers",
+      "properties",
+      "revision",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "updated_by"
+    ],
+    "additionalProperties": false
+  },
+  "SubjectRelationshipContext": {
+    "type": "object",
+    "properties": {
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GraphNode"
+        }
+      },
+      "edges": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Relationship"
+        }
+      },
+      "cursor": {
+        "type": "string"
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "truncation_reasons": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "nodes",
+      "edges",
+      "truncated"
+    ],
+    "additionalProperties": false
+  },
+  "GraphNode": {
+    "type": "object",
+    "properties": {
+      "ref": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "resolved_ref": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "type": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "required": [
+      "ref"
+    ],
+    "additionalProperties": false
+  },
+  "Relationship": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string"
+      },
+      "source": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "target": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "evidence": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipEvidence"
+        }
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "origin": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "extraction"
+        ]
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "deleted_by": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "source",
+      "target",
+      "properties",
+      "evidence",
+      "origin",
+      "revision",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "updated_by"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipEvidence": {
+    "type": "object",
+    "properties": {
+      "document": {
+        "$ref": "#/components/schemas/DocumentEndpointRef"
+      },
+      "document_version": {
+        "$ref": "#/components/schemas/DocumentVersionEndpointRef"
+      },
+      "excerpt": {
+        "type": "string",
+        "maxLength": 4000
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "document_version"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertSubjectItem": {
+    "type": "object",
+    "properties": {
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "subject": {
+        "$ref": "#/components/schemas/CreateSubjectPayload"
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "idempotency_key",
+      "subject"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertSubjectsPayload": {
+    "type": "object",
+    "properties": {
+      "items": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/UpsertSubjectItem"
+        }
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "additionalProperties": false
+  },
+  "SubjectMutationResult": {
+    "type": "object",
+    "properties": {
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "subject": {
+        "$ref": "#/components/schemas/Subject"
+      },
+      "error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "idempotency_key"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertSubjectsResponse": {
+    "type": "object",
+    "properties": {
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SubjectMutationResult"
+        }
+      }
+    },
+    "required": [
+      "results"
+    ],
+    "additionalProperties": false
+  },
+  "CreateRelationshipPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string"
+      },
+      "source": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "target": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "evidence": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipEvidence"
+        }
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "origin": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "extraction"
+        ],
+        "description": "Defaults to manual."
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "type",
+      "source",
+      "target"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateRelationshipPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string"
+      },
+      "source": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "target": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "evidence": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipEvidence"
+        }
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "origin": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "extraction"
+        ],
+        "description": "Defaults to manual."
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "expected_revision"
+    ],
+    "additionalProperties": false
+  },
+  "DeleteRelationshipQuery": {
+    "type": "object",
+    "properties": {
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "expected_revision"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertRelationshipItem": {
+    "type": "object",
+    "properties": {
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/CreateRelationshipPayload"
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "idempotency_key",
+      "relationship"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertRelationshipsPayload": {
+    "type": "object",
+    "properties": {
+      "items": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/UpsertRelationshipItem"
+        }
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipMutationResult": {
+    "type": "object",
+    "properties": {
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/Relationship"
+      },
+      "error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "idempotency_key"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertRelationshipsResponse": {
+    "type": "object",
+    "properties": {
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipMutationResult"
+        }
+      }
+    },
+    "required": [
+      "results"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipDirection": {
+    "type": "string",
+    "enum": [
+      "both",
+      "incoming",
+      "outgoing"
+    ]
+  },
+  "FindRelationshipsPayload": {
+    "type": "object",
+    "properties": {
+      "endpoints": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EndpointRef"
+        }
+      },
+      "direction": {
+        "$ref": "#/components/schemas/RelationshipDirection",
+        "description": "Defaults to both."
+      },
+      "relationship_types": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "limit": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 1000
+      },
+      "cursor": {
+        "type": "string"
+      },
+      "include_deleted": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false
+  },
+  "FindRelationshipsResponse": {
+    "type": "object",
+    "properties": {
+      "relationships": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Relationship"
+        }
+      },
+      "cursor": {
+        "type": "string"
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "truncation_reasons": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "relationships",
+      "truncated"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipTraversalStep": {
+    "type": "object",
+    "properties": {
+      "direction": {
+        "$ref": "#/components/schemas/RelationshipDirection",
+        "description": "Defaults to both."
+      },
+      "relationship_types": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "node_filter": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "additionalProperties": false
+  },
+  "TraverseRelationshipsPayload": {
+    "type": "object",
+    "properties": {
+      "start": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EndpointRef"
+        }
+      },
+      "steps": {
+        "minItems": 1,
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipTraversalStep"
+        }
+      },
+      "max_nodes": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 1000
+      },
+      "max_edges": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 5000
+      }
+    },
+    "required": [
+      "start",
+      "steps"
+    ],
+    "additionalProperties": false
+  },
+  "TraverseRelationshipsResponse": {
+    "type": "object",
+    "properties": {
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GraphNode"
+        }
+      },
+      "edges": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Relationship"
+        }
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "truncation_reasons": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "nodes",
+      "edges",
+      "truncated"
     ],
     "additionalProperties": false
   },
@@ -24689,6 +25809,169 @@
     },
     "additionalProperties": false
   },
+  "SchemaCandidateEvidence": {
+    "type": "object",
+    "properties": {
+      "object_id": {
+        "type": "string"
+      },
+      "root_object_id": {
+        "type": "string"
+      },
+      "excerpt": {
+        "type": "string"
+      },
+      "location": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "object_id",
+      "excerpt"
+    ],
+    "additionalProperties": false
+  },
+  "SchemaCandidate": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "project_id": {
+        "type": "string"
+      },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "suggested_schema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "normalized_key": {
+        "type": "string"
+      },
+      "source_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "evidence": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SchemaCandidateEvidence"
+        }
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "project_id",
+      "nature",
+      "name",
+      "normalized_key",
+      "source_count",
+      "evidence",
+      "created_at",
+      "updated_at",
+      "expires_at"
+    ],
+    "additionalProperties": false
+  },
+  "ProposeSchemaCandidatePayload": {
+    "type": "object",
+    "properties": {
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "suggested_schema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "evidence": {
+        "$ref": "#/components/schemas/SchemaCandidateEvidence"
+      }
+    },
+    "required": [
+      "nature",
+      "name",
+      "evidence"
+    ],
+    "additionalProperties": false
+  },
+  "ListSchemaCandidatesResponse": {
+    "type": "object",
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SchemaCandidate"
+        }
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "additionalProperties": false
+  },
+  "GenerateSchemaCandidateDraftResponse": {
+    "type": "object",
+    "properties": {
+      "workflow_run_id": {
+        "type": "string"
+      },
+      "run_id": {
+        "type": "string"
+      },
+      "agent_run_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "workflow_run_id",
+      "run_id",
+      "agent_run_id"
+    ],
+    "additionalProperties": false
+  },
+  "DeleteSchemaCandidateResponse": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "deleted": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "id",
+      "deleted"
+    ],
+    "additionalProperties": false
+  },
   "ContentObjectTypeItem": {
     "type": "object",
     "properties": {
@@ -24716,6 +25999,14 @@
           "type": "string"
         },
         "description": "Optional array of categorization tags"
+      },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature",
+        "description": "Semantic nature of this type. A missing value is treated as document for compatibility."
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/RelationshipTypeConfiguration",
+        "description": "Allowed directed endpoints when this type has relationship nature."
       },
       "updated_by": {
         "type": "string",
@@ -24802,6 +26093,14 @@
         },
         "description": "Optional array of categorization tags"
       },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature",
+        "description": "Semantic nature of this type. A missing value is treated as document for compatibility."
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/RelationshipTypeConfiguration",
+        "description": "Allowed directed endpoints when this type has relationship nature."
+      },
       "object_schema": {
         "type": "object",
         "additionalProperties": true,
@@ -24852,11 +26151,20 @@
         "minimum": 1,
         "maximum": 9007199254740991,
         "description": "Stored-resource revision. Omitted for app-contributed in-code types."
+      },
+      "ref_type": {
+        "type": "string",
+        "enum": [
+          "stored",
+          "incode"
+        ],
+        "description": "Whether this catalog entry comes from stored project data or an in-code app/system provider."
       }
     },
     "required": [
       "id",
-      "name"
+      "name",
+      "ref_type"
     ],
     "additionalProperties": false
   },
@@ -24912,6 +26220,14 @@
           "type": "string"
         },
         "description": "Optional array of categorization tags"
+      },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature",
+        "description": "Semantic nature of this type. A missing value is treated as document for compatibility."
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/RelationshipTypeConfiguration",
+        "description": "Allowed directed endpoints when this type has relationship nature."
       }
     },
     "required": [
@@ -24966,6 +26282,14 @@
         },
         "description": "Optional array of categorization tags"
       },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature",
+        "description": "Semantic nature of this type. A missing value is treated as document for compatibility."
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/RelationshipTypeConfiguration",
+        "description": "Allowed directed endpoints when this type has relationship nature."
+      },
       "expected_edit_revision": {
         "type": "integer",
         "minimum": 1,
@@ -25003,6 +26327,14 @@
           "type": "string"
         },
         "description": "Optional array of categorization tags"
+      },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature",
+        "description": "Semantic nature of this type. A missing value is treated as document for compatibility."
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/RelationshipTypeConfiguration",
+        "description": "Allowed directed endpoints when this type has relationship nature."
       },
       "updated_by": {
         "type": "string",
@@ -25067,6 +26399,9 @@
       "tag": {
         "type": "string"
       },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature"
+      },
       "layout": {
         "type": "boolean"
       },
@@ -25090,6 +26425,9 @@
       },
       "chunkable": {
         "type": "boolean"
+      },
+      "nature": {
+        "$ref": "#/components/schemas/ContentObjectTypeNature"
       },
       "layout": {
         "type": "boolean"
@@ -26723,6 +28061,63 @@
       }
     }
   },
+  "ContentObjectDomain": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "$ref": "#/components/schemas/ContentObjectTypeRef"
+      },
+      "version": {
+        "type": "string"
+      },
+      "properties": {
+        "$ref": "#/components/schemas/JSONObject"
+      }
+    },
+    "required": [
+      "type",
+      "properties"
+    ],
+    "additionalProperties": false
+  },
+  "ContentObjectDomainMap": {
+    "type": "object",
+    "additionalProperties": {
+      "$ref": "#/components/schemas/ContentObjectDomain"
+    }
+  },
+  "UpsertContentObjectDomainPayload": {
+    "type": "object",
+    "properties": {
+      "domain": {
+        "$ref": "#/components/schemas/ContentObjectDomain"
+      }
+    },
+    "required": [
+      "domain"
+    ],
+    "additionalProperties": false
+  },
+  "ContentObjectReadQuery": {
+    "type": "object",
+    "properties": {
+      "select": {
+        "type": "string"
+      },
+      "include": {
+        "type": "string",
+        "enum": [
+          "relationships"
+        ]
+      },
+      "relationship_limit": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 100
+      }
+    },
+    "additionalProperties": false
+  },
   "GenerationRunMetadata": {
     "type": "object",
     "properties": {
@@ -26961,6 +28356,9 @@
         "additionalProperties": true,
         "description": "The object properties. This is a JSON object that describes the object, matching the object type schema"
       },
+      "domains": {
+        "$ref": "#/components/schemas/ContentObjectDomainMap"
+      },
       "metadata": {
         "type": "object",
         "additionalProperties": true,
@@ -27179,6 +28577,9 @@
         "additionalProperties": true,
         "description": "The object properties. This is a JSON object that describes the object, matching the object type schema"
       },
+      "domains": {
+        "$ref": "#/components/schemas/ContentObjectDomainMap"
+      },
       "metadata": {
         "type": "object",
         "additionalProperties": true,
@@ -27318,6 +28719,9 @@
       "properties": {
         "$ref": "#/components/schemas/JSONObject"
       },
+      "domains": {
+        "$ref": "#/components/schemas/ContentObjectDomainMap"
+      },
       "metadata": {
         "type": "object",
         "additionalProperties": true
@@ -27423,6 +28827,9 @@
         "items": {
           "$ref": "#/components/schemas/InheritedPropertyMetadata"
         }
+      },
+      "relationship_context": {
+        "$ref": "#/components/schemas/SubjectRelationshipContext"
       }
     },
     "required": [
@@ -27526,6 +28933,9 @@
       "properties": {
         "$ref": "#/components/schemas/JSONObject"
       },
+      "domains": {
+        "$ref": "#/components/schemas/ContentObjectDomainMap"
+      },
       "metadata": {
         "type": "object",
         "additionalProperties": true
@@ -27631,6 +29041,9 @@
         "items": {
           "$ref": "#/components/schemas/InheritedPropertyMetadata"
         }
+      },
+      "relationship_context": {
+        "$ref": "#/components/schemas/SubjectRelationshipContext"
       }
     },
     "additionalProperties": false
@@ -27699,6 +29112,9 @@
       },
       "properties": {
         "$ref": "#/components/schemas/JSONObject"
+      },
+      "domains": {
+        "$ref": "#/components/schemas/ContentObjectDomainMap"
       },
       "metadata": {
         "type": "object",

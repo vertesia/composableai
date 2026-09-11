@@ -1,4 +1,9 @@
 {
+    "type.nature": "유형",
+    "type.natureDocument": "문서",
+    "type.natureDynamic": "동적 스키마",
+    "type.natureRelationship": "관계",
+    "type.natureSubject": "주체",
     "abac_perms.collection.content_manager": "컬렉션 관리자",
     "abac_perms.collection.content_reader": "컬렉션 열람자",
     "abac_perms.collection.content_writer": "컬렉션 편집자",

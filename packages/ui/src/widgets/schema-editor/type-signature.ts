@@ -8,6 +8,7 @@ export enum TypeNames {
     text = 'text', // a string with an additional editor: textarea property
     media = 'media', // a media file ref
     document = 'document', // a document ref
+    relationship = 'relationship', // a canonical relationship edge ID
 }
 
 export interface TypeSignature {

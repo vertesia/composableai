@@ -344,6 +344,9 @@ export class SchemaNode {
         } else if (type.name === 'document') {
             type.name = TypeNames.any;
             editor = 'document';
+        } else if (type.name === 'relationship') {
+            type.name = TypeNames.string;
+            editor = 'relationship';
         } else {
             editor = null; // remove custom editor
         }

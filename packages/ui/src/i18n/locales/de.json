@@ -1,4 +1,9 @@
 {
+    "type.nature": "Art",
+    "type.natureDocument": "Dokument",
+    "type.natureDynamic": "Dynamisches Schema",
+    "type.natureRelationship": "Beziehung",
+    "type.natureSubject": "Subjekt",
     "abac_perms.collection.content_manager": "Sammlungsverwalter",
     "abac_perms.collection.content_reader": "Sammlungsleser",
     "abac_perms.collection.content_writer": "Sammlungsbearbeiter",

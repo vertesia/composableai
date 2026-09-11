@@ -145,6 +145,10 @@ export function getTypeSignature(schema: JSONSchema): TypeSignature {
             displayTypeName = 'document';
             break;
         }
+        case 'relationship': {
+            displayTypeName = 'relationship';
+            break;
+        }
     }
     return {
         isNullable,

@@ -16,6 +16,7 @@ import {
     type ContentObjectExportStatusResponse,
     type ContentObjectItem,
     type ContentObjectProcessingPriority,
+    type ContentObjectReadQuery,
     type ContentObjectTextResponse,
     type ContentSource,
     type CreateContentObjectPayload,
@@ -43,6 +44,7 @@ import {
     type StartContentObjectExportResponse,
     type SupportedEmbeddingTypes,
     type UpdateContentObjectPayload,
+    type UpsertContentObjectDomainPayload,
     type ZenoBulkContentObjectExportComposeRequest,
     type ZenoBulkContentObjectExportPlanRequest,
     type ZenoBulkContentObjectExportPlanResponse,
@@ -274,6 +276,24 @@ export class ObjectsApi extends ApiTopic {
                 select,
             },
         });
+    }
+
+    retrieveWithRelationships(id: string, relationshipLimit = 20): Promise<ContentObject> {
+        return this.get(`/${id}`, {
+            query: { include: 'relationships', relationship_limit: relationshipLimit },
+        });
+    }
+
+    retrieveExpanded(id: string, query: ContentObjectReadQuery): Promise<ProjectedContentObjectApiResponse> {
+        return this.get(`/${id}`, { query });
+    }
+
+    upsertDomain(
+        objectId: string,
+        typeId: string,
+        payload: UpsertContentObjectDomainPayload,
+    ): Promise<ProjectedContentObjectApiResponse> {
+        return this.put(`/${encodeURIComponent(objectId)}/domains/${encodeURIComponent(typeId)}`, { payload });
     }
 
     getObjectText(id: string): Promise<ContentObjectTextResponse> {

@@ -438,6 +438,70 @@ export const ContentTypeEditingPolicySchema = z
     });
 
 export const ContentObjectTypeStatusSchema = z.enum(['active', 'draft']).meta({ id: 'ContentObjectTypeStatus' });
+export const ContentObjectTypeNatureSchema = z
+    .enum(['document', 'dynamic', 'subject', 'relationship'])
+    .meta({ id: 'ContentObjectTypeNature' });
+export const RelationshipEndpointConstraintSchema = z
+    .strictObject({
+        natures: z
+            .array(ContentObjectTypeNatureSchema)
+            .optional()
+            .meta({ description: 'Allowed endpoint content type natures.' }),
+        types: z.array(z.string()).optional().meta({ description: 'Allowed endpoint content type IDs.' }),
+    })
+    .meta({ id: 'RelationshipEndpointConstraint' });
+export const RelationshipTypeConfigurationSchema = z
+    .strictObject({
+        source: RelationshipEndpointConstraintSchema.optional().meta({
+            description: 'Constraints applied to the directed source endpoint.',
+        }),
+        target: RelationshipEndpointConstraintSchema.optional().meta({
+            description: 'Constraints applied to the directed target endpoint.',
+        }),
+    })
+    .meta({ id: 'RelationshipTypeConfiguration' });
+export const SchemaCandidateEvidenceSchema = z
+    .strictObject({
+        object_id: z.string(),
+        root_object_id: z.string().optional(),
+        excerpt: z.string(),
+        location: z.string().optional(),
+    })
+    .meta({ id: 'SchemaCandidateEvidence' });
+export const SchemaCandidateSchema = z
+    .strictObject({
+        id: z.string(),
+        project_id: z.string(),
+        nature: ContentObjectTypeNatureSchema,
+        name: z.string(),
+        description: z.string().optional(),
+        suggested_schema: z.looseObject({}).optional(),
+        normalized_key: z.string(),
+        source_count: z.number().int().nonnegative(),
+        evidence: z.array(SchemaCandidateEvidenceSchema),
+        created_at: z.string().meta({ format: 'date-time' }),
+        updated_at: z.string().meta({ format: 'date-time' }),
+        expires_at: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'SchemaCandidate' });
+export const ProposeSchemaCandidatePayloadSchema = z
+    .strictObject({
+        nature: ContentObjectTypeNatureSchema,
+        name: z.string(),
+        description: z.string().optional(),
+        suggested_schema: z.looseObject({}).optional(),
+        evidence: SchemaCandidateEvidenceSchema,
+    })
+    .meta({ id: 'ProposeSchemaCandidatePayload' });
+export const ListSchemaCandidatesResponseSchema = z
+    .strictObject({ items: z.array(SchemaCandidateSchema) })
+    .meta({ id: 'ListSchemaCandidatesResponse' });
+export const GenerateSchemaCandidateDraftResponseSchema = z
+    .strictObject({ workflow_run_id: z.string(), run_id: z.string(), agent_run_id: z.string() })
+    .meta({ id: 'GenerateSchemaCandidateDraftResponse' });
+export const DeleteSchemaCandidateResponseSchema = z
+    .strictObject({ id: z.string(), deleted: z.boolean() })
+    .meta({ id: 'DeleteSchemaCandidateResponse' });
 
 /*
  * The five content-type shapes, composed from one field dictionary.
@@ -457,6 +521,12 @@ const contentTypeFields = {
     name: z.string().meta({ description: 'Human-readable name or title' }),
     description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
     tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
+    nature: ContentObjectTypeNatureSchema.optional().meta({
+        description: 'Semantic nature of this type. A missing value is treated as document for compatibility.',
+    }),
+    relationship: RelationshipTypeConfigurationSchema.optional().meta({
+        description: 'Allowed directed endpoints when this type has relationship nature.',
+    }),
     object_schema: z
         .looseObject({})
         .meta({
@@ -536,6 +606,9 @@ export const ContentObjectTypeCatalogEntrySchema = z
         edit_revision: EditRevisionSchema.optional().meta({
             description: 'Stored-resource revision. Omitted for app-contributed in-code types.',
         }),
+        ref_type: z.enum(['stored', 'incode']).meta({
+            description: 'Whether this catalog entry comes from stored project data or an in-code app/system provider.',
+        }),
     })
     .meta({ id: 'ContentObjectTypeCatalogEntry' });
 
@@ -557,6 +630,8 @@ const storedContentTypeShape = {
     name: contentTypeFields.name,
     description: contentTypeFields.description,
     tags: contentTypeFields.tags,
+    nature: contentTypeFields.nature,
+    relationship: contentTypeFields.relationship,
     ...storedAuditFields,
     status: contentTypeFields.status,
     is_chunkable: contentTypeFields.is_chunkable,
@@ -593,6 +668,8 @@ export const CreateContentObjectTypePayloadSchema = z
         name: contentTypeFields.name,
         description: contentTypeFields.description,
         tags: contentTypeFields.tags,
+        nature: contentTypeFields.nature,
+        relationship: contentTypeFields.relationship,
     })
     .meta({ id: 'CreateContentObjectTypePayload' });
 
@@ -638,6 +715,7 @@ const contentTypeListingFields = {
 export const ContentObjectTypeCatalogQuerySchema = z
     .strictObject({
         tag: z.string().optional(),
+        nature: ContentObjectTypeNatureSchema.optional(),
         ...contentTypeListingFields,
     })
     .meta({ id: 'ContentObjectTypeCatalogQuery' });
@@ -646,6 +724,7 @@ export const ContentObjectTypeListQuerySchema = z
     .strictObject({
         name: z.string().optional(),
         chunkable: z.boolean().optional(),
+        nature: ContentObjectTypeNatureSchema.optional(),
         ...contentTypeListingFields,
     })
     .meta({ id: 'ContentObjectTypeListQuery' });

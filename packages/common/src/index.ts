@@ -32,6 +32,7 @@ export * from './email.js';
 export * from './embeddings.js';
 export * from './environment.js';
 export * from './facets.js';
+export * from './graph.js';
 export * from './group.js';
 export * from './integrations.js';
 export * from './interaction.js';

@@ -1,4 +1,9 @@
 {
+    "type.nature": "Naturaleza",
+    "type.natureDocument": "Documento",
+    "type.natureDynamic": "Esquema dinámico",
+    "type.natureRelationship": "Relación",
+    "type.natureSubject": "Sujeto",
     "abac_perms.collection.content_manager": "Gestor de colección",
     "abac_perms.collection.content_reader": "Lector de colección",
     "abac_perms.collection.content_writer": "Editor de colección",

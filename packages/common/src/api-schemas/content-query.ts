@@ -2,6 +2,10 @@ import { z } from 'zod';
 
 export const ContentQueryPayloadSchema = z
     .strictObject({
+        resource: z
+            .enum(['documents', 'subjects', 'relationships'])
+            .optional()
+            .meta({ description: 'Resource index to query. Defaults to documents.' }),
         sql: z.string().optional(),
         esql: z.string().optional(),
         dsl: z

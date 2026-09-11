@@ -22,6 +22,7 @@ import QuotaApi from './QuotaApi.js';
 import { RefsApi } from './RefsApi.js';
 import RemoteMcpConnectionsApi from './RemoteMcpConnectionsApi.js';
 import { RunsApi } from './RunsApi.js';
+import SchemaCandidatesApi from './SchemaCandidatesApi.js';
 import SecretsApi from './SecretsApi.js';
 import SkillsApi from './SkillsApi.js';
 import { ZenoClient } from './store/client.js';
@@ -445,6 +446,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     skills = new SkillsApi(this);
     prompts = new PromptsApi(this);
     runs = new RunsApi(this);
+    schemaCandidates = new SchemaCandidatesApi(this);
     account = new AccountApi(this);
     accounts = new AccountsApi(this);
     apikeys = new ApiKeysApi(this);

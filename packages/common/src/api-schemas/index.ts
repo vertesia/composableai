@@ -26,6 +26,7 @@ export * from './document-processing.js';
 export * from './embeddings.js';
 export * from './environment.js';
 export * from './events.js';
+export * from './graph.js';
 export * from './indexing.js';
 export * from './integrations.js';
 export * from './oauth-server.js';
