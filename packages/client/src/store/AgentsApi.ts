@@ -7,11 +7,9 @@ import {
     type AgentMessage,
     type AgentRun,
     type AgentRunDetailsStreamEvent,
-    type AgentRunEvaluation,
     type AgentRunFeedbackPayload,
     type AgentRunFeedbackResponse,
     type AgentRunInternals,
-    type AgentRunJudgeResult,
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
     type BindRunWorkflowPayload,
@@ -264,14 +262,6 @@ export class AgentsApi extends ApiTopic {
      * Update agent run status/metadata.
      * Called by workflow activities to sync lifecycle state.
      */
-    /**
-     * Record a judge result on an agent run's evaluation (internal: called by the judge workflow).
-     * Returns the refreshed evaluation summary.
-     */
-    recordJudgement(id: string, judge: AgentRunJudgeResult): Promise<AgentRunEvaluation> {
-        return this.post(`/${id}/evaluation/judge`, { payload: judge });
-    }
-
     updateStatus(id: string, update: UpdateAgentRunStatusPayload): Promise<AgentRun | ProcessRun> {
         return this.post(`/${id}/status`, { payload: update });
     }
