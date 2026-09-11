@@ -176,11 +176,14 @@ describe('AgentRunFeedback', () => {
 
     it('stops offering itself once the deployment says ratings are not collected', async () => {
         respondWith('disabled');
-        renderWithProviders(<AgentRunFeedback agentRunId="run-1" />);
+        const onRecorded = vi.fn();
+        renderWithProviders(<AgentRunFeedback agentRunId="run-1" onRecorded={onRecorded} />);
 
         fireEvent.click(screen.getByRole('button', { name: 'Rate this run up' }));
 
         await waitFor(() => expect(screen.queryByRole('button', { name: 'Rate this run up' })).toBeNull());
+        // Nothing was recorded, so the "recorded" callback does not fire.
+        expect(onRecorded).not.toHaveBeenCalled();
     });
 
     it('keeps the control usable after a network failure', async () => {

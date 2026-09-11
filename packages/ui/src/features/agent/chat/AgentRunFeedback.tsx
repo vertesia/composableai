@@ -177,8 +177,8 @@ export function AgentRunFeedback({
         try {
             const response = await client.agents.recordFeedback(agentRunId, payload);
             if (sentScopeKey !== currentScopeKey.current) return undefined;
-            onRecorded?.(payload, response.status);
             if (isAccepted(response.status)) {
+                onRecorded?.(payload, response.status);
                 setRating(value);
                 return response.status;
             }
