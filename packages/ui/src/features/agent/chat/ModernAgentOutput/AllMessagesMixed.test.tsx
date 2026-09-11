@@ -2819,3 +2819,49 @@ describe('AllMessagesMixed resource summary — same-timestamp cursor clipping',
         expect(screen.queryByText('Doc B')).toBeNull();
     });
 });
+
+describe('AllMessagesMixed — answer feedback', () => {
+    const answer = makeMessage({ type: AgentMessageType.ANSWER, message: 'Here is the result.', timestamp: 10 });
+    const thought = makeMessage({ type: AgentMessageType.UPDATE, message: 'Working on it.', timestamp: 5 });
+
+    it('renders the rating control under each answer in the details view when a run id is given', () => {
+        renderStacked([thought, answer], true, { agentRunId: 'agent-run-1' });
+
+        expect(screen.getByRole('button', { name: 'Rate this answer up' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: 'Rate this answer down' })).not.toBeNull();
+        // Only answers are rated; the working update above it carries no control.
+        expect(screen.getAllByRole('button', { name: /Rate this answer/ })).toHaveLength(2);
+    });
+
+    it('renders the rating control under each answer in the summary view when a run id is given', () => {
+        const session = new UserSession({} as unknown as VertesiaClient);
+        const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
+        render(
+            <I18nProvider lng="en">
+                <ReactRouterContext.Provider value={makeRouterContext()}>
+                    <UserSessionContext.Provider value={session}>
+                        <AgentResourceResolverProvider value={testResourceResolver}>
+                            <AllMessagesMixed
+                                messages={[thought, answer]}
+                                bottomRef={bottomRef}
+                                viewMode="sliding"
+                                isCompleted
+                                artifactRunId="run-1"
+                                agentRunId="agent-run-1"
+                            />
+                        </AgentResourceResolverProvider>
+                    </UserSessionContext.Provider>
+                </ReactRouterContext.Provider>
+            </I18nProvider>,
+        );
+
+        expect(screen.getByRole('button', { name: 'Rate this answer up' })).not.toBeNull();
+        expect(screen.getAllByRole('button', { name: /Rate this answer/ })).toHaveLength(2);
+    });
+
+    it('renders no rating control without a run id (fixture playback)', () => {
+        renderStacked([thought, answer], true);
+
+        expect(screen.queryByRole('button', { name: /Rate this answer/ })).toBeNull();
+    });
+});

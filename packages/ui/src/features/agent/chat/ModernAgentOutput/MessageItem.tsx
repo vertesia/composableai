@@ -27,6 +27,7 @@ import type React from 'react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from '../../../../core/utils/dayjs.js';
 import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
+import { AgentRunFeedback, agentMessageFeedbackId } from '../AgentRunFeedback';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
@@ -120,6 +121,8 @@ export interface MessageItemProps extends MessageItemClassNames {
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     /** Custom component to render store/collection links instead of default NavLink navigation */
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+    /** When set, answers carry a thumbs up / down rating control scoped to the message. */
+    feedbackAgentRunId?: string;
 }
 
 // Consolidated Studio/default message styling - single source of truth
@@ -236,6 +239,7 @@ function MessageItemComponent({
     messageStyleOverrides,
     StoreLinkComponent,
     CollectionLinkComponent,
+    feedbackAgentRunId,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const { t } = useUITranslation();
@@ -568,7 +572,7 @@ function MessageItemComponent({
         <div className={cn('w-full max-w-full', resolvedStyle.className)}>
             <div
                 className={cn(
-                    'border-s-4 bg-white dark:bg-muted mb-4 w-full max-w-full overflow-hidden',
+                    'group border-s-4 bg-white dark:bg-muted mb-4 w-full max-w-full overflow-hidden',
                     resolvedStyle.borderColor,
                     resolvedStyle.cardClassName,
                 )}
@@ -676,6 +680,15 @@ function MessageItemComponent({
                                 {renderContent(processedContent || visibleMessageContent)}
                             </div>
                         )
+                    )}
+
+                    {feedbackAgentRunId && message.type === AgentMessageType.ANSWER && (
+                        <AgentRunFeedback
+                            agentRunId={feedbackAgentRunId}
+                            messageId={agentMessageFeedbackId(message)}
+                            tone="inline"
+                            className="mt-2 -ms-1.5 print:hidden"
+                        />
                     )}
 
                     {messageAttachments.length > 0 && (
