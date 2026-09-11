@@ -227,6 +227,10 @@ export const SubjectRelationshipContextSchema = z
     .strictObject({
         nodes: z.array(GraphNodeSchema),
         edges: z.array(RelationshipSchema),
+        evidence_edges: z.array(RelationshipSchema).optional().meta({
+            description:
+                'Relationships whose evidence cites the fetched document version. These relationships are not necessarily adjacent to that document.',
+        }),
         cursor: z.string().optional(),
         truncated: z.boolean(),
         truncation_reasons: z.array(z.string()).optional(),
