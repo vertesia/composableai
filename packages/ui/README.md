@@ -238,3 +238,11 @@ The `@vertesia/ui/boot` entry remains free of React, Node, and Vite dependencies
 The plugin template README contains the full configuration example and custom HTML/CSS escape hatch.
 Copy overrides are scoped to the shell and preserve shared translation resources. Colors are scoped to
 each screen; decorative accent and button foreground/background are separate settings.
+
+
+Applications using Vite can pass `import.meta.env` as the second argument to `Env.init(props, import.meta.env)`
+to enable `VITE_AUTH_MODE` (`firebase` or `central`) and the `VITE_FIREBASE_API_KEY`,
+`VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, and `VITE_FIREBASE_APP_ID` build settings.
+Complete Firebase settings select Firebase mode when the mode is omitted; partial settings fail at startup.
+Valid injected runtime configuration takes precedence, while explicit `props.firebase` and `window.AUTH_MODE`
+retain their existing priority. Set `props.endpoints.auth` separately for the central authentication URL.

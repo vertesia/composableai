@@ -476,6 +476,49 @@ Returns interaction definition, prompts, and schemas (requires authorization).
 
 ## Deployment
 
+### Authentication environment variables
+
+Use `.env.app.local` for local `dev` runs and app builds, or set the same variables in your
+Vercel project's Environment Variables for each deployment environment. No source edits are needed.
+Vite embeds `VITE_*` values in the browser bundle; restart the dev server after local changes and
+rebuild/redeploy after changing Vercel settings. These are public browser settings, not service-account secrets.
+
+For direct Firebase authentication:
+
+```dotenv
+VITE_AUTH_MODE=firebase
+VITE_FIREBASE_API_KEY=your-web-api-key
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_APP_ID=your-web-app-id
+VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+```
+
+All four Firebase fields are required. A complete Firebase configuration also selects Firebase mode
+when `VITE_AUTH_MODE` is omitted; partial settings or an invalid mode produce a startup error.
+The Firebase project must be accepted by your configured STS endpoint.
+
+For central authentication:
+
+```dotenv
+VITE_AUTH_MODE=central
+VITE_AUTH_SERVER_URL=https://your-auth-server.example.com/
+```
+
+`VITE_AUTH_SERVER_URL` sets the central sign-in/logout broker. With no authentication settings,
+the existing central-auth default is retained. Explicit central mode ignores Firebase build settings.
+Valid gateway-injected runtime authentication configuration takes precedence over build settings.
+The existing `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`
+remain required for the app's API endpoints.
+
+Firebase domain/provider setup still applies: authorize localhost and your deployed app domains in
+Firebase. Redirect providers need a compatible auth helper domain; when using your app's domain as
+`VITE_FIREBASE_AUTH_DOMAIN`, serve/proxy `/__/auth/*` to your Firebase project's auth handler.
+The local template currently proxies that path to `dengenlabs.firebaseapp.com`; configure the proxy
+for your Firebase project when using a different one. Vercel does not use Vite's development proxy.
+Multi-tenant sign-in also needs `/api/resolve-tenant` routed to your tenant resolver on the hosting layer.
+See [Firebase redirect hosting requirements](https://firebase.google.com/docs/auth/web/redirect-best-practices)
+and [Vercel environment settings](https://vercel.com/docs/environment-variables/managing-environment-variables).
+
 ### Vercel (serverless)
 
 ```bash

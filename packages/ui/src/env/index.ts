@@ -95,14 +95,50 @@ function injectedRuntimeConfig(): VertesiaRuntimeConfig | undefined {
     return runtimeConfig;
 }
 
+/** Public build-time settings, for example Vite's import.meta.env. */
+export type AppBuildEnvironment = Record<string, string | boolean | undefined>;
+
+function buildRuntimeConfig(env?: AppBuildEnvironment): VertesiaRuntimeConfig | undefined {
+    if (!env) return undefined;
+    const value = (name: string) => (typeof env[name] === 'string' ? env[name].trim() : '');
+    const mode = value('VITE_AUTH_MODE');
+    if (mode && mode !== 'firebase' && mode !== 'central') {
+        throw new Error('VITE_AUTH_MODE must be firebase or central');
+    }
+    if (mode === 'central') return { authMode: 'central' };
+    const fields = {
+        apiKey: 'VITE_FIREBASE_API_KEY',
+        authDomain: 'VITE_FIREBASE_AUTH_DOMAIN',
+        projectId: 'VITE_FIREBASE_PROJECT_ID',
+        appId: 'VITE_FIREBASE_APP_ID',
+    };
+    if (!mode && !Object.values(fields).some((name) => value(name))) return undefined;
+    const missing = Object.values(fields).filter((name) => !value(name));
+    if (missing.length) {
+        throw new Error(`Firebase authentication requires: ${missing.join(', ')}`);
+    }
+    return {
+        authMode: 'firebase',
+        firebase: {
+            apiKey: value(fields.apiKey),
+            authDomain: value(fields.authDomain),
+            projectId: value(fields.projectId),
+            appId: value(fields.appId),
+        },
+    };
+}
+
 export class VertesiaEnvironment implements Readonly<EnvProps> {
     constructor(private _props?: EnvProps | undefined) {}
 
-    init(props?: EnvProps) {
-        const runtimeConfig = injectedRuntimeConfig();
+    init(props?: EnvProps, buildEnv?: AppBuildEnvironment) {
+        // Host runtime configuration takes precedence over static deployment defaults.
+        const runtimeConfig = injectedRuntimeConfig() ?? buildRuntimeConfig(buildEnv);
         const runtimeFirebase = runtimeConfig?.authMode === 'firebase' ? runtimeConfig.firebase : undefined;
         this._props = props && runtimeFirebase && !props.firebase ? { ...props, firebase: runtimeFirebase } : props;
-        if (runtimeConfig && window.AUTH_MODE === undefined) window.AUTH_MODE = runtimeConfig.authMode;
+        if (runtimeConfig && typeof window !== 'undefined' && window.AUTH_MODE === undefined) {
+            window.AUTH_MODE = runtimeConfig.authMode;
+        }
         return this;
     }
 

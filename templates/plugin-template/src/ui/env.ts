@@ -24,16 +24,20 @@ function requiredEnv(name: 'VITE_VERTESIA_STUDIO_URL' | 'VITE_VERTESIA_ZENO_URL'
     return value;
 }
 
-Env.init({
-    name: CONFIG__PLUGIN_TITLE,
-    version: '1.0.0',
-    isLocalDev: true,
-    isDocker: true,
-    type: 'development',
-    endpoints: {
-        studio: requiredEnv('VITE_VERTESIA_STUDIO_URL'),
-        zeno: requiredEnv('VITE_VERTESIA_ZENO_URL'),
-        sts: requiredEnv('VITE_VERTESIA_STS_URL'),
+Env.init(
+    {
+        name: CONFIG__PLUGIN_TITLE,
+        version: '1.0.0',
+        isLocalDev: true,
+        isDocker: true,
+        type: 'development',
+        endpoints: {
+            studio: requiredEnv('VITE_VERTESIA_STUDIO_URL'),
+            zeno: requiredEnv('VITE_VERTESIA_ZENO_URL'),
+            sts: requiredEnv('VITE_VERTESIA_STS_URL'),
+            auth: import.meta.env.VITE_AUTH_SERVER_URL?.trim() || undefined,
+        },
+        authTokenProvider: requestIframeHostAuthToken,
     },
-    authTokenProvider: requestIframeHostAuthToken,
-});
+    import.meta.env,
+);
