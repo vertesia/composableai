@@ -124,52 +124,65 @@ export function UserPermissionProvider({ children, loadingIcon, LoadingScreen }:
         const actionLabel =
             needsSignIn || denied ? t('auth.recovery.useDifferentAccount') : t('auth.recovery.tryAgain');
         const onAction = needsSignIn || denied ? () => session.signOut() : retry;
-        if (LoadingScreen) {
-            return (
-                <LoadingScreen
-                    status={failed ? 'error' : state.status === 'retrying' ? 'retrying' : 'loading'}
-                    error={failed ? state.error : undefined}
-                    title={title}
-                    description={description}
-                    loadingIcon={loadingIcon}
-                    actionLabel={actionLabel}
-                    onAction={onAction}
-                />
-            );
-        }
+        const Screen = LoadingScreen ?? DefaultPermissionLoadingScreen;
         return (
-            <div className="flex min-h-dvh items-center justify-center bg-background px-6 text-foreground">
-                <div className="w-full max-w-md space-y-6 text-center">
-                    <div aria-hidden="true" className="flex justify-center">
-                        {loadingIcon || (!failed && <Spinner size="2xl" className="text-info" />)}
-                    </div>
-                    <div
-                        role={failed ? 'alert' : 'status'}
-                        aria-live={failed ? 'assertive' : 'polite'}
-                        className="space-y-2"
-                    >
-                        <h1 className="text-xl font-semibold">{title}</h1>
-                        <p className="text-muted">{description}</p>
-                    </div>
-                    {failed && (
-                        <>
-                            <Button variant="outline" onClick={onAction}>
-                                {actionLabel}
-                            </Button>
-                            {state.error != null && (
-                                <details className="text-start text-sm text-muted">
-                                    <summary className="cursor-pointer">{t('auth.recovery.technicalDetails')}</summary>
-                                    <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap wrap-break-word">
-                                        {errorMessage(state.error)}
-                                    </pre>
-                                </details>
-                            )}
-                        </>
-                    )}
-                </div>
-            </div>
+            <Screen
+                status={failed ? 'error' : state.status === 'retrying' ? 'retrying' : 'loading'}
+                error={failed ? state.error : undefined}
+                title={title}
+                description={description}
+                loadingIcon={loadingIcon}
+                actionLabel={actionLabel}
+                onAction={onAction}
+            />
         );
     }
 
     return perms && <UserPermissionsContext.Provider value={perms}>{children}</UserPermissionsContext.Provider>;
+}
+
+/** Shared permission-loading and recovery layout. */
+export function DefaultPermissionLoadingScreen({
+    status,
+    error,
+    title,
+    description,
+    loadingIcon,
+    actionLabel,
+    onAction,
+}: PermissionLoadingScreenProps) {
+    const { t } = useUITranslation();
+    const failed = status === 'error';
+    return (
+        <div className="flex min-h-dvh items-center justify-center bg-background px-6 text-foreground">
+            <div className="w-full max-w-md space-y-6 text-center">
+                <div aria-hidden="true" className="flex justify-center">
+                    {loadingIcon || (!failed && <Spinner size="2xl" className="text-info" />)}
+                </div>
+                <div
+                    role={failed ? 'alert' : 'status'}
+                    aria-live={failed ? 'assertive' : 'polite'}
+                    className="space-y-2"
+                >
+                    <h1 className="text-xl font-semibold">{title}</h1>
+                    <p className="text-muted">{description}</p>
+                </div>
+                {failed && (
+                    <>
+                        <Button variant="outline" onClick={onAction}>
+                            {actionLabel}
+                        </Button>
+                        {error != null && (
+                            <details className="text-start text-sm text-muted">
+                                <summary className="cursor-pointer">{t('auth.recovery.technicalDetails')}</summary>
+                                <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap wrap-break-word">
+                                    {errorMessage(error)}
+                                </pre>
+                            </details>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
 }

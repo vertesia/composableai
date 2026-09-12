@@ -323,12 +323,43 @@ function SigninScreenImpl({
     }
 
     return (
+        <DefaultSignInScreen isNested={isNested} lightLogo={lightLogo} darkLogo={darkLogo} notice={notice}>
+            {content}
+        </DefaultSignInScreen>
+    );
+}
+
+/** The shared Studio sign-in layout; branding only supplies its content and assets. */
+export function DefaultSignInScreen({
+    isNested,
+    lightLogo,
+    darkLogo,
+    notice,
+    children,
+    logoAlt,
+    footer,
+}: {
+    isNested?: boolean;
+    lightLogo?: string;
+    darkLogo?: string;
+    notice?: ReactNode;
+    children: ReactNode;
+    logoAlt?: string;
+    footer?: string;
+}) {
+    return (
         <div
             style={{ zIndex: 999998 }}
             className={`${isNested ? 'absolute' : 'fixed'} inset-0 overflow-y-auto bg-background`}
         >
-            <SignInPageShell lightLogo={lightLogo} darkLogo={darkLogo} notice={notice}>
-                {content}
+            <SignInPageShell
+                lightLogo={lightLogo}
+                darkLogo={darkLogo}
+                logoAlt={logoAlt}
+                footer={footer}
+                notice={notice}
+            >
+                {children}
             </SignInPageShell>
         </div>
     );

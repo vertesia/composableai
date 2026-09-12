@@ -5,6 +5,7 @@ import {
     injectBootScreenHtml,
     renderBootScreenHead,
     renderBootScreenRuntime,
+    renderDefaultBootContent,
 } from './index.js';
 
 interface BootScreenApi {
@@ -50,7 +51,10 @@ describe('boot screen HTML integration', () => {
         expect(html).toContain(BOOT_SCREEN_STYLES);
         expect(html).toContain('auth-ui-theme');
         expect(html).toContain('/auth-icon.svg');
-        expect(html).toContain('class="vboot-spinner" width="40" height="40"');
+        const content = document.createElement('div');
+        content.innerHTML = renderDefaultBootContent();
+        expect(content.querySelector('.vboot-spinner')?.getAttribute('width')).toBe('40');
+        expect(content.querySelector('.vboot-spinner')?.getAttribute('height')).toBe('40');
         expect(html).toContain('window.__vertesiaBoot.hideLoadingIndicatorOnFirstRender()');
     });
 

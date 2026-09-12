@@ -7,10 +7,11 @@ export interface AuthLoadingScreenProps {
 }
 
 interface SplashScreenProps {
+    Presentation?: ComponentType<AuthLoadingScreenProps>;
     Screen?: ComponentType<AuthLoadingScreenProps>;
     icon?: ReactNode;
 }
-export function SplashScreen({ icon: Icon, Screen }: SplashScreenProps) {
+export function SplashScreen({ icon: Icon, Screen, Presentation = DefaultAuthLoadingScreen }: SplashScreenProps) {
     const { isLoading, authToken } = useUserSession();
     const [show, setShow] = useState(true);
 
@@ -37,23 +38,35 @@ export function SplashScreen({ icon: Icon, Screen }: SplashScreenProps) {
                     exit={{ opacity: 0 }}
                     transition={{ ease: 'easeIn', duration: 0.5 }}
                 >
-                    <div
-                        style={{
-                            display: 'flex',
-                            width: '100%',
-                            height: '100%',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                        className="flex w-full h-full items-center justify-center"
-                    >
-                        <div className="animate-[spin_4s_linear_infinite]">
-                            <div className="animate-pulse rounded-full bg-transparent">{Icon || <LoadingIcon />}</div>
-                        </div>
-                    </div>
+                    <Presentation loadingIcon={Icon} />
                 </motion.div>
             )}
         </AnimatePresence>
+    );
+}
+
+/** Presentation shared by the default shell and configured branding. */
+export function DefaultAuthLoadingScreen({
+    loadingIcon,
+    loadingLabel = 'Loading',
+}: AuthLoadingScreenProps & { loadingLabel?: string }) {
+    return (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999999 }} role="status" aria-label={loadingLabel}>
+            <div
+                style={{
+                    display: 'flex',
+                    width: '100%',
+                    height: '100%',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+                className="flex w-full h-full items-center justify-center"
+            >
+                <div className="animate-[spin_4s_linear_infinite]">
+                    <div className="animate-pulse rounded-full bg-transparent">{loadingIcon || <LoadingIcon />}</div>
+                </div>
+            </div>
+        </div>
     );
 }
 

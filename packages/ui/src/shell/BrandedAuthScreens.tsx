@@ -1,15 +1,15 @@
-import { Button } from '@vertesia/ui/core';
-import type { PermissionLoadingScreenProps } from '@vertesia/ui/features';
-import { UITranslationOverrides, useUITranslation } from '@vertesia/ui/i18n';
+import { DefaultPermissionLoadingScreen, type PermissionLoadingScreenProps } from '@vertesia/ui/features';
+import { UITranslationOverrides } from '@vertesia/ui/i18n';
 import { createContext, type ReactNode, useContext, useId, useMemo } from 'react';
 import { type AppBranding, renderBrandStyles } from '../boot/branding.js';
-import type { SignInScreenViewProps } from './login/SigninScreen';
-import type { AuthLoadingScreenProps } from './SplashScreen';
+import { DefaultSignInScreen, type SignInScreenViewProps } from './login/SigninScreen';
+import { type AuthLoadingScreenProps, DefaultAuthLoadingScreen } from './SplashScreen';
 import type { AuthScreens } from './VertesiaShell';
 
 const BrandingContext = createContext<AppBranding>({ name: '' });
 
 export function AppBrandingProvider({ branding, children }: { branding: AppBranding; children: ReactNode }) {
+    const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
     const overrides = useMemo(() => {
         const result: Record<string, string> = {};
         for (const [key, value] of Object.entries(branding.copy?.translations ?? {})) {
@@ -22,83 +22,62 @@ export function AppBrandingProvider({ branding, children }: { branding: AppBrand
     }, [branding]);
     return (
         <BrandingContext.Provider value={branding}>
-            <UITranslationOverrides overrides={overrides}>{children}</UITranslationOverrides>
+            <div data-vbrand={id} style={{ display: 'contents' }}>
+                <style>{renderBrandStyles(branding, `[data-vbrand="${id}"]`)}</style>
+                <UITranslationOverrides overrides={overrides}>{children}</UITranslationOverrides>
+            </div>
         </BrandingContext.Provider>
     );
 }
 
-function BrandPage({ children }: { children: ReactNode }) {
-    const brand = useContext(BrandingContext);
-    const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-    const logo = brand.logo;
+function BrandLoadingIcon({ brand }: { brand: AppBranding }) {
+    if (!brand.loadingIcon) return null;
     return (
-        <main className="vbrand" data-vbrand={id}>
-            <style>{renderBrandStyles(brand, `[data-vbrand="${id}"]`)}</style>
-            <div className="vbrand-panel">
-                {logo && (
-                    <>
-                        <img className="vbrand-logo vbrand-logo-light" src={logo.light} alt={logo.alt ?? brand.name} />
-                        <img
-                            className="vbrand-logo vbrand-logo-dark"
-                            src={logo.dark ?? logo.light}
-                            alt={logo.alt ?? brand.name}
-                        />
-                    </>
-                )}
-                <h1 className="vbrand-heading">{brand.name}</h1>
-                {children}
-                {brand.copy?.footer && <p className="text-sm text-muted">{brand.copy.footer}</p>}
-            </div>
-        </main>
+        <>
+            <img src={brand.loadingIcon.light} alt="" className="w-10 h-auto rounded-full block dark:hidden" />
+            <img
+                src={brand.loadingIcon.dark ?? brand.loadingIcon.light}
+                alt=""
+                className="w-10 h-auto rounded-full hidden dark:block"
+            />
+        </>
     );
 }
 
 export function BrandedAuthLoadingScreen({ loadingIcon }: AuthLoadingScreenProps) {
     const brand = useContext(BrandingContext);
-    const { t } = useUITranslation();
     return (
-        <BrandPage>
-            <div className="vbrand-panel vbrand-status" role="status" aria-live="polite">
-                <div aria-hidden="true">{loadingIcon ?? <div className="vbrand-spinner" />}</div>
-                <p>{brand.copy?.loading ?? t('auth.pending.authenticating')}</p>
-            </div>
-        </BrandPage>
+        <DefaultAuthLoadingScreen
+            loadingIcon={loadingIcon ?? (brand.loadingIcon ? <BrandLoadingIcon brand={brand} /> : undefined)}
+            loadingLabel={brand.copy?.loading}
+        />
     );
 }
 
-export function BrandedSignInScreen({ children, notice, flow, authError }: SignInScreenViewProps) {
-    if (flow.mode === 'pending' && !authError) return <BrandedAuthLoadingScreen />;
-    return (
-        <BrandPage>
-            {children}
-            {notice}
-        </BrandPage>
-    );
-}
-
-export function BrandedPermissionLoadingScreen({
-    status,
-    title,
-    description,
-    loadingIcon,
-    actionLabel,
-    onAction,
-}: PermissionLoadingScreenProps) {
+export function BrandedSignInScreen({ children, notice, isNested, lightLogo, darkLogo }: SignInScreenViewProps) {
     const brand = useContext(BrandingContext);
-    const failed = status === 'error';
     return (
-        <BrandPage>
-            {!failed && <div aria-hidden="true">{loadingIcon ?? <div className="vbrand-spinner" />}</div>}
-            <div
-                className="vbrand-status"
-                role={failed ? 'alert' : 'status'}
-                aria-live={failed ? 'assertive' : 'polite'}
-            >
-                <h2 className="text-xl font-semibold">{failed ? title : (brand.copy?.loading ?? title)}</h2>
-                <p className="mt-2 text-muted">{description}</p>
-            </div>
-            {failed && <Button onClick={onAction}>{actionLabel}</Button>}
-        </BrandPage>
+        <DefaultSignInScreen
+            isNested={isNested}
+            lightLogo={brand.logo?.light ?? lightLogo}
+            darkLogo={brand.logo?.dark ?? brand.logo?.light ?? darkLogo}
+            logoAlt={brand.logo?.alt ?? brand.name}
+            footer={brand.copy?.footer}
+            notice={notice}
+        >
+            {children}
+        </DefaultSignInScreen>
+    );
+}
+
+export function BrandedPermissionLoadingScreen(props: PermissionLoadingScreenProps) {
+    const brand = useContext(BrandingContext);
+    return (
+        <DefaultPermissionLoadingScreen
+            {...props}
+            description={props.status === 'error' ? props.description : (brand.copy?.loading ?? props.description)}
+            loadingIcon={props.loadingIcon ?? (brand.loadingIcon ? <BrandLoadingIcon brand={brand} /> : undefined)}
+        />
     );
 }
 

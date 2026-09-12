@@ -5,7 +5,7 @@ import { DevSessionProvider, UserSessionProvider } from '@vertesia/ui/session';
 import type { ComponentType, ReactNode } from 'react';
 import type { AppBranding } from '../boot/branding.js';
 import { IframeAppContextSync } from './apps/IframeAppContextSync.js';
-import { AppBrandingProvider, brandedAuthScreens } from './BrandedAuthScreens';
+import { AppBrandingProvider, BrandedAuthLoadingScreen, brandedAuthScreens } from './BrandedAuthScreens';
 import { type SignInScreenViewProps, SigninScreen } from './login/SigninScreen';
 import { type AuthLoadingScreenProps, SplashScreen } from './SplashScreen';
 
@@ -54,7 +54,11 @@ export function VertesiaShell({
                             <IframeAppContextSync />
                             {!authToken && (
                                 <>
-                                    <SplashScreen icon={loadingIcon} Screen={screens.Loading} />
+                                    <SplashScreen
+                                        icon={loadingIcon}
+                                        Screen={authScreens?.Loading}
+                                        Presentation={branding ? BrandedAuthLoadingScreen : undefined}
+                                    />
                                     <SigninScreen
                                         View={screens.SignIn}
                                         allowedPrefix="/shared/"

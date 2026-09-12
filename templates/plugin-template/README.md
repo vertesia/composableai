@@ -623,6 +623,12 @@ Edit **`src/modules/app/branding/index.ts`** and place assets in that directory.
 branding directory when upgrading the template. The SDK supplies the login, authentication-loading,
 permission-loading, and first-paint screens; there are no screen implementations to maintain in the template.
 
+Branding reuses the existing sign-in, animated loading-icon, permission-recovery, and pre-React
+layouts. Configuration changes assets, theme values, and copy while preserving spacing and controls.
+The `loadingIcon` light/dark assets are separate from the sign-in `logo`. Omitted color and font
+settings retain the existing theme. Different layouts require explicit screen or boot HTML overrides.
+
+
 ```ts
 import { defineAppBranding } from '@vertesia/ui/boot';
 
@@ -631,6 +637,7 @@ export default defineAppBranding({
     title: 'My workspace · Sign in',
     logo: { light: './assets/logo.svg', dark: './assets/logo-dark.svg', alt: 'My company' },
     favicon: './assets/favicon.svg',
+    loadingIcon: { light: './assets/icon.svg', dark: './assets/icon-dark.svg' },
     font: { family: 'My Font', regular: './assets/regular.woff2', bold: './assets/bold.woff2' },
     colors: {
         light: { background: '#ffffff', foreground: '#18202a', accent: '#b64b00', button: '#18202a', buttonText: '#ffffff' },

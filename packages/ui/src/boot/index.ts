@@ -1,6 +1,9 @@
 export interface BootScreenOptions {
     storageKey?: string;
     iconSrc?: string;
+    darkIconSrc?: string;
+    slowLoadingLabel?: string;
+    reloadLabel?: string;
     loadingLabel?: string;
     autoStart?: boolean;
     /** Trusted, app-authored HTML inside the loading container. Never pass user content. */
@@ -86,6 +89,9 @@ export const BOOT_SCREEN_STYLES = `
     border-radius: 100% !important;
     animation: vboot-spin 2s linear infinite !important;
   }
+  .vboot-icon-dark { display: none; }
+  .vboot-dark .vboot-icon-light { display: none; }
+  .vboot-dark .vboot-icon-dark { display: block; }
   .vboot-slow {
     text-align: center;
   }
@@ -129,12 +135,28 @@ function normalizedOptions(options: BootScreenOptions) {
     };
 }
 
+/** Default markup shared by Studio and configurable applications. */
+export function renderDefaultBootContent(options: BootScreenOptions = {}): string {
+    const escapeMarkup = (value: string) =>
+        value.replace(
+            /[&<>"']/g,
+            (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char,
+        );
+    const { iconSrc, loadingLabel } = normalizedOptions(options);
+    const icon = (src: string, className = '') =>
+        `<img class="vboot-spinner ${className}" width="40" height="40" src="${escapeMarkup(src)}" alt="${escapeMarkup(loadingLabel)}" />`;
+    return `<div class="vboot-overlay" role="status" aria-live="polite">${options.darkIconSrc ? icon(iconSrc, 'vboot-icon-light') + icon(options.darkIconSrc, 'vboot-icon-dark') : icon(iconSrc)}
+<div id="loading-slow-notice" class="vboot-slow" style="display: none;">
+<p>${escapeMarkup(options.slowLoadingLabel ?? 'Still loading — this is taking longer than usual.')}</p>
+<div id="loading-slow-reload" style="display: none;"><button type="button" class="vboot-btn" data-boot-reload>${escapeMarkup(options.reloadLabel ?? 'Reload page')}</button></div></div></div>`;
+}
+
 export function renderBootScreenRuntime(options: BootScreenOptions = {}): string {
-    const { storageKey, iconSrc, loadingLabel, html } = normalizedOptions(options);
+    const { storageKey, html } = normalizedOptions(options);
+    const defaultHtml = renderDefaultBootContent(options);
     return `(() => {
   const storageKey = ${inlineJson(storageKey)};
-  const iconSrc = ${inlineJson(iconSrc)};
-  const loadingLabel = ${inlineJson(loadingLabel)};
+
   const customHtml = ${html === undefined ? 'undefined' : inlineJson(html)};
   let slowNoticeTimer;
   let slowReloadTimer;
@@ -191,13 +213,7 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
     const loading = document.createElement('div');
     loading.id = 'loading-indicator';
     loading.className = bootThemeClass();
-    loading.innerHTML = customHtml ?? ('<div class="' + bootThemeClass() + ' vboot-overlay" role="status" aria-live="polite">'
-      + '<img class="vboot-spinner" width="40" height="40" src="' + iconSrc + '" alt="' + loadingLabel + '" />'
-      + '<div id="loading-slow-notice" class="vboot-slow" style="display: none;">'
-      + '<p>Still loading &mdash; this is taking longer than usual.</p>'
-      + '<div id="loading-slow-reload" style="display: none;">'
-      + '<button type="button" class="vboot-btn" onclick="window.location.reload()">Reload page</button>'
-      + '</div></div></div>');
+    loading.innerHTML = customHtml ?? ${inlineJson(defaultHtml)};
     loading.querySelectorAll('[data-boot-title]').forEach((heading) => {
       if (document.title) heading.textContent = document.title;
     });

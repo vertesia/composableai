@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { DefaultPermissionLoadingScreen } from '@vertesia/ui/features';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -8,7 +9,8 @@ import {
     BrandedSignInScreen,
 } from './BrandedAuthScreens';
 import { SignInFlowSteps, useSignInFlow } from './login/SignInFlow';
-import type { SignInRecoveryMode } from './login/SigninScreen';
+import { DefaultSignInScreen, type SignInRecoveryMode } from './login/SigninScreen';
+import { DefaultAuthLoadingScreen } from './SplashScreen';
 
 afterEach(() => {
     cleanup();
@@ -82,7 +84,7 @@ describe('configuration-driven auth screens', () => {
                 <BrandedAuthLoadingScreen />
             </AppBrandingProvider>,
         );
-        expect(screen.getByRole('status').textContent).toContain('Preparing Workspace');
+        expect(screen.getByRole('status').getAttribute('aria-label')).toBe('Preparing Workspace');
         view.rerender(
             <AppBrandingProvider branding={brand}>
                 <BrandedPermissionLoadingScreen
@@ -97,5 +99,52 @@ describe('configuration-driven auth screens', () => {
         expect(screen.getByRole('alert').textContent).toContain('Access failed');
         fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
         expect(retry).toHaveBeenCalledOnce();
+    });
+});
+
+describe('default layout parity', () => {
+    it('retains the default sign-in chrome and legal footer with empty branding', () => {
+        const view = render(
+            <DefaultSignInScreen>
+                <p>Form</p>
+            </DefaultSignInScreen>,
+        );
+        const expected = view.container.innerHTML;
+        view.rerender(
+            <AppBrandingProvider branding={{ name: 'Test' }}>
+                <BrandedSignInScreen
+                    {...({ isNested: false, children: <p>Form</p> } as Parameters<typeof BrandedSignInScreen>[0])}
+                />
+            </AppBrandingProvider>,
+        );
+        expect(view.container.querySelector('[data-vbrand] > div')?.outerHTML).toBe(expected);
+    });
+    it('uses the same loading markup with no branding assets or copy', () => {
+        const view = render(<DefaultAuthLoadingScreen />);
+        const expected = view.container.innerHTML;
+        view.rerender(
+            <AppBrandingProvider branding={{ name: 'Test' }}>
+                <BrandedAuthLoadingScreen />
+            </AppBrandingProvider>,
+        );
+        expect(view.container.querySelector('[role="status"]')?.outerHTML).toBe(expected);
+    });
+    it('preserves permission error details and the outline recovery button', () => {
+        const props = {
+            status: 'error' as const,
+            title: 'Failed',
+            description: 'Retry',
+            actionLabel: 'Retry',
+            onAction: vi.fn(),
+            error: new Error('Details'),
+        };
+        const view = render(<DefaultPermissionLoadingScreen {...props} />);
+        const expected = view.container.innerHTML;
+        view.rerender(
+            <AppBrandingProvider branding={{ name: 'Test' }}>
+                <BrandedPermissionLoadingScreen {...props} />
+            </AppBrandingProvider>,
+        );
+        expect(view.container.querySelector('[data-vbrand] > div')?.outerHTML).toBe(expected);
     });
 });

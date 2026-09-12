@@ -230,6 +230,12 @@ Pass resolved configuration as `<VertesiaShell branding={branding}>` for shared 
 authentication-loading, and permission screens. `authScreens` entries override individual defaults.
 Without `branding`, existing shell presentation remains unchanged.
 
+Branding reuses the existing sign-in, animated loading-icon, permission-recovery, and pre-React
+layouts. Configuration changes assets, theme values, and copy while preserving spacing and controls.
+The `loadingIcon` light/dark assets are separate from the sign-in `logo`. Omitted color and font
+settings retain the existing theme. Different layouts require explicit screen or boot HTML overrides.
+
+
 The Node-only `createAppBrandingPlugin(config, configModuleUrl)` from `@vertesia/ui/boot/vite` resolves
 relative image/font paths, exposes `virtual:vertesia-branding`, and generates the boot HTML/CSS, title,
 and favicon. Local assets are embedded for base-path independence; import this adapter only in Vite config.
