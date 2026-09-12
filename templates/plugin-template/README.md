@@ -488,20 +488,8 @@ Vercel project's Environment Variables for each deployment environment. No sourc
 Vite embeds `VITE_*` values in the browser bundle; restart the dev server after local changes and
 rebuild/redeploy after changing Vercel settings. These are public browser settings, not service-account secrets.
 
-For direct Firebase authentication:
-
-```dotenv
-VITE_AUTH_MODE=firebase
-VITE_FIREBASE_API_KEY=your-web-api-key
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_APP_ID=your-web-app-id
-VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-```
-
-Central authentication is the default. Firebase requires an explicit `VITE_AUTH_MODE=firebase`
-and all four Firebase fields; incomplete settings in Firebase mode or an invalid mode produce a startup error.
-Firebase build settings alone do not switch authentication modes.
-The Firebase project must be accepted by your configured STS endpoint.
+Central authentication is the default. To use direct Firebase authentication, contact Vertesia.
+Vertesia must configure it for your deployment and provide the required settings.
 
 For central authentication:
 
@@ -515,15 +503,6 @@ the existing central-auth default is retained. Explicit central mode ignores Fir
 Valid gateway-injected runtime authentication configuration takes precedence over build settings.
 The existing `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`
 remain required for the app's API endpoints.
-
-Firebase domain/provider setup still applies: authorize localhost and your deployed app domains in
-Firebase. Redirect providers need a compatible auth helper domain; when using your app's domain as
-`VITE_FIREBASE_AUTH_DOMAIN`, serve/proxy `/__/auth/*` to your Firebase project's auth handler.
-The local template currently proxies that path to `dengenlabs.firebaseapp.com`; configure the proxy
-for your Firebase project when using a different one. Vercel does not use Vite's development proxy.
-Multi-tenant sign-in also needs `/api/resolve-tenant` routed to your tenant resolver on the hosting layer.
-See [Firebase redirect hosting requirements](https://firebase.google.com/docs/auth/web/redirect-best-practices)
-and [Vercel environment settings](https://vercel.com/docs/environment-variables/managing-environment-variables).
 
 ### Vercel (serverless)
 

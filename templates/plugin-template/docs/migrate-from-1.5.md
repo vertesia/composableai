@@ -161,20 +161,8 @@ VITE_AUTH_SERVER_URL=https://your-auth-server.example.com/
 Unlike the 1.5 guide's configuration model, the central broker URL is now configurable. This is
 separate from `VITE_VERTESIA_STS_URL`, which still selects the token service.
 
-For direct Firebase authentication:
-
-```ini
-VITE_AUTH_MODE=firebase
-VITE_FIREBASE_API_KEY=your-web-api-key
-VITE_FIREBASE_PROJECT_ID=your-firebase-project-id
-VITE_FIREBASE_APP_ID=your-firebase-web-app-id
-VITE_FIREBASE_AUTH_DOMAIN=your-firebase-project-id.firebaseapp.com
-```
-
-Firebase requires an explicit `VITE_AUTH_MODE=firebase` and all four Firebase values. Without an
-explicit mode, central authentication remains the default even if Firebase build values are present.
-Incomplete settings in Firebase mode fail at startup. Explicit central mode ignores Firebase build settings. Firebase mode uses the app's own login page and exchanges the Firebase token with STS.
-Your Firebase project must be accepted by that STS deployment.
+To use direct Firebase authentication, contact Vertesia. Vertesia must configure it for your
+deployment and provide the required settings. Central authentication remains the default.
 
 Put these settings in `.env.app.local` for local development, or in Vercel's build environment.
 Restart Vite after changing local settings; rebuild and redeploy after changing deployment settings.
@@ -183,10 +171,6 @@ runtime authentication configuration takes precedence over build settings, and e
 host-token authentication.
 
 Keep the required `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`.
-For Firebase, configure authorized domains and redirect hosting for your project. The template's dev
-proxy for `/__/auth` targets `dengenlabs.firebaseapp.com`; change it if you use another project.
-Vercel does not run that Vite proxy. See [the hosting notes](../README.md#authentication-environment-variables)
-for the auth-helper and tenant-resolver requirements.
 
 To skip manual workspace selection during development, add:
 
