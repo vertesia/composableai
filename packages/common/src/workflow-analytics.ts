@@ -81,7 +81,8 @@ export type TurnEvaluationFlag =
     | 'high_gather'
     | 'overhead'
     | 'followup_after_answer'
-    | 'approval_denied';
+    | 'approval_denied'
+    | 'circuit_breaker';
 
 /** Coarse class of a tool error, derived from the error text. */
 export type ToolErrorClass = 'schema' | 'platform' | 'config' | 'environment' | 'other';
@@ -378,6 +379,10 @@ export interface TurnEvaluationEvent extends BaseAgentEvent {
     approvalsRequested: number;
     approvalsDenied: number;
     stopRequests: number;
+    /** Stall correctives injected: the model was warned it kept repeating the same call */
+    stallCorrectives: number;
+    /** Stall circuit-breaker trips: the model ignored the corrective and the loop was stopped */
+    stallTrips: number;
     /** An unprompted user message after an answer was followed by substantive tool work */
     followupAfterAnswer: boolean;
     severity: EvaluationSeverity;

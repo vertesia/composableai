@@ -59,6 +59,8 @@ const turnEvaluation: TurnEvaluationEvent = {
     approvalsRequested: 1,
     approvalsDenied: 0,
     stopRequests: 0,
+    stallCorrectives: 0,
+    stallTrips: 0,
     followupAfterAnswer: false,
     severity: 'none',
     flags: [],
@@ -175,6 +177,7 @@ describe('agent run evaluation API contracts', () => {
                 approvals_requested: 0,
                 approvals_denied: 0,
                 stop_requests: 0,
+                stall_trips: 0,
             },
             updated_at: turnEvaluation.timestamp,
         };

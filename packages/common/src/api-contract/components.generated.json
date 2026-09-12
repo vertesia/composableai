@@ -32884,6 +32884,11 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
+          },
+          "stall_trips": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -32901,7 +32906,8 @@
           "followups",
           "approvals_requested",
           "approvals_denied",
-          "stop_requests"
+          "stop_requests",
+          "stall_trips"
         ],
         "additionalProperties": false
       },
@@ -32945,7 +32951,8 @@
       "high_gather",
       "overhead",
       "followup_after_answer",
-      "approval_denied"
+      "approval_denied",
+      "circuit_breaker"
     ],
     "description": "Reason behind an evaluation severity."
   },
@@ -35490,6 +35497,16 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "stallCorrectives": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stallTrips": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "followupAfterAnswer": {
             "type": "boolean"
           },
@@ -35594,6 +35611,8 @@
           "approvalsRequested",
           "approvalsDenied",
           "stopRequests",
+          "stallCorrectives",
+          "stallTrips",
           "followupAfterAnswer",
           "severity",
           "flags",

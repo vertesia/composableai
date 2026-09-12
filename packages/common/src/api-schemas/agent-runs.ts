@@ -64,6 +64,7 @@ export const TurnEvaluationFlagSchema = z
         'overhead',
         'followup_after_answer',
         'approval_denied',
+        'circuit_breaker',
     ])
     .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
 
@@ -213,6 +214,7 @@ const AgentRunEvaluationTotalsSchema = z.strictObject({
     approvals_requested: z.number().int(),
     approvals_denied: z.number().int(),
     stop_requests: z.number().int(),
+    stall_trips: z.number().int(),
 });
 
 /**
@@ -421,6 +423,8 @@ const TurnEvaluationEventSchema = z.strictObject({
     approvalsRequested: z.number().int(),
     approvalsDenied: z.number().int(),
     stopRequests: z.number().int(),
+    stallCorrectives: z.number().int(),
+    stallTrips: z.number().int(),
     followupAfterAnswer: z.boolean(),
     severity: EvaluationSeveritySchema,
     flags: z.array(TurnEvaluationFlagSchema),
