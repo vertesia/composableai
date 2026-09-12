@@ -520,3 +520,23 @@ test('content-app module composes app routes and contributes resources', () => {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
 });
+
+test('regenerating module wiring preserves app-owned branding and custom screens', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-branding-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        writePackageJson(tmpRoot);
+        const brandingDir = path.join(tmpRoot, 'src/modules/app/branding');
+        fs.mkdirSync(brandingDir, { recursive: true });
+        const config = "export default { name: 'Customer workspace' };\n";
+        const screens = 'export const appAuthScreens = { Loading: CustomLoader };\n';
+        fs.writeFileSync(path.join(brandingDir, 'index.ts'), config);
+        fs.writeFileSync(path.join(brandingDir, 'screens.ts'), screens);
+        runCodegen(tmpRoot, ['content-app']);
+        runCodegen(tmpRoot, ['content-app']);
+        assert.equal(fs.readFileSync(path.join(brandingDir, 'index.ts'), 'utf8'), config);
+        assert.equal(fs.readFileSync(path.join(brandingDir, 'screens.ts'), 'utf8'), screens);
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});

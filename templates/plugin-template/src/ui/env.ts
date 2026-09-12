@@ -1,7 +1,8 @@
+import branding from 'virtual:vertesia-branding';
 import { Env } from '@vertesia/ui/env';
 import { requestIframeHostAuthToken } from '@vertesia/ui/shell';
 
-const CONFIG__PLUGIN_TITLE = 'Ui Plugin Template';
+const CONFIG__PLUGIN_TITLE = branding.title ?? branding.name;
 
 document.title = CONFIG__PLUGIN_TITLE;
 

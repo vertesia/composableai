@@ -4,11 +4,12 @@ import { createRequire } from 'node:module';
 import tailwindcss from '@tailwindcss/vite';
 import { apiServerPlugin } from '@vertesia/build-tools/vite';
 import { vertesiaPluginBuilder } from '@vertesia/plugin-builder';
-import { injectBootScreenHtml } from '@vertesia/ui/boot';
+import { createAppBrandingPlugin } from '@vertesia/ui/boot/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { type ConfigEnv, defineConfig, type Plugin, type UserConfig } from 'vite';
 import serveStatic from 'vite-plugin-serve-static';
+import branding from './src/modules/app/branding';
 
 /**
  * List of dependencies that must be bundled in the plugin bundle
@@ -176,6 +177,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
+            createAppBrandingPlugin(branding, new URL('./src/modules/app/branding/index.ts', import.meta.url)),
             vertesiaPluginBuilder({ inlineCss: CONFIG__inlineCss, input: 'src/ui/index.css' }),
         ],
         build: {
@@ -227,14 +229,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
-            {
-                name: 'app-boot-screen',
-                transformIndexHtml: (html) =>
-                    injectBootScreenHtml(html, {
-                        html: readFileSync(new URL('./src/modules/app/ui/auth/boot.html', import.meta.url), 'utf8'),
-                        styles: readFileSync(new URL('./src/modules/app/ui/auth/boot.css', import.meta.url), 'utf8'),
-                    }),
-            },
+            createAppBrandingPlugin(branding, new URL('./src/modules/app/branding/index.ts', import.meta.url)),
             reactImportMapPlugin(),
             staleAssetRecoveryPlugin(isVercelBuild),
             // HTTPS is required for Firebase auth but must be disabled under appgen/Vercel dev

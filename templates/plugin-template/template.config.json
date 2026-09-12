@@ -165,6 +165,7 @@
     "src/tool-server/config.ts",
     "src/modules/content-app/resources/processes/review-workflow.ts",
     "src/ui/env.ts",
+    "src/modules/app/branding/index.ts",
     "src/ui/plugin.tsx",
     "tests/e2e/app.spec.ts",
     ".env.app.template",

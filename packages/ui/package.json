@@ -189,6 +189,10 @@
         "./i18n": {
             "types": "./lib/i18n/index.d.ts",
             "default": "./lib/i18n/index.js"
+        },
+        "./boot/vite": {
+            "types": "./lib/boot/vite.d.ts",
+            "default": "./lib/boot/vite.js"
         }
     },
     "repository": {

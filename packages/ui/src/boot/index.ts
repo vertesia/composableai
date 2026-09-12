@@ -336,3 +336,5 @@ export function createBootScreenVitePlugin(options: BootScreenOptions = {}): Boo
         transformIndexHtml: (html) => injectBootScreenHtml(html, options),
     };
 }
+
+export * from './branding.js';

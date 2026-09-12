@@ -574,66 +574,66 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 
 Apache-2.0
 
-## Custom login and authentication loading pages
+## Application branding
 
-The standalone and service entry points pass `appAuthScreens` to `VertesiaShell`. Edit the app-owned
-components in `src/modules/app/ui/auth/`:
+Edit **`src/modules/app/branding/index.ts`** and place assets in that directory. Keep the whole
+branding directory when upgrading the template. The SDK supplies the login, authentication-loading,
+permission-loading, and first-paint screens; there are no screen implementations to maintain in the template.
 
-- `AppSignInPage.tsx`: the entire login page, including branding and surrounding content. Its
-  `children` contain the shared email/provider, signup, or recovery form. Retain them for tenant
-  resolution and authentication. The typed `flow` exposes presentation state and transitions;
-  `flow.onProviderClicked` does not initiate a provider redirect on its own.
-  `flow.mode === 'pending'` uses `AppAuthLoadingPage` while leaving for the identity provider.
-- `AppAuthLoadingPage.tsx`: session initialization and the return from the identity provider.
-  This replaces the whole page; the shell does not add a spinner or animation around it.
-- `AppPermissionLoadingPage.tsx`: loading/retrying permissions after authentication, plus failures.
-  `onAction` retries a failed request or signs out for an authorization/credential failure. Keep
-  that action reachable when replacing the markup. Protected content stays gated until ready.
-- `index.ts`: selects the components. Remove individual overrides to restore shared defaults.
+```ts
+import { defineAppBranding } from '@vertesia/ui/boot';
 
-```tsx
-<VertesiaShell preserveSignInPath authScreens={appAuthScreens}>
-    {/* application providers and routes */}
-</VertesiaShell>
+export default defineAppBranding({
+    name: 'My workspace',
+    title: 'My workspace · Sign in',
+    logo: { light: './assets/logo.svg', dark: './assets/logo-dark.svg', alt: 'My company' },
+    favicon: './assets/favicon.svg',
+    font: { family: 'My Font', regular: './assets/regular.woff2', bold: './assets/bold.woff2' },
+    colors: {
+        light: { background: '#ffffff', foreground: '#18202a', accent: '#b64b00', button: '#18202a', buttonText: '#ffffff' },
+        dark: { background: '#18202a', foreground: '#ffffff', accent: '#ff9900' },
+    },
+    copy: {
+        welcome: 'Welcome to your workspace',
+        emailPlaceholder: 'you@company.com',
+        loading: 'Preparing your workspace…',
+        footer: 'Your company',
+    },
+});
 ```
 
-These pages can use the session, theme, and translation hooks. They render before application
-providers, routes, or permission context are ready, so do not call app-specific hooks or
-`useUserPermissions()` from them. Keep status announcements and keyboard-accessible recovery
-buttons in your replacements. Existing `lightLogo`, `darkLogo`, and `loadingIcon` props still work
-with the default screens; custom screens decide how to display those props.
+Asset paths are relative to `branding/index.ts`. Local logos, icons, and fonts are embedded as data
+URLs by `createAppBrandingPlugin` from `@vertesia/ui/boot/vite`, so the same assets work under gateway
+version paths without root-relative requests. Missing assets fail the build. HTTPS URLs and data URLs
+are also supported; remote assets keep their normal network dependency. Inline fonts use `font-display: swap`.
+Changing local assets refreshes the dev preview; editing the config restarts Vite through its config dependency tracking.
 
-With Firebase runtime configuration (`authMode: 'firebase'`), sign-in happens in the app through
-Firebase, followed by the Vertesia STS token exchange. These overrides do not change authentication
-mode or the protocol. Central-auth mode still uses the central service's login page; identity-provider
-pages such as Google's remain external. Embedded apps use their host's authentication.
+The plugin supplies `virtual:vertesia-branding` to browser code and generates the pre-React loader from
+the same data. The shell uses scoped CSS and scoped auth copy; it does not mutate another app's translations.
+`accent` is decorative and used for spinners and focus indicators. Set `button` and `buttonText` together
+when overriding button colors, and verify contrast in both themes.
 
-The template requires a version of `@vertesia/ui` that exports `AuthScreens` and accepts
-`VertesiaShell.authScreens`. Publish that SDK before distributing this template revision. Existing
-built app versions need to be rebuilt to include the new pages.
+`copy.translations` optionally overrides additional `auth.*` and `signup.*` keys from the UI library.
+Those strings apply in every active language; use this for app-owned wording that is intentionally fixed.
+Unspecified strings retain the selected locale. Preserve interpolation placeholders such as `{{email}}`.
 
+### Fully custom layouts
 
-## Pre-React first-paint branding
+For layouts that need more than branding, add components beside the branding configuration and export
+optional `SignIn`, `Loading`, and `Permissions` replacements from **`branding/screens.ts`**. The fixed
+entry-point wiring passes these to `VertesiaShell.authScreens`; supplied components take precedence over
+branded defaults. Retain sign-in `children` for the shared tenant-resolution and authentication forms.
+Flow transitions alone do not initiate a provider redirect. Keep permission `onAction` recovery reachable.
 
-Edit `src/modules/app/ui/auth/boot.html` and `boot.css` for the screen shown while the application
-JavaScript is downloading. The standalone/service Vite build inlines both into `index.html`, so no
-React, Tailwind, or external stylesheet is needed. Reload the development page after editing them.
-The embedded library build leaves startup presentation to its host.
+For an entirely custom first-paint layout, set `boot: { html: './boot.html', styles: './boot.css' }` in the
+configuration. These are trusted developer files. Local quoted `src`/`href` attributes on HTML image/source/link tags and
+`url(...)` assets in CSS resolve relative to their own files. Keep custom markup outside `#root`, retain
+status announcements and reduced-motion behavior, and optionally include initially hidden
+`#loading-slow-notice` and `#loading-slow-reload` elements (shown after 10 and 30 seconds).
+A button with `data-boot-reload` reloads the page. The shared runtime hides the loader and clears timers
+when React first renders.
 
-- Replace the markup, title, inline SVG/logo, animation, and colors freely. `data-boot-title` copies the document title
-  (set during app generation); remove the attribute to supply your own heading. Use inline SVG for a logo that requires no extra request; external
-  asset URLs must respect the deployed app's base path.
-- The outer container is `#loading-indicator` with `.vboot` and, in dark mode, `.vboot-dark`.
-  The CSS receives `--vb-bg`, `--vb-fg`, `--vb-muted`, `--vb-border`, and `--vb-primary` /
-  `--vb-primary-fg`. Override them on `.vboot` / `.vboot.vboot-dark` to brand both themes.
-  For the document background before the overlay is created, set `--vertesia-boot-background`
-  on `:root` and `:root.dark`. Scope other CSS to the boot container so it does not affect React.
-- Keep `role="status"`, `aria-live="polite"`, and reduced-motion behavior in custom markup/styles.
-- Optional `#loading-slow-notice` and `#loading-slow-reload` elements become visible after 10 and
-  30 seconds. A button with `data-boot-reload` reloads the page without app JavaScript. Keep those
-  elements initially hidden with `style="display: none;"`.
-
-The shared boot runtime hides this screen on the first React render and clears pending recovery
-timers. The React `AppAuthLoadingPage` then covers authentication, followed by the permission screen.
-Keep boot HTML outside `#root`; content inside that element would look like a completed React render.
-The HTML/CSS inputs are trusted developer files, not a surface for unsanitized user content.
+Firebase mode still signs in through Firebase and exchanges its token with STS; central-auth mode still
+uses the central service's page. Branding config does not select an authentication mode or configure
+providers. Embedded apps use the host's authentication. Publish the updated `@vertesia/ui` before
+using this template, and rebuild existing app artifacts to include branding changes.

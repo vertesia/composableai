@@ -222,3 +222,19 @@ supplies `.vboot` / `.vboot-dark`. The optional root CSS variable `--vertesia-bo
 first-paint document color. These inputs must be trusted static developer content. Automatic startup
 also reveals the optional slow-notice/reload elements after 10/30 seconds and wires `data-boot-reload`
 buttons. Hosts with their own startup/error controller can continue using `autoStart: false`.
+
+### Shared branding configuration
+
+`defineAppBranding` and `AppBranding` from `@vertesia/ui/boot` define the data-only branding contract.
+Pass resolved configuration as `<VertesiaShell branding={branding}>` for shared branded login,
+authentication-loading, and permission screens. `authScreens` entries override individual defaults.
+Without `branding`, existing shell presentation remains unchanged.
+
+The Node-only `createAppBrandingPlugin(config, configModuleUrl)` from `@vertesia/ui/boot/vite` resolves
+relative image/font paths, exposes `virtual:vertesia-branding`, and generates the boot HTML/CSS, title,
+and favicon. Local assets are embedded for base-path independence; import this adapter only in Vite config.
+The `@vertesia/ui/boot` entry remains free of React, Node, and Vite dependencies.
+
+The plugin template README contains the full configuration example and custom HTML/CSS escape hatch.
+Copy overrides are scoped to the shell and preserve shared translation resources. Colors are scoped to
+each screen; decorative accent and button foreground/background are separate settings.
