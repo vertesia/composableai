@@ -191,11 +191,12 @@ See [the migration guide](COLOR-MIGRATION.md) before updating an existing consum
 
 `VertesiaShell` accepts optional `authScreens: AuthScreens` components:
 
-- `SignIn` receives `SignInScreenViewProps` from `@vertesia/ui/shell`: the full sign-in flow,
+- `SignIn` receives `SignInScreenViewProps` from `@vertesia/ui/shell`: sign-in flow state and transitions,
   `authError`, reusable default form `children` and `notice`, logo/positioning preferences, and
   callbacks for account reset, sanitized-scope continuation, retry, and signup. It owns the whole
-  page; returning `children` in your own layout preserves the shared forms. Rendering from `flow`
-  allows replacing forms and the provider-redirect pending state too. The shell retains loading,
+  page layout; retain `children` for the shared tenant-resolution and authentication forms.
+  `flow.onProviderClicked` only changes presentation state; it does not initiate a provider redirect.
+  Use `flow.mode` to replace the provider-redirect pending screen. The shell retains loading,
   signed-in, allowed-path, and error-suppression guards.
 - `Loading` receives `AuthLoadingScreenProps` from `@vertesia/ui/shell`. It owns the entire
   authentication loading page without any imposed layout or animation. It disappears immediately

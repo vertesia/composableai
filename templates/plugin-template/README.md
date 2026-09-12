@@ -574,14 +574,15 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 
 Apache-2.0
 
-### Custom login and authentication loading pages
+## Custom login and authentication loading pages
 
 The standalone and service entry points pass `appAuthScreens` to `VertesiaShell`. Edit the app-owned
 components in `src/modules/app/ui/auth/`:
 
 - `AppSignInPage.tsx`: the entire login page, including branding and surrounding content. Its
-  `children` contain the shared email/provider, signup, or recovery form. Keep them to reuse those
-  forms, or replace them using the typed `flow`, `authError`, and recovery/signup callbacks.
+  `children` contain the shared email/provider, signup, or recovery form. Retain them for tenant
+  resolution and authentication. The typed `flow` exposes presentation state and transitions;
+  `flow.onProviderClicked` does not initiate a provider redirect on its own.
   `flow.mode === 'pending'` uses `AppAuthLoadingPage` while leaving for the identity provider.
 - `AppAuthLoadingPage.tsx`: session initialization and the return from the identity provider.
   This replaces the whole page; the shell does not add a spinner or animation around it.
@@ -612,7 +613,7 @@ The template requires a version of `@vertesia/ui` that exports `AuthScreens` and
 built app versions need to be rebuilt to include the new pages.
 
 
-### Pre-React first-paint branding
+## Pre-React first-paint branding
 
 Edit `src/modules/app/ui/auth/boot.html` and `boot.css` for the screen shown while the application
 JavaScript is downloading. The standalone/service Vite build inlines both into `index.html`, so no

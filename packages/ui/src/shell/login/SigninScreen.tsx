@@ -24,7 +24,7 @@ import { isInviteRequiredError, readPendingSignin, resetSignInState } from './si
 export interface SignInScreenViewProps {
     flow: SignInFlowController<SignInRecoveryMode>;
     authError?: Error;
-    /** The existing form/recovery step, reusable in a custom layout or replaceable using flow. */
+    /** Retain these shared forms for tenant resolution and provider sign-in; flow alone does not initiate redirects. */
     children: ReactNode;
     notice: ReactNode;
     isNested: boolean;
