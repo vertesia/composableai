@@ -73,7 +73,7 @@ ${font.bold ? `@font-face { font-family:${cssString(font.family)};src:url(${cssS
  --color-primary:var(--primary);--color-primary-foreground:var(--primary-foreground);
  background:var(--brand-background);color:var(--brand-foreground);
  font-family:${font ? cssString(font.family) : 'inherit'};
- box-sizing:border-box;min-height:100dvh;padding:3rem 1.5rem;
+ box-sizing:border-box;width:100%;min-width:0;min-height:100dvh;padding:3rem 1.5rem;
  display:flex;align-items:center;justify-content:center;
 }
 .vbrand-panel { width:100%;max-width:32rem;display:flex;flex-direction:column;align-items:center;gap:1.5rem; }
