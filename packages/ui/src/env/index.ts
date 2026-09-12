@@ -35,6 +35,8 @@ export interface EnvProps {
         appId?: string;
         providerType?: string;
     };
+    /** Default workspace selection when the URL does not explicitly select an account or project. */
+    defaultAuthSelection?: { accountId?: string; projectId?: string };
     region?: string;
     datadogRum?: boolean;
     datadogLogs?: boolean;
@@ -136,6 +138,18 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         const runtimeConfig = injectedRuntimeConfig() ?? buildRuntimeConfig(buildEnv);
         const runtimeFirebase = runtimeConfig?.authMode === 'firebase' ? runtimeConfig.firebase : undefined;
         this._props = props && runtimeFirebase && !props.firebase ? { ...props, firebase: runtimeFirebase } : props;
+        if (this._props && this._props.defaultAuthSelection === undefined && buildEnv) {
+            const accountId =
+                typeof buildEnv.VITE_VERTESIA_ACCOUNT_ID === 'string'
+                    ? buildEnv.VITE_VERTESIA_ACCOUNT_ID.trim() || undefined
+                    : undefined;
+            const projectId =
+                typeof buildEnv.VITE_VERTESIA_PROJECT_ID === 'string'
+                    ? buildEnv.VITE_VERTESIA_PROJECT_ID.trim() || undefined
+                    : undefined;
+            if (accountId || projectId)
+                this._props = { ...this._props, defaultAuthSelection: { accountId, projectId } };
+        }
         if (runtimeConfig && typeof window !== 'undefined' && window.AUTH_MODE === undefined) {
             window.AUTH_MODE = runtimeConfig.authMode;
         }
@@ -215,6 +229,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get devAuthToken() {
         return this._props?.devAuthToken;
+    }
+
+    get defaultAuthSelection() {
+        return this._props?.defaultAuthSelection;
     }
 
     get authTokenProvider() {

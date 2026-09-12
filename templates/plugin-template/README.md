@@ -723,3 +723,19 @@ The template enables previews only in Vite development; production ignores these
 
 Other hosts can share the same fixtures using `mountAuthScreenPreview(container, screen, branding?, screens?)`
 from `@vertesia/ui/shell`, invoked from an `import.meta.env.DEV` branch before mounting their auth providers.
+
+### Default development account and project
+
+Set these public workspace IDs in `.env.app.local` and restart `pnpm dev`:
+
+```ini
+VITE_VERTESIA_ACCOUNT_ID=your-account-id
+VITE_VERTESIA_PROJECT_ID=your-project-id
+```
+
+They also work as build defaults on Vercel. These are Vertesia workspace IDs;
+`VITE_FIREBASE_PROJECT_ID` identifies the Firebase authentication project instead.
+Explicit `?a=...&p=...` URL selections take precedence over this entire configured pair.
+Without a URL selection, configured IDs take precedence over the last workspace stored in the browser.
+A project-only default does not inherit an unrelated stored account. An account-only default can
+restore the last project for that account. These settings select a workspace; they do not grant access.

@@ -288,3 +288,9 @@ The template enables previews only in Vite development; production ignores these
 
 Other hosts can share the same fixtures using `mountAuthScreenPreview(container, screen, branding?, screens?)`
 from `@vertesia/ui/shell`, invoked from an `import.meta.env.DEV` branch before mounting their auth providers.
+
+`Env.init(props, import.meta.env)` also reads `VITE_VERTESIA_ACCOUNT_ID` and `VITE_VERTESIA_PROJECT_ID`
+as the default auth workspace. With a valid accessible project, sign-in initializes that project directly,
+so the application can open without manual account/project selection. Explicit URL `a`/`p` selection
+wins as a whole pair; configured defaults precede stored browser selection. Hosts may provide
+`props.defaultAuthSelection` instead. The setting chooses scope and does not bypass app permissions.

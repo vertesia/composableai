@@ -162,3 +162,23 @@ describe('VertesiaEnvironment build configuration', () => {
         expect(window.AUTH_MODE).toBeUndefined();
     });
 });
+
+describe('build-time default workspace', () => {
+    it('reads and trims Vertesia IDs independently of the Firebase project', () => {
+        const env = new VertesiaEnvironment().init(baseProps, {
+            VITE_VERTESIA_ACCOUNT_ID: ' account-1 ',
+            VITE_VERTESIA_PROJECT_ID: ' project-1 ',
+        });
+        expect(env.defaultAuthSelection).toEqual({ accountId: 'account-1', projectId: 'project-1' });
+    });
+    it('ignores blank settings and preserves an explicit selection as a whole pair', () => {
+        expect(
+            new VertesiaEnvironment().init(baseProps, { VITE_VERTESIA_ACCOUNT_ID: ' ' }).defaultAuthSelection,
+        ).toBeUndefined();
+        const env = new VertesiaEnvironment().init(
+            { ...baseProps, defaultAuthSelection: { accountId: 'explicit' } },
+            { VITE_VERTESIA_ACCOUNT_ID: 'build', VITE_VERTESIA_PROJECT_ID: 'other-project' },
+        );
+        expect(env.defaultAuthSelection).toEqual({ accountId: 'explicit' });
+    });
+});

@@ -34,7 +34,11 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
     const onProjectChange = (selected: ProjectRef) => {
         localStorage.setItem(LastSelectedAccountId_KEY, selected.account);
         localStorage.setItem(`${LastSelectedProjectId_KEY}-${selected.account}`, selected.id);
-        window.location.reload();
+        // An explicit selection must override configured workspace defaults on the next load.
+        const url = new URL(window.location.href);
+        url.searchParams.set('a', selected.account);
+        url.searchParams.set('p', selected.id);
+        window.location.assign(url.toString());
     };
 
     const hasMultipleAccounts = accounts && accounts.length > 1;
