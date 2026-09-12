@@ -59,6 +59,8 @@ const turnEvaluation: TurnEvaluationEvent = {
     approvalsRequested: 1,
     approvalsDenied: 0,
     stopRequests: 0,
+    stallCorrectives: 0,
+    stallTrips: 0,
     followupAfterAnswer: false,
     severity: 'none',
     flags: [],
@@ -96,6 +98,11 @@ describe('agent run evaluation API contracts', () => {
 
     it('accepts a turn_evaluation event through the ingest payload', () => {
         expect(validateApiRequest('IngestAgentEventsPayload', { events: [turnEvaluation] }).valid).toBe(true);
+    });
+
+    it('accepts a turn_evaluation event from a producer that predates the stall counters', () => {
+        const { stallCorrectives: _c, stallTrips: _t, ...legacy } = turnEvaluation;
+        expect(validateApiRequest('IngestAgentEventsPayload', { events: [legacy] }).valid).toBe(true);
     });
 
     it('rejects a turn_evaluation event with an undeclared field', () => {
@@ -138,6 +145,18 @@ describe('agent run evaluation API contracts', () => {
                 score: 0.2,
                 promptVersion: 'v1',
             },
+            {
+                ...base,
+                eventType: 'stall_breaker',
+                action: 'trip',
+                toolNames: ['fetch_document'],
+                repeatCount: 4,
+                stallMeasure: 4,
+                allErrored: false,
+                iteration: 7,
+                interactive: true,
+                workstreamId: 'main',
+            },
         ];
         expect(validateApiRequest('IngestAgentEventsPayload', { events }).valid).toBe(true);
     });
@@ -175,10 +194,28 @@ describe('agent run evaluation API contracts', () => {
                 approvals_requested: 0,
                 approvals_denied: 0,
                 stop_requests: 0,
+                stall_trips: 0,
             },
             updated_at: turnEvaluation.timestamp,
         };
         expect(validateApiRequest('UpdateAgentRunStatusPayload', { evaluation_rollup: rollup }).valid).toBe(true);
+        // Rollups stored or sent before the stall counter existed keep validating.
+        const { stall_trips: _s, ...legacyTotals } = rollup.totals;
+        expect(
+            validateApiRequest('UpdateAgentRunStatusPayload', {
+                evaluation_rollup: { ...rollup, totals: legacyTotals },
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('AgentRunEvaluation', {
+                rev: 1,
+                rollup: { ...rollup, totals: legacyTotals },
+                severity: 'medium',
+                flags: ['unrecovered_tool'],
+                contradicted: false,
+                updated_at: turnEvaluation.timestamp,
+            }).valid,
+        ).toBe(true);
         expect(
             validateApiRequest('UpdateAgentRunStatusPayload', {
                 evaluation_rollup: { ...rollup, feedback_counts: { up: 1, down: 0 } },
