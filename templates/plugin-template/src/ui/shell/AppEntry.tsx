@@ -1,6 +1,7 @@
 import { AdminApp } from '@vertesia/tools-admin-ui';
 import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { IFRAME_APP_CONTENT_SLOT, IFRAME_APP_SLOT_PARAM, StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
+import { appAuthScreens } from '../../modules/app/ui/auth';
 import { setUsePluginAssets } from '../assets';
 import { App } from './App';
 import { OrgGate } from './layouts/OrgGate';
@@ -35,7 +36,7 @@ const routes: Route[] = [
 
 export function AppEntry() {
     return (
-        <VertesiaShell preserveSignInPath>
+        <VertesiaShell preserveSignInPath authScreens={appAuthScreens}>
             <OrgGate>
                 <RouterProvider routes={routes} />
             </OrgGate>

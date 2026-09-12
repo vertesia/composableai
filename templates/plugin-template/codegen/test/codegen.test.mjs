@@ -199,7 +199,7 @@ test('appgen Playwright support keeps authenticated output safe and transient ou
     assert.doesNotMatch(playwrightFixture, /new VertesiaClient\(/);
     assert.match(serviceEntry, /globalValues\.__VERTESIA_AUTH_TOKEN__/);
     assert.match(serviceEntry, /const runtimeAuthToken = injectedAuthToken \?\? devAuthToken/);
-    assert.match(serviceEntry, /<VertesiaShell authToken=\{runtimeAuthToken\}>/);
+    assert.match(serviceEntry, /<VertesiaShell\b[^>]*\bauthToken=\{runtimeAuthToken\}[^>]*>/);
     assert.match(gitignore, /pnpm-lock\.yaml/);
     assert.match(gitignore, /test-results\//);
     assert.match(gitignore, /playwright-report\//);

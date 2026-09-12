@@ -1,11 +1,16 @@
 import { useUserSession } from '@vertesia/ui/session';
 import { AnimatePresence, motion } from 'framer-motion';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
+
+export interface AuthLoadingScreenProps {
+    loadingIcon?: ReactNode;
+}
 
 interface SplashScreenProps {
+    Screen?: ComponentType<AuthLoadingScreenProps>;
     icon?: ReactNode;
 }
-export function SplashScreen({ icon: Icon }: SplashScreenProps) {
+export function SplashScreen({ icon: Icon, Screen }: SplashScreenProps) {
     const { isLoading, authToken } = useUserSession();
     const [show, setShow] = useState(true);
 
@@ -18,6 +23,9 @@ export function SplashScreen({ icon: Icon }: SplashScreenProps) {
     // The permission gate owns the loading UI once a token is available.
     // Skip the exit animation too, so two loading indicators never overlap.
     if (authToken) return null;
+
+    // Custom screens own the entire page, including their animation and positioning.
+    if (Screen) return isLoading ? <Screen loadingIcon={Icon} /> : null;
 
     return (
         <AnimatePresence>

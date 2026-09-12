@@ -186,3 +186,38 @@ The CSS compiler contract is checked by `src/__tests__/theme.test.ts`; contrast 
 `src/__tests__/contrast.test.ts`. Verify rendered states in both themes as well.
 
 See [the migration guide](COLOR-MIGRATION.md) before updating an existing consumer to this theme.
+
+### Custom authentication screens
+
+`VertesiaShell` accepts optional `authScreens: AuthScreens` components:
+
+- `SignIn` receives `SignInScreenViewProps` from `@vertesia/ui/shell`: the full sign-in flow,
+  `authError`, reusable default form `children` and `notice`, logo/positioning preferences, and
+  callbacks for account reset, sanitized-scope continuation, retry, and signup. It owns the whole
+  page; returning `children` in your own layout preserves the shared forms. Rendering from `flow`
+  allows replacing forms and the provider-redirect pending state too. The shell retains loading,
+  signed-in, allowed-path, and error-suppression guards.
+- `Loading` receives `AuthLoadingScreenProps` from `@vertesia/ui/shell`. It owns the entire
+  authentication loading page without any imposed layout or animation. It disappears immediately
+  when authentication finishes or a token becomes available.
+- `Permissions` receives `PermissionLoadingScreenProps` from `@vertesia/ui/features`: the
+  `loading`/`retrying`/`error` status, localized title/description, optional error and loading icon,
+  and an appropriate recovery `actionLabel`/`onAction`. This is a presentation override only;
+  application children never render until permissions are available.
+
+Omitted entries retain existing screens and logo/loading-icon behavior. Define component functions
+outside render so state does not reset on parent renders. All screens are under the session, theme,
+and translation providers, but outside the permission context and application providers.
+
+See `templates/plugin-template/src/modules/app/ui/auth/` for editable application examples. These
+options customize app-owned pages; they neither enable Firebase mode nor theme external provider
+or central-auth pages.
+
+
+`@vertesia/ui/boot` supports the pre-React stage separately: pass app-authored `html` and `styles`
+to `createBootScreenVitePlugin()` or `injectBootScreenHtml()`. HTML replaces the default inner loader;
+CSS is inlined after the default boot styles. The outer `#loading-indicator` owns the handoff and
+supplies `.vboot` / `.vboot-dark`. The optional root CSS variable `--vertesia-boot-background` sets
+first-paint document color. These inputs must be trusted static developer content. Automatic startup
+also reveals the optional slow-notice/reload elements after 10/30 seconds and wires `data-boot-reload`
+buttons. Hosts with their own startup/error controller can continue using `autoStart: false`.

@@ -2,7 +2,7 @@ import { type AuthTokenPayload, type Permission, PrincipalType, type SystemRoleD
 import { Button, errorMessage, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { createContext, useContext, useMemo } from 'react';
+import { type ComponentType, createContext, useContext, useMemo } from 'react';
 import { isAnyOf } from './helpers';
 import { roleMappingsErrorStatus, useRoleMappings } from './useRoleMappings';
 
@@ -67,11 +67,23 @@ export function useUserPermissions() {
     return perms;
 }
 
+export interface PermissionLoadingScreenProps {
+    status: 'loading' | 'retrying' | 'error';
+    error?: unknown;
+    title: string;
+    description: string;
+    loadingIcon?: React.ReactNode;
+    /** Localized label and action appropriate to the failure (retry, or sign out for 401/403). */
+    actionLabel: string;
+    onAction: () => void;
+}
+
 interface UserPermissionProviderProps {
+    LoadingScreen?: ComponentType<PermissionLoadingScreenProps>;
     children: React.ReactNode;
     loadingIcon?: React.ReactNode;
 }
-export function UserPermissionProvider({ children, loadingIcon }: UserPermissionProviderProps) {
+export function UserPermissionProvider({ children, loadingIcon, LoadingScreen }: UserPermissionProviderProps) {
     const { t } = useUITranslation();
     const session = useUserSession();
     const authToken = session.authToken;
@@ -100,6 +112,31 @@ export function UserPermissionProvider({ children, loadingIcon }: UserPermission
               : failed
                 ? t('permissions.connectionFailed')
                 : t('permissions.connecting');
+        const description = needsSignIn
+            ? t('auth.recovery.credential.body')
+            : denied
+              ? t('permissions.accessDenied')
+              : failed
+                ? t('permissions.tryAgainLater')
+                : state.status === 'retrying'
+                  ? t('permissions.retrying')
+                  : t('permissions.loadingPermissions');
+        const actionLabel =
+            needsSignIn || denied ? t('auth.recovery.useDifferentAccount') : t('auth.recovery.tryAgain');
+        const onAction = needsSignIn || denied ? () => session.signOut() : retry;
+        if (LoadingScreen) {
+            return (
+                <LoadingScreen
+                    status={failed ? 'error' : state.status === 'retrying' ? 'retrying' : 'loading'}
+                    error={failed ? state.error : undefined}
+                    title={title}
+                    description={description}
+                    loadingIcon={loadingIcon}
+                    actionLabel={actionLabel}
+                    onAction={onAction}
+                />
+            );
+        }
         return (
             <div className="flex min-h-dvh items-center justify-center bg-background px-6 text-foreground">
                 <div className="w-full max-w-md space-y-6 text-center">
@@ -112,24 +149,12 @@ export function UserPermissionProvider({ children, loadingIcon }: UserPermission
                         className="space-y-2"
                     >
                         <h1 className="text-xl font-semibold">{title}</h1>
-                        <p className="text-muted">
-                            {needsSignIn
-                                ? t('auth.recovery.credential.body')
-                                : denied
-                                  ? t('permissions.accessDenied')
-                                  : failed
-                                    ? t('permissions.tryAgainLater')
-                                    : state.status === 'retrying'
-                                      ? t('permissions.retrying')
-                                      : t('permissions.loadingPermissions')}
-                        </p>
+                        <p className="text-muted">{description}</p>
                     </div>
                     {failed && (
                         <>
-                            <Button variant="outline" onClick={needsSignIn || denied ? () => session.signOut() : retry}>
-                                {needsSignIn || denied
-                                    ? t('auth.recovery.useDifferentAccount')
-                                    : t('auth.recovery.tryAgain')}
+                            <Button variant="outline" onClick={onAction}>
+                                {actionLabel}
                             </Button>
                             {state.error != null && (
                                 <details className="text-start text-sm text-muted">

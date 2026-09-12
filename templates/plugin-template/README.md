@@ -573,3 +573,66 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 ## License
 
 Apache-2.0
+
+### Custom login and authentication loading pages
+
+The standalone and service entry points pass `appAuthScreens` to `VertesiaShell`. Edit the app-owned
+components in `src/modules/app/ui/auth/`:
+
+- `AppSignInPage.tsx`: the entire login page, including branding and surrounding content. Its
+  `children` contain the shared email/provider, signup, or recovery form. Keep them to reuse those
+  forms, or replace them using the typed `flow`, `authError`, and recovery/signup callbacks.
+  `flow.mode === 'pending'` uses `AppAuthLoadingPage` while leaving for the identity provider.
+- `AppAuthLoadingPage.tsx`: session initialization and the return from the identity provider.
+  This replaces the whole page; the shell does not add a spinner or animation around it.
+- `AppPermissionLoadingPage.tsx`: loading/retrying permissions after authentication, plus failures.
+  `onAction` retries a failed request or signs out for an authorization/credential failure. Keep
+  that action reachable when replacing the markup. Protected content stays gated until ready.
+- `index.ts`: selects the components. Remove individual overrides to restore shared defaults.
+
+```tsx
+<VertesiaShell preserveSignInPath authScreens={appAuthScreens}>
+    {/* application providers and routes */}
+</VertesiaShell>
+```
+
+These pages can use the session, theme, and translation hooks. They render before application
+providers, routes, or permission context are ready, so do not call app-specific hooks or
+`useUserPermissions()` from them. Keep status announcements and keyboard-accessible recovery
+buttons in your replacements. Existing `lightLogo`, `darkLogo`, and `loadingIcon` props still work
+with the default screens; custom screens decide how to display those props.
+
+With Firebase runtime configuration (`authMode: 'firebase'`), sign-in happens in the app through
+Firebase, followed by the Vertesia STS token exchange. These overrides do not change authentication
+mode or the protocol. Central-auth mode still uses the central service's login page; identity-provider
+pages such as Google's remain external. Embedded apps use their host's authentication.
+
+The template requires a version of `@vertesia/ui` that exports `AuthScreens` and accepts
+`VertesiaShell.authScreens`. Publish that SDK before distributing this template revision. Existing
+built app versions need to be rebuilt to include the new pages.
+
+
+### Pre-React first-paint branding
+
+Edit `src/modules/app/ui/auth/boot.html` and `boot.css` for the screen shown while the application
+JavaScript is downloading. The standalone/service Vite build inlines both into `index.html`, so no
+React, Tailwind, or external stylesheet is needed. Reload the development page after editing them.
+The embedded library build leaves startup presentation to its host.
+
+- Replace the markup, title, inline SVG/logo, animation, and colors freely. `data-boot-title` copies the document title
+  (set during app generation); remove the attribute to supply your own heading. Use inline SVG for a logo that requires no extra request; external
+  asset URLs must respect the deployed app's base path.
+- The outer container is `#loading-indicator` with `.vboot` and, in dark mode, `.vboot-dark`.
+  The CSS receives `--vb-bg`, `--vb-fg`, `--vb-muted`, `--vb-border`, and `--vb-primary` /
+  `--vb-primary-fg`. Override them on `.vboot` / `.vboot.vboot-dark` to brand both themes.
+  For the document background before the overlay is created, set `--vertesia-boot-background`
+  on `:root` and `:root.dark`. Scope other CSS to the boot container so it does not affect React.
+- Keep `role="status"`, `aria-live="polite"`, and reduced-motion behavior in custom markup/styles.
+- Optional `#loading-slow-notice` and `#loading-slow-reload` elements become visible after 10 and
+  30 seconds. A button with `data-boot-reload` reloads the page without app JavaScript. Keep those
+  elements initially hidden with `style="display: none;"`.
+
+The shared boot runtime hides this screen on the first React render and clears pending recovery
+timers. The React `AppAuthLoadingPage` then covers authentication, followed by the permission screen.
+Keep boot HTML outside `#root`; content inside that element would look like a completed React render.
+The HTML/CSS inputs are trusted developer files, not a surface for unsanitized user content.

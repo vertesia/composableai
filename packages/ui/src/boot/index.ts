@@ -3,6 +3,10 @@ export interface BootScreenOptions {
     iconSrc?: string;
     loadingLabel?: string;
     autoStart?: boolean;
+    /** Trusted, app-authored HTML inside the loading container. Never pass user content. */
+    html?: string;
+    /** Inline CSS appended after the defaults; available before application styles load. */
+    styles?: string;
 }
 
 export interface BootScreenHtmlPlugin {
@@ -120,15 +124,20 @@ function normalizedOptions(options: BootScreenOptions) {
         iconSrc: options.iconSrc ?? DEFAULT_ICON_SRC,
         loadingLabel: options.loadingLabel ?? DEFAULT_LOADING_LABEL,
         autoStart: options.autoStart ?? true,
+        html: options.html,
+        styles: options.styles,
     };
 }
 
 export function renderBootScreenRuntime(options: BootScreenOptions = {}): string {
-    const { storageKey, iconSrc, loadingLabel } = normalizedOptions(options);
+    const { storageKey, iconSrc, loadingLabel, html } = normalizedOptions(options);
     return `(() => {
   const storageKey = ${inlineJson(storageKey)};
   const iconSrc = ${inlineJson(iconSrc)};
   const loadingLabel = ${inlineJson(loadingLabel)};
+  const customHtml = ${html === undefined ? 'undefined' : inlineJson(html)};
+  let slowNoticeTimer;
+  let slowReloadTimer;
   const previewTheme = (() => {
     try {
       const value = new URL(window.location.href).searchParams.get('__vertesia_boot_theme');
@@ -161,8 +170,9 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
   };
   const paintDocumentBackground = () => {
     const dark = applyTheme();
-    const background = dark ? '#0a0a0a' : '#ffffff';
     const root = document.documentElement;
+    const background = window.getComputedStyle(root).getPropertyValue('--vertesia-boot-background').trim()
+      || (dark ? '#0a0a0a' : '#ffffff');
     root.style.backgroundColor = background;
     root.style.colorScheme = dark ? 'dark' : 'light';
     if (document.body) document.body.style.backgroundColor = background;
@@ -180,19 +190,29 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
     paintDocumentBackground();
     const loading = document.createElement('div');
     loading.id = 'loading-indicator';
-    loading.innerHTML = '<div class="' + bootThemeClass() + ' vboot-overlay" role="status" aria-live="polite">'
+    loading.className = bootThemeClass();
+    loading.innerHTML = customHtml ?? ('<div class="' + bootThemeClass() + ' vboot-overlay" role="status" aria-live="polite">'
       + '<img class="vboot-spinner" width="40" height="40" src="' + iconSrc + '" alt="' + loadingLabel + '" />'
       + '<div id="loading-slow-notice" class="vboot-slow" style="display: none;">'
       + '<p>Still loading &mdash; this is taking longer than usual.</p>'
       + '<div id="loading-slow-reload" style="display: none;">'
       + '<button type="button" class="vboot-btn" onclick="window.location.reload()">Reload page</button>'
-      + '</div></div></div>';
-    const loadingParent = typeof document.documentElement.appendChild === 'function'
+      + '</div></div></div>');
+    loading.querySelectorAll('[data-boot-title]').forEach((heading) => {
+      if (document.title) heading.textContent = document.title;
+    });
+    loading.querySelectorAll('[data-boot-reload]').forEach((button) => {
+      button.addEventListener('click', () => window.location.reload());
+    });
+    // Custom landmarks and controls must stay in body to enter the accessibility tree.
+    const loadingParent = customHtml === undefined && typeof document.documentElement.appendChild === 'function'
       ? document.documentElement
       : document.body;
     loadingParent.appendChild(loading);
   };
   const hideLoadingIndicator = () => {
+    clearTimeout(slowNoticeTimer);
+    clearTimeout(slowReloadTimer);
     const loading = document.getElementById('loading-indicator');
     if (loading) loading.style.display = 'none';
   };
@@ -217,7 +237,22 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
     });
     observer.observe(root, { childList: true });
   };
+  // Used by standalone apps. Hosts with their own error handler keep autoStart disabled.
+  const scheduleSlowLoadingNotice = () => {
+    clearTimeout(slowNoticeTimer);
+    clearTimeout(slowReloadTimer);
+    if (hasAppRendered()) return;
+    slowNoticeTimer = setTimeout(() => {
+      const notice = document.getElementById('loading-slow-notice');
+      if (notice) notice.style.display = '';
+    }, 10000);
+    slowReloadTimer = setTimeout(() => {
+      const reload = document.getElementById('loading-slow-reload');
+      if (reload) reload.style.display = '';
+    }, 30000);
+  };
   window.__vertesiaBoot = {
+    scheduleSlowLoadingNotice,
     applyTheme,
     bootThemeClass,
     ensureLoadingIndicator,
@@ -233,11 +268,11 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
 }
 
 export function renderBootScreenHead(options: BootScreenOptions = {}): string {
-    return `<style id="vertesia-boot-styles">${BOOT_SCREEN_STYLES}</style>\n<script>${renderBootScreenRuntime(options)}</script>`;
+    return `<style id="vertesia-boot-styles">${BOOT_SCREEN_STYLES}\n${options.styles ?? ''}</style>\n<script>${renderBootScreenRuntime(options)}</script>`;
 }
 
 export function renderBootScreenInitializer(): string {
-    return `<script>window.__vertesiaBoot.ensureLoadingIndicator(); window.__vertesiaBoot.hideLoadingIndicatorOnFirstRender();</script>`;
+    return `<script>window.__vertesiaBoot.ensureLoadingIndicator(); window.__vertesiaBoot.hideLoadingIndicatorOnFirstRender(); window.__vertesiaBoot.scheduleSlowLoadingNotice();</script>`;
 }
 
 function isHtmlWhitespace(character: string | undefined): boolean {

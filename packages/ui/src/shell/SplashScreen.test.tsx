@@ -19,4 +19,25 @@ describe('SplashScreen handoff', () => {
         // No fading splash remains over the permission gate's connection screen.
         expect(screen.queryByText('Startup indicator')).toBeNull();
     });
+    it('gives a custom screen the whole page without the default animation and unmounts it on completion', () => {
+        session.isLoading = true;
+        session.authToken = undefined;
+        const CustomScreen = () => <main>Branded authentication</main>;
+        const view = render(<SplashScreen Screen={CustomScreen} icon={<span>Old spinner</span>} />);
+        expect(view.container.firstElementChild?.tagName).toBe('MAIN');
+        expect(screen.queryByText('Old spinner')).toBeNull();
+        session.isLoading = false;
+        view.rerender(<SplashScreen Screen={CustomScreen} />);
+        expect(screen.queryByText('Branded authentication')).toBeNull();
+    });
+
+    it('hands a custom screen off to permissions as soon as the token arrives', () => {
+        session.isLoading = true;
+        session.authToken = undefined;
+        const CustomScreen = () => <main>Branded authentication</main>;
+        const view = render(<SplashScreen Screen={CustomScreen} />);
+        session.authToken = {} as AuthTokenPayload;
+        view.rerender(<SplashScreen Screen={CustomScreen} />);
+        expect(screen.queryByText('Branded authentication')).toBeNull();
+    });
 });

@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import tailwindcss from '@tailwindcss/vite';
 import { apiServerPlugin } from '@vertesia/build-tools/vite';
 import { vertesiaPluginBuilder } from '@vertesia/plugin-builder';
+import { injectBootScreenHtml } from '@vertesia/ui/boot';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { type ConfigEnv, defineConfig, type Plugin, type UserConfig } from 'vite';
@@ -226,6 +227,14 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
+            {
+                name: 'app-boot-screen',
+                transformIndexHtml: (html) =>
+                    injectBootScreenHtml(html, {
+                        html: readFileSync(new URL('./src/modules/app/ui/auth/boot.html', import.meta.url), 'utf8'),
+                        styles: readFileSync(new URL('./src/modules/app/ui/auth/boot.css', import.meta.url), 'utf8'),
+                    }),
+            },
             reactImportMapPlugin(),
             staleAssetRecoveryPlugin(isVercelBuild),
             // HTTPS is required for Firebase auth but must be disabled under appgen/Vercel dev

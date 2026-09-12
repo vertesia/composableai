@@ -1,13 +1,21 @@
 import { ThemeProvider, ToastProvider } from '@vertesia/ui/core';
-import { TypeRegistryProvider, UserPermissionProvider } from '@vertesia/ui/features';
+import { type PermissionLoadingScreenProps, TypeRegistryProvider, UserPermissionProvider } from '@vertesia/ui/features';
 import { LanguageBoundI18nProvider, LanguageProvider, type SupportedLanguage } from '@vertesia/ui/i18n';
 import { DevSessionProvider, UserSessionProvider } from '@vertesia/ui/session';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { IframeAppContextSync } from './apps/IframeAppContextSync.js';
-import { SigninScreen } from './login/SigninScreen';
-import { SplashScreen } from './SplashScreen';
+import { type SignInScreenViewProps, SigninScreen } from './login/SigninScreen';
+import { type AuthLoadingScreenProps, SplashScreen } from './SplashScreen';
 
-interface VertesiaShellProps {
+/** Optional full-page presentations. Session and permission gating remain owned by the shell. */
+export interface AuthScreens {
+    SignIn?: ComponentType<SignInScreenViewProps>;
+    Loading?: ComponentType<AuthLoadingScreenProps>;
+    Permissions?: ComponentType<PermissionLoadingScreenProps>;
+}
+
+export interface VertesiaShellProps {
+    authScreens?: AuthScreens;
     children: React.ReactNode;
     lightLogo?: string;
     darkLogo?: string;
@@ -30,6 +38,7 @@ export function VertesiaShell({
     suppressSignInErrorPrefixes,
     authToken,
     defaultLanguage,
+    authScreens,
 }: VertesiaShellProps) {
     const content = (
         <TypeRegistryProvider>
@@ -39,8 +48,9 @@ export function VertesiaShell({
                         <IframeAppContextSync />
                         {!authToken && (
                             <>
-                                <SplashScreen icon={loadingIcon} />
+                                <SplashScreen icon={loadingIcon} Screen={authScreens?.Loading} />
                                 <SigninScreen
+                                    View={authScreens?.SignIn}
                                     allowedPrefix="/shared/"
                                     darkLogo={darkLogo}
                                     lightLogo={lightLogo}
@@ -49,7 +59,9 @@ export function VertesiaShell({
                                 />
                             </>
                         )}
-                        <UserPermissionProvider loadingIcon={loadingIcon}>{children}</UserPermissionProvider>
+                        <UserPermissionProvider loadingIcon={loadingIcon} LoadingScreen={authScreens?.Permissions}>
+                            {children}
+                        </UserPermissionProvider>
                     </LanguageBoundI18nProvider>
                 </LanguageProvider>
             </ThemeProvider>

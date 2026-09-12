@@ -1,0 +1,52 @@
+/* Inline first-paint styles. Use plain CSS: Tailwind and app styles have not loaded yet.
+ * The container supplies .vboot / .vboot-dark and --vb-* colors before React.
+ * Override those variables here to match your app; use :root / :root.dark with
+ * --vertesia-boot-background to also customize the initial document background. */
+.app-boot {
+    box-sizing: border-box;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--vb-bg);
+    color: var(--vb-fg);
+    text-align: center;
+}
+.app-boot h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+.app-boot p {
+    margin: 0;
+    color: var(--vb-muted);
+}
+.app-boot-progress {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid var(--vb-border);
+    border-block-start-color: var(--vb-primary);
+    border-radius: 50%;
+    animation: vboot-spin 1s linear infinite;
+}
+.app-boot button {
+    margin-block-start: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--vb-border);
+    border-radius: 0.375rem;
+    background: var(--vb-primary);
+    color: var(--vb-primary-fg);
+    font: inherit;
+    cursor: pointer;
+}
+.app-boot button:focus-visible {
+    outline: 2px solid var(--vb-primary);
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .app-boot-progress {
+        animation: none;
+    }
+}

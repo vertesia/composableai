@@ -11,7 +11,7 @@ import {
     useUserSession,
     useUXTracking,
 } from '@vertesia/ui/session';
-import { useCallback, useEffect } from 'react';
+import { type ComponentType, type ReactNode, useCallback, useEffect } from 'react';
 import { type SignInFlowController, SignInFlowSteps, useSignInFlow } from './SignInFlow';
 import { SignInPageShell } from './SignInPageShell';
 import SignInRecoveryStep, { type SignInRecoveryKind } from './SignInRecoveryStep';
@@ -20,7 +20,24 @@ import SignInTenantBlockedStep from './SignInTenantBlockedStep';
 import SignupForm from './SignupForm';
 import { isInviteRequiredError, readPendingSignin, resetSignInState } from './signInUtils';
 
-interface SigninScreenProps {
+/** Presentation only: the shared screen still owns session gating and recovery transitions. */
+export interface SignInScreenViewProps {
+    flow: SignInFlowController<SignInRecoveryMode>;
+    authError?: Error;
+    /** The existing form/recovery step, reusable in a custom layout or replaceable using flow. */
+    children: ReactNode;
+    notice: ReactNode;
+    isNested: boolean;
+    lightLogo?: string;
+    darkLogo?: string;
+    onUseDifferentAccount: () => void;
+    onContinueWithSanitizedScope: () => void;
+    onRetry: () => void;
+    onSignup: (data: SignupData, firebaseToken: string) => void;
+}
+
+export interface SigninScreenProps {
+    View?: ComponentType<SignInScreenViewProps>;
     isNested?: boolean;
     allowedPrefix?: string | string[];
     lightLogo?: string;
@@ -36,6 +53,7 @@ export function SigninScreen({
     darkLogo,
     preservePath,
     suppressAuthErrorPrefix,
+    View,
 }: SigninScreenProps) {
     const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
     const allow = matchesPathPrefix(pathname, allowedPrefix);
@@ -47,6 +65,7 @@ export function SigninScreen({
             darkLogo={darkLogo}
             preservePath={preservePath}
             suppressAuthError={suppressAuthError}
+            View={View}
         />
     );
 }
@@ -65,7 +84,7 @@ function matchesPathPrefix(pathname: string, prefix?: string | string[]) {
  * The modes this screen adds on top of {@link SignInCoreMode}: every one is entered from an
  * `authError` the session surfaced, which is why they stay here rather than in the shared flow.
  */
-type RecoveryMode =
+export type SignInRecoveryMode =
     | 'blocked'
     | 'signup'
     | 'restricted'
@@ -91,12 +110,17 @@ function SigninScreenImpl({
     darkLogo,
     preservePath,
     suppressAuthError,
+    View,
 }: SigninScreenProps & { suppressAuthError?: boolean }) {
     const { t } = useUITranslation();
     const { isLoading, user, authError, signOut } = useUserSession();
     const { trackEvent } = useUXTracking();
 
-    const flow: SignInFlowController<RecoveryMode> = useSignInFlow<RecoveryMode>({ signOut, trackEvent, user });
+    const flow = useSignInFlow<SignInRecoveryMode>({
+        signOut,
+        trackEvent,
+        user,
+    });
     const { mode, setMode, email, setEmail, tenant, setTenant, storedSession, setStoredSession } = flow;
 
     const recoveryIdentity =
@@ -265,32 +289,45 @@ function SigninScreenImpl({
         content = <SignInFlowSteps flow={flow} />;
     }
 
+    const notice = authError && !isDedicatedAuthError(authError) && !isInviteRequiredError(authError) && (
+        <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
+            <div>
+                {t('auth.signInError')}
+                <br />
+                {t('auth.signInErrorContact')}
+                <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
+                    support@vertesiahq.com
+                </a>
+                {t('auth.signInErrorPersists')}
+            </div>
+        </div>
+    );
+
+    if (View) {
+        return (
+            <View
+                flow={flow}
+                authError={authError}
+                notice={notice}
+                isNested={isNested}
+                lightLogo={lightLogo}
+                darkLogo={darkLogo}
+                onUseDifferentAccount={useDifferentAccount}
+                onContinueWithSanitizedScope={continueWithSanitizedScope}
+                onRetry={retryAuthentication}
+                onSignup={onSignup}
+            >
+                {content}
+            </View>
+        );
+    }
+
     return (
         <div
             style={{ zIndex: 999998 }}
             className={`${isNested ? 'absolute' : 'fixed'} inset-0 overflow-y-auto bg-background`}
         >
-            <SignInPageShell
-                lightLogo={lightLogo}
-                darkLogo={darkLogo}
-                notice={
-                    authError &&
-                    !isDedicatedAuthError(authError) &&
-                    !isInviteRequiredError(authError) && (
-                        <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
-                            <div>
-                                {t('auth.signInError')}
-                                <br />
-                                {t('auth.signInErrorContact')}
-                                <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
-                                    support@vertesiahq.com
-                                </a>
-                                {t('auth.signInErrorPersists')}
-                            </div>
-                        </div>
-                    )
-                }
-            >
+            <SignInPageShell lightLogo={lightLogo} darkLogo={darkLogo} notice={notice}>
                 {content}
             </SignInPageShell>
         </div>
