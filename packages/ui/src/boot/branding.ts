@@ -5,7 +5,14 @@ export interface AppBranding {
     logo?: { light: string; dark?: string; alt?: string };
     favicon?: string;
     /** Small icon used by the existing loading layouts. */
-    loadingIcon?: { light: string; dark?: string };
+    loadingIcon?: {
+        light: string;
+        dark?: string;
+        /** CSS animation shorthand for boot and auth loading. Use 'none' for a static logo. */
+        animation?: string;
+        /** Trusted app-authored @keyframes CSS, shared by boot and React. Use app-specific names. */
+        keyframes?: string;
+    };
     font?: { family: string; regular: string; bold?: string };
     colors?: { light?: BrandColors; dark?: BrandColors };
     copy?: {
@@ -65,13 +72,22 @@ function colorDeclarations(colors?: BrandColors): string {
 
 /** Theme tokens only: branding must never replace the shared page layout. */
 export function renderBrandStyles(brand: AppBranding, selector = '.vbrand'): string {
+    const animation = brand.loadingIcon?.animation;
+    const keyframes = brand.loadingIcon?.keyframes ?? '';
+    if (animation !== undefined && /[;{}<>]/.test(animation)) throw new Error('Invalid loading icon animation');
+    if (/[<>]/.test(keyframes)) throw new Error('Invalid loading icon keyframes');
+    const motion =
+        animation === undefined
+            ? ''
+            : `--vertesia-loading-animation:${animation};--vertesia-loading-pulse-animation:none;`;
     const font = brand.font;
     const faces = font
         ? `@font-face { font-family:${cssString(font.family)};src:url(${cssString(font.regular)});font-weight:400;font-display:swap; }
 ${font.bold ? `@font-face { font-family:${cssString(font.family)};src:url(${cssString(font.bold)});font-weight:700;font-display:swap; }` : ''}`
         : '';
     return `${faces}
-${selector} { ${colorDeclarations(brand.colors?.light)}${font ? `font-family:${cssString(font.family)};` : ''} }
+${keyframes}
+${selector} { ${motion}${colorDeclarations(brand.colors?.light)}${font ? `font-family:${cssString(font.family)};` : ''} }
 .dark ${selector},${selector}.vboot-dark { ${colorDeclarations(brand.colors?.dark)} }
 `;
 }

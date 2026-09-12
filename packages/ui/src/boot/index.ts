@@ -87,7 +87,7 @@ export const BOOT_SCREEN_STYLES = `
     object-fit: contain !important;
     flex: none !important;
     border-radius: 100% !important;
-    animation: vboot-spin 2s linear infinite !important;
+    animation: var(--vertesia-loading-animation, vboot-spin 2s linear infinite) !important;
   }
   .vboot-icon-dark { display: none; }
   .vboot-dark .vboot-icon-light { display: none; }
@@ -116,7 +116,7 @@ export const BOOT_SCREEN_STYLES = `
     opacity: 0.9;
   }
   @media (prefers-reduced-motion: reduce) {
-    .vboot-spinner { animation: none; }
+    .vboot-spinner { animation: none !important; }
   }
 `;
 

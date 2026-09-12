@@ -687,3 +687,19 @@ Firebase mode still signs in through Firebase and exchanges its token with STS; 
 uses the central service's page. Branding config does not select an authentication mode or configure
 providers. Embedded apps use the host's authentication. Publish the updated `@vertesia/ui` before
 using this template, and rebuild existing app artifacts to include branding changes.
+
+Loading-logo motion is configurable in `loadingIcon`, for both pre-React boot and authentication loading:
+
+```ts
+loadingIcon: {
+    light: './assets/icon.svg',
+    animation: 'my-app-dim 2s ease-in-out infinite',
+    keyframes: '@keyframes my-app-dim { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }',
+},
+```
+
+`animation` accepts a CSS animation shorthand; `keyframes` contains optional trusted app-authored CSS
+and is embedded before first paint. Use app-specific keyframe names to avoid collisions.
+Set `animation: 'none'` for a static logo. Omitting it preserves the default spin/pulse treatment;
+a custom animation replaces both. Reduced-motion preferences disable loading-logo animation.
+This changes logo motion only; permission/recovery layout and explicitly overridden screens remain app-controlled.

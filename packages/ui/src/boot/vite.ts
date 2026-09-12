@@ -57,6 +57,7 @@ export function resolveBrandingAssets(branding: AppBranding, moduleUrl: URL, wat
             dark: branding.logo.dark ? asset(branding.logo.dark) : undefined,
         },
         loadingIcon: branding.loadingIcon && {
+            ...branding.loadingIcon,
             light: asset(branding.loadingIcon.light),
             dark: branding.loadingIcon.dark ? asset(branding.loadingIcon.dark) : undefined,
         },

@@ -26,7 +26,7 @@ describe('branding Vite adapter', () => {
             {
                 name: 'A & B',
                 logo: { light: './assets/logo.svg' },
-                loadingIcon: { light: './assets/logo.svg', dark: './assets/logo.svg' },
+                loadingIcon: { light: './assets/logo.svg', dark: './assets/logo.svg', animation: 'none' },
                 font: { family: 'Brand', regular: './assets/font.woff2' },
                 favicon: './assets/logo.svg',
             },
@@ -37,7 +37,11 @@ describe('branding Vite adapter', () => {
         const code = plugin.load.call({ addWatchFile }, id) ?? '';
         const resolved = JSON.parse(code.slice('export default '.length, -1));
         expect(resolved.logo.light).toMatch(/^data:image\/svg\+xml;base64,/);
-        expect(resolved.loadingIcon).toEqual({ light: resolved.logo.light, dark: resolved.logo.light });
+        expect(resolved.loadingIcon).toEqual({
+            light: resolved.logo.light,
+            dark: resolved.logo.light,
+            animation: 'none',
+        });
         expect(resolved.font.regular).toBe('data:font/woff2;base64,Zm9udC1ieXRlcw==');
         expect(addWatchFile).toHaveBeenCalledTimes(2);
         const html = plugin.transformIndexHtml(

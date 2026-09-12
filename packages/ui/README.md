@@ -252,3 +252,19 @@ to enable `VITE_AUTH_MODE` (`firebase` or `central`) and the `VITE_FIREBASE_API_
 Complete Firebase settings select Firebase mode when the mode is omitted; partial settings fail at startup.
 Valid injected runtime configuration takes precedence, while explicit `props.firebase` and `window.AUTH_MODE`
 retain their existing priority. Set `props.endpoints.auth` separately for the central authentication URL.
+
+Loading-logo motion is configurable in `loadingIcon`, for both pre-React boot and authentication loading:
+
+```ts
+loadingIcon: {
+    light: './assets/icon.svg',
+    animation: 'my-app-dim 2s ease-in-out infinite',
+    keyframes: '@keyframes my-app-dim { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }',
+},
+```
+
+`animation` accepts a CSS animation shorthand; `keyframes` contains optional trusted app-authored CSS
+and is embedded before first paint. Use app-specific keyframe names to avoid collisions.
+Set `animation: 'none'` for a static logo. Omitting it preserves the default spin/pulse treatment;
+a custom animation replaces both. Reduced-motion preferences disable loading-logo animation.
+This changes logo motion only; permission/recovery layout and explicitly overridden screens remain app-controlled.

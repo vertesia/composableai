@@ -36,6 +36,32 @@ describe('shared app branding', () => {
         expect(css).not.toContain('.vbrand {');
     });
 
+    it('shares custom animation and keyframes between React and boot, and supports static logos', () => {
+        const brand = {
+            name: 'Test',
+            loadingIcon: {
+                light: 'icon.svg',
+                animation: 'example-dim 2s ease-in-out infinite',
+                keyframes: '@keyframes example-dim { 50% { opacity: 0.35; } }',
+            },
+        };
+        for (const css of [renderBrandStyles(brand), brandedBootOptions(brand).styles]) {
+            expect(css).toContain('--vertesia-loading-animation:example-dim 2s ease-in-out infinite;');
+            expect(css).toContain('--vertesia-loading-pulse-animation:none;');
+            expect(css).toContain(brand.loadingIcon.keyframes);
+        }
+        expect(renderBrandStyles({ name: 'Default' })).not.toContain('--vertesia-loading-animation:');
+        expect(renderBrandStyles({ ...brand, loadingIcon: { light: 'icon.svg', animation: 'none' } })).toContain(
+            '--vertesia-loading-animation:none;',
+        );
+        expect(() =>
+            renderBrandStyles({ ...brand, loadingIcon: { light: 'icon.svg', animation: 'none;}body{}' } }),
+        ).toThrow('Invalid loading icon animation');
+        expect(() =>
+            renderBrandStyles({ ...brand, loadingIcon: { light: 'icon.svg', keyframes: '</style>' } }),
+        ).toThrow('Invalid loading icon keyframes');
+    });
+
     it('rejects CSS declaration injection and escapes font names', () => {
         expect(() =>
             renderBrandStyles({ name: 'Test', colors: { light: { background: 'red;}body{display:none' } } }),

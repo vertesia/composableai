@@ -62,8 +62,10 @@ export function DefaultAuthLoadingScreen({
                 }}
                 className="flex w-full h-full items-center justify-center"
             >
-                <div className="animate-[spin_4s_linear_infinite]">
-                    <div className="animate-pulse rounded-full bg-transparent">{loadingIcon || <LoadingIcon />}</div>
+                <div className="animate-[var(--vertesia-loading-animation,spin_4s_linear_infinite)] motion-reduce:animate-none">
+                    <div className="animate-[var(--vertesia-loading-pulse-animation,pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite)] motion-reduce:animate-none rounded-full bg-transparent">
+                        {loadingIcon || <LoadingIcon />}
+                    </div>
                 </div>
             </div>
         </div>
