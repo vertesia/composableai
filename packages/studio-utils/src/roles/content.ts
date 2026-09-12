@@ -3,7 +3,7 @@ import { AbacRole, type Role, type RolePartition } from './classes.js';
 
 const ContentRoleDomain: RoleDomain = 'content';
 
-const APPLICABLE_SCOPES: readonly AbacScope[] = ['document', 'collection'];
+const APPLICABLE_SCOPES: readonly AbacScope[] = ['document', 'collection', 'subject'];
 
 /**
  * Names of roles owned by the `content` domain. Apply to ResourceSet ACEs

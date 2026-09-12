@@ -104,7 +104,7 @@ export enum AccessControlPrincipalType {
  * (e.g. tasks), extend this list with the new scope(s) AND extend `RoleDomain`
  * with the new domain.
  */
-export const AbacScopes = ['document', 'collection', 'task'] as const;
+export const AbacScopes = ['document', 'collection', 'subject', 'task'] as const;
 
 /**
  * Logical grouping of roles by the service area that owns them. Declared as a

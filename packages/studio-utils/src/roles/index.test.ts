@@ -176,7 +176,7 @@ describe('Role instances', () => {
 
     it('AbacRole carries applicableScopes', () => {
         const reader = getRoleByName(ContentRoleNames.content_reader) as AbacRole;
-        expect(reader.applicableScopes).toEqual(['document', 'collection']);
+        expect(reader.applicableScopes).toEqual(['document', 'collection', 'subject']);
     });
 
     it('AbacRole permissions are bare verbs, not Permission enum values', () => {

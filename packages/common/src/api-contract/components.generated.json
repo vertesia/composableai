@@ -1080,6 +1080,7 @@
     "enum": [
       "document",
       "collection",
+      "subject",
       "task"
     ]
   },
@@ -24313,6 +24314,9 @@
         "type": "object",
         "additionalProperties": true
       },
+      "security": {
+        "$ref": "#/components/schemas/StringArrayMap"
+      },
       "revision": {
         "type": "integer",
         "minimum": 0,
@@ -24346,6 +24350,7 @@
       "name",
       "identifiers",
       "properties",
+      "security",
       "revision",
       "created_at",
       "updated_at",
@@ -24353,6 +24358,15 @@
       "updated_by"
     ],
     "additionalProperties": false
+  },
+  "StringArrayMap": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
   },
   "CreateSubjectPayload": {
     "type": "object",
@@ -24369,6 +24383,9 @@
       "properties": {
         "type": "object",
         "additionalProperties": true
+      },
+      "security": {
+        "$ref": "#/components/schemas/StringArrayMap"
       }
     },
     "required": [
@@ -24409,6 +24426,9 @@
       "properties": {
         "type": "object",
         "additionalProperties": true
+      },
+      "security": {
+        "$ref": "#/components/schemas/StringArrayMap"
       },
       "expected_revision": {
         "type": "integer",
@@ -24516,6 +24536,9 @@
         "type": "object",
         "additionalProperties": true
       },
+      "security": {
+        "$ref": "#/components/schemas/StringArrayMap"
+      },
       "revision": {
         "type": "integer",
         "minimum": 0,
@@ -24552,6 +24575,7 @@
       "name",
       "identifiers",
       "properties",
+      "security",
       "revision",
       "created_at",
       "updated_at",
@@ -28489,15 +28513,6 @@
       "values"
     ],
     "additionalProperties": false
-  },
-  "StringArrayMap": {
-    "type": "object",
-    "additionalProperties": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    }
   },
   "RevisionInfo": {
     "type": "object",

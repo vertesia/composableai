@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { StringArrayMapSchema } from './dashboard.js';
 
 const idSchema = z.string().min(1).max(256);
 const jsonObjectSchema = z.record(z.string(), z.unknown());
@@ -50,6 +51,7 @@ export const SubjectSchema = z
         name: z.string(),
         identifiers: SubjectIdentifierArraySchema,
         properties: jsonObjectSchema,
+        security: StringArrayMapSchema,
         revision: revisionSchema,
         ...auditFields,
     })
@@ -60,6 +62,7 @@ export const CreateSubjectPayloadSchema = z
         name: z.string(),
         identifiers: SubjectIdentifierArraySchema.optional(),
         properties: jsonObjectSchema.optional(),
+        security: StringArrayMapSchema.optional(),
     })
     .meta({ id: 'CreateSubjectPayload' });
 export const SubjectReadQuerySchema = z
