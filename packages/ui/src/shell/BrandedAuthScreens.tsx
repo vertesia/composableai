@@ -1,6 +1,6 @@
 import { DefaultPermissionLoadingScreen, type PermissionLoadingScreenProps } from '@vertesia/ui/features';
 import { UITranslationOverrides } from '@vertesia/ui/i18n';
-import { createContext, type ReactNode, useContext, useId, useMemo } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useId, useMemo, useState } from 'react';
 import { type AppBranding, renderBrandStyles } from '../boot/branding.js';
 import { DefaultSignInScreen, type SignInScreenViewProps } from './login/SigninScreen';
 import { type AuthLoadingScreenProps, DefaultAuthLoadingScreen, LoadingAnimation } from './SplashScreen';
@@ -76,7 +76,13 @@ export function BrandedPermissionLoadingScreen(props: PermissionLoadingScreenPro
         <DefaultPermissionLoadingScreen
             {...props}
             description={props.status === 'error' ? props.description : (brand.copy?.loading ?? props.description)}
-            loadingIcon={props.loadingIcon ?? (brand.loadingIcon ? <BrandLoadingIcon brand={brand} /> : undefined)}
+            loadingIcon={
+                props.status === 'error' ? (
+                    (props.loadingIcon ?? (brand.loadingIcon ? <BrandLoadingIcon brand={brand} /> : undefined))
+                ) : (
+                    <BrandedLoadingIndicator loadingIcon={props.loadingIcon} />
+                )
+            }
         />
     );
 }
@@ -88,8 +94,19 @@ export const brandedAuthScreens: AuthScreens = {
 };
 
 /** Brand-aware loading indicator that stays inside its container instead of covering the app shell. */
-export function BrandedLoadingIndicator({ loadingIcon }: AuthLoadingScreenProps) {
+export function BrandedLoadingIndicator({ loadingIcon, delayMs = 0 }: AuthLoadingScreenProps & { delayMs?: number }) {
     const brand = useContext(BrandingContext);
+    const [visible, setVisible] = useState(delayMs <= 0);
+    useEffect(() => {
+        if (delayMs <= 0) {
+            setVisible(true);
+            return;
+        }
+        setVisible(false);
+        const timer = setTimeout(() => setVisible(true), delayMs);
+        return () => clearTimeout(timer);
+    }, [delayMs]);
+    if (!visible) return null;
     return (
         <div role="status" aria-label={brand.copy?.loading ?? 'Loading'}>
             <LoadingAnimation

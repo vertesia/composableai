@@ -1,6 +1,5 @@
 import { useUserSession } from '@vertesia/ui/session';
-import { AnimatePresence, motion } from 'framer-motion';
-import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 export interface AuthLoadingScreenProps {
     loadingIcon?: ReactNode;
@@ -13,36 +12,12 @@ interface SplashScreenProps {
 }
 export function SplashScreen({ icon: Icon, Screen, Presentation = DefaultAuthLoadingScreen }: SplashScreenProps) {
     const { isLoading, authToken } = useUserSession();
-    const [show, setShow] = useState(true);
-
-    useEffect(() => {
-        if (!isLoading) {
-            setShow(false);
-        }
-    }, [isLoading]);
-
-    // The permission gate owns the loading UI once a token is available.
-    // Skip the exit animation too, so two loading indicators never overlap.
-    if (authToken) return null;
+    // Hand off synchronously: an exiting splash must never cover the next view.
+    if (authToken || !isLoading) return null;
 
     // Custom screens own the entire page, including their animation and positioning.
-    if (Screen) return isLoading ? <Screen loadingIcon={Icon} /> : null;
-
-    return (
-        <AnimatePresence>
-            {show && (
-                <motion.div
-                    style={{ zIndex: 999999, position: 'fixed', inset: 0 }}
-                    className="fixed inset-x-0 inset-y-0"
-                    initial={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ ease: 'easeIn', duration: 0.5 }}
-                >
-                    <Presentation loadingIcon={Icon} />
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
+    const LoadingScreen = Screen ?? Presentation;
+    return <LoadingScreen loadingIcon={Icon} />;
 }
 
 /** Presentation shared by the default shell and configured branding. */

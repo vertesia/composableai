@@ -1,10 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DefaultPermissionLoadingScreen } from '@vertesia/ui/features';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     AppBrandingProvider,
     BrandedAuthLoadingScreen,
+    BrandedLoadingIndicator,
     BrandedPermissionLoadingScreen,
     BrandedSignInScreen,
 } from './BrandedAuthScreens';
@@ -146,5 +147,35 @@ describe('default layout parity', () => {
             </AppBrandingProvider>,
         );
         expect(view.container.querySelector('[data-vbrand] > div')?.outerHTML).toBe(expected);
+    });
+});
+
+describe('delayed resource loading indicator', () => {
+    it('avoids flashing on fast loads and cancels its timer on handoff', () => {
+        vi.useFakeTimers();
+        try {
+            const view = render(<BrandedLoadingIndicator delayMs={200} />);
+            expect(screen.queryByRole('status')).toBeNull();
+            act(() => vi.advanceTimersByTime(100));
+            view.unmount();
+            act(() => vi.advanceTimersByTime(200));
+            expect(screen.queryByRole('status')).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('shows a slow load and disappears immediately when replaced by the view', () => {
+        vi.useFakeTimers();
+        try {
+            const view = render(<BrandedLoadingIndicator delayMs={200} />);
+            act(() => vi.advanceTimersByTime(200));
+            expect(screen.getByRole('status')).toBeTruthy();
+            view.rerender(<main>Resource view</main>);
+            expect(screen.queryByRole('status')).toBeNull();
+            expect(screen.getByText('Resource view')).toBeTruthy();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

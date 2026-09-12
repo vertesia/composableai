@@ -7,6 +7,22 @@ const session = { isLoading: true, authToken: undefined as AuthTokenPayload | un
 vi.mock('@vertesia/ui/session', () => ({ useUserSession: () => session }));
 
 describe('SplashScreen handoff', () => {
+    it('never mounts a splash over an already ready sign-in view', () => {
+        session.isLoading = false;
+        session.authToken = undefined;
+        render(<SplashScreen icon={<span>Startup indicator</span>} />);
+        expect(screen.queryByText('Startup indicator')).toBeNull();
+    });
+
+    it('removes the default splash immediately when loading completes without a token', () => {
+        session.isLoading = true;
+        session.authToken = undefined;
+        const view = render(<SplashScreen icon={<span>Startup indicator</span>} />);
+        session.isLoading = false;
+        view.rerender(<SplashScreen icon={<span>Startup indicator</span>} />);
+        expect(screen.queryByText('Startup indicator')).toBeNull();
+    });
+
     it.each([true, false])('removes the splash immediately when a token arrives with isLoading=%s', (isLoading) => {
         session.isLoading = true;
         session.authToken = undefined;

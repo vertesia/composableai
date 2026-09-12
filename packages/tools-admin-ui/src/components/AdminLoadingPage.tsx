@@ -6,7 +6,7 @@ export function AdminLoadingPage({ fullPage = false }: { fullPage?: boolean }) {
         <div
             className={`flex flex-1 items-center justify-center bg-background text-foreground ${fullPage ? 'min-h-dvh' : 'min-h-64'}`}
         >
-            <BrandedLoadingIndicator />
+            <BrandedLoadingIndicator delayMs={200} />
         </div>
     );
 }
