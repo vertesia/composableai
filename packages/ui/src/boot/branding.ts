@@ -85,8 +85,8 @@ ${font.bold ? `@font-face { font-family:${cssString(font.family)};src:url(${cssS
 .vbrand-status { text-align:center; }
 .vbrand input:focus { border-color:var(--brand-accent);--tw-ring-color:var(--brand-accent); }
 .vbrand-spinner { width:2rem;height:2rem;border:3px solid color-mix(in srgb,var(--brand-foreground) 15%,transparent);border-block-start-color:var(--brand-accent);border-radius:50%;animation:vbrand-spin 1s linear infinite; }
-.vbrand-reload { background:var(--brand-button);color:var(--brand-buttonText);padding:.75rem 1rem;border:0;border-radius:.375rem;font:inherit;cursor:pointer; }
-.vbrand-reload:focus-visible { outline:2px solid var(--brand-accent);outline-offset:3px; }
+.vbrand .vboot-btn { background:var(--brand-button);color:var(--brand-buttonText); }
+.vbrand .vboot-btn:focus-visible { outline:2px solid var(--brand-accent);outline-offset:3px; }
 @keyframes vbrand-spin { to { transform:rotate(360deg); } }
 @media(prefers-reduced-motion:reduce) { .vbrand-spinner { animation:none; } }
 `.replace(/\.vbrand(?![\w-])/g, selector);
@@ -105,8 +105,8 @@ export function brandedBootOptions(brand: AppBranding) {
             `<main class="vbrand"><div class="vbrand-panel" role="status" aria-live="polite">
 ${renderBrandLogo(brand)}<h1 class="vbrand-heading">${escapeBrandHtml(brand.name)}</h1>
 <span class="vbrand-spinner" aria-hidden="true"></span><p>${escapeBrandHtml(brand.copy?.loading ?? 'Loading your workspace…')}</p>
-<div id="loading-slow-notice" style="display:none">${escapeBrandHtml(brand.copy?.slowLoading ?? 'This is taking longer than usual.')}
-<div id="loading-slow-reload" style="display:none"><button type="button" class="vbrand-reload" data-boot-reload>${escapeBrandHtml(brand.copy?.reload ?? 'Reload page')}</button></div></div>
+<div id="loading-slow-notice" class="vboot-slow" style="display:none"><p>${escapeBrandHtml(brand.copy?.slowLoading ?? 'This is taking longer than usual.')}</p>
+<div id="loading-slow-reload" style="display:none"><button type="button" class="vboot-btn" data-boot-reload>${escapeBrandHtml(brand.copy?.reload ?? 'Reload page')}</button></div></div>
 </div></main>`,
         styles: `${renderBrandStyles(brand)}\n:root{--vertesia-boot-background:${brand.colors?.light?.background ?? '#fff'}}:root.dark{--vertesia-boot-background:${brand.colors?.dark?.background ?? '#0a0a0a'}}\n${brand.boot?.styles ?? ''}`,
     };

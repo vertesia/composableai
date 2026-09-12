@@ -14,7 +14,9 @@ describe('shared app branding', () => {
         expect(root.querySelector('script')).toBeNull();
         expect(root.querySelector('img')?.getAttribute('onerror')).toBeNull();
         expect(root.querySelector('h1')?.textContent).toBe('<script>alert(1)</script>');
-        expect(root.querySelector('[data-boot-reload]')).toBeTruthy();
+        expect(root.querySelector('[data-boot-reload]')?.className).toBe('vboot-btn');
+        expect(root.querySelector('#loading-slow-notice')?.className).toBe('vboot-slow');
+        expect(root.querySelector('#loading-slow-notice p')).toBeTruthy();
         expect(root.querySelector('#loading-slow-reload')?.getAttribute('style')).toBe('display:none');
         const html = injectBootScreenHtml('<html><head></head><body><div id="root"></div></body></html>', options);
         expect(html).not.toContain('<script>alert(1)</script>');
