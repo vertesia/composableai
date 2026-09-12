@@ -164,6 +164,11 @@ wiring (the CLI does not rewrite an already generated app):
 The CLI's development mode uses `https://auth.dev1.vertesia.io/` with its development API endpoints.
 The auth URL selects the central broker; `VITE_VERTESIA_STS_URL` still selects the token service.
 
+The bootstrap CLI uses the same `~/.vertesia/dev` marker file as the Vertesia CLI. When present,
+its region menu also offers `dev1` and `dev2`, with their matching API and STS endpoints.
+`dev2` currently uses the shared central auth broker. The marker only exposes region choices;
+`--dev` remains a separate scaffold option that applies its development dependency and endpoint defaults.
+
 To use direct Firebase authentication, contact Vertesia. Vertesia must configure it for your
 deployment and provide the required settings. Central authentication remains the default.
 

@@ -499,6 +499,10 @@ Valid gateway-injected runtime authentication configuration takes precedence ove
 The existing `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`
 remain required for the app's API endpoints.
 
+If the Vertesia CLI marker file `~/.vertesia/dev` exists, the bootstrap region menu also offers
+`dev1` and `dev2`. Their API and STS endpoints are set automatically; `dev2` uses the shared central
+auth broker. The marker does not enable the bootstrap's separate `--dev` scaffold settings.
+
 ### Vercel (serverless)
 
 ```bash
