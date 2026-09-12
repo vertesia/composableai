@@ -149,15 +149,20 @@ and default workspace settings below. No environment values should be hardcoded 
 
 ### 5. Choose authentication and development defaults
 
-The default remains central authentication. To explicitly select a central broker:
+Central authentication is the default. The 1.6 bootstrap CLI asks for your region and writes
+`VITE_AUTH_SERVER_URL` alongside the Studio, Zeno, and STS URLs in `.env.app`.
+Newly generated apps need no manual authentication URL setup.
 
-```ini
-VITE_AUTH_MODE=central
-VITE_AUTH_SERVER_URL=https://your-auth-server.example.com/
-```
+For an existing 1.5 app, add the regional auth setting to its existing `.env.app` when adopting this
+wiring (the CLI does not rewrite an already generated app):
 
-Unlike the 1.5 guide's configuration model, the central broker URL is now configurable. This is
-separate from `VITE_VERTESIA_STS_URL`, which still selects the token service.
+| Region | `VITE_AUTH_SERVER_URL` |
+| --- | --- |
+| US (`us1`) | `https://auth.us1.vertesia.io/` |
+| Europe (`eu1`) | `https://auth.eu1.vertesia.io/` |
+
+The CLI's development mode uses `https://auth.dev1.vertesia.io/` with its development API endpoints.
+The auth URL selects the central broker; `VITE_VERTESIA_STS_URL` still selects the token service.
 
 To use direct Firebase authentication, contact Vertesia. Vertesia must configure it for your
 deployment and provide the required settings. Central authentication remains the default.

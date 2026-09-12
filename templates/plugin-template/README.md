@@ -491,15 +491,10 @@ rebuild/redeploy after changing Vercel settings. These are public browser settin
 Central authentication is the default. To use direct Firebase authentication, contact Vertesia.
 Vertesia must configure it for your deployment and provide the required settings.
 
-For central authentication:
-
-```dotenv
-VITE_AUTH_MODE=central
-VITE_AUTH_SERVER_URL=https://your-auth-server.example.com/
-```
-
-`VITE_AUTH_SERVER_URL` sets the central sign-in/logout broker. With no authentication settings,
-the existing central-auth default is retained. Explicit central mode ignores Firebase build settings.
+The bootstrap CLI asks for your region and writes `VITE_AUTH_SERVER_URL` to `.env.app` alongside
+`VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`.
+No manual auth URL setup is needed for a newly generated app. The auth URL selects the regional
+central sign-in/logout broker; central authentication remains the default.
 Valid gateway-injected runtime authentication configuration takes precedence over build settings.
 The existing `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`
 remain required for the app's API endpoints.

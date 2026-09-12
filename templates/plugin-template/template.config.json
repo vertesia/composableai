@@ -8,7 +8,8 @@
     "answers": {
       "STUDIO_URL": "https://studio-server-dev-main.api.dev1.vertesia.io",
       "ZENO_URL": "https://zeno-server-dev-main.api.dev1.vertesia.io",
-      "STS_URL": "https://sts.dev1.vertesia.io"
+      "STS_URL": "https://sts.dev1.vertesia.io",
+      "AUTH_SERVER_URL": "https://auth.dev1.vertesia.io/"
     },
     "pnpmWorkspace": {
       "minimumReleaseAgeExclude": ["@vertesia/*", "@llumiverse/*"]
@@ -147,6 +148,14 @@
       "map": {
         "us1": "https://api.vertesia.io",
         "eu1": "https://api.eu1.vertesia.io"
+      }
+    },
+    "AUTH_SERVER_URL": {
+      "from": "REGION",
+      "transform": "map",
+      "map": {
+        "us1": "https://auth.us1.vertesia.io/",
+        "eu1": "https://auth.eu1.vertesia.io/"
       }
     },
     "STS_URL": {
