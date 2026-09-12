@@ -32906,8 +32906,7 @@
           "followups",
           "approvals_requested",
           "approvals_denied",
-          "stop_requests",
-          "stall_trips"
+          "stop_requests"
         ],
         "additionalProperties": false
       },
@@ -35611,8 +35610,6 @@
           "approvalsRequested",
           "approvalsDenied",
           "stopRequests",
-          "stallCorrectives",
-          "stallTrips",
           "followupAfterAnswer",
           "severity",
           "flags",

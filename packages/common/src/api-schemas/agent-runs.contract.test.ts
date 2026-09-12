@@ -100,6 +100,11 @@ describe('agent run evaluation API contracts', () => {
         expect(validateApiRequest('IngestAgentEventsPayload', { events: [turnEvaluation] }).valid).toBe(true);
     });
 
+    it('accepts a turn_evaluation event from a producer that predates the stall counters', () => {
+        const { stallCorrectives: _c, stallTrips: _t, ...legacy } = turnEvaluation;
+        expect(validateApiRequest('IngestAgentEventsPayload', { events: [legacy] }).valid).toBe(true);
+    });
+
     it('rejects a turn_evaluation event with an undeclared field', () => {
         const events = [{ ...turnEvaluation, verdict: 'success' }];
         expect(validateApiRequest('IngestAgentEventsPayload', { events }).valid).toBe(false);
@@ -194,6 +199,23 @@ describe('agent run evaluation API contracts', () => {
             updated_at: turnEvaluation.timestamp,
         };
         expect(validateApiRequest('UpdateAgentRunStatusPayload', { evaluation_rollup: rollup }).valid).toBe(true);
+        // Rollups stored or sent before the stall counter existed keep validating.
+        const { stall_trips: _s, ...legacyTotals } = rollup.totals;
+        expect(
+            validateApiRequest('UpdateAgentRunStatusPayload', {
+                evaluation_rollup: { ...rollup, totals: legacyTotals },
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('AgentRunEvaluation', {
+                rev: 1,
+                rollup: { ...rollup, totals: legacyTotals },
+                severity: 'medium',
+                flags: ['unrecovered_tool'],
+                contradicted: false,
+                updated_at: turnEvaluation.timestamp,
+            }).valid,
+        ).toBe(true);
         expect(
             validateApiRequest('UpdateAgentRunStatusPayload', {
                 evaluation_rollup: { ...rollup, feedback_counts: { up: 1, down: 0 } },

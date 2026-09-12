@@ -214,7 +214,8 @@ const AgentRunEvaluationTotalsSchema = z.strictObject({
     approvals_requested: z.number().int(),
     approvals_denied: z.number().int(),
     stop_requests: z.number().int(),
-    stall_trips: z.number().int(),
+    /** Absent on rollups written before the stall counters existed; read as 0. */
+    stall_trips: z.number().int().optional(),
 });
 
 /**
@@ -423,8 +424,9 @@ const TurnEvaluationEventSchema = z.strictObject({
     approvalsRequested: z.number().int(),
     approvalsDenied: z.number().int(),
     stopRequests: z.number().int(),
-    stallCorrectives: z.number().int(),
-    stallTrips: z.number().int(),
+    /** Absent on events from producers that predate the stall counters; read as 0. */
+    stallCorrectives: z.number().int().optional(),
+    stallTrips: z.number().int().optional(),
     followupAfterAnswer: z.boolean(),
     severity: EvaluationSeveritySchema,
     flags: z.array(TurnEvaluationFlagSchema),

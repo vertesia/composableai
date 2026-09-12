@@ -406,10 +406,13 @@ export interface TurnEvaluationEvent extends BaseAgentEvent {
     approvalsRequested: number;
     approvalsDenied: number;
     stopRequests: number;
-    /** Stall correctives injected: the model was warned it kept repeating the same call */
-    stallCorrectives: number;
-    /** Stall circuit-breaker trips: the model ignored the corrective and the loop was stopped */
-    stallTrips: number;
+    /**
+     * Stall correctives injected: the model was warned it kept repeating the same call.
+     * Absent on events from producers that predate the counter; read as 0.
+     */
+    stallCorrectives?: number;
+    /** Stall circuit-breaker trips: the model ignored the corrective and the loop was stopped. Same caveat. */
+    stallTrips?: number;
     /** An unprompted user message after an answer was followed by substantive tool work */
     followupAfterAnswer: boolean;
     severity: EvaluationSeverity;
