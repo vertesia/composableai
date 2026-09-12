@@ -112,7 +112,6 @@ function SigninScreenImpl({
     suppressAuthError,
     View,
 }: SigninScreenProps & { suppressAuthError?: boolean }) {
-    const { t } = useUITranslation();
     const { isLoading, user, authError, signOut } = useUserSession();
     const { trackEvent } = useUXTracking();
 
@@ -290,17 +289,7 @@ function SigninScreenImpl({
     }
 
     const notice = authError && !isDedicatedAuthError(authError) && !isInviteRequiredError(authError) && (
-        <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
-            <div>
-                {t('auth.signInError')}
-                <br />
-                {t('auth.signInErrorContact')}
-                <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
-                    support@vertesiahq.com
-                </a>
-                {t('auth.signInErrorPersists')}
-            </div>
-        </div>
+        <SignInErrorNotice />
     );
 
     if (View) {
@@ -361,6 +350,24 @@ export function DefaultSignInScreen({
             >
                 {children}
             </SignInPageShell>
+        </div>
+    );
+}
+
+/** Shared generic authentication error notice. */
+export function SignInErrorNotice() {
+    const { t } = useUITranslation();
+    return (
+        <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
+            <div>
+                {t('auth.signInError')}
+                <br />
+                {t('auth.signInErrorContact')}
+                <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
+                    support@vertesiahq.com
+                </a>
+                {t('auth.signInErrorPersists')}
+            </div>
         </div>
     );
 }

@@ -268,3 +268,23 @@ and is embedded before first paint. Use app-specific keyframe names to avoid col
 Set `animation: 'none'` for a static logo. Omitting it preserves the default spin/pulse treatment;
 a custom animation replaces both. Reduced-motion preferences disable loading-logo animation.
 This changes logo motion only; permission/recovery layout and explicitly overridden screens remain app-controlled.
+
+### Auth screen previews
+
+In `pnpm dev`, open `/?__vertesia_auth=email`. The corner selector links to all shared login,
+redirect-pending, loading, and recovery states. Direct links use these values:
+
+- Before redirect: `email`, `providers`, `tenant`, `returning`, `pending`, `blocked`.
+- After redirect: `loading`, `signup`, `restricted`, `scope-project`, `scope-account`, `no-account`,
+  `credentials`, `service`, `auth-error`.
+- Permissions: `permissions`, `permission-retry`, `permission-error`, `permission-denied`,
+  `permission-session-expired`.
+
+`/?__vertesia_boot=slow` keeps the real pre-React loader visible through its slow/reload timers.
+Append `&__vertesia_boot_theme=light` or `dark` to select a theme. These are visual fixtures,
+not an authentication round-trip test: built-in preview forms are inert and no session provider is mounted.
+Branding and optional screen overrides are reused. Custom overrides should also avoid effects in preview.
+The template enables previews only in Vite development; production ignores these selectors.
+
+Other hosts can share the same fixtures using `mountAuthScreenPreview(container, screen, branding?, screens?)`
+from `@vertesia/ui/shell`, invoked from an `import.meta.env.DEV` branch before mounting their auth providers.
