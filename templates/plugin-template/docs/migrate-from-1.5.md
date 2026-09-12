@@ -26,9 +26,7 @@ and deployment settings; do not replace the entire app with a fresh scaffold.
 
 Upgrade the app's `@vertesia/*` dependencies and dev dependencies to the same published 1.6 release
 cohort, including `@vertesia/ui`, `@vertesia/tools-admin-ui`, `@vertesia/client`, `@vertesia/common`,
-`@vertesia/tools-sdk`, `@vertesia/build-tools`, and `@vertesia/plugin-builder`. Reinstall with your
-package manager and commit its updated lockfile. Do not copy the repository's `workspace:*` versions
-into an independently deployed app.
+`@vertesia/tools-sdk`, `@vertesia/build-tools`, and `@vertesia/plugin-builder`.
 
 The new template imports exports that older packages do not provide. In particular, the updated admin
 UI requires `BrandedLoadingIndicator` from the matching UI package. Use a published 1.6 prerelease if
