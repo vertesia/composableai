@@ -107,6 +107,8 @@ function buildRuntimeConfig(env?: AppBuildEnvironment): VertesiaRuntimeConfig | 
     if (mode && mode !== 'firebase' && mode !== 'central') {
         throw new Error('VITE_AUTH_MODE must be firebase or central');
     }
+    // Firebase build settings are only consumed after an explicit opt-in.
+    if (!mode) return undefined;
     if (mode === 'central') return { authMode: 'central' };
     const fields = {
         apiKey: 'VITE_FIREBASE_API_KEY',
@@ -114,7 +116,6 @@ function buildRuntimeConfig(env?: AppBuildEnvironment): VertesiaRuntimeConfig | 
         projectId: 'VITE_FIREBASE_PROJECT_ID',
         appId: 'VITE_FIREBASE_APP_ID',
     };
-    if (!mode && !Object.values(fields).some((name) => value(name))) return undefined;
     const missing = Object.values(fields).filter((name) => !value(name));
     if (missing.length) {
         throw new Error(`Firebase authentication requires: ${missing.join(', ')}`);

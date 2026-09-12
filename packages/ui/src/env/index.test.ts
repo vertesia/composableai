@@ -103,13 +103,23 @@ describe('VertesiaEnvironment build configuration', () => {
 
     afterEach(() => vi.unstubAllGlobals());
 
-    it('enables Firebase from complete build settings without requiring an explicit mode', () => {
+    it('enables Firebase only with an explicit mode and complete build settings', () => {
         vi.stubGlobal('window', {});
-        const env = new VertesiaEnvironment().init(baseProps, buildEnv);
+        const env = new VertesiaEnvironment().init(baseProps, { ...buildEnv, VITE_AUTH_MODE: 'firebase' });
         expect(env.firebase?.apiKey).toBe('build-key');
         expect(env.firebase?.authDomain).toBe('project.firebaseapp.com');
         expect(window.AUTH_MODE).toBe('firebase');
     });
+
+    it.each([buildEnv, { VITE_FIREBASE_API_KEY: 'unused-key' }])(
+        'retains central auth when Firebase values exist without an explicit mode',
+        (settings) => {
+            vi.stubGlobal('window', {});
+            const env = new VertesiaEnvironment().init(baseProps, settings);
+            expect(env.firebase).toBeUndefined();
+            expect(window.AUTH_MODE).toBeUndefined();
+        },
+    );
 
     it('allows explicit central mode even with Firebase build settings', () => {
         vi.stubGlobal('window', {});
@@ -118,11 +128,11 @@ describe('VertesiaEnvironment build configuration', () => {
         expect(window.AUTH_MODE).toBe('central');
     });
 
-    it.each(['firebase', ''])('rejects incomplete Firebase settings in mode %s', (mode) => {
+    it('rejects incomplete settings when Firebase is selected', () => {
         vi.stubGlobal('window', {});
         expect(() =>
             new VertesiaEnvironment().init(baseProps, {
-                VITE_AUTH_MODE: mode,
+                VITE_AUTH_MODE: 'firebase',
                 VITE_FIREBASE_API_KEY: 'key',
             }),
         ).toThrow('VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID');

@@ -2,6 +2,11 @@
 
 A unified template for building Vertesia plugins with a **Hono tool server** (backend) and **React UI plugin** (frontend), built and deployed as a single unit.
 
+## Upgrading an existing app
+
+- [From 1.5 to 1.6: authentication, branding, and workspace defaults](docs/migrate-from-1.5.md)
+- [From 1.4 to 1.5: iframe hosting and configurable auth](docs/migrate-from-1.4.md)
+
 ## What You Can Build
 
 - **Tools** -- executable functions invoked by AI agents (API integrations, data processing)
@@ -493,8 +498,9 @@ VITE_FIREBASE_APP_ID=your-web-app-id
 VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
 ```
 
-All four Firebase fields are required. A complete Firebase configuration also selects Firebase mode
-when `VITE_AUTH_MODE` is omitted; partial settings or an invalid mode produce a startup error.
+Central authentication is the default. Firebase requires an explicit `VITE_AUTH_MODE=firebase`
+and all four Firebase fields; incomplete settings in Firebase mode or an invalid mode produce a startup error.
+Firebase build settings alone do not switch authentication modes.
 The Firebase project must be accepted by your configured STS endpoint.
 
 For central authentication:
