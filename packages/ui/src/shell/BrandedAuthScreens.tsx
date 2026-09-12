@@ -3,7 +3,7 @@ import { UITranslationOverrides } from '@vertesia/ui/i18n';
 import { createContext, type ReactNode, useContext, useId, useMemo } from 'react';
 import { type AppBranding, renderBrandStyles } from '../boot/branding.js';
 import { DefaultSignInScreen, type SignInScreenViewProps } from './login/SigninScreen';
-import { type AuthLoadingScreenProps, DefaultAuthLoadingScreen } from './SplashScreen';
+import { type AuthLoadingScreenProps, DefaultAuthLoadingScreen, LoadingAnimation } from './SplashScreen';
 import type { AuthScreens } from './VertesiaShell';
 
 const BrandingContext = createContext<AppBranding>({ name: '' });
@@ -86,3 +86,15 @@ export const brandedAuthScreens: AuthScreens = {
     Loading: BrandedAuthLoadingScreen,
     Permissions: BrandedPermissionLoadingScreen,
 };
+
+/** Brand-aware loading indicator that stays inside its container instead of covering the app shell. */
+export function BrandedLoadingIndicator({ loadingIcon }: AuthLoadingScreenProps) {
+    const brand = useContext(BrandingContext);
+    return (
+        <div role="status" aria-label={brand.copy?.loading ?? 'Loading'}>
+            <LoadingAnimation
+                loadingIcon={loadingIcon ?? (brand.loadingIcon ? <BrandLoadingIcon brand={brand} /> : undefined)}
+            />
+        </div>
+    );
+}
