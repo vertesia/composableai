@@ -140,6 +140,18 @@ describe('agent run evaluation API contracts', () => {
                 score: 0.2,
                 promptVersion: 'v1',
             },
+            {
+                ...base,
+                eventType: 'stall_breaker',
+                action: 'trip',
+                toolNames: ['fetch_document'],
+                repeatCount: 4,
+                stallMeasure: 4,
+                allErrored: false,
+                iteration: 7,
+                interactive: true,
+                workstreamId: 'main',
+            },
         ];
         expect(validateApiRequest('IngestAgentEventsPayload', { events }).valid).toBe(true);
     });

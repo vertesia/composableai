@@ -462,6 +462,19 @@ const TurnJudgementEventSchema = z.strictObject({
     detectorVersion: z.number().int().optional(),
 });
 
+const StallBreakerEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.StallBreaker),
+    action: z.enum(['corrective', 'trip']),
+    toolNames: z.array(z.string()),
+    repeatCount: z.number().int(),
+    stallMeasure: z.number().int(),
+    allErrored: z.boolean(),
+    iteration: z.number().int(),
+    interactive: z.boolean(),
+    workstreamId: z.string(),
+});
+
 export const AgentEventSchema: z.ZodType<AgentEvent> = z
     .discriminatedUnion('eventType', [
         AgentRunStartedEventSchema,
@@ -471,6 +484,7 @@ export const AgentEventSchema: z.ZodType<AgentEvent> = z
         TurnEvaluationEventSchema,
         FeedbackEventSchema,
         TurnJudgementEventSchema,
+        StallBreakerEventSchema,
     ])
     .meta({ id: 'AgentEvent' });
 
