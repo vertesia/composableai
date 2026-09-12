@@ -2,9 +2,9 @@ import branding from 'virtual:vertesia-branding';
 import { Env } from '@vertesia/ui/env';
 import { requestIframeHostAuthToken } from '@vertesia/ui/shell';
 
-const CONFIG__PLUGIN_TITLE = branding.title ?? branding.name;
+const appTitle = branding.title ?? branding.name;
 
-document.title = CONFIG__PLUGIN_TITLE;
+document.title = appTitle;
 
 // Endpoints must be supplied by the build environment via VITE_VERTESIA_*_URL.
 // The appgen live-preview/version-build pipeline injects these — see
@@ -26,7 +26,7 @@ function requiredEnv(name: 'VITE_VERTESIA_STUDIO_URL' | 'VITE_VERTESIA_ZENO_URL'
 
 Env.init(
     {
-        name: CONFIG__PLUGIN_TITLE,
+        name: appTitle,
         version: '1.0.0',
         isLocalDev: true,
         isDocker: true,
