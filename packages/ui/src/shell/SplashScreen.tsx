@@ -1,51 +1,45 @@
 import { useUserSession } from '@vertesia/ui/session';
-import { AnimatePresence, motion } from 'framer-motion';
-import { type ReactNode, useEffect, useState } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+
+export interface AuthLoadingScreenProps {
+    loadingIcon?: ReactNode;
+}
 
 interface SplashScreenProps {
+    Presentation?: ComponentType<AuthLoadingScreenProps>;
+    Screen?: ComponentType<AuthLoadingScreenProps>;
     icon?: ReactNode;
 }
-export function SplashScreen({ icon: Icon }: SplashScreenProps) {
+export function SplashScreen({ icon: Icon, Screen, Presentation = DefaultAuthLoadingScreen }: SplashScreenProps) {
     const { isLoading, authToken } = useUserSession();
-    const [show, setShow] = useState(true);
+    // Hand off synchronously: an exiting splash must never cover the next view.
+    if (authToken || !isLoading) return null;
 
-    useEffect(() => {
-        if (!isLoading) {
-            setShow(false);
-        }
-    }, [isLoading]);
+    // Custom screens own the entire page, including their animation and positioning.
+    const LoadingScreen = Screen ?? Presentation;
+    return <LoadingScreen loadingIcon={Icon} />;
+}
 
-    // The permission gate owns the loading UI once a token is available.
-    // Skip the exit animation too, so two loading indicators never overlap.
-    if (authToken) return null;
-
+/** Presentation shared by the default shell and configured branding. */
+export function DefaultAuthLoadingScreen({
+    loadingIcon,
+    loadingLabel = 'Loading',
+}: AuthLoadingScreenProps & { loadingLabel?: string }) {
     return (
-        <AnimatePresence>
-            {show && (
-                <motion.div
-                    style={{ zIndex: 999999, position: 'fixed', inset: 0 }}
-                    className="fixed inset-x-0 inset-y-0"
-                    initial={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ ease: 'easeIn', duration: 0.5 }}
-                >
-                    <div
-                        style={{
-                            display: 'flex',
-                            width: '100%',
-                            height: '100%',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                        className="flex w-full h-full items-center justify-center"
-                    >
-                        <div className="animate-[spin_4s_linear_infinite]">
-                            <div className="animate-pulse rounded-full bg-transparent">{Icon || <LoadingIcon />}</div>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999999 }} role="status" aria-label={loadingLabel}>
+            <div
+                style={{
+                    display: 'flex',
+                    width: '100%',
+                    height: '100%',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+                className="flex w-full h-full items-center justify-center"
+            >
+                <LoadingAnimation loadingIcon={loadingIcon} />
+            </div>
+        </div>
     );
 }
 
@@ -81,5 +75,16 @@ function LoadingIcon() {
                 strokeLinecap="round"
             />
         </svg>
+    );
+}
+
+/** Shared logo motion for full-screen and in-content loading states. */
+export function LoadingAnimation({ loadingIcon }: AuthLoadingScreenProps) {
+    return (
+        <div className="animate-[var(--vertesia-loading-animation,spin_4s_linear_infinite)] motion-reduce:animate-none">
+            <div className="animate-[var(--vertesia-loading-pulse-animation,pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite)] motion-reduce:animate-none rounded-full bg-transparent">
+                {loadingIcon || <LoadingIcon />}
+            </div>
+        </div>
     );
 }

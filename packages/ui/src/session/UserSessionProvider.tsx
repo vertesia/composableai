@@ -272,6 +272,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             session.setSession = setSession;
             void Env.authTokenProvider()
                 .then(async (injectedToken) => {
+                    if (cancelled) return;
                     if (!injectedToken) {
                         startFirebaseOrCentralAuth();
                         return;
@@ -287,6 +288,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     if (!cancelled) setSession(session.clone());
                 })
                 .catch((err: unknown) => {
+                    if (cancelled) return;
                     if (surfaceAuthError(err)) return;
                     console.warn('Auth: failed to initialize injected auth token', err);
                     Env.logger.warn('Failed to initialize injected auth token', {
@@ -302,6 +304,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 });
             return () => {
                 cancelled = true;
+                hasInitiatedAuthRef.current = false;
                 unsubscribe?.();
             };
         }
@@ -309,6 +312,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         startFirebaseOrCentralAuth();
         return () => {
             cancelled = true;
+            hasInitiatedAuthRef.current = false;
             unsubscribe?.();
         };
     };

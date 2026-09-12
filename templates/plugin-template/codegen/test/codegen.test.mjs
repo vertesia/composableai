@@ -199,7 +199,7 @@ test('appgen Playwright support keeps authenticated output safe and transient ou
     assert.doesNotMatch(playwrightFixture, /new VertesiaClient\(/);
     assert.match(serviceEntry, /globalValues\.__VERTESIA_AUTH_TOKEN__/);
     assert.match(serviceEntry, /const runtimeAuthToken = injectedAuthToken \?\? devAuthToken/);
-    assert.match(serviceEntry, /<VertesiaShell authToken=\{runtimeAuthToken\}>/);
+    assert.match(serviceEntry, /<VertesiaShell\b[^>]*\bauthToken=\{runtimeAuthToken\}[^>]*>/);
     assert.match(gitignore, /pnpm-lock\.yaml/);
     assert.match(gitignore, /test-results\//);
     assert.match(gitignore, /playwright-report\//);
@@ -516,6 +516,26 @@ test('content-app module composes app routes and contributes resources', () => {
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/content-app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/assistant')), false);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/examples')), false);
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
+test('regenerating module wiring preserves app-owned branding and custom screens', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-branding-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        writePackageJson(tmpRoot);
+        const brandingDir = path.join(tmpRoot, 'src/modules/app/branding');
+        fs.mkdirSync(brandingDir, { recursive: true });
+        const config = "export default { name: 'Customer workspace' };\n";
+        const screens = 'export const appAuthScreens = { Loading: CustomLoader };\n';
+        fs.writeFileSync(path.join(brandingDir, 'index.ts'), config);
+        fs.writeFileSync(path.join(brandingDir, 'screens.ts'), screens);
+        runCodegen(tmpRoot, ['content-app']);
+        runCodegen(tmpRoot, ['content-app']);
+        assert.equal(fs.readFileSync(path.join(brandingDir, 'index.ts'), 'utf8'), config);
+        assert.equal(fs.readFileSync(path.join(brandingDir, 'screens.ts'), 'utf8'), screens);
     } finally {
         fs.rmSync(tmpRoot, { recursive: true, force: true });
     }

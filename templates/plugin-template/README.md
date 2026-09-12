@@ -2,6 +2,11 @@
 
 A unified template for building Vertesia plugins with a **Hono tool server** (backend) and **React UI plugin** (frontend), built and deployed as a single unit.
 
+## Upgrading an existing app
+
+- [From 1.5 to 1.6: authentication, branding, and workspace defaults](docs/migrate-from-1.5.md)
+- [From 1.4 to 1.5: iframe hosting and configurable auth](docs/migrate-from-1.4.md)
+
 ## What You Can Build
 
 - **Tools** -- executable functions invoked by AI agents (API integrations, data processing)
@@ -476,6 +481,28 @@ Returns interaction definition, prompts, and schemas (requires authorization).
 
 ## Deployment
 
+### Authentication environment variables
+
+Use `.env.app.local` for local `dev` runs and app builds, or set the same variables in your
+Vercel project's Environment Variables for each deployment environment. No source edits are needed.
+Vite embeds `VITE_*` values in the browser bundle; restart the dev server after local changes and
+rebuild/redeploy after changing Vercel settings. These are public browser settings, not service-account secrets.
+
+Central authentication is the default. To use direct Firebase authentication, contact Vertesia.
+Vertesia must configure it for your deployment and provide the required settings.
+
+The bootstrap CLI asks for your region and writes `VITE_AUTH_SERVER_URL` to `.env.app` alongside
+`VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`.
+No manual auth URL setup is needed for a newly generated app. The auth URL selects the regional
+central sign-in/logout broker; central authentication remains the default.
+Valid gateway-injected runtime authentication configuration takes precedence over build settings.
+The existing `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`
+remain required for the app's API endpoints.
+
+If the Vertesia CLI marker file `~/.vertesia/dev` exists, the bootstrap region menu also offers
+`dev1` and `dev2`. Their API and STS endpoints are set automatically; `dev2` uses the shared central
+auth broker. The marker does not enable the bootstrap's separate `--dev` scaffold settings.
+
 ### Vercel (serverless)
 
 ```bash
@@ -573,3 +600,126 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 ## License
 
 Apache-2.0
+
+## Application branding
+
+Edit **`src/modules/app/branding/index.ts`** and place assets in that directory. Keep the whole
+branding directory when upgrading the template. The SDK supplies the login, authentication-loading,
+permission-loading, and first-paint screens; there are no screen implementations to maintain in the template.
+
+Branding reuses the existing sign-in, animated loading-icon, permission-recovery, and pre-React
+layouts. Configuration changes assets, theme values, and copy while preserving spacing and controls.
+The `loadingIcon` light/dark assets are separate from the sign-in `logo`. Omitted color and font
+settings retain the existing theme. Different layouts require explicit screen or boot HTML overrides.
+
+
+```ts
+import { defineAppBranding } from '@vertesia/ui/boot';
+
+export default defineAppBranding({
+    name: 'My workspace',
+    title: 'My workspace · Sign in',
+    logo: { light: './assets/logo.svg', dark: './assets/logo-dark.svg', alt: 'My company' },
+    favicon: './assets/favicon.svg',
+    loadingIcon: { light: './assets/icon.svg', dark: './assets/icon-dark.svg' },
+    font: { family: 'My Font', regular: './assets/regular.woff2', bold: './assets/bold.woff2' },
+    colors: {
+        light: { background: '#ffffff', foreground: '#18202a', accent: '#b64b00', button: '#18202a', buttonText: '#ffffff' },
+        dark: { background: '#18202a', foreground: '#ffffff', accent: '#ff9900' },
+    },
+    copy: {
+        welcome: 'Welcome to your workspace',
+        emailPlaceholder: 'you@company.com',
+        loading: 'Preparing your workspace…',
+        footer: 'Your company',
+    },
+});
+```
+
+Asset paths are relative to `branding/index.ts`. Local logos, icons, and fonts are embedded as data
+URLs by `createAppBrandingPlugin` from `@vertesia/ui/boot/vite`, so the same assets work under gateway
+version paths without root-relative requests. Missing assets fail the build. HTTPS URLs and data URLs
+are also supported; remote assets keep their normal network dependency. Inline fonts use `font-display: swap`.
+Changing local assets refreshes the dev preview; editing the config restarts Vite through its config dependency tracking.
+
+The plugin supplies `virtual:vertesia-branding` to browser code and generates the pre-React loader from
+the same data. The shell uses scoped CSS and scoped auth copy; it does not mutate another app's translations.
+`accent` is decorative and used for spinners and focus indicators. Set `button` and `buttonText` together
+when overriding button colors, and verify contrast in both themes.
+
+`copy.translations` optionally overrides additional `auth.*` and `signup.*` keys from the UI library.
+Those strings apply in every active language; use this for app-owned wording that is intentionally fixed.
+Unspecified strings retain the selected locale. Preserve interpolation placeholders such as `{{email}}`.
+
+### Fully custom layouts
+
+For layouts that need more than branding, add components beside the branding configuration and export
+optional `SignIn`, `Loading`, and `Permissions` replacements from **`branding/screens.ts`**. The fixed
+entry-point wiring passes these to `VertesiaShell.authScreens`; supplied components take precedence over
+branded defaults. Retain sign-in `children` for the shared tenant-resolution and authentication forms.
+Flow transitions alone do not initiate a provider redirect. Keep permission `onAction` recovery reachable.
+
+For an entirely custom first-paint layout, set `boot: { html: './boot.html', styles: './boot.css' }` in the
+configuration. These are trusted developer files. Local quoted `src`/`href` attributes on HTML image/source/link tags and
+`url(...)` assets in CSS resolve relative to their own files. Keep custom markup outside `#root`, retain
+status announcements and reduced-motion behavior, and optionally include initially hidden
+`#loading-slow-notice` and `#loading-slow-reload` elements (shown after 10 and 30 seconds).
+A button with `data-boot-reload` reloads the page. The shared runtime hides the loader and clears timers
+when React first renders.
+
+Firebase mode still signs in through Firebase and exchanges its token with STS; central-auth mode still
+uses the central service's page. Branding config does not select an authentication mode or configure
+providers. Embedded apps use the host's authentication. Publish the updated `@vertesia/ui` before
+using this template, and rebuild existing app artifacts to include branding changes.
+
+Loading-logo motion is configurable in `loadingIcon`, for both pre-React boot and authentication loading:
+
+```ts
+loadingIcon: {
+    light: './assets/icon.svg',
+    animation: 'my-app-dim 2s ease-in-out infinite',
+    keyframes: '@keyframes my-app-dim { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }',
+},
+```
+
+`animation` accepts a CSS animation shorthand; `keyframes` contains optional trusted app-authored CSS
+and is embedded before first paint. Use app-specific keyframe names to avoid collisions.
+Set `animation: 'none'` for a static logo. Omitting it preserves the default spin/pulse treatment;
+a custom animation replaces both. Reduced-motion preferences disable loading-logo animation.
+This changes logo motion only; permission/recovery layout and explicitly overridden screens remain app-controlled.
+
+### Auth screen previews
+
+In `pnpm dev`, open `/?__vertesia_auth=email`. The corner selector links to all shared login,
+redirect-pending, loading, and recovery states. Direct links use these values:
+
+- Before redirect: `email`, `providers`, `tenant`, `returning`, `pending`, `blocked`.
+- After redirect: `loading`, `signup`, `restricted`, `scope-project`, `scope-account`, `no-account`,
+  `credentials`, `service`, `auth-error`.
+- Permissions: `permissions`, `permission-retry`, `permission-error`, `permission-denied`,
+  `permission-session-expired`.
+
+`/?__vertesia_boot=slow` keeps the real pre-React loader visible through its slow/reload timers.
+Append `&__vertesia_boot_theme=light` or `dark` to select a theme. These are visual fixtures,
+not an authentication round-trip test: built-in preview forms are inert and no session provider is mounted.
+Branding and optional screen overrides are reused. Custom overrides should also avoid effects in preview.
+The template enables previews only in Vite development; production ignores these selectors.
+
+Other hosts can share the same fixtures using `mountAuthScreenPreview(container, screen, branding?, screens?)`
+from `@vertesia/ui/shell`, invoked from an `import.meta.env.DEV` branch before mounting their auth providers.
+
+### Default development account and project
+
+Set these public workspace IDs in `.env.app.local` and restart `pnpm dev`:
+
+```ini
+VITE_VERTESIA_ACCOUNT_ID=your-account-id
+VITE_VERTESIA_PROJECT_ID=your-project-id
+```
+
+They also work as build defaults on Vercel. These are Vertesia workspace IDs;
+`VITE_FIREBASE_PROJECT_ID` identifies the Firebase authentication project instead.
+Explicit `?a=...&p=...` URL selections take precedence over this entire configured pair.
+Without a URL selection, configured IDs take precedence over the last workspace stored in the browser.
+A project-only default does not inherit an unrelated stored account. An account-only default can
+restore the last project for that account. These settings select a workspace; they do not grant access.
