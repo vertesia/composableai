@@ -34,6 +34,7 @@ export * from './process.js';
 export * from './process-agent-policy.js';
 export * from './quota.js';
 export * from './registry.js';
+export * from './run-conversation.js';
 export * from './secrets.js';
 export { CreateContentObjectTypePayloadSchema, InteractionExecutionConfigurationSchema } from './store.js';
 export * from './view-execution.js';

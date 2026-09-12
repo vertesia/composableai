@@ -83,8 +83,9 @@ packages:
   '@vertesia/*':
     access: $all
     publish: $all
-  # Local-only (no npmjs proxy): we publish the vendored @llumiverse/common from
-  # the submodule, and it is the only @llumiverse package the templates need.
+  # Local-only (no npmjs proxy): publish the vendored @llumiverse packages that
+  # the templates need, including private package dependencies used by this smoke
+  # test. This does not change the packages eligible for a real npm release.
   # Without a proxy, verdaccio never consults npm for this scope, so re-publishing
   # a version that already exists upstream (a pinned submodule snapshot) succeeds
   # instead of failing with a 409 conflict.
@@ -137,14 +138,39 @@ publish_to_verdaccio() {
   # Set auth token for verdaccio
   npm set "//${VERDACCIO_URL#http://}/:_authToken" "test-token"
 
-  local count=0 pkg_name pkg_version package_os package_cpu
+  local count=0 pkg_name pkg_version package_os package_cpu package_private
   while IFS= read -r pkg_dir; do
     cd "$pkg_dir"
     pkg_name=$(npm pkg get name | tr -d '"')
     pkg_version=$(npm pkg get version | tr -d '"')
     package_os=$(node -p "require('./package.json').os?.[0] || ''")
     package_cpu=$(node -p "require('./package.json').cpu?.[0] || ''")
+    package_private=$(node -p "require('./package.json').private === true ? 'true' : 'false'")
     echo "  Publishing ${pkg_name}@${pkg_version}..."
+
+    local publish_target="$pkg_dir"
+    if [ "$package_private" = "true" ]; then
+      # A private package may still be required by the packages exercised in this
+      # isolated registry. Pack first so pnpm resolves workspace/catalog entries,
+      # then remove `private` from the disposable manifest only. The source package
+      # remains ineligible for the real release workflow.
+      local pack_result="${VERDACCIO_DIR}/pack-${count}.json"
+      local pack_dir="${VERDACCIO_DIR}/packs"
+      publish_target="${VERDACCIO_DIR}/staged-package-${count}"
+      mkdir -p "$pack_dir" "$publish_target"
+      pnpm pack --pack-destination "$pack_dir" --json > "$pack_result"
+      local tarball
+      tarball=$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).filename)" "$pack_result")
+      tar -xzf "$tarball" --strip-components=1 -C "$publish_target"
+      node - "$publish_target/package.json" <<'NODE'
+const fs = require('fs');
+const manifestPath = process.argv[2];
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+delete manifest.private;
+fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+NODE
+    fi
+
     # @vertesia/* and @llumiverse/* are local-only scopes in the verdaccio config
     # (no npmjs proxy), so publishing always targets local storage and never
     # conflicts with an already-published upstream version. Surface the real
@@ -155,7 +181,7 @@ publish_to_verdaccio() {
     if [ -n "$package_os" ] && [ -n "$package_cpu" ]; then
       publish_command+=("--config.os=${package_os}" "--config.cpu=${package_cpu}")
     fi
-    publish_command+=(publish)
+    publish_command+=(publish "$publish_target")
     if ! output=$(
       "${publish_command[@]}" \
         --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1
@@ -200,7 +226,12 @@ workspace_package_dirs() {
   if [ "$CLI_ONLY" = "true" ]; then
     workspace_filters=(--filter "@vertesia/cli...")
   else
-    workspace_filters=(--filter "./llumiverse/common" --filter "./libraries/jst" --filter "./packages/**")
+    workspace_filters=(
+      --filter "./llumiverse/conversation"
+      --filter "./llumiverse/common"
+      --filter "./libraries/jst"
+      --filter "./packages/**"
+    )
   fi
 
   # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
@@ -209,7 +240,10 @@ workspace_package_dirs() {
   # dependency closure, while still excluding internal workspace-only libraries.
   pnpm -r "${workspace_filters[@]}" exec pwd | while IFS= read -r pkg_dir; do
     case "$pkg_dir" in
-      "${repo_root}"/llumiverse/common|"${repo_root}"/libraries/jst|"${repo_root}"/packages/*)
+      "${repo_root}"/llumiverse/conversation | \
+        "${repo_root}"/llumiverse/common | \
+        "${repo_root}"/libraries/jst | \
+        "${repo_root}"/packages/*)
         [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
         ;;
     esac

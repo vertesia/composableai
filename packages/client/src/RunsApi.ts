@@ -11,6 +11,7 @@ import type {
     InteractionExecutionResult,
     PopulatedExecutionRun,
     RunClonePayload,
+    RunConversationResponse,
     RunCreatePayload,
     RunListingFilters,
     RunListingQueryOptions,
@@ -72,6 +73,11 @@ export class RunsApi extends ApiTopic {
     async retrieve<ResultT = unknown, ParamsT = unknown>(id: string): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
         const r = await this.get<ExecutionRun<ParamsT>>(`/${id}`);
         return enhanceExecutionRun<ResultT, ParamsT>(r);
+    }
+
+    /** Retrieve a retained canonical history, or the explicit reason it is unavailable. */
+    retrieveConversation(id: string): Promise<RunConversationResponse> {
+        return this.get(`/${encodeURIComponent(id)}/conversation`);
     }
 
     retrievePopulated<P = unknown>(id: string): Promise<PopulatedExecutionRun<P>> {

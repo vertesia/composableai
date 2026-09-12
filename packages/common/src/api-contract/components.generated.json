@@ -1,4 +1,3261 @@
 {
+  "AvailableRunConversation": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "const": "available"
+      },
+      "conversation": {
+        "$ref": "#/components/schemas/ConversationDocumentV0"
+      }
+    },
+    "required": [
+      "status",
+      "conversation"
+    ],
+    "additionalProperties": false,
+    "description": "A retained canonical conversation at its stored revision."
+  },
+  "ConversationDocumentV0": {
+    "type": "object",
+    "properties": {
+      "format": {
+        "type": "string",
+        "const": "llumiverse.conversation"
+      },
+      "schema_version": {
+        "type": "number",
+        "const": 0
+      },
+      "experimental_revision": {
+        "type": "string",
+        "const": "2026-09-11.ingestion.1"
+      },
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "created_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "updated_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "turns": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTurn"
+        }
+      },
+      "generations": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ConversationGeneration"
+        }
+      },
+      "operation_receipts": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ConversationOperationReceipt"
+        }
+      },
+      "execution_receipts": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ConversationExecutionReceipt"
+        }
+      },
+      "assets": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ConversationAsset"
+        }
+      },
+      "tool_definitions": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ConversationToolDefinition"
+        }
+      },
+      "context": {
+        "$ref": "#/components/schemas/ConversationContext"
+      },
+      "compactions": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ConversationCompactionRecord"
+        }
+      },
+      "processing": {
+        "$ref": "#/components/schemas/ConversationProcessingState"
+      },
+      "lineage": {
+        "$ref": "#/components/schemas/ConversationLineage"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      }
+    },
+    "required": [
+      "format",
+      "schema_version",
+      "experimental_revision",
+      "id",
+      "revision",
+      "created_at",
+      "updated_at",
+      "turns",
+      "generations",
+      "operation_receipts",
+      "execution_receipts",
+      "assets",
+      "tool_definitions",
+      "context",
+      "compactions",
+      "processing"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationIdentifier": {
+    "type": "string",
+    "minLength": 1
+  },
+  "ConversationNonnegativeSafeInteger": {
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 9007199254740991
+  },
+  "ConversationTimestamp": {
+    "type": "string",
+    "format": "date-time",
+    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+  },
+  "ConversationUserTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "actor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "execution_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "exchange_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "parent_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_visibility": {
+        "$ref": "#/components/schemas/ConversationModelVisibility"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "kind": {
+        "type": "string",
+        "const": "user"
+      },
+      "authority": {
+        "$ref": "#/components/schemas/ConversationAuthority"
+      },
+      "blocks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationUserContentBlock"
+        }
+      },
+      "provenance": {
+        "$ref": "#/components/schemas/ConversationNonGeneratedTurnProvenance"
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "model_visibility",
+      "kind",
+      "authority",
+      "blocks",
+      "provenance"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTurnStatus": {
+    "type": "string",
+    "enum": [
+      "completed",
+      "interrupted",
+      "failed"
+    ]
+  },
+  "ConversationTurnTimestamps": {
+    "type": "object",
+    "properties": {
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "started_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "completed_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      }
+    },
+    "required": [
+      "recorded_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationModelVisibility": {
+    "type": "string",
+    "enum": [
+      "include",
+      "exclude"
+    ]
+  },
+  "ConversationMetadata": {
+    "type": "object",
+    "propertyNames": {
+      "type": "string",
+      "minLength": 1
+    },
+    "additionalProperties": {
+      "$ref": "#/components/schemas/ConversationJsonValue"
+    }
+  },
+  "ConversationAuthority": {
+    "type": "string",
+    "enum": [
+      "system",
+      "developer",
+      "ordinary"
+    ]
+  },
+  "ConversationTextBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "text"
+      },
+      "text": {
+        "type": "string"
+      },
+      "format": {
+        "type": "string",
+        "enum": [
+          "plain",
+          "markdown",
+          "code"
+        ]
+      },
+      "language": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "text",
+      "format"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationJsonBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "json"
+      },
+      "value": {
+        "$ref": "#/components/schemas/ConversationJsonValue"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationImageBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "image"
+      },
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "caption": {
+        "type": "string"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/ConversationImageRegion"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "asset_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationImageRegion": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "image_region"
+      },
+      "coordinate_space": {
+        "type": "string",
+        "enum": [
+          "pixels",
+          "normalized"
+        ]
+      },
+      "x": {
+        "type": "number",
+        "minimum": 0
+      },
+      "y": {
+        "type": "number",
+        "minimum": 0
+      },
+      "width": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      },
+      "height": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    },
+    "required": [
+      "type",
+      "coordinate_space",
+      "x",
+      "y",
+      "width",
+      "height"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationDocumentBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "document"
+      },
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "caption": {
+        "type": "string"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/ConversationPageRange"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "asset_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationPageRange": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "page_range"
+      },
+      "from_page": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      },
+      "through_page": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      }
+    },
+    "required": [
+      "type",
+      "from_page",
+      "through_page"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationPositiveSafeInteger": {
+    "type": "integer",
+    "exclusiveMinimum": 0,
+    "maximum": 9007199254740991
+  },
+  "ConversationAudioBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "audio"
+      },
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "caption": {
+        "type": "string"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/ConversationTimeRange"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "asset_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTimeRange": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "time_range"
+      },
+      "start_seconds": {
+        "type": "number",
+        "minimum": 0
+      },
+      "end_seconds": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      }
+    },
+    "required": [
+      "type",
+      "start_seconds",
+      "end_seconds"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationVideoBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "video"
+      },
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "caption": {
+        "type": "string"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/ConversationTimeRange"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "asset_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationExternalReferenceBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "external_reference"
+      },
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "original_type": {
+        "type": "string",
+        "enum": [
+          "text",
+          "json",
+          "image",
+          "document",
+          "audio",
+          "video",
+          "tool_call",
+          "tool_result",
+          "reasoning",
+          "native_replay",
+          "extension"
+        ]
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1
+      },
+      "content_hash": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "preview": {
+        "type": "string"
+      },
+      "retrieval": {
+        "$ref": "#/components/schemas/ConversationRetrievalCapability"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "asset_id",
+      "original_type",
+      "description",
+      "retrieval"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationContentHash": {
+    "type": "string",
+    "minLength": 1
+  },
+  "ConversationRetrievalCapability": {
+    "type": "object",
+    "properties": {
+      "capability": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      },
+      "arguments": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
+      "tool_definition_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "capability",
+      "version",
+      "arguments"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationJsonObject": {
+    "type": "object",
+    "additionalProperties": {
+      "$ref": "#/components/schemas/ConversationJsonValue"
+    }
+  },
+  "ConversationExtensionBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "extension"
+      },
+      "namespace": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "payload": {
+        "$ref": "#/components/schemas/ConversationJsonValue"
+      },
+      "model_projection": {
+        "type": "string",
+        "enum": [
+          "excluded",
+          "registered"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "namespace",
+      "version",
+      "payload"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationReceivedTurnProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "received"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationInsertedTurnProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "inserted"
+      },
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationImportedTurnProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "imported"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "native_id": {
+        "$ref": "#/components/schemas/ConversationNativeIdentity"
+      },
+      "source_history_turn_number": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "missing_metadata": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "actor_id",
+            "authority",
+            "generation",
+            "timestamps",
+            "usage",
+            "exchange",
+            "tool_definition"
+          ]
+        }
+      }
+    },
+    "required": [
+      "type",
+      "source"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationNativeIdentity": {
+    "type": "object",
+    "properties": {
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scope": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "value": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "protocol",
+      "scope",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationDerivedTurnProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "derived"
+      },
+      "derivation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "source_turn_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "source_block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "source_hash": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "type",
+      "derivation_id",
+      "source_turn_ids",
+      "source_hash"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationGeneratedAgentTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "actor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "execution_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "exchange_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "parent_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_visibility": {
+        "$ref": "#/components/schemas/ConversationModelVisibility"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "kind": {
+        "type": "string",
+        "const": "agent"
+      },
+      "authority": {
+        "$ref": "#/components/schemas/ConversationAuthority"
+      },
+      "blocks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationAgentContentBlock"
+        }
+      },
+      "provenance": {
+        "$ref": "#/components/schemas/ConversationGeneratedTurnProvenance"
+      },
+      "generation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "model_visibility",
+      "kind",
+      "authority",
+      "blocks",
+      "provenance",
+      "generation_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationToolCallBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "tool_call"
+      },
+      "call_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "tool_name": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "definition_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "executor": {
+        "type": "string",
+        "enum": [
+          "application",
+          "provider"
+        ]
+      },
+      "arguments": {
+        "$ref": "#/components/schemas/ConversationToolArguments"
+      },
+      "native_id": {
+        "$ref": "#/components/schemas/ConversationNativeIdentity"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "call_id",
+      "tool_name",
+      "executor",
+      "arguments"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationStructuredToolArguments": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "json"
+      },
+      "value": {
+        "$ref": "#/components/schemas/ConversationJsonValue"
+      }
+    },
+    "required": [
+      "type",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationInvalidToolArguments": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "invalid"
+      },
+      "raw": {
+        "type": "string"
+      },
+      "error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "type",
+      "raw"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationReasoningBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "reasoning"
+      },
+      "text": {
+        "type": "string"
+      },
+      "representation": {
+        "type": "string",
+        "enum": [
+          "text",
+          "summary"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "text",
+      "representation"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationNativeReplayBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "native_replay"
+      },
+      "adapter": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "compatibility_scope": {
+        "$ref": "#/components/schemas/ConversationReplayCompatibilityScope"
+      },
+      "payload": {
+        "$ref": "#/components/schemas/ConversationJsonValue"
+      },
+      "dependencies": {
+        "$ref": "#/components/schemas/ConversationReplayDependencies"
+      },
+      "content_hash": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "adapter",
+      "protocol",
+      "compatibility_scope",
+      "payload",
+      "dependencies"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationReplayCompatibilityScope": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "adapter_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "provider",
+      "protocol",
+      "adapter_version"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationReplayDependencies": {
+    "type": "object",
+    "properties": {
+      "turn_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "block_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "call_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "request_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "turn_ids",
+      "block_ids",
+      "call_ids",
+      "request_ids"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationGeneratedTurnProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "generated"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationImportedAgentTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "actor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "execution_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "exchange_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "parent_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_visibility": {
+        "$ref": "#/components/schemas/ConversationModelVisibility"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "kind": {
+        "type": "string",
+        "const": "agent"
+      },
+      "authority": {
+        "$ref": "#/components/schemas/ConversationAuthority"
+      },
+      "blocks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationAgentContentBlock"
+        }
+      },
+      "provenance": {
+        "$ref": "#/components/schemas/ConversationImportedTurnProvenance"
+      },
+      "generation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "model_visibility",
+      "kind",
+      "authority",
+      "blocks",
+      "provenance"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationDerivedAgentTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "actor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "execution_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "exchange_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "parent_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_visibility": {
+        "$ref": "#/components/schemas/ConversationModelVisibility"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "kind": {
+        "type": "string",
+        "const": "agent"
+      },
+      "authority": {
+        "$ref": "#/components/schemas/ConversationAuthority"
+      },
+      "blocks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationAgentContentBlock"
+        }
+      },
+      "provenance": {
+        "$ref": "#/components/schemas/ConversationDerivedTurnProvenance"
+      },
+      "generation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "model_visibility",
+      "kind",
+      "authority",
+      "blocks",
+      "provenance"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationNongeneratedAgentTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "actor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "execution_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "exchange_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "parent_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_visibility": {
+        "$ref": "#/components/schemas/ConversationModelVisibility"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "kind": {
+        "type": "string",
+        "const": "agent"
+      },
+      "authority": {
+        "$ref": "#/components/schemas/ConversationAuthority"
+      },
+      "blocks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationAgentContentBlock"
+        }
+      },
+      "provenance": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ConversationReceivedTurnProvenance"
+          },
+          {
+            "$ref": "#/components/schemas/ConversationInsertedTurnProvenance"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "received": "#/components/schemas/ConversationReceivedTurnProvenance",
+            "inserted": "#/components/schemas/ConversationInsertedTurnProvenance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "model_visibility",
+      "kind",
+      "authority",
+      "blocks",
+      "provenance"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationToolTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "actor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "execution_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "exchange_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "parent_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_visibility": {
+        "$ref": "#/components/schemas/ConversationModelVisibility"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "kind": {
+        "type": "string",
+        "const": "tool"
+      },
+      "authority": {
+        "type": "string",
+        "const": "ordinary"
+      },
+      "blocks": {
+        "minItems": 1,
+        "maxItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationToolResultBlock"
+        }
+      },
+      "provenance": {
+        "$ref": "#/components/schemas/ConversationNonGeneratedTurnProvenance"
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "model_visibility",
+      "kind",
+      "authority",
+      "blocks",
+      "provenance"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationToolResultBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "tool_result"
+      },
+      "call_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "success",
+          "error",
+          "cancelled",
+          "denied",
+          "unknown"
+        ]
+      },
+      "content": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationNestedToolResultContentBlock"
+        }
+      },
+      "native_id": {
+        "$ref": "#/components/schemas/ConversationNativeIdentity"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "call_id",
+      "status",
+      "content"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProgramTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "actor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "execution_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "exchange_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "parent_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_visibility": {
+        "$ref": "#/components/schemas/ConversationModelVisibility"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "kind": {
+        "type": "string",
+        "const": "program"
+      },
+      "authority": {
+        "$ref": "#/components/schemas/ConversationAuthority"
+      },
+      "blocks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationProgramContentBlock"
+        }
+      },
+      "provenance": {
+        "$ref": "#/components/schemas/ConversationNonGeneratedTurnProvenance"
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "model_visibility",
+      "kind",
+      "authority",
+      "blocks",
+      "provenance"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationExecutedGeneration": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "request_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "attempt_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "provider_response_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "purpose": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "requested_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "resolved_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "provider": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
+      "adapter_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "finish_reason": {
+        "type": "string"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationGenerationTimestamps"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "context_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "tool_set_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "usage": {
+        "$ref": "#/components/schemas/ConversationGenerationUsage"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "record_source": {
+        "type": "string",
+        "const": "executed"
+      },
+      "request_receipt": {
+        "$ref": "#/components/schemas/ConversationRequestReceipt"
+      }
+    },
+    "required": [
+      "id",
+      "request_id",
+      "attempt_id",
+      "purpose",
+      "requested_model",
+      "provider",
+      "protocol",
+      "adapter_version",
+      "status",
+      "timestamps",
+      "source",
+      "record_source",
+      "request_receipt"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationGenerationTimestamps": {
+    "type": "object",
+    "properties": {
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "started_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "completed_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "provider_duration_ms": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "required": [
+      "recorded_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationRef": {
+    "type": "object",
+    "properties": {
+      "conversation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      }
+    },
+    "required": [
+      "conversation_id",
+      "revision"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationGenerationUsage": {
+    "type": "object",
+    "properties": {
+      "input_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "output_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "total_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "reasoning_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "cache_read_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "cache_write_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "input_new_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "accounting_provenance": {
+        "$ref": "#/components/schemas/ConversationUsageAccountingProvenance"
+      },
+      "input_partition": {
+        "$ref": "#/components/schemas/ConversationCompleteInputPartition"
+      },
+      "reported_usage": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationReportedUsage"
+        }
+      },
+      "cost": {
+        "$ref": "#/components/schemas/ConversationGenerationCost"
+      }
+    },
+    "additionalProperties": false
+  },
+  "ConversationUsageAccountingProvenance": {
+    "type": "object",
+    "properties": {
+      "input_tokens": {
+        "$ref": "#/components/schemas/ConversationAccountingProvenance"
+      },
+      "output_tokens": {
+        "$ref": "#/components/schemas/ConversationAccountingProvenance"
+      },
+      "total_tokens": {
+        "$ref": "#/components/schemas/ConversationAccountingProvenance"
+      },
+      "reasoning_tokens": {
+        "$ref": "#/components/schemas/ConversationAccountingProvenance"
+      },
+      "cache_read_tokens": {
+        "$ref": "#/components/schemas/ConversationAccountingProvenance"
+      },
+      "cache_write_tokens": {
+        "$ref": "#/components/schemas/ConversationAccountingProvenance"
+      },
+      "input_new_tokens": {
+        "$ref": "#/components/schemas/ConversationAccountingProvenance"
+      }
+    },
+    "additionalProperties": false
+  },
+  "ConversationAccountingProvenance": {
+    "type": "object",
+    "properties": {
+      "method": {
+        "type": "string",
+        "enum": [
+          "reported",
+          "derived"
+        ]
+      },
+      "accounting_basis": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "method",
+      "accounting_basis"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationCompleteInputPartition": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "complete_disjoint"
+      },
+      "cache_write_bucket": {
+        "type": "string",
+        "enum": [
+          "included",
+          "inapplicable"
+        ]
+      }
+    },
+    "required": [
+      "type",
+      "cache_write_bucket"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationReportedUsage": {
+    "type": "object",
+    "properties": {
+      "source": {
+        "type": "string",
+        "enum": [
+          "provider",
+          "legacy",
+          "host"
+        ]
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "accounting_basis": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "payload": {
+        "$ref": "#/components/schemas/ConversationJsonValue"
+      }
+    },
+    "required": [
+      "source",
+      "payload"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationGenerationCost": {
+    "type": "object",
+    "properties": {
+      "amount": {
+        "type": "string",
+        "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+      },
+      "currency": {
+        "type": "string",
+        "pattern": "^[A-Z]{3}$"
+      },
+      "provenance": {
+        "type": "string",
+        "enum": [
+          "reported",
+          "estimated"
+        ]
+      },
+      "price_source": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "price_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "amount",
+      "currency",
+      "provenance"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationRequestReceipt": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "request_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "attempt_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "source_tail_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "context_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "tool_set_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "request_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "target": {
+        "$ref": "#/components/schemas/ConversationModelTarget"
+      },
+      "tool_definition_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "asset_versions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationAssetVersionBinding"
+        }
+      },
+      "item_mappings": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationNativeItemMapping"
+        }
+      },
+      "measurement": {
+        "$ref": "#/components/schemas/ConversationContextMeasurement"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      }
+    },
+    "required": [
+      "id",
+      "request_id",
+      "attempt_id",
+      "source",
+      "context_fingerprint",
+      "tool_set_fingerprint",
+      "request_fingerprint",
+      "target",
+      "tool_definition_ids",
+      "asset_versions",
+      "item_mappings",
+      "recorded_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationModelTarget": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "adapter_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "options": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      }
+    },
+    "required": [
+      "provider",
+      "protocol",
+      "model",
+      "adapter_version"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationAssetVersionBinding": {
+    "type": "object",
+    "properties": {
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "content_hash": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "asset_id",
+      "content_hash"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationNativeItemMapping": {
+    "type": "object",
+    "properties": {
+      "canonical_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "native_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "turn",
+          "block",
+          "call"
+        ]
+      }
+    },
+    "required": [
+      "canonical_id",
+      "native_id",
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationContextMeasurement": {
+    "type": "object",
+    "properties": {
+      "input_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "method": {
+        "type": "string",
+        "enum": [
+          "exact",
+          "estimated",
+          "provider_counted"
+        ]
+      },
+      "tokenizer": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "tokenizer_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "adapter": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "adapter_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "source_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "target_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "measured_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      }
+    },
+    "required": [
+      "input_tokens",
+      "method",
+      "tokenizer",
+      "adapter",
+      "adapter_version",
+      "source_fingerprint",
+      "target_model",
+      "measured_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationImportedGeneration": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "record_source": {
+        "type": "string",
+        "const": "imported"
+      },
+      "request_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "attempt_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "provider_response_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "purpose": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "requested_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "resolved_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "provider": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
+      "adapter_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "failed",
+          "cancelled"
+        ]
+      },
+      "finish_reason": {
+        "type": "string"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationGenerationTimestamps"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "context_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "tool_set_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "usage": {
+        "$ref": "#/components/schemas/ConversationGenerationUsage"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      },
+      "request_receipt": {
+        "$ref": "#/components/schemas/ConversationRequestReceipt"
+      },
+      "missing_metadata": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "request_receipt",
+            "request_id",
+            "attempt_id",
+            "timestamps",
+            "usage",
+            "purpose",
+            "requested_model",
+            "resolved_model",
+            "provider",
+            "protocol",
+            "adapter_version",
+            "provider_response_id",
+            "finish_reason"
+          ]
+        }
+      }
+    },
+    "required": [
+      "id",
+      "record_source",
+      "status",
+      "timestamps",
+      "source"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationOperationReceipt": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "conversation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "payload_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "base_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "result_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "accepted_turn_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_generation_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_asset_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_tool_definition_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_execution_receipt_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_context_entry_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "conversation_id",
+      "payload_fingerprint",
+      "base_revision",
+      "result_revision",
+      "recorded_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationExecutionReceipt": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "call_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "executor": {
+        "type": "string",
+        "enum": [
+          "application",
+          "provider"
+        ]
+      },
+      "host_execution_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "attempt_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "success",
+          "error",
+          "cancelled",
+          "denied"
+        ]
+      },
+      "result_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "result_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      }
+    },
+    "required": [
+      "id",
+      "call_id",
+      "executor",
+      "status",
+      "result_fingerprint",
+      "recorded_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationAsset": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "kind": {
+        "$ref": "#/components/schemas/ConversationAssetKind"
+      },
+      "mime_type": {
+        "type": "string",
+        "minLength": 1
+      },
+      "storage": {
+        "$ref": "#/components/schemas/ConversationAssetStorage"
+      },
+      "provenance": {
+        "$ref": "#/components/schemas/ConversationAssetProvenance"
+      },
+      "byte_length": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "content_hash": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "media": {
+        "$ref": "#/components/schemas/ConversationAssetMediaMetadata"
+      },
+      "created_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "mime_type",
+      "storage",
+      "provenance",
+      "created_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationAssetKind": {
+    "type": "string",
+    "enum": [
+      "text",
+      "json",
+      "binary",
+      "image",
+      "document",
+      "audio",
+      "video",
+      "other"
+    ]
+  },
+  "ConversationInlineTextAssetStorage": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "inline_text"
+      },
+      "text": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "type",
+      "text"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationInlineJsonAssetStorage": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "inline_json"
+      },
+      "value": {
+        "$ref": "#/components/schemas/ConversationJsonValue"
+      }
+    },
+    "required": [
+      "type",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationInlineBase64AssetStorage": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "inline_base64"
+      },
+      "data": {
+        "$ref": "#/components/schemas/ConversationBase64"
+      }
+    },
+    "required": [
+      "type",
+      "data"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationBase64": {
+    "type": "string",
+    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+  },
+  "ConversationExternalAssetStorage": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "external"
+      },
+      "resolver": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "locator": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      }
+    },
+    "required": [
+      "type",
+      "resolver",
+      "locator"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationReceivedAssetProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "received"
+      },
+      "source_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationGeneratedAssetProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "generated"
+      },
+      "generation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "source_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "type",
+      "generation_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationImportedAssetProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "imported"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "native_id": {
+        "$ref": "#/components/schemas/ConversationNativeIdentity"
+      }
+    },
+    "required": [
+      "type",
+      "source"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationDerivedAssetProvenance": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "derived"
+      },
+      "source_asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "transform_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "transform_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "configuration": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      }
+    },
+    "required": [
+      "type",
+      "source_asset_id",
+      "transform_id",
+      "transform_version"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationAssetMediaMetadata": {
+    "type": "object",
+    "properties": {
+      "width": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      },
+      "height": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      },
+      "duration_seconds": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      },
+      "page_count": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      }
+    },
+    "additionalProperties": false
+  },
+  "ConversationToolDefinition": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "name": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "description": {
+        "type": "string"
+      },
+      "input_schema": {
+        "$ref": "#/components/schemas/ConversationToolInputSchema"
+      },
+      "result_capabilities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationToolResultCapability"
+        }
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "version",
+      "input_schema"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationToolResultCapability": {
+    "type": "string",
+    "enum": [
+      "text",
+      "json",
+      "image",
+      "document",
+      "audio",
+      "video"
+    ]
+  },
+  "ConversationContext": {
+    "type": "object",
+    "properties": {
+      "revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "entries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationContextEntry"
+        }
+      },
+      "active_tool_definition_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "protected_entry_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "retrieval_requirements": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationContextRetrievalRequirement"
+        }
+      },
+      "cache_intent": {
+        "$ref": "#/components/schemas/ConversationCacheIntent"
+      }
+    },
+    "required": [
+      "revision",
+      "entries",
+      "active_tool_definition_ids",
+      "protected_entry_ids",
+      "retrieval_requirements"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationSourceTurnContextEntry": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "source_turn"
+      },
+      "turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "turn_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationReplacementTurnContextEntry": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "replacement_turn"
+      },
+      "compaction_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "compaction_id",
+      "turn_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationContextRetrievalRequirement": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "retrieval": {
+        "$ref": "#/components/schemas/ConversationRetrievalCapability"
+      }
+    },
+    "required": [
+      "id",
+      "asset_id",
+      "retrieval"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationCacheIntent": {
+    "type": "object",
+    "properties": {
+      "namespace": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "off",
+          "required"
+        ]
+      },
+      "stable_through_entry_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "ttl_seconds": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      }
+    },
+    "required": [
+      "namespace",
+      "mode"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationCompactionRecord": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "strategy": {
+        "$ref": "#/components/schemas/ConversationCompactionStrategy"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationCompactionSource"
+      },
+      "replacement_turns": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTurn"
+        }
+      },
+      "fidelity": {
+        "type": "string",
+        "enum": [
+          "value_preserving",
+          "reversible_representation",
+          "heuristic",
+          "semantic",
+          "retrievable"
+        ]
+      },
+      "retained_asset_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "generation_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "supersedes_compaction_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "created_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationMetadata"
+      }
+    },
+    "required": [
+      "id",
+      "operation_id",
+      "strategy",
+      "source",
+      "replacement_turns",
+      "fidelity",
+      "retained_asset_ids",
+      "generation_ids",
+      "created_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationCompactionStrategy": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "configuration_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "id",
+      "version",
+      "configuration_fingerprint"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationCompactionSource": {
+    "type": "object",
+    "properties": {
+      "turn_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "source_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "turn_ids",
+      "source_fingerprint"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProcessingState": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "policy_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "processors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationProcessorConfiguration"
+        }
+      }
+    },
+    "required": [
+      "enabled",
+      "policy_revision",
+      "processors"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProcessorConfiguration": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scope": {
+        "type": "string",
+        "enum": [
+          "on_append",
+          "on_budget",
+          "manual"
+        ]
+      },
+      "config": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
+      "required": {
+        "type": "boolean"
+      },
+      "failure_behavior": {
+        "type": "string",
+        "enum": [
+          "block",
+          "skip_with_diagnostic"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "version",
+      "scope",
+      "config",
+      "required",
+      "failure_behavior"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationLineage": {
+    "type": "object",
+    "properties": {
+      "parents": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationLineageParent"
+        }
+      }
+    },
+    "required": [
+      "parents"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationLineageParent": {
+    "type": "object",
+    "properties": {
+      "relation": {
+        "type": "string",
+        "enum": [
+          "fork",
+          "merge"
+        ]
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      }
+    },
+    "required": [
+      "relation",
+      "source"
+    ],
+    "additionalProperties": false
+  },
+  "UnavailableRunConversation": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "const": "unavailable"
+      },
+      "reason": {
+        "type": "string",
+        "enum": [
+          "not_recorded",
+          "retention_policy",
+          "pruned"
+        ]
+      },
+      "retention": {
+        "type": "string",
+        "enum": [
+          "STANDARD",
+          "RESTRICTED",
+          "DEBUG"
+        ]
+      }
+    },
+    "required": [
+      "status",
+      "reason"
+    ],
+    "additionalProperties": false,
+    "description": "The run has no retained resumable canonical history."
+  },
+  "RunConversationResponse": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/AvailableRunConversation"
+      },
+      {
+        "$ref": "#/components/schemas/UnavailableRunConversation"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "status",
+      "mapping": {
+        "available": "#/components/schemas/AvailableRunConversation",
+        "unavailable": "#/components/schemas/UnavailableRunConversation"
+      }
+    },
+    "type": "object",
+    "required": [
+      "status"
+    ]
+  },
+  "ConversationTurn": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ConversationUserTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationAgentTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationToolTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationProgramTurn"
+      }
+    ]
+  },
+  "ConversationJsonValue": {
+    "anyOf": [
+      {
+        "type": "string"
+      },
+      {
+        "type": "number"
+      },
+      {
+        "type": "boolean"
+      },
+      {
+        "type": "null"
+      },
+      {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationJsonValue"
+        }
+      },
+      {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ConversationJsonValue"
+        }
+      }
+    ]
+  },
+  "ConversationUserContentBlock": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTextBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationJsonBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImageBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDocumentBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationAudioBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationVideoBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExternalReferenceBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExtensionBlock"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "text": "#/components/schemas/ConversationTextBlock",
+        "json": "#/components/schemas/ConversationJsonBlock",
+        "image": "#/components/schemas/ConversationImageBlock",
+        "document": "#/components/schemas/ConversationDocumentBlock",
+        "audio": "#/components/schemas/ConversationAudioBlock",
+        "video": "#/components/schemas/ConversationVideoBlock",
+        "external_reference": "#/components/schemas/ConversationExternalReferenceBlock",
+        "extension": "#/components/schemas/ConversationExtensionBlock"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationNonGeneratedTurnProvenance": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationReceivedTurnProvenance"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationInsertedTurnProvenance"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImportedTurnProvenance"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDerivedTurnProvenance"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "received": "#/components/schemas/ConversationReceivedTurnProvenance",
+        "inserted": "#/components/schemas/ConversationInsertedTurnProvenance",
+        "imported": "#/components/schemas/ConversationImportedTurnProvenance",
+        "derived": "#/components/schemas/ConversationDerivedTurnProvenance"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationAgentTurn": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ConversationGeneratedAgentTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImportedAgentTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDerivedAgentTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationNongeneratedAgentTurn"
+      }
+    ]
+  },
+  "ConversationAgentContentBlock": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTextBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationJsonBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImageBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDocumentBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationAudioBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationVideoBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationToolCallBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExternalReferenceBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationReasoningBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationNativeReplayBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExtensionBlock"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "text": "#/components/schemas/ConversationTextBlock",
+        "json": "#/components/schemas/ConversationJsonBlock",
+        "image": "#/components/schemas/ConversationImageBlock",
+        "document": "#/components/schemas/ConversationDocumentBlock",
+        "audio": "#/components/schemas/ConversationAudioBlock",
+        "video": "#/components/schemas/ConversationVideoBlock",
+        "tool_call": "#/components/schemas/ConversationToolCallBlock",
+        "external_reference": "#/components/schemas/ConversationExternalReferenceBlock",
+        "reasoning": "#/components/schemas/ConversationReasoningBlock",
+        "native_replay": "#/components/schemas/ConversationNativeReplayBlock",
+        "extension": "#/components/schemas/ConversationExtensionBlock"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationToolArguments": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationStructuredToolArguments"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationInvalidToolArguments"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "json": "#/components/schemas/ConversationStructuredToolArguments",
+        "invalid": "#/components/schemas/ConversationInvalidToolArguments"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationNestedToolResultContentBlock": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTextBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationJsonBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImageBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDocumentBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationAudioBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationVideoBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExternalReferenceBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationReasoningBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationNativeReplayBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExtensionBlock"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "text": "#/components/schemas/ConversationTextBlock",
+        "json": "#/components/schemas/ConversationJsonBlock",
+        "image": "#/components/schemas/ConversationImageBlock",
+        "document": "#/components/schemas/ConversationDocumentBlock",
+        "audio": "#/components/schemas/ConversationAudioBlock",
+        "video": "#/components/schemas/ConversationVideoBlock",
+        "external_reference": "#/components/schemas/ConversationExternalReferenceBlock",
+        "reasoning": "#/components/schemas/ConversationReasoningBlock",
+        "native_replay": "#/components/schemas/ConversationNativeReplayBlock",
+        "extension": "#/components/schemas/ConversationExtensionBlock"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationProgramContentBlock": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTextBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationJsonBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImageBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDocumentBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationAudioBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationVideoBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExternalReferenceBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationReasoningBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationNativeReplayBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExtensionBlock"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "text": "#/components/schemas/ConversationTextBlock",
+        "json": "#/components/schemas/ConversationJsonBlock",
+        "image": "#/components/schemas/ConversationImageBlock",
+        "document": "#/components/schemas/ConversationDocumentBlock",
+        "audio": "#/components/schemas/ConversationAudioBlock",
+        "video": "#/components/schemas/ConversationVideoBlock",
+        "external_reference": "#/components/schemas/ConversationExternalReferenceBlock",
+        "reasoning": "#/components/schemas/ConversationReasoningBlock",
+        "native_replay": "#/components/schemas/ConversationNativeReplayBlock",
+        "extension": "#/components/schemas/ConversationExtensionBlock"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationGeneration": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationExecutedGeneration"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImportedGeneration"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "record_source",
+      "mapping": {
+        "executed": "#/components/schemas/ConversationExecutedGeneration",
+        "imported": "#/components/schemas/ConversationImportedGeneration"
+      }
+    },
+    "type": "object",
+    "required": [
+      "record_source"
+    ]
+  },
+  "ConversationAssetStorage": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationInlineTextAssetStorage"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationInlineJsonAssetStorage"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationInlineBase64AssetStorage"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationExternalAssetStorage"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "inline_text": "#/components/schemas/ConversationInlineTextAssetStorage",
+        "inline_json": "#/components/schemas/ConversationInlineJsonAssetStorage",
+        "inline_base64": "#/components/schemas/ConversationInlineBase64AssetStorage",
+        "external": "#/components/schemas/ConversationExternalAssetStorage"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationAssetProvenance": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationReceivedAssetProvenance"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationGeneratedAssetProvenance"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImportedAssetProvenance"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDerivedAssetProvenance"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "received": "#/components/schemas/ConversationReceivedAssetProvenance",
+        "generated": "#/components/schemas/ConversationGeneratedAssetProvenance",
+        "imported": "#/components/schemas/ConversationImportedAssetProvenance",
+        "derived": "#/components/schemas/ConversationDerivedAssetProvenance"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationToolInputSchema": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
+      {
+        "type": "boolean"
+      }
+    ]
+  },
+  "ConversationContextEntry": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationSourceTurnContextEntry"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationReplacementTurnContextEntry"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "source_turn": "#/components/schemas/ConversationSourceTurnContextEntry",
+        "replacement_turn": "#/components/schemas/ConversationReplacementTurnContextEntry"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
   "CreateDelegationGrantPayload": {
     "type": "object",
     "properties": {
@@ -7863,6 +11120,16 @@
       "tool_use_id": {
         "type": "string",
         "description": "The tool use id if the segment is a tool response"
+      },
+      "tool_result_status": {
+        "type": "string",
+        "enum": [
+          "success",
+          "error",
+          "cancelled",
+          "denied"
+        ],
+        "description": "Terminal status of a tool response supplied by the application"
       },
       "thought_signature": {
         "type": "string",
