@@ -67,16 +67,20 @@ export default function SignInEmailStep({ initialEmail, onProceed }: SignInEmail
                     error={submitError ? t('auth.email.invalidError') : undefined}
                 />
 
-                <SignInStepButton type="submit" disabled={loading}>
-                    {loading ? (
+                {loading ? (
+                    <div
+                        role="status"
+                        aria-label={t('auth.pending.authenticating')}
+                        className="h-[42px] flex items-center justify-center"
+                    >
                         <Spinner />
-                    ) : (
-                        <>
-                            <span>{t('auth.continue')}</span>
-                            <ArrowRight className="!size-3.5" />
-                        </>
-                    )}
-                </SignInStepButton>
+                    </div>
+                ) : (
+                    <SignInStepButton type="submit">
+                        <span>{t('auth.continue')}</span>
+                        <ArrowRight className="!size-3.5" />
+                    </SignInStepButton>
+                )}
             </form>
         </SignInStepLayout>
     );

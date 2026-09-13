@@ -34,6 +34,8 @@ export interface EnvProps {
         projectId: string;
         appId?: string;
         providerType?: string;
+        /** Fixed Identity Platform tenant, preserved throughout sign-in. */
+        tenantId?: string;
     };
     /** Default workspace selection when the URL does not explicitly select an account or project. */
     defaultAuthSelection?: { accountId?: string; projectId?: string };
@@ -139,6 +141,11 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         const runtimeConfig = injectedRuntimeConfig() ?? buildRuntimeConfig(buildEnv);
         const runtimeFirebase = runtimeConfig?.authMode === 'firebase' ? runtimeConfig.firebase : undefined;
         this._props = props && runtimeFirebase && !props.firebase ? { ...props, firebase: runtimeFirebase } : props;
+        const tenantId =
+            typeof buildEnv?.VITE_FIREBASE_TENANT_ID === 'string' ? buildEnv.VITE_FIREBASE_TENANT_ID.trim() : '';
+        if (this._props?.firebase && tenantId && !this._props.firebase.tenantId) {
+            this._props = { ...this._props, firebase: { ...this._props.firebase, tenantId } };
+        }
         if (this._props && this._props.defaultAuthSelection === undefined && buildEnv) {
             const accountId =
                 typeof buildEnv.VITE_VERTESIA_ACCOUNT_ID === 'string'

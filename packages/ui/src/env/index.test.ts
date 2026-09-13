@@ -192,3 +192,30 @@ describe('build-time default workspace', () => {
         expect(env.defaultAuthSelection).toEqual({ accountId: 'explicit' });
     });
 });
+
+describe('fixed Firebase tenant', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('combines an app tenant with gateway credentials', () => {
+        vi.stubGlobal('window', {
+            __VERTESIA_RUNTIME_CONFIG__: {
+                authMode: 'firebase',
+                firebase: {
+                    apiKey: 'gateway',
+                    authDomain: 'app.example.com',
+                    projectId: 'project',
+                    appId: 'app',
+                },
+            },
+        });
+        const env = new VertesiaEnvironment().init(baseProps, { VITE_FIREBASE_TENANT_ID: ' example-tenant ' });
+        expect(env.firebase?.tenantId).toBe('example-tenant');
+        expect(env.firebase?.apiKey).toBe('gateway');
+    });
+
+    it('does not enable Firebase just because a tenant is supplied', () => {
+        vi.stubGlobal('window', {});
+        const env = new VertesiaEnvironment().init(baseProps, { VITE_FIREBASE_TENANT_ID: 'tenant' });
+        expect(env.firebase).toBeUndefined();
+    });
+});

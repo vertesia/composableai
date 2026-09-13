@@ -489,6 +489,10 @@ Vite embeds `VITE_*` values in the browser bundle; restart the dev server after 
 rebuild/redeploy after changing Vercel settings. These are public browser settings, not service-account secrets.
 
 Central authentication is the default. To use direct Firebase authentication, contact Vertesia.
+Once Firebase is configured, set `VITE_FIREBASE_TENANT_ID` in `.env.app.local` or your build environment
+to the tenant ID supplied by Vertesia to use a fixed SSO tenant. This also works when the app gateway
+supplies the Firebase credentials. The setting does not enable Firebase by itself. Without it,
+sign-in discovers the tenant from the email address. Branding does not select an authentication tenant.
 Vertesia must configure it for your deployment and provide the required settings.
 
 The bootstrap CLI asks for your region and writes `VITE_AUTH_SERVER_URL` to `.env.app` alongside
