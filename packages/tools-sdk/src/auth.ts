@@ -50,6 +50,9 @@ export interface ToolContext {
 }
 
 export async function authorize(ctx: Context, endpointOverrides?: EndpointOverrides, toolContext?: ToolContext) {
+    // A sandbox host can bind a session in application middleware. HTTP headers cannot set this value.
+    const boundSession = ctx.get('toolAuthSession') as AuthSession | undefined;
+    if (boundSession) return boundSession;
     const auth = ctx.req.header('Authorization');
     if (!auth) {
         throw new HTTPException(401, {
