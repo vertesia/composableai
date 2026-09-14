@@ -76,9 +76,18 @@ export function resolveBrandingAssets(branding: AppBranding, moduleUrl: URL, wat
 
 export function createAppBrandingPlugin(branding: AppBranding, moduleUrl: URL) {
     const watched = new Set<string>();
+    let workspace: { account?: string; project?: string } = {};
     const resolve = () => resolveBrandingAssets(branding, moduleUrl, (file) => watched.add(file));
     return {
         name: 'vertesia-app-branding',
+        configResolved(config: { env: Record<string, unknown> }) {
+            const account = config.env.VITE_VERTESIA_ACCOUNT_ID;
+            const project = config.env.VITE_VERTESIA_PROJECT_ID;
+            workspace = {
+                account: typeof account === 'string' ? account : undefined,
+                project: typeof project === 'string' ? project : undefined,
+            };
+        },
         resolveId(id: string) {
             if (id === VIRTUAL_ID) return RESOLVED_ID;
         },
@@ -112,6 +121,12 @@ export function createAppBrandingPlugin(branding: AppBranding, moduleUrl: URL) {
                     `<link rel="icon" href="${escapeBrandHtml(resolved.favicon)}"></head>`,
                 );
             }
+            // Data only: a hosting gateway can render its own trusted login without executing app code.
+            const brandData = JSON.stringify({ ...resolved, workspace }).replace(/</g, '\\u003c');
+            result = result.replace(
+                '</head>',
+                `<script type="application/json" id="vertesia-app-branding">${brandData}</script></head>`,
+            );
             return injectBootScreenHtml(result, brandedBootOptions(resolved));
         },
     };
