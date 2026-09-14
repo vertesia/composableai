@@ -1,6 +1,6 @@
 {
     "name": "@koa-stack/server",
-    "version": "0.26.0-dev",
+    "version": "0.27.0-dev.20260914.133404Z",
     "description": " A web server based on koa with advanced routing, lazy body and flexbile error handling",
     "type": "module",
     "scripts": {
