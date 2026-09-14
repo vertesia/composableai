@@ -29,8 +29,9 @@ import {
     Wrench,
 } from 'lucide-react';
 import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AgentRunFeedback, agentMessageFeedbackId } from '../AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
-import { AskUserWidget } from '../AskUserWidget';
+import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
@@ -309,6 +310,8 @@ interface SummaryMessageProps {
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+    /** When set, answers carry a thumbs up / down rating control scoped to the message. */
+    feedbackAgentRunId?: string;
 }
 
 function SummaryWorkstreamLaunchMessage({
@@ -475,11 +478,15 @@ function getTableColumnLayouts(node?: Element): AgentMarkdownTableColumnLayout[]
         return clampNumber(avgLength * 0.7 + maxLength * 0.25 + longestTokenLength * 0.45, 18, 90);
     });
 
-    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    const totalWeight = weights.reduce((sum, weight, index) => sum + (compactColumns.has(index) ? 0 : weight), 0);
     if (totalWeight <= 0) return [];
 
     return weights.map((weight, columnIndex) => {
-        const width = `${((weight / totalWeight) * 100).toFixed(3)}%`;
+        const share = weight / totalWeight;
+        // Reserve actual space for short values and headers before distributing prose columns.
+        const width = compactColumns.has(columnIndex)
+            ? '8rem'
+            : `calc(${(share * 100).toFixed(3)}% - ${(compactColumns.size * 8 * share).toFixed(3)}rem)`;
         return {
             key: `agent-markdown-table-column-${columnIndex}`,
             compact: compactColumns.has(columnIndex),
@@ -500,24 +507,30 @@ function AgentMarkdownTable({
     const columnLayouts = getTableColumnLayouts(node);
 
     return (
-        <table {...props} className={className}>
-            {columnLayouts.length > 0 ? (
-                <colgroup>
-                    {columnLayouts.map((columnLayout) => (
-                        <col
-                            key={columnLayout.key}
-                            className={columnLayout.compact ? 'agent-markdown-table-compact-col' : undefined}
-                            style={
-                                {
-                                    '--agent-markdown-table-column-width': columnLayout.width,
-                                } as React.CSSProperties
-                            }
-                        />
-                    ))}
-                </colgroup>
-            ) : null}
-            {children}
-        </table>
+        <div className="overflow-x-auto">
+            <table
+                {...props}
+                className={className}
+                style={{ minWidth: `${columnLayouts.length * 8}rem`, ...props.style }}
+            >
+                {columnLayouts.length > 0 ? (
+                    <colgroup>
+                        {columnLayouts.map((columnLayout) => (
+                            <col
+                                key={columnLayout.key}
+                                className={columnLayout.compact ? 'agent-markdown-table-compact-col' : undefined}
+                                style={
+                                    {
+                                        '--agent-markdown-table-column-width': columnLayout.width,
+                                    } as React.CSSProperties
+                                }
+                            />
+                        ))}
+                    </colgroup>
+                ) : null}
+                {children}
+            </table>
+        </div>
     );
 }
 
@@ -667,6 +680,7 @@ function SummaryMessage({
     requestInputAnswered = false,
     StoreLinkComponent,
     CollectionLinkComponent,
+    feedbackAgentRunId,
 }: SummaryMessageProps) {
     const { router } = useRouterContext();
     const content =
@@ -748,11 +762,12 @@ function SummaryMessage({
     const requestInputDetails = message.details as AskUserMessageDetails | undefined;
     if (message.type === AgentMessageType.REQUEST_INPUT && requestInputDetails?.ux) {
         const uxConfig = requestInputDetails.ux;
+        const hasSelectableOptions = isAskUserOptions(uxConfig.options) && uxConfig.options.length > 0;
         return (
             <div className="mx-auto w-full max-w-3xl px-1">
                 <AskUserWidget
                     question={content}
-                    options={uxConfig.options}
+                    options={hasSelectableOptions ? uxConfig.options : undefined}
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}
                     onSelect={(optionId) =>
@@ -766,7 +781,7 @@ function SummaryMessage({
                     onMultiSelect={(optionIds) =>
                         sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
                     }
-                    allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                    allowFreeResponse={!hasSelectableOptions || !!uxConfig.free_response}
                     placeholder={uxConfig.free_response?.placeholder}
                     submitLabel={uxConfig.free_response?.submit_label}
                     onSubmit={(value) =>
@@ -783,7 +798,7 @@ function SummaryMessage({
     const isError = message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING;
 
     return (
-        <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
+        <div className="group mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
             {isError && (
                 <div className="mb-2 text-xs font-medium text-destructive">
                     {message.type === AgentMessageType.WARNING ? 'Warning' : 'Error'}
@@ -807,6 +822,14 @@ function SummaryMessage({
                         {content}
                     </MarkdownRenderer>
                 </div>
+            )}
+            {feedbackAgentRunId && message.type === AgentMessageType.ANSWER && (
+                <AgentRunFeedback
+                    agentRunId={feedbackAgentRunId}
+                    messageId={agentMessageFeedbackId(message)}
+                    tone="inline"
+                    className="mt-1 -ms-1.5 print:hidden"
+                />
             )}
         </div>
     );
@@ -1210,6 +1233,15 @@ function getToolTarget(details: Record<string, unknown>): string | undefined {
     return undefined;
 }
 
+/**
+ * An approval decision that stopped the tool from running — a denial, a timeout, or a cancellation
+ * — as opposed to one that released it. Unknown decisions count as blocking: every decision the
+ * agent has ever emitted except `auto_approved` is one, so that is the safer default.
+ */
+function isBlockingApprovalDecision(decision: unknown): boolean {
+    return typeof decision === 'string' && decision !== 'auto_approved';
+}
+
 function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string | undefined {
     switch (decision) {
         case 'denied':
@@ -1221,6 +1253,8 @@ function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string 
             return `Approval reviewer denied ${toolLabel}.`;
         case 'cancelled_after_denial':
             return `Cancelled ${toolLabel} after another tool was denied.`;
+        case 'auto_approved':
+            return `Approval no longer required for ${toolLabel}.`;
         default:
             return undefined;
     }
@@ -1237,6 +1271,8 @@ function getApprovalDecisionStatusText(decision: unknown): string | undefined {
             return 'Denied by reviewer';
         case 'cancelled_after_denial':
             return 'Cancelled after denial';
+        case 'auto_approved':
+            return 'Approved without asking';
         default:
             return undefined;
     }
@@ -1467,7 +1503,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
     addSection(
         'Output',
         ['output', 'stdout', 'result', 'results', 'content', 'result_summary', 'observation', 'display_message'],
-        typeof details.approval_decision === 'string' ? 'error' : undefined,
+        isBlockingApprovalDecision(details.approval_decision) ? 'error' : undefined,
     );
     addSection('Files', ['files', 'outputFiles']);
     addSection('Error', ['error', 'stderr'], 'error');
@@ -2277,11 +2313,13 @@ function SummaryActivityRow({
                                 <div className="mt-3 space-y-3">
                                     {requestInputMessages.map((message) => {
                                         const uxConfig = message.details.ux;
+                                        const hasSelectableOptions =
+                                            isAskUserOptions(uxConfig.options) && uxConfig.options.length > 0;
                                         return (
                                             <AskUserWidget
                                                 key={getAgentMessageRenderKey(message, 'work-request-input')}
                                                 question={getRequestInputDisplayText(message)}
-                                                options={uxConfig.options}
+                                                options={hasSelectableOptions ? uxConfig.options : undefined}
                                                 variant={uxConfig.variant}
                                                 multiSelect={uxConfig.multiSelect}
                                                 onSelect={(optionId) =>
@@ -2299,9 +2337,7 @@ function SummaryActivityRow({
                                                         optionIds.join(', '),
                                                     )
                                                 }
-                                                allowFreeResponse={
-                                                    !uxConfig.options?.length || !!uxConfig.free_response
-                                                }
+                                                allowFreeResponse={!hasSelectableOptions || !!uxConfig.free_response}
                                                 placeholder={uxConfig.free_response?.placeholder}
                                                 submitLabel={uxConfig.free_response?.submit_label}
                                                 onSubmit={(value) =>
@@ -2456,6 +2492,8 @@ interface AllMessagesMixedProps {
     batchProgressPanelClassNames?: BatchProgressPanelClassNames;
     /** Run ID used to resolve artifact references in streaming chart specs */
     artifactRunId?: string;
+    /** Agent run to record answer ratings against. Omit to render answers without a rating control. */
+    agentRunId?: string;
     /** Hide the workstream tabs entirely */
     hideWorkstreamTabs?: boolean;
     /** className override for the working indicator container */
@@ -2510,6 +2548,7 @@ function AllMessagesMixedComponent({
     streamingMessageClassNames,
     batchProgressPanelClassNames,
     artifactRunId,
+    agentRunId,
     hideWorkstreamTabs,
     workingIndicatorClassName,
     messageListClassName,
@@ -3150,7 +3189,7 @@ function AllMessagesMixedComponent({
                     padding: 0.75rem;
                     border-radius: 0.5rem;
                     overflow-x: auto;
-                    background-color: var(--color-muted-background, #f3f4f6);
+                    background-color: var(--color-muted, #f3f4f6);
                     color: var(--color-foreground, #1f2937);
                 }
                 .vprose pre code {
@@ -3245,7 +3284,7 @@ function AllMessagesMixedComponent({
                 .agent-markdown :not(pre) > code {
                     border: 1px solid var(--border);
                     border-radius: 0.375rem;
-                    background: var(--muted-background);
+                    background: var(--muted);
                     color: var(--foreground);
                     padding: 0.1rem 0.35rem;
                     font-size: 0.8125em;
@@ -3258,7 +3297,7 @@ function AllMessagesMixedComponent({
                     overflow: auto;
                     border: 1px solid var(--border);
                     border-radius: 0.75rem;
-                    background: var(--muted-background);
+                    background: var(--muted);
                     color: var(--foreground);
                     padding: 0.875rem;
                     font-size: 0.8125rem;
@@ -3321,9 +3360,6 @@ function AllMessagesMixedComponent({
                 }
                 .agent-markdown col {
                     width: var(--agent-markdown-table-column-width);
-                }
-                .agent-markdown .agent-markdown-table-compact-col {
-                    width: clamp(4.75rem, var(--agent-markdown-table-column-width), 7rem);
                 }
                 .agent-markdown tr:last-child td {
                     border-bottom: 0;
@@ -3568,6 +3604,7 @@ function AllMessagesMixedComponent({
                                                     messageStyleOverrides={messageStyleOverrides}
                                                     StoreLinkComponent={StoreLinkComponent}
                                                     CollectionLinkComponent={CollectionLinkComponent}
+                                                    feedbackAgentRunId={agentRunId}
                                                 />
                                             </MessageErrorBoundary>
                                         </TimelineEntry>
@@ -3688,6 +3725,7 @@ function AllMessagesMixedComponent({
                                             )}
                                             StoreLinkComponent={StoreLinkComponent}
                                             CollectionLinkComponent={CollectionLinkComponent}
+                                            feedbackAgentRunId={agentRunId}
                                         />
                                     </MessageErrorBoundary>
                                 );

@@ -54,7 +54,7 @@ export function renderJsonLine(line: string) {
             : stringValue
               ? 'text-success'
               : literal
-                ? 'text-primary'
+                ? 'text-info'
                 : numberValue
                   ? 'text-attention'
                   : undefined;

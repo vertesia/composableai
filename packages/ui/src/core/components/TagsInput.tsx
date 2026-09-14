@@ -278,9 +278,9 @@ function TagsInputContent({
                                 <span
                                     key={item}
                                     className={clsx(
-                                        'inline-flex items-center justify-between gap-2 px-2 py-1 text-sm bg-primary/20 text-foreground ring-1 ring-primary/30 rounded-md w-full transition-all',
+                                        'inline-flex items-center justify-between gap-2 px-2 py-1 text-sm bg-info text-foreground ring-1 ring-primary/30 rounded-md w-full transition-all',
                                         pendingDeleteIndex === index &&
-                                            'ring-2 ring-red-300 shadow-[0_0_8px_rgba(252,165,165,0.5)]',
+                                            'ring-2 ring-destructive shadow-[0_0_8px_rgba(252,165,165,0.5)]',
                                     )}
                                 >
                                     <span className="truncate">{item}</span>
@@ -288,7 +288,7 @@ function TagsInputContent({
                                         type="button"
                                         onClick={(e) => handleRemove(item, e)}
                                         disabled={disabled}
-                                        className="hover:bg-primary/30 rounded-sm transition-colors flex-shrink-0"
+                                        className="hover:bg-info rounded-sm transition-colors flex-shrink-0"
                                     >
                                         <X className="h-3 w-3" />
                                     </button>
@@ -303,9 +303,9 @@ function TagsInputContent({
                             <span
                                 key={item}
                                 className={clsx(
-                                    'inline-flex items-center gap-1 px-2 py-1 text-sm bg-primary/20 text-foreground ring-1 ring-primary/30 rounded-md transition-all',
+                                    'inline-flex items-center gap-1 px-2 py-1 text-sm bg-info text-foreground ring-1 ring-primary/30 rounded-md transition-all',
                                     pendingDeleteIndex === index &&
-                                        'ring-2 ring-red-300 shadow-[0_0_8px_rgba(252,165,165,0.5)]',
+                                        'ring-2 ring-destructive shadow-[0_0_8px_rgba(252,165,165,0.5)]',
                                 )}
                             >
                                 {item}
@@ -313,7 +313,7 @@ function TagsInputContent({
                                     type="button"
                                     onClick={(e) => handleRemove(item, e)}
                                     disabled={disabled}
-                                    className="hover:bg-primary/30 rounded-sm transition-colors"
+                                    className="hover:bg-info rounded-sm transition-colors"
                                 >
                                     <X className="h-3 w-3" />
                                 </button>
@@ -336,7 +336,7 @@ function TagsInputContent({
                         placeholder={value.length === 0 ? placeholder : ''}
                         className={clsx(
                             'flex-1 min-w-[120px] bg-transparent text-sm',
-                            'placeholder:text-muted-foreground',
+                            'placeholder:text-muted',
                             'border-none outline-none focus:outline-none focus:ring-0 p-0 m-0',
                             layout === 'vertical' && 'w-full',
                         )}
@@ -356,7 +356,7 @@ function TagsInputContent({
             >
                 <div ref={dropdownRef} className="overflow-y-auto" style={{ maxHeight: `${maxDropdownHeight}px` }}>
                     {filteredOptions.length === 0 && !showCreateOption ? (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
+                        <div className="px-3 py-2 text-sm text-muted">
                             {searchTerm ? 'No options found' : 'No more options available'}
                         </div>
                     ) : (
@@ -381,8 +381,8 @@ function TagsInputContent({
                                             className={clsx(
                                                 'px-3 py-2 text-sm cursor-pointer transition-colors',
                                                 index === highlightedIndex
-                                                    ? 'bg-blue-500/20 text-foreground'
-                                                    : 'hover:bg-accent/50',
+                                                    ? 'bg-info text-foreground'
+                                                    : 'hover:bg-muted/50',
                                             )}
                                         >
                                             {option}
@@ -404,10 +404,10 @@ function TagsInputContent({
                                         onClick={() => handleCreate(searchTerm)}
                                         onMouseEnter={() => setHighlightedIndex(filteredOptions.length)}
                                         className={clsx(
-                                            '!flex w-full justify-start px-3 py-2 text-sm cursor-pointer transition-colors text-primary',
+                                            '!flex w-full justify-start px-3 py-2 text-sm cursor-pointer transition-colors text-info',
                                             highlightedIndex === filteredOptions.length
-                                                ? 'bg-blue-500/20'
-                                                : 'hover:bg-accent/50',
+                                                ? 'bg-info'
+                                                : 'hover:bg-muted/50',
                                         )}
                                     >
                                         {createText.replace('%value%', searchTerm)}

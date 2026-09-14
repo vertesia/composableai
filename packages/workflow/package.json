@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "1.6.0-dev",
+    "version": "1.6.0-dev.20260912.110338Z",
     "type": "module",
     "description": "Vertesia workflow DSL",
     "main": "./lib/index.js",
@@ -35,9 +35,9 @@
         "vitest": "^4.1.11"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1119.0",
-        "@aws-sdk/client-textract": "^3.1119.0",
-        "@aws-sdk/credential-providers": "^3.1119.0",
+        "@aws-sdk/client-s3": "^3.1125.0",
+        "@aws-sdk/client-textract": "^3.1125.0",
+        "@aws-sdk/credential-providers": "^3.1125.0",
         "@llumiverse/common": "workspace:*",
         "@temporalio/activity": "^1.23.0",
         "@temporalio/workflow": "^1.23.0",
@@ -49,7 +49,7 @@
         "mime": "^4.1.0",
         "ms": "3.0.0-canary.202508261828",
         "node-web-stream-adapters": "^0.2.1",
-        "p-limit": "^7.3.1",
+        "p-limit": "^7.3.2",
         "papaparse": "^5.7.0",
         "seedrandom": "^3.0.5",
         "sharp": "^0.35.4",
@@ -111,5 +111,5 @@
         "agents",
         "typescript"
     ],
-    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
+    "gitHead": "504e8df031c3950ec324c865385caf460b1c1cd7"
 }

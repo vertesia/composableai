@@ -34,7 +34,11 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
     const onProjectChange = (selected: ProjectRef) => {
         localStorage.setItem(LastSelectedAccountId_KEY, selected.account);
         localStorage.setItem(`${LastSelectedProjectId_KEY}-${selected.account}`, selected.id);
-        window.location.reload();
+        // An explicit selection must override configured workspace defaults on the next load.
+        const url = new URL(window.location.href);
+        url.searchParams.set('a', selected.account);
+        url.searchParams.set('p', selected.id);
+        window.location.assign(url.toString());
     };
 
     const hasMultipleAccounts = accounts && accounts.length > 1;
@@ -55,18 +59,18 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
         <div className="w-full flex flex-col items-center gap-4 mt-24">
             <div className="w-1/3">
                 <div className="mb-8 flex flex-col items-center text-center">
-                    <LockIcon className="w-10 h-10 mb-4 text-muted-foreground" />
+                    <LockIcon className="w-10 h-10 mb-4 text-muted" />
                     <div className="text-xl font-semibold">{t('access.denied')}</div>
-                    <div className="mt-2 text-sm text-muted-foreground">
+                    <div className="mt-2 text-sm text-muted">
                         {t('access.noPermission', { name, project: project?.name })}
                     </div>
                 </div>
                 {showSelectors && (
                     <>
-                        <div className="mb-4 text-sm text-muted-foreground">{t('access.switchPrompt')}</div>
+                        <div className="mb-4 text-sm text-muted">{t('access.switchPrompt')}</div>
                         {hasMultipleAccounts && (
                             <div className="mb-4 flex flex-col gap-2">
-                                <span className="font-semibold text-muted-foreground">{t('access.account')}</span>
+                                <span className="font-semibold text-muted">{t('access.account')}</span>
                                 <SelectBox
                                     by="id"
                                     value={selectedOrg}
@@ -79,7 +83,7 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
                         )}
                         {hasMultipleProjects && (
                             <div className="mb-4 flex flex-col gap-2">
-                                <span className="font-semibold text-muted-foreground">{t('access.project')}</span>
+                                <span className="font-semibold text-muted">{t('access.project')}</span>
                                 <SelectBox
                                     by="id"
                                     value={undefined}

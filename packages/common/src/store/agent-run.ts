@@ -21,7 +21,18 @@ import type {
     AgentRunArtifactQuerySchema,
     AgentRunArtifactsQuerySchema,
     AgentRunArtifactUploadHeadersSchema,
+    AgentRunContradictionReasonSchema,
     AgentRunDetailsQuerySchema,
+    AgentRunEvaluationRollupSchema,
+    AgentRunEvaluationSchema,
+    AgentRunFeedbackCountsSchema,
+    AgentRunFeedbackEntrySchema,
+    AgentRunFeedbackPayloadSchema,
+    AgentRunFeedbackRatingSchema,
+    AgentRunFeedbackReasonCodeSchema,
+    AgentRunFeedbackResponseSchema,
+    AgentRunFeedbackStatusSchema,
+    AgentRunJudgeResultSchema,
     AgentRunSchema,
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
@@ -31,6 +42,7 @@ import type {
     CreateRunPayloadSchema,
     IngestAgentEventsPayloadSchema,
     IngestAgentEventsResponseSchema,
+    ListAgentRunsEvaluationSeveritySchema,
     ListAgentRunsQuerySchema,
     PostAgentRunUpdatePayloadSchema,
     PostAgentRunUpdateResponseSchema,
@@ -63,6 +75,8 @@ import type {
     ConversationFileRemovedRef,
     WorkflowRunEvent,
 } from './workflow.js';
+
+export * from './agent-run-values.js';
 
 export type AgentRunStatus = z.infer<typeof AgentRunStatusSchema>;
 
@@ -263,6 +277,8 @@ export interface RecordProcessRunPayload<TData = Record<string, unknown>, TSourc
         RecordRunWorkflowPayload {
     run_kind: 'process';
     run_type?: ProcessRunType;
+    schedule_id?: string;
+    type?: AgentRunType;
 }
 
 export type RecordRunPayload<TData = Record<string, unknown>, TSource = RunSource> =
@@ -276,6 +292,18 @@ export type RecordRunPayload<TData = Record<string, unknown>, TSource = RunSourc
 export type BindRunWorkflowPayload = z.infer<typeof BindRunWorkflowPayloadSchema>;
 
 export type TerminateAgentRunResponse = z.infer<typeof TerminateAgentRunResponseSchema>;
+
+export type AgentRunFeedbackRating = z.infer<typeof AgentRunFeedbackRatingSchema>;
+export type AgentRunFeedbackReasonCode = z.infer<typeof AgentRunFeedbackReasonCodeSchema>;
+export type AgentRunFeedbackPayload = z.infer<typeof AgentRunFeedbackPayloadSchema>;
+export type AgentRunFeedbackStatus = z.infer<typeof AgentRunFeedbackStatusSchema>;
+export type AgentRunFeedbackCounts = z.infer<typeof AgentRunFeedbackCountsSchema>;
+export type AgentRunFeedbackResponse = z.infer<typeof AgentRunFeedbackResponseSchema>;
+export type AgentRunFeedbackEntry = z.infer<typeof AgentRunFeedbackEntrySchema>;
+export type AgentRunEvaluationRollup = z.infer<typeof AgentRunEvaluationRollupSchema>;
+export type AgentRunJudgeResult = z.infer<typeof AgentRunJudgeResultSchema>;
+export type AgentRunContradictionReason = z.infer<typeof AgentRunContradictionReasonSchema>;
+export type AgentRunEvaluation = z.infer<typeof AgentRunEvaluationSchema>;
 
 /**
  * Payload for updating an AgentRun's lifecycle and derived metadata.
@@ -308,6 +336,11 @@ export interface UpdateAgentRunStatusPayload {
     last_archive_error?: string;
     sequence?: number;
     process_state?: ProcessState;
+    /**
+     * Fold of the run's turn evaluations, written by the conversation workflow. The server applies
+     * it atomically and ignores a rollup whose `seq` is not newer than the one it holds.
+     */
+    evaluation_rollup?: AgentRunEvaluationRollup;
 }
 
 // The wire contract is deliberately open because signal payloads are selected by `signalName`.
@@ -387,6 +420,9 @@ export type AgentRunDetailsStreamEvent =
     | { type: 'history'; data: AgentRunDetailsHistoryStreamEvent }
     | { type: 'control'; data: AgentRunDetailsControlStreamEvent }
     | { type: 'error'; data: AgentRunDetailsErrorStreamEvent };
+
+/** Evaluation severity filter values; `unrated` selects runs without an evaluation. */
+export type ListAgentRunsEvaluationSeverity = z.infer<typeof ListAgentRunsEvaluationSeveritySchema>;
 
 /**
  * Filters for listing agent runs.

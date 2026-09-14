@@ -26,6 +26,31 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
+    it('Button resolves custom color overrides without conflicting variant colors', () => {
+        const { container } = renderWithProviders(
+            <div>
+                <Button>Save</Button>
+                <Button className="bg-info text-info">Custom action</Button>
+                <Button variant="outline">Cancel</Button>
+            </div>,
+        );
+        const [primary, custom, outline] = container.querySelectorAll('button');
+        // The primary variant is the solid brand pair: `bg-primary` is the dark blue surface and
+        // `text-primary` resolves `--primary-foreground` (white) on top of it. Both halves use the
+        // bare token name -- `text-primary-foreground` is the pre-rename spelling and must not return.
+        expect(primary.classList.contains('bg-primary')).toBe(true);
+        expect(primary.classList.contains('text-primary')).toBe(true);
+        expect(primary.classList.contains('text-primary-foreground')).toBe(false);
+        // A className color override replaces the variant's pair outright, leaving no primary remnant.
+        expect(custom.classList.contains('bg-info')).toBe(true);
+        expect(custom.classList.contains('text-info')).toBe(true);
+        expect(custom.classList.contains('bg-primary')).toBe(false);
+        expect(custom.classList.contains('text-primary')).toBe(false);
+        // The outline variant sets a surface but no semantic ink, so it inherits the page foreground.
+        expect(outline.classList.contains('bg-background')).toBe(true);
+        expect(outline.classList.contains('text-primary')).toBe(false);
+    });
+
     it('Button defaults to type="button" but does not inject type when asChild', async () => {
         const { container } = renderWithProviders(
             <div>

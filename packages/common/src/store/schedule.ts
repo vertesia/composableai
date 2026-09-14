@@ -1,14 +1,24 @@
 /**
- * Agent Schedule Types
+ * Schedule Types
  *
- * Defines types for scheduling agents to run on a recurring basis using cron expressions.
+ * Defines types for scheduling agents or processes to run on a recurring basis using cron expressions.
  * Schedules are stored in MongoDB with execution handled by Temporal.
  */
+
+import type { ProcessRunType } from './agent-run.js';
 
 /**
  * Represents a scheduled agent execution configuration.
  */
+export type ScheduleRunAs = { mode: 'creator' } | { mode: 'user'; user_id: string };
+
 export interface AgentSchedule {
+    owner?: string;
+    run_as?: ScheduleRunAs;
+    visibility?: 'project' | 'private';
+    delegation_grant_id?: string;
+    delegation_expires_at?: string | null;
+    output_collection_id?: string;
     /** Unique identifier for the schedule */
     id: string;
 
@@ -24,11 +34,29 @@ export interface AgentSchedule {
     /** Account ID this schedule belongs to */
     account: string;
 
+    /** The kind of workflow started by the schedule. Older agent schedules may omit this field. */
+    target?: 'agent' | 'process';
+
     /** Interaction ID or endpoint name to execute (e.g., "MyAgent" or ObjectId) */
-    interaction: string;
+    interaction?: string;
 
     /** Cached interaction name for display purposes */
     interaction_name?: string;
+
+    /** Process definition ID to execute */
+    process?: string;
+
+    /**
+     * Initial process context the schedule fires with, as supplied at creation. Process schedules
+     * only; the agent equivalent is `vars`.
+     */
+    context?: Record<string, unknown>;
+
+    /**
+     * Process execution mode the schedule fires with. Process schedules only. Absent on schedules
+     * created before this field was reported, which run as "programmatic".
+     */
+    run_type?: ProcessRunType;
 
     /**
      * Cron expression defining when to run.
@@ -74,18 +102,15 @@ export interface AgentSchedule {
     next_run_at?: Date;
 }
 
-/**
- * Payload for creating a new schedule.
- */
-export interface CreateSchedulePayload {
+interface CreateSchedulePayloadBase {
+    run_as: ScheduleRunAs;
+    delegation_expires_at?: string | null;
+    request_id?: string;
     /** Human-readable name for the schedule */
     name: string;
 
     /** Optional description of what the schedule does */
     description?: string;
-
-    /** Interaction ID or endpoint name to execute */
-    interaction: string;
 
     /**
      * Cron expression defining when to run.
@@ -96,23 +121,54 @@ export interface CreateSchedulePayload {
     /** Timezone for the cron expression (defaults to "UTC") */
     timezone?: string;
 
-    /** Variables to pass to the agent workflow */
-    vars?: Record<string, unknown>;
-
     /** Optional task queue override */
     task_queue?: string;
 
     /** Whether the schedule should be enabled immediately (defaults to true) */
     enabled?: boolean;
+}
+
+/** Payload for creating an agent schedule. */
+export interface CreateAgentSchedulePayload extends CreateSchedulePayloadBase {
+    /** Agent schedules are the default for backwards compatibility. */
+    target?: 'agent';
+
+    /** Interaction ID or endpoint name to execute */
+    interaction: string;
+
+    /** Variables to pass to the agent workflow */
+    vars?: Record<string, unknown>;
 
     /** Visibility of the conversation (defaults to "project") */
     visibility?: 'project' | 'private';
 }
 
+/** Payload for creating a process schedule. */
+export interface CreateProcessSchedulePayload extends CreateSchedulePayloadBase {
+    target: 'process';
+
+    /** Process definition ID to execute */
+    process: string;
+
+    /** Initial process context merged with the definition's initial context */
+    context?: Record<string, unknown>;
+
+    /** Process execution mode (defaults to "programmatic") */
+    run_type?: ProcessRunType;
+}
+
+/** Payload for creating a new schedule. */
+export type CreateSchedulePayload = CreateAgentSchedulePayload | CreateProcessSchedulePayload;
+
 /**
  * Payload for updating an existing schedule.
+ *
+ * Agent vars and delegation changes re-publish the execution specification. Process context,
+ * run_type, and task queues remain fixed at creation.
  */
 export interface UpdateSchedulePayload {
+    run_as?: ScheduleRunAs;
+    delegation_expires_at?: string | null;
     /** Updated name */
     name?: string;
 
@@ -138,20 +194,28 @@ export interface UpdateSchedulePayload {
 /**
  * Summary information for listing schedules.
  */
-export interface ScheduleListItem {
-    id: string;
-    name: string;
-    description?: string;
-    interaction: string;
-    interaction_name?: string;
-    cron_expression: string;
-    timezone?: string;
-    enabled: boolean;
-    last_run_at?: Date;
-    next_run_at?: Date;
-    created_by: string;
-    updated_at: Date;
-}
+export type ScheduleListItem = Pick<
+    AgentSchedule,
+    | 'owner'
+    | 'run_as'
+    | 'delegation_grant_id'
+    | 'delegation_expires_at'
+    | 'id'
+    | 'name'
+    | 'description'
+    | 'target'
+    | 'process'
+    | 'run_type'
+    | 'interaction'
+    | 'interaction_name'
+    | 'cron_expression'
+    | 'timezone'
+    | 'enabled'
+    | 'last_run_at'
+    | 'next_run_at'
+    | 'created_by'
+    | 'updated_at'
+>;
 
 /**
  * Extended schedule information including Temporal execution details.

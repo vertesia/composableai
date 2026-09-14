@@ -1,8 +1,8 @@
 import type { CatalogInteractionRef } from '@vertesia/common';
-import { Badge, Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { Badge, Card, CardContent, useFetch } from '@vertesia/ui/core';
 import { NavLink, useParams } from '@vertesia/ui/router';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 import { TYPE_VARIANTS } from '../components/typeVariants.js';
 
@@ -24,11 +24,7 @@ export function InteractionCollection() {
     }
 
     if (!interactions) {
-        return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
-                <Spinner />
-            </div>
-        );
+        return <AdminLoadingPage />;
     }
 
     return (
@@ -52,9 +48,7 @@ export function InteractionCollection() {
                                     interaction
                                 </span>
                                 <div className="font-semibold text-card-foreground">{inter.title || inter.name}</div>
-                                <div className="mt-1 text-sm text-muted-foreground">
-                                    {inter.description || 'No description'}
-                                </div>
+                                <div className="mt-1 text-sm text-muted">{inter.description || 'No description'}</div>
                                 {inter.tags && inter.tags.length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-1">
                                         {inter.tags.map((tag) => (

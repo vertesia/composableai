@@ -35,6 +35,7 @@ class ManagerRole extends OrgMemberRole {
 class DeveloperRole extends OrgMemberRole {
     constructor() {
         super(SystemRoles.developer, Object.values(Permission));
+        this.permissions.delete(Permission.schedule_delegate);
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.project_admin);
         this.permissions.delete(Permission.project_settings_write);

@@ -45,6 +45,7 @@ import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
+import { AgentRunFeedbackProvider } from './AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
@@ -1229,7 +1230,7 @@ function StartWorkflowView({
             >
                 {/* Drag overlay for full-panel file drop */}
                 {canStageFiles && isDragOver && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-info-background z-50 pointer-events-none rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center bg-info z-50 pointer-events-none rounded-lg">
                         <div className="text-info font-medium flex items-center gap-2 text-lg">
                             <UploadIcon className="size-6" />
                             Drop files to stage for upload
@@ -2808,47 +2809,50 @@ function ModernAgentConversationInner({
             {messages.length === 0 && !effectiveIsCompleted && pendingStartMessage && pendingStartTimestamp ? (
                 <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
             ) : (
-                <AllMessagesMixed
-                    messages={renderedMessages}
-                    workstreamSourceMessages={renderedWorkstreamSourceMessages}
-                    bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                    isCompleted={displayedIsCompleted}
-                    plan={getActivePlan.plan}
-                    workstreamStatus={getActivePlan.workstreamStatus}
-                    showPlanPanel={showRightPanelProp && showSlidingPanel}
-                    onTogglePlanPanel={handleTogglePlanPanel}
-                    plans={plans}
-                    activePlanIndex={activePlanIndex}
-                    onChangePlan={handleChangePlan}
-                    taskLabels={taskLabels}
-                    streamingMessages={displayedStreamingMessages}
-                    onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
-                    onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
-                    messageItemClassNames={messageItemClassNames}
-                    messageStyleOverrides={messageStyleOverrides}
-                    toolCallGroupClassNames={toolCallGroupClassNames}
-                    hideToolCallsInViewMode={hideToolCallsInViewMode}
-                    streamingMessageClassNames={streamingMessageClassNames}
-                    batchProgressPanelClassNames={batchProgressPanelClassNames}
-                    artifactRunId={agentRunId}
-                    viewMode={viewMode}
-                    hideWorkstreamTabs={hideWorkstreamTabs}
-                    workingIndicatorClassName={workingIndicatorClassName}
-                    messageListClassName={messageListClassName}
-                    StoreLinkComponent={effectiveStoreLinkComponent}
-                    CollectionLinkComponent={CollectionLinkComponent}
-                    prependFriendlyMessage={prependFriendlyMessage}
-                    initialRequestData={initialRequestData}
-                    initialRequestSchema={initialRequestSchema}
-                    initialRequestTitle={initialRequestTitle}
-                    initialRequestTemplate={initialRequestTemplate}
-                    showInitialRequest={initialHistoryStatus === 'empty' && messages.length === 0}
-                    hiddenMessageTypes={hiddenMessageTypes}
-                    disableAutoScroll={!isPlaybackLive}
-                    renderRequestInputControls={!shouldShowRequestInputOverlay}
-                    activeWorkstream={activeWorkstream}
-                    onActiveWorkstreamChange={setActiveWorkstream}
-                />
+                <AgentRunFeedbackProvider agentRunId={agentRunId}>
+                    <AllMessagesMixed
+                        messages={renderedMessages}
+                        workstreamSourceMessages={renderedWorkstreamSourceMessages}
+                        bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
+                        isCompleted={displayedIsCompleted}
+                        plan={getActivePlan.plan}
+                        workstreamStatus={getActivePlan.workstreamStatus}
+                        showPlanPanel={showRightPanelProp && showSlidingPanel}
+                        onTogglePlanPanel={handleTogglePlanPanel}
+                        plans={plans}
+                        activePlanIndex={activePlanIndex}
+                        onChangePlan={handleChangePlan}
+                        taskLabels={taskLabels}
+                        streamingMessages={displayedStreamingMessages}
+                        onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                        onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
+                        messageItemClassNames={messageItemClassNames}
+                        messageStyleOverrides={messageStyleOverrides}
+                        toolCallGroupClassNames={toolCallGroupClassNames}
+                        hideToolCallsInViewMode={hideToolCallsInViewMode}
+                        streamingMessageClassNames={streamingMessageClassNames}
+                        batchProgressPanelClassNames={batchProgressPanelClassNames}
+                        artifactRunId={agentRunId}
+                        agentRunId={agentRunId}
+                        viewMode={viewMode}
+                        hideWorkstreamTabs={hideWorkstreamTabs}
+                        workingIndicatorClassName={workingIndicatorClassName}
+                        messageListClassName={messageListClassName}
+                        StoreLinkComponent={effectiveStoreLinkComponent}
+                        CollectionLinkComponent={CollectionLinkComponent}
+                        prependFriendlyMessage={prependFriendlyMessage}
+                        initialRequestData={initialRequestData}
+                        initialRequestSchema={initialRequestSchema}
+                        initialRequestTitle={initialRequestTitle}
+                        initialRequestTemplate={initialRequestTemplate}
+                        showInitialRequest={initialHistoryStatus === 'empty' && messages.length === 0}
+                        hiddenMessageTypes={hiddenMessageTypes}
+                        disableAutoScroll={!isPlaybackLive}
+                        renderRequestInputControls={!shouldShowRequestInputOverlay}
+                        activeWorkstream={activeWorkstream}
+                        onActiveWorkstreamChange={setActiveWorkstream}
+                    />
+                </AgentRunFeedbackProvider>
             )}
 
             {shouldShowRequestInputOverlay ? (
@@ -2970,7 +2974,7 @@ function ModernAgentConversationInner({
                     ref={conversationLayoutRef}
                     className={cn(
                         'flex flex-col lg:flex-row gap-2 w-full h-full relative overflow-hidden',
-                        canUploadFiles && isDragOver && 'ring-2 ring-blue-400 ring-inset',
+                        canUploadFiles && isDragOver && 'ring-2 ring-info ring-inset',
                         className,
                     )}
                     onDragEnter={canUploadFiles ? handleDragEnter : undefined}
@@ -2980,8 +2984,8 @@ function ModernAgentConversationInner({
                 >
                     {/* Drag overlay for full-panel file drop */}
                     {canUploadFiles && isDragOver && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
-                            <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
+                        <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 z-50 pointer-events-none rounded-lg">
+                            <div className="text-info font-medium flex items-center gap-2 text-lg">
                                 <UploadIcon className="size-6" />
                                 Drop files to upload
                             </div>

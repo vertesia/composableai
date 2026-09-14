@@ -1,6 +1,6 @@
 {
     "name": "@koa-stack/body",
-    "version": "0.26.0-dev",
+    "version": "0.27.0-dev.20260914.133404Z",
     "description": "Expose the request body as a promise in koa Context.body",
     "type": "module",
     "scripts": {
@@ -38,7 +38,7 @@
         "@types/koa": "^3.0.3",
         "@types/qs": "^6.15.1",
         "@vertesia/tsconfig": "workspace:*",
-        "fast-xml-parser": "^5.11.0",
+        "fast-xml-parser": "^5.11.1",
         "typescript": "catalog:"
     },
     "main": "./lib/index.js",

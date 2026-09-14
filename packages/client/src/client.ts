@@ -7,6 +7,7 @@ import { ApiKeysApi } from './ApiKeysApi.js';
 import AppsApi from './AppsApi.js';
 import AuditTrailApi from './AuditTrailApi.js';
 import CommandsApi from './CommandsApi.js';
+import DelegationGrantsApi from './DelegationGrantsApi.js';
 import EnvironmentsApi from './EnvironmentsApi.js';
 import { IamApi } from './IamApi.js';
 import InteractionsApi from './InteractionsApi.js';
@@ -450,6 +451,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     analytics = new AnalyticsApi(this);
     auditTrail = new AuditTrailApi(this);
     training = new TrainingApi(this);
+    delegationGrants = new DelegationGrantsApi(this);
     users = new UsersApi(this);
     iam = new IamApi(this);
     refs = new RefsApi(this);

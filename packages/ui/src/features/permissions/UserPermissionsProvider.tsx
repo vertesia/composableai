@@ -1,9 +1,10 @@
 import { type AuthTokenPayload, type Permission, PrincipalType, type SystemRoleDefinition } from '@vertesia/common';
-import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
+import { Button, errorMessage, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { createContext, useContext, useMemo } from 'react';
+import { type ComponentType, createContext, useContext, useMemo } from 'react';
 import { isAnyOf } from './helpers';
+import { roleMappingsErrorStatus, useRoleMappings } from './useRoleMappings';
 
 type ListRolesResponse = SystemRoleDefinition[];
 
@@ -66,38 +67,122 @@ export function useUserPermissions() {
     return perms;
 }
 
-interface UserPermissionProviderProps {
-    children: React.ReactNode;
+export interface PermissionLoadingScreenProps {
+    status: 'loading' | 'retrying' | 'error';
+    error?: unknown;
+    title: string;
+    description: string;
+    loadingIcon?: React.ReactNode;
+    /** Localized label and action appropriate to the failure (retry, or sign out for 401/403). */
+    actionLabel: string;
+    onAction: () => void;
 }
-export function UserPermissionProvider({ children }: UserPermissionProviderProps) {
+
+interface UserPermissionProviderProps {
+    LoadingScreen?: ComponentType<PermissionLoadingScreenProps>;
+    children: React.ReactNode;
+    loadingIcon?: React.ReactNode;
+}
+export function UserPermissionProvider({ children, loadingIcon, LoadingScreen }: UserPermissionProviderProps) {
     const { t } = useUITranslation();
     const session = useUserSession();
     const authToken = session.authToken;
-    const shouldFetchRoleMappings = Boolean(authToken && !authToken.permissions);
-    const { data, error, isLoading } = useFetch<ListRolesResponse | undefined>(() => {
-        if (shouldFetchRoleMappings) {
-            return session.client.iam.roles.listSystem();
-        }
-        return Promise.resolve(undefined);
-    }, [session.client, authToken, shouldFetchRoleMappings]);
+    const { state, retry } = useRoleMappings(session.client, authToken);
 
     const perms = useMemo(() => {
-        if (authToken) {
-            if (authToken.permissions || !shouldFetchRoleMappings) {
-                return new UserPermissions(authToken);
-            }
-            if (data && !isLoading) {
-                return new UserPermissions(authToken, data);
-            }
-        } else {
-            return undefined;
+        if (!authToken) return undefined;
+        if (authToken.permissions) {
+            return new UserPermissions(authToken);
+        }
+        if (state.status === 'ready') {
+            return new UserPermissions(authToken, state.roles);
         }
         return undefined;
-    }, [authToken, data, isLoading, shouldFetchRoleMappings]);
+    }, [authToken, state]);
 
-    if (error) {
-        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{errorMessage(error)}</ErrorBox>;
+    if (authToken && !perms) {
+        const failed = state.status === 'error';
+        const status = failed ? roleMappingsErrorStatus(state.error) : undefined;
+        const needsSignIn = status === 401;
+        const denied = status === 403;
+        const title = needsSignIn
+            ? t('auth.recovery.credential.title')
+            : denied
+              ? t('shell.accessDenied')
+              : failed
+                ? t('permissions.connectionFailed')
+                : t('permissions.connecting');
+        const description = needsSignIn
+            ? t('auth.recovery.credential.body')
+            : denied
+              ? t('permissions.accessDenied')
+              : failed
+                ? t('permissions.tryAgainLater')
+                : state.status === 'retrying'
+                  ? t('permissions.retrying')
+                  : t('permissions.loadingPermissions');
+        const actionLabel =
+            needsSignIn || denied ? t('auth.recovery.useDifferentAccount') : t('auth.recovery.tryAgain');
+        const onAction = needsSignIn || denied ? () => session.signOut() : retry;
+        const Screen = LoadingScreen ?? DefaultPermissionLoadingScreen;
+        return (
+            <Screen
+                status={failed ? 'error' : state.status === 'retrying' ? 'retrying' : 'loading'}
+                error={failed ? state.error : undefined}
+                title={title}
+                description={description}
+                loadingIcon={loadingIcon}
+                actionLabel={actionLabel}
+                onAction={onAction}
+            />
+        );
     }
 
     return perms && <UserPermissionsContext.Provider value={perms}>{children}</UserPermissionsContext.Provider>;
+}
+
+/** Shared permission-loading and recovery layout. */
+export function DefaultPermissionLoadingScreen({
+    status,
+    error,
+    title,
+    description,
+    loadingIcon,
+    actionLabel,
+    onAction,
+}: PermissionLoadingScreenProps) {
+    const { t } = useUITranslation();
+    const failed = status === 'error';
+    return (
+        <div className="flex min-h-dvh items-center justify-center bg-background px-6 text-foreground">
+            <div className="w-full max-w-md space-y-6 text-center">
+                <div aria-hidden="true" className="flex justify-center">
+                    {loadingIcon || (!failed && <Spinner size="2xl" className="text-info" />)}
+                </div>
+                <div
+                    role={failed ? 'alert' : 'status'}
+                    aria-live={failed ? 'assertive' : 'polite'}
+                    className="space-y-2"
+                >
+                    <h1 className="text-xl font-semibold">{title}</h1>
+                    <p className="text-muted">{description}</p>
+                </div>
+                {failed && (
+                    <>
+                        <Button variant="outline" onClick={onAction}>
+                            {actionLabel}
+                        </Button>
+                        {error != null && (
+                            <details className="text-start text-sm text-muted">
+                                <summary className="cursor-pointer">{t('auth.recovery.technicalDetails')}</summary>
+                                <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap wrap-break-word">
+                                    {errorMessage(error)}
+                                </pre>
+                            </details>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
 }

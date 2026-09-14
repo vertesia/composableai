@@ -217,7 +217,7 @@ export function SelectCollection({
                             placeholder={resolvedSearchPlaceholder}
                             value={searchQuery}
                             onValueChange={handleSearchChange}
-                            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-50"
                         />
                         {isSearching && (
                             <div className="me-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

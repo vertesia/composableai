@@ -1,3 +1,7 @@
+import { statSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
 /**
  * Configuration for @vertesia/create-tools
  *
@@ -69,3 +73,13 @@ export const validation = {
      */
     reservedNames: ['test', 'node_modules', 'dist', 'build'] as string[],
 } as const;
+
+/** Same marker and file check as the Vertesia CLI; independent of scaffold --dev settings. */
+export function hasDevelopmentMarker(directory = join(homedir(), '.vertesia')): boolean {
+    try {
+        return statSync(join(directory, 'dev')).isFile();
+    } catch (error: unknown) {
+        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return false;
+        throw error;
+    }
+}

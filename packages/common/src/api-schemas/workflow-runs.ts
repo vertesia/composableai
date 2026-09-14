@@ -229,6 +229,7 @@ export const PendingActivitySchema = z
 
 export const AgentTaskSchema = z
     .strictObject({
+        history_id: z.string().meta({ description: 'Stable observability row identity across refreshes.' }).optional(),
         taskType: z
             .enum(['tool_call', 'llm_call', 'input', 'timer', 'subagent', 'processing', 'signal'])
             .meta({ description: 'Type discriminator for future task types' }),
@@ -576,6 +577,20 @@ export const WorkflowHistorySchema = z
         }),
         z.strictObject({
             type: z.literal('agent'),
+            mode: z
+                .enum(['snapshot', 'delta'])
+                .meta({
+                    description:
+                        'Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows.',
+                })
+                .optional(),
+            next_from: z
+                .string()
+                .meta({
+                    description:
+                        'Pass as from on the next refresh with the same options. Absence disables incremental refresh.',
+                })
+                .optional(),
             agentTasks: z.array(AgentTaskSchema),
         }),
     ])

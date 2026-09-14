@@ -109,22 +109,26 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
     const onProjectChange = (selected: ProjectRef) => {
         localStorage.setItem(LastSelectedAccountId_KEY, selected.account);
         localStorage.setItem(`${LastSelectedProjectId_KEY}-${selected.account}`, selected.id);
-        window.location.reload();
+        // An explicit selection must override configured workspace defaults on the next load.
+        const url = new URL(window.location.href);
+        url.searchParams.set('a', selected.account);
+        url.searchParams.set('p', selected.id);
+        window.location.assign(url.toString());
     };
 
     const filteredProjects = selectedAccountId ? projectsByOrg[selectedAccountId] || [] : [];
     const selectedOrg = orgOptions.find((a) => a.id === selectedAccountId);
 
     return (
-        <Center className="pt-10 flex flex-col items-center text-center text-gray-700">
-            <LockIcon className="w-10 h-10 mb-4 text-gray-500" />
+        <Center className="pt-10 flex flex-col items-center text-center text-foreground">
+            <LockIcon className="w-10 h-10 mb-4 text-muted" />
             <div className="text-xl font-semibold">{t('shell.accessDenied')}</div>
-            <div className="mt-2 text-sm text-gray-500">
+            <div className="mt-2 text-sm text-muted">
                 You don&apos;t have permission to view the <span className="font-semibold">{name}</span> app in project:{' '}
                 <span className="font-semibold">&laquo;{project?.name}&raquo;</span>.
             </div>
             {orgOptions.length === 0 && allProjects !== undefined && (
-                <div className="mt-4 text-sm text-gray-500">
+                <div className="mt-4 text-sm text-muted">
                     This app is not installed in any project you have access to.
                 </div>
             )}
@@ -132,7 +136,7 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
                 <div className="mt-4 flex flex-row gap-4 items-end">
                     {orgOptions.length > 1 && (
                         <div>
-                            <div className="text-sm text-gray-500 mb-2">{t('shell.organization')}</div>
+                            <div className="text-sm text-muted mb-2">{t('shell.organization')}</div>
                             <SelectBox
                                 by="id"
                                 value={selectedOrg}
@@ -145,7 +149,7 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
                     )}
                     <div>
                         {orgOptions.length > 1 && (
-                            <div className="text-sm text-gray-500 mb-2">{t('login.terminal.project')}</div>
+                            <div className="text-sm text-muted mb-2">{t('login.terminal.project')}</div>
                         )}
                         <SelectBox
                             by="id"
@@ -165,10 +169,10 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
 function UnknownAppName() {
     const { t } = useUITranslation();
     return (
-        <Center className="pt-10 flex flex-col items-center text-center text-gray-700">
-            <LockIcon className="w-10 h-10 mb-4 text-gray-500" />
+        <Center className="pt-10 flex flex-col items-center text-center text-foreground">
+            <LockIcon className="w-10 h-10 mb-4 text-muted" />
             <div className="text-xl font-semibold">{t('shell.applicationNotRegistered')}</div>
-            <div className="mt-2 text-sm text-gray-500">
+            <div className="mt-2 text-sm text-muted">
                 Before starting to code a Vertesia application you must register an application manifest in Vertesia
                 Studio then install it in one or more projects.
                 <p />

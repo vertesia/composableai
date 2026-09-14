@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/ui",
-    "version": "1.6.0-dev",
+    "version": "1.6.0-dev.20260912.110338Z",
     "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
@@ -71,29 +71,29 @@
         "dayjs": "^1.11.23",
         "debounce": "^3.0.0",
         "dompurify": "^3.4.14",
-        "fast-xml-parser": "^5.11.0",
+        "fast-xml-parser": "^5.11.1",
         "firebase": "^12.18.0",
-        "framer-motion": "^13.1.1",
-        "i18next": "^26.4.0",
+        "framer-motion": "^13.2.0",
+        "i18next": "^26.4.1",
         "jwt-decode": "^4.0.0",
-        "katex": "^0.18.4",
+        "katex": "^0.18.5",
         "lodash-es": "^4.18.1",
-        "lucide-react": "^1.38.0",
+        "lucide-react": "^1.42.0",
         "mermaid": "^11.17.2",
         "monaco-editor": "^0.56.0",
-        "motion": "^13.1.1",
+        "motion": "^13.2.0",
         "papaparse": "^5.7.0",
         "react": "catalog:",
         "react-calendar": "^6.0.1",
         "react-date-picker": "^12.1.0",
         "react-dom": "catalog:",
-        "react-error-boundary": "^6.1.4",
-        "react-i18next": "^17.0.12",
+        "react-error-boundary": "^6.1.5",
+        "react-i18next": "^17.0.13",
         "react-markdown": "^10.1.0",
         "react-pdf": "^10.5.0",
         "react-remove-scroll": "^2.7.2",
         "react-remove-scroll-bar": "^2.3.8",
-        "react-resizable-panels": "^4.12.3",
+        "react-resizable-panels": "^4.12.4",
         "react-style-singleton": "^2.2.3",
         "react-vega": "^8.0.0",
         "rehype-katex": "^7.0.1",
@@ -107,12 +107,12 @@
         "ts-md5": "^2.0.1",
         "unist-util-visit": "^5.1.0",
         "vega": "^6.4.0",
-        "vega-embed": "^7.1.0",
+        "vega-embed": "^7.2.0",
         "vega-lite": "^6.4.3"
     },
     "devDependencies": {
-        "@testing-library/react": "^16.3.2",
-        "@testing-library/user-event": "^14.6.6",
+        "@testing-library/react": "^16.3.3",
+        "@testing-library/user-event": "^14.6.7",
         "@types/hast": "^3.0.5",
         "@types/lodash-es": "^4.17.12",
         "@types/node": "catalog:",
@@ -122,9 +122,10 @@
         "@vertesia/tsconfig": "workspace:*",
         "axe-core": "^4.13.0",
         "culori": "^4.0.2",
-        "i18next-cli": "^1.71.3",
+        "i18next-cli": "^1.72.2",
         "jsdom": "^30.0.1",
         "rolldown": "catalog:",
+        "tailwindcss": "^4.3.3",
         "typescript": "catalog:",
         "vitest": "^4.1.11",
         "vitest-axe": "^0.1.0",
@@ -188,6 +189,10 @@
         "./i18n": {
             "types": "./lib/i18n/index.d.ts",
             "default": "./lib/i18n/index.js"
+        },
+        "./boot/vite": {
+            "types": "./lib/boot/vite.d.ts",
+            "default": "./lib/boot/vite.js"
         }
     },
     "repository": {
@@ -195,5 +200,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/ui"
     },
-    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
+    "gitHead": "504e8df031c3950ec324c865385caf460b1c1cd7"
 }

@@ -22,6 +22,12 @@ export * from './common.js';
 export * from './content-query.js';
 export * from './cost-analytics.js';
 export * from './data-platform.js';
+export type {
+    CreateDelegationGrantPayload,
+    DelegationGrant,
+    DelegationGrantArray,
+    DelegationTokenClaim,
+} from './delegation.js';
 export * from './email.js';
 export * from './embeddings.js';
 export * from './environment.js';

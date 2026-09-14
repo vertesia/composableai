@@ -55,10 +55,11 @@ const SIGNIN_STEP_BUTTON_BASE = 'cursor-pointer inline-flex items-center justify
 const SIGNIN_STEP_BUTTON_VARIANTS = {
     // Filled CTA; greys out when disabled.
     primary:
-        'h-[42px] gap-2.5 rounded-md bg-foreground text-background hover:opacity-90 ' +
+        'h-[42px] gap-2.5 rounded-md bg-[var(--auth-button,var(--foreground))] text-[color:var(--auth-button-text,var(--background))] hover:opacity-90 ' +
         'disabled:opacity-50 disabled:cursor-not-allowed',
     // Non-interactive primary kept at full opacity (spinner reads as active).
-    loading: 'h-[42px] gap-2.5 rounded-md bg-foreground text-background opacity-90',
+    loading:
+        'h-[42px] gap-2.5 rounded-md bg-[var(--auth-button,var(--foreground))] text-[color:var(--auth-button-text,var(--background))] opacity-90',
     // Flat text link.
     ghost: 'h-9 text-muted hover:text-foreground',
 } as const;
@@ -135,7 +136,7 @@ interface SignInInitialsBadgeProps {
 export function SignInInitialsBadge({ initials, shape = 'circle' }: SignInInitialsBadgeProps) {
     return (
         <span
-            className={`bg-info text-info-foreground grid place-items-center font-semibold shrink-0 ${INITIALS_BADGE_SHAPES[shape]}`}
+            className={`bg-info text-info grid place-items-center font-semibold shrink-0 ${INITIALS_BADGE_SHAPES[shape]}`}
         >
             {initials}
         </span>
@@ -145,7 +146,7 @@ export function SignInInitialsBadge({ initials, shape = 'circle' }: SignInInitia
 /** Rounded tile framing a provider/status icon. */
 export function SignInIconBadge({ children }: { children: ReactNode }) {
     return (
-        <div className="inline-grid place-items-center size-14 rounded-xl bg-info-background border border-info/15 mb-3.5">
+        <div className="inline-grid place-items-center size-14 rounded-xl bg-info border border-info/15 mb-3.5">
             {children}
         </div>
     );
@@ -177,7 +178,7 @@ const ACCOUNT_CARD_VARIANTS = {
         topRow: 'flex items-center gap-2.5 px-3 py-2.5',
         title: 'text-[13.5px] font-semibold text-foreground leading-tight',
         subtitle: 'text-[11.5px] text-muted leading-tight mt-0.5',
-        bottomRow: 'flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted-background',
+        bottomRow: 'flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted',
         mailBox: 'size-[30px] grid place-items-center shrink-0',
         mailIcon: 'size-4 text-muted',
         email: 'text-sm text-foreground/80 flex-1 truncate',
@@ -187,7 +188,7 @@ const ACCOUNT_CARD_VARIANTS = {
         topRow: 'flex items-center gap-3 px-3.5 py-2.5',
         title: 'text-sm font-semibold text-foreground truncate',
         subtitle: 'text-xs text-foreground/80 truncate',
-        bottomRow: 'flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted-background',
+        bottomRow: 'flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted',
         mailBox: 'w-9 h-6 grid place-items-center shrink-0',
         mailIcon: 'size-3.5 text-muted',
         email: 'text-xs text-foreground/80 flex-1 truncate',
@@ -253,7 +254,7 @@ interface SignInAccountRowProps {
 /** Single-row identity card: badge + title/subtitle + a trailing action link. */
 export function SignInAccountRow({ badge, title, subtitle, actionLabel, onAction }: SignInAccountRowProps) {
     return (
-        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted-background">
+        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted">
             {badge}
             <SignInIdentityLines
                 title={title}
@@ -275,7 +276,7 @@ interface SignInEmailRowProps {
 /** Standalone bordered pill: mail icon + email + a trailing action link. */
 export function SignInEmailRow({ email, actionLabel, onAction }: SignInEmailRowProps) {
     return (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted-background">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted">
             <Mail className="size-4 text-muted shrink-0" />
             <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
             <SignInInlineLinkButton onClick={onAction}>{actionLabel}</SignInInlineLinkButton>
@@ -307,7 +308,7 @@ export function SignInProviderButton({ provider, label, onClick, variant = 'outl
                 variant="unstyled"
                 size="none"
                 onClick={onClick}
-                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 ps-3.5 pe-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
+                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 ps-3.5 pe-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted"
             >
                 <Icon className="!size-[18px] shrink-0" />
                 <span className="flex-1 text-start">{label}</span>
@@ -317,7 +318,9 @@ export function SignInProviderButton({ provider, label, onClick, variant = 'outl
     }
 
     const variantClass =
-        variant === 'filled' ? '!bg-foreground text-background hover:!bg-foreground/90' : 'hover:shadow-sm';
+        variant === 'filled'
+            ? '!bg-[var(--auth-button,var(--foreground))] text-[color:var(--auth-button-text,var(--background))] hover:!bg-[var(--auth-button,var(--foreground))]/90'
+            : 'hover:shadow-sm';
     return (
         <Button
             variant="outline"
@@ -342,7 +345,7 @@ interface SignInCalloutProps {
 /** Destructive notice: icon + bold title over a muted meta line. */
 export function SignInCallout({ icon: Icon, title, meta }: SignInCalloutProps) {
     return (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive-background border border-destructive/20">
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive border border-destructive/20">
             <Icon className="size-5 text-destructive shrink-0" />
             <div className="flex-1 min-w-0 text-sm">
                 <div className="font-semibold text-destructive">{title}</div>
@@ -355,7 +358,7 @@ export function SignInCallout({ icon: Icon, title, meta }: SignInCalloutProps) {
 /** Horizontal rule with a centered label. */
 export function SignInOrDivider({ children }: { children: ReactNode }) {
     return (
-        <div className="flex items-center gap-3 my-2 text-muted-foreground text-[10.5px] uppercase tracking-widest">
+        <div className="flex items-center gap-3 my-2 text-muted text-[10.5px] uppercase tracking-widest">
             <div className="flex-1 h-px bg-border" />
             <span>{children}</span>
             <div className="flex-1 h-px bg-border" />
@@ -393,7 +396,7 @@ export function SignInEmailField({
                 id="vt-login-email"
                 name="vt-login-email"
                 type="email"
-                className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
+                className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
                 placeholder={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}

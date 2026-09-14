@@ -1,3 +1,4 @@
+export * from './interaction.js';
 export * from './mimeType.js';
 export * from './print.js';
 export * from './rendition.js';

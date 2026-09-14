@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteAuthBundle, isKeyringAvailable, readAuthBundle, writeAuthBundle } from './keyring.js';
+import {
+    deleteAuthBundle,
+    isKeyringAvailable,
+    readAuthBundle,
+    writeAuthBundle,
+    writeRefreshedAuthBundle,
+} from './keyring.js';
 
 describe('Bun native keyring', () => {
     const values = new Map<string, string>();
@@ -24,6 +30,7 @@ describe('Bun native keyring', () => {
 
     afterEach(() => {
         Reflect.deleteProperty(globalThis, 'Bun');
+        vi.useRealTimers();
     });
 
     it('stores profile credentials with the Vertesia service identity', async () => {
@@ -42,6 +49,28 @@ describe('Bun native keyring', () => {
             accessToken: 'access-token',
             refreshToken: 'refresh-token',
         });
+    });
+
+    it('retries saving the same rotated credentials after transient keychain failures', async () => {
+        vi.useFakeTimers();
+        set.mockRejectedValueOnce(new Error('Keychain locked')).mockRejectedValueOnce(new Error('Prompt timed out'));
+        const write = writeRefreshedAuthBundle('production', { accessToken: 'access', refreshToken: 'replacement' });
+        await vi.advanceTimersByTimeAsync(1500);
+        await write;
+        expect(set).toHaveBeenCalledTimes(3);
+        expect(new Set(set.mock.calls.map(([arg]) => arg.value)).size).toBe(1);
+        expect((await readAuthBundle('production'))?.refreshToken).toBe('replacement');
+    });
+
+    it('bounds persistence retries and preserves the last keychain error', async () => {
+        vi.useFakeTimers();
+        const error = new Error('Keychain unavailable');
+        set.mockRejectedValueOnce(error).mockRejectedValueOnce(error).mockRejectedValueOnce(error);
+        const write = writeRefreshedAuthBundle('production', { refreshToken: 'replacement' });
+        const assertion = expect(write).rejects.toBe(error);
+        await vi.advanceTimersByTimeAsync(1500);
+        await assertion;
+        expect(set).toHaveBeenCalledTimes(3);
     });
 
     it('deletes the native secret without treating a missing value as an error', async () => {

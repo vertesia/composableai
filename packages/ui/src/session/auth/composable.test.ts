@@ -5,7 +5,10 @@ function makeJwt(payload: Record<string, unknown>) {
     return `${encode({ alg: 'ES256', typ: 'JWT' })}.${encode(payload)}.signature`;
 }
 
-async function importComposableAuth(authTokenProvider?: () => Promise<string | undefined>) {
+async function importComposableAuth(
+    authTokenProvider?: () => Promise<string | undefined>,
+    defaultAuthSelection?: { accountId?: string; projectId?: string },
+) {
     vi.resetModules();
     const [{ Env }, composableAuth] = await Promise.all([import('@vertesia/ui/env'), import('./composable')]);
     Env.init({
@@ -20,6 +23,7 @@ async function importComposableAuth(authTokenProvider?: () => Promise<string | u
             sts: 'https://sts.dev1.vertesia.io',
         },
         authTokenProvider,
+        defaultAuthSelection,
     });
     return composableAuth;
 }
@@ -372,5 +376,23 @@ describe('resolveAuthSelection', () => {
             accountId: 'stored-account',
             projectId: 'stored-project',
         });
+    });
+});
+
+describe('configured workspace selection', () => {
+    afterEach(() => localStorage.clear());
+    it.each([
+        [{ accountId: 'env-a', projectId: 'env-p' }, '', { accountId: 'env-a', projectId: 'env-p' }],
+        [{ projectId: 'env-p' }, '', { accountId: undefined, projectId: 'env-p' }],
+        [{ accountId: 'env-a' }, '', { accountId: 'env-a', projectId: 'env-a-cached-p' }],
+        [{ accountId: 'env-a', projectId: 'env-p' }, '?p=url-p', { accountId: undefined, projectId: 'url-p' }],
+        [{ accountId: 'env-a', projectId: 'env-p' }, '?a=url-a', { accountId: 'url-a', projectId: undefined }],
+        [{ accountId: 'env-a', projectId: 'env-p' }, '?a=url-a&p=url-p', { accountId: 'url-a', projectId: 'url-p' }],
+    ] as const)('selects %j with URL %s', async (selection, query, expected) => {
+        localStorage.setItem('composableai.lastSelectedAccountId', 'old-a');
+        localStorage.setItem('composableai.lastSelectedProjectId-old-a', 'old-p');
+        localStorage.setItem('composableai.lastSelectedProjectId-env-a', 'env-a-cached-p');
+        const { resolveAuthSelection } = await importComposableAuth(undefined, selection);
+        expect(resolveAuthSelection(new URL(`https://app.example.test/${query}`))).toEqual(expected);
     });
 });

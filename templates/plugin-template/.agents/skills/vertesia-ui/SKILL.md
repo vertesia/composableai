@@ -178,7 +178,7 @@ const resetAndFetch = useCallback(() => {
 {/* After the table */}
 {isLoading && items.length > 0 && <div className="flex justify-center py-4"><Spinner /></div>}
 <div ref={loadMoreRef} className="h-4 w-full" />
-{!isLoading && items.length === 0 && <div className="text-center text-sm text-muted py-8">No items found</div>}
+{!isLoading && items.length === 0 && <div className="text-center text-sm text-muted-foreground py-8">No items found</div>}
 ```
 
 **Always** use a generation counter (`fetchGenRef`) to prevent stale responses from race conditions.
@@ -419,11 +419,11 @@ Use `ModernAgentConversation` from `@vertesia/ui/features` for agent chat interf
 ### Semantic color classes
 
 ```tsx
-<span className="text-success">Success</span>
-<span className="text-attention">Warning</span>
-<span className="text-destructive">Error</span>
+<span className="text-success-foreground">Success</span>
+<span className="text-attention-foreground">Warning</span>
+<span className="text-destructive-foreground">Error</span>
 <span className="text-muted-foreground">Muted</span>
-<div className="bg-success/10 text-success">Success message</div>
+<div className="bg-success text-success-foreground">Success message</div>
 ```
 
 ### Layout patterns
@@ -437,13 +437,14 @@ Use `ModernAgentConversation` from `@vertesia/ui/features` for agent chat interf
 Override CSS custom properties in `index.css` after the shared import:
 
 ```css
-@layer base {
-  :root { --primary: oklch(55% 0.2 145); }
-  .dark { --primary: oklch(75% 0.18 145); }
-}
+:root { --primary: oklch(40% 0.1 145); --primary-foreground: oklch(1 0 0); }
+.dark { --primary: oklch(45% 0.1 145); --primary-foreground: oklch(1 0 0); }
 ```
 
-Available tokens: `--primary`, `--success`, `--attention`, `--destructive`, `--done`, `--info`, `--muted` (each with `-background` variant), `--background`, `--foreground`, `--card-*`, `--sidebar-*`, `--border`, `--input`, `--ring`.
+Available tokens: `--primary`, `--secondary`, `--success`, `--attention`, `--destructive`, `--done`, `--info`, `--muted` (each paired with `-foreground`), `--background`, `--foreground`, `--card-*`, `--sidebar-*`, `--border`, `--input`, `--ring`.
+
+Base tokens are surfaces; pair them with `-foreground` text/icons. The old status, muted, and secondary
+`-background` names are deprecated aliases; use base names in new code. Primary is solid, with a contrasting foreground.
 
 ### Tailwind Variant Safety
 

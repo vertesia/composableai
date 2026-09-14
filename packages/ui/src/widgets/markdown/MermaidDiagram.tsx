@@ -192,8 +192,8 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
 
     if (!svg) {
         return (
-            <div className={`my-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse ${className || ''}`}>
-                <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className={`my-4 p-4 bg-muted rounded-lg animate-pulse ${className || ''}`}>
+                <div className="h-32 bg-muted rounded"></div>
             </div>
         );
     }

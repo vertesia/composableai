@@ -1,9 +1,9 @@
 import type { InteractionSpec } from '@vertesia/common';
-import { Badge, Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { Badge, Card, CardContent, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 import { ROLE_VARIANTS } from '../components/typeVariants.js';
 
@@ -39,11 +39,7 @@ export function InteractionDetail() {
     }
 
     if (!interaction) {
-        return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
-                <Spinner />
-            </div>
-        );
+        return <AdminLoadingPage />;
     }
 
     const { agent_runner_options } = interaction;
@@ -71,11 +67,9 @@ export function InteractionDetail() {
                                     >
                                         {prompt.role}
                                     </span>
-                                    {prompt.name && (
-                                        <span className="text-sm italic text-muted-foreground">{prompt.name}</span>
-                                    )}
+                                    {prompt.name && <span className="text-sm italic text-muted">{prompt.name}</span>}
                                 </div>
-                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                     {prompt.content}
                                 </pre>
                             </CardContent>
@@ -87,7 +81,7 @@ export function InteractionDetail() {
             {interaction.result_schema && (
                 <div className="mb-8">
                     <h2 className="mb-3 text-lg font-semibold text-foreground">Result Schema</h2>
-                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                         {JSON.stringify(interaction.result_schema, null, 2)}
                     </pre>
                 </div>

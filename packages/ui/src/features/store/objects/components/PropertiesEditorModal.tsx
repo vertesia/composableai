@@ -196,7 +196,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
             >
                 <ModalTitle>{t('store.editProperties')}</ModalTitle>
                 <ModalBody>
-                    <div className="mb-2 text-sm text-gray-500">
+                    <div className="mb-2 text-sm text-muted">
                         {object.type?.name ? (
                             <span>
                                 Editing properties for object type: <strong>{object.type.name}</strong>
@@ -205,7 +205,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                             <span>{t('store.editingGenericDocument')}</span>
                         )}
                         {jsonSchema !== null && (
-                            <span className="ms-2 text-green-600">(JSON schema validation enabled)</span>
+                            <span className="ms-2 text-success">(JSON schema validation enabled)</span>
                         )}
                     </div>
                     <div className="h-[75vh] border rounded-md overflow-hidden">

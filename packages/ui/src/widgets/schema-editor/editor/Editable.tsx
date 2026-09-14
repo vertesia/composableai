@@ -101,7 +101,7 @@ export function Editable<T>({
                     readonly={readonly}
                 />
             )}
-            {validationError && <div className="text-red-500 text-sm">{validationError}</div>}
+            {validationError && <div className="text-destructive text-sm">{validationError}</div>}
         </div>
     );
 }
@@ -214,7 +214,7 @@ function DataEdit<T>({ editor: Editor, value, onSave, onCancel, skipClickOutside
 
 export function TextDataViewer({ value, placeholder }: DataViewerProps<string>) {
     if (!value) {
-        return <span className="text-gray-400">{placeholder || 'Missing value'}</span>;
+        return <span className="text-muted">{placeholder || 'Missing value'}</span>;
     } else {
         return <span>{value == null ? '' : value.toString()}</span>;
     }

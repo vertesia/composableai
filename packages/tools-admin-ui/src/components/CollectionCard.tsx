@@ -18,10 +18,8 @@ export function CollectionCard({ collection }: { collection: CollectionInfo }) {
                         {collection.type}
                     </span>
                     <div className="font-semibold text-card-foreground">{collection.title}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                        {collection.description || 'No description'}
-                    </div>
-                    <div className="mt-2 font-mono text-xs text-muted-foreground">
+                    <div className="mt-1 text-sm text-muted">{collection.description || 'No description'}</div>
+                    <div className="mt-2 font-mono text-xs text-muted">
                         {collection.count} {collection.count === 1 ? 'item' : 'items'}
                     </div>
                 </CardContent>

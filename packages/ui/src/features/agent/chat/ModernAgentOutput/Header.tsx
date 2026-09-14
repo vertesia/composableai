@@ -209,6 +209,10 @@ export default function Header({
                 </Button>
             )}
 
+            {/* Keyed by run so a switch remounts the control. The component also resets itself —
+                it is exported and cannot assume a parent does this — but a remount here makes the
+                intent local and obvious at the one site that knows a new run is being shown. */}
+
             {agentRunId && (
                 <Button
                     type="button"
@@ -298,7 +302,7 @@ export default function Header({
                                 'w-2 h-2 rounded-full transition-colors duration-200',
                                 isReceivingChunks
                                     ? 'bg-purple-500 shadow-[0_0_6px_2px_rgba(168,85,247,0.6)]'
-                                    : 'bg-gray-400',
+                                    : 'bg-muted',
                             )}
                         />
                     </span>

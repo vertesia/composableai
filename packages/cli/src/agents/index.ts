@@ -79,6 +79,7 @@ type ListTasksOptions = {
 
 type InspectOptions = {
     details?: boolean;
+    from?: string;
     history?: boolean;
     messages?: boolean;
     tasks?: boolean;
@@ -180,6 +181,7 @@ export function registerAgentsCommand(program: Command) {
         .command('inspect <runId>')
         .description('Inspect a durable agent or process run')
         .option('--details', 'Include workflow details')
+        .option('--from <cursor>', 'Fetch history from details.history.next_from (implies --details and --json)')
         .option('--history', 'Include process node history')
         .option('--messages', 'Include stored stream messages')
         .option('--tasks', 'Include tasks for the run')
@@ -408,8 +410,8 @@ async function inspectAgentRun(program: Command, runId: string, options: Inspect
     const limit = readOptionalInteger(options.limit) ?? 50;
 
     const result: Record<string, unknown> = { run };
-    if (options.details) {
-        result.details = await client.agents.getRunDetails(runId, { includeHistory: true });
+    if (options.details || options.from !== undefined) {
+        result.details = await client.agents.getRunDetails(runId, { includeHistory: true, from: options.from });
     }
     if (includeHistory && isProcessRun(run)) {
         result.history = await client.agents.getHistory(runId);
@@ -423,7 +425,7 @@ async function inspectAgentRun(program: Command, runId: string, options: Inspect
     }
 
     const outputFile = readOptionalString(options.output);
-    if (options.json || outputFile) {
+    if (options.json || outputFile || options.from !== undefined) {
         const json = JSON.stringify(result, null, 2);
         if (outputFile) {
             writeFile(outputFile, json);

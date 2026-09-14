@@ -59,6 +59,9 @@ export const EnvironmentTokenRequestSchema = z
 export const AgentTokenRequestSchema = z
     .strictObject({
         type: z.literal('agent'),
+        delegation_grant_id: z.string().optional(),
+        delegation_policy_hash: z.string().optional(),
+        continuation_token: z.string().optional(),
         ...baseTokenRequestShape,
         account_id: z.string(),
         project_id: z.string(),

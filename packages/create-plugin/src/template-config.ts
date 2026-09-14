@@ -168,6 +168,9 @@ export interface PostInstallConfig {
  * to replace {{name}} placeholders in template files.
  */
 export interface PromptConfig {
+    /** Select choices; development-only choices require the ~/.vertesia/dev marker. */
+    choices?: Array<{ title: string; value: unknown; description?: string; devOnly?: boolean }>;
+
     /** Prompt type: "text", "number", "confirm", "select", or "multiselect" */
     type: string;
 

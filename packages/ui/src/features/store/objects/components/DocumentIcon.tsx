@@ -80,12 +80,12 @@ export function DocumentIcon({
 
     return (
         <Card
-            className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''}`}
+            className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-info bg-info/50 dark:bg-info/20' : ''}`}
             onClick={() => onRowClick?.(document)}
         >
             {isHighlighted && (
                 <div className="absolute top-2 end-8 z-10">
-                    <CheckIcon className="size-4 text-blue-600 dark:text-blue-400" />
+                    <CheckIcon className="size-4 text-info" />
                 </div>
             )}
             {selection && (
@@ -116,11 +116,11 @@ export function DocumentIcon({
             {renditionUrl && renditionStatus === 'ready' ? (
                 <img src={renditionUrl} alt={renditionAlt} className="w-auto h-48 object-cover rounded-t-xl" />
             ) : (
-                <div className="h-48 bg-gray-700 rounded-t-xl flex items-center justify-center text-muted">
+                <div className="h-48 bg-muted rounded-t-xl flex items-center justify-center text-muted">
                     {renditionStatus}
                 </div>
             )}
-            <Separator className="bg-gray-200 h-[2px]" />
+            <Separator className="bg-muted h-[2px]" />
             <CardContent className="p-2 flex flex-col">
                 <div className="flex flex-col overflow-hidden">
                     <VTooltip placement="top" description={title}>

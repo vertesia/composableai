@@ -4,7 +4,7 @@ import { Check } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 import { Button, Input } from './shadcn';
 
-const Default_Option_Style = 'flex-1 px-2 py-2 hover:bg-accent nowrap';
+const Default_Option_Style = 'flex-1 px-2 py-2 hover:bg-muted nowrap';
 
 export interface OptionLayout {
     label?: ReactNode;

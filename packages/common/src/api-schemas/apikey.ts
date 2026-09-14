@@ -84,6 +84,14 @@ export const ApiKeySchema = z
         account: z.string(),
         project: ProjectRefSchema,
         enabled: z.boolean(),
+        scim_provisioning: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Organization-wide SCIM provisioning credential. Only account administrators may create ' +
+                    'or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access.',
+            }),
         created_by: z.string(),
         updated_by: z.string(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -147,6 +155,7 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     role: true,
     type: true,
     expires_at: true,
+    scim_provisioning: true,
     properties: true,
     clearance: true,
     compartments: true,
@@ -155,7 +164,7 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     .meta({ id: 'CreateApiKeyPayload' });
 
 /**
- * What `PUT /apikeys/:keyId` accepts: the six fields the handler applies, each optional.
+ * What `PUT /apikeys/:keyId` accepts: the fields the handler applies, each optional.
  *
  * Narrower than the create payload in both directions — `type` and `expires_at` are immutable after
  * creation, `enabled` is only settable here — which is precisely why one shared component could not
@@ -167,6 +176,7 @@ export const UpdateApiKeyPayloadSchema = ApiKeySchema.pick({
     name: true,
     role: true,
     enabled: true,
+    scim_provisioning: true,
     properties: true,
     clearance: true,
     compartments: true,

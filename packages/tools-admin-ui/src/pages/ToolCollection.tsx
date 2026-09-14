@@ -1,7 +1,7 @@
-import { Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { Card, CardContent, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 import { TYPE_VARIANTS } from '../components/typeVariants.js';
 
@@ -32,12 +32,7 @@ export function ToolCollection() {
 
     if (error)
         return <div className="p-6 text-destructive">Failed to load tool collection &ldquo;{collection}&rdquo;.</div>;
-    if (!data)
-        return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
-                <Spinner />
-            </div>
-        );
+    if (!data) return <AdminLoadingPage />;
 
     return (
         <DetailPage
@@ -58,9 +53,9 @@ export function ToolCollection() {
                             </span>
                             <span className="font-semibold text-card-foreground">{tool.name}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground">{tool.description || 'No description'}</div>
+                        <div className="text-sm text-muted">{tool.description || 'No description'}</div>
                         {tool.input_schema && (
-                            <pre className="mt-3 whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                            <pre className="mt-3 whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                 {JSON.stringify(tool.input_schema, null, 2)}
                             </pre>
                         )}

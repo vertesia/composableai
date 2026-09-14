@@ -27,8 +27,9 @@ import type React from 'react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from '../../../../core/utils/dayjs.js';
 import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
+import { AgentRunFeedback, agentMessageFeedbackId } from '../AgentRunFeedback';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
-import { AskUserWidget } from '../AskUserWidget';
+import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
@@ -120,28 +121,45 @@ export interface MessageItemProps extends MessageItemClassNames {
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     /** Custom component to render store/collection links instead of default NavLink navigation */
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+    /** When set, answers carry a thumbs up / down rating control scoped to the message. */
+    feedbackAgentRunId?: string;
 }
 
 // Consolidated Studio/default message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
-    [AgentMessageType.ANSWER]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ANSWER]: {
+        borderColor: 'border-s-info',
+        iconColor: 'text-info',
+        sender: 'Agent',
+        Icon: Bot,
+    },
     [AgentMessageType.COMPLETE]: {
         borderColor: 'border-s-success',
         iconColor: 'text-success',
         sender: 'Completed',
         Icon: CheckCircle,
     },
-    [AgentMessageType.IDLE]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
+    [AgentMessageType.IDLE]: {
+        borderColor: 'border-s-info',
+        iconColor: 'text-info',
+        sender: 'Ready',
+        Icon: Clock,
+    },
     [AgentMessageType.REQUEST_INPUT]: {
         borderColor: 'border-s-attention',
         iconColor: 'text-attention',
         sender: 'Input',
         Icon: User,
     },
-    [AgentMessageType.QUESTION]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
+    [AgentMessageType.QUESTION]: {
+        borderColor: 'border-s-muted',
+        iconColor: 'text-muted',
+        sender: 'User',
+        Icon: User,
+    },
     [AgentMessageType.THOUGHT]: {
-        borderColor: 'border-s-purple-500',
-        iconColor: 'text-purple-600 dark:text-purple-400',
+        borderColor: 'border-s-done',
+        iconColor: 'text-done',
         sender: 'Agent',
         Icon: Bot,
     },
@@ -175,7 +193,12 @@ export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleCo
         sender: 'Warning',
         Icon: AlertCircle,
     },
-    [AgentMessageType.SYSTEM]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
+    [AgentMessageType.SYSTEM]: {
+        borderColor: 'border-s-muted',
+        iconColor: 'text-muted',
+        sender: 'System',
+        Icon: Info,
+    },
     [AgentMessageType.STREAMING_CHUNK]: {
         borderColor: 'border-s-info',
         iconColor: 'text-info',
@@ -183,8 +206,8 @@ export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleCo
         Icon: Bot,
     },
     [AgentMessageType.BATCH_PROGRESS]: {
-        borderColor: 'border-s-blue-500',
-        iconColor: 'text-blue-600 dark:text-blue-400',
+        borderColor: 'border-s-info',
+        iconColor: 'text-info',
         sender: 'Batch',
         Icon: Layers,
     },
@@ -216,6 +239,7 @@ function MessageItemComponent({
     messageStyleOverrides,
     StoreLinkComponent,
     CollectionLinkComponent,
+    feedbackAgentRunId,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const { t } = useUITranslation();
@@ -375,6 +399,7 @@ function MessageItemComponent({
     // UX config for REQUEST_INPUT messages (narrowed const so it stays typed inside the JSX closures below)
     const askUserUx =
         message.type === AgentMessageType.REQUEST_INPUT ? (message.details as AskUserMessageDetails)?.ux : undefined;
+    const hasSelectableAskUserOptions = isAskUserOptions(askUserUx?.options) && askUserUx.options.length > 0;
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(
@@ -412,7 +437,7 @@ function MessageItemComponent({
         // Handle object content (JSON)
         if (typeof content === 'object') {
             return (
-                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700">
+                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-foreground">
                     {JSON.stringify(content, null, 2)}
                 </pre>
             );
@@ -548,7 +573,7 @@ function MessageItemComponent({
         <div className={cn('w-full max-w-full', resolvedStyle.className)}>
             <div
                 className={cn(
-                    'border-s-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden',
+                    'group border-s-4 bg-white dark:bg-muted mb-4 w-full max-w-full overflow-hidden',
                     resolvedStyle.borderColor,
                     resolvedStyle.cardClassName,
                 )}
@@ -611,17 +636,12 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div
-                    className={cn(
-                        'px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden',
-                        resolvedStyle.contentClassName,
-                    )}
-                >
+                <div className={cn('px-4 pb-3 bg-white dark:bg-muted overflow-hidden', resolvedStyle.contentClassName)}>
                     {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                     {askUserUx ? (
                         <AskUserWidget
                             question={typeof messageContent === 'string' ? messageContent : ''}
-                            options={askUserUx.options}
+                            options={hasSelectableAskUserOptions ? askUserUx.options : undefined}
                             variant={askUserUx.variant}
                             multiSelect={askUserUx.multiSelect}
                             onSelect={(optionId) =>
@@ -635,7 +655,7 @@ function MessageItemComponent({
                             onMultiSelect={(optionIds) =>
                                 sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
                             }
-                            allowFreeResponse={!askUserUx.options?.length || !!askUserUx.free_response}
+                            allowFreeResponse={!hasSelectableAskUserOptions || !!askUserUx.free_response}
                             placeholder={askUserUx.free_response?.placeholder}
                             submitLabel={askUserUx.free_response?.submit_label}
                             onSubmit={(value) =>
@@ -661,6 +681,15 @@ function MessageItemComponent({
                                 {renderContent(processedContent || visibleMessageContent)}
                             </div>
                         )
+                    )}
+
+                    {feedbackAgentRunId && message.type === AgentMessageType.ANSWER && (
+                        <AgentRunFeedback
+                            agentRunId={feedbackAgentRunId}
+                            messageId={agentMessageFeedbackId(message)}
+                            tone="inline"
+                            className="mt-2 -ms-1.5 print:hidden"
+                        />
                     )}
 
                     {messageAttachments.length > 0 && (

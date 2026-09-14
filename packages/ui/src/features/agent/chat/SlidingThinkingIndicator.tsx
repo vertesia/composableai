@@ -284,7 +284,7 @@ export function SlidingThinkingIndicator({
                         size="xs"
                         variant="ghost"
                         onClick={() => setShowDetails(!showDetails)}
-                        className="text-slate-500 hover:text-slate-700 flex items-center gap-1 text-xs"
+                        className="text-muted hover:text-foreground flex items-center gap-1 text-xs"
                         title={showDetails ? t('agent.hideThinkingDetails') : t('agent.showAllMessages')}
                     >
                         {showDetails ? (
@@ -356,10 +356,13 @@ export function SlidingThinkingIndicator({
                                         ) : (
                                             <div
                                                 className={cn(
-                                                    'py-2 px-3 border-s-2 bg-white dark:bg-slate-800 flex items-center w-full',
+                                                    'py-2 px-3 border-s-2 bg-white dark:bg-muted flex items-center w-full',
                                                     'transition-all duration-200 ease-in-out rounded-e-md',
                                                     // Set border color based on message type
                                                     {
+                                                        // Categorical message-type palette, not semantic state:
+                                                        // these must stay in step with <PulsingMessageLoader color>
+                                                        // in AnimatedThinkingDots, which uses the same hue names.
                                                         'border-blue-400 dark:border-blue-500':
                                                             getThinkingColor(message) === 'blue',
                                                         'border-purple-400 dark:border-purple-500':

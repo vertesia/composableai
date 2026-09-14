@@ -137,8 +137,11 @@ function identityFromAcceptedToken(token: string): AuthenticatedIdentity | undef
 }
 
 export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
-    const urlAccount = currentUrl.searchParams.get('a') ?? undefined;
-    const urlProject = currentUrl.searchParams.get('p') ?? undefined;
+    // A URL selection owns the whole pair: never attach an unrelated configured account/project.
+    const hasUrlScope = currentUrl.searchParams.has('a') || currentUrl.searchParams.has('p');
+    const defaults = hasUrlScope ? undefined : Env.defaultAuthSelection;
+    const urlAccount = currentUrl.searchParams.get('a') ?? defaults?.accountId;
+    const urlProject = currentUrl.searchParams.get('p') ?? defaults?.projectId;
     const accountId =
         urlAccount ??
         (urlProject === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);

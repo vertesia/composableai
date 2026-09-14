@@ -316,7 +316,14 @@ export function toOpenApiComponents(
             throw new SchemaAdapterError(`Component '${name}' is not an object schema.`);
         }
         ctx.rootName = name;
-        register(name, walk(structuredClone(schema), ctx, true) as JsonObject, ctx);
+        const adapted = walk(structuredClone(schema), ctx, true) as JsonObject;
+        // Zod 4.5 emits named roots as a bare reference to their own $defs entry.
+        // walk already registered that definition; registering the wrapper would replace it
+        // with a self-reference and incorrectly report a conflicting component shape.
+        if (adapted[REF] === `${COMPONENT_PREFIX}${name}` && Object.keys(adapted).length === 1 && ctx.seen.has(name)) {
+            continue;
+        }
+        register(name, adapted, ctx);
     }
 
     const strict = options.strictComponents;

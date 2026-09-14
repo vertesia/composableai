@@ -51,7 +51,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                         <div className="font-medium text-sm">{t('agent.stepByStepPlan')}</div>
                     </div>
 
-                    <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <div className="divide-y divide-border">
                         {plan.plan && plan.plan.length > 0 ? (
                             plan.plan.map((task, index) => {
                                 // Extract task info with null checks
@@ -68,16 +68,16 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
 
                                 // Determine status icon and style
                                 let StatusIcon = Circle;
-                                let statusColor = 'text-gray-400';
+                                let statusColor = 'text-muted';
                                 let bgColor = '';
 
                                 if (status === 'in_progress') {
                                     StatusIcon = Clock;
-                                    statusColor = 'text-blue-500';
-                                    bgColor = 'bg-blue-50/50 dark:bg-blue-900/10';
+                                    statusColor = 'text-info';
+                                    bgColor = 'bg-info/50 dark:bg-info/10';
                                 } else if (status === 'completed') {
                                     StatusIcon = CheckCircle;
-                                    statusColor = 'text-green-500';
+                                    statusColor = 'text-success';
                                 }
 
                                 return (
@@ -86,18 +86,18 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                             <StatusIcon className="h-4 w-4" />
                                         </div>
                                         <div>
-                                            <div className="text-sm text-gray-800 dark:text-gray-200">{taskGoal}</div>
+                                            <div className="text-sm text-foreground">{taskGoal}</div>
                                             <div className="mt-1">
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-foreground">
                                                     {taskId}
                                                 </span>
                                                 <span
                                                     className={`ms-2 text-xs ${
                                                         status === 'completed'
-                                                            ? 'text-green-600 dark:text-green-400'
+                                                            ? 'text-success'
                                                             : status === 'in_progress'
-                                                              ? 'text-blue-600 dark:text-blue-400'
-                                                              : 'text-gray-500 dark:text-gray-400'
+                                                              ? 'text-info'
+                                                              : 'text-muted'
                                                     }`}
                                                 >
                                                     {status === 'completed'
@@ -112,8 +112,8 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 );
                             })
                         ) : (
-                            <div className="p-4 text-center text-gray-500 dark:text-gray-400 italic">
-                                <AlertCircle className="h-5 w-5 mx-auto mb-2 text-amber-500" />
+                            <div className="p-4 text-center text-muted italic">
+                                <AlertCircle className="h-5 w-5 mx-auto mb-2 text-attention" />
                                 <p>{t('agent.noPlanDetected')}</p>
                                 <p className="text-xs mt-1">{t('agent.plansWillAppear')}</p>
                             </div>
@@ -123,8 +123,8 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
 
                 {/* Workstream Status Summary */}
                 {workstreamStatus.size > 1 && (
-                    <div className="mt-4 rounded-md border border-gray-200 dark:border-gray-800">
-                        <div className="p-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+                    <div className="mt-4 rounded-md border border-border">
+                        <div className="p-3 border-b border-border bg-muted">
                             <div className="font-medium text-sm">{t('agent.workstreams')}</div>
                         </div>
                         <div className="p-3">
@@ -147,19 +147,19 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                     })
                                     .map(([id, status]) => {
                                         let StatusIcon = Circle;
-                                        let statusColor = 'text-gray-400';
-                                        let statusBg = 'bg-gray-100 dark:bg-gray-800';
+                                        let statusColor = 'text-muted';
+                                        let statusBg = 'bg-muted';
                                         let statusText = t('agent.pending');
 
                                         if (status === 'in_progress') {
                                             StatusIcon = Clock;
-                                            statusColor = 'text-blue-500';
-                                            statusBg = 'bg-blue-100 dark:bg-blue-800/30';
+                                            statusColor = 'text-info';
+                                            statusBg = 'bg-info';
                                             statusText = t('agent.inProgress');
                                         } else if (status === 'completed') {
                                             StatusIcon = CheckCircle;
-                                            statusColor = 'text-green-500';
-                                            statusBg = 'bg-green-100 dark:bg-green-800/30';
+                                            statusColor = 'text-success';
+                                            statusBg = 'bg-success';
                                             statusText = t('agent.completed');
                                         }
 
@@ -172,7 +172,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                                     <StatusIcon className="h-4 w-4" />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <span className="text-sm font-medium text-gray-800 dark:text-gray-300">
+                                                    <span className="text-sm font-medium text-foreground">
                                                         {displayId}
                                                     </span>
                                                 </div>

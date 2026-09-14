@@ -27,7 +27,7 @@ import {
     updateIntakePolicy,
 } from './intake-policy-editor.logic.js';
 
-export type IntakePolicyFormSection = 'overview' | 'conversion' | 'extraction' | 'grounding' | 'output';
+export type IntakePolicyFormSection = 'classification' | 'conversion' | 'extraction' | 'grounding' | 'output';
 
 interface IntakePolicyFormProps {
     policy: ContentTypeIntakePolicy;
@@ -45,7 +45,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
     const { t } = useUITranslation();
     const setValue = (path: IntakePolicyPath, value: unknown) => onChange(updateIntakePolicy(policy, path, value));
 
-    if (section === 'overview') {
+    if (section === 'classification') {
         return (
             <FormSurface>
                 <FormSection
@@ -317,6 +317,8 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                 <FormSection
                     title={t('intakePolicy.section.visionBudget')}
                     description={t('intakePolicy.help.section.visionBudget')}
+                    // `last` only because Verification below is hidden; drop it when that is restored.
+                    last
                 >
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <SelectField
@@ -358,6 +360,11 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                     </div>
                 </FormSection>
+
+                {/* Verification is hidden until the feature is wired up. The policy schema, the
+                    API contract and this form all still carry it; nothing here consumes the values
+                    at processing time yet. Uncomment as-is to bring the section back, and remove
+                    the `last` prop added to the Vision evidence budget section above.
 
                 <FormSection title={t('intakePolicy.section.verification')} last>
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -410,6 +417,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         readonly={readonly}
                     />
                 </FormSection>
+                */}
             </FormSurface>
         );
     }
@@ -636,7 +644,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
 }
 
 function FormSurface({ children }: { children: ReactNode }) {
-    return <div className="mx-auto w-full max-w-6xl px-1 py-4">{children}</div>;
+    return <div className="w-full px-1 py-4">{children}</div>;
 }
 
 function FormSection({

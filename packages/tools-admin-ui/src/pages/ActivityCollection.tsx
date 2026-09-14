@@ -1,8 +1,8 @@
 import type { RemoteActivityDefinition } from '@vertesia/common';
-import { Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { Card, CardContent, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 import { TYPE_VARIANTS } from '../components/typeVariants.js';
 
@@ -29,12 +29,7 @@ export function ActivityCollection() {
         return (
             <div className="p-6 text-destructive">Failed to load activity collection &ldquo;{collection}&rdquo;.</div>
         );
-    if (!data)
-        return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
-                <Spinner />
-            </div>
-        );
+    if (!data) return <AdminLoadingPage />;
 
     return (
         <DetailPage
@@ -56,23 +51,23 @@ export function ActivityCollection() {
                             </span>
                             <span className="font-semibold text-card-foreground">{activity.name}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground">{activity.description || 'No description'}</div>
+                        <div className="text-sm text-muted">{activity.description || 'No description'}</div>
                         {activity.input_schema && (
                             <div className="mt-3">
-                                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
                                     Input Schema
                                 </p>
-                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                     {JSON.stringify(activity.input_schema, null, 2)}
                                 </pre>
                             </div>
                         )}
                         {activity.output_schema && (
                             <div className="mt-3">
-                                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
                                     Output Schema
                                 </p>
-                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                                     {JSON.stringify(activity.output_schema, null, 2)}
                                 </pre>
                             </div>

@@ -1,7 +1,7 @@
-import { Badge, Spinner, useFetch } from '@vertesia/ui/core';
+import { Badge, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 
 interface SkillDefinitionResponse {
@@ -36,12 +36,7 @@ export function SkillDetail() {
     );
 
     if (error) return <div className="p-6 text-destructive">Failed to load skill &ldquo;{name}&rdquo;.</div>;
-    if (!skill)
-        return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
-                <Spinner />
-            </div>
-        );
+    if (!skill) return <AdminLoadingPage />;
 
     return (
         <DetailPage
@@ -108,7 +103,7 @@ export function SkillDetail() {
                     Instructions
                     {skill.content_type === 'jst' && <Badge className="ml-2">JST template</Badge>}
                 </h2>
-                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                     {skill.instructions}
                 </pre>
             </div>
@@ -116,7 +111,7 @@ export function SkillDetail() {
             {skill.input_schema && (
                 <div className="mb-8">
                     <h2 className="mb-3 text-lg font-semibold text-foreground">Input Schema</h2>
-                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted p-4 font-mono text-sm text-foreground">
                         {JSON.stringify(skill.input_schema, null, 2)}
                     </pre>
                 </div>

@@ -31,7 +31,7 @@ import {
     ToolUseSchema,
     VideoResultSchema,
 } from '@llumiverse/common/schemas';
-import { z } from 'zod';
+import type { z } from 'zod';
 import type {
     CreateEventSubscriptionPayload,
     EventDeliveryTarget,
@@ -343,6 +343,7 @@ import {
     SemanticColumnTypeSchema,
     UpdateSchemaPayloadSchema,
 } from './data-store.js';
+import { CreateDelegationGrantPayloadSchema, DelegationGrantArraySchema, DelegationGrantSchema } from './delegation.js';
 import {
     DocAnalyzeRunStatusResponseSchema,
     DocAnalyzerProgressSchema,
@@ -374,6 +375,7 @@ import {
     EmbeddingsStatusResponseSchema,
     ProjectConfigurationEmbeddingEnablePayloadSchema,
 } from './embeddings.js';
+import { emitJsonSchema } from './emit-json-schema.js';
 import {
     EnableEnvironmentModelPayloadSchema,
     ExecutionEnvironmentArraySchema,
@@ -1786,6 +1788,25 @@ const AGENT_RUN_SCHEMAS = {
     SearchAgentRunsQuery: AgentRunSchemas.SearchAgentRunsQuerySchema,
     StreamAgentRunQuery: AgentRunSchemas.StreamAgentRunQuerySchema,
     UpdateAgentRunStatusPayload: AgentRunSchemas.UpdateAgentRunStatusPayloadSchema,
+    AgentRunFeedbackRating: AgentRunSchemas.AgentRunFeedbackRatingSchema,
+    AgentRunFeedbackReasonCode: AgentRunSchemas.AgentRunFeedbackReasonCodeSchema,
+    AgentRunFeedbackPayload: AgentRunSchemas.AgentRunFeedbackPayloadSchema,
+    AgentRunFeedbackStatus: AgentRunSchemas.AgentRunFeedbackStatusSchema,
+    AgentRunFeedbackCounts: AgentRunSchemas.AgentRunFeedbackCountsSchema,
+    AgentRunFeedbackResponse: AgentRunSchemas.AgentRunFeedbackResponseSchema,
+    AgentRunFeedbackEntry: AgentRunSchemas.AgentRunFeedbackEntrySchema,
+    AgentRunEvaluationRollup: AgentRunSchemas.AgentRunEvaluationRollupSchema,
+    AgentRunJudgeResult: AgentRunSchemas.AgentRunJudgeResultSchema,
+    AgentRunContradictionReason: AgentRunSchemas.AgentRunContradictionReasonSchema,
+    AgentRunEvaluation: AgentRunSchemas.AgentRunEvaluationSchema,
+    TurnTerminalType: AgentRunSchemas.TurnTerminalTypeSchema,
+    EvaluationSeverity: AgentRunSchemas.EvaluationSeveritySchema,
+    TurnEvaluationFlag: AgentRunSchemas.TurnEvaluationFlagSchema,
+    ToolErrorClass: AgentRunSchemas.ToolErrorClassSchema,
+    JudgeGateReason: AgentRunSchemas.JudgeGateReasonSchema,
+    JudgeOutcome: AgentRunSchemas.JudgeOutcomeSchema,
+    JudgeVerdict: AgentRunSchemas.JudgeVerdictSchema,
+    ListAgentRunsEvaluationSeverity: AgentRunSchemas.ListAgentRunsEvaluationSeveritySchema,
     AgentEvent: AgentRunSchemas.AgentEventSchema,
     IngestAgentEventsPayload: AgentRunSchemas.IngestAgentEventsPayloadSchema,
     IngestAgentEventsResponse: AgentRunSchemas.IngestAgentEventsResponseSchema,
@@ -2246,7 +2267,13 @@ const CONTENT_QUERY_SCHEMAS = {
     ContentQueryResult: ContentQuerySchemas.ContentQueryResultSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const DELEGATION_SCHEMAS = {
+    CreateDelegationGrantPayload: CreateDelegationGrantPayloadSchema,
+    DelegationGrant: DelegationGrantSchema,
+    DelegationGrantArray: DelegationGrantArraySchema,
+};
 const API_SCHEMA_GROUPS = [
+    DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
     OAUTH_SCHEMAS,
@@ -2309,7 +2336,8 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
+type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
+    typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
     typeof OAUTH_SCHEMAS &
     typeof ENVIRONMENT_SCHEMAS &
@@ -2380,6 +2408,8 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'CreateDelegationGrantPayload',
+    'DelegationGrant',
     // Process Test Lab request, fixture, and result contracts.
     'ProcessTestVirtualActor',
     'ProcessTestFixtureResult',
@@ -2779,6 +2809,13 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'UpdateAgentArtifactContentResponse',
     'UpdateAgentArtifactContentPayload',
     'TerminateAgentRunResponse',
+    'AgentRunFeedbackPayload',
+    'AgentRunFeedbackResponse',
+    'AgentRunFeedbackCounts',
+    'AgentRunFeedbackEntry',
+    'AgentRunEvaluationRollup',
+    'AgentRunJudgeResult',
+    'AgentRunEvaluation',
     'StartContentObjectExportResponse',
     'ExportContentObjectsIncludeOptions',
     'ExportContentObjectsFilter',
@@ -3386,12 +3423,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
  * not be used to express contract rules — they would be invisible to both the spec and AJV.
  */
 function emitRawSchemas(): Record<string, unknown> {
-    return Object.fromEntries(
-        Object.entries(API_SCHEMAS).map(([name, schema]) => [
-            name,
-            z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }),
-        ]),
-    );
+    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitJsonSchema(schema)]));
 }
 
 /**
