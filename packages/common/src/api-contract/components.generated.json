@@ -1374,6 +1374,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1485,6 +1489,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1569,6 +1577,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1647,6 +1659,10 @@
         "type": "string",
         "format": "date-time"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "properties": {
         "type": "object",
         "additionalProperties": true,
@@ -1681,6 +1697,10 @@
       },
       "enabled": {
         "type": "boolean"
+      },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
       },
       "properties": {
         "type": "object",
