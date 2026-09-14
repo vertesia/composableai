@@ -1,145 +1,4 @@
 {
-  "CreateDelegationGrantPayload": {
-    "type": "object",
-    "properties": {
-      "schedule_id": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "subject": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "output_collection_id": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "policy_hash": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{64}$"
-      },
-      "expires_at": {
-        "anyOf": [
-          {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          {
-            "type": "null"
-          }
-        ]
-      }
-    },
-    "required": [
-      "schedule_id",
-      "subject",
-      "output_collection_id",
-      "policy_hash",
-      "expires_at"
-    ],
-    "additionalProperties": false
-  },
-  "DelegationGrant": {
-    "type": "object",
-    "properties": {
-      "schedule_id": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "subject": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "output_collection_id": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "policy_hash": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{64}$"
-      },
-      "expires_at": {
-        "anyOf": [
-          {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          {
-            "type": "null"
-          }
-        ]
-      },
-      "id": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "account_id": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "project_id": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "granter": {
-        "type": "string",
-        "pattern": "^[a-f0-9]{24}$"
-      },
-      "created_at": {
-        "type": "string",
-        "format": "date-time",
-        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-      },
-      "revoked_at": {
-        "anyOf": [
-          {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          {
-            "type": "null"
-          }
-        ]
-      }
-    },
-    "required": [
-      "schedule_id",
-      "subject",
-      "output_collection_id",
-      "policy_hash",
-      "expires_at",
-      "id",
-      "account_id",
-      "project_id",
-      "granter",
-      "created_at",
-      "revoked_at"
-    ],
-    "additionalProperties": false
-  },
-  "DelegationGrantArray": {
-    "type": "array",
-    "items": {
-      "$ref": "#/components/schemas/DelegationGrant"
-    }
-  },
-  "AccountApiVersionPolicy": {
-    "type": "object",
-    "properties": {
-      "default_api_version": {
-        "type": "number",
-        "enum": [
-          20250925,
-          20260210,
-          20260319,
-          20260803
-        ]
-      }
-    }
-  },
   "AccountType": {
     "type": "string",
     "enum": [
@@ -303,15 +162,7 @@
         "const": "stripe"
       },
       "portal_url": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
-        ],
-        "description": "Interactive billing portal URL; null for account API keys."
+        "type": "string"
       }
     },
     "required": [
@@ -687,16 +538,6 @@
   "PrincipalIdentity": {
     "type": "object",
     "properties": {
-      "kind": {
-        "type": "string",
-        "enum": [
-          "user",
-          "apikey"
-        ]
-      },
-      "id": {
-        "type": "string"
-      },
       "clearance": {
         "type": "number"
       },
@@ -718,18 +559,20 @@
       "properties": {
         "type": "object",
         "additionalProperties": true
+      },
+      "id": {
+        "type": "string"
       }
     },
     "required": [
-      "kind",
-      "id",
       "clearance",
       "compartments",
       "tags",
-      "properties"
+      "properties",
+      "id"
     ],
     "additionalProperties": false,
-    "description": "Response shape of the `/iam/users/identity` endpoint: the current principal's full ABAC context — its `kind` (always `user` here), `id`, and the merged BLP attributes a rule can reference through `$principal.*`."
+    "description": "Response shape of the `/iam/users/identity` endpoint: the current principal's  {@link  PrincipalContext }  plus its id. Distinct from `PrincipalContext` itself because the id is identity metadata, not a merged BLP field — adding it to `PrincipalContext` would unintentionally expose `$principal.id` to PrincipalSet rule evaluation."
   },
   "SignupData": {
     "type": "object",
@@ -1327,17 +1170,6 @@
   "Permission": {
     "type": "string",
     "enum": [
-      "account:user:read",
-      "account:user:manage",
-      "account:group:read",
-      "account:group:manage",
-      "account:membership:read",
-      "account:membership:manage",
-      "account:api_key:read",
-      "account:api_key:manage",
-      "account:billing:status_read",
-      "account:billing:portal_create",
-      "schedule:delegate",
       "interaction:read",
       "interaction:write",
       "interaction:delete",
@@ -1393,7 +1225,6 @@
     "enum": [
       "owner",
       "admin",
-      "app_admin",
       "manager",
       "developer",
       "application",
@@ -1586,174 +1417,6 @@
       "updated_at",
       "value"
     ],
-    "additionalProperties": false
-  },
-  "AccountApiKey": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "account": {
-        "type": "string"
-      },
-      "enabled": {
-        "type": "boolean"
-      },
-      "maskedValue": {
-        "type": "string"
-      },
-      "created_by": {
-        "type": "string"
-      },
-      "updated_by": {
-        "type": "string"
-      },
-      "created_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "updated_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "expires_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "scope": {
-        "type": "string",
-        "const": "account"
-      },
-      "profile": {
-        "type": "string",
-        "const": "account_admin_v1"
-      },
-      "last_used_at": {
-        "type": "string",
-        "format": "date-time"
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "account",
-      "enabled",
-      "created_by",
-      "updated_by",
-      "created_at",
-      "updated_at",
-      "scope",
-      "profile"
-    ],
-    "additionalProperties": false
-  },
-  "AccountApiKeyWithValue": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "account": {
-        "type": "string"
-      },
-      "enabled": {
-        "type": "boolean"
-      },
-      "maskedValue": {
-        "type": "string"
-      },
-      "created_by": {
-        "type": "string"
-      },
-      "updated_by": {
-        "type": "string"
-      },
-      "created_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "updated_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "expires_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "scope": {
-        "type": "string",
-        "const": "account"
-      },
-      "profile": {
-        "type": "string",
-        "const": "account_admin_v1"
-      },
-      "last_used_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "value": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "account",
-      "enabled",
-      "created_by",
-      "updated_by",
-      "created_at",
-      "updated_at",
-      "scope",
-      "profile",
-      "value"
-    ],
-    "additionalProperties": false
-  },
-  "AccountApiKeyArray": {
-    "type": "array",
-    "items": {
-      "$ref": "#/components/schemas/AccountApiKey"
-    }
-  },
-  "CreateAccountApiKeyPayload": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string",
-        "minLength": 1,
-        "pattern": "\\S"
-      },
-      "expires_at": {
-        "type": "string",
-        "format": "date-time"
-      }
-    },
-    "required": [
-      "name"
-    ],
-    "additionalProperties": false
-  },
-  "UpdateAccountApiKeyPayload": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string",
-        "minLength": 1,
-        "pattern": "\\S"
-      },
-      "enabled": {
-        "type": "boolean"
-      }
-    },
     "additionalProperties": false
   },
   "ApiKeyReadResponse": {
@@ -2546,10 +2209,9 @@
       "long",
       "double",
       "date",
-      "geo_point",
-      "nested"
+      "geo_point"
     ],
-    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Declare nested object-array paths with type `nested` and their children as separate dotted paths. Paths are relative to the object's `properties` field."
+    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are relative to the object's `properties` field."
   },
   "ProjectIndexingConfiguration": {
     "type": "object",
@@ -2730,15 +2392,6 @@
       "max_tokens": {
         "type": "number"
       },
-      "tool_choice": {
-        "type": "string",
-        "enum": [
-          "auto",
-          "none",
-          "any",
-          "required"
-        ]
-      },
       "temperature": {
         "type": "number"
       },
@@ -2764,6 +2417,9 @@
         "type": "boolean"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "AzureFoundryChatOptions": {
@@ -2809,6 +2465,9 @@
         "type": "boolean"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ImagenOptions": {
@@ -2829,8 +2488,7 @@
         "enum": [
           "dont_allow",
           "allow_adults",
-          "allow_all",
-          "allow_adult"
+          "allow_all"
         ]
       },
       "safety_setting": {
@@ -2910,6 +2568,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ImagenTaskType": {
@@ -2987,6 +2648,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "VertexAIGeminiOptions": {
@@ -3100,6 +2764,9 @@
         "type": "number"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ThinkingLevel": {
@@ -3151,6 +2818,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "VertexAIGrokOptions": {
@@ -3176,6 +2846,9 @@
         }
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "NovaCanvasOptions": {
@@ -3247,6 +2920,7 @@
       }
     },
     "required": [
+      "_option_id",
       "taskType"
     ],
     "additionalProperties": false
@@ -3282,6 +2956,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockNovaOptions": {
@@ -3300,9 +2977,6 @@
       "top_p": {
         "type": "number"
       },
-      "top_k": {
-        "type": "number"
-      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3318,6 +2992,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockMistralOptions": {
@@ -3336,9 +3013,6 @@
       "top_p": {
         "type": "number"
       },
-      "top_k": {
-        "type": "number"
-      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3354,6 +3028,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockAI21Options": {
@@ -3372,12 +3049,6 @@
       "top_p": {
         "type": "number"
       },
-      "presence_penalty": {
-        "type": "number"
-      },
-      "frequency_penalty": {
-        "type": "number"
-      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3393,6 +3064,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockCohereCommandOptions": {
@@ -3411,15 +3085,6 @@
       "top_p": {
         "type": "number"
       },
-      "top_k": {
-        "type": "number"
-      },
-      "presence_penalty": {
-        "type": "number"
-      },
-      "frequency_penalty": {
-        "type": "number"
-      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3435,6 +3100,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockClaudeOptions": {
@@ -3494,6 +3162,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockPalmyraOptions": {
@@ -3536,6 +3207,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockGptOssOptions": {
@@ -3580,6 +3254,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "TwelvelabsPegasusOptions": {
@@ -3601,6 +3278,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockMantleResponsesOptions": {
@@ -3626,8 +3306,7 @@
           "low",
           "medium",
           "high",
-          "xhigh",
-          "max"
+          "xhigh"
         ]
       },
       "reasoning_effort": {
@@ -3637,8 +3316,7 @@
           "low",
           "medium",
           "high",
-          "xhigh",
-          "max"
+          "xhigh"
         ]
       },
       "verbosity": {
@@ -3661,6 +3339,9 @@
         "type": "boolean"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockMantleChatCompletionsOptions": {
@@ -3705,6 +3386,9 @@
         "type": "boolean"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockMantleClaudeOptions": {
@@ -3759,6 +3443,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "OpenAiThinkingOptions": {
@@ -3770,15 +3457,6 @@
       },
       "max_tokens": {
         "type": "number"
-      },
-      "tool_choice": {
-        "type": "string",
-        "enum": [
-          "auto",
-          "none",
-          "any",
-          "required"
-        ]
       },
       "stop_sequence": {
         "type": "array",
@@ -3814,6 +3492,9 @@
         "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ReasoningEffort": {
@@ -3838,15 +3519,6 @@
       "max_tokens": {
         "type": "number"
       },
-      "tool_choice": {
-        "type": "string",
-        "enum": [
-          "auto",
-          "none",
-          "any",
-          "required"
-        ]
-      },
       "effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
       },
@@ -3893,131 +3565,9 @@
         "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
-    "additionalProperties": false
-  },
-  "OpenRouterTextOptions": {
-    "type": "object",
-    "properties": {
-      "max_tokens": {
-        "type": "number"
-      },
-      "tool_choice": {
-        "type": "string",
-        "enum": [
-          "auto",
-          "none",
-          "any",
-          "required"
-        ]
-      },
-      "effort": {
-        "$ref": "#/components/schemas/ReasoningEffort"
-      },
-      "reasoning_effort": {
-        "$ref": "#/components/schemas/ReasoningEffort"
-      },
-      "temperature": {
-        "type": "number"
-      },
-      "top_p": {
-        "type": "number"
-      },
-      "presence_penalty": {
-        "type": "number"
-      },
-      "frequency_penalty": {
-        "type": "number"
-      },
-      "stop_sequence": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "image_detail": {
-        "type": "string",
-        "enum": [
-          "low",
-          "high",
-          "auto"
-        ]
-      },
-      "include_thoughts": {
-        "type": "boolean"
-      },
-      "service_tier": {
-        "type": "string",
-        "minLength": 1,
-        "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
-      },
-      "_option_id": {
-        "type": "string",
-        "const": "openrouter-text"
-      },
-      "provider_sort": {
-        "type": "string",
-        "enum": [
-          "price",
-          "throughput",
-          "latency",
-          "exacto"
-        ]
-      },
-      "provider_order": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "provider_only": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "provider_ignore": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "provider_allow_fallbacks": {
-        "type": "boolean"
-      },
-      "provider_require_parameters": {
-        "type": "boolean"
-      },
-      "provider_data_collection": {
-        "type": "string",
-        "enum": [
-          "allow",
-          "deny"
-        ]
-      },
-      "provider_zdr": {
-        "type": "boolean"
-      },
-      "provider_quantizations": {
-        "type": "array",
-        "items": {
-          "type": "string",
-          "enum": [
-            "int4",
-            "int8",
-            "fp4",
-            "mxfp4",
-            "nvfp4",
-            "fp6",
-            "fp8",
-            "mxfp8",
-            "fp16",
-            "bf16",
-            "fp32",
-            "unknown"
-          ]
-        }
-      }
-    },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "OpenAiDalleOptions": {
@@ -4062,6 +3612,9 @@
         "type": "number"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "OpenAiGptImageOptions": {
@@ -4106,6 +3659,57 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
+    "additionalProperties": false
+  },
+  "OpenAiTranscriptionOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-transcription"
+      },
+      "language": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "_option_id"
+    ],
+    "additionalProperties": false
+  },
+  "OpenAiSpeechOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-speech"
+      },
+      "voice": {
+        "type": "string",
+        "minLength": 1
+      },
+      "response_format": {
+        "type": "string",
+        "enum": [
+          "mp3",
+          "wav"
+        ]
+      },
+      "speed": {
+        "type": "number",
+        "minimum": 0.25,
+        "maximum": 4
+      },
+      "instructions": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "XAIGrokImageOptions": {
@@ -4161,6 +3765,9 @@
         "maximum": 10
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "GroqOptions": {
@@ -4201,6 +3808,7 @@
       }
     },
     "required": [
+      "_option_id",
       "reasoning_format"
     ],
     "additionalProperties": false
@@ -4268,64 +3876,13 @@
         "type": "boolean"
       }
     },
-    "additionalProperties": false
-  },
-  "AnthropicClaudeOptions": {
-    "type": "object",
-    "properties": {
-      "_option_id": {
-        "type": "string",
-        "const": "anthropic-claude"
-      },
-      "max_tokens": {
-        "type": "number"
-      },
-      "temperature": {
-        "type": "number"
-      },
-      "top_p": {
-        "type": "number"
-      },
-      "top_k": {
-        "type": "number"
-      },
-      "stop_sequence": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "effort": {
-        "type": "string",
-        "enum": [
-          "low",
-          "medium",
-          "high",
-          "xhigh",
-          "max"
-        ]
-      },
-      "thinking_budget_tokens": {
-        "type": "number"
-      },
-      "include_thoughts": {
-        "type": "boolean"
-      },
-      "cache_enabled": {
-        "type": "boolean"
-      },
-      "cache_ttl": {
-        "type": "string",
-        "enum": [
-          "5m",
-          "1h"
-        ]
-      }
-    },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ModelOptions": {
-    "anyOf": [
+    "oneOf": [
       {
         "$ref": "#/components/schemas/TextFallbackOptions"
       },
@@ -4393,13 +3950,16 @@
         "$ref": "#/components/schemas/OpenAiTextOptions"
       },
       {
-        "$ref": "#/components/schemas/OpenRouterTextOptions"
-      },
-      {
         "$ref": "#/components/schemas/OpenAiDalleOptions"
       },
       {
         "$ref": "#/components/schemas/OpenAiGptImageOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiTranscriptionOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiSpeechOptions"
       },
       {
         "$ref": "#/components/schemas/XAIGrokImageOptions"
@@ -4409,12 +3969,46 @@
       },
       {
         "$ref": "#/components/schemas/MistralTextOptions"
-      },
-      {
-        "$ref": "#/components/schemas/AnthropicClaudeOptions"
       }
     ],
-    "type": "object"
+    "discriminator": {
+      "propertyName": "_option_id",
+      "mapping": {
+        "text-fallback": "#/components/schemas/TextFallbackOptions",
+        "azure-foundry-chat": "#/components/schemas/AzureFoundryChatOptions",
+        "vertexai-imagen": "#/components/schemas/ImagenOptions",
+        "vertexai-claude": "#/components/schemas/VertexAIClaudeOptions",
+        "vertexai-gemini": "#/components/schemas/VertexAIGeminiOptions",
+        "vertexai-gemini-omni-video": "#/components/schemas/VertexAIGeminiOmniVideoOptions",
+        "vertexai-grok": "#/components/schemas/VertexAIGrokOptions",
+        "bedrock-nova-canvas": "#/components/schemas/NovaCanvasOptions",
+        "bedrock-converse": "#/components/schemas/BedrockConverseOptions",
+        "bedrock-nova": "#/components/schemas/BedrockNovaOptions",
+        "bedrock-mistral": "#/components/schemas/BedrockMistralOptions",
+        "bedrock-ai21": "#/components/schemas/BedrockAI21Options",
+        "bedrock-cohere-command": "#/components/schemas/BedrockCohereCommandOptions",
+        "bedrock-claude": "#/components/schemas/BedrockClaudeOptions",
+        "bedrock-palmyra": "#/components/schemas/BedrockPalmyraOptions",
+        "bedrock-gpt-oss": "#/components/schemas/BedrockGptOssOptions",
+        "bedrock-twelvelabs-pegasus": "#/components/schemas/TwelvelabsPegasusOptions",
+        "bedrock-mantle-responses": "#/components/schemas/BedrockMantleResponsesOptions",
+        "bedrock-mantle-chat-completions": "#/components/schemas/BedrockMantleChatCompletionsOptions",
+        "bedrock-mantle-claude": "#/components/schemas/BedrockMantleClaudeOptions",
+        "openai-thinking": "#/components/schemas/OpenAiThinkingOptions",
+        "openai-text": "#/components/schemas/OpenAiTextOptions",
+        "openai-dalle": "#/components/schemas/OpenAiDalleOptions",
+        "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
+        "openai-transcription": "#/components/schemas/OpenAiTranscriptionOptions",
+        "openai-speech": "#/components/schemas/OpenAiSpeechOptions",
+        "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
+        "groq-deepseek-thinking": "#/components/schemas/GroqOptions",
+        "mistral-text": "#/components/schemas/MistralTextOptions"
+      }
+    },
+    "type": "object",
+    "required": [
+      "_option_id"
+    ]
   },
   "HttpTimeoutOptions": {
     "type": "object",
@@ -5378,12 +4972,11 @@
   "ToolCollectionAuthType": {
     "type": "string",
     "enum": [
-      "none",
       "oauth",
       "api_key",
       "other"
     ],
-    "description": "Authentication type for tool collections.\n- 'none': connect directly without credentials for MCP collections; does not disable authentication for Vertesia SDK collections\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)\n- 'other' or omitted: use the legacy provider connection-details flow for MCP collections"
+    "description": "Authentication type for tool collections.\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)"
   },
   "MCPOAuthConfig": {
     "type": "object",
@@ -6278,10 +5871,6 @@
         "type": "string",
         "description": "Owning account enforced when restrict_to_owner_account is true."
       },
-      "consent_required": {
-        "type": "boolean",
-        "description": "False when the authorization server has determined this client may be approved without showing a consent screen. Absent or true means consent must be collected from the user. Granted scopes are clamped to the user permissions by the server in either case, so this controls only whether the user is prompted."
-      },
       "status": {
         "$ref": "#/components/schemas/OAuthAuthorizationRequestStatus"
       },
@@ -7027,7 +6616,6 @@
       "watsonx",
       "xai",
       "anthropic",
-      "openrouter",
       "virtual_lb",
       "virtual_mediator",
       "test"
@@ -8181,6 +7769,55 @@
     ],
     "additionalProperties": false
   },
+  "AudioResult": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "audio"
+      },
+      "value": {
+        "type": "string",
+        "pattern": "^(?:gs|s3):\\/\\/[^/]+\\/.+|^artifact:.+"
+      },
+      "mime_type": {
+        "type": "string",
+        "pattern": "^audio\\/.*"
+      },
+      "container": {
+        "type": "string"
+      },
+      "codec": {
+        "type": "string"
+      },
+      "sample_rate": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "channels": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "sample_encoding": {
+        "type": "string"
+      },
+      "byte_order": {
+        "type": "string",
+        "enum": [
+          "little",
+          "big"
+        ]
+      }
+    },
+    "required": [
+      "type",
+      "value",
+      "mime_type"
+    ],
+    "additionalProperties": false
+  },
   "VideoResult": {
     "type": "object",
     "properties": {
@@ -8230,6 +7867,9 @@
       },
       {
         "$ref": "#/components/schemas/VideoResult"
+      },
+      {
+        "$ref": "#/components/schemas/AudioResult"
       }
     ],
     "discriminator": {
@@ -8239,7 +7879,8 @@
         "thoughts": "#/components/schemas/ThoughtsResult",
         "json": "#/components/schemas/JsonResult",
         "image": "#/components/schemas/ImageResult",
-        "video": "#/components/schemas/VideoResult"
+        "video": "#/components/schemas/VideoResult",
+        "audio": "#/components/schemas/AudioResult"
       }
     },
     "type": "object",
@@ -10891,9 +10532,7 @@
           "denied",
           "denied_with_feedback",
           "timeout",
-          "reviewer_denied",
-          "user_interrupted_after_tool_execution",
-          "user_stopped_after_tool_execution"
+          "reviewer_denied"
         ]
       },
       "message": {
@@ -11106,7 +10745,7 @@
       },
       "pending_tool_approval_results": {
         "$ref": "#/components/schemas/PendingToolApprovalResults",
-        "description": "Buffered tool results held across an interactive pause until the next user message."
+        "description": "Buffered tool results held while approval denial pauses until the next user message."
       },
       "latest_user_message": {
         "type": "string",
@@ -13310,10 +12949,6 @@
         },
         "description": "Hard denylist of tool names for this conversation. Excluded tools are never exposed to the model and are refused at execution time, even when a skill or tool refresh would otherwise unlock them. Takes precedence over tool_names, initial_skills, and skill-based tool activation."
       },
-      "agent_policy": {
-        "$ref": "#/components/schemas/ProcessAgentExecutionPolicy",
-        "description": "Process-authored successful-tool phases enforced by this child conversation. Ordinary conversation callers should leave this unset."
-      },
       "max_iterations": {
         "type": "number",
         "description": "The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used."
@@ -13409,210 +13044,6 @@
     "required": [
       "interaction",
       "type"
-    ]
-  },
-  "ProcessAgentToolPhase": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string",
-        "minLength": 1
-      },
-      "tools": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "type": "string",
-          "minLength": 1
-        },
-        "description": "Any successful tool in this list advances the phase."
-      },
-      "continuation_tools": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "type": "string",
-          "minLength": 1
-        },
-        "description": "Additional tools authorized while the phase is active. Successful calls do not advance the phase."
-      },
-      "recovery_tools": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "type": "string",
-          "minLength": 1
-        },
-        "description": "Additional tools authorized only after a matching phase tool fails. Successful calls do not advance the phase."
-      },
-      "tool_input_contains": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ProcessAgentToolInputContains"
-        },
-        "description": "All declared top-level string-field presence, absence, and minimum-length checks must match before a tool call is authorized or advances the phase."
-      },
-      "min_successes": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Successful matching calls required to advance. Defaults to one."
-      },
-      "max_tokens": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Optional output-token ceiling for model turns while this action phase is active."
-      },
-      "recovery_prompt": {
-        "type": "string",
-        "minLength": 1,
-        "description": "Process-authored instruction used when the agent tries to finish during this phase."
-      }
-    },
-    "required": [
-      "id",
-      "tools",
-      "recovery_prompt"
-    ]
-  },
-  "ProcessAgentToolInputContains": {
-    "type": "object",
-    "properties": {
-      "field": {
-        "type": "string",
-        "minLength": 1,
-        "description": "Top-level tool-input field to inspect."
-      },
-      "contains": {
-        "type": "string",
-        "minLength": 1,
-        "description": "Case-sensitive substring required in the string field."
-      },
-      "not_contains": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "type": "string",
-          "minLength": 1
-        },
-        "description": "Case-sensitive substrings forbidden in the same string field."
-      },
-      "min_length": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Minimum string length required for the same field."
-      }
-    },
-    "required": [
-      "field",
-      "contains"
-    ]
-  },
-  "ProcessAgentPhaseReset": {
-    "type": "object",
-    "properties": {
-      "tools": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "type": "string",
-          "minLength": 1
-        },
-        "description": "Successful tools that invalidate later phase progress."
-      },
-      "tool_input_contains": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ProcessAgentToolInputContains"
-        },
-        "description": "Optional input checks applied to the invalidating tool call."
-      },
-      "to_phase": {
-        "type": "string",
-        "minLength": 1,
-        "description": "Phase id that must be completed next after invalidation."
-      }
-    },
-    "required": [
-      "tools",
-      "to_phase"
-    ]
-  },
-  "ProcessAgentExecutionPolicy": {
-    "type": "object",
-    "properties": {
-      "phases": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ProcessAgentToolPhase"
-        },
-        "description": "Ordered successful-tool phases the agent node must complete."
-      },
-      "phase_resets": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ProcessAgentPhaseReset"
-        },
-        "description": "Successful tool calls that invalidate prior progress and reset execution to a declared phase."
-      },
-      "defer_result_schema_until_complete": {
-        "type": "boolean",
-        "description": "Hide the node result schema from model calls until every declared phase completes."
-      },
-      "restrict_to_phase_tools": {
-        "type": "boolean",
-        "description": "Expose one stable union of declared phase tools to the model, and reject tool calls that do not satisfy the current phase. This preserves prompt-cache stability while enforcing ordered execution."
-      },
-      "action_phase_count": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Number of leading phases whose model turns require a tool call. Defaults to zero and cannot exceed phases.length."
-      },
-      "action_phase_max_tokens": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Maximum output tokens while an action phase is active."
-      },
-      "max_recovery_attempts_per_phase": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Bounded recovery turns allowed per incomplete phase. Defaults to one."
-      },
-      "max_failed_tool_iterations": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Run-wide budget of repeated model iterations containing failed tool results before the agent node stops. The first failing iteration establishes model-visible recovery evidence and is not charged; phase transitions do not reset the budget. Defaults to eight."
-      },
-      "max_failed_tool_iterations_per_phase": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Optional per-phase budget of corrective model iterations that still contain failed tool results. The first failure in each phase establishes recovery evidence and is not charged."
-      },
-      "max_repeated_tool_failure_iterations": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Optional number of repeated normalized failure fingerprints allowed in one phase before the agent node stops. A value of one stops after the first corrective iteration repeats an already observed cause."
-      },
-      "completion_prompt": {
-        "type": "string",
-        "minLength": 1,
-        "description": "Process-authored instruction appended to the final successful tool result. That turn restores the result schema and requires the agent to return its result without another tool call."
-      }
-    },
-    "required": [
-      "phases"
     ]
   },
   "AsyncInteractionExecutionPayload": {
@@ -14220,12 +13651,12 @@
       "token_usage": {
         "$ref": "#/components/schemas/ExecutionTokenUsage"
       },
+      "prompt_cache_diagnostic": {
+        "$ref": "#/components/schemas/PromptCacheDiagnostic"
+      },
       "service_tier": {
         "type": "string",
         "description": "Processing tier actually used by the provider"
-      },
-      "prompt_cache_diagnostic": {
-        "$ref": "#/components/schemas/PromptCacheDiagnostic"
       },
       "tool_use": {
         "type": "array",
@@ -22256,10 +21687,6 @@
         "type": "object",
         "additionalProperties": true
       },
-      "inherit_context": {
-        "type": "boolean",
-        "description": "Whether interaction and custom-agent nodes receive the complete process context in addition to resolved input. Defaults to true; set false for input-only specialist prompts."
-      },
       "config": {
         "type": "object",
         "additionalProperties": true
@@ -22297,24 +21724,6 @@
         "items": {
           "type": "string"
         }
-      },
-      "initial_skills": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Builtin system skills activated before the agent node's first model turn."
-      },
-      "excluded_tools": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Execution-time tool denylist for the agent node's child conversation."
-      },
-      "agent_policy": {
-        "$ref": "#/components/schemas/ProcessAgentExecutionPolicy",
-        "description": "Declarative successful-tool phases and completion behavior for this agent node. The Process owns this policy; the child conversation enforces it generically."
       },
       "model": {
         "type": "string",
@@ -23422,15 +22831,6 @@
         "type": "string",
         "const": "agent"
       },
-      "delegation_grant_id": {
-        "type": "string"
-      },
-      "delegation_policy_hash": {
-        "type": "string"
-      },
-      "continuation_token": {
-        "type": "string"
-      },
       "audience": {
         "type": "string"
       },
@@ -24040,9 +23440,6 @@
         "items": {
           "$ref": "#/components/schemas/TaskField"
         }
-      },
-      "requestId": {
-        "type": "string"
       }
     },
     "required": [
@@ -24309,9 +23706,6 @@
     "type": "object",
     "properties": {
       "bucket": {
-        "type": "string"
-      },
-      "location": {
         "type": "string"
       }
     },
@@ -30236,16 +29630,8 @@
   "ProcessRunConfig": {
     "type": "object",
     "properties": {
-      "environment": {
-        "type": "string",
-        "description": "Execution environment id used by Process LLM nodes and the supervisor."
-      },
       "model": {
         "type": "string"
-      },
-      "model_options": {
-        "$ref": "#/components/schemas/ModelOptions",
-        "description": "Validated model options applied to Process LLM nodes and the supervisor."
       },
       "user_message": {
         "type": "string",
@@ -30453,12 +29839,6 @@
       },
       "run_type": {
         "$ref": "#/components/schemas/ProcessRunType"
-      },
-      "schedule_id": {
-        "type": "string"
-      },
-      "type": {
-        "$ref": "#/components/schemas/AgentRunType"
       },
       "process_id": {
         "type": "string"
@@ -32704,439 +32084,6 @@
     "additionalProperties": false,
     "description": "Response from signaling an agent workflow."
   },
-  "AgentRunEvaluationRollup": {
-    "type": "object",
-    "properties": {
-      "seq": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 9007199254740991,
-        "description": "Monotonic per run; the server ignores a rollup older than the one it holds."
-      },
-      "detector_version": {
-        "type": "integer",
-        "minimum": -9007199254740991,
-        "maximum": 9007199254740991
-      },
-      "turns": {
-        "type": "integer",
-        "minimum": -9007199254740991,
-        "maximum": 9007199254740991
-      },
-      "severity": {
-        "$ref": "#/components/schemas/EvaluationSeverity"
-      },
-      "flags": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/TurnEvaluationFlag"
-        }
-      },
-      "worst_turn_seq": {
-        "type": "integer",
-        "minimum": -9007199254740991,
-        "maximum": 9007199254740991
-      },
-      "last_terminal_type": {
-        "$ref": "#/components/schemas/TurnTerminalType"
-      },
-      "terminal_error_class": {
-        "type": "string"
-      },
-      "partial": {
-        "type": "boolean"
-      },
-      "totals": {
-        "type": "object",
-        "properties": {
-          "tool_calls": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "error_tool_results": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "unrecovered_tools": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "llm_calls": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "prompt_tokens": {
-            "type": "number"
-          },
-          "completion_tokens": {
-            "type": "number"
-          },
-          "cached_tokens": {
-            "type": "number"
-          },
-          "retry_completion_tokens": {
-            "type": "number"
-          },
-          "active_ms": {
-            "type": "number"
-          },
-          "ask_user_wait_ms": {
-            "type": "number"
-          },
-          "approval_wait_ms": {
-            "type": "number"
-          },
-          "followups": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "approvals_requested": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "approvals_denied": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "stop_requests": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "stall_trips": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          }
-        },
-        "required": [
-          "tool_calls",
-          "error_tool_results",
-          "unrecovered_tools",
-          "llm_calls",
-          "prompt_tokens",
-          "completion_tokens",
-          "cached_tokens",
-          "retry_completion_tokens",
-          "active_ms",
-          "ask_user_wait_ms",
-          "approval_wait_ms",
-          "followups",
-          "approvals_requested",
-          "approvals_denied",
-          "stop_requests"
-        ],
-        "additionalProperties": false
-      },
-      "updated_at": {
-        "type": "string",
-        "format": "date-time"
-      }
-    },
-    "required": [
-      "seq",
-      "detector_version",
-      "turns",
-      "severity",
-      "flags",
-      "totals",
-      "updated_at"
-    ],
-    "additionalProperties": false,
-    "description": "Fold of the turn evaluations of a run."
-  },
-  "EvaluationSeverity": {
-    "type": "string",
-    "enum": [
-      "none",
-      "low",
-      "medium",
-      "high"
-    ],
-    "description": "Worst deterministic detector level. `none` means no detector fired, not success."
-  },
-  "TurnEvaluationFlag": {
-    "type": "string",
-    "enum": [
-      "user_stopped_after_failure",
-      "mutation_unsuccessful",
-      "run_failed",
-      "unrecovered_tool",
-      "fail_streak",
-      "identical_retry",
-      "reread",
-      "high_gather",
-      "overhead",
-      "followup_after_answer",
-      "approval_denied",
-      "circuit_breaker"
-    ],
-    "description": "Reason behind an evaluation severity."
-  },
-  "TurnTerminalType": {
-    "type": "string",
-    "enum": [
-      "answer",
-      "user_stopped",
-      "completed",
-      "failed",
-      "cancelled",
-      "interrupted"
-    ],
-    "description": "How an agent turn ended."
-  },
-  "AgentRunFeedbackCounts": {
-    "type": "object",
-    "properties": {
-      "up": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "down": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "last_rating": {
-        "$ref": "#/components/schemas/AgentRunFeedbackRating"
-      },
-      "last_reason_code": {
-        "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
-      }
-    },
-    "required": [
-      "up",
-      "down"
-    ],
-    "additionalProperties": false,
-    "description": "Ratings over the retained feedback entries, one vote per rater: a user who rated the run and one of its answers counts once, by their latest rating."
-  },
-  "AgentRunFeedbackRating": {
-    "type": "string",
-    "enum": [
-      "up",
-      "down"
-    ],
-    "description": "Thumbs up or thumbs down on an agent run."
-  },
-  "AgentRunFeedbackReasonCode": {
-    "type": "string",
-    "enum": [
-      "accurate",
-      "helpful",
-      "fast",
-      "well_explained",
-      "wrong_result",
-      "incomplete",
-      "misunderstood_request",
-      "too_slow",
-      "tool_failure",
-      "unsafe_action",
-      "other"
-    ],
-    "description": "Why the run was rated the way it was."
-  },
-  "AgentRunJudgeResult": {
-    "type": "object",
-    "properties": {
-      "rev": {
-        "type": "integer",
-        "minimum": -9007199254740991,
-        "maximum": 9007199254740991
-      },
-      "gate": {
-        "$ref": "#/components/schemas/JudgeGateReason"
-      },
-      "sample_rate": {
-        "type": "number"
-      },
-      "selected_probability": {
-        "type": "number"
-      },
-      "outcome": {
-        "$ref": "#/components/schemas/JudgeOutcome"
-      },
-      "verdict": {
-        "$ref": "#/components/schemas/JudgeVerdict"
-      },
-      "score": {
-        "type": "number"
-      },
-      "model": {
-        "type": "string"
-      },
-      "prompt_version": {
-        "type": "string"
-      },
-      "turns_judged": {
-        "type": "array",
-        "items": {
-          "type": "integer",
-          "minimum": -9007199254740991,
-          "maximum": 9007199254740991
-        }
-      },
-      "judged_at": {
-        "type": "string",
-        "format": "date-time"
-      }
-    },
-    "required": [
-      "rev",
-      "gate",
-      "sample_rate",
-      "selected_probability",
-      "outcome",
-      "prompt_version",
-      "judged_at"
-    ],
-    "additionalProperties": false,
-    "description": "Latest judge result for a run."
-  },
-  "JudgeGateReason": {
-    "type": "string",
-    "enum": [
-      "signal",
-      "sample"
-    ],
-    "description": "Why the judge looked at a run."
-  },
-  "JudgeOutcome": {
-    "type": "string",
-    "enum": [
-      "judged",
-      "skipped_unarchived",
-      "failed"
-    ],
-    "description": "What a judge run produced."
-  },
-  "JudgeVerdict": {
-    "type": "string",
-    "enum": [
-      "success",
-      "partial",
-      "failure"
-    ],
-    "description": "The judge's reading of a turn."
-  },
-  "AgentRunContradictionReason": {
-    "type": "string",
-    "enum": [
-      "feedback_down_on_clean_run",
-      "judge_failure_on_clean_run"
-    ]
-  },
-  "AgentRunEvaluation": {
-    "type": "object",
-    "properties": {
-      "rev": {
-        "type": "integer",
-        "minimum": -9007199254740991,
-        "maximum": 9007199254740991,
-        "description": "Bumped on every change to any part of the summary."
-      },
-      "rollup": {
-        "$ref": "#/components/schemas/AgentRunEvaluationRollup"
-      },
-      "feedback_counts": {
-        "$ref": "#/components/schemas/AgentRunFeedbackCounts"
-      },
-      "judge": {
-        "$ref": "#/components/schemas/AgentRunJudgeResult"
-      },
-      "severity": {
-        "$ref": "#/components/schemas/EvaluationSeverity"
-      },
-      "flags": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/TurnEvaluationFlag"
-        }
-      },
-      "contradicted": {
-        "type": "boolean"
-      },
-      "contradiction_reasons": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AgentRunContradictionReason"
-        }
-      },
-      "deployment_env": {
-        "type": "string"
-      },
-      "updated_at": {
-        "type": "string",
-        "format": "date-time"
-      }
-    },
-    "required": [
-      "rev",
-      "severity",
-      "flags",
-      "contradicted",
-      "updated_at"
-    ],
-    "additionalProperties": false,
-    "description": "Evaluation summary of an agent run."
-  },
-  "AgentRunFeedbackEntry": {
-    "type": "object",
-    "properties": {
-      "feedback_id": {
-        "type": "string"
-      },
-      "rating": {
-        "$ref": "#/components/schemas/AgentRunFeedbackRating"
-      },
-      "reason_code": {
-        "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
-      },
-      "comment": {
-        "type": "string"
-      },
-      "message_id": {
-        "type": "string"
-      },
-      "message_seq": {
-        "type": "integer",
-        "minimum": -9007199254740991,
-        "maximum": 9007199254740991
-      },
-      "message_scoped": {
-        "type": "boolean"
-      },
-      "user_id": {
-        "type": "string"
-      },
-      "rated_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "replaced_at": {
-        "type": "string",
-        "format": "date-time"
-      }
-    },
-    "required": [
-      "feedback_id",
-      "rating",
-      "message_scoped",
-      "user_id",
-      "rated_at"
-    ],
-    "additionalProperties": false,
-    "description": "One recorded rating on an agent run."
-  },
   "AutonomousRunResponse": {
     "type": "object",
     "properties": {
@@ -33363,17 +32310,6 @@
           "type": "string"
         },
         "description": "Lessons learned from the conversation (extracted at completion)"
-      },
-      "evaluation": {
-        "$ref": "#/components/schemas/AgentRunEvaluation",
-        "description": "Evaluation summary of the run."
-      },
-      "feedback": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AgentRunFeedbackEntry"
-        },
-        "description": "Retained user ratings on the run."
       },
       "archived_at": {
         "type": "string",
@@ -33637,17 +32573,6 @@
           "type": "string"
         },
         "description": "Lessons learned from the conversation (extracted at completion)"
-      },
-      "evaluation": {
-        "$ref": "#/components/schemas/AgentRunEvaluation",
-        "description": "Evaluation summary of the run."
-      },
-      "feedback": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/AgentRunFeedbackEntry"
-        },
-        "description": "Retained user ratings on the run."
       },
       "archived_at": {
         "type": "string",
@@ -34456,11 +33381,6 @@
   "AgentRunDetailsQuery": {
     "type": "object",
     "properties": {
-      "from": {
-        "type": "string",
-        "maxLength": 12000,
-        "description": "Opaque history cursor from next_from; requires include_history. Invalid or expired cursors return a snapshot."
-      },
       "include_history": {
         "type": "boolean"
       },
@@ -34468,16 +33388,6 @@
         "type": "boolean"
       }
     }
-  },
-  "ListAgentRunsEvaluationSeverity": {
-    "type": "string",
-    "enum": [
-      "unrated",
-      "none",
-      "low",
-      "medium",
-      "high"
-    ]
   },
   "ListAgentRunsQuery": {
     "type": "object",
@@ -34557,28 +33467,6 @@
           "desc"
         ],
         "description": "Sort order"
-      },
-      "evaluation_severity": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ListAgentRunsEvaluationSeverity"
-        },
-        "description": "Filter by evaluation severity; `unrated` selects runs without an evaluation"
-      },
-      "evaluation_flag": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/TurnEvaluationFlag"
-        },
-        "description": "Filter by evaluation flag (any of)"
-      },
-      "feedback_rating": {
-        "$ref": "#/components/schemas/AgentRunFeedbackRating",
-        "description": "Filter by last feedback rating"
-      },
-      "contradicted": {
-        "type": "boolean",
-        "description": "Only runs whose feedback or judge contradicts the detectors"
       }
     }
   },
@@ -34813,85 +33701,8 @@
       },
       "process_state": {
         "$ref": "#/components/schemas/ProcessState"
-      },
-      "evaluation_rollup": {
-        "$ref": "#/components/schemas/AgentRunEvaluationRollup"
       }
     }
-  },
-  "AgentRunFeedbackPayload": {
-    "type": "object",
-    "properties": {
-      "feedback_id": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 64,
-        "description": "Client-generated idempotency key (a UUID). A retried request with the same id is a no-op."
-      },
-      "rating": {
-        "$ref": "#/components/schemas/AgentRunFeedbackRating"
-      },
-      "reason_code": {
-        "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
-      },
-      "comment": {
-        "type": "string",
-        "maxLength": 2000,
-        "description": "Free-text comment. Stored with the tenant; only its presence is ever counted."
-      },
-      "message_id": {
-        "type": "string",
-        "description": "Rate one message rather than the run as a whole."
-      },
-      "message_seq": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Position of the rated message in the run, when a message is rated."
-      }
-    },
-    "required": [
-      "feedback_id",
-      "rating"
-    ],
-    "additionalProperties": false,
-    "description": "A user rating on an agent run."
-  },
-  "AgentRunFeedbackStatus": {
-    "type": "string",
-    "enum": [
-      "recorded",
-      "replaced",
-      "disabled"
-    ],
-    "description": "Whether the rating was recorded."
-  },
-  "AgentRunFeedbackResponse": {
-    "type": "object",
-    "properties": {
-      "status": {
-        "$ref": "#/components/schemas/AgentRunFeedbackStatus"
-      },
-      "feedback_counts": {
-        "$ref": "#/components/schemas/AgentRunFeedbackCounts"
-      }
-    },
-    "required": [
-      "status"
-    ],
-    "additionalProperties": false,
-    "description": "Result of rating an agent run."
-  },
-  "ToolErrorClass": {
-    "type": "string",
-    "enum": [
-      "schema",
-      "platform",
-      "config",
-      "environment",
-      "other"
-    ],
-    "description": "Coarse class of a tool error, derived from the error text."
   },
   "AgentEvent": {
     "oneOf": [
@@ -34927,44 +33738,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "eventId": {
-            "type": "string"
-          },
-          "deployment": {
-            "type": "object",
-            "properties": {
-              "env": {
-                "type": "string"
-              },
-              "group": {
-                "type": "string"
-              },
-              "version": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "env",
-              "group",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "producer": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ],
-            "additionalProperties": false
           },
           "eventType": {
             "type": "string",
@@ -35027,44 +33800,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "eventId": {
-            "type": "string"
-          },
-          "deployment": {
-            "type": "object",
-            "properties": {
-              "env": {
-                "type": "string"
-              },
-              "group": {
-                "type": "string"
-              },
-              "version": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "env",
-              "group",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "producer": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ],
-            "additionalProperties": false
           },
           "eventType": {
             "type": "string",
@@ -35175,44 +33910,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "eventId": {
-            "type": "string"
-          },
-          "deployment": {
-            "type": "object",
-            "properties": {
-              "env": {
-                "type": "string"
-              },
-              "group": {
-                "type": "string"
-              },
-              "version": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "env",
-              "group",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "producer": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ],
-            "additionalProperties": false
           },
           "eventType": {
             "type": "string",
@@ -35330,44 +34027,6 @@
               "type": "string"
             }
           },
-          "eventId": {
-            "type": "string"
-          },
-          "deployment": {
-            "type": "object",
-            "properties": {
-              "env": {
-                "type": "string"
-              },
-              "group": {
-                "type": "string"
-              },
-              "version": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "env",
-              "group",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "producer": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ],
-            "additionalProperties": false
-          },
           "eventType": {
             "type": "string",
             "const": "tool_call"
@@ -35414,18 +34073,6 @@
           },
           "spawnedChildWorkflow": {
             "type": "boolean"
-          },
-          "approvalClass": {
-            "$ref": "#/components/schemas/AgentToolApprovalClass"
-          },
-          "errorClass": {
-            "$ref": "#/components/schemas/ToolErrorClass"
-          },
-          "signatureHash": {
-            "type": "string"
-          },
-          "workstreamId": {
-            "type": "string"
           }
         },
         "required": [
@@ -35442,765 +34089,6 @@
           "iteration",
           "success",
           "durationMs"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "type": "string"
-          },
-          "runId": {
-            "type": "string"
-          },
-          "agentRunId": {
-            "type": "string"
-          },
-          "model": {
-            "type": "string"
-          },
-          "environmentId": {
-            "type": "string"
-          },
-          "environmentType": {
-            "type": "string"
-          },
-          "interactionId": {
-            "type": "string"
-          },
-          "parentRunId": {
-            "type": "string"
-          },
-          "ancestorRunIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "eventId": {
-            "type": "string"
-          },
-          "deployment": {
-            "type": "object",
-            "properties": {
-              "env": {
-                "type": "string"
-              },
-              "group": {
-                "type": "string"
-              },
-              "version": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "env",
-              "group",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "producer": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "eventType": {
-            "type": "string",
-            "const": "turn_evaluation"
-          },
-          "schemaVersion": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "detectorVersion": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "workstreamId": {
-            "type": "string"
-          },
-          "turnSeq": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 9007199254740991
-          },
-          "terminalType": {
-            "$ref": "#/components/schemas/TurnTerminalType"
-          },
-          "partial": {
-            "type": "boolean"
-          },
-          "startedAt": {
-            "type": "string"
-          },
-          "endedAt": {
-            "type": "string"
-          },
-          "durationMs": {
-            "type": "number"
-          },
-          "activeMs": {
-            "type": "number"
-          },
-          "askUserWaitMs": {
-            "type": "number"
-          },
-          "approvalWaitMs": {
-            "type": "number"
-          },
-          "timeToFirstAnswerMs": {
-            "type": "number"
-          },
-          "toolCalls": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "errorToolResults": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "maxFailStreak": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "identicalRetryCount": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "unrecoveredTools": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "errorClasses": {
-            "type": "object",
-            "properties": {
-              "schema": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "platform": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "config": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "environment": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              "other": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              }
-            },
-            "required": [
-              "schema",
-              "platform",
-              "config",
-              "environment",
-              "other"
-            ],
-            "additionalProperties": false
-          },
-          "gatherCalls": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "gatherRatio": {
-            "type": "number"
-          },
-          "mutationAttempted": {
-            "type": "boolean"
-          },
-          "mutationSucceeded": {
-            "type": "boolean"
-          },
-          "rereadCount": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "overheadCalls": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "skillsLoaded": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "interruptedToolCalls": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "llmCalls": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "promptTokens": {
-            "type": "number"
-          },
-          "completionTokens": {
-            "type": "number"
-          },
-          "cachedTokens": {
-            "type": "number"
-          },
-          "retryCompletionTokens": {
-            "type": "number"
-          },
-          "approvalsRequested": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "approvalsDenied": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "stopRequests": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "stallCorrectives": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "stallTrips": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "followupAfterAnswer": {
-            "type": "boolean"
-          },
-          "severity": {
-            "$ref": "#/components/schemas/EvaluationSeverity"
-          },
-          "flags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TurnEvaluationFlag"
-            }
-          },
-          "terminalErrorClass": {
-            "type": "string"
-          },
-          "tools": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "seq": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 9007199254740991
-                },
-                "toolUseId": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "approvalClass": {
-                  "$ref": "#/components/schemas/AgentToolApprovalClass"
-                },
-                "ok": {
-                  "type": "boolean"
-                },
-                "errorClass": {
-                  "$ref": "#/components/schemas/ToolErrorClass"
-                },
-                "sig": {
-                  "type": "string"
-                },
-                "durationMs": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "seq",
-                "toolUseId",
-                "name",
-                "ok",
-                "sig",
-                "durationMs"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "toolsTruncated": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          }
-        },
-        "required": [
-          "timestamp",
-          "runId",
-          "model",
-          "environmentId",
-          "environmentType",
-          "interactionId",
-          "eventType",
-          "schemaVersion",
-          "detectorVersion",
-          "workstreamId",
-          "turnSeq",
-          "terminalType",
-          "startedAt",
-          "endedAt",
-          "durationMs",
-          "activeMs",
-          "askUserWaitMs",
-          "approvalWaitMs",
-          "toolCalls",
-          "errorToolResults",
-          "maxFailStreak",
-          "identicalRetryCount",
-          "unrecoveredTools",
-          "errorClasses",
-          "gatherCalls",
-          "mutationAttempted",
-          "mutationSucceeded",
-          "rereadCount",
-          "overheadCalls",
-          "skillsLoaded",
-          "interruptedToolCalls",
-          "llmCalls",
-          "promptTokens",
-          "completionTokens",
-          "cachedTokens",
-          "retryCompletionTokens",
-          "approvalsRequested",
-          "approvalsDenied",
-          "stopRequests",
-          "followupAfterAnswer",
-          "severity",
-          "flags",
-          "tools",
-          "toolsTruncated"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "type": "string"
-          },
-          "runId": {
-            "type": "string"
-          },
-          "agentRunId": {
-            "type": "string"
-          },
-          "model": {
-            "type": "string"
-          },
-          "environmentId": {
-            "type": "string"
-          },
-          "environmentType": {
-            "type": "string"
-          },
-          "interactionId": {
-            "type": "string"
-          },
-          "parentRunId": {
-            "type": "string"
-          },
-          "ancestorRunIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "eventId": {
-            "type": "string"
-          },
-          "deployment": {
-            "type": "object",
-            "properties": {
-              "env": {
-                "type": "string"
-              },
-              "group": {
-                "type": "string"
-              },
-              "version": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "env",
-              "group",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "producer": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "eventType": {
-            "type": "string",
-            "const": "feedback"
-          },
-          "feedbackId": {
-            "type": "string"
-          },
-          "rating": {
-            "$ref": "#/components/schemas/AgentRunFeedbackRating"
-          },
-          "reasonCode": {
-            "$ref": "#/components/schemas/AgentRunFeedbackReasonCode"
-          },
-          "hasComment": {
-            "type": "boolean"
-          },
-          "messageScoped": {
-            "type": "boolean"
-          },
-          "messageSeq": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "replaced": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "timestamp",
-          "runId",
-          "model",
-          "environmentId",
-          "environmentType",
-          "interactionId",
-          "eventType",
-          "feedbackId",
-          "rating",
-          "hasComment",
-          "messageScoped",
-          "replaced"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "type": "string"
-          },
-          "runId": {
-            "type": "string"
-          },
-          "agentRunId": {
-            "type": "string"
-          },
-          "model": {
-            "type": "string"
-          },
-          "environmentId": {
-            "type": "string"
-          },
-          "environmentType": {
-            "type": "string"
-          },
-          "interactionId": {
-            "type": "string"
-          },
-          "parentRunId": {
-            "type": "string"
-          },
-          "ancestorRunIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "eventId": {
-            "type": "string"
-          },
-          "deployment": {
-            "type": "object",
-            "properties": {
-              "env": {
-                "type": "string"
-              },
-              "group": {
-                "type": "string"
-              },
-              "version": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "env",
-              "group",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "producer": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "eventType": {
-            "type": "string",
-            "const": "turn_judgement"
-          },
-          "evaluationRev": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "workstreamId": {
-            "type": "string"
-          },
-          "turnSeq": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 9007199254740991
-          },
-          "gate": {
-            "$ref": "#/components/schemas/JudgeGateReason"
-          },
-          "sampleRate": {
-            "type": "number"
-          },
-          "selectedProbability": {
-            "type": "number"
-          },
-          "outcome": {
-            "$ref": "#/components/schemas/JudgeOutcome"
-          },
-          "verdict": {
-            "$ref": "#/components/schemas/JudgeVerdict"
-          },
-          "score": {
-            "type": "number"
-          },
-          "reasons": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "promptVersion": {
-            "type": "string"
-          },
-          "detectorVersion": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          }
-        },
-        "required": [
-          "timestamp",
-          "runId",
-          "model",
-          "environmentId",
-          "environmentType",
-          "interactionId",
-          "eventType",
-          "evaluationRev",
-          "workstreamId",
-          "turnSeq",
-          "gate",
-          "sampleRate",
-          "selectedProbability",
-          "outcome",
-          "promptVersion"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "timestamp": {
-            "type": "string"
-          },
-          "runId": {
-            "type": "string"
-          },
-          "agentRunId": {
-            "type": "string"
-          },
-          "model": {
-            "type": "string"
-          },
-          "environmentId": {
-            "type": "string"
-          },
-          "environmentType": {
-            "type": "string"
-          },
-          "interactionId": {
-            "type": "string"
-          },
-          "parentRunId": {
-            "type": "string"
-          },
-          "ancestorRunIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "eventId": {
-            "type": "string"
-          },
-          "deployment": {
-            "type": "object",
-            "properties": {
-              "env": {
-                "type": "string"
-              },
-              "group": {
-                "type": "string"
-              },
-              "version": {
-                "type": "string"
-              },
-              "region": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "env",
-              "group",
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "producer": {
-            "type": "object",
-            "properties": {
-              "version": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "version"
-            ],
-            "additionalProperties": false
-          },
-          "eventType": {
-            "type": "string",
-            "const": "stall_breaker"
-          },
-          "action": {
-            "type": "string",
-            "enum": [
-              "corrective",
-              "trip"
-            ]
-          },
-          "toolNames": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "repeatCount": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "stallMeasure": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "allErrored": {
-            "type": "boolean"
-          },
-          "iteration": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "interactive": {
-            "type": "boolean"
-          },
-          "workstreamId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "timestamp",
-          "runId",
-          "model",
-          "environmentId",
-          "environmentType",
-          "interactionId",
-          "eventType",
-          "action",
-          "toolNames",
-          "repeatCount",
-          "stallMeasure",
-          "allErrored",
-          "iteration",
-          "interactive",
-          "workstreamId"
         ],
         "additionalProperties": false
       }
@@ -37116,10 +35004,6 @@
   "AgentTask": {
     "type": "object",
     "properties": {
-      "history_id": {
-        "type": "string",
-        "description": "Stable observability row identity across refreshes."
-      },
       "taskType": {
         "type": "string",
         "enum": [
@@ -37344,18 +35228,6 @@
             "type": "string",
             "const": "agent"
           },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "snapshot",
-              "delta"
-            ],
-            "description": "Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows."
-          },
-          "next_from": {
-            "type": "string",
-            "description": "Pass as from on the next refresh with the same options. Absence disables incremental refresh."
-          },
           "agentTasks": {
             "type": "array",
             "items": {
@@ -37397,12 +35269,6 @@
         "type": "string"
       },
       "lastStartedTime": {
-        "type": [
-          "string",
-          "null"
-        ]
-      },
-      "lastHeartbeatTime": {
         "type": [
           "string",
           "null"
@@ -42746,71 +40612,6 @@
     ],
     "additionalProperties": false
   },
-  "EmbeddingBatchRunSummary": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "state": {
-        "type": "string",
-        "enum": [
-          "preparing",
-          "submitted",
-          "running",
-          "applying",
-          "completed",
-          "completed_with_errors",
-          "cancelled",
-          "stale",
-          "failed"
-        ]
-      },
-      "model": {
-        "type": "string"
-      },
-      "created_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "completed_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "applied": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "skipped": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "failed": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "stale": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      }
-    },
-    "required": [
-      "id",
-      "state",
-      "model",
-      "created_at",
-      "applied",
-      "skipped",
-      "failed",
-      "stale"
-    ],
-    "additionalProperties": false,
-    "description": "Latest batch run for this embedding type, without provider payloads or input content."
-  },
   "EmbeddingsStatusResponse": {
     "type": "object",
     "properties": {
@@ -42819,9 +40620,6 @@
       },
       "embeddingRunsInProgress": {
         "type": "number"
-      },
-      "latestBatchRun": {
-        "$ref": "#/components/schemas/EmbeddingBatchRunSummary"
       },
       "totalIndexableObjects": {
         "type": "number"
@@ -42866,21 +40664,6 @@
     ],
     "additionalProperties": false
   },
-  "RecalculateEmbeddingsQuery": {
-    "type": "object",
-    "properties": {
-      "mode": {
-        "type": "string",
-        "const": "sync",
-        "description": "Force synchronous per-object recalculation. When omitted, batch inference is used when supported."
-      },
-      "force": {
-        "type": "boolean",
-        "description": "Recalculate all eligible objects, including current embeddings. Token limits still apply; existing renditions are reused."
-      }
-    },
-    "additionalProperties": false
-  },
   "ProjectConfigurationEmbeddingEnablePayload": {
     "type": "object",
     "properties": {
@@ -42898,530 +40681,6 @@
       "environment"
     ],
     "additionalProperties": false
-  },
-  "EmbeddingBatchProviderState": {
-    "type": "string",
-    "enum": [
-      "pending",
-      "running",
-      "succeeded",
-      "failed",
-      "cancelled",
-      "paused"
-    ]
-  },
-  "EmbeddingBatchCapabilityRequest": {
-    "type": "object",
-    "properties": {
-      "embedding_type": {
-        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
-      }
-    },
-    "required": [
-      "embedding_type"
-    ]
-  },
-  "EmbeddingBatchCapabilityResponse": {
-    "type": "object",
-    "properties": {
-      "eligible": {
-        "type": "boolean"
-      },
-      "reason": {
-        "type": "string"
-      },
-      "environment": {
-        "type": "string"
-      },
-      "provider": {
-        "type": "string"
-      },
-      "model": {
-        "type": "string"
-      },
-      "dimensions": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991
-      },
-      "max_tokens": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991
-      },
-      "location": {
-        "type": "string"
-      },
-      "input_format": {
-        "type": "string"
-      },
-      "max_rows": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991
-      },
-      "artifact_uri": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "eligible"
-    ]
-  },
-  "EmbeddingBatchCreateRequest": {
-    "type": "object",
-    "properties": {
-      "embedding_type": {
-        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
-      },
-      "model": {
-        "type": "string"
-      },
-      "dimensions": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991
-      },
-      "display_name": {
-        "type": "string"
-      },
-      "input_uri": {
-        "type": "string"
-      },
-      "output_uri": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "embedding_type",
-      "model",
-      "dimensions",
-      "display_name",
-      "input_uri",
-      "output_uri"
-    ]
-  },
-  "EmbeddingBatchJobRequest": {
-    "type": "object",
-    "properties": {
-      "embedding_type": {
-        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
-      },
-      "model": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "include_output_artifacts": {
-        "type": "boolean",
-        "description": "On get, resolve terminal result artifacts for application. Omit for lightweight status polling."
-      }
-    },
-    "required": [
-      "embedding_type",
-      "model",
-      "name"
-    ]
-  },
-  "EmbeddingBatchJobResponse": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string"
-      },
-      "display_name": {
-        "type": "string"
-      },
-      "state": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "running",
-          "succeeded",
-          "failed",
-          "cancelled",
-          "paused"
-        ]
-      },
-      "model": {
-        "type": "string"
-      },
-      "input_uri": {
-        "type": "string"
-      },
-      "output_uri": {
-        "type": "string"
-      },
-      "output_artifacts": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Terminal job result artifacts in application storage, including partial results. Never provider file IDs."
-      },
-      "error_message": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "name",
-      "state"
-    ]
-  },
-  "EmbeddingBatchRunState": {
-    "type": "string",
-    "enum": [
-      "preparing",
-      "submitted",
-      "running",
-      "applying",
-      "completed",
-      "completed_with_errors",
-      "cancelled",
-      "stale",
-      "failed"
-    ]
-  },
-  "EmbeddingBatchSubjob": {
-    "type": "object",
-    "properties": {
-      "index": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "display_name": {
-        "type": "string"
-      },
-      "input_uri": {
-        "type": "string"
-      },
-      "output_uri": {
-        "type": "string"
-      },
-      "row_count": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "provider_name": {
-        "type": "string"
-      },
-      "state": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "running",
-          "succeeded",
-          "failed",
-          "cancelled",
-          "paused"
-        ]
-      }
-    },
-    "required": [
-      "index",
-      "display_name",
-      "input_uri",
-      "output_uri",
-      "row_count"
-    ]
-  },
-  "EmbeddingBatchPrepareRequest": {
-    "type": "object",
-    "properties": {
-      "run_id": {
-        "type": "string"
-      },
-      "embedding_type": {
-        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
-      },
-      "capability": {
-        "$ref": "#/components/schemas/EmbeddingBatchCapabilityResponse"
-      }
-    },
-    "required": [
-      "run_id",
-      "embedding_type",
-      "capability"
-    ]
-  },
-  "EmbeddingBatchPrepareResponse": {
-    "type": "object",
-    "properties": {
-      "run_id": {
-        "type": "string"
-      },
-      "row_count": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "subjobs": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "index": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991
-            },
-            "display_name": {
-              "type": "string"
-            },
-            "input_uri": {
-              "type": "string"
-            },
-            "output_uri": {
-              "type": "string"
-            },
-            "row_count": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991
-            },
-            "provider_name": {
-              "type": "string"
-            },
-            "state": {
-              "type": "string",
-              "enum": [
-                "pending",
-                "running",
-                "succeeded",
-                "failed",
-                "cancelled",
-                "paused"
-              ]
-            }
-          },
-          "required": [
-            "index",
-            "display_name",
-            "input_uri",
-            "output_uri",
-            "row_count"
-          ],
-          "additionalProperties": false
-        }
-      }
-    },
-    "required": [
-      "run_id",
-      "row_count",
-      "subjobs"
-    ]
-  },
-  "EmbeddingBatchRenditionPageRequest": {
-    "type": "object",
-    "properties": {
-      "run_id": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "run_id"
-    ]
-  },
-  "EmbeddingBatchRenditionPageResponse": {
-    "type": "object",
-    "properties": {
-      "status": {
-        "type": "string",
-        "enum": [
-          "running",
-          "page_completed",
-          "completed"
-        ]
-      },
-      "page_index": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "page_scanned": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "page_ready": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "page_generated": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "page_failed": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "running": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      }
-    },
-    "required": [
-      "status",
-      "page_index",
-      "page_scanned",
-      "page_ready",
-      "page_generated",
-      "page_failed",
-      "running"
-    ]
-  },
-  "EmbeddingBatchUpdateRequest": {
-    "type": "object",
-    "properties": {
-      "run_id": {
-        "type": "string"
-      },
-      "state": {
-        "type": "string",
-        "enum": [
-          "preparing",
-          "submitted",
-          "running",
-          "applying",
-          "completed",
-          "completed_with_errors",
-          "cancelled",
-          "stale",
-          "failed"
-        ]
-      },
-      "subjobs": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "index": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991
-            },
-            "display_name": {
-              "type": "string"
-            },
-            "input_uri": {
-              "type": "string"
-            },
-            "output_uri": {
-              "type": "string"
-            },
-            "row_count": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991
-            },
-            "provider_name": {
-              "type": "string"
-            },
-            "state": {
-              "type": "string",
-              "enum": [
-                "pending",
-                "running",
-                "succeeded",
-                "failed",
-                "cancelled",
-                "paused"
-              ]
-            }
-          },
-          "required": [
-            "index",
-            "display_name",
-            "input_uri",
-            "output_uri",
-            "row_count"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "error_code": {
-        "type": "string"
-      },
-      "error_message": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "run_id",
-      "state"
-    ]
-  },
-  "EmbeddingBatchApplyRequest": {
-    "type": "object",
-    "properties": {
-      "run_id": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "run_id"
-    ]
-  },
-  "EmbeddingBatchApplyResponse": {
-    "type": "object",
-    "properties": {
-      "state": {
-        "type": "string",
-        "enum": [
-          "preparing",
-          "submitted",
-          "running",
-          "applying",
-          "completed",
-          "completed_with_errors",
-          "cancelled",
-          "stale",
-          "failed"
-        ]
-      },
-      "succeeded": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "failed": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "stale": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "applied": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 9007199254740991
-      },
-      "failure_counts": {
-        "type": "object",
-        "additionalProperties": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991
-        }
-      }
-    },
-    "required": [
-      "state",
-      "succeeded",
-      "failed",
-      "stale",
-      "applied"
-    ]
   },
   "GenericCommandResponse": {
     "type": "object",

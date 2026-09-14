@@ -1286,6 +1286,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/OpenAiGptImageOptions',
                 },
                 {
+                    $ref: '#/$defs/OpenAiTranscriptionOptions',
+                },
+                {
+                    $ref: '#/$defs/OpenAiSpeechOptions',
+                },
+                {
                     $ref: '#/$defs/XAIGrokImageOptions',
                 },
                 {
@@ -1415,6 +1421,33 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['png', 'webp', 'jpeg'],
                 },
             },
+            additionalProperties: false,
+        },
+        OpenAiSpeechOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-speech',
+                },
+                voice: {
+                    type: 'string',
+                    minLength: 1,
+                },
+                response_format: {
+                    type: 'string',
+                    enum: ['mp3', 'wav'],
+                },
+                speed: {
+                    type: 'number',
+                    minimum: 0.25,
+                    maximum: 4,
+                },
+                instructions: {
+                    type: 'string',
+                },
+            },
+            required: ['_option_id'],
             additionalProperties: false,
         },
         OpenAiTextOptions: {
@@ -1630,6 +1663,20 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     },
                 },
             },
+            additionalProperties: false,
+        },
+        OpenAiTranscriptionOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-transcription',
+                },
+                language: {
+                    type: 'string',
+                },
+            },
+            required: ['_option_id'],
             additionalProperties: false,
         },
         PromptCacheMode: {
