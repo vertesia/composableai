@@ -32,6 +32,7 @@ describe('branding Vite adapter', () => {
             },
             moduleUrl,
         );
+        plugin.configResolved({ env: { VITE_VERTESIA_ACCOUNT_ID: 'account', VITE_VERTESIA_PROJECT_ID: 'project' } });
         const addWatchFile = vi.fn();
         const id = plugin.resolveId('virtual:vertesia-branding') ?? '';
         const code = plugin.load.call({ addWatchFile }, id) ?? '';
@@ -48,6 +49,9 @@ describe('branding Vite adapter', () => {
             '<html><head><title>Old</title><link rel="icon" href="old.ico"></head><body></body></html>',
         );
         expect(html).toContain('<title>A &amp; B</title>');
+        const metadata = /id="vertesia-app-branding">(.*?)<\/script>/.exec(html)?.[1];
+        expect(JSON.parse(metadata || '{}').name).toBe('A & B');
+        expect(JSON.parse(metadata || '{}').workspace).toEqual({ account: 'account', project: 'project' });
         expect(html).toContain(resolved.logo.light);
         expect(html).not.toContain('old.ico');
         expect(html).not.toContain('./assets/');
