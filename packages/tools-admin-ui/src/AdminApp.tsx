@@ -1,8 +1,7 @@
-import { Spinner } from '@vertesia/ui/core';
 import type { Route } from '@vertesia/ui/router';
 import { NestedRouterProvider, RouteComponent } from '@vertesia/ui/router';
-
 import { AdminContext } from './AdminContext.js';
+import { AdminLoadingPage } from './components/AdminLoadingPage.js';
 import { AdminTopBar } from './components/AdminTopBar.js';
 import { useResourceData, useServerInfo } from './hooks.js';
 import { ActivityCollection } from './pages/ActivityCollection.js';
@@ -57,11 +56,7 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
     const error = infoError || dataError;
 
     if (isLoading) {
-        return (
-            <div className="flex h-64 items-center justify-center text-muted">
-                <Spinner />
-            </div>
-        );
+        return <AdminLoadingPage fullPage />;
     }
 
     if (error) {
@@ -73,7 +68,7 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
     const title = serverInfo.message.replace('Vertesia Tools API', 'Tools Server');
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="flex min-h-dvh flex-col bg-background text-foreground">
             <AdminTopBar title={title} />
             <AdminContext.Provider
                 value={{
@@ -84,7 +79,9 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
                 }}
             >
                 <NestedRouterProvider routes={routes}>
-                    <RouteComponent />
+                    <div className="flex flex-1 flex-col">
+                        <RouteComponent />
+                    </div>
                 </NestedRouterProvider>
             </AdminContext.Provider>
         </div>

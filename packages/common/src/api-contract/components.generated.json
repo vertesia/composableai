@@ -1374,6 +1374,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1485,6 +1489,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1569,6 +1577,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1647,6 +1659,10 @@
         "type": "string",
         "format": "date-time"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "properties": {
         "type": "object",
         "additionalProperties": true,
@@ -1681,6 +1697,10 @@
       },
       "enabled": {
         "type": "boolean"
+      },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
       },
       "properties": {
         "type": "object",
@@ -32884,6 +32904,11 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
+          },
+          "stall_trips": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -32945,7 +32970,8 @@
       "high_gather",
       "overhead",
       "followup_after_answer",
-      "approval_denied"
+      "approval_denied",
+      "circuit_breaker"
     ],
     "description": "Reason behind an evaluation severity."
   },
@@ -35490,6 +35516,16 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "stallCorrectives": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stallTrips": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "followupAfterAnswer": {
             "type": "boolean"
           },
@@ -35854,6 +35890,138 @@
           "selectedProbability",
           "outcome",
           "promptVersion"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "agentRunId": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "environmentId": {
+            "type": "string"
+          },
+          "environmentType": {
+            "type": "string"
+          },
+          "interactionId": {
+            "type": "string"
+          },
+          "parentRunId": {
+            "type": "string"
+          },
+          "ancestorRunIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "eventType": {
+            "type": "string",
+            "const": "stall_breaker"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "corrective",
+              "trip"
+            ]
+          },
+          "toolNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "repeatCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stallMeasure": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "allErrored": {
+            "type": "boolean"
+          },
+          "iteration": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "interactive": {
+            "type": "boolean"
+          },
+          "workstreamId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "timestamp",
+          "runId",
+          "model",
+          "environmentId",
+          "environmentType",
+          "interactionId",
+          "eventType",
+          "action",
+          "toolNames",
+          "repeatCount",
+          "stallMeasure",
+          "allErrored",
+          "iteration",
+          "interactive",
+          "workstreamId"
         ],
         "additionalProperties": false
       }

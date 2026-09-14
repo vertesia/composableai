@@ -11,18 +11,19 @@ interface CompanySizeOption {
 }
 
 interface SignupFormProps {
+    identity?: Pick<User, 'displayName' | 'email'>;
     onSignup: (data: SignupData, fbToken: string) => void;
     goBack: () => void;
 }
 
-export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
+export default function SignupForm({ onSignup, goBack, identity }: SignupFormProps) {
     const { t } = useUITranslation();
     const [accountType, setAccountType] = useState<string | undefined>(undefined);
     const [companySize, setCompanySize] = useState<CompanySizeOption | undefined>(undefined);
     const [companyName, setCompanyName] = useState<string | undefined>(undefined);
     const [companyWebsite, setCompanyWebsite] = useState<string | undefined>(undefined);
     const [projectMaturity, setProjectMaturity] = useState<string | undefined>(undefined);
-    const [fbUser, setFbUser] = useState<User | undefined>(undefined);
+    const [fbUser, setFbUser] = useState<Pick<User, 'displayName' | 'email'> | undefined>(identity);
 
     const [error, setError] = useState<string | undefined>(undefined);
     const isCompany = accountType === 'company';
@@ -57,13 +58,17 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
     ];
 
     useEffect(() => {
+        if (identity) {
+            setFbUser(identity);
+            return;
+        }
         const user = getFirebaseAuth().currentUser;
         if (!user) {
             console.error('No user found');
             return;
         }
         setFbUser(user);
-    }, []);
+    }, [identity]);
 
     const isValid = () => {
         if (!accountType) {

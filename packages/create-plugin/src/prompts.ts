@@ -4,11 +4,11 @@
 
 import chalk from 'chalk';
 import prompts from 'prompts';
+import { hasDevelopmentMarker } from './configuration.js';
 import type { PromptConfig, TemplateConfig } from './template-config.js';
 import { applyMapTransform, applyTransform, concatValues } from './transforms.js';
 
 type ProcessedPromptConfig = Omit<PromptConfig, 'validate'> & {
-    choices?: Array<{ value: unknown }>;
     validate?: string | ((value: string) => boolean | string);
 };
 
@@ -20,6 +20,7 @@ export async function promptUser(
     projectName: string,
     templateConfig: TemplateConfig,
     nonInteractive = false,
+    developmentRegions = hasDevelopmentMarker(),
 ): Promise<Record<string, unknown>> {
     if (!templateConfig.prompts) {
         return {};
@@ -31,6 +32,14 @@ export async function promptUser(
     // Process prompts - replace ${PROJECT_NAME} and other variables in initial values
     const processedPrompts: ProcessedPromptConfig[] = filteredPrompts.map((p) => {
         const prompt: ProcessedPromptConfig = { ...p };
+        if (p.choices) {
+            const initialChoice = typeof p.initial === 'number' ? p.choices[p.initial] : undefined;
+            prompt.choices = p.choices.filter((choice) => !choice.devOnly || developmentRegions);
+            if (typeof p.initial === 'number') {
+                const index = initialChoice ? prompt.choices.indexOf(initialChoice) : -1;
+                prompt.initial = Math.max(0, index);
+            }
+        }
 
         // Replace ${PROJECT_NAME} in initial values
         if (typeof prompt.initial === 'string') {

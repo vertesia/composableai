@@ -1,13 +1,24 @@
 import { ThemeProvider, ToastProvider } from '@vertesia/ui/core';
-import { TypeRegistryProvider, UserPermissionProvider } from '@vertesia/ui/features';
+import { type PermissionLoadingScreenProps, TypeRegistryProvider, UserPermissionProvider } from '@vertesia/ui/features';
 import { LanguageBoundI18nProvider, LanguageProvider, type SupportedLanguage } from '@vertesia/ui/i18n';
 import { DevSessionProvider, UserSessionProvider } from '@vertesia/ui/session';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import type { AppBranding } from '../boot/branding.js';
 import { IframeAppContextSync } from './apps/IframeAppContextSync.js';
-import { SigninScreen } from './login/SigninScreen';
-import { SplashScreen } from './SplashScreen';
+import { AppBrandingProvider, BrandedAuthLoadingScreen, brandedAuthScreens } from './BrandedAuthScreens';
+import { type SignInScreenViewProps, SigninScreen } from './login/SigninScreen';
+import { type AuthLoadingScreenProps, SplashScreen } from './SplashScreen';
 
-interface VertesiaShellProps {
+/** Optional full-page presentations. Session and permission gating remain owned by the shell. */
+export interface AuthScreens {
+    SignIn?: ComponentType<SignInScreenViewProps>;
+    Loading?: ComponentType<AuthLoadingScreenProps>;
+    Permissions?: ComponentType<PermissionLoadingScreenProps>;
+}
+
+export interface VertesiaShellProps {
+    authScreens?: AuthScreens;
+    branding?: AppBranding;
     children: React.ReactNode;
     lightLogo?: string;
     darkLogo?: string;
@@ -30,26 +41,38 @@ export function VertesiaShell({
     suppressSignInErrorPrefixes,
     authToken,
     defaultLanguage,
+    authScreens,
+    branding,
 }: VertesiaShellProps) {
-    const content = (
+    const screens = { ...(branding ? brandedAuthScreens : {}), ...authScreens };
+    const brandedContent = (
         <TypeRegistryProvider>
             <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
                 <LanguageProvider defaultLanguage={defaultLanguage}>
                     <LanguageBoundI18nProvider>
-                        <IframeAppContextSync />
-                        {!authToken && (
-                            <>
-                                <SplashScreen icon={loadingIcon} />
-                                <SigninScreen
-                                    allowedPrefix="/shared/"
-                                    darkLogo={darkLogo}
-                                    lightLogo={lightLogo}
-                                    preservePath={preserveSignInPath}
-                                    suppressAuthErrorPrefix={suppressSignInErrorPrefixes}
-                                />
-                            </>
-                        )}
-                        <UserPermissionProvider loadingIcon={loadingIcon}>{children}</UserPermissionProvider>
+                        <AppBrandingBoundary branding={branding}>
+                            <IframeAppContextSync />
+                            {!authToken && (
+                                <>
+                                    <SplashScreen
+                                        icon={loadingIcon}
+                                        Screen={authScreens?.Loading}
+                                        Presentation={branding ? BrandedAuthLoadingScreen : undefined}
+                                    />
+                                    <SigninScreen
+                                        View={screens.SignIn}
+                                        allowedPrefix="/shared/"
+                                        darkLogo={darkLogo}
+                                        lightLogo={lightLogo}
+                                        preservePath={preserveSignInPath}
+                                        suppressAuthErrorPrefix={suppressSignInErrorPrefixes}
+                                    />
+                                </>
+                            )}
+                            <UserPermissionProvider loadingIcon={loadingIcon} LoadingScreen={screens.Permissions}>
+                                {children}
+                            </UserPermissionProvider>
+                        </AppBrandingBoundary>
                     </LanguageBoundI18nProvider>
                 </LanguageProvider>
             </ThemeProvider>
@@ -59,10 +82,14 @@ export function VertesiaShell({
     return (
         <ToastProvider>
             {authToken ? (
-                <DevSessionProvider token={authToken}>{content}</DevSessionProvider>
+                <DevSessionProvider token={authToken}>{brandedContent}</DevSessionProvider>
             ) : (
-                <UserSessionProvider loadOnboardingStatus={loadOnboardingStatus}>{content}</UserSessionProvider>
+                <UserSessionProvider loadOnboardingStatus={loadOnboardingStatus}>{brandedContent}</UserSessionProvider>
             )}
         </ToastProvider>
     );
+}
+
+function AppBrandingBoundary({ branding, children }: { branding?: AppBranding; children: ReactNode }) {
+    return branding ? <AppBrandingProvider branding={branding}>{children}</AppBrandingProvider> : children;
 }

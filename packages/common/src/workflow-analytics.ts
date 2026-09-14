@@ -25,6 +25,8 @@ export enum AgentEventType {
     Feedback = 'feedback',
     /** Verdict of the LLM judge on one turn, emitted by the judge workflow */
     TurnJudgement = 'turn_judgement',
+    /** The stall circuit breaker acted: a corrective was injected, or the loop was stopped */
+    StallBreaker = 'stall_breaker',
 }
 
 /**
@@ -81,7 +83,8 @@ export type TurnEvaluationFlag =
     | 'high_gather'
     | 'overhead'
     | 'followup_after_answer'
-    | 'approval_denied';
+    | 'approval_denied'
+    | 'circuit_breaker';
 
 /** Coarse class of a tool error, derived from the error text. */
 export type ToolErrorClass = 'schema' | 'platform' | 'config' | 'environment' | 'other';
@@ -313,6 +316,31 @@ export interface TurnToolObservation {
     durationMs: number;
 }
 
+/** What the stall circuit breaker did. */
+export type StallBreakerAction = 'corrective' | 'trip';
+
+/**
+ * Emitted the moment the stall circuit breaker acts on a repeated tool call: `corrective` when it
+ * appends its warning to the tool results, `trip` when the model repeated anyway and the loop was
+ * stopped (the run fails, or an interactive run hands control back to the user). The closing turn
+ * evaluation counts these too; this row carries the tools and the measure at the time.
+ */
+export interface StallBreakerEvent extends BaseAgentEvent {
+    eventType: AgentEventType.StallBreaker;
+    action: StallBreakerAction;
+    /** Tools of the repeated call set */
+    toolNames: string[];
+    /** Consecutive repeats of the identical call set */
+    repeatCount: number;
+    /** The measure the breaker acted on: the repeat count, or the windowed unproductive run */
+    stallMeasure: number;
+    /** Whether every result of the repeated call set was an error */
+    allErrored: boolean;
+    iteration: number;
+    interactive: boolean;
+    workstreamId: string;
+}
+
 /**
  * Emitted when an agent turn ends. One turn is the agent work between two user hand-offs.
  * Deterministic: computed inside the workflow from what the workflow observed.
@@ -378,6 +406,13 @@ export interface TurnEvaluationEvent extends BaseAgentEvent {
     approvalsRequested: number;
     approvalsDenied: number;
     stopRequests: number;
+    /**
+     * Stall correctives injected: the model was warned it kept repeating the same call.
+     * Absent on events from producers that predate the counter; read as 0.
+     */
+    stallCorrectives?: number;
+    /** Stall circuit-breaker trips: the model ignored the corrective and the loop was stopped. Same caveat. */
+    stallTrips?: number;
     /** An unprompted user message after an answer was followed by substantive tool work */
     followupAfterAnswer: boolean;
     severity: EvaluationSeverity;
@@ -474,7 +509,8 @@ export type AgentEvent =
     | ToolCallEvent
     | TurnEvaluationEvent
     | FeedbackEvent
-    | TurnJudgementEvent;
+    | TurnJudgementEvent
+    | StallBreakerEvent;
 
 /**
  * Workflow Analytics Types

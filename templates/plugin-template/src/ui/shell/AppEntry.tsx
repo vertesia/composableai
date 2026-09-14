@@ -1,7 +1,9 @@
+import branding from 'virtual:vertesia-branding';
 import { AdminApp } from '@vertesia/tools-admin-ui';
 import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { IFRAME_APP_CONTENT_SLOT, IFRAME_APP_SLOT_PARAM, StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
 import { useEffect, useState } from 'react';
+import { appAuthScreens } from '../../modules/app/branding/screens';
 import { setUsePluginAssets } from '../assets';
 import { App } from './App';
 import { OrgGate } from './layouts/OrgGate';
@@ -55,7 +57,7 @@ export function AppEntry() {
     }, []);
     if (window.__VERTESIA_SANDBOX_READY__ && !hostToken) return null;
     return (
-        <VertesiaShell preserveSignInPath authToken={hostToken}>
+        <VertesiaShell branding={branding} preserveSignInPath authScreens={appAuthScreens} authToken={hostToken}>
             <OrgGate>
                 <RouterProvider routes={routes} />
             </OrgGate>
