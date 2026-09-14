@@ -84,6 +84,14 @@ export const ApiKeySchema = z
         account: z.string(),
         project: ProjectRefSchema,
         enabled: z.boolean(),
+        scim_provisioning: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Organization-wide SCIM provisioning credential. Only account administrators may create ' +
+                    'or manage these keys. Set at creation only; disable or delete the key to revoke access.',
+            }),
         created_by: z.string(),
         updated_by: z.string(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -147,6 +155,7 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     role: true,
     type: true,
     expires_at: true,
+    scim_provisioning: true,
     properties: true,
     clearance: true,
     compartments: true,
