@@ -15,9 +15,6 @@ export interface SharedContentEntry {
     modified_at: string;
 }
 
-/** A shared collection plus its member listing — the default drill-in response. */
-export type SharedCollectionView = Collection & { members?: SharedContentEntry[] };
-
 /** Result of resolving a bare content id: the entity, its type, and the project it lives in. */
 export type ResolvedContent =
     | { type: 'object'; projectId: string; entity: ContentObject }
@@ -41,23 +38,31 @@ export class ContentApi extends ApiTopic {
         return this.get('/shared');
     }
 
-    /** Root shared entries (shared collections + root shared objects) of a shared project. */
-    sharedRoots(projectId: string): Promise<SharedContentEntry[]> {
-        return this.get(`/shared/${projectId}`);
+    /**
+     * Shared COLLECTIONS at a browse level — the root collections of a shared project (no `parentId`),
+     * or the sub-collections of `parentId` within it. Bounded set, returned in full, newest first.
+     */
+    sharedCollections(projectId: string, parentId?: string): Promise<SharedContentEntry[]> {
+        const path = parentId ? `/shared/${projectId}/${parentId}` : `/shared/${projectId}`;
+        return this.get(path, { query: { list: 'collections' } });
     }
 
     /**
-     * Read a shared entity in a shared project. An object id → the full object; a collection id →
-     * the collection meta plus its shared members, or meta only with `{ members: false }`.
+     * A page of shared OBJECTS at a browse level — the root objects of a shared project (no `parentId`),
+     * or the member objects of `parentId` within it. Paginated via `from`/`limit`, newest first.
      */
-    getShared(
+    sharedObjects(
         projectId: string,
-        id: string,
-        options?: { members?: boolean },
-    ): Promise<ContentObject | SharedCollectionView> {
-        return this.get(`/shared/${projectId}/${id}`, {
-            query: options?.members === false ? { members: 'false' } : undefined,
-        });
+        parentId?: string,
+        options?: { from?: number; limit?: number },
+    ): Promise<SharedContentEntry[]> {
+        const path = parentId ? `/shared/${projectId}/${parentId}` : `/shared/${projectId}`;
+        return this.get(path, { query: { list: 'objects', from: options?.from, limit: options?.limit } });
+    }
+
+    /** Read a shared entity's detail: an object id → the full object; a collection id → its meta. */
+    getShared(projectId: string, id: string): Promise<ContentObject | Collection> {
+        return this.get(`/shared/${projectId}/${id}`);
     }
 
     /**
