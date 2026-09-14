@@ -1,8 +1,8 @@
 import type { InCodeTypeDefinition } from '@vertesia/common';
-import { Badge, Spinner, useFetch } from '@vertesia/ui/core';
+import { Badge, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 
 export function TypeDetail() {
@@ -21,12 +21,7 @@ export function TypeDetail() {
     );
 
     if (error) return <div className="p-6 text-destructive">Failed to load type &ldquo;{name}&rdquo;.</div>;
-    if (!typeDef)
-        return (
-            <div className="flex h-64 items-center justify-center text-muted">
-                <Spinner />
-            </div>
-        );
+    if (!typeDef) return <AdminLoadingPage />;
 
     return (
         <DetailPage

@@ -37,11 +37,21 @@ export function getFirebaseAnalytics(): Analytics {
 export function getFirebaseAuth(): Auth {
     if (!_firebaseAuth) {
         _firebaseAuth = getAuth(getFirebaseApp());
+        _firebaseAuth.tenantId = Env.firebase?.tenantId ?? null;
     }
     return _firebaseAuth;
 }
 
 export async function setFirebaseTenant(tenantEmail?: string) {
+    if (Env.firebase?.tenantId) {
+        getFirebaseAuth().tenantId = Env.firebase.tenantId;
+        return {
+            firebaseTenantId: Env.firebase.tenantId,
+            provider: Env.firebase.providerType ?? 'oidc',
+            name: '',
+            label: '',
+        };
+    }
     if (!tenantEmail) {
         console.log('No tenant name or email specified, skipping tenant setup');
         return;

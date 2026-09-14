@@ -104,6 +104,7 @@ bootstrap_template() {
   local npm_cache_dir="/tmp/npm-cache-$$"
   (cd /tmp && env -i HOME="$HOME" PATH="$PATH" \
     npm_config_registry="${npm_config_registry:-}" \
+    pnpm_config_registry="${pnpm_config_registry:-${npm_config_registry:-}}" \
     npm_config_package_lock="false" \
     npm_config_cache="${npm_cache_dir}" \
     npm exec --yes -- "@vertesia/create-plugin@${PACKAGE_SPEC}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${CREATE_ARGS} ${branch_args} ${pm_args} ${EXTRA_CREATE_ARGS:-})
