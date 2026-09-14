@@ -3664,6 +3664,54 @@
     ],
     "additionalProperties": false
   },
+  "OpenAiTranscriptionOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-transcription"
+      },
+      "language": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "_option_id"
+    ],
+    "additionalProperties": false
+  },
+  "OpenAiSpeechOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-speech"
+      },
+      "voice": {
+        "type": "string",
+        "minLength": 1
+      },
+      "response_format": {
+        "type": "string",
+        "enum": [
+          "mp3",
+          "wav"
+        ]
+      },
+      "speed": {
+        "type": "number",
+        "minimum": 0.25,
+        "maximum": 4
+      },
+      "instructions": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "_option_id"
+    ],
+    "additionalProperties": false
+  },
   "XAIGrokImageOptions": {
     "type": "object",
     "properties": {
@@ -3908,6 +3956,12 @@
         "$ref": "#/components/schemas/OpenAiGptImageOptions"
       },
       {
+        "$ref": "#/components/schemas/OpenAiTranscriptionOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiSpeechOptions"
+      },
+      {
         "$ref": "#/components/schemas/XAIGrokImageOptions"
       },
       {
@@ -3944,6 +3998,8 @@
         "openai-text": "#/components/schemas/OpenAiTextOptions",
         "openai-dalle": "#/components/schemas/OpenAiDalleOptions",
         "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
+        "openai-transcription": "#/components/schemas/OpenAiTranscriptionOptions",
+        "openai-speech": "#/components/schemas/OpenAiSpeechOptions",
         "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
         "groq-deepseek-thinking": "#/components/schemas/GroqOptions",
         "mistral-text": "#/components/schemas/MistralTextOptions"
@@ -7713,6 +7769,55 @@
     ],
     "additionalProperties": false
   },
+  "AudioResult": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "audio"
+      },
+      "value": {
+        "type": "string",
+        "pattern": "^(?:gs|s3):\\/\\/[^/]+\\/.+|^artifact:.+"
+      },
+      "mime_type": {
+        "type": "string",
+        "pattern": "^audio\\/.*"
+      },
+      "container": {
+        "type": "string"
+      },
+      "codec": {
+        "type": "string"
+      },
+      "sample_rate": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "channels": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "sample_encoding": {
+        "type": "string"
+      },
+      "byte_order": {
+        "type": "string",
+        "enum": [
+          "little",
+          "big"
+        ]
+      }
+    },
+    "required": [
+      "type",
+      "value",
+      "mime_type"
+    ],
+    "additionalProperties": false
+  },
   "VideoResult": {
     "type": "object",
     "properties": {
@@ -7762,6 +7867,9 @@
       },
       {
         "$ref": "#/components/schemas/VideoResult"
+      },
+      {
+        "$ref": "#/components/schemas/AudioResult"
       }
     ],
     "discriminator": {
@@ -7771,7 +7879,8 @@
         "thoughts": "#/components/schemas/ThoughtsResult",
         "json": "#/components/schemas/JsonResult",
         "image": "#/components/schemas/ImageResult",
-        "video": "#/components/schemas/VideoResult"
+        "video": "#/components/schemas/VideoResult",
+        "audio": "#/components/schemas/AudioResult"
       }
     },
     "type": "object",

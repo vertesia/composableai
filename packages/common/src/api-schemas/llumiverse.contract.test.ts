@@ -44,6 +44,8 @@ const UNION_MEMBERS = [
     'OpenAiTextOptions',
     'OpenAiDalleOptions',
     'OpenAiGptImageOptions',
+    'OpenAiTranscriptionOptions',
+    'OpenAiSpeechOptions',
     'XAIGrokImageOptions',
     'GroqOptions',
     'MistralTextOptions',
@@ -151,5 +153,17 @@ describe('the JSONSchema closure is published open, because a JSON Schema is ope
         // and has to fail, or the component would be documentation rather than a schema.
         expect(validateApiRequest('JSONSchema', { description: 42 }).valid).toBe(false);
         expect(validateApiRequest('JSONSchema', { required: 'status' }).valid).toBe(false);
+    });
+});
+
+describe('audio completion wire contract', () => {
+    it('enforces durable references and preserves metadata through the published union', () => {
+        const validate = compile('CompletionResult');
+        const audio = { type: 'audio', value: 'gs://bucket/speech.wav', mime_type: 'audio/wav', container: 'wav' };
+        expect(validate(JSON.parse(JSON.stringify(audio)))).toBe(true);
+        expect(validate({ ...audio, value: 'data:audio/wav;base64,AAAA' })).toBe(false);
+        expect(validate({ ...audio, value: 'https://example.com/temporary.wav' })).toBe(false);
+        expect(validate({ ...audio, data: 'AAAA' })).toBe(false);
+        expect(validate({ ...audio, mime_type: undefined })).toBe(false);
     });
 });
