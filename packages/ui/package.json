@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/ui",
-    "version": "1.5.0-dev.20260910.052912Z",
+    "version": "1.5.0",
     "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
@@ -191,5 +191,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/ui"
     },
-    "gitHead": "95d481ca856012cd67b501b901dc365afeb7cf81"
+    "gitHead": "3485742020066ab1fd3292487cf3a9577b5e4d91"
 }
