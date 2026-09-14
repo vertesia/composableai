@@ -1379,7 +1379,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 response_format: {
                     type: 'string',
-                    enum: ['mp3', 'wav'],
+                    enum: ['mp3', 'wav', 'opus', 'aac', 'flac', 'pcm'],
                 },
                 speed: {
                     type: 'number',
@@ -1716,6 +1716,30 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     deprecated: true,
                     'x-deprecated-message': 'Use service_tier="flex" instead.',
                     description: 'Deprecated: Use service_tier="flex" instead.',
+                },
+                speech_voice: {
+                    type: 'string',
+                },
+                speech_language: {
+                    type: 'string',
+                },
+                transcription_language_codes: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                transcription_diarization: {
+                    type: 'boolean',
+                },
+                transcription_word_timestamps: {
+                    type: 'boolean',
+                },
+                transcription_vocabulary: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
                 },
                 image_aspect_ratio: {
                     type: 'string',
