@@ -13,10 +13,14 @@ import type {
     User,
     UserInviteToken,
 } from '@vertesia/common';
+import AccountApiKeysApi from './AccountApiKeysApi.js';
 
 export default class AccountApi extends ApiTopic {
+    readonly apikeys: AccountApiKeysApi;
+
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/account');
+        this.apikeys = new AccountApiKeysApi(parent);
     }
 
     /**
