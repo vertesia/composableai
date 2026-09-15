@@ -8,7 +8,12 @@ import * as AuditTrailSchemas from './audit-trail.js';
 import { StringValueMapSchema } from './files.js';
 import { ConversationVisibilitySchema, NumberValueMapSchema } from './interaction.js';
 import { JsonLogicRuleSchema, ProcessDefinitionBodySchema, ProcessRunTypeSchema } from './process.js';
-import { nullableNumberSchema, nullableStringSchema } from './schema-primitives.js';
+import {
+    EditRevisionSchema,
+    ExpectedEditRevisionSchema,
+    nullableNumberSchema,
+    nullableStringSchema,
+} from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
 export const ServerSentEventsResponseSchema = z.string().meta({ id: 'ServerSentEventsResponse' });
@@ -151,6 +156,7 @@ export const EventDeliverySortFieldSchema = z
 export const WorkflowRuleItemSchema = z
     .strictObject({
         id: z.string().meta({ description: 'Unique identifier for the object' }),
+        edit_revision: EditRevisionSchema,
         name: z.string().meta({ description: 'Human-readable name or title' }),
         description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
         tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
@@ -236,6 +242,7 @@ export const EventDeliveryQueueSortFieldSchema = z
 export const WorkflowRuleSchema = z
     .strictObject({
         id: z.string().meta({ description: 'Unique identifier for the object' }),
+        edit_revision: EditRevisionSchema,
         name: z.string().meta({ description: 'Human-readable name or title' }),
         description: z.string().meta({ description: 'Optional detailed description of the object' }).optional(),
         tags: z.array(z.string()).meta({ description: 'Optional array of categorization tags' }).optional(),
@@ -319,6 +326,7 @@ export const CreateWorkflowRulePayloadSchema = z
  */
 export const UpdateWorkflowRulePayloadSchema = z
     .strictObject({
+        expected_edit_revision: ExpectedEditRevisionSchema,
         ...workflowRulePayloadFields,
         endpoint: z.string().optional(),
         name: z.string().meta({ description: 'Human-readable name or title' }).optional(),

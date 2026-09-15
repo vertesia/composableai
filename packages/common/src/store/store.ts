@@ -51,12 +51,15 @@ import type {
     WorkflowRuleSchema,
 } from '../api-schemas/events.js';
 import type {
+    BucketCreateAccessStatusResponseSchema,
     BucketReadAccessStatusResponseSchema,
     BulkUploadUrlsPayloadSchema,
     BulkUploadUrlsResponseSchema,
     CopyFilePayloadSchema,
     CopyFileResponseSchema,
     DeleteFileResultSchema,
+    EnsureBucketCreateAccessPayloadSchema,
+    EnsureBucketCreateAccessResponseSchema,
     EnsureBucketReadAccessPayloadSchema,
     EnsureBucketReadAccessResponseSchema,
     FileBucketResponseSchema,
@@ -736,6 +739,12 @@ export type EnsureBucketReadAccessPayload = z.infer<typeof EnsureBucketReadAcces
 export type EnsureBucketReadAccessResponse = z.infer<typeof EnsureBucketReadAccessResponseSchema>;
 
 export type BucketReadAccessStatusResponse = z.infer<typeof BucketReadAccessStatusResponseSchema>;
+
+export type EnsureBucketCreateAccessPayload = z.infer<typeof EnsureBucketCreateAccessPayloadSchema>;
+
+export type EnsureBucketCreateAccessResponse = z.infer<typeof EnsureBucketCreateAccessResponseSchema>;
+
+export type BucketCreateAccessStatusResponse = z.infer<typeof BucketCreateAccessStatusResponseSchema>;
 
 export type FileMetadataResponse = z.infer<typeof FileMetadataResponseSchema>;
 

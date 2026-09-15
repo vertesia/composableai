@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase, type ServerSentEvent } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     AnalyzeDriftBatchResult,
     BulkDeleteResult,
@@ -22,8 +22,6 @@ import type {
     NextIndexCursorResult,
     ReindexAgentRunsPayload,
     ReindexAgentRunsResponse,
-    ReindexViaBulkRequest,
-    ReindexViaBulkResult,
     StartProjectReindexPayload,
     SwapAliasRequest,
     SwapAliasResult,
@@ -344,72 +342,5 @@ export class IndexingApi extends ApiTopic {
             alias,
             backend,
         } satisfies SwapAliasRequest);
-    }
-
-    /**
-     * Full reindex of a tenant via zeno-bulk (all-in-one).
-     * The Go service handles sharding, indexing, catch-up, and alias swap internally.
-     *
-     * In JSON mode (default): waits for completion and returns the final result.
-     * In SSE mode (when onEvent is provided): streams progress events from zeno-bulk
-     * and returns the final result. The onEvent callback receives parsed SSE events
-     * with { event: "progress" | "done", data: string (JSON) }.
-     */
-    async reindexViaBulk(
-        tenantId: string,
-        onEvent?: ((event: ServerSentEvent) => void) | null,
-        dryRun?: boolean,
-        backend?: ElasticsearchBackend,
-        projectId?: string,
-        tuning?: {
-            shardSize?: number;
-            shards?: number;
-            bulkConcurrency?: number;
-            bulkSizeBytes?: number;
-            bulkMaxDocs?: number;
-        },
-    ): Promise<ReindexViaBulkResult> {
-        const bulkUrl = `${this.zenoBulkBaseUrl}/reindex`;
-        const params = {
-            tenant_id: tenantId,
-            project_id: projectId,
-            dry_run: dryRun ?? false,
-            backend,
-            shard_size: tuning?.shardSize,
-            shards: tuning?.shards,
-            bulk_concurrency: tuning?.bulkConcurrency,
-            bulk_size_bytes: tuning?.bulkSizeBytes,
-            bulk_max_docs: tuning?.bulkMaxDocs,
-        } satisfies ReindexViaBulkRequest;
-
-        if (!onEvent) {
-            return this.client.post(bulkUrl, { payload: { params } });
-        }
-
-        // SSE mode: stream progress events from zeno-bulk
-        let lastResult: ReindexViaBulkResult | undefined;
-
-        await this.client.sseRequest(
-            'POST',
-            bulkUrl,
-            {
-                payload: { params },
-            },
-            (event) => {
-                onEvent(event);
-                if (event.type === 'event' && event.event === 'done') {
-                    try {
-                        lastResult = JSON.parse(event.data) as ReindexViaBulkResult;
-                    } catch {
-                        // data might not be valid JSON
-                    }
-                }
-            },
-        );
-
-        if (!lastResult) {
-            throw new Error('zeno-bulk SSE stream ended without a done event');
-        }
-        return lastResult;
     }
 }

@@ -75,6 +75,21 @@ export function getPermissionsForRoles(roleNames: Iterable<string>): string[] {
 }
 
 /**
+ * Return the platform permission keys a caller must hold to delegate a role.
+ *
+ * System roles already contain complete `domain:verb` Permission values. ABAC roles store bare
+ * verbs for content-security token generation, so map them back to their domain-qualified keys at
+ * an authorization boundary.
+ */
+export function getDelegablePermissionsForRole(roleName: string): string[] {
+    const role = getRoleByName(roleName);
+    if (role instanceof AbacRole) {
+        return [...role.permissions].map((permission) => `${role.domain}:${permission}`);
+    }
+    return [...role.permissions];
+}
+
+/**
  * A list of roles with a unified `hasPermission` check across them.
  */
 export class RoleList {

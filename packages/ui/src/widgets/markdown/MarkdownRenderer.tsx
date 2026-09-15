@@ -1,7 +1,6 @@
 import type { Element } from 'hast';
 import React from 'react';
 import Markdown, { type Components, defaultUrlTransform } from 'react-markdown';
-import rehypeKatex from 'rehype-katex';
 import { defListHastHandlers, remarkDefinitionList } from 'remark-definition-list';
 import remarkDirective from 'remark-directive';
 import remarkGfm from 'remark-gfm';
@@ -24,6 +23,55 @@ type MarkdownTree = Parameters<typeof visit>[0];
 type MarkdownNode = { value?: unknown };
 type MarkdownParent = { children?: unknown[] };
 type RemarkPluginList = NonNullable<React.ComponentProps<typeof Markdown>['remarkPlugins']>;
+type RehypePluginList = NonNullable<React.ComponentProps<typeof Markdown>['rehypePlugins']>;
+type RehypePlugin = RehypePluginList[number];
+
+// A `$` that the math preprocessor left unescaped — the only way remark-math can produce a math
+// node. Currency is escaped to `\$` by `preprocessMathDelimiters`, so it does not match.
+const MATH_DELIMITER_REGEX = /(?:^|[^\\])\$/;
+const NO_REHYPE_PLUGINS: RehypePluginList = [];
+
+let rehypeKatex: RehypePlugin | undefined;
+let rehypeKatexPromise: Promise<RehypePlugin> | undefined;
+
+function loadRehypeKatex(): Promise<RehypePlugin> {
+    if (!rehypeKatexPromise) {
+        rehypeKatexPromise = import('rehype-katex').then(({ default: plugin }) => {
+            rehypeKatex = plugin;
+            return plugin;
+        });
+    }
+    return rehypeKatexPromise;
+}
+
+/**
+ * KaTeX is ~250 KB and most markdown has no math in it, so it is fetched the first time a document
+ * containing math delimiters is rendered. Until it resolves, math renders unstyled; once loaded it
+ * stays loaded for the rest of the session and later renderers pick it up without a second pass.
+ */
+function useRehypePlugins(markdown: string): RehypePluginList {
+    const hasMath = React.useMemo(() => MATH_DELIMITER_REGEX.test(markdown), [markdown]);
+    const [plugin, setPlugin] = React.useState(() => rehypeKatex);
+
+    React.useEffect(() => {
+        if (!hasMath || plugin) return;
+        let cancelled = false;
+        loadRehypeKatex()
+            .then((loaded) => {
+                if (!cancelled) {
+                    setPlugin(() => loaded);
+                }
+            })
+            .catch((err: unknown) => {
+                console.error('Failed to load KaTeX; math will render unstyled', err);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [hasMath, plugin]);
+
+    return React.useMemo(() => (plugin ? [plugin] : NO_REHYPE_PLUGINS), [plugin]);
+}
 
 // Custom URL schemes that we handle in our components
 const ALLOWED_CUSTOM_SCHEMES = [
@@ -151,7 +199,7 @@ export function MarkdownRenderer({
     }, [remarkPlugins, removeComments]);
 
     // Rehype plugins (HTML processing, including KaTeX for math)
-    const rehypePluginsArray = React.useMemo(() => [rehypeKatex], []);
+    const rehypePluginsArray = useRehypePlugins(normalizedMarkdown);
 
     // Remark-rehype bridge options (custom AST handlers for definition lists)
     const remarkRehypeOptions = React.useMemo(

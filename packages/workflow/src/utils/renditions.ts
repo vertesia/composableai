@@ -92,27 +92,17 @@ export async function uploadRenditionPages(
                     },
                 );
 
-                const result = await client.files.uploadFile(source).catch((err: unknown) => {
-                    const message = err instanceof Error ? err.message : String(err);
-                    const stack = err instanceof Error ? err.stack : undefined;
-                    log.error(`Failed to upload rendition for ${contentEtag} page ${i}`, {
-                        error: err,
-                        errorMessage: message,
-                        stack,
-                    });
-                    return Promise.reject(`Upload failed: ${message}`);
-                });
+                const result = await client.files.uploadFile(source);
                 log.debug(`Rendition uploaded for ${contentEtag} page ${i}`, {
                     result,
                 });
 
                 return result;
             } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : String(err);
                 log.error(`Failed to upload rendition for ${contentEtag} page ${i}`, {
                     error: err,
                 });
-                return Promise.reject(`Upload failed: ${message}`);
+                throw err;
             } finally {
                 if (resizedImagePath) {
                     try {

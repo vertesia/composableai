@@ -7,7 +7,7 @@ import type { ViewType } from './types';
 function LoadingSpinner({ className }: { className?: string }) {
     return (
         <div className={`flex items-center justify-center ${className || ''}`}>
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted" />
         </div>
     );
 }
@@ -61,7 +61,7 @@ function JsonPageLayoutView({ pageNumber }: JsonPageLayoutViewProps) {
     }
 
     if (error) {
-        return <div className="px-4 py-2 text-red-500 text-sm">{error}</div>;
+        return <div className="px-4 py-2 text-destructive text-sm">{error}</div>;
     }
 
     return content ? <JSONCode className="w-full" data={content} /> : null;
@@ -96,13 +96,13 @@ function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
         return (
             <div className="h-full flex flex-col items-center justify-center gap-2">
                 <LoadingSpinner />
-                <span className="text-sm text-muted-foreground">Loading...</span>
+                <span className="text-sm text-muted">Loading...</span>
             </div>
         );
     }
 
     if (error) {
-        return <div className="px-4 py-2 text-red-500 text-sm">{error}</div>;
+        return <div className="px-4 py-2 text-destructive text-sm">{error}</div>;
     }
 
     return (

@@ -34,6 +34,29 @@ function hasFileMatching(dir, predicate) {
 
 const projects = ['tsconfig.ui.json', 'tsconfig.tool-server.json', 'tsconfig.node.json'];
 
+// tsconfig.scripts.json type-checks the app's own Node-side code — top-level `scripts/`, the
+// Playwright suite under `tests/`, and each module's `scripts/` — including `.mjs` via checkJs.
+// Those files sit outside every other project, so without this a seed/exercise script can call the
+// SDK with options it does not have (`token`/`appVersion` instead of `apikey`/`withAppVersion()`),
+// build a silently unauthenticated client, and only fail at runtime with a 401 after a candidate is
+// already built. Skipped when the app ships none of them, so `tsc` cannot fail with TS18003 (no
+// inputs). `scripts/typecheck.mjs` (this file) and the service module's build tooling are excluded
+// by tsconfig.scripts.json itself, so they must not count as inputs here either.
+const scriptedSources = (name) => name.endsWith('.ts') || name.endsWith('.mjs');
+const hasModuleScripts = hasFileMatching(join(cwd, 'src', 'modules'), (name, full) => {
+    const rel = relative(cwd, full).replaceAll('\\', '/');
+    return scriptedSources(name) && rel.includes('/scripts/') && !rel.startsWith('src/modules/service/');
+});
+if (
+    hasFileMatching(join(cwd, 'scripts'), (name) => scriptedSources(name) && name !== 'typecheck.mjs') ||
+    hasFileMatching(join(cwd, 'tests'), scriptedSources) ||
+    hasModuleScripts
+) {
+    projects.push('tsconfig.scripts.json');
+} else {
+    console.log('[typecheck] no app-owned Node-side sources found, skipping tsconfig.scripts.json');
+}
+
 const legacyWidgetsRoot = join(cwd, 'src', 'tool-server', 'skills');
 const modulesRoot = join(cwd, 'src', 'modules');
 const hasWidgets =
@@ -116,12 +139,17 @@ function collectDeprecations(tsconfigPaths) {
     return out;
 }
 
-try {
-    const deprecations = collectDeprecations(projects);
-    for (const line of deprecations) console.log(line);
-    if (deprecations.length > 0) {
-        console.log(`[typecheck] ${deprecations.length} deprecation warning(s) — advisory, not blocking.`);
+// TypeScript 7's native package intentionally exposes only version metadata from the root module;
+// it no longer ships the legacy language-service API used by this advisory scan. Detect the API
+// explicitly so generated builds stay quiet instead of printing a misleading exception every time.
+if (ts.sys?.readFile && ts.createLanguageService && ts.createDocumentRegistry) {
+    try {
+        const deprecations = collectDeprecations(projects);
+        for (const line of deprecations) console.log(line);
+        if (deprecations.length > 0) {
+            console.log(`[typecheck] ${deprecations.length} deprecation warning(s) — advisory, not blocking.`);
+        }
+    } catch (err) {
+        console.log(`[typecheck] deprecation scan skipped: ${err?.message ?? err}`);
     }
-} catch (err) {
-    console.log(`[typecheck] deprecation scan skipped: ${err?.message ?? err}`);
 }

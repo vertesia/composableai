@@ -10,6 +10,7 @@ import { registerIamCommand } from './iam/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
+import { registerProcessTestsCommand } from './process-tests/index.js';
 import {
     type CreateProfileOptions,
     createProfile,
@@ -272,7 +273,7 @@ profilesRoot
     .command('delete <name>')
     .description('delete an existing configuration profile')
     .action((name) => {
-        deleteProfile(name);
+        return deleteProfile(name);
     });
 profilesRoot
     .command('file')
@@ -282,6 +283,7 @@ profilesRoot
     });
 
 registerObjectsCommand(program);
+registerProcessTestsCommand(program);
 registerWorkflowsCommand(program);
 registerQuotaCommand(program);
 

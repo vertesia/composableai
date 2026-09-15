@@ -5,14 +5,20 @@
 # Expected variables (set by caller before calling functions):
 #   RELEASE_TYPE   - "snapshot" or "release"
 #   TEMPLATE_NAME  - Template name (default: "Vertesia Plugin")
+#   TEMPLATE_BRANCH - Source ref whose package channel is under test
+#   PACKAGE_VERSION - Optional exact create-plugin/package cohort version
 #
 # Variables set by this library:
-#   NPM_TAG        - "dev" (snapshot) or "latest" (release)
+#   NPM_TAG        - Track tag (dev, dev-X.Y, latest, or snapshot-<sha>)
+#   PACKAGE_SPEC   - Exact PACKAGE_VERSION when supplied, otherwise NPM_TAG
 #   TEMPLATE_REF   - "main" (snapshot) or "" (release — CLI resolves tag automatically)
 #   CREATE_ARGS    - Extra create-plugin args derived from release type
 #   TEST_PROJECT_DIR - Path to bootstrapped project (set by bootstrap_template)
 
 # =============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib-package-channel.sh"
 # Release type helpers
 # =============================================================================
 
@@ -30,15 +36,24 @@ validate_release_type() {
 }
 
 derive_tag_and_branch() {
+  local source_sha
+  source_sha="${GITHUB_SHA:-$(git rev-parse HEAD)}"
+  NPM_TAG="$(resolve_package_channel "${TEMPLATE_BRANCH:-main}" "$RELEASE_TYPE" "$source_sha")"
+  PACKAGE_SPEC="${PACKAGE_VERSION:-$NPM_TAG}"
+
   if [ "$RELEASE_TYPE" = "snapshot" ]; then
-    NPM_TAG="dev"
     # Use caller-supplied TEMPLATE_BRANCH so packages and template come from the same branch.
     TEMPLATE_REF="${TEMPLATE_BRANCH:-main}"
-    # Snapshot packages are published under the dev tag. Tell create-plugin to resolve
-    # internal workspace dependencies to that tag instead of its release templateVersions map.
-    CREATE_ARGS="--dev"
+    if [ -n "${PACKAGE_VERSION:-}" ]; then
+      # Post-publish tests receive the exact version produced by this workflow, so the CLI and
+      # its baked cohort map are known to support pinned development mode.
+      CREATE_ARGS="--dev --dependency-mode pinned"
+    else
+      # A tag identifies a create-plugin cohort. Its default mode uses the baked exact version map
+      # and also works with CLIs published before --dependency-mode existed.
+      CREATE_ARGS=""
+    fi
   else
-    NPM_TAG="latest"
     TEMPLATE_REF=""
     CREATE_ARGS=""
   fi
@@ -61,6 +76,7 @@ bootstrap_template() {
   echo "  Template: ${TEMPLATE_NAME}"
   echo "  Ref: ${TEMPLATE_REF:-<auto>}"
   echo "  Tag: ${NPM_TAG}"
+  echo "  Package spec: ${PACKAGE_SPEC}"
   [ -n "$CREATE_ARGS" ] && echo "  Create args: ${CREATE_ARGS}"
   [ -n "$pkg_manager" ] && echo "  Package manager: ${pkg_manager}"
 
@@ -90,7 +106,7 @@ bootstrap_template() {
     npm_config_registry="${npm_config_registry:-}" \
     npm_config_package_lock="false" \
     npm_config_cache="${npm_cache_dir}" \
-    npm exec --yes -- "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${CREATE_ARGS} ${branch_args} ${pm_args} ${EXTRA_CREATE_ARGS:-})
+    npm exec --yes -- "@vertesia/create-plugin@${PACKAGE_SPEC}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${CREATE_ARGS} ${branch_args} ${pm_args} ${EXTRA_CREATE_ARGS:-})
   rm -rf "${npm_cache_dir}"
 }
 
@@ -150,6 +166,7 @@ print_config() {
   echo ""
   echo "  Release type: ${RELEASE_TYPE}"
   echo "  NPM tag: ${NPM_TAG}"
+  echo "  Package spec: ${PACKAGE_SPEC}"
   echo "  Template: ${TEMPLATE_NAME}"
   echo "  Template ref: ${TEMPLATE_REF:-<auto>}"
   echo ""

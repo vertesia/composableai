@@ -71,6 +71,56 @@ describe('gate 1 — the schema is the single source of truth for the converted 
         assertType<Equals<SerperConfigurationInput['integration'], SupportedIntegrations.serper>>(true);
         expect(true).toBe(true);
     });
+
+    it('accepts an AWS integration that is declared but not configured', () => {
+        // `getIntegrationConfig` reads `integrations?.[integrationId] ?? {}`, so a project that has
+        // never set up AWS answers with the discriminator and `enabled` alone. `s3_role_arn` was
+        // required, which made that answer fail its own response contract on every call.
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.aws,
+                enabled: false,
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.aws,
+                enabled: true,
+                s3_role_arn: 'arn:aws:iam::123456789012:role/vertesia',
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('accepts an ask_user_webhook integration that is declared but not configured', () => {
+        // Same defect as the AWS case above: `webhook_url` was required on the response, so an
+        // unconfigured project failed its own contract on every GET of this integration.
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.ask_user_webhook,
+                enabled: false,
+                webhook_secret: null,
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.ask_user_webhook,
+                enabled: true,
+                webhook_url: 'https://example.test/hooks/ask-user',
+                webhook_secret: null,
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('still requires webhook_url when the integration is being configured', () => {
+        // The request schema must not follow the response into optionality — you cannot set this
+        // integration up without a URL.
+        expect(
+            validateApiRequest('ProjectIntegrationConfigRequest', {
+                integration: SupportedIntegrations.ask_user_webhook,
+                enabled: true,
+            }).valid,
+        ).toBe(false);
+    });
 });
 
 /**
@@ -345,6 +395,23 @@ describe('gate 4 — AJV validates the same canonical objects that are published
 });
 
 describe('gate 5 — runtime enforcement uses the published components', () => {
+    it('accepts decrypted integration credentials only on the response contract', () => {
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.exa,
+                enabled: true,
+                api_key: 'agent-runtime-secret',
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.ask_user_webhook,
+                enabled: true,
+                webhook_secret: 'agent-runtime-secret',
+            }).valid,
+        ).toBe(true);
+    });
+
     it('checks the shared count response the same way for every service that returns it', () => {
         // Four slots across three resources and two servers, so this component had to move as a unit.
         expect(validateApiResponse('CountResult', { count: 0 }).valid).toBe(true);

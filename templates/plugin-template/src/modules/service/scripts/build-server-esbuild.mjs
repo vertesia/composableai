@@ -6,7 +6,9 @@
 
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { renderTransformerModule, validateBuiltInteractionPrompts } from './build-server-support.mjs';
 
 const bt = await import('@vertesia/build-tools');
 // Transformers are TransformerRule objects: { pattern: RegExp, transform: fn, virtual?: bool }.
@@ -55,8 +57,16 @@ const plugin = {
                 const wp = isAbsolute(w.path) ? w.path : resolve(dirname(clean), w.path);
                 collectedWidgets.set(w.name, wp);
             }
-            const imports = r.imports ? `${r.imports.join('\n')}\n\n` : '';
-            return { contents: `${imports}${r.code || ''}`, loader: 'js', resolveDir: dirname(clean) };
+            if (rule.schema) {
+                const validation = rule.schema.safeParse(r.data);
+                if (!validation.success) {
+                    const errors = validation.error.issues
+                        .map((error) => `  - ${error.path.join('.')}: ${error.message}`)
+                        .join('\n');
+                    throw new Error(`Validation failed for ${clean}:\n${errors}`);
+                }
+            }
+            return { contents: renderTransformerModule(r), loader: 'js', resolveDir: dirname(clean) };
         });
     },
 };
@@ -77,6 +87,16 @@ await build({
     logLevel: 'warning',
 });
 console.log('[B] esbuild self-contained bundle -> lib/server.js, lib/server-node.js, lib/config.js');
+
+// Import the actual production bundle, not the TypeScript source. This catches transformer or
+// bundler regressions that source-level interaction tests cannot see (for example a `?prompt`
+// import silently becoming `{}` and reaching the model as an empty message list).
+const builtConfigUrl = pathToFileURL(resolve('lib/config.js')).href;
+const { ServerConfig: builtServerConfig } = await import(`${builtConfigUrl}?validation=${Date.now()}`);
+const interactionValidation = validateBuiltInteractionPrompts(builtServerConfig);
+console.log(
+    `[B] validated ${interactionValidation.promptCount} prompt(s) across ${interactionValidation.interactionCount} interaction(s)`,
+);
 
 // Compile skill widgets to dist/widgets/<name>.js (browser ESM, React provided by the host).
 // Mirrors build-tools' compileWidgets DEFAULT_EXTERNALS so the widget loads in the app shell.

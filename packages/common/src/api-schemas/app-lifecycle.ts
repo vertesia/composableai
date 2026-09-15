@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { APPGEN_PACKAGE_SPEC_PATTERN } from '../appgen.js';
 import { AppAccessControlSchema, AppAvailableInSchema, MCPToolAnnotationsSchema } from './apps.js';
 import { EventCategorySchema } from './audit-trail.js';
 
@@ -398,12 +399,20 @@ export const AppVersionGitSourceSchema = z
 
 export const StartAppScaffoldRequestSchema = z
     .strictObject({
-        app_id: z
-            .string()
-            .meta({ description: 'App id / package name to create. It is normalized to the same slug rules used by' }),
+        app_id: z.string().meta({
+            description: 'Package name for the new app to create and scaffold. This is not the id of an existing app.',
+        }),
         title: z.string().optional(),
         description: z.string().optional(),
         modules: z.array(AppScaffoldModuleSchema).optional(),
+        appgen_package_spec: z
+            .string()
+            .regex(APPGEN_PACKAGE_SPEC_PATTERN)
+            .meta({
+                description:
+                    'Optional Vertesia SDK version or package track for this scaffold. Overrides the deployment default.',
+            })
+            .optional(),
         create_version: z
             .boolean()
             .meta({
@@ -412,6 +421,18 @@ export const StartAppScaffoldRequestSchema = z
             .optional(),
     })
     .meta({ id: 'StartAppScaffoldRequest' });
+
+export const StartAppDevelopmentTaskRequestSchema = z
+    .strictObject({
+        prompt: z.string().min(1).meta({ description: 'Development request passed to the App Builder parent.' }),
+        environment: z.string().min(1).meta({ description: 'Execution environment id for the App Builder run.' }),
+        model: z.string().min(1).meta({ description: 'Model id for the App Builder run.' }),
+        build_version: z
+            .boolean()
+            .meta({ description: 'Create one immutable app version after validation. Defaults to false.' })
+            .optional(),
+    })
+    .meta({ id: 'StartAppDevelopmentTaskRequest' });
 
 export const StartAppBuildRequestSchema = z
     .strictObject({
@@ -442,6 +463,12 @@ export const AgentToolDefinitionSchema = z
         // component publishes `true`. They accept identical values, but the name is still derived
         // through `AppPackage`, so this reproduces the published form exactly.
         input_schema: openObjectSchema,
+        output_schema: openObjectSchema
+            .meta({
+                description:
+                    'Optional MCP outputSchema advertised by the provider for its structuredContent payload. Execution adapters may expose results differently.',
+            })
+            .optional(),
         url: z
             .string()
             .meta({
@@ -844,7 +871,7 @@ export const AppDevelopmentTaskDetailsSchema = z
         source_commit: z.string().meta({ description: 'Commit currently at the branch head.' }),
         commit_date: z.string().meta({ description: 'Branch-head commit date, when available.' }).optional(),
         agent_run: AgentRunSearchHitSchema.meta({
-            description: 'Latest Studio Assistant run started for this task branch.',
+            description: 'Latest App Builder parent run started for this task branch.',
         }).optional(),
     })
     .meta({
@@ -862,6 +889,23 @@ export const AppToolCollectionArraySchema = z.array(AppToolCollectionSchema).met
 export const AppInstallationKindSchema = z
     .enum(['ui', 'tools', 'all'])
     .meta({ id: 'AppInstallationKind', description: 'Which app contributions an installation listing is for.' });
+
+// `AppListScope` has a TypeScript name and therefore gets a reusable component of its own.
+export const AppListScopeSchema = z.enum(['account', 'project']).meta({
+    id: 'AppListScope',
+    description: 'Which apps an app listing covers.',
+});
+
+export const AppsQuerySchema = z
+    .strictObject({
+        scope: AppListScopeSchema.meta({
+            description:
+                'Restrict the listing to apps that belong to the current project — those installed ' +
+                'into it or that have built versions in it. Defaults to `account`, which lists every ' +
+                'app visible to the account, including the public catalog.',
+        }).optional(),
+    })
+    .meta({ id: 'AppsQuery' });
 
 export const AppInstallationsQuerySchema = z
     .strictObject({

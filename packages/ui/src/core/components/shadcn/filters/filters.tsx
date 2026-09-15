@@ -1,6 +1,6 @@
-import dayjs from 'dayjs';
 import { X } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
+import dayjs from '../../../utils/dayjs.js';
 import { Button } from '../button';
 import { DateCombobox, SelectionCombobox, StringListCombobox, TextCombobox } from './comboBox/comboBox';
 import type { Filter, FilterGroup, FilterOption } from './types';
@@ -130,7 +130,7 @@ export default function Filters({ filters, setFilters, filterGroups }: FiltersPr
                             onClick={() => {
                                 setFilters((prev) => prev.filter((f) => f !== filter));
                             }}
-                            className="bg-muted rounded-s-none rounded-e-sm size-8 hover:text-primary hover:bg-muted/50 transition shrink-0"
+                            className="bg-muted rounded-s-none rounded-e-sm size-8 hover:text-info hover:bg-muted/50 transition shrink-0"
                         >
                             <X className="size-6" />
                         </Button>

@@ -688,6 +688,30 @@ export interface ConversationFileRef {
 }
 
 /**
+ * Manifest closing a staged-upload batch (the FileBatchClosed signal). Sent by clients that
+ * stage files before the run exists (the agent start screen) after every upload attempt has
+ * finished: those clients cannot wait for text extraction themselves, so the workflow owns the
+ * "[Files Ready]" user turn. The manifest is the batch's authoritative membership — the
+ * workflow delivers once, and only once, every listed file has settled, so a fast first file
+ * can never trigger delivery while later files are still uploading.
+ */
+export interface ConversationFileBatchRef {
+    /** Client-generated batch id. Stable across retries so redelivering the manifest is a no-op. */
+    batch_id: string;
+    /**
+     * Ids (ConversationFileRef.id) of the files successfully uploaded and signaled for this
+     * batch. Files whose upload failed client-side are listed in `failed_uploads` instead;
+     * empty when every upload failed.
+     */
+    file_ids: string[];
+    /**
+     * Files the client could not upload or signal. Without them a 1-of-2 batch would look
+     * complete to the workflow, so the agent would never learn a file is missing.
+     */
+    failed_uploads?: { name: string; error?: string }[];
+}
+
+/**
  * Reference to a file removed from the conversation attachment set.
  */
 export interface ConversationFileRemovedRef {

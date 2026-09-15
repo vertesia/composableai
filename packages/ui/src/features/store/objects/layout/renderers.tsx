@@ -1,13 +1,8 @@
 import { Button, VTooltip } from '@vertesia/ui/core';
-import dayjs from 'dayjs';
-import LocalizedFormat from 'dayjs/plugin/localizedFormat';
-import RelativeTime from 'dayjs/plugin/relativeTime';
 import { ExternalLink, Eye } from 'lucide-react';
 import type { ReactNode } from 'react';
+import dayjs from '../../../../core/utils/dayjs.js';
 import { shortId } from '../../../utils';
-
-dayjs.extend(RelativeTime);
-dayjs.extend(LocalizedFormat);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;

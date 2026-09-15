@@ -12,7 +12,7 @@ interface SidebarProps {
 
 export function Sidebar({ children, logo, className }: SidebarProps) {
     return (
-        <div className={clsx(className || 'bg-indigo-600 dark:bg-indigo-950', 'flex flex-col h-full')}>
+        <div className={clsx(className || 'bg-primary', 'flex flex-col h-full')}>
             {logo && <div className="-mx-2 flex h-auto my-4 shrink-0 self-start">{logo}</div>}
             <div className="flex-1 min-h-0 overflow-hidden px-0 lg:px-2">
                 <nav className="h-full flex flex-col">

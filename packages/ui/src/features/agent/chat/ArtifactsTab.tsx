@@ -582,6 +582,7 @@ function ArtifactsTabComponent({
                             <UniversalDocumentViewer
                                 source={previewSource}
                                 className="h-full"
+                                showHeader
                                 onDownload={() => previewPath && void handleDownload(previewPath)}
                             />
                         </React.Suspense>

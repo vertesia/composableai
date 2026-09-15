@@ -1,13 +1,11 @@
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import enquirer from 'enquirer';
+import packageMetadata from '../package.json' with { type: 'json' };
 import { getBooleanOption, getStringOption, isRecord } from './utils/options.js';
 
 const { prompt } = enquirer;
 
-const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
+declare const VERTESIA_CLI_RUNTIME: string | undefined;
 
 interface PackageMetadata {
     name: string;
@@ -17,12 +15,13 @@ interface PackageMetadata {
 let _package: PackageMetadata | undefined;
 function getPackage(): PackageMetadata {
     if (_package === undefined) {
-        _package = readPackageMetadata(JSON.parse(readFileSync(`${packageDir}/package.json`, 'utf8')));
+        _package = readPackageMetadata(packageMetadata);
     }
     return _package;
 }
 function getVersion() {
-    return getPackage().version;
+    const runtime = typeof VERTESIA_CLI_RUNTIME === 'string' ? VERTESIA_CLI_RUNTIME : 'javascript';
+    return `${getPackage().version} (${runtime})`;
 }
 
 async function getLatestVersion() {
@@ -84,4 +83,4 @@ async function warnIfNotLatest() {
     }
 }
 
-export { getLatestVersion, getPackage, getVersion, packageDir, warnIfNotLatest };
+export { getLatestVersion, getPackage, getVersion, warnIfNotLatest };

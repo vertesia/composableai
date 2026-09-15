@@ -35,8 +35,12 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
 
         setUpdating(true);
         store.types
-            .update(objectType.id, { object_schema: schema.schema })
-            .then(() => {
+            .update(objectType.id, {
+                object_schema: schema.schema,
+                ...(objectType.edit_revision === undefined ? {} : { expected_edit_revision: objectType.edit_revision }),
+            })
+            .then((response) => {
+                objectType.edit_revision = response.edit_revision;
                 onSchemaUpdate(schema);
                 toast({
                     status: 'success',

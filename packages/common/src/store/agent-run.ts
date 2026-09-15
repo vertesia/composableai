@@ -12,6 +12,7 @@
  * (workflowId, runId) are internal server concerns.
  */
 
+import type { ReasoningEffort } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
     AgentArtifactContentResponseSchema,
@@ -54,9 +55,10 @@ import type { ConversationVisibility, InteractionExecutionConfiguration, RunSour
 import type { EventRef } from '../platform-event.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
-import type { StopSignal, UserInputSignal } from './signals.js';
+import type { ModelConfigChangedSignal, StopSignal, UserInputSignal } from './signals.js';
 import type {
     ConversationActivityState,
+    ConversationFileBatchRef,
     ConversationFileRef,
     ConversationFileRemovedRef,
     WorkflowRunEvent,
@@ -241,6 +243,10 @@ export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends 
     /** Workstream this run occupies inside its parent run (the process node id). */
     workstream_id?: string;
     interaction: string;
+    title?: string;
+    topic?: string;
+    generate_topic?: boolean;
+    generate_lessons?: boolean;
     first_workflow_run_id: string;
     schedule_id?: string;
     visibility?: ConversationVisibility;
@@ -291,6 +297,10 @@ export interface UpdateAgentRunStatusPayload {
     disabled_mcp_collections?: string[];
     /** Tool approval mode persisted for interactive agent runs. */
     tool_approval_mode?: AgentToolApprovalMode;
+    /** Model selected for subsequent conversation turns. */
+    model?: string;
+    /** Reasoning effort selected for subsequent turns; null clears the explicit override. */
+    effort?: ReasoningEffort | null;
     /** Archive state fields (set by the archive workflow) */
     archive_state?: AgentRunArchiveState;
     archived_at?: string;
@@ -305,8 +315,10 @@ export interface UpdateAgentRunStatusPayload {
 export type SignalAgentPayload =
     | UserInputSignal
     | StopSignal
+    | ModelConfigChangedSignal
     | ConversationFileRef
     | ConversationFileRemovedRef
+    | ConversationFileBatchRef
     | Record<string, unknown>;
 
 export type SignalAgentResponse = z.infer<typeof SignalAgentResponseSchema>;

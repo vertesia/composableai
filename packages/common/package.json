@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "1.5.0-dev.20260807.073259Z",
+    "version": "1.5.0",
     "license": "Apache-2.0",
     "type": "module",
     "main": "./lib/index.js",
@@ -17,7 +17,9 @@
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "gen:schemas": "tsx ./scripts/gen-intake-policy-schema.ts && pnpm exec biome format --write ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts"
+        "gen:schemas": "tsx ./scripts/gen-api-components.ts && tsx ./scripts/gen-intake-policy-schema.ts && pnpm exec biome format --write ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts",
+        "check:schemas": "! git status --porcelain --untracked-files=normal -- ./src/api-contract/components.generated.json ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts | grep .",
+        "check:pre-push": "pnpm exec turbo run gen:schemas --filter=@vertesia/common && pnpm run check:schemas"
     },
     "exports": {
         ".": {
@@ -27,13 +29,17 @@
         "./api-schemas": {
             "types": "./lib/api-schemas/index.d.ts",
             "default": "./lib/api-schemas/index.js"
+        },
+        "./api-contract": {
+            "types": "./lib/api-contract/index.d.ts",
+            "default": "./lib/api-contract/index.js"
         }
     },
     "devDependencies": {
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
-        "tsx": "^4.23.5",
+        "tsx": "^4.23.12",
         "typescript": "catalog:",
         "vitest": "^4.1.10"
     },
@@ -56,5 +62,5 @@
         "ai",
         "typescript"
     ],
-    "gitHead": "e6ebc1482ad6c4df965d74c79f82eb25fc6e2ce3"
+    "gitHead": "3485742020066ab1fd3292487cf3a9577b5e4d91"
 }

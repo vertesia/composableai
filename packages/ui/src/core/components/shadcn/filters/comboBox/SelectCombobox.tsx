@@ -50,7 +50,7 @@ export const SelectionCombobox = ({
                 }
             }}
         >
-            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 transition text-muted hover:text-primary shrink-0">
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 transition text-muted hover:text-info shrink-0">
                 <div className="flex gap-1.5 items-center">
                     {filterValues?.length === 1
                         ? (() => {

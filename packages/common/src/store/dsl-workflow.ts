@@ -105,6 +105,10 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
     type: 'workflow';
     // the workflow endpoint to run
     name: string;
+    /** Title displayed for the child workflow in the workflow builder. */
+    title?: string;
+    /** Description displayed for the child workflow in the workflow builder. */
+    description?: string;
     /**
      * The parameters to pass to the child workflow.
      * These parameters will be merged over the parent workflow vars and passed altogether to the child workflow.
@@ -224,8 +228,20 @@ export type WorkflowDefinitionPayloadWithSteps = DSLWorkflowSpecWithSteps & Lega
 export type WorkflowDefinitionPayloadWithActivities = DSLWorkflowSpecWithActivities &
     LegacyWorkflowDefinitionUpsertFields;
 
-/** The request body of `POST /workflows/definitions` and `PUT /workflows/definitions/:id`. */
+/** The request body of `POST /workflows/definitions`. */
 export type WorkflowDefinitionPayload = WorkflowDefinitionPayloadWithSteps | WorkflowDefinitionPayloadWithActivities;
+
+interface ExpectedEditRevision {
+    expected_edit_revision?: number;
+}
+
+export type UpdateWorkflowDefinitionPayloadWithSteps = DSLWorkflowSpecWithSteps & ExpectedEditRevision;
+export type UpdateWorkflowDefinitionPayloadWithActivities = DSLWorkflowSpecWithActivities & ExpectedEditRevision;
+
+/** The guarded request body of `PUT /workflows/definitions/:id`. */
+export type UpdateWorkflowDefinitionPayload =
+    | UpdateWorkflowDefinitionPayloadWithSteps
+    | UpdateWorkflowDefinitionPayloadWithActivities;
 
 export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpecBase): DSLWorkflowSpec {
     if ('steps' in spec && spec.steps) {
@@ -235,6 +251,7 @@ export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpecBase): DSL
 }
 
 export interface DSLWorkflowDefinition extends BaseObject, DSLWorkflowSpecBase {
+    edit_revision: number;
     // an optional JSON schema to describe the input vars of the workflow.
     input_schema?: Record<string, unknown>;
     activities?: DSLActivitySpec[];

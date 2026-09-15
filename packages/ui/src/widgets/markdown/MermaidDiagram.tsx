@@ -1,5 +1,6 @@
-import mermaid from 'mermaid';
 import { useEffect, useId, useRef, useState } from 'react';
+
+type Mermaid = typeof import('mermaid').default;
 
 const MERMAID_FONT_FAMILY =
     'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -78,27 +79,41 @@ export function makeSvgResponsive(svg: string): string {
     });
 }
 
-// Initialize mermaid with a browser-focused config close to Mermaid Playground defaults.
-mermaid.initialize({
-    startOnLoad: false,
-    theme: 'default',
-    securityLevel: 'loose',
-    fontFamily: MERMAID_FONT_FAMILY,
-    suppressErrorRendering: true,
-    flowchart: {
-        htmlLabels: true,
-        useMaxWidth: true,
-        nodeSpacing: 40,
-        rankSpacing: 50,
-        padding: 12,
-    },
-    sequence: {
-        useMaxWidth: true,
-    },
-    themeVariables: {
-        fontFamily: MERMAID_FONT_FAMILY,
-    },
-});
+let mermaidPromise: Promise<Mermaid> | undefined;
+
+/**
+ * Load Mermaid on first render of a diagram, initialized with a browser-focused config close to
+ * Mermaid Playground defaults. Mermaid is several hundred KB and most pages never render a diagram,
+ * so it is imported dynamically to keep it out of the eager bundle of every consuming app.
+ */
+function loadMermaid(): Promise<Mermaid> {
+    if (!mermaidPromise) {
+        mermaidPromise = import('mermaid').then(({ default: mermaid }) => {
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: 'default',
+                securityLevel: 'loose',
+                fontFamily: MERMAID_FONT_FAMILY,
+                suppressErrorRendering: true,
+                flowchart: {
+                    htmlLabels: true,
+                    useMaxWidth: true,
+                    nodeSpacing: 40,
+                    rankSpacing: 50,
+                    padding: 12,
+                },
+                sequence: {
+                    useMaxWidth: true,
+                },
+                themeVariables: {
+                    fontFamily: MERMAID_FONT_FAMILY,
+                },
+            });
+            return mermaid;
+        });
+    }
+    return mermaidPromise;
+}
 
 export interface MermaidDiagramProps {
     /** The mermaid diagram code */
@@ -147,6 +162,7 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
                 const normalizedCode = normalizeMermaidCodeForBrowser(code);
 
                 // Render the diagram
+                const mermaid = await loadMermaid();
                 const { svg: renderedSvg } = await mermaid.render(id, normalizedCode);
                 const responsiveSvg = makeSvgResponsive(renderedSvg);
 
@@ -176,8 +192,8 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
 
     if (!svg) {
         return (
-            <div className={`my-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg animate-pulse ${className || ''}`}>
-                <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className={`my-4 p-4 bg-muted rounded-lg animate-pulse ${className || ''}`}>
+                <div className="h-32 bg-muted rounded"></div>
             </div>
         );
     }

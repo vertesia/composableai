@@ -1,6 +1,6 @@
 import { AdminApp } from '@vertesia/tools-admin-ui';
 import { type Route, RouterProvider } from '@vertesia/ui/router';
-import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
+import { IFRAME_APP_CONTENT_SLOT, IFRAME_APP_SLOT_PARAM, StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
 import { setUsePluginAssets } from '../assets';
 import { App } from './App';
 import { OrgGate } from './layouts/OrgGate';
@@ -10,6 +10,8 @@ import { PluginLayout } from './layouts/PluginLayout';
 setUsePluginAssets(false);
 
 const appName = import.meta.env.VITE_APP_NAME;
+const isCompositeContent =
+    new URLSearchParams(window.location.search).get(IFRAME_APP_SLOT_PARAM) === IFRAME_APP_CONTENT_SLOT;
 
 const routes: Route[] = [
     { path: '*', Component: () => <AdminApp /> },
@@ -17,9 +19,15 @@ const routes: Route[] = [
         path: 'app/*',
         Component: () => (
             <StandaloneApp name={appName} AccessDenied={PluginAccessDenied}>
-                <PluginLayout>
-                    <App />
-                </PluginLayout>
+                {isCompositeContent ? (
+                    <div className="h-dvh min-h-0 overflow-hidden">
+                        <App />
+                    </div>
+                ) : (
+                    <PluginLayout>
+                        <App />
+                    </PluginLayout>
+                )}
             </StandaloneApp>
         ),
     },

@@ -329,7 +329,7 @@ export function SelectBox<T = unknown>({
                         type="button"
                         onClick={addNew}
                         className={clsx(
-                            'w-full text-start gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent bg-transparent border-0',
+                            'w-full text-start gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-muted bg-transparent border-0',
                         )}
                     >
                         <SquarePlus size={16} strokeWidth={1.25} absoluteStrokeWidth />
@@ -448,7 +448,7 @@ export function SelectBox<T = unknown>({
                         variant="link"
                         size="icon"
                         disabled={disabled}
-                        aria-label={clearTitle || 'Clear selection'}
+                        title={clearTitle || 'Clear selection'}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (multiple) {
@@ -462,7 +462,7 @@ export function SelectBox<T = unknown>({
                                 e.stopPropagation();
                             }
                         }}
-                        className="absolute end-8 top-1/2 -translate-y-1/2 hover:bg-muted/20 rounded p-1"
+                        className="absolute end-2 top-1/2 -translate-y-1/2 hover:bg-muted/20 rounded p-1"
                     >
                         {clearIcon ? clearIcon : <X className="size-4" />}
                     </Button>

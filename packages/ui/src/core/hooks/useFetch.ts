@@ -30,9 +30,11 @@ export function useFetch<T = unknown>(fetcher: () => Promise<T>, opts?: FetchOpt
         const currentOptions = optionsRef.current;
         currentOptions.start?.();
         setIsLoading(true);
+        setError(undefined);
         return fetcherRef
             .current()
             .then((result: T) => {
+                setError(undefined);
                 setData(result);
                 currentOptions.onSuccess?.(result);
             })

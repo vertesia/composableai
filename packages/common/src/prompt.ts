@@ -2,6 +2,8 @@ import type { JSONSchema, PromptRole } from '@llumiverse/common';
 import type { z } from 'zod';
 import type {
     ExportedPromptTemplateRefSchema,
+    InteractionPromptSegmentInputSchema,
+    InteractionPromptTemplateInputSchema,
     PromptTemplateCreatePayloadSchema,
     PromptTemplateRefSchema,
     PromptTemplateSchema,
@@ -63,6 +65,10 @@ export interface ExecutablePromptTemplate {
     inputSchema?: JSONSchema;
 }
 export type PromptTemplate = z.infer<typeof PromptTemplateSchema>;
+
+export type InteractionPromptTemplateInput = z.infer<typeof InteractionPromptTemplateInputSchema>;
+
+export type InteractionPromptSegmentInput = z.infer<typeof InteractionPromptSegmentInputSchema>;
 
 export type PromptTemplateForkPayload = z.infer<typeof PromptTemplateForkPayloadSchema>;
 

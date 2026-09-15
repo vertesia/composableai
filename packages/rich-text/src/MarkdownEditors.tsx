@@ -9,6 +9,9 @@ export interface MarkdownComponentEditorProps extends MarkdownEditorShellProps {
 
 export interface MarkdownDocumentEditorProps extends MarkdownEditorShellProps {}
 
+/** Default delay before a full-document edit is serialized back to Markdown. */
+export const DOCUMENT_EDITOR_CHANGE_DEBOUNCE_MS = 150;
+
 function mergeClasses(...values: Array<string | undefined>): string {
     return values.filter(Boolean).join(' ');
 }
@@ -33,7 +36,7 @@ export function MarkdownComponentEditor({
 export function MarkdownDocumentEditor({
     className,
     contentClassName,
-    onChangeDebounceMs = 150,
+    onChangeDebounceMs = DOCUMENT_EDITOR_CHANGE_DEBOUNCE_MS,
     ...props
 }: MarkdownDocumentEditorProps) {
     return (

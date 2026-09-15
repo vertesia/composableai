@@ -75,14 +75,15 @@ export const AppUIConfigSchema = z
                 '`/plugins/vertesia-review-center-${buildId}`',
         }),
         isolation: z
-            .enum(['shadow', 'css'])
+            .enum(['shadow', 'css', 'iframe'])
             .optional()
             .meta({
                 description:
                     'The isolation strategy. If not specified it defaults to shadow.\n- shadow - use Shadow ' +
                     "DOM to fully isolate the plugin from the host.\n- css - inject the plugin's styles " +
-                    '(minus the preflight) into the host document;   lighter but styles may conflict with ' +
-                    'the host.',
+                    '(minus the preflight) into the host document; lighter but styles may conflict with ' +
+                    'the host.\n- iframe - load a standalone application in a sandboxed iframe so it owns its ' +
+                    'JavaScript and dependency graph.',
             }),
         css_rebuild: z
             .boolean()

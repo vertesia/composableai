@@ -16,11 +16,11 @@ const variants = cva('', {
         },
         variant: {
             default:
-                'flex w-full rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+                'flex w-full rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
             unstyled: 'block m-0 p-0 w-full border-0 focus:outline-hidden focus:ring-0 bg-transparent',
             noPadding:
-                'block rounded-md border-0 bg-background shadow-2xs ring-1 ring-inset ring-ring placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-ring ring-offset-background',
-            legacy: 'py-1.5 block rounded-md border-0 bg-background shadow-2xs ring-1 ring-inset ring-ring placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-ring ring-offset-background',
+                'block rounded-md border-0 bg-background shadow-2xs ring-1 ring-inset ring-ring placeholder:text-muted focus:ring-2 focus:ring-inset focus:ring-ring ring-offset-background',
+            legacy: 'py-1.5 block rounded-md border-0 bg-background shadow-2xs ring-1 ring-inset ring-ring placeholder:text-muted focus:ring-2 focus:ring-inset focus:ring-ring ring-offset-background',
         },
     },
     defaultVariants: {

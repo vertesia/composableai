@@ -35,7 +35,7 @@ jobs:
   update-submodule:
     name: Update submodule
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     # Scopes the submodule sync App key to a dedicated environment.
     environment: submodule-sync
     permissions:
@@ -51,19 +51,51 @@ jobs:
           fi
           echo "Branch '${TARGET_COMPOSABLEAI_BRANCH}' is valid."
 
+      - name: Generate authenticated checkout token
+        id: checkout-app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
+          private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            composableai
+            llumiverse
+          permission-contents: read
+
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: recursive
-          fetch-depth: 0 # Fetch all history to ensure we can access the specified commit
+          token: ${{ steps.checkout-app-token.outputs.token }}
+          submodules: false
+          fetch-depth: 0 # The target branch and force-with-lease retry checks need full composableai history.
           ref: ${{ env.TARGET_COMPOSABLEAI_BRANCH }}
           persist-credentials: false
 
+      - name: Initialize shallow submodule
+        env:
+          SUBMODULE_READ_TOKEN: ${{ steps.checkout-app-token.outputs.token }}
+        run: |
+          github_auth_header="$(printf 'x-access-token:%s' "$SUBMODULE_READ_TOKEN" | base64 | tr -d '\n')"
+          echo "::add-mask::${github_auth_header}"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${github_auth_header}" \
+            submodule update --init --recursive --depth=1
+
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-          cache: pnpm
 
       - name: Check if submodule update is needed
         id: precheck
@@ -78,66 +110,20 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      # Use an App distinct from APP_VERTESIA_RENOVATE_AUTOMERGE. GitHub holds
-      # pull_request workflows caused by GITHUB_TOKEN, while an App-created PR starts CI normally;
-      # keeping the author and approver as separate Apps also makes the approval count.
-      - name: Generate submodule sync token
-        id: sync-app-token
-        if: ${{ steps.precheck.outputs.skip != 'true' }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_ID }}
-          private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
-          permission-contents: write
-          permission-issues: write
-          permission-pull-requests: write
-
-      - name: Clean up existing PRs
-        if: ${{ steps.precheck.outputs.skip != 'true' }}
-        env:
-          GH_TOKEN: ${{ steps.sync-app-token.outputs.token }}
-        run: |
-          echo "Fetching pull requests with labels: [branch:${TARGET_COMPOSABLEAI_BRANCH}] and [workflow:update-llumiverse]..."
-          pr_list=$(gh pr list \
-            --repo vertesia/composableai \
-            --label branch:${TARGET_COMPOSABLEAI_BRANCH} \
-            --label workflow:update-llumiverse \
-            --state open \
-            --json number,title \
-            --jq '.[] | "\(.number) \(.title)"')
-
-          if [ -z "$pr_list" ]; then
-            echo "No matching pull requests found."
-            exit 0
-          fi
-
-          # Show PRs to be closed
-          echo "Found PRs:"
-          echo "$pr_list"
-          echo ""
-
-          # Close each PR
-          echo "Closing PRs..."
-          while read -r pr_line; do
-            pr_number=$(echo "$pr_line" | cut -d' ' -f1)
-            pr_title=$(echo "$pr_line" | cut -d' ' -f2-)
-            echo "Closing PR #${pr_number} ${pr_title}..."
-
-            gh pr comment "$pr_number" \
-                --repo vertesia/composableai \
-                --body "Closing this pull request automatically as a new commit ${TARGET_LLUMIVERSE_URL} appeared."
-
-            gh pr close "$pr_number" --repo vertesia/composableai --delete-branch
-          done <<< "$pr_list"
-
-          echo "Done."
-
       - name: Update Git submodule and lockfile
-        id: update-submodule
+        id: prepare-submodule
         if: ${{ steps.precheck.outputs.skip != 'true' }}
         env:
-          GH_TOKEN: ${{ steps.sync-app-token.outputs.token }}
+          APP_SLUG: ${{ steps.checkout-app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.checkout-app-token.outputs.token }}
+          SUBMODULE_READ_TOKEN: ${{ steps.checkout-app-token.outputs.token }}
         run: |
+          github_auth_header="$(printf 'x-access-token:%s' "$SUBMODULE_READ_TOKEN" | base64 | tr -d '\n')"
+          echo "::add-mask::${github_auth_header}"
+          git -C llumiverse \
+            -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${github_auth_header}" \
+            fetch --depth=1 origin "$TARGET_LLUMIVERSE_SHA"
+
           export TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 $TARGET_LLUMIVERSE_SHA)"
           export TARGET_LLUMIVERSE_EMAIL="$(git -C llumiverse log --format="%ae" -1 $TARGET_LLUMIVERSE_SHA)"
 
@@ -159,8 +145,13 @@ jobs:
           Other  | Temporary branch  | \`${TEMP_BRANCH}\`
           EOF
 
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
+          app_user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+          git config --global user.name "${APP_SLUG}[bot]"
+          git config --global user.email "${app_user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+
+          # The fetched submodule controls package lifecycle scripts invoked by pnpm dedupe. Do not
+          # expose even the read-only checkout token to those processes.
+          unset GH_TOKEN SUBMODULE_READ_TOKEN github_auth_header
 
           git checkout -b $TEMP_BRANCH
 
@@ -176,7 +167,7 @@ jobs:
           pnpm install --lockfile-only
           pnpm dedupe
           # Check for changes in the lockfile
-          if git diff --quiet; then
+          if git diff --quiet HEAD -- pnpm-lock.yaml; then
             echo "No changes to lockfile: skipping commit" >&2
           else
             git add pnpm-lock.yaml
@@ -184,10 +175,105 @@ jobs:
             echo "Lockfile updated" >&2
           fi
 
+          # `@vertesia/common`'s Zod registry builds directly on `@llumiverse/common/schemas`, so a
+          # llumiverse change can alter the published components. The generated artifacts are
+          # committed and `components.contract.test.ts` fails when they are stale, which would leave
+          # the sync PR red and unmergeable forever, since automerge waits on a green build.
+          # Regenerate them here so the sync PR carries its own artifact updates.
+          # Keep this list in sync with the generated-artifact allowlist in
+          # .github/workflows/automerge-llumiverse.yaml, which refuses to merge a sync PR that
+          # touches anything else.
+          generated_schema_paths=(
+            packages/common/src/api-contract/components.generated.json
+            packages/common/src/store/intake-policy-schema.generated.ts
+            packages/common/src/store/editing-policy-schema.generated.ts
+          )
+
+          schema_generation_failed=false
+          echo "Installing the updated workspace before regenerating the committed schemas..." >&2
+          if ! pnpm install --frozen-lockfile; then
+            echo "::warning::Workspace installation failed; creating the sync PR without regenerated schemas. PR CI will report the failure."
+            schema_generation_failed=true
+          elif ! pnpm exec turbo run build --filter=@llumiverse/common; then
+            echo "::warning::@llumiverse/common build failed; creating the sync PR so PR CI can report the failure."
+            schema_generation_failed=true
+          elif ! pnpm --dir packages/common run gen:schemas; then
+            echo "::warning::Schema generation failed; creating the sync PR so PR CI can report the failure."
+            schema_generation_failed=true
+          else
+            # Anything modified outside the generated artifacts means the install or the generator
+            # touched a file this sync is not allowed to commit; the automerge allowlist would
+            # reject the PR anyway, so treat it as a generation failure.
+            unexpected_changes="$(git status --porcelain --untracked-files=no -- . ':(exclude)llumiverse' \
+              "${generated_schema_paths[@]/#/:(exclude)}")"
+            if [[ -n "$unexpected_changes" ]]; then
+              echo "::warning::Schema generation left unexpected changes; creating the sync PR without regenerated schemas."
+              echo "$unexpected_changes"
+              schema_generation_failed=true
+            elif git diff --quiet HEAD -- "${generated_schema_paths[@]}"; then
+              echo "No changes to generated schemas: skipping commit" >&2
+            else
+              git add -- "${generated_schema_paths[@]}"
+              git commit --amend --no-edit
+              echo "Generated schemas updated" >&2
+            fi
+          fi
+
+          if [[ "$schema_generation_failed" == "true" ]]; then
+            # Never leave partially generated artifacts on the sync branch.
+            git restore --source=HEAD --staged --worktree -- "${generated_schema_paths[@]}"
+            echo "Schema regeneration failed; the PR was intentionally preserved for CI diagnosis." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "schema_generation_failed=${schema_generation_failed}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve updated pnpm cache key
+        id: updated-pnpm-cache
+        if: steps.precheck.outputs.skip != 'true'
+        shell: bash
+        env:
+          CACHE_KEY: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+        run: echo "key=${CACHE_KEY}" >> "${GITHUB_OUTPUT}"
+      - name: Save pnpm store cache
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.updated-pnpm-cache.outputs.key != steps.pnpm-cache.outputs.cache-matched-key
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.updated-pnpm-cache.outputs.key }}
+
+      # Mint the write token only after all package lifecycle scripts have completed. Use an App
+      # distinct from APP_VERTESIA_RENOVATE_AUTOMERGE so the PR author and approver remain separate.
+      - name: Generate composableai write token
+        id: sync-app-token
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
+          private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
+          repositories: composableai
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Push branch and open pull request
+        id: update-submodule
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
+        env:
+          GH_TOKEN: ${{ steps.sync-app-token.outputs.token }}
+          SCHEMA_GENERATION_FAILED: ${{ steps.prepare-submodule.outputs.schema_generation_failed }}
+        run: |
+          TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 "$TARGET_LLUMIVERSE_SHA")"
+          MAYBE_LLUMIVERSE_PR="$(echo "$TARGET_LLUMIVERSE_MSG" | grep -oP '(?<=#)\d+' || true)"
+          TARGET_BRANCH_SLUG="${TARGET_COMPOSABLEAI_BRANCH//\//-}"
+          TEMP_BRANCH="sync-llumiverse-${TARGET_BRANCH_SLUG}-${TARGET_LLUMIVERSE_SHA::7}"
+
           # The dedicated App pushes the branch and opens the PR. Unlike GITHUB_TOKEN, its events
           # are eligible to start the pull_request workflows that build, test, and lint this branch.
           gh auth setup-git
-          git push origin "$TEMP_BRANCH"
+          git fetch origin "refs/heads/${TEMP_BRANCH}:refs/remotes/origin/${TEMP_BRANCH}" || true
+          git push --force-with-lease origin "$TEMP_BRANCH"
 
           pr_body=$(cat <<EOF
           This PR updates the llumiverse submodule to ${TARGET_LLUMIVERSE_URL}. It was generated by [GitHub Actions](https://github.com/vertesia/composableai/actions/runs/${GITHUB_RUN_ID:-0}).
@@ -205,18 +291,35 @@ jobs:
             This update does not correspond to any specific PR in llumiverse."
           fi
 
+          if [[ "$SCHEMA_GENERATION_FAILED" == "true" ]]; then
+            pr_body+="
+
+            :warning: Schema regeneration failed in the sync workflow. The PR was still created so the build can expose the failure for review."
+          fi
+
           # Ensure the dynamic `branch:<target>` label exists; for a new
           # release/X.Y line it won't, and `gh pr create --label` errors on
           # a missing label. `--force` is a no-op if it already exists.
           gh label create "branch:${TARGET_COMPOSABLEAI_BRANCH}" --color ededed --force
 
-          new_pr_url=$(gh pr create \
-              --title "chore: update llumiverse to ${TARGET_LLUMIVERSE_SHA::7}" \
-              --body "${pr_body}" \
-              --base "${TARGET_COMPOSABLEAI_BRANCH}" \
+          new_pr_url=$(gh pr list \
+              --repo vertesia/composableai \
               --head "${TEMP_BRANCH}" \
-              --label "branch:${TARGET_COMPOSABLEAI_BRANCH}" \
-              --label "workflow:update-llumiverse")
+              --base "${TARGET_COMPOSABLEAI_BRANCH}" \
+              --state open \
+              --json url \
+              --jq '.[0].url // empty')
+          if [[ -n "$new_pr_url" ]]; then
+            echo "Reusing existing PR ${new_pr_url}."
+          else
+            new_pr_url=$(gh pr create \
+                --title "chore: update llumiverse to ${TARGET_LLUMIVERSE_SHA::7}" \
+                --body "${pr_body}" \
+                --base "${TARGET_COMPOSABLEAI_BRANCH}" \
+                --head "${TEMP_BRANCH}" \
+                --label "branch:${TARGET_COMPOSABLEAI_BRANCH}" \
+                --label "workflow:update-llumiverse")
+          fi
           new_pr_number=$(echo "$new_pr_url" | grep -oP '(?<=pull/)\d+')
 
           echo "new_pr_url=${new_pr_url}" >> $GITHUB_OUTPUT
@@ -228,6 +331,33 @@ jobs:
           author_login=$(gh api repos/vertesia/llumiverse/commits/${TARGET_LLUMIVERSE_SHA} --jq '.author.login // empty')
           echo "author_login=${author_login}" >> $GITHUB_OUTPUT
 
+      - name: Clean up superseded PRs
+        if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.new_pr_number }}
+        env:
+          GH_TOKEN: ${{ steps.sync-app-token.outputs.token }}
+          NEW_PR_NUMBER: ${{ steps.update-submodule.outputs.new_pr_number }}
+        run: |
+          pr_list=$(gh pr list \
+            --repo vertesia/composableai \
+            --label "branch:${TARGET_COMPOSABLEAI_BRANCH}" \
+            --label workflow:update-llumiverse \
+            --state open \
+            --json number,title \
+            --jq '.[] | "\(.number) \(.title)"')
+
+          while read -r pr_line; do
+            [[ -z "$pr_line" ]] && continue
+            pr_number="${pr_line%% *}"
+            pr_title="${pr_line#* }"
+            [[ "$pr_number" == "$NEW_PR_NUMBER" ]] && continue
+
+            echo "Closing superseded PR #${pr_number} ${pr_title}..."
+            gh pr comment "$pr_number" \
+              --repo vertesia/composableai \
+              --body "Closing this pull request automatically as a new commit ${TARGET_LLUMIVERSE_URL} appeared."
+            gh pr close "$pr_number" --repo vertesia/composableai --delete-branch
+          done <<< "$pr_list"
+
       - name: Assign PR to author
         if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
         env:
@@ -238,26 +368,31 @@ jobs:
           gh pr edit "${STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_NUMBER}" \
             --add-assignee "${STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN}"
 
+      - name: Generate Studio dispatch token
+        id: studio-dispatch-token
+        if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
+          private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
+          owner: ${{ github.repository_owner }}
+          repositories: studio
+          permission-contents: write
+
       - name: Notify studio for Slack notification
         # Dispatch to the private studio repo so it can look up the developer's
         # Slack address without exposing private email mappings in this public repo.
         if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
-        run: |
-          curl -L \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${REPO_STUDIO_ACCESS_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            --fail-with-body \
-            https://api.github.com/repos/vertesia/studio/dispatches \
-            -d '{
-              "event_type": "composableai-pr-notification",
-              "client_payload": {
-                "github_login": "${STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN}",
-                "message": "Please review this PR which brings your llumiverse changes to composableai: ${STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_URL}"
-              }
-            }'
         env:
-          REPO_STUDIO_ACCESS_TOKEN: ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ steps.studio-dispatch-token.outputs.token }}
           STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN: ${{ steps.update-submodule.outputs.author_login }}
           STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_URL: ${{ steps.update-submodule.outputs.new_pr_url }}
+        run: |
+          gh api repos/vertesia/studio/dispatches \
+            --method POST \
+            --input - <<EOF
+          $(jq -nc \
+              --arg login "${STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN}" \
+              --arg message "Please review this PR which brings your llumiverse changes to composableai: ${STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_URL}" \
+              '{event_type: "composableai-pr-notification", client_payload: {github_login: $login, message: $message}}')
+          EOF

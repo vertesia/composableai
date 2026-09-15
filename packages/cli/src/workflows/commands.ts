@@ -211,7 +211,11 @@ export async function createOrUpdateWorkflowDefinition(
 
     const client = await getClient(program);
     if (workflowId) {
-        const res = await client.workflows.definitions.update(workflowId, json);
+        const current = await client.workflows.definitions.retrieve(workflowId);
+        const res = await client.workflows.definitions.update(workflowId, {
+            ...json,
+            expected_edit_revision: current.edit_revision,
+        });
         console.log('Updated workflow', res.id);
         return;
     } else {

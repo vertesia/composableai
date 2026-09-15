@@ -4,7 +4,7 @@ import type React from 'react';
 const defaultTableCass = `
 divide-y divide-border
 [&>tbody]:divide-y [&>tbody]:divide-border
-[&_th]:text-start [&_th]:px-3 [&_th]:py-3.5 [&_th]:text-sm [&_th]:font-normal [&_th]:text-muted-foreground
+[&_th]:text-start [&_th]:px-3 [&_th]:py-3.5 [&_th]:text-sm [&_th]:font-normal [&_th]:text-muted
 [&_td]:px-3 [&_td]:py-4 [&_td]:text-sm
 `;
 

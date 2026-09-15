@@ -1,43 +1,41 @@
 import { Database, MessagesSquare, PlusCircle, Settings } from 'lucide-react';
-import { ChatPage } from './pages/ChatPage';
-import { ContentObjectDetailPage } from './pages/ContentObjectDetailPage';
-import { ContentObjectsPage } from './pages/ContentObjectsPage';
-import { ConversationsPage } from './pages/ConversationsPage';
-import { SettingsPage } from './pages/SettingsPage';
 
+// Pages are loaded on first navigation. Importing them here instead would pull every page's
+// dependency graph — agent chat, the document viewers, the markdown stack — into the entry chunk.
 export const routes = [
     {
         path: '/objects',
         label: 'nav.objects',
         icon: Database,
-        Component: () => <ContentObjectsPage />,
+        LazyComponent: () => import('./pages/ContentObjectsPage').then((m) => ({ default: m.ContentObjectsPage })),
     },
     {
         path: '/objects/:id',
         hideFromNav: true,
-        Component: () => <ContentObjectDetailPage />,
+        LazyComponent: () =>
+            import('./pages/ContentObjectDetailPage').then((m) => ({ default: m.ContentObjectDetailPage })),
     },
     {
         path: '/conversations',
         label: 'nav.conversations',
         icon: MessagesSquare,
-        Component: () => <ConversationsPage />,
+        LazyComponent: () => import('./pages/ConversationsPage').then((m) => ({ default: m.ConversationsPage })),
     },
     {
         path: '/chat',
         label: 'nav.newChat',
         icon: PlusCircle,
-        Component: () => <ChatPage />,
+        LazyComponent: () => import('./pages/ChatPage').then((m) => ({ default: m.ChatPage })),
     },
     {
         path: '/chat/:agentRunId',
         hideFromNav: true,
-        Component: () => <ChatPage />,
+        LazyComponent: () => import('./pages/ChatPage').then((m) => ({ default: m.ChatPage })),
     },
     {
         path: '/settings',
         label: 'nav.settings',
         icon: Settings,
-        Component: () => <SettingsPage />,
+        LazyComponent: () => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
     },
 ];

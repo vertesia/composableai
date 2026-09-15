@@ -12,6 +12,7 @@ import {
     getSlidingViewMessageBuckets,
     groupMessagesWithStreaming,
     isInProgress,
+    isStreamingDataVisibleInWorkstream,
     isStreamReplacedByMessage,
     isToolActivityMessage,
     mergeConsecutiveToolGroups,
@@ -136,6 +137,99 @@ describe('ModernAgentOutput utils - tool preamble behavior', () => {
             expect(grouped[1].messages).toHaveLength(1);
             expect(grouped[1].messages[0].details?.tool).toBe('list-assistant-knowledge');
         }
+    });
+});
+
+describe('ModernAgentOutput summary - ask_user review content', () => {
+    const draft = '## Draft agenda\n9:00 Welcome\n9:15 Platform foundations';
+    const tool = makeMessage({
+        timestamp: 3000,
+        message: 'Waiting for your review...',
+        details: {
+            tool: 'ask_user',
+            tool_status: 'running',
+            tool_run_id: 'ask-1',
+            activity_group_id: 'review-1',
+        },
+    });
+    const question = makeMessage({
+        timestamp: 4000,
+        type: AgentMessageType.REQUEST_INPUT,
+        message: 'Does this agenda work?',
+        details: { tool: 'ask_user' },
+    });
+
+    it.each([false, true])('keeps persisted review prose visible with streamed=%s', (streamed) => {
+        const preamble = makeMessage({
+            timestamp: 2000,
+            message: draft,
+            details: {
+                event_class: 'activity',
+                display_role: 'tool_preamble',
+                tools: ['update_plan', 'ask_user'],
+                activity_group_id: 'review-1',
+                streamed,
+            },
+        });
+        const items = buildSummaryConversationItems([preamble, tool, question], false);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work', 'message']);
+        expect(items[0]).toEqual({ type: 'message', message: preamble });
+        expect(items[2]).toEqual({ type: 'message', message: question });
+    });
+
+    it.each([
+        { tools: [{ name: 'ask_user' }] },
+        { tools: [{ tool: 'ask_user' }] },
+        { tool: 'ask_user' },
+        { tools: [null, 42, {}, 'search_documents', { name: 'ask_user' }] },
+    ])('keeps review prose visible for supported tool metadata: %j', (details) => {
+        const preamble = makeMessage({
+            timestamp: 2000,
+            message: draft,
+            // Exercise legacy wire shapes outside the current string[] contract.
+            details: { display_role: 'tool_preamble', ...details } as unknown as AgentMessage['details'],
+        });
+        expect(buildSummaryConversationItems([preamble, tool, question], false)[0]).toEqual({
+            type: 'message',
+            message: preamble,
+        });
+    });
+
+    it.each([
+        { display_role: 'tool_preamble', tools: [null, {}, { name: 'search_documents' }] },
+        { tool: 'ask_user', tool_status: 'running' },
+        { tool: 'think' },
+    ])('keeps non-review activity collapsed: %j', (details) => {
+        const activity = makeMessage({
+            message: 'Working on the draft',
+            details: details as unknown as AgentMessage['details'],
+        });
+        expect(buildSummaryConversationItems([activity, question], false)[0]).toMatchObject({
+            type: 'work',
+            messages: [activity],
+        });
+    });
+
+    it.each([false, true])('keeps reconstructed review streams visible with isComplete=%s', (isComplete) => {
+        const messages = buildSummaryDisplayMessages(
+            [tool, question],
+            new Map([
+                [
+                    'review-stream',
+                    {
+                        text: draft,
+                        startTimestamp: 2000,
+                        activityId: 'review-1',
+                        isComplete,
+                    },
+                ],
+            ]),
+        );
+        const items = buildSummaryConversationItems(messages, false);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work', 'message']);
+        expect(items[0]).toMatchObject({ type: 'message', message: { message: draft } });
     });
 });
 
@@ -1310,6 +1404,43 @@ describe('ModernAgentOutput summary conversation items', () => {
         expect(summaryMessages).toEqual([answer]);
     });
 
+    it('does not duplicate persisted reasoning without streaming metadata across intervening activity', () => {
+        const activity = makeMessage({
+            timestamp: 2500,
+            type: AgentMessageType.THOUGHT,
+            message: 'Launching workstream',
+            details: {
+                tool: 'launch_workstream',
+                tool_status: 'completed',
+                tool_run_id: 'tool-1',
+            },
+        });
+        const reasoning = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Launching parallel processing',
+            details: {
+                display_role: 'reasoning',
+            },
+        });
+
+        const summaryMessages = buildSummaryDisplayMessages(
+            [activity, reasoning],
+            new Map([
+                [
+                    'stream-1',
+                    {
+                        text: 'Launching parallel processing',
+                        startTimestamp: 2000,
+                        isComplete: true,
+                    },
+                ],
+            ]),
+        );
+
+        expect(summaryMessages).toEqual([activity, reasoning]);
+    });
+
     it('does not duplicate completed tool preamble streams once persisted prose replaces them', () => {
         const preamble = makeMessage({
             timestamp: 3000,
@@ -1391,6 +1522,33 @@ describe('ModernAgentOutput summary conversation items', () => {
 });
 
 describe('ModernAgentOutput utils - streamed deduplication', () => {
+    it('shows a workstream stream only in its owning workstream', () => {
+        const stream = {
+            text: 'Child work in progress',
+            startTimestamp: 1000,
+            workstreamId: 'research',
+        };
+
+        expect(isStreamingDataVisibleInWorkstream(stream, 'all')).toBe(false);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'main')).toBe(false);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'research')).toBe(true);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'writing')).toBe(false);
+
+        const streams = new Map([['stream-1', stream]]);
+        expect(groupMessagesWithStreaming([], streams, 'all')).toHaveLength(0);
+        expect(groupMessagesWithStreaming([], streams, 'research')).toHaveLength(1);
+    });
+
+    it('keeps main-agent streams in the main conversation', () => {
+        const stream = {
+            text: 'Main response in progress',
+            startTimestamp: 1000,
+        };
+
+        expect(isStreamingDataVisibleInWorkstream(stream, 'all')).toBe(true);
+        expect(isStreamingDataVisibleInWorkstream(stream, 'main')).toBe(true);
+    });
+
     it('skips a stale streaming item once an equivalent streamed answer is persisted', () => {
         const answer = makeMessage({
             timestamp: 2000,
@@ -1497,6 +1655,35 @@ describe('ModernAgentOutput utils - streamed deduplication', () => {
                 [tool],
             ),
         ).toBe(false);
+    });
+
+    it('replaces matching streamed prose with persisted thinking prose, but not a generic marker', () => {
+        const matchingThinking = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Launching parallel processing',
+            details: {
+                activity_id: 'activity-1',
+                display_role: 'thinking',
+            },
+        });
+        const genericMarker = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Thinking...',
+            details: {
+                activity_id: 'activity-1',
+                display_role: 'thinking',
+            },
+        });
+        const streaming = {
+            text: 'Launching parallel processing',
+            startTimestamp: 1000,
+            activityId: 'activity-1',
+        };
+
+        expect(isStreamReplacedByMessage(streaming, [matchingThinking])).toBe(true);
+        expect(isStreamReplacedByMessage(streaming, [genericMarker])).toBe(false);
     });
 });
 

@@ -1,4 +1,4 @@
-import type { ComputedFacetResponse } from '@vertesia/common';
+import type { ComplexSearchQuery, ComputedFacetResponse } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     FilterBar,
@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import {
+    createSearchQueryKeyGuard,
     filterValueToQueryValue,
     type SearchInterface,
     setSearchQueryValue,
@@ -19,9 +20,24 @@ import {
 import { VStringFacet } from './utils/VStringFacet';
 import { VTypeFacet } from './utils/VTypeFacet';
 
+const documentQueryFilterNames = [
+    'id',
+    'name',
+    'types',
+    'status',
+] as const satisfies readonly (keyof ComplexSearchQuery)[];
+const documentMatchFilterNames = ['tags', 'created_at', 'updated_at'] as const;
+const isDocumentQueryFilterName = createSearchQueryKeyGuard<ComplexSearchQuery>(documentQueryFilterNames);
+const documentMatchFilterNameSet = new Set<string>(documentMatchFilterNames);
+type DocumentMatchFilterName = (typeof documentMatchFilterNames)[number];
+
+function isDocumentMatchFilterName(name: string): name is DocumentMatchFilterName {
+    return documentMatchFilterNameSet.has(name);
+}
+
 interface DocumentsFacetsNavProps {
     facets: ComputedFacetResponse;
-    search: SearchInterface;
+    search: SearchInterface<ComplexSearchQuery>;
 }
 
 function getBuckets(value: ComputedFacetResponse[string]) {
@@ -100,7 +116,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
 }
 
 // Hook to create filter change handler for documents
-export function useDocumentFilterHandler(search: SearchInterface) {
+export function useDocumentFilterHandler(search: SearchInterface<ComplexSearchQuery>) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             search.clearFilters();
@@ -138,12 +154,13 @@ export function useDocumentFilterHandler(search: SearchInterface) {
                     filterValue = filterValueToQueryValue(filter);
                 }
 
-                if (filterName === 'name') {
-                    setSearchQueryValue(search, 'name', filterValue);
-                } else if (filterName === 'id') {
-                    setSearchQueryValue(search, 'id', filterValue);
-                } else {
+                if (isDocumentQueryFilterName(filterName)) {
                     setSearchQueryValue(search, filterName, filterValue);
+                } else if (isDocumentMatchFilterName(filterName) && filterValue !== undefined) {
+                    search.query.match = {
+                        ...search.query.match,
+                        [filterName]: filterValue,
+                    };
                 }
             }
         });

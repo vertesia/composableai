@@ -1,4 +1,5 @@
 import { Env } from '@vertesia/ui/env';
+import { requestIframeHostAuthToken } from '@vertesia/ui/shell';
 
 const CONFIG__PLUGIN_TITLE = 'Ui Plugin Template';
 
@@ -33,4 +34,5 @@ Env.init({
         zeno: requiredEnv('VITE_VERTESIA_ZENO_URL'),
         sts: requiredEnv('VITE_VERTESIA_STS_URL'),
     },
+    authTokenProvider: requestIframeHostAuthToken,
 });

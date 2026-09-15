@@ -91,7 +91,7 @@ export function Modal({
                                 <Button
                                     variant="outline"
                                     title="Close"
-                                    className="data-[state=open]:bg-accent opacity-70 hover:opacity-100 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background focus:ring-offset-2 data-[state=open]:text-muted-foreground transition-opacity disabled:pointer-events-none"
+                                    className="data-[state=open]:bg-muted opacity-70 hover:opacity-100 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background focus:ring-offset-2 data-[state=open]:text-muted transition-opacity disabled:pointer-events-none"
                                 >
                                     <X className="size-4" />
                                 </Button>
@@ -133,9 +133,7 @@ export const ModalTitle = ({
         >
             {children}
             {description && (
-                <DialogDescription className="text-sm !font-normal text-muted-foreground pb-2">
-                    {description}
-                </DialogDescription>
+                <DialogDescription className="text-sm !font-normal text-muted pb-2">{description}</DialogDescription>
             )}
         </DialogTitle>
     );
@@ -205,10 +203,6 @@ const DialogContent = React.forwardRef<
             <DialogOverlay />
             <DialogPrimitive.Content
                 ref={ref}
-                autoFocus={false}
-                onOpenAutoFocus={(event) => {
-                    event.preventDefault();
-                }}
                 className={cn(
                     // rtl-ok: symmetric centering + slide animations from Radix — left-[50%]/translate-x-[-50%] are mirror-safe
                     'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',

@@ -1,3 +1,5 @@
+import type { ReasoningEffort } from '@llumiverse/common';
+
 export interface UserInputSignal {
     message: string;
     /**
@@ -24,6 +26,18 @@ export interface StopSignal {
     client_message_id?: string;
     metadata?: Record<string, unknown>;
     auth_token?: string;
+}
+
+/**
+ * Changes the model used by subsequent turns of a running conversation.
+ *
+ * The workflow keeps the current execution environment/provider. This is intended for compatible
+ * model switches within that environment (for example Opus/Sonnet or Terra/Sol). An omitted field
+ * preserves its current value; `effort: null` returns to the provider/model default.
+ */
+export interface ModelConfigChangedSignal {
+    model?: string;
+    effort?: ReasoningEffort | null;
 }
 
 /**

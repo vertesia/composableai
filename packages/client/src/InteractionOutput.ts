@@ -120,6 +120,10 @@ export class InteractionOutput<T = unknown> {
         return this.results.some((r) => r.type === 'image');
     }
 
+    hasVideo() {
+        return this.results.some((r) => r.type === 'video');
+    }
+
     /**
      * Get the concatenated text from all text results.
      * Returns an empty string if no text results exist.
@@ -213,10 +217,24 @@ export class InteractionOutput<T = unknown> {
         return this.results.filter((r) => r.type === 'image').map((r) => r.value);
     }
 
+    /** Get the first video result URI. */
+    video(): string {
+        const videoResult = this.results.find((r) => r.type === 'video');
+        if (!videoResult) {
+            throw new Error('No video result found');
+        }
+        return videoResult.value;
+    }
+
+    /** Get all video result URIs. */
+    videos(): string[] {
+        return this.results.filter((r) => r.type === 'video').map((r) => r.value);
+    }
+
     /**
      * Convert all answer results to a string representation.
      * Thoughts are available through thoughts() and remain separate from the answer.
-     * Text and image results are used as-is, JSON results are stringified with the specified indent.
+     * Text and media results are used as-is, JSON results are stringified with the specified indent.
      * All parts are joined using the specified separator.
      *
      * @param separator - The separator to use between parts (default: '\n')

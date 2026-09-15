@@ -55,11 +55,46 @@ export interface EnvProps {
     onLogout?: () => void;
 }
 
+export type VertesiaRuntimeConfig =
+    | {
+          authMode: 'firebase';
+          firebase: {
+              apiKey: string;
+              authDomain: string;
+              projectId: string;
+              appId: string;
+          };
+      }
+    | {
+          authMode: 'central';
+      };
+
+declare global {
+    interface Window {
+        AUTH_MODE?: 'firebase' | 'central';
+        __VERTESIA_RUNTIME_CONFIG__?: VertesiaRuntimeConfig;
+    }
+}
+
+function injectedRuntimeConfig(): VertesiaRuntimeConfig | undefined {
+    if (typeof window === 'undefined') return undefined;
+    const runtimeConfig = window.__VERTESIA_RUNTIME_CONFIG__;
+    if (runtimeConfig?.authMode === 'central') return runtimeConfig;
+    if (runtimeConfig?.authMode !== 'firebase') return undefined;
+
+    const firebase = runtimeConfig.firebase;
+    if (!firebase?.apiKey || !firebase.authDomain || !firebase.projectId || !firebase.appId) return undefined;
+    return runtimeConfig;
+}
+
 export class VertesiaEnvironment implements Readonly<EnvProps> {
     constructor(private _props?: EnvProps | undefined) {}
 
     init(props?: EnvProps) {
-        this._props = props;
+        const runtimeConfig = injectedRuntimeConfig();
+        const runtimeFirebase = runtimeConfig?.authMode === 'firebase' ? runtimeConfig.firebase : undefined;
+        this._props = props && runtimeFirebase && !props.firebase ? { ...props, firebase: runtimeFirebase } : props;
+        if (runtimeConfig && window.AUTH_MODE === undefined) window.AUTH_MODE = runtimeConfig.authMode;
         return this;
     }
 

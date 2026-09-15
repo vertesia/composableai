@@ -52,24 +52,41 @@ function renderSummary(
     props: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
 ) {
     const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
-
-    return render(
+    const renderConversation = (
+        currentMessages: AgentMessage[],
+        currentIsCompleted: boolean,
+        currentStreamingMessages: Map<string, StreamingData>,
+        currentProps: Partial<React.ComponentProps<typeof AllMessagesMixed>>,
+    ) => (
         <I18nProvider lng="en">
             <ReactRouterContext.Provider value={makeRouterContext()}>
                 <AgentResourceResolverProvider value={testResourceResolver}>
                     <AllMessagesMixed
-                        messages={messages}
+                        messages={currentMessages}
                         bottomRef={bottomRef}
                         viewMode="sliding"
-                        isCompleted={isCompleted}
+                        isCompleted={currentIsCompleted}
                         artifactRunId="run-1"
-                        streamingMessages={streamingMessages}
-                        {...props}
+                        streamingMessages={currentStreamingMessages}
+                        {...currentProps}
                     />
                 </AgentResourceResolverProvider>
             </ReactRouterContext.Provider>
-        </I18nProvider>,
+        </I18nProvider>
     );
+
+    const result = render(renderConversation(messages, isCompleted, streamingMessages, props));
+    return {
+        ...result,
+        rerenderSummary(
+            nextMessages: AgentMessage[],
+            nextIsCompleted = false,
+            nextStreamingMessages = new Map<string, StreamingData>(),
+            nextProps: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
+        ) {
+            result.rerender(renderConversation(nextMessages, nextIsCompleted, nextStreamingMessages, nextProps));
+        },
+    };
 }
 
 function renderStacked(
@@ -114,6 +131,41 @@ describe('AllMessagesMixed summary view', () => {
 
     afterEach(() => {
         vi.useRealTimers();
+    });
+
+    it('keeps the draft accompanying ask_user visible outside collapsed work', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1000,
+                message: '## Draft agenda\n9:00 Welcome\n9:15 Platform foundations',
+                details: {
+                    event_class: 'activity',
+                    display_role: 'tool_preamble',
+                    tools: ['ask_user'],
+                    activity_group_id: 'review-1',
+                    streamed: true,
+                },
+            }),
+            makeMessage({
+                timestamp: 2000,
+                message: 'Waiting for review...',
+                details: {
+                    tool: 'ask_user',
+                    tool_status: 'running',
+                    activity_group_id: 'review-1',
+                },
+            }),
+            makeMessage({
+                timestamp: 3000,
+                type: AgentMessageType.REQUEST_INPUT,
+                message: 'Does this agenda work?',
+                details: { tool: 'ask_user', request_id: 'ask-1' },
+            }),
+        ]);
+
+        expect(screen.getByRole('heading', { name: 'Draft agenda' })).not.toBeNull();
+        expect(screen.getByText('Does this agenda work?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Worked\s*for/ }).getAttribute('aria-expanded')).toBe('false');
     });
 
     it('renders delivery status on user bubbles in summary view', () => {
@@ -766,6 +818,72 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('Main agent response.')).not.toBeNull();
     });
 
+    it('keeps streamed and persisted child output in the owning workstream throughout its lifecycle', () => {
+        const question = makeMessage({
+            timestamp: 1_000,
+            type: AgentMessageType.QUESTION,
+            message: 'Research the launch plan.',
+        });
+        const launch = makeMessage({
+            timestamp: 2_000,
+            type: AgentMessageType.UPDATE,
+            message: 'Research workstream launched',
+            workstream_id: 'research',
+            details: {
+                event_class: 'activity',
+                workstream_event: 'launched',
+                launch_id: 'launch-research',
+                workstream_id: 'research',
+                child_workflow_id: 'workstream:research',
+                child_workflow_run_id: 'run-research',
+            },
+        });
+        const sourceMessages = [question, launch];
+        const streamingMessages = new Map<string, StreamingData>([
+            [
+                'research-stream',
+                {
+                    text: 'Research is still streaming.',
+                    startTimestamp: 3_000,
+                    workstreamId: 'research',
+                },
+            ],
+        ]);
+        const { rerenderSummary } = renderSummary(sourceMessages, false, streamingMessages, {
+            workstreamSourceMessages: sourceMessages,
+            activeWorkstream: 'all',
+        });
+
+        expect(screen.queryByText('Research is still streaming.')).toBeNull();
+
+        rerenderSummary(sourceMessages, false, streamingMessages, {
+            workstreamSourceMessages: sourceMessages,
+            activeWorkstream: 'research',
+        });
+        expect(screen.getByText('Research is still streaming.')).not.toBeNull();
+
+        const persistedChildAnswer = makeMessage({
+            timestamp: 4_000,
+            type: AgentMessageType.ANSWER,
+            message: 'Research is complete.',
+            workstream_id: 'research',
+            details: { streamed: true },
+        });
+        const completedMessages = [...sourceMessages, persistedChildAnswer];
+
+        rerenderSummary(completedMessages, true, new Map(), {
+            workstreamSourceMessages: completedMessages,
+            activeWorkstream: 'research',
+        });
+        expect(screen.getByText('Research is complete.')).not.toBeNull();
+
+        rerenderSummary(completedMessages, true, new Map(), {
+            workstreamSourceMessages: completedMessages,
+            activeWorkstream: 'all',
+        });
+        expect(screen.queryByText('Research is complete.')).toBeNull();
+    });
+
     it('renders first child workflow activity as a workstream row when the launch event is missing', () => {
         renderSummary(
             [
@@ -1026,12 +1144,36 @@ describe('AllMessagesMixed summary view', () => {
 
         const columns = Array.from(screen.getByRole('table').querySelectorAll('col'));
         const contentWidths = [columns[0], columns[2]].map((column) =>
-            Number.parseFloat(column.style.getPropertyValue('--agent-markdown-table-column-width')),
+            Number.parseFloat(
+                column.style.getPropertyValue('--agent-markdown-table-column-width').replace('calc(', ''),
+            ),
         );
 
         expect(columns).toHaveLength(3);
         expect(columns[1]?.classList.contains('agent-markdown-table-compact-col')).toBe(true);
         expect(contentWidths[1]).toBeGreaterThan(contentWidths[0]);
+    });
+
+    it('reserves readable widths for agenda columns beside long descriptions', () => {
+        renderSummary([
+            makeMessage({
+                type: AgentMessageType.ANSWER,
+                message: [
+                    '| Time | Duration | Topic | Facilitator |',
+                    '| --- | --- | --- | --- |',
+                    '| 9:15 a.m. | 90 min | Advanced capabilities: sub-agents, workstreams, skills, tools and human review | Vertesia |',
+                    '| 10:45 a.m. | 15 min | Break | All |',
+                ].join('\n'),
+            }),
+        ]);
+
+        const table = screen.getByRole('table');
+        const widths = Array.from(table.querySelectorAll('col')).map((column) =>
+            column.style.getPropertyValue('--agent-markdown-table-column-width'),
+        );
+        expect(widths).toEqual(['8rem', '8rem', 'calc(100.000% - 24.000rem)', '8rem']);
+        expect(table.style.minWidth).toBe('32rem');
+        expect(table.parentElement?.classList.contains('overflow-x-auto')).toBe(true);
     });
 
     it('merges legacy activity progress rows with different tool run ids', () => {
@@ -1455,6 +1597,68 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText('denied')).toBeNull();
         expect(screen.queryByText('Approval request')).toBeNull();
         expect(screen.getAllByText(/quotes\.md/).length).toBeGreaterThan(0);
+    });
+
+    describe.each(['summary', 'stacked', 'activity'] as const)('request input in %s view', (mode) => {
+        function renderPrompt(options: unknown) {
+            const onSendMessage = vi.fn();
+            const prompt = makeMessage({
+                timestamp: 2_000,
+                type: AgentMessageType.REQUEST_INPUT,
+                message: 'Choose a response',
+                details: { request_id: 'robust-ask', ux: { options, variant: 'default', multiSelect: false } },
+            });
+            if (mode === 'stacked') {
+                renderStacked([prompt], false, { onSendMessage });
+            } else if (mode === 'activity') {
+                renderSummary(
+                    [
+                        makeMessage({
+                            timestamp: 1_000,
+                            message: 'Waiting for input',
+                            details: {
+                                event_class: 'activity',
+                                tool: 'ask_user',
+                                tool_run_id: 'ask-run',
+                                tool_status: 'running',
+                                activity_group_id: 'ask-group',
+                            },
+                        }),
+                        { ...prompt, details: { ...prompt.details, activity_group_id: 'ask-group', tool: 'ask_user' } },
+                        makeMessage({ timestamp: 3_000, message: 'Finished', type: AgentMessageType.COMPLETE }),
+                    ],
+                    true,
+                    new Map(),
+                    { onSendMessage },
+                );
+                fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+            } else {
+                renderSummary([prompt], false, new Map(), { onSendMessage });
+            }
+            return onSendMessage;
+        }
+
+        it.each([
+            { name: 'a string', options: 'null' },
+            { name: 'null', options: null },
+            { name: 'a null entry', options: [null] },
+            { name: 'an object label', options: [{ id: 'a', label: {} }] },
+            { name: 'mixed valid and invalid entries', options: [{ id: 'a', label: 'A' }, null] },
+        ])('allows text submission for $name', ({ options }) => {
+            const onSendMessage = renderPrompt(options);
+            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Custom response' } });
+            fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+            expect(onSendMessage).toHaveBeenCalledWith('Custom response', {
+                request_input_response: { request_id: 'robust-ask' },
+            });
+        });
+
+        it('preserves valid choices and their response IDs', () => {
+            const onSendMessage = renderPrompt([{ id: 'a', label: 'Choice A' }]);
+            fireEvent.click(screen.getByRole('button', { name: 'Choice A' }));
+            expect(onSendMessage).toHaveBeenCalledWith('a', { request_input_response: { request_id: 'robust-ask' } });
+            expect(screen.queryByRole('textbox')).toBeNull();
+        });
     });
 
     it('renders pending ask options compactly in summary view', () => {

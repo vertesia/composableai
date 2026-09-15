@@ -17,7 +17,7 @@ function RowErrorFallback({ error }: ErrorFallbackComponentProps) {
             <td colSpan={100}>
                 <span className="text-xs"> Cannot display row</span>
                 <br />
-                <span className="bg-gray-400">{message}</span>
+                <span className="bg-muted">{message}</span>
             </td>
         </tr>
     );

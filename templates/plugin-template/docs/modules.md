@@ -83,7 +83,7 @@ UI contributions live under the `ui` key. Vertesia resource contributions live u
       },
       "resources": "src/modules/content-app/resources",
       "packageScripts": {
-        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs"
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts"
       }
     }
   }
@@ -98,8 +98,8 @@ helpers that should only appear in generated projects where that module is activ
   "modules": {
     "content-app": {
       "packageScripts": {
-        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
-        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts",
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts"
       }
     }
   }
@@ -107,7 +107,7 @@ helpers that should only appear in generated projects where that module is activ
 ```
 
 Keep module-specific script files inside that module, for example
-`src/modules/content-app/scripts/seed-content-app.mjs`. During scaffold, codegen merges the active
+`src/modules/content-app/scripts/seed-content-app.ts`. During scaffold, codegen merges the active
 modules' `packageScripts` into the generated `package.json`. Inactive module scripts are not added.
 
 During scaffold, `create-plugin` runs the template lifecycle script declared in `template.config.json`:

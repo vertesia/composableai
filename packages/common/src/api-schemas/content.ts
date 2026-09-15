@@ -300,27 +300,54 @@ export const EmbeddingMapSchema = z.object({}).catchall(EmbeddingSchema).meta({ 
  * keeps emitting under the base's `id` and collides with it in the published document.
  */
 const collectionPayloadFields = {
-    description: z.string().optional(),
-    skip_head_sync: z.boolean().optional(),
-    tags: z.array(z.string()).optional(),
-    type: nullableStringSchema.optional(),
-    query: z.looseObject({}).optional(),
-    properties: z.looseObject({}).optional(),
-    parent: nullableStringSchema.optional(),
+    description: z.string().meta({ description: 'Description of the collection and its purpose' }).optional(),
+    skip_head_sync: z
+        .boolean()
+        .meta({
+            description: 'When true the collection does not track and sync member HEAD revisions. Defaults to false.',
+        })
+        .optional(),
+    tags: z.array(z.string()).meta({ description: 'Categorization tags for the collection' }).optional(),
+    type: nullableStringSchema
+        .meta({ description: 'Default content type ID for documents in the collection' })
+        .optional(),
+    query: z
+        .looseObject({})
+        .meta({ description: 'MongoDB query that determines membership of a dynamic collection' })
+        .optional(),
+    properties: z.looseObject({}).meta({ description: 'Metadata properties attached to the collection' }).optional(),
+    parent: nullableStringSchema.meta({ description: 'Parent collection ID when the collection is nested' }).optional(),
     table_layout: z
         .array(ColumnLayoutSchema)
         .nullable()
-        .meta({ anyOf: undefined, type: ['array', 'null'], items: { $ref: 'ColumnLayout' } })
+        .meta({
+            anyOf: undefined,
+            type: ['array', 'null'],
+            items: { $ref: 'ColumnLayout' },
+            description: 'Column layout used when listing collection members',
+        })
         .optional(),
-    allowed_types: z.array(z.string()).optional(),
-    updated_by: z.string().optional(),
-    shared_properties: z.array(z.string()).optional(),
+    allowed_types: z
+        .array(z.string())
+        .meta({ description: 'Content type IDs allowed to be added to the collection' })
+        .optional(),
+    updated_by: z.string().meta({ description: 'Identity recorded as the updater of the collection' }).optional(),
+    shared_properties: z
+        .array(z.string())
+        .meta({ description: 'Names of collection properties whose values are propagated to member documents' })
+        .optional(),
     sensitivity: z.number().meta({ description: 'BLP sensitivity level for member documents' }).optional(),
     compartments: z.array(z.string()).meta({ description: 'Compartments for member documents' }).optional(),
 };
 
 export const CreateCollectionPayloadSchema = z
-    .strictObject({ ...collectionPayloadFields, name: z.string(), dynamic: z.boolean() })
+    .strictObject({
+        ...collectionPayloadFields,
+        name: z.string().meta({ description: 'Name of the collection' }),
+        dynamic: z.boolean().meta({
+            description: 'When true, membership is determined by `query`; when false, members are added explicitly',
+        }),
+    })
     .meta({ id: 'CreateCollectionPayload' });
 
 /**
@@ -331,8 +358,13 @@ export const CreateCollectionPayloadSchema = z
 export const UpdateCollectionPayloadSchema = z
     .strictObject({
         ...collectionPayloadFields,
-        name: z.string().optional(),
-        dynamic: z.boolean().optional(),
+        name: z.string().meta({ description: 'Name of the collection' }).optional(),
+        dynamic: z
+            .boolean()
+            .meta({
+                description: 'When true, membership is determined by `query`; when false, members are added explicitly',
+            })
+            .optional(),
     })
     .meta({ id: 'UpdateCollectionPayload', description: 'Fields to change on a collection. All optional.' });
 
@@ -780,6 +812,15 @@ export const ContentObjectApiResponseSchema = z
         is_locked: z.boolean().optional(),
         score: z.number().optional(),
         user_permissions: ContentObjectUserPermissionsSchema.optional(),
+        searchTypeResult: z
+            .array(
+                z.strictObject({
+                    type: z.string(),
+                    score: z.number(),
+                    rank: z.number(),
+                }),
+            )
+            .optional(),
         text: z.string().optional(),
         text_etag: z.string().optional(),
         embeddings: EmbeddingMapSchema.optional(),
@@ -793,6 +834,7 @@ export const ContentObjectApiResponseSchema = z
                 description:
                     'BLP sensitivity level — set directly or inherited from collections (max across collections).',
             })
+            .nullable()
             .optional(),
         compartments: z
             .array(z.string())
@@ -853,6 +895,25 @@ export const ContentObjectItemApiResponseSchema = z
         is_locked: z.boolean().optional(),
         score: z.number().optional(),
         user_permissions: ContentObjectUserPermissionsSchema.optional(),
+        searchTypeResult: z
+            .array(
+                z.strictObject({
+                    type: z.string(),
+                    score: z.number(),
+                    rank: z.number(),
+                }),
+            )
+            .optional(),
+        text: z.string().optional(),
+        text_etag: z.string().optional(),
+        embeddings: EmbeddingMapSchema.optional(),
+        parts: z.array(z.string()).optional(),
+        parts_etag: z.string().optional(),
+        transcript: z.looseObject({}).optional(),
+        security: StringArrayMapSchema.optional(),
+        sensitivity: z.number().nullable().optional(),
+        compartments: z.array(z.string()).optional(),
+        inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectItemApiResponse' });
 

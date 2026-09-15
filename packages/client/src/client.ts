@@ -28,6 +28,7 @@ import { VERSION, VERSION_HEADER } from './store/version.js';
 import ToolsApi from './ToolsApi.js';
 import TrainingApi from './TrainingApi.js';
 import UsersApi from './UsersApi.js';
+import { warnUnknownOptions } from './unknown-options.js';
 import ViewsApi from './ViewsApi.js';
 
 /**
@@ -63,7 +64,6 @@ export type VertesiaClientProps = {
     storeUrl?: string;
     tokenServerUrl?: string;
     apikey?: string;
-    projectId?: string;
     sessionTags?: string | string[];
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
@@ -75,6 +75,25 @@ export type VertesiaClientProps = {
      */
     timeout?: number | false | null;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
+};
+
+/**
+ * Every option the constructor reads. Typing it as `Record<keyof Required<VertesiaClientProps>, true>`
+ * keeps it exhaustive in both directions: a new prop that is missing here fails to compile, and a key
+ * here that is not a prop fails too. Without that, the table would silently rot into false warnings.
+ */
+const KNOWN_CLIENT_OPTIONS: Record<keyof Required<VertesiaClientProps>, true> = {
+    site: true,
+    serverUrl: true,
+    storeUrl: true,
+    tokenServerUrl: true,
+    apikey: true,
+    sessionTags: true,
+    onRequest: true,
+    onResponse: true,
+    retryPolicy: true,
+    timeout: true,
+    fetch: true,
 };
 
 export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
@@ -119,6 +138,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         payload?: AuthTokenPayload,
         endpoints?: { studio: string; store: string; token?: string; git?: string },
     ) {
+        if (!token?.trim()) {
+            throw new Error('VertesiaClient.fromAuthToken requires a non-empty auth token');
+        }
+
         if (!payload) {
             payload = decodeJWT(token);
         }
@@ -138,6 +161,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             site: 'api.vertesia.io',
         },
     ) {
+        warnUnknownOptions('VertesiaClient', opts, KNOWN_CLIENT_OPTIONS);
+
         let studioServerUrl: string;
         let zenoServerUrl: string;
 
@@ -350,6 +375,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.processes;
     }
 
+    get processTestRuns() {
+        return this.store.processTestRuns;
+    }
+
     get tasks() {
         return this.store.tasks;
     }
@@ -451,9 +480,27 @@ export function isTokenExpired(token: string | null) {
 }
 
 export function decodeJWT(jwt: string): AuthTokenPayload {
-    const payloadBase64 = jwt.split('.')[1];
-    const decodedJson = base64UrlDecode(payloadBase64);
-    return JSON.parse(decodedJson);
+    // Never echo the token itself in these messages: it is a live credential, and decode failures
+    // are routinely logged. The shape of the failure is enough to identify the caller's mistake.
+    const segments = typeof jwt === 'string' ? jwt.split('.') : [];
+    if (segments.length !== 3 || !segments[1]) {
+        throw new Error(
+            `Invalid auth token: expected a JWT of three dot-separated segments, got ${segments.length || 'none'}`,
+        );
+    }
+
+    let decodedJson: string;
+    try {
+        decodedJson = base64UrlDecode(segments[1]);
+    } catch (err) {
+        throw new Error(`Invalid auth token: payload segment is not base64url (${(err as Error).message})`);
+    }
+
+    try {
+        return JSON.parse(decodedJson);
+    } catch {
+        throw new Error('Invalid auth token: payload segment is not JSON');
+    }
 }
 
 type RuntimeProcess = {

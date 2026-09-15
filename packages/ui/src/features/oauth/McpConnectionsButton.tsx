@@ -93,7 +93,7 @@ export function McpConnectionsButton({
 }
 
 /**
- * Inline MCP status list for forms. It shows all available OAuth MCP groups
+ * Inline MCP status list for forms. It shows all available authenticated MCP groups
  * without requiring the user to open the management dialog.
  */
 export function McpConnectionsInlineList({
@@ -128,6 +128,7 @@ export function McpConnectionsInlineList({
             {groups.map((group) => {
                 const active = !isGroupDisabled(group, disabledCollections);
                 const connected = group.authStatus?.authenticated === true;
+                const interactiveOAuth = group.authType === 'oauth' && group.oauthGrantType !== 'client_credentials';
                 const StatusIcon = connected ? Link2 : Link2Off;
                 return (
                     <div key={group.key} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2 text-sm">
@@ -155,7 +156,7 @@ export function McpConnectionsInlineList({
                                 </span>
                             </VTooltip>
                         </div>
-                        {statusLoading && !group.authStatus ? (
+                        {interactiveOAuth && statusLoading && !group.authStatus ? (
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -165,7 +166,7 @@ export function McpConnectionsInlineList({
                             >
                                 <Spinner className="size-3" />
                             </Button>
-                        ) : (
+                        ) : interactiveOAuth ? (
                             <RemoteMcpConnectionButton
                                 appId={group.appId}
                                 collectionId={group.representativeId}
@@ -176,6 +177,12 @@ export function McpConnectionsInlineList({
                                 showDisconnect
                                 readOnly={readOnly}
                             />
+                        ) : (
+                            <Badge variant="outline" className="h-6 w-32 justify-center px-2 text-xs">
+                                {group.authType === 'api_key'
+                                    ? t('mcpConnections.apiKey')
+                                    : t('mcpConnections.managedByApp')}
+                            </Badge>
                         )}
                         {onChange && (
                             <div className="flex min-w-24 items-center justify-end gap-2 text-xs">

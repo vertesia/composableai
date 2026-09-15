@@ -1,11 +1,17 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateProcessDefinitionPayload,
+    CreateProcessTestSuitePayload,
     ListProcessDefinitionsQuery as ListProcessDefinitionsWireQuery,
+    ListProcessTestRunsQuery,
     ProcessDefinition,
+    ProcessTestRun,
+    ProcessTestSuite,
     PublishProcessDefinitionPayload,
     RevertProcessDefinitionPayload,
+    StartProcessTestRunPayload,
     UpdateProcessDefinitionPayload,
+    UpdateProcessTestSuitePayload,
 } from '@vertesia/common';
 
 export type ListProcessDefinitionsQuery = ListProcessDefinitionsWireQuery & {
@@ -54,5 +60,43 @@ export class ProcessApi extends ApiTopic {
 
     delete(id: string): Promise<{ id: string; count: number }> {
         return this.del(`/${id}`);
+    }
+
+    listTestSuites(processId: string): Promise<ProcessTestSuite[]> {
+        return this.get(`/${processId}/test-suites`);
+    }
+
+    createTestSuite(processId: string, payload: CreateProcessTestSuitePayload): Promise<ProcessTestSuite> {
+        return this.post(`/${processId}/test-suites`, { payload });
+    }
+
+    updateTestSuite(
+        processId: string,
+        suiteId: string,
+        payload: UpdateProcessTestSuitePayload,
+    ): Promise<ProcessTestSuite> {
+        return this.put(`/${processId}/test-suites/${suiteId}`, { payload });
+    }
+
+    deleteTestSuite(processId: string, suiteId: string): Promise<{ id: string; count: number }> {
+        return this.del(`/${processId}/test-suites/${suiteId}`);
+    }
+
+    startTestRun(processId: string, payload: StartProcessTestRunPayload): Promise<ProcessTestRun> {
+        return this.post(`/${processId}/test-runs`, { payload });
+    }
+
+    listTestRuns(processId: string, query?: ListProcessTestRunsQuery): Promise<ProcessTestRun[]> {
+        return this.get(`/${processId}/test-runs`, {
+            query: query?.limit == null ? undefined : { limit: String(query.limit) },
+        });
+    }
+
+    retrieveTestRun(processId: string, runId: string): Promise<ProcessTestRun> {
+        return this.get(`/${processId}/test-runs/${runId}`);
+    }
+
+    cancelTestRun(processId: string, runId: string): Promise<ProcessTestRun> {
+        return this.post(`/${processId}/test-runs/${runId}/cancel`, {});
     }
 }

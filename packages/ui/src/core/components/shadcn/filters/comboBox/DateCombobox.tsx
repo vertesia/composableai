@@ -1,7 +1,7 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import ReactCalendar from 'react-calendar';
+import dayjs from '../../../../utils/dayjs.js';
 import { Button } from '../../button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { calendarStyles } from '../filter-styles';
@@ -46,7 +46,7 @@ export const DateCombobox = ({
                 return (
                     <span className="flex items-center gap-1.5">
                         <span className="font-medium">{dayjs(dateRange[0]).format('MMMM DD, YYYY')}</span>
-                        <span className="text-xs text-muted-foreground">-</span>
+                        <span className="text-xs text-muted">-</span>
                         <span className="font-medium">{dayjs(dateRange[1]).format('MMMM DD, YYYY')}</span>
                     </span>
                 );
@@ -54,11 +54,11 @@ export const DateCombobox = ({
                 return (
                     <span className="flex items-center gap-1.5">
                         <span className="font-medium">{dayjs(dateRange[0]).format('MMMM DD, YYYY')}</span>
-                        <span className="text-xs text-muted-foreground">- Select end</span>
+                        <span className="text-xs text-muted">- Select end</span>
                     </span>
                 );
             } else {
-                return <span className="text-muted-foreground">{t('filter.selectRange')}</span>;
+                return <span className="text-muted">{t('filter.selectRange')}</span>;
             }
         } else {
             return selectedDate ? dayjs(selectedDate).format('MMMM DD, YYYY') : 'Pick a date';
@@ -91,7 +91,7 @@ export const DateCombobox = ({
 
     return (
         <Popover _open={open} onOpenChange={setOpen}>
-            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition">
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-info shrink-0 transition">
                 <div className="flex gap-1.5 items-center min-h-[20px]">{getDisplayText()}</div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-4} sideOffset={6}>
@@ -137,7 +137,7 @@ export const DateCombobox = ({
                                                         return 'bg-primary text-primary-foreground rounded-e-md font-semibold';
                                                     }
                                                     if (currentDate > startDate && currentDate < endDate) {
-                                                        return 'bg-primary/20 text-primary font-medium';
+                                                        return 'bg-info text-info font-medium';
                                                     }
                                                 } else {
                                                     // Only start date selected

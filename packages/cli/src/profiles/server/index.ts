@@ -22,6 +22,8 @@ export interface ConfigResult extends Required<ConfigPayload> {
     refresh_token?: string;
     expires_in?: number;
     access_token_expires_at?: number;
+    /** Lifetime of `refresh_token` in seconds, as reported by the authorization server. */
+    refresh_token_expires_in?: number;
     refresh_token_expires_at?: number;
     oauth_client_id?: string;
     oauth_resource?: string;

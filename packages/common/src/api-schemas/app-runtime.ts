@@ -35,6 +35,7 @@ import { RemoteActivityDefinitionSchema } from './integrations.js';
 import { CatalogInteractionRefSchema } from './interaction.js';
 import { ProcessDefinitionBodySchema } from './process.js';
 import { RenderingTemplateDefinitionRefSchema } from './project.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InCodeTypeDefinitionSchema } from './store.js';
 import { ViewExperienceConfigurationSchema } from './view-execution.js';
 
@@ -428,6 +429,10 @@ export const AppManifestDataSchema = z
     })
     .meta({ id: 'AppManifestData' });
 
+export const UpdateAppPayloadSchema = AppManifestDataSchema.extend({
+    expected_edit_revision: ExpectedEditRevisionSchema,
+}).meta({ id: 'UpdateAppPayload' });
+
 export const CompositeAppMenuNavItemSchema: z.ZodType<CompositeAppMenuNavItem> = z
     .strictObject({
         id: z.string().meta({ description: 'Stable unique identifier' }),
@@ -506,6 +511,7 @@ export const CompositeAppMessageOverridesSchema = z
 
 export const AppManifestSchema = z
     .strictObject({
+        edit_revision: EditRevisionSchema,
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
         }),
@@ -737,6 +743,7 @@ export const AppInstallationListEntryArraySchema = z
 
 export const CompositeAppConfigSchema = z
     .strictObject({
+        edit_revision: EditRevisionSchema,
         id: z
             .string()
             .meta({
@@ -958,6 +965,7 @@ export const AppPackageSchema = z
 
 export const CompositeAppConfigPayloadSchema = z
     .strictObject({
+        expected_edit_revision: ExpectedEditRevisionSchema,
         card: CompositeAppCardOverridesSchema.meta({
             description: 'Card display overrides (includes visibility)',
         }).optional(),

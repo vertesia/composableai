@@ -13,7 +13,7 @@ export function ResourceCard({ resource }: { resource: ResourceItem }) {
                     {resource.type}
                 </span>
                 <div className="font-semibold text-card-foreground">{resource.title}</div>
-                <div className="mt-1 text-sm text-muted-foreground">{resource.description || 'No description'}</div>
+                <div className="mt-1 text-sm text-muted">{resource.description || 'No description'}</div>
                 {resource.tags && resource.tags.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                         {resource.tags.map((tag) => (
@@ -23,9 +23,7 @@ export function ResourceCard({ resource }: { resource: ResourceItem }) {
                         ))}
                     </div>
                 )}
-                {resource.url && (
-                    <div className="mt-2 truncate font-mono text-xs text-muted-foreground">{resource.url}</div>
-                )}
+                {resource.url && <div className="mt-2 truncate font-mono text-xs text-muted">{resource.url}</div>}
             </CardContent>
         </Card>
     );

@@ -6,7 +6,7 @@ interface SplashScreenProps {
     icon?: ReactNode;
 }
 export function SplashScreen({ icon: Icon }: SplashScreenProps) {
-    const { isLoading } = useUserSession();
+    const { isLoading, authToken } = useUserSession();
     const [show, setShow] = useState(true);
 
     useEffect(() => {
@@ -14,6 +14,10 @@ export function SplashScreen({ icon: Icon }: SplashScreenProps) {
             setShow(false);
         }
     }, [isLoading]);
+
+    // The permission gate owns the loading UI once a token is available.
+    // Skip the exit animation too, so two loading indicators never overlap.
+    if (authToken) return null;
 
     return (
         <AnimatePresence>
@@ -54,7 +58,7 @@ function LoadingIcon() {
         <svg
             width="32"
             height="32"
-            className="w-8 h-8 text-indigo-600"
+            className="w-8 h-8 text-info"
             viewBox="0 0 50 50"
             xmlns="http://www.w3.org/2000/svg"
             role="img"

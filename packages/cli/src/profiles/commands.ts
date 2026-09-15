@@ -105,7 +105,7 @@ export async function useProfile(name?: string) {
     if (!name) {
         name = await selectProfile('Select the profile to use');
     }
-    config.use(name).save();
+    await config.use(name).save();
 }
 
 export function showProfile(name?: string) {
@@ -135,10 +135,10 @@ export function showProfile(name?: string) {
     }
 }
 
-export function showAuthDetails(options: AuthDetailsOptions = {}) {
+export async function showAuthDetails(options: AuthDetailsOptions = {}) {
     const envAuth = readEnvCredential();
     const profile = config.current;
-    const bundle = profile ? readAuthBundle(profile.name) : undefined;
+    const bundle = profile ? await readAuthBundle(profile.name) : undefined;
     const profileAccessToken = bundle?.accessToken || profile?.apikey;
     const activeToken = envAuth?.token || profileAccessToken;
     const activeCredentialSource = envAuth
@@ -227,7 +227,7 @@ export async function showActiveIdToken() {
         return;
     }
 
-    const bundle = readAuthBundle(config.current.name);
+    const bundle = await readAuthBundle(config.current.name);
     if (!bundle?.idToken) {
         console.log(
             'No ID token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.',
@@ -237,12 +237,12 @@ export async function showActiveIdToken() {
     console.log(bundle.idToken);
 }
 
-export function deleteProfile(name: string) {
-    deleteAuthBundle(name);
-    config.remove(name).save();
+export async function deleteProfile(name: string) {
+    await deleteAuthBundle(name);
+    await config.remove(name).save();
 }
 
-export function logoutProfile(name?: string) {
+export async function logoutProfile(name?: string) {
     const profileName = name || config.current?.name;
     if (!profileName) {
         console.log('No profile is selected. Run `vertesia profiles use <name>` to select a profile');
@@ -255,9 +255,9 @@ export function logoutProfile(name?: string) {
     const profile = config.getProfile(profileName);
     if (profile?.apikey) {
         delete profile.apikey;
-        config.save();
+        await config.save();
     }
-    deleteAuthBundle(profileName);
+    await deleteAuthBundle(profileName);
     console.log(`Logged out of profile ${profileName}.`);
 }
 
@@ -375,7 +375,7 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             );
             process.exit(1);
         }
-        writeAuthBundle(name, {
+        await writeAuthBundle(name, {
             accessToken: options.apikey,
             accessTokenExpiresAt: getAccessTokenExpiry(options.apikey),
         });
@@ -387,7 +387,7 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             region,
             ...serverUrls,
         });
-        config.use(name).save();
+        await config.use(name).save();
     } else {
         await config.createProfile(name, target, region).start(options.onResult);
     }
@@ -663,7 +663,7 @@ export async function tryRefreshToken() {
         console.log('No profile is selected. Run `vertesia profiles use <name>` to select a profile');
         process.exit(1);
     }
-    if (shouldRefreshProfileToken(config.current)) {
+    if (await shouldRefreshProfileToken(config.current)) {
         console.log();
         console.log(colors.bold('Operation Failed:'), colors.red('Authentication token expired!'));
         console.log();

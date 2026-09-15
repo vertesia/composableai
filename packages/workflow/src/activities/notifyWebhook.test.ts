@@ -14,6 +14,7 @@ import {
     type NotifyWebhookResult,
     notifyWebhook,
     type WebhookNotificationPayload,
+    webhookLogTarget,
 } from './notifyWebhook.js';
 
 const mockValidateUrl = vi.hoisted(() => vi.fn());
@@ -43,6 +44,14 @@ vi.stubGlobal('fetch', vi.fn());
 
 let testEnv: MockActivityEnvironment;
 const mockFetch = vi.mocked(fetch);
+
+describe('webhookLogTarget', () => {
+    it('removes credentials, query parameters, and fragments', () => {
+        expect(webhookLogTarget('https://user:secret@example.test/hook?token=sensitive#fragment')).toBe(
+            'https://example.test/hook',
+        );
+    });
+});
 
 beforeAll(async () => {
     testEnv = new MockActivityEnvironment();

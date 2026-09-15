@@ -1,4 +1,4 @@
-import type { FacetBucket } from '@vertesia/common';
+import type { FacetBucket, ListWorkflowRunsPayload } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     FilterBar,
@@ -8,7 +8,12 @@ import {
     FilterProvider,
 } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import {
+    createSearchQueryKeyGuard,
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+} from './utils/SearchInterface';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
 
@@ -17,16 +22,30 @@ interface WorkflowExecutionsFacetsNavProps {
         status?: FacetBucket[];
         initiated_by?: FacetBucket[];
     };
-    search: SearchInterface;
+    search: WorkflowRunsSearchInterface;
 }
+
+const workflowExecutionFilterNames = [
+    'search_term',
+    'status',
+    'initiated_by',
+    'start',
+    'end',
+    'has_reported_errors',
+] as const satisfies readonly (keyof ListWorkflowRunsPayload)[];
+
+type WorkflowExecutionFilterName = (typeof workflowExecutionFilterNames)[number];
+type WorkflowExecutionFilterGroup = Omit<FilterGroup, 'name'> & { name: WorkflowExecutionFilterName };
+type WorkflowRunsSearchInterface = SearchInterface<ListWorkflowRunsPayload>;
+const isWorkflowExecutionFilterName = createSearchQueryKeyGuard<ListWorkflowRunsPayload>(workflowExecutionFilterNames);
 
 // Hook to create filter groups for workflow executions
 export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFacetsNavProps['facets']): FilterGroup[] {
-    const customFilterGroups: FilterGroup[] = [];
+    const customFilterGroups: WorkflowExecutionFilterGroup[] = [];
 
     customFilterGroups.push({
         placeholder: 'Workflow Name or Workflow Run ID',
-        name: 'name',
+        name: 'search_term',
         type: 'text',
         options: [],
     });
@@ -37,7 +56,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
             name: 'status',
             placeholder: 'Status',
         });
-        customFilterGroups.push(statusFilterGroup);
+        customFilterGroups.push({ ...statusFilterGroup, name: 'status' });
     }
 
     if (facets.initiated_by) {
@@ -46,7 +65,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
             name: 'initiated_by',
             placeholder: 'Initiated By',
         });
-        customFilterGroups.push(initiatedByFilterGroup);
+        customFilterGroups.push({ ...initiatedByFilterGroup, name: 'initiated_by' });
     }
 
     const dateAfterFilterGroup = {
@@ -54,7 +73,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         placeholder: 'Date After',
         type: 'date' as const,
         multiple: false,
-    };
+    } satisfies WorkflowExecutionFilterGroup;
     customFilterGroups.push(dateAfterFilterGroup);
 
     const dateBeforeFilterGroup = {
@@ -62,7 +81,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         placeholder: 'Date Before',
         type: 'date' as const,
         multiple: false,
-    };
+    } satisfies WorkflowExecutionFilterGroup;
     customFilterGroups.push(dateBeforeFilterGroup);
 
     const hasReportedErrorsFilterGroup = {
@@ -74,14 +93,14 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
             { label: 'Yes', value: 'true' },
             { label: 'No', value: 'false' },
         ],
-    };
+    } satisfies WorkflowExecutionFilterGroup;
     customFilterGroups.push(hasReportedErrorsFilterGroup);
 
     return customFilterGroups;
 }
 
 // Hook to create filter change handler for workflow executions
-export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
+export function useWorkflowExecutionsFilterHandler(search: WorkflowRunsSearchInterface) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             search.clearFilters();
@@ -92,20 +111,21 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
 
         newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
+                if (!isWorkflowExecutionFilterName(filter.name)) {
+                    return;
+                }
+
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
 
-                if (filterName === 'name') {
-                    setSearchQueryValue(search, 'search_term', filterValue);
-                    setSearchQueryValue(search, 'name', filterValue);
-                } else if (filterName === 'has_reported_errors') {
+                if (filterName === 'has_reported_errors') {
                     // Convert string "true"/"false" to boolean
                     const stringValue = Array.isArray(filterValue) ? filterValue[0] : filterValue;
                     // Only set the filter if we have a valid value
                     if (stringValue === 'true' || stringValue === 'false') {
                         setSearchQueryValue(search, filterName, stringValue === 'true');
                     }
-                } else {
+                } else if (typeof filterValue === 'string') {
                     setSearchQueryValue(search, filterName, filterValue);
                 }
             }

@@ -1,8 +1,8 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import dayjs from 'dayjs';
 import type React from 'react';
 import { useState } from 'react';
 import Calendar from 'react-calendar';
+import dayjs from '../../../../utils/dayjs.js';
 import { Button } from '../../button';
 import { calendarStyles } from '../filter-styles';
 import type { Filter, FilterGroup } from '../types';
@@ -205,7 +205,7 @@ export default function DateFilter({
                                                 return 'bg-primary text-primary-foreground rounded-e-md font-semibold';
                                             }
                                             if (currentDate > startDate && currentDate < endDate) {
-                                                return 'bg-primary/20 text-primary font-medium';
+                                                return 'bg-info text-info font-medium';
                                             }
                                         } else {
                                             // Only start date selected

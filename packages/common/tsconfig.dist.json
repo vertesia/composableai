@@ -11,7 +11,10 @@
         "outDir": "./lib"
     },
     "include": [
-        "src"
+        "src",
+        // tsc's default `include` globs only match .ts — the generated components artifact
+        // is imported by `src/api-contract/index.ts` and must be listed explicitly.
+        "src/api-contract/components.generated.json"
     ],
     "exclude": [
         "**/*.test.*",

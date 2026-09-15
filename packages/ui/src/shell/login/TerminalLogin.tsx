@@ -220,14 +220,14 @@ function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenPro
         <>
             <div className="w-1/3">
                 <div className="mb-4 text-xl font-semibold text-info">Authorizing client on {envName} environment.</div>
-                <div className="mb-2 text-md text-muted-foreground">
+                <div className="mb-2 text-base text-muted">
                     <div>{t('login.terminal.clientWantsAuth')}</div>
                     <div>
                         The client app code is <b className="text-foreground">{clientInfo.code}</b>. You can check if
                         the code is correct in the terminal.
                     </div>
                 </div>
-                <div className="mb-2 text-sm text-muted-foreground">
+                <div className="mb-2 text-sm text-muted">
                     <div>{t('login.terminal.chooseAccountProject')}</div>
                     <div>{t('login.terminal.profileNameNote')}</div>
                 </div>
@@ -307,15 +307,15 @@ function ProfileForm({ allProjects, data, onAccept }: Readonly<ProfileFormProps>
     return (
         <div className="w-1/3">
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted-foreground">{t('login.terminal.profileName')}</span>
+                <span className="font-semibold text-muted">{t('login.terminal.profileName')}</span>
                 <Input type="text" value={currentData.profile} onChange={onChangeProfile} />
             </div>
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted-foreground">{t('login.terminal.account')}</span>
+                <span className="font-semibold text-muted">{t('login.terminal.account')}</span>
                 <SelectAccount value={currentData.account} onChange={onChangeAccount} accounts={accounts || []} />
             </div>
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted-foreground">{t('login.terminal.project')}</span>
+                <span className="font-semibold text-muted">{t('login.terminal.project')}</span>
                 <SelectProject value={currentData.project} onChange={onChangeProject} projects={projects} />
             </div>
             <div className="mb-4 text-sm text-attention">{t('login.terminal.browserPermissionNote')}</div>
