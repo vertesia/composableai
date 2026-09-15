@@ -176,9 +176,14 @@ export class DocumentSearch implements SearchInterface {
     }
 
     computeFacets(_query: ObjectSearchQuery) {
-        this._facetsRequest().then((facets) => {
-            this.facets.value = facets;
-        });
+        this._facetsRequest()
+            .then((facets) => {
+                this.facets.value = facets;
+            })
+            .catch((err: unknown) => {
+                const error = err instanceof Error ? err : new Error(String(err));
+                this.result.value = { ...this.result.value, error };
+            });
     }
 
     async _search(loadMore = false, noFacets = false): Promise<boolean> {
