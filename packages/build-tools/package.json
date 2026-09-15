@@ -38,7 +38,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "catalog:",
         "vite": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",

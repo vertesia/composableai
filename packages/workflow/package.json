@@ -32,7 +32,7 @@
         "@types/tmp": "^0.2.6",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.1125.0",

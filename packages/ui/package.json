@@ -127,7 +127,7 @@
         "rolldown": "catalog:",
         "tailwindcss": "^4.3.3",
         "typescript": "catalog:",
-        "vitest": "^4.1.11",
+        "vitest": "catalog:",
         "vitest-axe": "^0.1.0",
         "wcag-contrast": "^3.0.0"
     },

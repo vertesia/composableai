@@ -88,7 +88,7 @@
         "tslib": "^2.8.1",
         "typescript": "catalog:",
         "vite": "catalog:",
-        "vitest": "^4.1.11",
+        "vitest": "catalog:",
         "vite-plugin-serve-static": "^2.2.1"
     },
     "dependencies": {
