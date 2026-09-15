@@ -86,8 +86,8 @@ const agentStreamProvider: AgentStreamProvider = {
     async streamMessages(id, onMessage, since, signal, options) {
         // Call onHistoryLoaded once, then replay those historical messages through onMessage.
         // Continue delivering live messages through onMessage. Honor signal, release transport
-        // resources on abort, and preserve payloads passed to the caller-provided exit function.
-        // Resolve when the stream finishes and reject transport failures.
+        // resources on abort, provide an exit function to onMessage, and resolve with the payload
+        // passed to it. Resolve normally when the transport finishes; reject transport failures.
     },
 };
 

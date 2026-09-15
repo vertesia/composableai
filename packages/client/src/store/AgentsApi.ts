@@ -71,9 +71,9 @@ export type AgentStreamMessageCallback = (message: AgentMessage, exitFn?: (paylo
  *
  * Implementations own the full stream lifecycle. Call `onHistoryLoaded` once before replaying
  * those historical messages through `onMessage`, then deliver live messages through `onMessage`.
- * Honor `signal`, release transport resources when it aborts, and preserve any payload passed to
- * the caller-provided exit function when settling. Rejections propagate without falling back to
- * the built-in transport.
+ * Honor `signal`, release transport resources when it aborts, provide an exit function to
+ * `onMessage`, and resolve with the payload passed to that function. Rejections propagate without
+ * falling back to the built-in transport.
  *
  * The provider also owns authentication for its transport. Ordinary REST requests continue to use
  * the client's configured API key or auth callback; a host provider can use the same credential
