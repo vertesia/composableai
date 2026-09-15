@@ -33012,7 +33012,7 @@
       "down"
     ],
     "additionalProperties": false,
-    "description": "Ratings over the retained feedback entries."
+    "description": "Ratings over the retained feedback entries, one vote per rater: a user who rated the run and one of its answers counts once, by their latest rating."
   },
   "AgentRunFeedbackRating": {
     "type": "string",
