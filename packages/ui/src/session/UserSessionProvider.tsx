@@ -134,7 +134,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             session.setSession = setSession;
             getComposableToken(selectedAccount, selectedProject, Env.devAuthToken)
                 .then((res) => {
-                    session.login(res.rawToken).then(() => setSession(session.clone()));
+                    return session.login(res.rawToken).then(() => setSession(session.clone()));
                 })
                 .catch((err) => {
                     if (surfaceAuthError(err)) return;
@@ -169,7 +169,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             }
             getComposableToken(selectedAccount, selectedProject, token, false, shouldRedirectToCentralAuth())
                 .then((res) => {
-                    session.login(res.rawToken, { loadOnboardingStatus }).then(() => {
+                    return session.login(res.rawToken, { loadOnboardingStatus }).then(() => {
                         setSession(session.clone());
                         clearAuthHash();
                     });
@@ -238,7 +238,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         shouldRedirectToCentralAuth(),
                     )
                         .then((res) => {
-                            session
+                            return session
                                 .login(res.rawToken, { loadOnboardingStatus })
                                 .then(() => setSession(session.clone()));
                         })

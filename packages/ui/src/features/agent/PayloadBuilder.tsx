@@ -332,7 +332,12 @@ export class PayloadBuilder {
                 this._model_options = interaction.model_options as ModelOptions | undefined;
                 if (interaction.runtime?.environment) {
                     const envId = interaction.runtime.environment;
-                    this.vertesia.environments.retrieve(envId).then((environment) => (this.environment = environment));
+                    this.vertesia.environments
+                        .retrieve(envId)
+                        .then((environment) => (this.environment = environment))
+                        .catch(() => {
+                            this.environment = undefined;
+                        });
                 }
             }
             this.onStateChanged();

@@ -123,9 +123,10 @@ jobs:
           fi
 
           # npm dependency PRs touch manifests/lockfiles; github-actions PRs touch
-          # workflow/action files. Anything outside these is not an eligible Renovate
+          # workflow/action files. The plugin workspace template is also a dependency manifest.
+          # Anything outside these is not an eligible Renovate
           # update and must not be auto-merged.
-          disallowed_files="$(gh pr diff "$pr_url" --repo "$REPO" --name-only | grep -vE '(^|/)(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)$|^\.github/workflows/[^/]+\.ya?ml$|^\.github/actions/.+$' || true)"
+          disallowed_files="$(gh pr diff "$pr_url" --repo "$REPO" --name-only | grep -vE '(^|/)(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)$|^templates/plugin-template/pnpm-workspace\.yaml\.template$|^\.github/workflows/[^/]+\.ya?ml$|^\.github/actions/.+$' || true)"
           if [[ -n "$disallowed_files" ]]; then
             echo "Skipping PR #$pr_number: PR changes files outside supported dependency manifests/lockfiles."
             echo "$disallowed_files"

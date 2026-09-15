@@ -413,10 +413,12 @@ describe('collaborative Markdown actions', () => {
         await user.click(await screen.findByRole('menuitem', { name: 'Paragraph' }));
 
         const editor = await screen.findByRole('textbox');
-        await user.click(editor);
+        // Wait for the insertion template to hydrate, then replace it regardless of the initial caret position.
+        await waitFor(() => expect(editor.textContent).toBe('Paragraph'));
+        await user.tripleClick(editor);
         // Paste in one operation — char-by-char typing races ProseMirror in jsdom and drops chars.
         await user.paste('Inserted paragraph.');
-        await waitFor(() => expect(editor.textContent ?? '').toContain('Inserted paragraph.'));
+        await waitFor(() => expect(editor.textContent).toBe('Inserted paragraph.'));
         fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
         await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));
@@ -425,7 +427,7 @@ describe('collaborative Markdown actions', () => {
                 action: 'edit',
                 user_change: {
                     before: 'Original paragraph.',
-                    after: expect.stringMatching(/^Original paragraph\.\n\n.*Inserted paragraph\.$/),
+                    after: 'Original paragraph.\n\nInserted paragraph.',
                 },
             }),
         );

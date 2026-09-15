@@ -40,7 +40,7 @@
         "react": "19.2.8",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "exports": {
         ".": {
