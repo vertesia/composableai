@@ -29,7 +29,7 @@ import {
     Wrench,
 } from 'lucide-react';
 import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AgentRunFeedback, agentMessageFeedbackId } from '../AgentRunFeedback';
+import { AgentRunFeedback, agentMessageFeedbackId, isAgentMessageRatable } from '../AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
@@ -823,7 +823,7 @@ function SummaryMessage({
                     </MarkdownRenderer>
                 </div>
             )}
-            {feedbackAgentRunId && message.type === AgentMessageType.ANSWER && (
+            {feedbackAgentRunId && isAgentMessageRatable(message) && (
                 <AgentRunFeedback
                     agentRunId={feedbackAgentRunId}
                     messageId={agentMessageFeedbackId(message)}
