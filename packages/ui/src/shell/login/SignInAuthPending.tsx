@@ -28,10 +28,10 @@ export default function SignInAuthPending({ provider, onCancel }: SignInAuthPend
             </div>
 
             <div className="w-full flex flex-col gap-2">
-                <SignInStepButton variant="loading">
+                <div className="flex justify-center">
                     <Spinner />
-                    <span>{t('auth.pending.authenticating')}</span>
-                </SignInStepButton>
+                </div>
+                <span>{t('auth.pending.authenticating')}</span>
                 {onCancel && (
                     <SignInStepButton variant="ghost" onClick={onCancel}>
                         {t('auth.pending.cancel')}

@@ -42,6 +42,7 @@ class UserSession {
         }
 
         this.logout = this.logout.bind(this);
+        this.signOut = this.signOut.bind(this);
     }
 
     get store() {
@@ -249,6 +250,9 @@ class UserSession {
     }
 
     async fetchOnboardingStatus(): Promise<boolean> {
+        if (!this.project?.id) {
+            return false;
+        }
         if (this.onboardingComplete) {
             console.log('Onboarding already completed');
             return false;

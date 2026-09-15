@@ -1,8 +1,8 @@
-import { Badge, Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { Badge, Card, CardContent, useFetch } from '@vertesia/ui/core';
 import { NavLink, useParams } from '@vertesia/ui/router';
 import { useMemo } from 'react';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 import { TYPE_VARIANTS } from '../components/typeVariants.js';
 
@@ -60,12 +60,7 @@ export function SkillCollection() {
 
     if (error)
         return <div className="p-6 text-destructive">Failed to load skill collection &ldquo;{collection}&rdquo;.</div>;
-    if (!data)
-        return (
-            <div className="flex h-64 items-center justify-center text-muted">
-                <Spinner />
-            </div>
-        );
+    if (!data) return <AdminLoadingPage />;
 
     return (
         <DetailPage

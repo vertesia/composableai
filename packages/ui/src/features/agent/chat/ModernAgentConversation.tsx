@@ -45,6 +45,7 @@ import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
+import { AgentRunFeedbackProvider } from './AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
@@ -2808,47 +2809,50 @@ function ModernAgentConversationInner({
             {messages.length === 0 && !effectiveIsCompleted && pendingStartMessage && pendingStartTimestamp ? (
                 <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
             ) : (
-                <AllMessagesMixed
-                    messages={renderedMessages}
-                    workstreamSourceMessages={renderedWorkstreamSourceMessages}
-                    bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                    isCompleted={displayedIsCompleted}
-                    plan={getActivePlan.plan}
-                    workstreamStatus={getActivePlan.workstreamStatus}
-                    showPlanPanel={showRightPanelProp && showSlidingPanel}
-                    onTogglePlanPanel={handleTogglePlanPanel}
-                    plans={plans}
-                    activePlanIndex={activePlanIndex}
-                    onChangePlan={handleChangePlan}
-                    taskLabels={taskLabels}
-                    streamingMessages={displayedStreamingMessages}
-                    onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
-                    onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
-                    messageItemClassNames={messageItemClassNames}
-                    messageStyleOverrides={messageStyleOverrides}
-                    toolCallGroupClassNames={toolCallGroupClassNames}
-                    hideToolCallsInViewMode={hideToolCallsInViewMode}
-                    streamingMessageClassNames={streamingMessageClassNames}
-                    batchProgressPanelClassNames={batchProgressPanelClassNames}
-                    artifactRunId={agentRunId}
-                    viewMode={viewMode}
-                    hideWorkstreamTabs={hideWorkstreamTabs}
-                    workingIndicatorClassName={workingIndicatorClassName}
-                    messageListClassName={messageListClassName}
-                    StoreLinkComponent={effectiveStoreLinkComponent}
-                    CollectionLinkComponent={CollectionLinkComponent}
-                    prependFriendlyMessage={prependFriendlyMessage}
-                    initialRequestData={initialRequestData}
-                    initialRequestSchema={initialRequestSchema}
-                    initialRequestTitle={initialRequestTitle}
-                    initialRequestTemplate={initialRequestTemplate}
-                    showInitialRequest={initialHistoryStatus === 'empty' && messages.length === 0}
-                    hiddenMessageTypes={hiddenMessageTypes}
-                    disableAutoScroll={!isPlaybackLive}
-                    renderRequestInputControls={!shouldShowRequestInputOverlay}
-                    activeWorkstream={activeWorkstream}
-                    onActiveWorkstreamChange={setActiveWorkstream}
-                />
+                <AgentRunFeedbackProvider agentRunId={agentRunId}>
+                    <AllMessagesMixed
+                        messages={renderedMessages}
+                        workstreamSourceMessages={renderedWorkstreamSourceMessages}
+                        bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
+                        isCompleted={displayedIsCompleted}
+                        plan={getActivePlan.plan}
+                        workstreamStatus={getActivePlan.workstreamStatus}
+                        showPlanPanel={showRightPanelProp && showSlidingPanel}
+                        onTogglePlanPanel={handleTogglePlanPanel}
+                        plans={plans}
+                        activePlanIndex={activePlanIndex}
+                        onChangePlan={handleChangePlan}
+                        taskLabels={taskLabels}
+                        streamingMessages={displayedStreamingMessages}
+                        onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                        onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
+                        messageItemClassNames={messageItemClassNames}
+                        messageStyleOverrides={messageStyleOverrides}
+                        toolCallGroupClassNames={toolCallGroupClassNames}
+                        hideToolCallsInViewMode={hideToolCallsInViewMode}
+                        streamingMessageClassNames={streamingMessageClassNames}
+                        batchProgressPanelClassNames={batchProgressPanelClassNames}
+                        artifactRunId={agentRunId}
+                        agentRunId={agentRunId}
+                        viewMode={viewMode}
+                        hideWorkstreamTabs={hideWorkstreamTabs}
+                        workingIndicatorClassName={workingIndicatorClassName}
+                        messageListClassName={messageListClassName}
+                        StoreLinkComponent={effectiveStoreLinkComponent}
+                        CollectionLinkComponent={CollectionLinkComponent}
+                        prependFriendlyMessage={prependFriendlyMessage}
+                        initialRequestData={initialRequestData}
+                        initialRequestSchema={initialRequestSchema}
+                        initialRequestTitle={initialRequestTitle}
+                        initialRequestTemplate={initialRequestTemplate}
+                        showInitialRequest={initialHistoryStatus === 'empty' && messages.length === 0}
+                        hiddenMessageTypes={hiddenMessageTypes}
+                        disableAutoScroll={!isPlaybackLive}
+                        renderRequestInputControls={!shouldShowRequestInputOverlay}
+                        activeWorkstream={activeWorkstream}
+                        onActiveWorkstreamChange={setActiveWorkstream}
+                    />
+                </AgentRunFeedbackProvider>
             )}
 
             {shouldShowRequestInputOverlay ? (

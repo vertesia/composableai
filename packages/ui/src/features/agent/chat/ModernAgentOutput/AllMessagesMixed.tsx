@@ -29,8 +29,9 @@ import {
     Wrench,
 } from 'lucide-react';
 import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AgentRunFeedback, agentMessageFeedbackId } from '../AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
-import { AskUserWidget } from '../AskUserWidget';
+import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
@@ -309,6 +310,8 @@ interface SummaryMessageProps {
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+    /** When set, answers carry a thumbs up / down rating control scoped to the message. */
+    feedbackAgentRunId?: string;
 }
 
 function SummaryWorkstreamLaunchMessage({
@@ -677,6 +680,7 @@ function SummaryMessage({
     requestInputAnswered = false,
     StoreLinkComponent,
     CollectionLinkComponent,
+    feedbackAgentRunId,
 }: SummaryMessageProps) {
     const { router } = useRouterContext();
     const content =
@@ -758,11 +762,12 @@ function SummaryMessage({
     const requestInputDetails = message.details as AskUserMessageDetails | undefined;
     if (message.type === AgentMessageType.REQUEST_INPUT && requestInputDetails?.ux) {
         const uxConfig = requestInputDetails.ux;
+        const hasSelectableOptions = isAskUserOptions(uxConfig.options) && uxConfig.options.length > 0;
         return (
             <div className="mx-auto w-full max-w-3xl px-1">
                 <AskUserWidget
                     question={content}
-                    options={uxConfig.options}
+                    options={hasSelectableOptions ? uxConfig.options : undefined}
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}
                     onSelect={(optionId) =>
@@ -776,7 +781,7 @@ function SummaryMessage({
                     onMultiSelect={(optionIds) =>
                         sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
                     }
-                    allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                    allowFreeResponse={!hasSelectableOptions || !!uxConfig.free_response}
                     placeholder={uxConfig.free_response?.placeholder}
                     submitLabel={uxConfig.free_response?.submit_label}
                     onSubmit={(value) =>
@@ -793,7 +798,7 @@ function SummaryMessage({
     const isError = message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING;
 
     return (
-        <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
+        <div className="group mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
             {isError && (
                 <div className="mb-2 text-xs font-medium text-destructive">
                     {message.type === AgentMessageType.WARNING ? 'Warning' : 'Error'}
@@ -817,6 +822,14 @@ function SummaryMessage({
                         {content}
                     </MarkdownRenderer>
                 </div>
+            )}
+            {feedbackAgentRunId && message.type === AgentMessageType.ANSWER && (
+                <AgentRunFeedback
+                    agentRunId={feedbackAgentRunId}
+                    messageId={agentMessageFeedbackId(message)}
+                    tone="inline"
+                    className="mt-1 -ms-1.5 print:hidden"
+                />
             )}
         </div>
     );
@@ -2300,11 +2313,13 @@ function SummaryActivityRow({
                                 <div className="mt-3 space-y-3">
                                     {requestInputMessages.map((message) => {
                                         const uxConfig = message.details.ux;
+                                        const hasSelectableOptions =
+                                            isAskUserOptions(uxConfig.options) && uxConfig.options.length > 0;
                                         return (
                                             <AskUserWidget
                                                 key={getAgentMessageRenderKey(message, 'work-request-input')}
                                                 question={getRequestInputDisplayText(message)}
-                                                options={uxConfig.options}
+                                                options={hasSelectableOptions ? uxConfig.options : undefined}
                                                 variant={uxConfig.variant}
                                                 multiSelect={uxConfig.multiSelect}
                                                 onSelect={(optionId) =>
@@ -2322,9 +2337,7 @@ function SummaryActivityRow({
                                                         optionIds.join(', '),
                                                     )
                                                 }
-                                                allowFreeResponse={
-                                                    !uxConfig.options?.length || !!uxConfig.free_response
-                                                }
+                                                allowFreeResponse={!hasSelectableOptions || !!uxConfig.free_response}
                                                 placeholder={uxConfig.free_response?.placeholder}
                                                 submitLabel={uxConfig.free_response?.submit_label}
                                                 onSubmit={(value) =>
@@ -2479,6 +2492,8 @@ interface AllMessagesMixedProps {
     batchProgressPanelClassNames?: BatchProgressPanelClassNames;
     /** Run ID used to resolve artifact references in streaming chart specs */
     artifactRunId?: string;
+    /** Agent run to record answer ratings against. Omit to render answers without a rating control. */
+    agentRunId?: string;
     /** Hide the workstream tabs entirely */
     hideWorkstreamTabs?: boolean;
     /** className override for the working indicator container */
@@ -2533,6 +2548,7 @@ function AllMessagesMixedComponent({
     streamingMessageClassNames,
     batchProgressPanelClassNames,
     artifactRunId,
+    agentRunId,
     hideWorkstreamTabs,
     workingIndicatorClassName,
     messageListClassName,
@@ -3588,6 +3604,7 @@ function AllMessagesMixedComponent({
                                                     messageStyleOverrides={messageStyleOverrides}
                                                     StoreLinkComponent={StoreLinkComponent}
                                                     CollectionLinkComponent={CollectionLinkComponent}
+                                                    feedbackAgentRunId={agentRunId}
                                                 />
                                             </MessageErrorBoundary>
                                         </TimelineEntry>
@@ -3708,6 +3725,7 @@ function AllMessagesMixedComponent({
                                             )}
                                             StoreLinkComponent={StoreLinkComponent}
                                             CollectionLinkComponent={CollectionLinkComponent}
+                                            feedbackAgentRunId={agentRunId}
                                         />
                                     </MessageErrorBoundary>
                                 );

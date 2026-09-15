@@ -1,7 +1,7 @@
-import { Badge, Spinner, useFetch } from '@vertesia/ui/core';
+import { Badge, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 
 interface SkillDefinitionResponse {
@@ -36,12 +36,7 @@ export function SkillDetail() {
     );
 
     if (error) return <div className="p-6 text-destructive">Failed to load skill &ldquo;{name}&rdquo;.</div>;
-    if (!skill)
-        return (
-            <div className="flex h-64 items-center justify-center text-muted">
-                <Spinner />
-            </div>
-        );
+    if (!skill) return <AdminLoadingPage />;
 
     return (
         <DetailPage

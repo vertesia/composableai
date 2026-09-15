@@ -30,6 +30,10 @@ export interface AgentRunnerFilterQuery {
     initiated_by?: string;
     start?: string;
     end?: string;
+    /** Evaluation severity (`high`, `medium`, `low`, `none`) or `unrated` for runs no detector looked at. */
+    evaluation?: string;
+    /** Last user rating on the run: `up` or `down`. */
+    feedback?: string;
 }
 
 const agentRunnerFilterNames = [
@@ -40,6 +44,8 @@ const agentRunnerFilterNames = [
     'initiated_by',
     'start',
     'end',
+    'evaluation',
+    'feedback',
 ] as const satisfies readonly (keyof AgentRunnerFilterQuery)[];
 const isAgentRunnerFilterName = createSearchQueryKeyGuard<AgentRunnerFilterQuery>(agentRunnerFilterNames);
 
@@ -50,6 +56,10 @@ interface AgentRunnerFacetsNavProps {
         interactions?: EnrichedFacetBucket[];
         /** `run_kind` buckets — `agent` (autonomous runs) and `process` (process runs). */
         kinds?: FacetBucket[];
+        /** Evaluation severity buckets, `unrated` standing for runs without an evaluation. */
+        evaluation?: FacetBucket[];
+        /** Last-rating buckets (`up` / `down`). */
+        feedback?: FacetBucket[];
     };
     search: SearchInterface<AgentRunnerFilterQuery>;
     actions?: React.ReactNode[];
@@ -105,6 +115,22 @@ export function useAgentRunnerFilterGroups(facets: AgentRunnerFacetsNavProps['fa
             buckets: facets.initiated_by || [],
             name: 'initiated_by',
             placeholder: 'Initiated By',
+        }),
+    );
+
+    customFilterGroups.push(
+        VStringFacet({
+            buckets: facets.evaluation || [],
+            name: 'evaluation',
+            placeholder: 'Evaluation',
+        }),
+    );
+
+    customFilterGroups.push(
+        VStringFacet({
+            buckets: facets.feedback || [],
+            name: 'feedback',
+            placeholder: 'Feedback',
         }),
     );
 

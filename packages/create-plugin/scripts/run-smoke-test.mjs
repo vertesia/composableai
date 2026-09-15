@@ -71,7 +71,15 @@ try {
             );
             exitCode = 1;
         } else {
-            console.log(`smoke test: scaffolded at ${projectPath} OK`);
+            // Check the generated source, since substitutions can introduce lint errors
+            // that are absent from the template itself (for example unused imports).
+            const lint = spawnSync('biome', ['lint', 'src'], { cwd: projectPath, stdio: 'inherit' });
+            if (lint.status !== 0) {
+                console.error('smoke test: generated source failed lint', lint.error ?? '');
+                exitCode = lint.status ?? 1;
+            } else {
+                console.log(`smoke test: scaffolded and linted at ${projectPath} OK`);
+            }
         }
     }
 } finally {

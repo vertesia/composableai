@@ -8,7 +8,8 @@
     "answers": {
       "STUDIO_URL": "https://studio-server-dev-main.api.dev1.vertesia.io",
       "ZENO_URL": "https://zeno-server-dev-main.api.dev1.vertesia.io",
-      "STS_URL": "https://sts.dev1.vertesia.io"
+      "STS_URL": "https://sts.dev1.vertesia.io",
+      "AUTH_SERVER_URL": "https://auth.dev1.vertesia.io/"
     },
     "pnpmWorkspace": {
       "minimumReleaseAgeExclude": ["@vertesia/*", "@llumiverse/*"]
@@ -116,6 +117,16 @@
           "title": "Europe (eu1)",
           "description": "EU region — api.eu1.vertesia.io / sts.eu1.vertesia.io",
           "value": "eu1"
+        },
+        {
+          "title": "Development GCP (dev1)",
+          "value": "dev1",
+          "devOnly": true
+        },
+        {
+          "title": "Development AWS (dev2)",
+          "value": "dev2",
+          "devOnly": true
         }
       ]
     }
@@ -138,7 +149,9 @@
       "transform": "map",
       "map": {
         "us1": "https://api.vertesia.io",
-        "eu1": "https://api.eu1.vertesia.io"
+        "eu1": "https://api.eu1.vertesia.io",
+        "dev1": "https://api.dev1.vertesia.io",
+        "dev2": "https://api.dev2.vertesia.io"
       }
     },
     "ZENO_URL": {
@@ -146,7 +159,19 @@
       "transform": "map",
       "map": {
         "us1": "https://api.vertesia.io",
-        "eu1": "https://api.eu1.vertesia.io"
+        "eu1": "https://api.eu1.vertesia.io",
+        "dev1": "https://api.dev1.vertesia.io",
+        "dev2": "https://api.dev2.vertesia.io"
+      }
+    },
+    "AUTH_SERVER_URL": {
+      "from": "REGION",
+      "transform": "map",
+      "map": {
+        "us1": "https://auth.us1.vertesia.io/",
+        "eu1": "https://auth.eu1.vertesia.io/",
+        "dev1": "https://auth.dev1.vertesia.io/",
+        "dev2": "https://internal-auth.vertesia.app/"
       }
     },
     "STS_URL": {
@@ -154,7 +179,9 @@
       "transform": "map",
       "map": {
         "us1": "https://sts.vertesia.io",
-        "eu1": "https://sts.eu1.vertesia.io"
+        "eu1": "https://sts.eu1.vertesia.io",
+        "dev1": "https://sts.dev1.vertesia.io",
+        "dev2": "https://sts.dev2.vertesia.io"
       }
     }
   },
@@ -165,6 +192,7 @@
     "src/tool-server/config.ts",
     "src/modules/content-app/resources/processes/review-workflow.ts",
     "src/ui/env.ts",
+    "src/modules/app/branding/index.ts",
     "src/ui/plugin.tsx",
     "tests/e2e/app.spec.ts",
     ".env.app.template",
