@@ -7,6 +7,7 @@ import {
     type AgentMessage,
     type AgentRun,
     type AgentRunDetailsStreamEvent,
+    type AgentRunFilesResponse,
     type AgentRunInternals,
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
@@ -30,11 +31,13 @@ import {
     type RecordAgentRunPayload,
     type RecordProcessRunPayload,
     type RecordRunPayload,
+    type RegisterAgentRunFilePayload,
     type RunsByAgentAnalyticsResponse,
     type SearchAgentRunsQuery,
     type SearchAgentRunsResponse,
     type SignalAgentPayload,
     type SignalAgentResponse,
+    type StartAgentRunPayload,
     type TerminateAgentRunResponse,
     type TimeToFirstResponseAnalyticsResponse,
     type TokenUsageAnalyticsResponse,
@@ -828,6 +831,29 @@ export class AgentsApi extends ApiTopic {
         if (disposition) query.disposition = disposition;
         if (fileName) query.filename = fileName;
         return this.get(`/${id}/artifacts/${escapeArtifactPathDelimiters(path)}`, { query });
+    }
+
+    /**
+     * Record a file uploaded into a draft run's artifact space and start its text extraction.
+     * Call once per file as each upload lands.
+     */
+    registerFile(runId: string, payload: RegisterAgentRunFilePayload): Promise<AgentRunFilesResponse> {
+        return this.post(`/${runId}/files`, { payload });
+    }
+
+    /** Per-file status of a draft run's attachments. */
+    getFiles(runId: string): Promise<AgentRunFilesResponse> {
+        return this.get(`/${runId}/files`);
+    }
+
+    /** Remove an attachment from a draft run, cancelling any extraction in flight. */
+    removeFile(runId: string, fileId: string): Promise<AgentRunFilesResponse> {
+        return this.del(`/${runId}/files/${fileId}`);
+    }
+
+    /** Start the conversation for a run created with `draft: true`. */
+    startDraft(runId: string, payload: StartAgentRunPayload = {}): Promise<AgentRun> {
+        return this.post(`/${runId}/start`, { payload });
     }
 
     /**
