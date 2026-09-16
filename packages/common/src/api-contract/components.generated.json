@@ -1,5 +1,43 @@
 {
+<<<<<<< HEAD
   "CreateDelegationGrantPayload": {
+=======
+  "AccountApiVersionPolicy": {
+    "type": "object",
+    "properties": {
+      "default_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      },
+      "override_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      }
+    }
+  },
+  "AccountType": {
+    "type": "string",
+    "enum": [
+      "vertesia",
+      "partner",
+      "free",
+      "customer",
+      "prospect",
+      "unknown"
+    ]
+  },
+  "AccountBilling": {
+>>>>>>> a5e2e35d (feat: add account API compatibility policy contract and client (#2212))
     "type": "object",
     "properties": {
       "schedule_id": {
