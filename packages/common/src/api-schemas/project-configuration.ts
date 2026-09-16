@@ -100,7 +100,8 @@ export const ProjectSearchPropertyMappingSchema = z
         id: 'ProjectSearchPropertyMapping',
         description:
             'Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full ' +
-            'reindex. Existing Elasticsearch fields cannot change type in place.',
+            'reindex. Existing Elasticsearch fields cannot change type in place. A `nested` mapping accepts no ' +
+            'scalar options; declare its searchable child fields as separate mappings below its path.',
     });
 
 /**
