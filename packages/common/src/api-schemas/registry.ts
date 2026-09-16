@@ -90,6 +90,9 @@ import {
     TimeResolutionSchema,
 } from './analytics.js';
 import {
+    AccountApiKeyArraySchema,
+    AccountApiKeySchema,
+    AccountApiKeyWithValueSchema,
     ApiKeyArraySchema,
     ApiKeyListQuerySchema,
     ApiKeyReadQuerySchema,
@@ -97,9 +100,11 @@ import {
     ApiKeySchema,
     ApiKeyWithValueSchema,
     AuthTokenResponseSchema,
+    CreateAccountApiKeyPayloadSchema,
     CreateApiKeyPayloadSchema,
     DeleteOperationResultSchema,
     ProjectRefArraySchema,
+    UpdateAccountApiKeyPayloadSchema,
     UpdateApiKeyPayloadSchema,
 } from './apikey.js';
 import {
@@ -841,6 +846,12 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     ApiKey: ApiKeySchema,
     ApiKeyArray: ApiKeyArraySchema,
     ApiKeyWithValue: ApiKeyWithValueSchema,
+    AccountApiKey: AccountApiKeySchema,
+    AccountApiKeyWithValue: AccountApiKeyWithValueSchema,
+    AccountApiKeyArray: AccountApiKeyArraySchema,
+    CreateAccountApiKeyPayload: CreateAccountApiKeyPayloadSchema,
+    UpdateAccountApiKeyPayload: UpdateAccountApiKeyPayloadSchema,
+
     ApiKeyReadResponse: ApiKeyReadResponseSchema,
     ApiKeyReadQuery: ApiKeyReadQuerySchema,
     CreateApiKeyPayload: CreateApiKeyPayloadSchema,
@@ -2408,6 +2419,11 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'AccountApiKey',
+    'AccountApiKeyWithValue',
+    'CreateAccountApiKeyPayload',
+    'UpdateAccountApiKeyPayload',
+
     'CreateDelegationGrantPayload',
     'DelegationGrant',
     // Process Test Lab request, fixture, and result contracts.

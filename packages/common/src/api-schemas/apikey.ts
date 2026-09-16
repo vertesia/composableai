@@ -207,3 +207,34 @@ export type ApiKeyReadResponseFromSchema = z.infer<typeof ApiKeyReadResponseSche
 export type CreateApiKeyPayloadFromSchema = z.infer<typeof CreateApiKeyPayloadSchema>;
 export type UpdateApiKeyPayloadFromSchema = z.infer<typeof UpdateApiKeyPayloadSchema>;
 export type AuthTokenResponseFromSchema = z.infer<typeof AuthTokenResponseSchema>;
+
+/** Project-independent organization credentials, managed only by interactive administrators. */
+export const AccountApiKeySchema = ApiKeySchema.pick({
+    id: true,
+    name: true,
+    account: true,
+    enabled: true,
+    maskedValue: true,
+    created_by: true,
+    updated_by: true,
+    created_at: true,
+    updated_at: true,
+    expires_at: true,
+})
+    .extend({
+        scope: z.literal('account'),
+        profile: z.literal('account_admin_v1'),
+        last_used_at: z.string().meta({ format: 'date-time' }).optional(),
+    })
+    .meta({ id: 'AccountApiKey' });
+export const AccountApiKeyWithValueSchema = AccountApiKeySchema.extend({ value: z.string() }).meta({
+    id: 'AccountApiKeyWithValue',
+});
+export const AccountApiKeyArraySchema = z.array(AccountApiKeySchema).meta({ id: 'AccountApiKeyArray' });
+export const CreateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name: true, expires_at: true })
+    .extend({ name: z.string().trim().min(1) })
+    .meta({ id: 'CreateAccountApiKeyPayload' });
+export const UpdateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name: true, enabled: true })
+    .extend({ name: z.string().trim().min(1) })
+    .partial()
+    .meta({ id: 'UpdateAccountApiKeyPayload' });

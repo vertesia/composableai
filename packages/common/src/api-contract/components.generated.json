@@ -289,7 +289,15 @@
         "const": "stripe"
       },
       "portal_url": {
-        "type": "string"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Interactive billing portal URL; null for account API keys."
       }
     },
     "required": [
@@ -1303,6 +1311,25 @@
   "Permission": {
     "type": "string",
     "enum": [
+      "account:user:read",
+      "account:user:update",
+      "account:user:provision",
+      "account:user:deprovision",
+      "account:group:read",
+      "account:group:create",
+      "account:group:update",
+      "account:group:delete",
+      "account:group:members_write",
+      "account:membership:read",
+      "account:membership:create",
+      "account:membership:update",
+      "account:membership:delete",
+      "account:api_key:create",
+      "account:api_key:read",
+      "account:api_key:update",
+      "account:api_key:delete",
+      "account:billing:status_read",
+      "account:billing:portal_create",
       "schedule:delegate",
       "interaction:read",
       "interaction:write",
@@ -1545,6 +1572,172 @@
       "updated_at",
       "value"
     ],
+    "additionalProperties": false
+  },
+  "AccountApiKey": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "account": {
+        "type": "string"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "maskedValue": {
+        "type": "string"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "scope": {
+        "type": "string",
+        "const": "account"
+      },
+      "profile": {
+        "type": "string",
+        "const": "account_admin_v1"
+      },
+      "last_used_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "account",
+      "enabled",
+      "created_by",
+      "updated_by",
+      "created_at",
+      "updated_at",
+      "scope",
+      "profile"
+    ],
+    "additionalProperties": false
+  },
+  "AccountApiKeyWithValue": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "account": {
+        "type": "string"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "maskedValue": {
+        "type": "string"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "scope": {
+        "type": "string",
+        "const": "account"
+      },
+      "profile": {
+        "type": "string",
+        "const": "account_admin_v1"
+      },
+      "last_used_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "value": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "account",
+      "enabled",
+      "created_by",
+      "updated_by",
+      "created_at",
+      "updated_at",
+      "scope",
+      "profile",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "AccountApiKeyArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/AccountApiKey"
+    }
+  },
+  "CreateAccountApiKeyPayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateAccountApiKeyPayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "enabled": {
+        "type": "boolean"
+      }
+    },
     "additionalProperties": false
   },
   "ApiKeyReadResponse": {

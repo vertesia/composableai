@@ -1,4 +1,4 @@
-import { Permission, SystemRoles } from '@vertesia/common';
+import { ACCOUNT_SCOPED_PERMISSIONS, Permission, SystemRoles } from '@vertesia/common';
 import { type Role, type RolePartition, SystemRole } from './classes.js';
 
 class OrgMemberRole extends SystemRole {
@@ -22,6 +22,7 @@ class AdminRole extends OrgMemberRole {
 class ManagerRole extends OrgMemberRole {
     constructor() {
         super(SystemRoles.manager, Object.values(Permission));
+        for (const permission of ACCOUNT_SCOPED_PERMISSIONS) this.permissions.delete(permission);
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.manage_billing);
         this.permissions.delete(Permission.audit_read);
@@ -36,6 +37,7 @@ class DeveloperRole extends OrgMemberRole {
     constructor() {
         super(SystemRoles.developer, Object.values(Permission));
         this.permissions.delete(Permission.schedule_delegate);
+        for (const permission of ACCOUNT_SCOPED_PERMISSIONS) this.permissions.delete(permission);
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.project_admin);
         this.permissions.delete(Permission.project_settings_write);
@@ -149,7 +151,11 @@ class ReadOnlyAuditRole extends OrgMemberRole {
 
 class BillingRole extends OrgMemberRole {
     constructor() {
-        super(SystemRoles.billing, [Permission.manage_billing]);
+        super(SystemRoles.billing, [
+            Permission.manage_billing,
+            Permission.account_billing_status_read,
+            Permission.account_billing_portal_create,
+        ]);
     }
 }
 

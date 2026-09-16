@@ -12,6 +12,26 @@
  */
 
 export enum Permission {
+    account_user_read = 'account:user:read',
+    account_user_update = 'account:user:update',
+    account_user_provision = 'account:user:provision',
+    account_user_deprovision = 'account:user:deprovision',
+    account_group_read = 'account:group:read',
+    account_group_create = 'account:group:create',
+    account_group_update = 'account:group:update',
+    account_group_delete = 'account:group:delete',
+    account_group_members_write = 'account:group:members_write',
+    account_membership_read = 'account:membership:read',
+    account_membership_create = 'account:membership:create',
+    account_membership_update = 'account:membership:update',
+    account_membership_delete = 'account:membership:delete',
+    account_api_key_create = 'account:api_key:create',
+    account_api_key_read = 'account:api_key:read',
+    account_api_key_update = 'account:api_key:update',
+    account_api_key_delete = 'account:api_key:delete',
+    account_billing_status_read = 'account:billing:status_read',
+    account_billing_portal_create = 'account:billing:portal_create',
+
     schedule_delegate = 'schedule:delegate',
     int_read = 'interaction:read',
     int_write = 'interaction:write',
@@ -112,3 +132,26 @@ export const AbacScopes = ['document', 'collection', 'task'] as const;
  * `RoleDomain` type is inferred from it in `roles/types.ts`.
  */
 export const RoleDomains = ['system', 'content', 'tasks'] as const;
+
+/** These capabilities are granted only by account roles, never selected-project roles. */
+export const ACCOUNT_SCOPED_PERMISSIONS: readonly Permission[] = [
+    Permission.account_user_read,
+    Permission.account_user_update,
+    Permission.account_user_provision,
+    Permission.account_user_deprovision,
+    Permission.account_group_read,
+    Permission.account_group_create,
+    Permission.account_group_update,
+    Permission.account_group_delete,
+    Permission.account_group_members_write,
+    Permission.account_membership_read,
+    Permission.account_membership_create,
+    Permission.account_membership_update,
+    Permission.account_membership_delete,
+    Permission.account_api_key_create,
+    Permission.account_api_key_read,
+    Permission.account_api_key_update,
+    Permission.account_api_key_delete,
+    Permission.account_billing_status_read,
+    Permission.account_billing_portal_create,
+];
