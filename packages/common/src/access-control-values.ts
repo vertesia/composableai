@@ -12,6 +12,17 @@
  */
 
 export enum Permission {
+    account_user_read = 'account:user:read',
+    account_user_manage = 'account:user:manage',
+    account_group_read = 'account:group:read',
+    account_group_manage = 'account:group:manage',
+    account_membership_read = 'account:membership:read',
+    account_membership_manage = 'account:membership:manage',
+    account_api_key_read = 'account:api_key:read',
+    account_api_key_manage = 'account:api_key:manage',
+    account_billing_status_read = 'account:billing:status_read',
+    account_billing_portal_create = 'account:billing:portal_create',
+
     schedule_delegate = 'schedule:delegate',
     int_read = 'interaction:read',
     int_write = 'interaction:write',
@@ -112,3 +123,17 @@ export const AbacScopes = ['document', 'collection', 'task'] as const;
  * `RoleDomain` type is inferred from it in `roles/types.ts`.
  */
 export const RoleDomains = ['system', 'content', 'tasks'] as const;
+
+/** These capabilities are granted only by account roles, never selected-project roles. */
+export const ACCOUNT_SCOPED_PERMISSIONS: readonly Permission[] = [
+    Permission.account_user_read,
+    Permission.account_user_manage,
+    Permission.account_group_read,
+    Permission.account_group_manage,
+    Permission.account_membership_read,
+    Permission.account_membership_manage,
+    Permission.account_api_key_read,
+    Permission.account_api_key_manage,
+    Permission.account_billing_status_read,
+    Permission.account_billing_portal_create,
+];

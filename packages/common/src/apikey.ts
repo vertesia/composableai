@@ -80,6 +80,8 @@ export type ApiKeyListQuery = z.infer<typeof ApiKeyListQuerySchema>;
 export type ApiKeyReadQuery = z.infer<typeof ApiKeyReadQuerySchema>;
 
 export interface AuthTokenPayload {
+    credential_scope?: 'project' | 'account';
+    credential_profile?: 'account_admin_v1';
     delegation?: import('./delegation.js').DelegationTokenClaim;
     sub: string;
     name: string;
@@ -194,3 +196,13 @@ export enum PrincipalType {
     Agent = 'agent',
     Schedule = 'schedule',
 }
+
+export type AccountApiKey = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeySchema>;
+export type AccountApiKeyWithValue = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeyWithValueSchema>;
+export type AccountApiKeyArray = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeyArraySchema>;
+export type CreateAccountApiKeyPayload = z.infer<
+    typeof import('./api-schemas/apikey.js').CreateAccountApiKeyPayloadSchema
+>;
+export type UpdateAccountApiKeyPayload = z.infer<
+    typeof import('./api-schemas/apikey.js').UpdateAccountApiKeyPayloadSchema
+>;
