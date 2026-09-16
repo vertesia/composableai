@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ApiSchemaComponents } from '../api-contract/index.js';
-import { AccountApiKeySchema, AccountApiKeyWithValueSchema, ApiKeySchema } from './apikey.js';
+import {
+    AccountApiKeySchema,
+    AccountApiKeyWithValueSchema,
+    ApiKeySchema,
+    CreateAccountApiKeyPayloadSchema,
+    UpdateAccountApiKeyPayloadSchema,
+} from './apikey.js';
+import { validateApiRequest } from './registry.js';
 
 describe('separate account-key wire contract', () => {
     const metadata = {
@@ -34,5 +41,20 @@ describe('separate account-key wire contract', () => {
             expect(components[name].properties).not.toHaveProperty('project');
         }
         expect(components.ApiKey.required).toContain('project');
+    });
+});
+
+// AJV enforces emitted JSON Schema; Zod trimming alone cannot reject whitespace at the API boundary.
+describe.each([
+    ['CreateAccountApiKeyPayload', CreateAccountApiKeyPayloadSchema],
+    ['UpdateAccountApiKeyPayload', UpdateAccountApiKeyPayloadSchema],
+] as const)('%s name validation', (component, schema) => {
+    it.each(['', '   ', '\t\n ', '\u00a0'])('rejects blank name %j in Zod and AJV', (name) => {
+        expect(schema.safeParse({ name }).success).toBe(false);
+        expect(validateApiRequest(component, { name }).valid).toBe(false);
+    });
+    it.each(['IdP provisioning', '  IdP provisioning  '])('accepts nonblank name %j in both validators', (name) => {
+        expect(schema.safeParse({ name }).success).toBe(true);
+        expect(validateApiRequest(component, { name }).valid).toBe(true);
     });
 });

@@ -232,9 +232,9 @@ export const AccountApiKeyWithValueSchema = AccountApiKeySchema.extend({ value: 
 });
 export const AccountApiKeyArraySchema = z.array(AccountApiKeySchema).meta({ id: 'AccountApiKeyArray' });
 export const CreateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name: true, expires_at: true })
-    .extend({ name: z.string().trim().min(1) })
+    .extend({ name: z.string().trim().min(1).regex(/\S/) })
     .meta({ id: 'CreateAccountApiKeyPayload' });
 export const UpdateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name: true, enabled: true })
-    .extend({ name: z.string().trim().min(1) })
+    .extend({ name: z.string().trim().min(1).regex(/\S/) })
     .partial()
     .meta({ id: 'UpdateAccountApiKeyPayload' });
