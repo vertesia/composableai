@@ -1,4 +1,9 @@
-import type { ExecutionEnvironmentRef, InteractionExecutionConfiguration, Project } from '@vertesia/common';
+import type {
+    ExecutionEnvironmentRef,
+    InferenceProfile,
+    InteractionExecutionConfiguration,
+    Project,
+} from '@vertesia/common';
 import { Button, Popover, PopoverContent, PopoverTrigger, SelectBox, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -18,11 +23,13 @@ interface ModelOption {
 
 export function getDocumentEditingProjectDefault(
     project: Pick<Project, 'configuration'>,
+    profile?: InferenceProfile,
 ): DocumentEditingConfiguration {
-    const defaults = project.configuration?.defaults?.system?.agent ?? project.configuration?.defaults?.base;
+    const defaults = profile ?? project.configuration?.defaults?.system?.agent ?? project.configuration?.defaults?.base;
     return {
         environment: defaults?.environment,
         model: defaults?.model,
+        ...(profile?.model_options ? { model_options: profile.model_options } : {}),
     };
 }
 

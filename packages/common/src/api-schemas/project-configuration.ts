@@ -1,6 +1,7 @@
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ResourceVisibility } from '../project-values.js';
+import { ProjectInferenceProfilesSchema } from './inference-profile.js';
 import { ContentTypeIntakePolicySchema } from './store.js';
 
 /**
@@ -421,7 +422,11 @@ export const ProjectConfigurationSchema = z
         default_environment: z.string().optional(),
         default_model: z.string().optional(),
         human_context: z.string().optional(),
-        defaults: ProjectModelDefaultsSchema.optional(),
+        defaults: ProjectModelDefaultsSchema.optional().meta({
+            deprecated: true,
+            description: 'Legacy model defaults, replaced by inference profile assignments after migration.',
+        }),
+        inference: ProjectInferenceProfilesSchema.optional(),
         default_visibility: ResourceVisibilitySchema.optional(),
         sync_content_properties: z.boolean().optional(),
         embeddings: z.strictObject({

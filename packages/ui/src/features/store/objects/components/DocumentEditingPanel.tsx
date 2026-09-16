@@ -440,7 +440,10 @@ export function DocumentEditingWorkspace({
         setIsLoadingConfiguration(true);
         void client.projects
             .retrieve(project.id)
-            .then((fullProject) => {
+            .then(async (fullProject) => {
+                const profile = fullProject.configuration?.inference
+                    ? await client.inferenceProfiles.getDefault(fullProject.configuration, 'agent')
+                    : undefined;
                 if (
                     cancelled ||
                     editingScopeRef.current !== requestScopeKey ||
@@ -449,7 +452,7 @@ export function DocumentEditingWorkspace({
                     return;
                 }
                 configurationSourceRef.current = 'project';
-                setExecutionConfiguration(getDocumentEditingProjectDefault(fullProject));
+                setExecutionConfiguration(getDocumentEditingProjectDefault(fullProject, profile));
             })
             .catch((error: unknown) => {
                 console.warn('Failed to load the default document editing model', error);

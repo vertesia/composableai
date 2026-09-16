@@ -444,6 +444,20 @@ import {
     ReindexAgentRunsResponseSchema,
     StartProjectReindexPayloadSchema,
 } from './indexing.js';
+import {
+    CreateInferenceProfilePayloadSchema,
+    InferenceProfileIdSchema,
+    InferenceProfileNameSchema,
+    InferenceProfileRecordArraySchema,
+    InferenceProfileRecordSchema,
+    InferenceProfileSchema,
+    InferenceProfileSnapshotSchema,
+    InteractionConfigurationRecordSchema,
+    InteractionConfigurationResultSchema,
+    ProjectInferenceProfilesSchema,
+    UpdateInferenceProfilePayloadSchema,
+    UpdateInteractionConfigurationPayloadSchema,
+} from './inference-profile.js';
 import * as IntegrationSchemas from './integrations.js';
 import {
     AgentResourceActionSchema,
@@ -1083,6 +1097,18 @@ const LLM_COMPLETION_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const INTERACTION_SCHEMAS = {
+    UpdateInteractionConfigurationPayload: UpdateInteractionConfigurationPayloadSchema,
+    InteractionConfigurationRecord: InteractionConfigurationRecordSchema,
+    InteractionConfigurationResult: InteractionConfigurationResultSchema,
+    CreateInferenceProfilePayload: CreateInferenceProfilePayloadSchema,
+    UpdateInferenceProfilePayload: UpdateInferenceProfilePayloadSchema,
+    InferenceProfileRecord: InferenceProfileRecordSchema,
+    InferenceProfileRecordArray: InferenceProfileRecordArraySchema,
+    InferenceProfileId: InferenceProfileIdSchema,
+    InferenceProfileName: InferenceProfileNameSchema,
+    InferenceProfile: InferenceProfileSchema,
+    InferenceProfileSnapshot: InferenceProfileSnapshotSchema,
+    ProjectInferenceProfiles: ProjectInferenceProfilesSchema,
     // The interaction definition and the prompt tree under it.
     InteractionStatus: InteractionStatusSchema,
     InteractionVisibility: InteractionVisibilitySchema,
@@ -1218,6 +1244,38 @@ const EXECUTION_RUN_SCHEMAS = {
     RunSearchQuery: RunSearchQuerySchema,
     RunListQuery: RunListQuerySchema,
     RunSearchPayload: RunSearchPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const EXECUTION_REQUEST_SCHEMAS: {
+    InteractionExecutionPayload: typeof InteractionExecutionPayloadSchema;
+    NamedInteractionExecutionPayload: typeof NamedInteractionExecutionPayloadSchema;
+    InteractionExecutionResult: typeof InteractionExecutionResultSchema;
+    FindRunResult: typeof FindRunResultSchema;
+    FindRunResultArray: typeof FindRunResultArraySchema;
+    PopulatedExecutionRunResult: typeof PopulatedExecutionRunResultSchema;
+    LegacyExecutionRunResult: typeof LegacyExecutionRunResultSchema;
+    LegacyPopulatedExecutionRunResult: typeof LegacyPopulatedExecutionRunResultSchema;
+    InteractionExecutionConfiguration: typeof InteractionExecutionConfigurationSchema;
+    InteractionExecutionError: typeof InteractionExecutionErrorSchema;
+    ResultStorageOptions: typeof ResultStorageOptionsSchema;
+    ExecuteInteractionByEndpointQuery: typeof ExecuteInteractionByEndpointQuerySchema;
+    ExecuteInteractionByEndpointHeaders: typeof ExecuteInteractionByEndpointHeadersSchema;
+    AsyncCompletionMode: typeof AsyncCompletionModeSchema;
+    AsyncCompletionOptions: typeof AsyncCompletionOptionsSchema;
+    AsyncExecutionPayload: typeof AsyncExecutionPayloadSchema;
+    AsyncInteractionExecutionPayload: typeof AsyncInteractionExecutionPayloadSchema;
+    AsyncConversationExecutionPayload: typeof AsyncConversationExecutionPayloadSchema;
+    AsyncExecutionResult: typeof AsyncExecutionResultSchema;
+    RateLimitRequestPayload: typeof RateLimitRequestPayloadSchema;
+    RateLimitRequestResponse: typeof RateLimitRequestResponseSchema;
+    ComputeRunFacetPayload: typeof ComputeRunFacetPayloadSchema;
+    ComputeRunFacetsResponse: typeof ComputeRunFacetsResponseSchema;
+    RunSearchMetaResponse: typeof RunSearchMetaResponseSchema;
+    ToolResultsPayload: typeof ToolResultsPayloadSchema;
+    UserMessagePayload: typeof UserMessagePayloadSchema;
+    ExecutionResponse: typeof ExecutionResponseSchema;
+    RunClonePayload: typeof RunClonePayloadSchema;
+} = {
     // Executing an interaction, synchronously or as a workflow.
     InteractionExecutionPayload: InteractionExecutionPayloadSchema,
     NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
@@ -2294,6 +2352,7 @@ const API_SCHEMA_GROUPS = [
     INTERACTION_AUTHORING_SCHEMAS,
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
+    EXECUTION_REQUEST_SCHEMAS,
     PROMPT_AUTHORING_SCHEMAS,
     PROJECT_TOOL_SCHEMAS,
     REMOTE_MCP_SCHEMAS,
@@ -2357,6 +2416,7 @@ type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
     typeof INTERACTION_AUTHORING_SCHEMAS &
     typeof AGENT_CONVERSATION_SCHEMAS &
     typeof EXECUTION_RUN_SCHEMAS &
+    typeof EXECUTION_REQUEST_SCHEMAS &
     typeof PROMPT_AUTHORING_SCHEMAS &
     typeof PROJECT_TOOL_SCHEMAS &
     typeof REMOTE_MCP_SCHEMAS &
@@ -2419,6 +2479,15 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'UpdateInteractionConfigurationPayload',
+    'InteractionConfigurationRecord',
+    'InteractionConfigurationResult',
+    'CreateInferenceProfilePayload',
+    'UpdateInferenceProfilePayload',
+    'InferenceProfileRecord',
+    'InferenceProfile',
+    'InferenceProfileSnapshot',
+    'ProjectInferenceProfiles',
     'AccountApiKey',
     'AccountApiKeyWithValue',
     'CreateAccountApiKeyPayload',
