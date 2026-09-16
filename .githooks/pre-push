@@ -14,6 +14,12 @@ hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$hook_dir/.." && pwd)"
 cd "$repo_root"
 
+# Git can export a relative GIT_WORK_TREE for linked worktrees. Package scripts
+# change directory, so let their Git commands discover the checkout from .git.
+while IFS= read -r git_env_var; do
+    unset "$git_env_var"
+done < <(git rev-parse --local-env-vars)
+
 # CI installs with --frozen-lockfile, so a lockfile that drifted from a package.json edit fails
 # every job before it runs anything. --lockfile-only keeps this a verification: it resolves against
 # the manifests without touching node_modules, and --frozen-lockfile makes it report the drift
