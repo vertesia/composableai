@@ -588,11 +588,13 @@ export function DocumentEditingWorkspace({
                         },
                     ],
                     data: { user_prompt: prompt },
-                    config: {
-                        environment: executionConfiguration.environment,
-                        model: executionConfiguration.model,
-                        model_options: executionConfiguration.model_options,
-                    },
+                    config: executionConfiguration.inference_profile
+                        ? { inference_profile: executionConfiguration.inference_profile }
+                        : {
+                              environment: executionConfiguration.environment,
+                              model: executionConfiguration.model,
+                              model_options: executionConfiguration.model_options,
+                          },
                     started_by: startedBy,
                     tags: identity.tags,
                     properties: identity.properties,

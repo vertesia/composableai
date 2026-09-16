@@ -148,6 +148,8 @@ describe('executeInteraction retryability', () => {
             config: {
                 environment: 'env-id',
                 model: 'model-id',
+                inference_profile: '507f1f77bcf86cd799439011',
+                inherit_model_config: true,
                 http_timeout: httpTimeout,
             },
         };
@@ -181,6 +183,8 @@ describe('executeInteraction retryability', () => {
                 interaction: 'testInteraction',
                 environment_id: 'env-id',
                 model_id: 'model-id',
+                inference_profile: '507f1f77bcf86cd799439011',
+                inherit_model_config: true,
                 rate_limit_id: expect.stringMatching(/:testInteraction$/),
             }),
         );

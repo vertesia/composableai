@@ -17,7 +17,7 @@ export default class InferenceProfilesApi extends ApiTopic {
     async getDefault(
         configuration: Pick<ProjectConfiguration, 'inference' | 'defaults'>,
         category?: keyof NonNullable<ProjectInferenceProfiles['system']>,
-    ): Promise<InferenceProfile | undefined> {
+    ): Promise<InferenceProfileRecord | InferenceProfile | undefined> {
         const settings = configuration.inference;
         const id = (category ? settings?.system?.[category] : undefined) ?? settings?.default_profile;
         if (id) return this.retrieve(id);

@@ -1,6 +1,7 @@
 import type {
     ExecutionEnvironmentRef,
     InferenceProfile,
+    InferenceProfileRecord,
     InteractionExecutionConfiguration,
     Project,
 } from '@vertesia/common';
@@ -11,6 +12,7 @@ import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface DocumentEditingConfiguration {
+    inference_profile?: string | null;
     environment?: string;
     model?: string;
     model_options?: InteractionExecutionConfiguration['model_options'];
@@ -23,10 +25,11 @@ interface ModelOption {
 
 export function getDocumentEditingProjectDefault(
     project: Pick<Project, 'configuration'>,
-    profile?: InferenceProfile,
+    profile?: InferenceProfileRecord | InferenceProfile,
 ): DocumentEditingConfiguration {
     const defaults = profile ?? project.configuration?.defaults?.system?.agent ?? project.configuration?.defaults?.base;
     return {
+        ...(profile && 'id' in profile ? { inference_profile: profile.id } : {}),
         environment: defaults?.environment,
         model: defaults?.model,
         ...(profile?.model_options ? { model_options: profile.model_options } : {}),
