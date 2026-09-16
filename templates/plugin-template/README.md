@@ -431,6 +431,8 @@ Key files:
 
 The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it should map routes exposed by active UI modules, commonly `src/modules/app/ui/routes.tsx`, as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
 
+It maps routes; it does not create them. Keep it in step with your routes — a listed route that does not resolve is a broken sidebar link, and an unlisted route is invisible to composite users. `uiConfig.available_in` in `src/tool-server/config.ts` controls whether the plugin is offered in the App Portal, the Composite App shell, or both.
+
 ## Accessibility
 
 The scaffolded plugin targets a **WCAG 2.1 AA baseline** out of the box. The `biome.json.template` inherits the `a11y` rule group (`useButtonType`, `useAltText`, `useSemanticElements`, `useHtmlLang`, etc.) at `error` so violations break `{{PM_RUN}} build` before they ship. A few conventions to keep:
