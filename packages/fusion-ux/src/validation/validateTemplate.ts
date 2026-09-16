@@ -3,16 +3,9 @@
  * Two-stage validation: Schema (AJV) + Semantic (custom)
  */
 
-import Ajv from 'ajv';
 import type { FragmentTemplate, ValidationError, ValidationResult } from '../types.js';
+import validateSchema from './fragmentTemplate.validator.generated.js';
 import { findClosestKey } from './fuzzyMatch.js';
-import { FragmentTemplateSchema } from './schemas.js';
-
-// Create AJV instance with all errors enabled
-const ajv = new Ajv({ allErrors: true, verbose: true });
-
-// Compile the schema
-const validateSchema = ajv.compile(FragmentTemplateSchema);
 
 /**
  * Validate a template against schema and data keys
