@@ -22,7 +22,7 @@
     },
     "license": "Apache-2.0",
     "devDependencies": {
-        "@smithy/types": "^4.17.2",
+        "@smithy/types": "^4.18.0",
         "@temporalio/proto": "^1.23.0",
         "@temporalio/testing": "^1.23.0",
         "@temporalio/worker": "^1.23.0",
@@ -56,7 +56,7 @@
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",
-        "undici": "^7.29.0",
+        "undici": "^7.29.1",
         "yaml": "^2.9.0"
     },
     "exports": {
