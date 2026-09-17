@@ -1,13 +1,15 @@
 import type { ImportDataPayload } from '@vertesia/common';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZenoClient } from './client.js';
 
 describe('DataApi', () => {
+    afterEach(() => vi.restoreAllMocks());
     // `import` is the name applications built against the 1.4 SDK call, through the client the
     // platform serves them rather than one they bundle -- so renaming it (as 1.5 briefly did, to
     // `importData`) breaks them at deploy time rather than at their next upgrade. This pins both
     // the name and the request it issues.
     it('exposes `import` as POST {store}/import with the data store header', async () => {
+        const timeout = vi.spyOn(AbortSignal, 'timeout');
         const requests: { url: string; method: string; storeHeader: string | null; body: string }[] = [];
         const fetchImport = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
             const request = new Request(input, init);
@@ -32,6 +34,7 @@ describe('DataApi', () => {
 
         const job = await client.data.import('store-1', payload);
 
+        expect(timeout).toHaveBeenCalledWith(180_000);
         expect(job).toEqual({ id: 'import-1', status: 'completed' });
         expect(requests).toHaveLength(1);
         expect(requests[0].method).toBe('POST');

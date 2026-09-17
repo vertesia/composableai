@@ -98,7 +98,7 @@ export class DataApi extends ApiTopic {
      * @returns Object with the archived store ID
      */
     delete(id: string): Promise<DataStoreArchiveResult> {
-        return this.del(`/${id}`, { headers: this.storeHeaders(id) });
+        return this.del(`/${id}`, { timeoutMs: 180_000, headers: this.storeHeaders(id) });
     }
 
     // ============================================================
@@ -137,7 +137,7 @@ export class DataApi extends ApiTopic {
      * @returns The updated schema
      */
     updateSchema(id: string, payload: UpdateSchemaPayload): Promise<DataSchema> {
-        return this.put(`/${id}/schema`, { payload, headers: this.storeHeaders(id) });
+        return this.put(`/${id}/schema`, { payload, timeoutMs: 180_000, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -201,7 +201,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     createTables(id: string, payload: CreateTablesPayload): Promise<DataTable[]> {
-        return this.post(`/${id}/tables`, { payload, headers: this.storeHeaders(id) });
+        return this.post(`/${id}/tables`, { payload, timeoutMs: 180_000, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -226,7 +226,7 @@ export class DataApi extends ApiTopic {
      * @returns The updated table
      */
     alterTable(id: string, tableName: string, payload: AlterTablePayload): Promise<DataTable> {
-        return this.put(`/${id}/tables/${tableName}`, { payload, headers: this.storeHeaders(id) });
+        return this.put(`/${id}/tables/${tableName}`, { payload, timeoutMs: 180_000, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -236,7 +236,7 @@ export class DataApi extends ApiTopic {
      * @param tableName - Table name
      */
     dropTable(id: string, tableName: string): Promise<DataStoreTableDropResult> {
-        return this.del(`/${id}/tables/${tableName}`, { headers: this.storeHeaders(id) });
+        return this.del(`/${id}/tables/${tableName}`, { timeoutMs: 180_000, headers: this.storeHeaders(id) });
     }
 
     // ============================================================
@@ -279,7 +279,7 @@ export class DataApi extends ApiTopic {
      * the moment 1.5 is deployed, not at their next upgrade.
      */
     import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
-        return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
+        return this.post(`/${id}/import`, { payload, timeoutMs: 180_000, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -327,7 +327,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     createSnapshot(id: string, payload: CreateSnapshotPayload): Promise<DataStoreVersion> {
-        return this.post(`/${id}/versions`, { payload, headers: this.storeHeaders(id) });
+        return this.post(`/${id}/versions`, { payload, timeoutMs: 180_000, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -340,7 +340,10 @@ export class DataApi extends ApiTopic {
      * @returns The updated data store
      */
     rollback(id: string, versionId: string): Promise<DataStore> {
-        return this.post(`/${id}/versions/${versionId}/rollback`, { headers: this.storeHeaders(id) });
+        return this.post(`/${id}/versions/${versionId}/rollback`, {
+            timeoutMs: 180_000,
+            headers: this.storeHeaders(id),
+        });
     }
 
     /**
@@ -412,7 +415,7 @@ export class DataApi extends ApiTopic {
      * @returns Resulting version ID and affected table row counts
      */
     mutateRows(id: string, payload: DataStoreMutateRowsPayload): Promise<DataStoreMutateRowsResult> {
-        return this.post(`/${id}/mutate`, { payload, headers: this.storeHeaders(id) });
+        return this.post(`/${id}/mutate`, { payload, timeoutMs: 180_000, headers: this.storeHeaders(id) });
     }
 
     /**
