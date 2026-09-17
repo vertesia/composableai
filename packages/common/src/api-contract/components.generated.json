@@ -1,4 +1,27 @@
 {
+  "AccountApiVersionPolicy": {
+    "type": "object",
+    "properties": {
+      "default_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      },
+      "override_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      }
+    }
+  },
   "AccountType": {
     "type": "string",
     "enum": [
@@ -2198,7 +2221,7 @@
       "type"
     ],
     "additionalProperties": false,
-    "description": "Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full reindex. Existing Elasticsearch fields cannot change type in place."
+    "description": "Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full reindex. Existing Elasticsearch fields cannot change type in place. A `nested` mapping accepts no scalar options; declare its searchable child fields as separate mappings below its path."
   },
   "ProjectSearchPropertyType": {
     "type": "string",
@@ -2209,9 +2232,10 @@
       "long",
       "double",
       "date",
-      "geo_point"
+      "geo_point",
+      "nested"
     ],
-    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are relative to the object's `properties` field."
+    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Declare nested object-array paths with type `nested` and their children as separate dotted paths. Paths are relative to the object's `properties` field."
   },
   "ProjectIndexingConfiguration": {
     "type": "object",
@@ -20142,6 +20166,10 @@
       "hideFromDashboard": {
         "type": "boolean",
         "description": "When true, this item is excluded from the Composite App dashboard cards"
+      },
+      "openInAppPortal": {
+        "type": "boolean",
+        "description": "When true, this item navigates to the App Portal form of the URL (`/apps/<appName><route>`) instead of the Composite App form (`/app/<appName><route>`), so the app is opened standalone rather than inside the Composite App shell."
       },
       "permissions": {
         "$ref": "#/components/schemas/CompositeAppNavItemPermissions",
