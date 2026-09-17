@@ -1554,7 +1554,7 @@ function ModernAgentConversationInner({
         showInput,
         showSlidingPanel,
         setShowSlidingPanel,
-    } = useAgentPlans(messages, interactive, isModal);
+    } = useAgentPlans(messages, interactive);
 
     const {
         openDocuments,
@@ -1938,9 +1938,10 @@ function ModernAgentConversationInner({
     // Unified right panel state
     // ────────────────────────────────────────────
     type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
-    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>(
-        conversationContent || conversationTab ? 'conversation' : 'plan',
+    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab | undefined>(
+        conversationContent || conversationTab ? 'conversation' : undefined,
     );
+    const defaultRightPanelTab = plans.length > 0 || panelWorkstreams.length === 0 ? 'plan' : 'workstreams';
     const [selectedArtifactPath, setSelectedArtifactPath] = useState<string | null>(null);
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
@@ -3085,8 +3086,8 @@ function ModernAgentConversationInner({
                                     conversationContent={conversationTab ? conversationAreaJsx : conversationContent}
                                     // Panel control
                                     onClose={handleCloseRightPanel}
-                                    defaultTab={rightPanelTab}
-                                    activeTab={rightPanelTab}
+                                    defaultTab={rightPanelTab ?? defaultRightPanelTab}
+                                    activeTab={rightPanelTab ?? defaultRightPanelTab}
                                     onTabChange={setRightPanelTab}
                                 />
                             </div>
