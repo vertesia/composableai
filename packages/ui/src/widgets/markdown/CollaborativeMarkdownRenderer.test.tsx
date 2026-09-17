@@ -412,10 +412,16 @@ describe('collaborative Markdown actions', () => {
         await user.click(screen.getByRole('button', { name: 'Insert component after this block' }));
         await user.click(await screen.findByRole('menuitem', { name: 'Paragraph' }));
 
-        const editor = await screen.findByRole('textbox');
-        // Wait for the insertion template to hydrate, then replace it regardless of the initial caret position.
-        await waitFor(() => expect(editor.textContent).toBe('Paragraph'));
-        await user.tripleClick(editor);
+        // The lazy editor first renders a textarea with the same template text. Wait for
+        // the actual rich-text editor before selecting and pasting into its content.
+        const editor = await waitFor(() => {
+            const textbox = screen.getByRole('textbox');
+            expect(textbox.getAttribute('contenteditable')).toBe('true');
+            expect(textbox.textContent).toBe('Paragraph');
+            return textbox;
+        });
+        await user.click(editor);
+        await user.keyboard('{Control>}a{/Control}');
         // Paste in one operation — char-by-char typing races ProseMirror in jsdom and drops chars.
         await user.paste('Inserted paragraph.');
         await waitFor(() => expect(editor.textContent).toBe('Inserted paragraph.'));
