@@ -67,7 +67,11 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
 
     const token = decodeJWT(payload.auth_token);
     // Normalize the token's endpoints claim (string | object) the same way the main client does.
-    const tokenEndpoints = decodeEndpoints(token.endpoints);
+    // Only decode when the claim is actually present: decodeEndpoints(undefined) returns the
+    // PRODUCTION endpoint map (token: https://sts.vertesia.io), which would mask the tokenServerUrl
+    // fallback below and mint against prod for a non-prod token. An empty map preserves the fallback
+    // to `token.iss`.
+    const tokenEndpoints = token.endpoints ? decodeEndpoints(token.endpoints) : {};
 
     let requestSequence = 0;
     let requestPrefix: string | undefined;
