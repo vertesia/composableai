@@ -37,8 +37,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      contents: read
-      pull-requests: read
+      contents: read # Read trusted helpers and upstream commit metadata.
+      pull-requests: read # Inspect source PR labels and resolve contributors.
     outputs:
       should_sync: ${{ github.event_name == 'workflow_dispatch' || steps.policy.outputs.should_sync == 'true' }}
     steps:
@@ -69,7 +69,7 @@ jobs:
     # Scopes the submodule sync App key to a dedicated environment.
     environment: submodule-sync
     permissions:
-      contents: read
+      contents: read # Read trusted helpers and upstream commit metadata.
     steps:
       - name: Validate branch
         run: |
@@ -431,10 +431,10 @@ jobs:
     needs: [check-sync-policy, update-submodule]
     if: ${{ failure() }}
     permissions:
-      contents: read
-      pull-requests: read
-      actions: read
-    uses: ./.github/workflows/notify-automation.yaml
+      contents: read # Read trusted helpers and upstream commit metadata.
+      pull-requests: read # Inspect source PR labels and resolve contributors.
+      actions: read # Inspect workflow failures in the reusable notifier.
+    uses: ./.github/workflows/notify-automation.yaml # zizmor: ignore[self-repository] actionlint does not yet support $/ workflow references.
     with:
       source_repository: vertesia/llumiverse
       source_sha: ${{ inputs.llumiverse_sha || github.event.client_payload.llumiverse_sha }}
