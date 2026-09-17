@@ -131,3 +131,19 @@ creating or updating a downstream sync PR. CI still runs and failure notificatio
 The opt-out applies only to that merge commit and target branch (`main` or `release/*`); later
 unlabeled merges can trigger sync again. A manually dispatched downstream submodule update
 bypasses the label. Adding the label after a sync has already started does not cancel that sync.
+
+## Build and test caching
+
+`pnpm build`, `pnpm test`, and `pnpm ci:test` use Turbo. Local commands read and write
+local cache entries and only read the remote cache. Set `TURBO_CACHE_OPTS` to override
+this policy (for example, `--cache=local:rw` to work without a remote cache).
+
+The build/test workflow authenticates to Vercel Remote Cache with GitHub OIDC.
+It reads the Vercel team from the `TURBO_TEAM` organization variable (`Vertesia`). Configure a Turborepo CLI OIDC policy for this repository on that team.
+The setup action obtains a short-lived token; no `TURBO_TOKEN` secret is needed.
+Fork pull requests skip remote authentication and use the local cache.
+Test hashes distinguish CI runners from local runs and include the runner image version.
+
+`@vertesia/common` tests cache their package-owned schemas and build artifacts. Client
+bundle checks live in the client package. Downstream consumers own checks against their
+published API documents and generated-client fixtures; package tests never read those files.
