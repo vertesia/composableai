@@ -29,6 +29,8 @@ jobs:
     concurrency:
       group: automerge-llumiverse-${{ github.event.workflow_run.head_branch }}
       cancel-in-progress: false
+    outputs:
+      attention_reason: ${{ steps.eligibility.outputs.attention_reason || steps.repair.outputs.attention_reason }}
     steps:
       - name: Check automerge eligibility
         id: eligibility
@@ -122,6 +124,7 @@ jobs:
           fi
           if ! jq -e '.[0].files | all(.changeType == "MODIFIED")' <<< "$prs_json" >/dev/null; then
             echo "Skipping PR #$pr_number: PR includes non-modified file changes."
+            echo "attention_reason=Submodule sync no longer qualifies for automatic merging. Review the changes and merge manually." >> "$GITHUB_OUTPUT"
             jq -r '.[0].files[] | select(.changeType != "MODIFIED") | "- \(.changeType) \(.path)"' <<< "$prs_json"
             exit 0
           fi
@@ -133,6 +136,7 @@ jobs:
           disallowed_files="$(gh pr diff "$pr_url" --repo "$REPO" --name-only | grep -vE '^(llumiverse|pnpm-lock\.yaml|packages/common/src/api-contract/components\.generated\.json|packages/common/src/store/(intake|editing)-policy-schema\.generated\.ts)$' || true)"
           if [[ -n "$disallowed_files" ]]; then
             echo "Skipping PR #$pr_number: PR changes files outside the llumiverse submodule, lockfile, and generated schemas."
+            echo "attention_reason=Submodule sync no longer qualifies for automatic merging. Review the changes and merge manually." >> "$GITHUB_OUTPUT"
             echo "$disallowed_files"
             exit 0
           fi
@@ -151,6 +155,7 @@ jobs:
             ))
           ' <<< "$prs_json" >/dev/null; then
             echo "Skipping PR #$pr_number: PR contains commits not authored by the sync workflow."
+            echo "attention_reason=Submodule sync no longer qualifies for automatic merging. Review the changes and merge manually." >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -378,6 +383,7 @@ jobs:
           node-version: 24
 
       - name: Repair pnpm lock conflict
+        id: repair
         if: |
           steps.eligibility.outputs.should_repair_lock == 'true' ||
           steps.merge.outputs.should_repair_lock == 'true'
@@ -392,6 +398,7 @@ jobs:
           set -e
           if [[ "$status" == "2" ]]; then
             echo "PR conflict is not pnpm-lock.yaml-only; leaving it for manual resolution."
+            echo "attention_reason=Submodule sync has conflicts beyond the lockfile and requires manual resolution." >> "$GITHUB_OUTPUT"
             exit 0
           fi
           exit "$status"
@@ -413,3 +420,14 @@ jobs:
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: ${{ steps.updated-pnpm-cache.outputs.key }}
+
+  notify-failure:
+    needs: approve-and-merge
+    if: >-
+      always() && (needs.approve-and-merge.result == 'failure' ||
+      needs.approve-and-merge.outputs.attention_reason != '')
+    uses: ./.github/workflows/notify-automation.yaml
+    with:
+      branch: ${{ github.event.workflow_run.head_branch }}
+      sha: ${{ github.event.workflow_run.head_sha }}
+      reason: ${{ needs.approve-and-merge.outputs.attention_reason || 'Automatic merge or conflict repair failed. Review the workflow run and merge the PR manually once resolved.' }}

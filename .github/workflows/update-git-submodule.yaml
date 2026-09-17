@@ -396,3 +396,16 @@ jobs:
               --arg message "Please review this PR which brings your llumiverse changes to composableai: ${STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_URL}" \
               '{event_type: "composableai-pr-notification", client_payload: {github_login: $login, message: $message}}')
           EOF
+
+  notify-failure:
+    needs: update-submodule
+    if: ${{ failure() && needs.update-submodule.result == 'failure' }}
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    uses: ./.github/workflows/notify-automation.yaml
+    with:
+      source_repository: vertesia/llumiverse
+      source_sha: ${{ inputs.llumiverse_sha || github.event.client_payload.llumiverse_sha }}
+      reason: "The llumiverse submodule sync failed before it could complete. Review the workflow run."
