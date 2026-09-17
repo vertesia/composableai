@@ -1455,6 +1455,7 @@
     "enum": [
       "owner",
       "admin",
+      "app_admin",
       "manager",
       "developer",
       "application",
