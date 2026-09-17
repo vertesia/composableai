@@ -67,11 +67,12 @@ export const ProjectSearchTierSchema = z.enum(['standard', 'performance']).meta(
 export const ElasticsearchBackendSchema = z.enum(['serverless', 'hosted']).meta({ id: 'ElasticsearchBackend' });
 
 export const ProjectSearchPropertyTypeSchema = z
-    .enum(['keyword', 'text', 'boolean', 'long', 'double', 'date', 'geo_point'])
+    .enum(['keyword', 'text', 'boolean', 'long', 'double', 'date', 'geo_point', 'nested'])
     .meta({
         id: 'ProjectSearchPropertyType',
         description:
-            'Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are ' +
+            'Elasticsearch field types that may be explicitly assigned to content-object properties. ' +
+            'Declare nested object-array paths with type `nested` and their children as separate dotted paths. Paths are ' +
             "relative to the object's `properties` field.",
     });
 
@@ -99,7 +100,8 @@ export const ProjectSearchPropertyMappingSchema = z
         id: 'ProjectSearchPropertyMapping',
         description:
             'Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full ' +
-            'reindex. Existing Elasticsearch fields cannot change type in place.',
+            'reindex. Existing Elasticsearch fields cannot change type in place. A `nested` mapping accepts no ' +
+            'scalar options; declare its searchable child fields as separate mappings below its path.',
     });
 
 /**

@@ -1599,6 +1599,68 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getAllByText(/quotes\.md/).length).toBeGreaterThan(0);
     });
 
+    describe.each(['summary', 'stacked', 'activity'] as const)('request input in %s view', (mode) => {
+        function renderPrompt(options: unknown) {
+            const onSendMessage = vi.fn();
+            const prompt = makeMessage({
+                timestamp: 2_000,
+                type: AgentMessageType.REQUEST_INPUT,
+                message: 'Choose a response',
+                details: { request_id: 'robust-ask', ux: { options, variant: 'default', multiSelect: false } },
+            });
+            if (mode === 'stacked') {
+                renderStacked([prompt], false, { onSendMessage });
+            } else if (mode === 'activity') {
+                renderSummary(
+                    [
+                        makeMessage({
+                            timestamp: 1_000,
+                            message: 'Waiting for input',
+                            details: {
+                                event_class: 'activity',
+                                tool: 'ask_user',
+                                tool_run_id: 'ask-run',
+                                tool_status: 'running',
+                                activity_group_id: 'ask-group',
+                            },
+                        }),
+                        { ...prompt, details: { ...prompt.details, activity_group_id: 'ask-group', tool: 'ask_user' } },
+                        makeMessage({ timestamp: 3_000, message: 'Finished', type: AgentMessageType.COMPLETE }),
+                    ],
+                    true,
+                    new Map(),
+                    { onSendMessage },
+                );
+                fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+            } else {
+                renderSummary([prompt], false, new Map(), { onSendMessage });
+            }
+            return onSendMessage;
+        }
+
+        it.each([
+            { name: 'a string', options: 'null' },
+            { name: 'null', options: null },
+            { name: 'a null entry', options: [null] },
+            { name: 'an object label', options: [{ id: 'a', label: {} }] },
+            { name: 'mixed valid and invalid entries', options: [{ id: 'a', label: 'A' }, null] },
+        ])('allows text submission for $name', ({ options }) => {
+            const onSendMessage = renderPrompt(options);
+            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Custom response' } });
+            fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+            expect(onSendMessage).toHaveBeenCalledWith('Custom response', {
+                request_input_response: { request_id: 'robust-ask' },
+            });
+        });
+
+        it('preserves valid choices and their response IDs', () => {
+            const onSendMessage = renderPrompt([{ id: 'a', label: 'Choice A' }]);
+            fireEvent.click(screen.getByRole('button', { name: 'Choice A' }));
+            expect(onSendMessage).toHaveBeenCalledWith('a', { request_input_response: { request_id: 'robust-ask' } });
+            expect(screen.queryByRole('textbox')).toBeNull();
+        });
+    });
+
     it('renders pending ask options compactly in summary view', () => {
         renderSummary([
             makeMessage({
