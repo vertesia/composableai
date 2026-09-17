@@ -13,7 +13,8 @@
     "test": {
       "dependsOn": ["build"],
       "outputs": [],
-      "cache": false
+      "cache": true,
+      "env": ["CI", "RUNNER_OS", "RUNNER_ARCH", "ImageOS", "ImageVersion"]
     },
     "typecheck:test": {
       "dependsOn": ["^build"],
