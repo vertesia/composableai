@@ -32,7 +32,37 @@ permissions:
   contents: read
 
 jobs:
+  check-sync-policy:
+    name: Check source PR sync policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      should_sync: ${{ github.event_name == 'workflow_dispatch' || steps.policy.outputs.should_sync == 'true' }}
+    steps:
+      # Manual sync is an explicit operator override of the automatic opt-out.
+      - name: Checkout trusted sync policy
+        if: github.event_name == 'repository_dispatch'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          submodules: false
+      - name: Honor skip-submodule-sync on the source PR
+        if: github.event_name == 'repository_dispatch'
+        id: policy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_REPOSITORY: vertesia/llumiverse
+          SOURCE_SHA: ${{ env.TARGET_LLUMIVERSE_SHA }}
+          TARGET_BRANCH: ${{ env.TARGET_COMPOSABLEAI_BRANCH }}
+        run: node .github/bin/submodule-sync-policy.mjs
+
   update-submodule:
+    needs: check-sync-policy
+    if: needs.check-sync-policy.outputs.should_sync == 'true'
     name: Update submodule
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -398,8 +428,8 @@ jobs:
           EOF
 
   notify-failure:
-    needs: update-submodule
-    if: ${{ failure() && needs.update-submodule.result == 'failure' }}
+    needs: [check-sync-policy, update-submodule]
+    if: ${{ failure() }}
     permissions:
       contents: read
       pull-requests: read
