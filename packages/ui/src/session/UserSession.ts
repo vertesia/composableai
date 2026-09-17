@@ -44,6 +44,7 @@ class UserSession {
         }
 
         this.logout = this.logout.bind(this);
+        this.signOut = this.signOut.bind(this);
     }
 
     get store() {

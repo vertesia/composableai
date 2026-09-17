@@ -437,9 +437,6 @@ export class ObjectsApi extends ApiTopic {
         }
         if (options?.createRevision) {
             headers[ContentObjectApiHeaders.CREATE_REVISION] = 'true';
-            if (options.revisionLabel) {
-                headers[ContentObjectApiHeaders.REVISION_LABEL] = options.revisionLabel;
-            }
         }
         if (options?.suppressWorkflows) {
             headers[ContentObjectApiHeaders.SUPPRESS_WORKFLOWS] = 'true';
@@ -447,6 +444,11 @@ export class ObjectsApi extends ApiTopic {
 
         return this.put(`/${id}`, {
             payload: updatePayload,
+            // The existing query contract preserves Unicode labels; HTTP headers only accept ByteString values.
+            query:
+                options?.createRevision && options.revisionLabel
+                    ? { revision_label: options.revisionLabel }
+                    : undefined,
             headers,
         });
     }
