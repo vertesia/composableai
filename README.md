@@ -121,3 +121,13 @@ The generated project is based on [templates/plugin-template](./templates/plugin
 ## License
 
 Apache-2.0. See [LICENSE](./LICENSE).
+
+## Coordinated submodule updates
+
+Add the `skip-submodule-sync` label to a PR before merging when a coordinated PR in the parent repository
+already handles the submodule update. The automatic sync checks the merged PR's label before
+creating or updating a downstream sync PR. CI still runs and failure notifications remain enabled.
+
+The opt-out applies only to that merge commit and target branch (`main` or `release/*`); later
+unlabeled merges can trigger sync again. A manually dispatched downstream submodule update
+bypasses the label. Adding the label after a sync has already started does not cancel that sync.
