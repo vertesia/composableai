@@ -32,7 +32,7 @@ jobs:
     name: Unit tests
     permissions:
       contents: read
-      id-token: write
+      id-token: write # Exchange GitHub OIDC identity for a short-lived Turbo cache token.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -105,7 +105,7 @@ jobs:
     name: Template smoke test (Plugin)
     permissions:
       contents: read
-      id-token: write
+      id-token: write # Exchange GitHub OIDC identity for a short-lived Turbo cache token.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
