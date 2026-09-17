@@ -466,7 +466,7 @@ function GroupAvatar({ userId, showTitle = false, size = 'md' }: GroupAvatarProp
     return (
         <UserPopoverPanel title={group.name || t('user.unnamedGroup')} description={description}>
             <div className="flex flex-row items-center gap-2">
-                <Users className="size-6 text-primary" size={size} />
+                <Users className="size-6 text-info" size={size} />
                 {showTitle && <div className="text-sm font-semibold ps-2">{group.name || t('user.unnamedGroup')}</div>}
             </div>
         </UserPopoverPanel>

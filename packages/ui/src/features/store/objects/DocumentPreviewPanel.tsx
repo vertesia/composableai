@@ -132,7 +132,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b dark:border-border bg-gradient-to-r from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
                 <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-primary me-2" />
+                    <FileText className="h-5 w-5 text-info me-2" />
                     <h2 className="text-lg font-semibold text-foreground truncate">
                         {isLoading ? t('store.loadingDocument') : object?.name || t('store.documentPreview')}
                     </h2>
@@ -142,7 +142,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                         variant="ghost"
                         size="sm"
                         onClick={handleViewFullDocument}
-                        className="flex items-center gap-1 text-primary hover:text-primary"
+                        className="flex items-center gap-1 text-info hover:text-info"
                     >
                         <Maximize2 className="h-4 w-4" />
                         <span>{t('store.fullView')}</span>
@@ -162,7 +162,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
             {isLoading ? (
                 <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                        <Spinner size="lg" className="text-primary mb-2" />
+                        <Spinner size="lg" className="text-info mb-2" />
                         <p className="text-muted">{t('store.loadingDocument')}</p>
                     </div>
                 </div>
@@ -175,7 +175,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 variant="unstyled"
                                 className={`py-2 px-4 font-medium border-b-2 ${
                                     currentTab === 'preview'
-                                        ? 'border-primary text-primary'
+                                        ? 'border-primary text-info'
                                         : 'border-transparent text-muted hover:text-foreground'
                                 }`}
                                 onClick={() => setCurrentTab('preview')}
@@ -189,7 +189,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 variant="unstyled"
                                 className={`py-2 px-4 font-medium border-b-2 ${
                                     currentTab === 'properties'
-                                        ? 'border-primary text-primary'
+                                        ? 'border-primary text-info'
                                         : 'border-transparent text-muted hover:text-foreground'
                                 }`}
                                 onClick={() => setCurrentTab('properties')}
@@ -209,12 +209,12 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 {/* Text/Markdown Content */}
                                 {loadingText ? (
                                     <div className="flex items-center justify-center h-40">
-                                        <Spinner size="md" className="text-primary" />
+                                        <Spinner size="md" className="text-info" />
                                     </div>
                                 ) : text ? (
                                     <div className="shadow rounded-md p-4 border border-border bg-white dark:bg-muted">
                                         {seemsMarkdown ? (
-                                            <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-muted prose-pre:my-2 prose-headings:text-primary dark:prose-invert">
+                                            <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-muted prose-pre:my-2 prose-headings:text-info dark:prose-invert">
                                                 <MarkdownRenderer>{text}</MarkdownRenderer>
                                             </div>
                                         ) : (
@@ -238,7 +238,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                             </div>
                                         ) : (
                                             <div className="flex items-center justify-center h-40">
-                                                <Spinner size="md" className="text-primary" />
+                                                <Spinner size="md" className="text-info" />
                                             </div>
                                         )}
                                     </div>
@@ -247,7 +247,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 {/* PDF Content Notice */}
                                 {isPdf && (
                                     <div className="flex flex-col items-center justify-center h-64 border border-border rounded-md p-4 bg-muted">
-                                        <FileText className="h-16 w-16 text-primary mb-4" />
+                                        <FileText className="h-16 w-16 text-info mb-4" />
                                         <p className="text-muted text-center mb-4">{t('store.pdfPreviewFullView')}</p>
                                         <Button
                                             onClick={handleViewFullDocument}
@@ -353,7 +353,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 }
                             }}
                             variant="outline"
-                            className="text-primary border-primary hover:bg-info"
+                            className="text-info border-primary hover:bg-info"
                         >
                             <Download className="h-4 w-4 me-2" />
                             {t('pdf.download')}

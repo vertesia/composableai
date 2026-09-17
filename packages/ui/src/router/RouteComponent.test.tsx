@@ -1,5 +1,6 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ErrorBoundary } from 'react-error-boundary';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prefetchLazyRoutes, RouteComponent } from './RouteComponent';
 import { type LazyRouteModule, useNavigate } from './Router';
 import { RouterProvider } from './RouterProvider';
@@ -37,6 +38,44 @@ describe('RouteComponent lazy routes', () => {
         cleanup();
         window.history.pushState({}, '', '/');
     });
+
+    it.each(['missing module', 'rejected import', 'synchronous failure'] as const)(
+        'reports a %s through the error boundary instead of remaining on the spinner',
+        async (failure) => {
+            const error = new Error('Module could not be loaded');
+            const onError = vi.fn();
+            const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+            const routes = [
+                {
+                    path: '/a',
+                    LazyComponent: () => {
+                        if (failure === 'synchronous failure') throw error;
+                        return failure === 'missing module'
+                            ? Promise.resolve(undefined as unknown as LazyRouteModule)
+                            : Promise.reject(error);
+                    },
+                },
+            ];
+            try {
+                render(
+                    <ErrorBoundary fallback={<div>Route unavailable</div>} onError={onError}>
+                        <RouterProvider routes={routes}>
+                            <RouteComponent spinner={<div>loading</div>} />
+                        </RouterProvider>
+                    </ErrorBoundary>,
+                );
+                await screen.findByText('Route unavailable');
+                expect(screen.queryByText('loading')).toBeNull();
+                expect(onError.mock.calls[0][0]).toEqual(
+                    failure === 'missing module'
+                        ? new Error('Lazy module for /a does not have a default export')
+                        : error,
+                );
+            } finally {
+                consoleError.mockRestore();
+            }
+        },
+    );
 
     it('stops showing the previous lazy route while the next one loads', async () => {
         const pageA = deferredModule('Page A');
@@ -85,6 +124,31 @@ describe('RouteComponent lazy routes', () => {
         await act(async () => pageA.resolve());
         expect(screen.queryByText('Page A')).toBeNull();
         expect(screen.getByText('Page B')).toBeDefined();
+    });
+
+    it('ignores a rejected import after navigating away', async () => {
+        let reject!: (error: Error) => void;
+        const promise = new Promise<LazyRouteModule>((_resolve, rejectPromise) => {
+            reject = rejectPromise;
+        });
+        const onError = vi.fn();
+        render(
+            <ErrorBoundary fallback={<div>Route unavailable</div>} onError={onError}>
+                <RouterProvider
+                    routes={[
+                        { path: '/a', LazyComponent: () => promise },
+                        { path: '/b', Component: () => <div>Page B</div> },
+                    ]}
+                >
+                    <CaptureNavigate />
+                    <RouteComponent />
+                </RouterProvider>
+            </ErrorBoundary>,
+        );
+        await act(async () => navigateFn('/b'));
+        await act(async () => reject(new Error('Previous route failed')));
+        expect(screen.getByText('Page B')).toBeDefined();
+        expect(onError).not.toHaveBeenCalled();
     });
 
     it('renders a previously resolved lazy route synchronously on revisit', async () => {

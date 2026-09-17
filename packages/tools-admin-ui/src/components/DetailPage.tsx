@@ -20,11 +20,11 @@ export function DetailPage({ type, title, description, tags, backHref = '/', chi
         <div className="mx-auto max-w-5xl px-7 py-10">
             <nav className="mb-5 flex items-center gap-4">
                 {backHref !== '/' && (
-                    <NavLink href="/" className="text-sm text-primary hover:opacity-75">
+                    <NavLink href="/" className="text-sm text-info hover:opacity-75">
                         Home
                     </NavLink>
                 )}
-                <NavLink href={backHref} className="flex items-center gap-1 text-sm text-primary hover:opacity-75">
+                <NavLink href={backHref} className="flex items-center gap-1 text-sm text-info hover:opacity-75">
                     <ArrowLeft className="size-3.5" />
                     Back
                 </NavLink>

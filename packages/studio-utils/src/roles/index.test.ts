@@ -46,27 +46,27 @@ describe('getRoleByName', () => {
 describe('listRoles', () => {
     it('returns every role across all partitions', () => {
         const roles = listRoles();
-        // 16 system roles + 3 content roles
-        expect(roles).toHaveLength(19);
+        // 17 system roles + 3 content roles
+        expect(roles).toHaveLength(20);
     });
 
     it('lists system roles before content roles (partition registration order)', () => {
         const roles = listRoles();
         const systemCount = roles.filter((r) => r.domain === 'system').length;
         const contentCount = roles.filter((r) => r.domain === 'content').length;
-        expect(systemCount).toBe(16);
+        expect(systemCount).toBe(17);
         expect(contentCount).toBe(3);
 
-        // First 16 are system, next 3 are content
-        for (let i = 0; i < 16; i++) expect(roles[i].domain).toBe('system');
-        for (let i = 16; i < 19; i++) expect(roles[i].domain).toBe('content');
+        // First 17 are system, next 3 are content
+        for (let i = 0; i < 17; i++) expect(roles[i].domain).toBe('system');
+        for (let i = 17; i < 20; i++) expect(roles[i].domain).toBe('content');
     });
 });
 
 describe('listRolesByDomain', () => {
     it('returns only system roles for "system"', () => {
         const roles = listRolesByDomain('system');
-        expect(roles).toHaveLength(16);
+        expect(roles).toHaveLength(17);
         expect(roles.every((r) => r.domain === 'system')).toBe(true);
     });
 
@@ -84,7 +84,7 @@ describe('listRolesByDomain', () => {
 describe('listSystemRoles', () => {
     it('returns SystemRole instances', () => {
         const roles = listSystemRoles();
-        expect(roles).toHaveLength(16);
+        expect(roles).toHaveLength(17);
         expect(roles.every((r) => r instanceof SystemRole)).toBe(true);
     });
 
@@ -120,7 +120,7 @@ describe('listAbacRolesForScope', () => {
 describe('getAllRoleNames', () => {
     it('returns names of every registered role', () => {
         const names = getAllRoleNames();
-        expect(names).toHaveLength(19);
+        expect(names).toHaveLength(20);
         expect(names).toContain('owner');
         expect(names).toContain('content:reader');
     });

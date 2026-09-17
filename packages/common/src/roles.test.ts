@@ -7,6 +7,7 @@ describe('shared role vocabulary', () => {
         expect(Object.values(SystemRoles).sort()).toEqual(
             [
                 'admin',
+                'app_admin',
                 'app_member',
                 'application',
                 'auditor',

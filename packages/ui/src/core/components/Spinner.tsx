@@ -27,7 +27,7 @@ export function Spinner({ size, className }: SpinnerProps) {
     const sizeClass = getRealSize(size || 'md');
     return (
         <svg
-            className={clsx('animate-[spin_0.8s_linear_infinite] text-primary', sizeClass, className)}
+            className={clsx('animate-[spin_0.8s_linear_infinite] text-info', sizeClass, className)}
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

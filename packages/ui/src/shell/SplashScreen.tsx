@@ -58,7 +58,7 @@ function LoadingIcon() {
         <svg
             width="32"
             height="32"
-            className="w-8 h-8 text-primary"
+            className="w-8 h-8 text-info"
             viewBox="0 0 50 50"
             xmlns="http://www.w3.org/2000/svg"
             role="img"

@@ -12,7 +12,7 @@ export function Link({ underline = 'always', className, children, ...others }: L
         underlineClass = 'hover:underline';
     }
     return (
-        <a className={clsx('text-primary', className, underlineClass)} {...others}>
+        <a className={clsx('text-info', className, underlineClass)} {...others}>
             {children}
         </a>
     );

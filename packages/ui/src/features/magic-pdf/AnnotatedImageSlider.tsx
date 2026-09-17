@@ -326,7 +326,7 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
             aria-pressed={isSelected}
             className={clsx(
                 'p-1 rounded cursor-pointer transition-colors',
-                isSelected ? 'text-primary bg-primary/10' : 'text-muted hover:text-foreground hover:bg-muted',
+                isSelected ? 'text-info bg-info' : 'text-muted hover:text-foreground hover:bg-muted',
             )}
             onClick={onClick}
         >

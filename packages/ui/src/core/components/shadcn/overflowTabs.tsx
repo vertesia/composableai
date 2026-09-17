@@ -15,7 +15,7 @@ const VARIANT_CLASSES: Record<OverflowTabsVariant, { base: string; active: strin
     tabs: {
         base: 'flex items-center border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer shrink-0',
         inactive: 'border-transparent text-muted hover:border-border hover:text-foreground',
-        active: 'border-primary text-primary',
+        active: 'border-primary text-info',
         icon: 'ms-1 size-4',
     },
     pills: {
@@ -307,7 +307,7 @@ export function OverflowTabsBar({ tabs, current, onTabChange, variant = 'tabs', 
                                 key={tab.name}
                                 disabled={tab.disabled}
                                 onClick={() => onTabChange(tab.name)}
-                                className={cn(tab.name === current && 'text-primary')}
+                                className={cn(tab.name === current && 'text-info')}
                             >
                                 {tab.label}
                             </DropdownMenuItem>

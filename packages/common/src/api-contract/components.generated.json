@@ -1,4 +1,27 @@
 {
+  "AccountApiVersionPolicy": {
+    "type": "object",
+    "properties": {
+      "default_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      },
+      "override_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      }
+    }
+  },
   "AccountType": {
     "type": "string",
     "enum": [
@@ -1225,6 +1248,7 @@
     "enum": [
       "owner",
       "admin",
+      "app_admin",
       "manager",
       "developer",
       "application",
@@ -1270,6 +1294,10 @@
       },
       "enabled": {
         "type": "boolean"
+      },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
       },
       "created_by": {
         "type": "string"
@@ -1357,6 +1385,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1441,6 +1473,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1519,6 +1555,10 @@
         "type": "string",
         "format": "date-time"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "properties": {
         "type": "object",
         "additionalProperties": true,
@@ -1553,6 +1593,10 @@
       },
       "enabled": {
         "type": "boolean"
+      },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
       },
       "properties": {
         "type": "object",
@@ -2178,7 +2222,7 @@
       "type"
     ],
     "additionalProperties": false,
-    "description": "Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full reindex. Existing Elasticsearch fields cannot change type in place."
+    "description": "Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full reindex. Existing Elasticsearch fields cannot change type in place. A `nested` mapping accepts no scalar options; declare its searchable child fields as separate mappings below its path."
   },
   "ProjectSearchPropertyType": {
     "type": "string",
@@ -2189,9 +2233,10 @@
       "long",
       "double",
       "date",
-      "geo_point"
+      "geo_point",
+      "nested"
     ],
-    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are relative to the object's `properties` field."
+    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Declare nested object-array paths with type `nested` and their children as separate dotted paths. Paths are relative to the object's `properties` field."
   },
   "ProjectIndexingConfiguration": {
     "type": "object",
@@ -10049,7 +10094,8 @@
       "resume_tools",
       "resume_user",
       "checkpoint",
-      "nested_interaction"
+      "nested_interaction",
+      "background"
     ],
     "description": "Types of LLM calls in a conversation"
   },
@@ -10874,6 +10920,10 @@
   "ExecutionRunWorkflow": {
     "type": "object",
     "properties": {
+      "agent_run_id": {
+        "type": "string",
+        "description": "Root agent run owning this inference, including inference performed by child workstreams."
+      },
       "rate_limit_id": {
         "type": "string",
         "description": "Stable identifier pairing an interaction rate-limit admission with its completion feedback."
@@ -13590,6 +13640,10 @@
           },
           "workflow_id": {
             "type": "string"
+          },
+          "agent_run_id": {
+            "type": "string",
+            "description": "Root agent run owning this inference, including inference performed by child workstreams."
           }
         },
         "required": [
@@ -20113,6 +20167,10 @@
       "hideFromDashboard": {
         "type": "boolean",
         "description": "When true, this item is excluded from the Composite App dashboard cards"
+      },
+      "openInAppPortal": {
+        "type": "boolean",
+        "description": "When true, this item navigates to the App Portal form of the URL (`/apps/<appName><route>`) instead of the Composite App form (`/app/<appName><route>`), so the app is opened standalone rather than inside the Composite App shell."
       },
       "permissions": {
         "$ref": "#/components/schemas/CompositeAppNavItemPermissions",
@@ -33814,7 +33872,8 @@
               "resume_tools",
               "resume_user",
               "checkpoint",
-              "nested_interaction"
+              "nested_interaction",
+              "background"
             ]
           },
           "attemptNumber": {
@@ -38277,6 +38336,11 @@
   "ImportDataPayload": {
     "type": "object",
     "properties": {
+      "import_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$",
+        "description": "Optional client-generated Mongo ObjectId for idempotent retries. Generate once before submitting, then reuse with identical input. New IDs must be less than 24 hours old; existing jobs are returned without executing again. Poll GET /data/:storeId/import/:importId after a timeout."
+      },
       "tables": {
         "$ref": "#/components/schemas/ImportTableDataMap",
         "description": "Map of table name to data specification"
