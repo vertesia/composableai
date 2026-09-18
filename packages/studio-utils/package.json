@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/studio-utils",
-    "version": "1.6.0-dev.20260912.110338Z",
+    "version": "1.6.0-dev.20260918.061604Z",
     "type": "module",
     "description": "Shared utilities for Vertesia studio: prompt template rendering, schema-based mock data generation, prompt and interaction validation helpers.",
     "main": "./lib/index.js",
@@ -48,6 +48,7 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "build": "pnpm run clean:lib && pnpm exec tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
@@ -65,5 +66,5 @@
         "@vertesia/jst": "workspace:*",
         "handlebars": "^4.7.9"
     },
-    "gitHead": "504e8df031c3950ec324c865385caf460b1c1cd7"
+    "gitHead": "ea552337206e77c256478b76e19b4235e70bf769"
 }

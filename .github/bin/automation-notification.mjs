@@ -53,7 +53,8 @@ export async function notification({ repo, eventName, event, inputs = {}, runUrl
             throw new Error('Invalid sync source repository or SHA');
         }
         const login = await commitOwner(api, inputs.source_repository, inputs.source_sha);
-        if (!login) throw new Error('Cannot resolve a human author for the failed sync');
+        // Automated release commits can legitimately have no human recipient.
+        if (!login) return null;
         return { login, message: `${escapeSlack(inputs.reason)}\n<${runUrl}|Failed sync run>` };
     }
 
@@ -106,6 +107,7 @@ export async function notification({ repo, eventName, event, inputs = {}, runUrl
     // Creation precedes label/assignee updates; resolve provenance from GitHub instead.
     if (!called && eventName === 'pull_request_target' && !pr.draft) return null;
     const login = await prOwner(api, repo, pr, kind);
+    if (!login && kind.upstream) return null;
     if (!login) throw new Error(`Cannot resolve a human author for ${pr.html_url}`);
     return {
         login,
