@@ -253,6 +253,21 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         });
     });
 
+    it('accepts explicit nested paths through the project configuration contract', () => {
+        expect(ApiSchemaComponents.ProjectSearchPropertyType.enum).toContain('nested');
+        expect(
+            validateApiRequest('UpdateProjectConfigurationPayload', {
+                indexing: {
+                    property_mappings: {
+                        line_items: { type: 'nested' },
+                        'line_items.sku': { type: 'keyword' },
+                        'line_items.quantity': { type: 'long' },
+                    },
+                },
+            }).valid,
+        ).toBe(true);
+    });
+
     it('publishes geo_point as an explicit project property mapping type', () => {
         expect(ApiSchemaComponents.ProjectSearchPropertyType.enum).toContain('geo_point');
     });

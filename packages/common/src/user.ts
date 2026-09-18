@@ -1,5 +1,10 @@
 import type { z } from 'zod';
-import type { AccountBillingSchema, AccountSchema, UpdateAccountPayloadSchema } from './api-schemas/account.js';
+import type {
+    AccountApiVersionPolicySchema,
+    AccountBillingSchema,
+    AccountSchema,
+    UpdateAccountPayloadSchema,
+} from './api-schemas/account.js';
 import type {
     AccountProjectsResponseSchema,
     AccountRefSchema,
@@ -104,3 +109,5 @@ export type SignupData = z.infer<typeof SignupDataSchema>;
  * The `POST /auth/signup` request body.
  */
 export type SignupPayload = z.infer<typeof SignupPayloadSchema>;
+
+export type AccountApiVersionPolicy = z.infer<typeof AccountApiVersionPolicySchema>;

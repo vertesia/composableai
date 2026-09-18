@@ -1,4 +1,27 @@
 {
+  "AccountApiVersionPolicy": {
+    "type": "object",
+    "properties": {
+      "default_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      },
+      "override_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      }
+    }
+  },
   "AccountType": {
     "type": "string",
     "enum": [
@@ -1225,6 +1248,7 @@
     "enum": [
       "owner",
       "admin",
+      "app_admin",
       "manager",
       "developer",
       "application",
@@ -2198,7 +2222,7 @@
       "type"
     ],
     "additionalProperties": false,
-    "description": "Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full reindex. Existing Elasticsearch fields cannot change type in place."
+    "description": "Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full reindex. Existing Elasticsearch fields cannot change type in place. A `nested` mapping accepts no scalar options; declare its searchable child fields as separate mappings below its path."
   },
   "ProjectSearchPropertyType": {
     "type": "string",
@@ -2209,9 +2233,10 @@
       "long",
       "double",
       "date",
-      "geo_point"
+      "geo_point",
+      "nested"
     ],
-    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are relative to the object's `properties` field."
+    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Declare nested object-array paths with type `nested` and their children as separate dotted paths. Paths are relative to the object's `properties` field."
   },
   "ProjectIndexingConfiguration": {
     "type": "object",
@@ -20280,6 +20305,10 @@
         "type": "boolean",
         "description": "When true, this item is excluded from the Composite App dashboard cards"
       },
+      "openInAppPortal": {
+        "type": "boolean",
+        "description": "When true, this item navigates to the App Portal form of the URL (`/apps/<appName><route>`) instead of the Composite App form (`/app/<appName><route>`), so the app is opened standalone rather than inside the Composite App shell."
+      },
       "permissions": {
         "$ref": "#/components/schemas/CompositeAppNavItemPermissions",
         "description": "Optional access control settings for this nav item"
@@ -23734,6 +23763,9 @@
     "type": "object",
     "properties": {
       "bucket": {
+        "type": "string"
+      },
+      "location": {
         "type": "string"
       }
     },
@@ -40640,6 +40672,71 @@
     ],
     "additionalProperties": false
   },
+  "EmbeddingBatchRunSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "model": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "applied": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "skipped": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "stale": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "id",
+      "state",
+      "model",
+      "created_at",
+      "applied",
+      "skipped",
+      "failed",
+      "stale"
+    ],
+    "additionalProperties": false,
+    "description": "Latest batch run for this embedding type, without provider payloads or input content."
+  },
   "EmbeddingsStatusResponse": {
     "type": "object",
     "properties": {
@@ -40648,6 +40745,9 @@
       },
       "embeddingRunsInProgress": {
         "type": "number"
+      },
+      "latestBatchRun": {
+        "$ref": "#/components/schemas/EmbeddingBatchRunSummary"
       },
       "totalIndexableObjects": {
         "type": "number"
@@ -40692,6 +40792,21 @@
     ],
     "additionalProperties": false
   },
+  "RecalculateEmbeddingsQuery": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "sync",
+        "description": "Force synchronous per-object recalculation. When omitted, batch inference is used when supported."
+      },
+      "force": {
+        "type": "boolean",
+        "description": "Recalculate all eligible objects, including current embeddings. Token limits still apply; existing renditions are reused."
+      }
+    },
+    "additionalProperties": false
+  },
   "ProjectConfigurationEmbeddingEnablePayload": {
     "type": "object",
     "properties": {
@@ -40709,6 +40824,530 @@
       "environment"
     ],
     "additionalProperties": false
+  },
+  "EmbeddingBatchProviderState": {
+    "type": "string",
+    "enum": [
+      "pending",
+      "running",
+      "succeeded",
+      "failed",
+      "cancelled",
+      "paused"
+    ]
+  },
+  "EmbeddingBatchCapabilityRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      }
+    },
+    "required": [
+      "embedding_type"
+    ]
+  },
+  "EmbeddingBatchCapabilityResponse": {
+    "type": "object",
+    "properties": {
+      "eligible": {
+        "type": "boolean"
+      },
+      "reason": {
+        "type": "string"
+      },
+      "environment": {
+        "type": "string"
+      },
+      "provider": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "dimensions": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "max_tokens": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "location": {
+        "type": "string"
+      },
+      "input_format": {
+        "type": "string"
+      },
+      "max_rows": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "artifact_uri": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "eligible"
+    ]
+  },
+  "EmbeddingBatchCreateRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "model": {
+        "type": "string"
+      },
+      "dimensions": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "embedding_type",
+      "model",
+      "dimensions",
+      "display_name",
+      "input_uri",
+      "output_uri"
+    ]
+  },
+  "EmbeddingBatchJobRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "model": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "include_output_artifacts": {
+        "type": "boolean",
+        "description": "On get, resolve terminal result artifacts for application. Omit for lightweight status polling."
+      }
+    },
+    "required": [
+      "embedding_type",
+      "model",
+      "name"
+    ]
+  },
+  "EmbeddingBatchJobResponse": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "paused"
+        ]
+      },
+      "model": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      },
+      "output_artifacts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Terminal job result artifacts in application storage, including partial results. Never provider file IDs."
+      },
+      "error_message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "state"
+    ]
+  },
+  "EmbeddingBatchRunState": {
+    "type": "string",
+    "enum": [
+      "preparing",
+      "submitted",
+      "running",
+      "applying",
+      "completed",
+      "completed_with_errors",
+      "cancelled",
+      "stale",
+      "failed"
+    ]
+  },
+  "EmbeddingBatchSubjob": {
+    "type": "object",
+    "properties": {
+      "index": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      },
+      "row_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "provider_name": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "paused"
+        ]
+      }
+    },
+    "required": [
+      "index",
+      "display_name",
+      "input_uri",
+      "output_uri",
+      "row_count"
+    ]
+  },
+  "EmbeddingBatchPrepareRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "capability": {
+        "$ref": "#/components/schemas/EmbeddingBatchCapabilityResponse"
+      }
+    },
+    "required": [
+      "run_id",
+      "embedding_type",
+      "capability"
+    ]
+  },
+  "EmbeddingBatchPrepareResponse": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "row_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "subjobs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "display_name": {
+              "type": "string"
+            },
+            "input_uri": {
+              "type": "string"
+            },
+            "output_uri": {
+              "type": "string"
+            },
+            "row_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "provider_name": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "succeeded",
+                "failed",
+                "cancelled",
+                "paused"
+              ]
+            }
+          },
+          "required": [
+            "index",
+            "display_name",
+            "input_uri",
+            "output_uri",
+            "row_count"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "run_id",
+      "row_count",
+      "subjobs"
+    ]
+  },
+  "EmbeddingBatchRenditionPageRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ]
+  },
+  "EmbeddingBatchRenditionPageResponse": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "running",
+          "page_completed",
+          "completed"
+        ]
+      },
+      "page_index": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_scanned": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_ready": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_generated": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "running": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "status",
+      "page_index",
+      "page_scanned",
+      "page_ready",
+      "page_generated",
+      "page_failed",
+      "running"
+    ]
+  },
+  "EmbeddingBatchUpdateRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "subjobs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "display_name": {
+              "type": "string"
+            },
+            "input_uri": {
+              "type": "string"
+            },
+            "output_uri": {
+              "type": "string"
+            },
+            "row_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "provider_name": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "succeeded",
+                "failed",
+                "cancelled",
+                "paused"
+              ]
+            }
+          },
+          "required": [
+            "index",
+            "display_name",
+            "input_uri",
+            "output_uri",
+            "row_count"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "error_code": {
+        "type": "string"
+      },
+      "error_message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id",
+      "state"
+    ]
+  },
+  "EmbeddingBatchApplyRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ]
+  },
+  "EmbeddingBatchApplyResponse": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "succeeded": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "stale": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "applied": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failure_counts": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "required": [
+      "state",
+      "succeeded",
+      "failed",
+      "stale",
+      "applied"
+    ]
   },
   "GenericCommandResponse": {
     "type": "object",

@@ -67,7 +67,10 @@ export function extractHandlebarsVariables(template: string): Set<string> {
                 const params = n.params as unknown[] | undefined;
                 const hash = n.hash as { pairs?: unknown[] } | undefined;
                 const isHelperCall = (params?.length ?? 0) > 0 || (hash?.pairs?.length ?? 0) > 0;
-                if (!isHelperCall) {
+                // The renderer registers _now as a zero-argument helper. Only the bare
+                // helper invocation is implicit; paths such as this._now remain data reads.
+                const path = n.path as { original?: string } | undefined;
+                if (!isHelperCall && path?.original !== '_now') {
                     visit(n.path);
                 }
                 if (params) for (const p of params) visit(p);
