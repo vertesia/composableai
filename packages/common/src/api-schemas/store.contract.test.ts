@@ -103,26 +103,15 @@ describe.skipIf(!publishedDocument)('gate — generated artifact = canonical com
         }
     });
 
-    it('drops the discriminator hint the published component keeps, and only that', () => {
-        // The one place the artifact and the component are allowed to differ, pinned from both sides
-        // so neither can move alone. `synthesizeDiscriminator` restates `type` and `required` on the
-        // union node for the generated Java/Go clients; the node has no `properties`, and Gemini
-        // rejects the whole tool schema over it ("requires unspecified property '_option_id'") when
-        // the artifact reaches Vertex inside `create_or_update_type`'s input schema.
-        expect(published.ModelOptions).toMatchObject({
-            discriminator: { propertyName: '_option_id' },
-            type: 'object',
-            required: ['_option_id'],
-        });
-
+    it('preserves optional-ID anyOf semantics in the bundled option schema', () => {
         const bundled = ($defsOf(GeneratedIntakePolicySchema) as Record<string, Record<string, unknown>>).ModelOptions;
+        const component = published.ModelOptions as { anyOf: unknown[]; discriminator?: unknown; required?: string[] };
         expect(bundled.discriminator).toBeUndefined();
-        expect(bundled.required).toBeUndefined();
-        expect(bundled.type).toBeUndefined();
-        // The branches are what carried the contract all along, so nothing was validated away.
-        expect((bundled.oneOf as unknown[]).length).toBe(
-            ((published.ModelOptions as { oneOf: unknown[] }).oneOf ?? []).length,
-        );
+        expect(component.discriminator).toBeUndefined();
+        expect(bundled.required ?? []).not.toContain('_option_id');
+        expect(component.required ?? []).not.toContain('_option_id');
+        expect((bundled.anyOf as unknown[]).length).toBe(component.anyOf.length);
+        expect(bundled.oneOf).toBeUndefined();
     });
 
     it('registers the component the alias claims, under the id the alias name requires', () => {
@@ -385,8 +374,8 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
 
     it('validates model_options against the union instead of accepting any object', () => {
         // Same class: `model_options` was `{type: object, additionalProperties: true}` in the
-        // hand-written schema and `$ref: ModelOptions` in the published component. It now has to name
-        // a driver through `_option_id`, which is the discriminator generated clients already use.
+        // hand-written schema and `$ref: ModelOptions` in the published component. The family hint
+        // is optional, but known field types and supplied IDs remain validated.
         expect(ApiSchemaComponents.ContentTypeIntakePolicy).toBeDefined();
         expect(
             validate({
@@ -394,11 +383,11 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
             }),
             errors(),
         ).toBe(true);
-        expect(validate({ extraction: { config: { model_options: { temperature: 0.5 } } } })).toBe(false);
+        expect(validate({ extraction: { config: { model_options: { temperature: 0.5 } } } })).toBe(true);
         expect(validate({ extraction: { config: { model_options: { _option_id: 'not-a-driver' } } } })).toBe(false);
-        // The empty object is rejected for the same reason, which is why nothing may PUT it on the
-        // wire — see `normalizeModelOptions`, which drops an options bag with no options in it.
-        expect(validate({ extraction: { config: { model_options: {} } } })).toBe(false);
+        expect(validate({ extraction: { config: { model_options: {} } } })).toBe(true);
+        expect(validate({ extraction: { config: { model_options: { temperature: 'hot' } } } })).toBe(false);
+        expect(validate({ extraction: { config: { model_options: { unknown_option: true } } } })).toBe(false);
     });
 
     it('constrains the two config enums that were unconstrained strings', () => {
