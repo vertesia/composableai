@@ -294,7 +294,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['5m', '1h'],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         AzureFoundryChatOptions: {
@@ -336,7 +335,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockAI21Options: {
@@ -377,7 +375,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockClaudeOptions: {
@@ -429,7 +426,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockCohereCommandOptions: {
@@ -473,7 +469,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockConverseOptions: {
@@ -508,7 +503,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockGptOssOptions: {
@@ -550,7 +544,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockMantleChatCompletionsOptions: {
@@ -587,7 +580,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockMantleClaudeOptions: {
@@ -633,7 +625,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['5m', '1h'],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockMantleResponsesOptions: {
@@ -672,7 +663,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockMistralOptions: {
@@ -710,7 +700,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockNovaOptions: {
@@ -748,7 +737,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockPalmyraOptions: {
@@ -792,7 +780,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         ConfigModes: {
@@ -962,7 +949,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['parsed', 'raw', 'hidden'],
                 },
             },
-            required: ['_option_id', 'reasoning_format'],
+            required: ['reasoning_format'],
             additionalProperties: false,
         },
         HttpTimeoutOptions: {
@@ -1069,7 +1056,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     ],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         ImagenTaskType: {
@@ -1220,11 +1206,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         ModelOptions: {
-            oneOf: [
+            anyOf: [
                 {
                     $ref: '#/$defs/TextFallbackOptions',
                 },
@@ -1313,6 +1298,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/AnthropicClaudeOptions',
                 },
             ],
+            type: 'object',
         },
         NovaCanvasOptions: {
             type: 'object',
@@ -1373,7 +1359,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['DEFAULT', 'PRECISE'],
                 },
             },
-            required: ['_option_id', 'taskType'],
+            required: ['taskType'],
             additionalProperties: false,
         },
         OpenAiDalleOptions: {
@@ -1403,7 +1389,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'number',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         OpenAiGptImageOptions: {
@@ -1430,7 +1415,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['png', 'webp', 'jpeg'],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         OpenAiTextOptions: {
@@ -1490,7 +1474,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         OpenAiThinkingOptions: {
@@ -1538,7 +1521,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         OpenRouterTextOptions: {
@@ -1648,7 +1630,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     },
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         PromptCacheMode: {
@@ -1702,7 +1683,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         ThinkingLevel: {
@@ -1729,7 +1709,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         VertexAIClaudeOptions: {
@@ -1775,7 +1754,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['5m', '1h'],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         VertexAIGeminiOmniVideoOptions: {
@@ -1803,7 +1781,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['360p', '720p', '1080p', '4k'],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         VertexAIGeminiOptions: {
@@ -1889,7 +1866,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'number',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         VertexAIGrokOptions: {
@@ -1915,7 +1891,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     },
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         XAIGrokImageOptions: {
@@ -1962,7 +1937,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     maximum: 10,
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
     },
