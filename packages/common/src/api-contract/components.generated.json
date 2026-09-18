@@ -2742,9 +2742,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "AzureFoundryChatOptions": {
@@ -2790,9 +2787,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ImagenOptions": {
@@ -2813,7 +2807,8 @@
         "enum": [
           "dont_allow",
           "allow_adults",
-          "allow_all"
+          "allow_all",
+          "allow_adult"
         ]
       },
       "safety_setting": {
@@ -2893,9 +2888,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ImagenTaskType": {
@@ -2973,9 +2965,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "VertexAIGeminiOptions": {
@@ -3089,9 +3078,6 @@
         "type": "number"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ThinkingLevel": {
@@ -3143,9 +3129,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "VertexAIGrokOptions": {
@@ -3171,9 +3154,6 @@
         }
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "NovaCanvasOptions": {
@@ -3245,7 +3225,6 @@
       }
     },
     "required": [
-      "_option_id",
       "taskType"
     ],
     "additionalProperties": false
@@ -3281,9 +3260,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockNovaOptions": {
@@ -3302,6 +3278,9 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3317,9 +3296,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMistralOptions": {
@@ -3338,6 +3314,9 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3353,9 +3332,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockAI21Options": {
@@ -3374,6 +3350,12 @@
       "top_p": {
         "type": "number"
       },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3389,9 +3371,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockCohereCommandOptions": {
@@ -3410,6 +3389,15 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3425,9 +3413,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockClaudeOptions": {
@@ -3487,9 +3472,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockPalmyraOptions": {
@@ -3532,9 +3514,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockGptOssOptions": {
@@ -3579,9 +3558,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "TwelvelabsPegasusOptions": {
@@ -3603,9 +3579,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleResponsesOptions": {
@@ -3631,7 +3604,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "reasoning_effort": {
@@ -3641,7 +3615,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "verbosity": {
@@ -3664,9 +3639,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleChatCompletionsOptions": {
@@ -3711,9 +3683,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleClaudeOptions": {
@@ -3768,9 +3737,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiThinkingOptions": {
@@ -3826,9 +3792,6 @@
         "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ReasoningEffort": {
@@ -3908,9 +3871,6 @@
         "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenRouterTextOptions": {
@@ -4036,9 +3996,6 @@
         }
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiDalleOptions": {
@@ -4083,9 +4040,6 @@
         "type": "number"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiGptImageOptions": {
@@ -4130,9 +4084,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "XAIGrokImageOptions": {
@@ -4188,9 +4139,6 @@
         "maximum": 10
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "GroqOptions": {
@@ -4231,7 +4179,6 @@
       }
     },
     "required": [
-      "_option_id",
       "reasoning_format"
     ],
     "additionalProperties": false
@@ -4299,13 +4246,64 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
+    "additionalProperties": false
+  },
+  "AnthropicClaudeOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "anthropic-claude"
+      },
+      "max_tokens": {
+        "type": "number"
+      },
+      "temperature": {
+        "type": "number"
+      },
+      "top_p": {
+        "type": "number"
+      },
+      "top_k": {
+        "type": "number"
+      },
+      "stop_sequence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "effort": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "thinking_budget_tokens": {
+        "type": "number"
+      },
+      "include_thoughts": {
+        "type": "boolean"
+      },
+      "cache_enabled": {
+        "type": "boolean"
+      },
+      "cache_ttl": {
+        "type": "string",
+        "enum": [
+          "5m",
+          "1h"
+        ]
+      }
+    },
     "additionalProperties": false
   },
   "ModelOptions": {
-    "oneOf": [
+    "anyOf": [
       {
         "$ref": "#/components/schemas/TextFallbackOptions"
       },
@@ -4389,45 +4387,12 @@
       },
       {
         "$ref": "#/components/schemas/MistralTextOptions"
+      },
+      {
+        "$ref": "#/components/schemas/AnthropicClaudeOptions"
       }
     ],
-    "discriminator": {
-      "propertyName": "_option_id",
-      "mapping": {
-        "text-fallback": "#/components/schemas/TextFallbackOptions",
-        "azure-foundry-chat": "#/components/schemas/AzureFoundryChatOptions",
-        "vertexai-imagen": "#/components/schemas/ImagenOptions",
-        "vertexai-claude": "#/components/schemas/VertexAIClaudeOptions",
-        "vertexai-gemini": "#/components/schemas/VertexAIGeminiOptions",
-        "vertexai-gemini-omni-video": "#/components/schemas/VertexAIGeminiOmniVideoOptions",
-        "vertexai-grok": "#/components/schemas/VertexAIGrokOptions",
-        "bedrock-nova-canvas": "#/components/schemas/NovaCanvasOptions",
-        "bedrock-converse": "#/components/schemas/BedrockConverseOptions",
-        "bedrock-nova": "#/components/schemas/BedrockNovaOptions",
-        "bedrock-mistral": "#/components/schemas/BedrockMistralOptions",
-        "bedrock-ai21": "#/components/schemas/BedrockAI21Options",
-        "bedrock-cohere-command": "#/components/schemas/BedrockCohereCommandOptions",
-        "bedrock-claude": "#/components/schemas/BedrockClaudeOptions",
-        "bedrock-palmyra": "#/components/schemas/BedrockPalmyraOptions",
-        "bedrock-gpt-oss": "#/components/schemas/BedrockGptOssOptions",
-        "bedrock-twelvelabs-pegasus": "#/components/schemas/TwelvelabsPegasusOptions",
-        "bedrock-mantle-responses": "#/components/schemas/BedrockMantleResponsesOptions",
-        "bedrock-mantle-chat-completions": "#/components/schemas/BedrockMantleChatCompletionsOptions",
-        "bedrock-mantle-claude": "#/components/schemas/BedrockMantleClaudeOptions",
-        "openai-thinking": "#/components/schemas/OpenAiThinkingOptions",
-        "openai-text": "#/components/schemas/OpenAiTextOptions",
-        "openrouter-text": "#/components/schemas/OpenRouterTextOptions",
-        "openai-dalle": "#/components/schemas/OpenAiDalleOptions",
-        "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
-        "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
-        "groq-deepseek-thinking": "#/components/schemas/GroqOptions",
-        "mistral-text": "#/components/schemas/MistralTextOptions"
-      }
-    },
-    "type": "object",
-    "required": [
-      "_option_id"
-    ]
+    "type": "object"
   },
   "HttpTimeoutOptions": {
     "type": "object",
