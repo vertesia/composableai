@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/plugin-builder",
-    "version": "1.6.0-dev.20260918.063824Z",
+    "version": "1.6.0-dev.20260918.090710Z",
     "description": "A vite plugin to build vertesia UI plugins",
     "type": "module",
     "types": "./lib/index.d.ts",
@@ -42,5 +42,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/plugin-builder"
     },
-    "gitHead": "5e9878a6ab82875248b0696621bb957732d42377"
+    "gitHead": "10f35da1a210e1950f9c8b1368fea89328a23ea0"
 }

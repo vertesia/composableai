@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli-darwin-arm64",
-    "version": "1.6.0-dev.20260918.063824Z",
+    "version": "1.6.0-dev.20260918.090710Z",
     "description": "The macOS ARM64 native executable for the Vertesia CLI.",
     "license": "Apache-2.0",
     "preferUnplugged": true,
@@ -23,5 +23,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/cli-darwin-arm64"
     },
-    "gitHead": "5e9878a6ab82875248b0696621bb957732d42377"
+    "gitHead": "10f35da1a210e1950f9c8b1368fea89328a23ea0"
 }
