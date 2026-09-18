@@ -7,6 +7,7 @@ import { RemoteMcpConnectionButton } from './RemoteMcpConnectionButton.js';
 import {
     countConnectedActiveGroups,
     getConnectedActiveGroupLabels,
+    isGroupConnected,
     isGroupDisabled,
     toggleGroupDisabled,
     useMcpConnections,
@@ -29,7 +30,7 @@ export interface McpConnectionsButtonProps {
 /**
  * Toolbar button that opens the MCP connections dialog. The badge shows how many MCP
  * servers are connected and active for this conversation.
- * Renders nothing when the project has no OAuth MCP servers installed.
+ * Renders nothing when the project has no MCP servers installed.
  */
 export function McpConnectionsButton({
     disabledCollections,
@@ -93,7 +94,7 @@ export function McpConnectionsButton({
 }
 
 /**
- * Inline MCP status list for forms. It shows all available authenticated MCP groups
+ * Inline MCP status list for forms. It shows all available MCP groups
  * without requiring the user to open the management dialog.
  */
 export function McpConnectionsInlineList({
@@ -127,7 +128,7 @@ export function McpConnectionsInlineList({
         <div className="space-y-1">
             {groups.map((group) => {
                 const active = !isGroupDisabled(group, disabledCollections);
-                const connected = group.authStatus?.authenticated === true;
+                const connected = isGroupConnected(group);
                 const interactiveOAuth = group.authType === 'oauth' && group.oauthGrantType !== 'client_credentials';
                 const StatusIcon = connected ? Link2 : Link2Off;
                 return (
@@ -179,9 +180,11 @@ export function McpConnectionsInlineList({
                             />
                         ) : (
                             <Badge variant="outline" className="h-6 w-32 justify-center px-2 text-xs">
-                                {group.authType === 'api_key'
-                                    ? t('mcpConnections.apiKey')
-                                    : t('mcpConnections.managedByApp')}
+                                {group.authType === 'none'
+                                    ? t('mcpConnections.noAuthentication')
+                                    : group.authType === 'api_key'
+                                      ? t('mcpConnections.apiKey')
+                                      : t('mcpConnections.managedByApp')}
                             </Badge>
                         )}
                         {onChange && (

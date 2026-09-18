@@ -365,6 +365,7 @@
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "MCP 接続を管理",
     "mcpConnections.managedByApp": "アプリによる管理",
+    "mcpConnections.noAuthentication": "認証なし",
     "mcpConnections.settings": "設定",
     "mcpConnections.subtitle": "この会話で利用できる MCP サーバーを管理します。",
     "mcpConnections.title": "MCP",
