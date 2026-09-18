@@ -4941,11 +4941,12 @@
   "ToolCollectionAuthType": {
     "type": "string",
     "enum": [
+      "none",
       "oauth",
       "api_key",
       "other"
     ],
-    "description": "Authentication type for tool collections.\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)"
+    "description": "Authentication type for tool collections.\n- 'none': connect directly without credentials\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)\n- 'other' or omitted: use the legacy provider connection-details flow for MCP collections"
   },
   "MCPOAuthConfig": {
     "type": "object",
