@@ -10,11 +10,10 @@ declare global {
 /**
  * The broker this app sends users to for sign-in and logout.
  *
- * Hard-coded until now, which meant every consumer of this package reached the same deployment no
- * matter what was running. It is read from the environment so a single app can be pointed at a
- * different broker, and it keeps this default so an app that configures nothing is unaffected.
+ * A gateway or app can select a regional broker through Env.endpoints.auth.
+ * Unconfigured apps use the first-party central broker.
  */
-export const DEFAULT_CENTRAL_AUTH_URL = 'https://internal-auth.vertesia.app/';
+export const DEFAULT_CENTRAL_AUTH_URL = 'https://auth.vertesia.io/';
 
 export function centralAuthUrl(): string {
     const configured = Env.endpoints.auth;

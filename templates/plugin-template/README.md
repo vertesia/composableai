@@ -499,7 +499,12 @@ The bootstrap CLI asks for your region and writes `VITE_AUTH_SERVER_URL` to `.en
 `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`.
 No manual auth URL setup is needed for a newly generated app. The auth URL selects the regional
 central sign-in/logout broker; central authentication remains the default.
-Valid gateway-injected runtime authentication configuration takes precedence over build settings.
+Valid gateway-injected runtime authentication configuration takes precedence over build settings,
+including the central broker URL (`authUrl`). Without either override, the UI uses
+`https://auth.vertesia.io/`. On dev1 the gateway supplies `https://auth.dev1.vertesia.io/`.
+For a gateway-hosted Firebase app, explicitly build with `VITE_AUTH_MODE=firebase`; the build tools
+record this in the runtime marker. The gateway checks its Firebase credentials and exact-host
+allowlist before serving that mode. Merely using an authorized hostname does not enable Firebase.
 The existing `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`
 remain required for the app's API endpoints.
 

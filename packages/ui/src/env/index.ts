@@ -18,8 +18,8 @@ export interface EnvProps {
         /**
          * Central Auth broker that issues the sign-in redirect and hosts `/logout`.
          *
-         * Optional: when unset the session falls back to the long-standing broker, so an app that
-         * does not set it keeps its current behaviour exactly. Set it to move one environment at a
+         * Optional: when unset the session falls back to the first-party broker, so an app that
+         * does not set it uses auth.vertesia.io. Set it to move one environment at a
          * time onto a different broker.
          */
         auth?: string;
@@ -79,6 +79,8 @@ export type VertesiaRuntimeConfig =
       }
     | {
           authMode: 'central';
+          /** Broker selected by the serving gateway. Overrides build-time configuration. */
+          authUrl?: string;
       };
 
 declare global {
@@ -141,6 +143,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         const runtimeConfig = injectedRuntimeConfig() ?? buildRuntimeConfig(buildEnv);
         const runtimeFirebase = runtimeConfig?.authMode === 'firebase' ? runtimeConfig.firebase : undefined;
         this._props = props && runtimeFirebase && !props.firebase ? { ...props, firebase: runtimeFirebase } : props;
+        const authUrl = runtimeConfig?.authMode === 'central' ? runtimeConfig.authUrl?.trim() : undefined;
+        if (this._props && authUrl) {
+            this._props = { ...this._props, endpoints: { ...this._props.endpoints, auth: authUrl } };
+        }
         const tenantId =
             typeof buildEnv?.VITE_FIREBASE_TENANT_ID === 'string' ? buildEnv.VITE_FIREBASE_TENANT_ID.trim() : '';
         if (this._props?.firebase && tenantId && !this._props.firebase.tenantId) {
