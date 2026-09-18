@@ -251,6 +251,52 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
     additionalProperties: false,
     description: 'Per-content-type policy for the standard intake workflows.',
     $defs: {
+        AnthropicClaudeOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'anthropic-claude',
+                },
+                max_tokens: {
+                    type: 'number',
+                },
+                temperature: {
+                    type: 'number',
+                },
+                top_p: {
+                    type: 'number',
+                },
+                top_k: {
+                    type: 'number',
+                },
+                stop_sequence: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                effort: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                thinking_budget_tokens: {
+                    type: 'number',
+                },
+                include_thoughts: {
+                    type: 'boolean',
+                },
+                cache_enabled: {
+                    type: 'boolean',
+                },
+                cache_ttl: {
+                    type: 'string',
+                    enum: ['5m', '1h'],
+                },
+            },
+            required: ['_option_id'],
+            additionalProperties: false,
+        },
         AzureFoundryChatOptions: {
             type: 'object',
             properties: {
@@ -1238,6 +1284,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 {
                     $ref: '#/$defs/MistralTextOptions',
+                },
+                {
+                    $ref: '#/$defs/AnthropicClaudeOptions',
                 },
             ],
         },

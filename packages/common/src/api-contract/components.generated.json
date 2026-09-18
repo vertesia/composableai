@@ -3858,6 +3858,63 @@
     ],
     "additionalProperties": false
   },
+  "AnthropicClaudeOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "anthropic-claude"
+      },
+      "max_tokens": {
+        "type": "number"
+      },
+      "temperature": {
+        "type": "number"
+      },
+      "top_p": {
+        "type": "number"
+      },
+      "top_k": {
+        "type": "number"
+      },
+      "stop_sequence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "effort": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "thinking_budget_tokens": {
+        "type": "number"
+      },
+      "include_thoughts": {
+        "type": "boolean"
+      },
+      "cache_enabled": {
+        "type": "boolean"
+      },
+      "cache_ttl": {
+        "type": "string",
+        "enum": [
+          "5m",
+          "1h"
+        ]
+      }
+    },
+    "required": [
+      "_option_id"
+    ],
+    "additionalProperties": false
+  },
   "ModelOptions": {
     "oneOf": [
       {
@@ -3940,6 +3997,9 @@
       },
       {
         "$ref": "#/components/schemas/MistralTextOptions"
+      },
+      {
+        "$ref": "#/components/schemas/AnthropicClaudeOptions"
       }
     ],
     "discriminator": {
@@ -3971,7 +4031,8 @@
         "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
         "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
         "groq-deepseek-thinking": "#/components/schemas/GroqOptions",
-        "mistral-text": "#/components/schemas/MistralTextOptions"
+        "mistral-text": "#/components/schemas/MistralTextOptions",
+        "anthropic-claude": "#/components/schemas/AnthropicClaudeOptions"
       }
     },
     "type": "object",
