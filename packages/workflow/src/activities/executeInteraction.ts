@@ -293,7 +293,9 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             throw rateLimitFailure;
         }
         const executionError = toExecutionError(error);
-        if (executionError.statusCode === 429) {
+        if (isRenditionPending(executionError)) {
+            log.debug(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
+        } else if (executionError.statusCode === 429) {
             log.warn(`Resource exhausted while executing interaction ${interactionName}`, { error: executionError });
         } else {
             log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
@@ -490,6 +492,10 @@ interface ExecutionError extends Error {
     code?: number;
     retryable?: boolean;
     errorCode?: unknown;
+}
+
+function isRenditionPending(error: ExecutionError): boolean {
+    return (error.statusCode ?? error.status ?? error.code) === 412 && error.retryable !== false;
 }
 
 function toExecutionError(error: unknown): ExecutionError {
