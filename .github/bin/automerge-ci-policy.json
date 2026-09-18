@@ -10,14 +10,23 @@
             },
             {
                 "name": "^Template smoke test \\(Plugin\\)$",
-                "example": "Template smoke test (Plugin)"
+                "example": "Template smoke test (Plugin)",
+                "steps": [
+                    "Build workspace",
+                    "Test package channel policy",
+                    "Template integration test - Plugin"
+                ]
             }
         ]
     },
     "lint.yaml": {
         "jobs": [
             {
-                "name": "^Check codebase$"
+                "name": "^Check codebase$",
+                "steps": [
+                    "Test automerge CI policy",
+                    "Check codebase"
+                ]
             }
         ]
     }
