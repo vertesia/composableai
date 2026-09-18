@@ -2807,7 +2807,8 @@
         "enum": [
           "dont_allow",
           "allow_adults",
-          "allow_all"
+          "allow_all",
+          "allow_adult"
         ]
       },
       "safety_setting": {
@@ -3277,6 +3278,9 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3308,6 +3312,9 @@
         "type": "number"
       },
       "top_p": {
+        "type": "number"
+      },
+      "top_k": {
         "type": "number"
       },
       "stop_sequence": {
@@ -3343,6 +3350,12 @@
       "top_p": {
         "type": "number"
       },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3374,6 +3387,15 @@
         "type": "number"
       },
       "top_p": {
+        "type": "number"
+      },
+      "top_k": {
+        "type": "number"
+      },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
         "type": "number"
       },
       "stop_sequence": {
@@ -3582,7 +3604,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "reasoning_effort": {
@@ -3592,7 +3615,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "verbosity": {
@@ -3972,9 +3996,6 @@
         }
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiDalleOptions": {
@@ -4227,8 +4248,6 @@
     },
     "additionalProperties": false
   },
-<<<<<<< HEAD
-=======
   "AnthropicClaudeOptions": {
     "type": "object",
     "properties": {
@@ -4283,7 +4302,6 @@
     },
     "additionalProperties": false
   },
->>>>>>> 3e538757 (fix: publish optional model option family IDs (#2251))
   "ModelOptions": {
     "anyOf": [
       {
@@ -4369,49 +4387,12 @@
       },
       {
         "$ref": "#/components/schemas/MistralTextOptions"
+      },
+      {
+        "$ref": "#/components/schemas/AnthropicClaudeOptions"
       }
     ],
-<<<<<<< HEAD
-    "discriminator": {
-      "propertyName": "_option_id",
-      "mapping": {
-        "text-fallback": "#/components/schemas/TextFallbackOptions",
-        "azure-foundry-chat": "#/components/schemas/AzureFoundryChatOptions",
-        "vertexai-imagen": "#/components/schemas/ImagenOptions",
-        "vertexai-claude": "#/components/schemas/VertexAIClaudeOptions",
-        "vertexai-gemini": "#/components/schemas/VertexAIGeminiOptions",
-        "vertexai-gemini-omni-video": "#/components/schemas/VertexAIGeminiOmniVideoOptions",
-        "vertexai-grok": "#/components/schemas/VertexAIGrokOptions",
-        "bedrock-nova-canvas": "#/components/schemas/NovaCanvasOptions",
-        "bedrock-converse": "#/components/schemas/BedrockConverseOptions",
-        "bedrock-nova": "#/components/schemas/BedrockNovaOptions",
-        "bedrock-mistral": "#/components/schemas/BedrockMistralOptions",
-        "bedrock-ai21": "#/components/schemas/BedrockAI21Options",
-        "bedrock-cohere-command": "#/components/schemas/BedrockCohereCommandOptions",
-        "bedrock-claude": "#/components/schemas/BedrockClaudeOptions",
-        "bedrock-palmyra": "#/components/schemas/BedrockPalmyraOptions",
-        "bedrock-gpt-oss": "#/components/schemas/BedrockGptOssOptions",
-        "bedrock-twelvelabs-pegasus": "#/components/schemas/TwelvelabsPegasusOptions",
-        "bedrock-mantle-responses": "#/components/schemas/BedrockMantleResponsesOptions",
-        "bedrock-mantle-chat-completions": "#/components/schemas/BedrockMantleChatCompletionsOptions",
-        "bedrock-mantle-claude": "#/components/schemas/BedrockMantleClaudeOptions",
-        "openai-thinking": "#/components/schemas/OpenAiThinkingOptions",
-        "openai-text": "#/components/schemas/OpenAiTextOptions",
-        "openrouter-text": "#/components/schemas/OpenRouterTextOptions",
-        "openai-dalle": "#/components/schemas/OpenAiDalleOptions",
-        "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
-        "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
-        "groq-deepseek-thinking": "#/components/schemas/GroqOptions",
-        "mistral-text": "#/components/schemas/MistralTextOptions"
-      }
-    },
-    "type": "object",
-    "required": [
-      "_option_id"
-    ]
-=======
     "type": "object"
->>>>>>> 3e538757 (fix: publish optional model option family IDs (#2251))
   },
   "HttpTimeoutOptions": {
     "type": "object",
