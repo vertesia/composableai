@@ -407,6 +407,7 @@
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "إدارة اتصالات MCP",
     "mcpConnections.managedByApp": "يُدار بواسطة التطبيق",
+    "mcpConnections.noAuthentication": "بدون مصادقة",
     "mcpConnections.settings": "الإعدادات",
     "mcpConnections.subtitle": "إدارة خوادم MCP المتاحة لهذه المحادثة.",
     "mcpConnections.title": "MCP",

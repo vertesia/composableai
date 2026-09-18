@@ -93,3 +93,13 @@ describe('toggleGroupDisabled', () => {
         expect(toggleGroupDisabled(g, disabled, true)).toEqual([]);
     });
 });
+
+describe('anonymous MCP groups', () => {
+    it('counts anonymous servers without credential status and respects disabled collections', () => {
+        const anonymous = { ...group(['anonymous'], false, 'Anonymous'), authType: 'none' as const };
+        expect(countConnectedActiveGroups([anonymous])).toBe(1);
+        expect(getConnectedActiveGroupLabels([anonymous])).toEqual(['Anonymous']);
+        expect(countConnectedActiveGroups([anonymous], ['anonymous'])).toBe(0);
+        expect(getConnectedActiveGroupLabels([anonymous], ['anonymous'])).toEqual([]);
+    });
+});
