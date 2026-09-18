@@ -1,8 +1,10 @@
 import type { AbacScope, RoleDomain } from '@vertesia/common';
+import { agentRunPartition } from './agent-runs.js';
 import { AbacRole, type Role, type RolePartition, SystemRole } from './classes.js';
 import { contentPartition } from './content.js';
 import { systemPartition } from './system.js';
 
+export { AgentRunRoleNames } from './agent-runs.js';
 export { AbacRole, Role, type RolePartition, SystemRole } from './classes.js';
 export { ContentRoleNames } from './content.js';
 
@@ -11,7 +13,7 @@ export { ContentRoleNames } from './content.js';
  * match wins. The `system` partition is registered first so domain-specific
  * partitions (added later) cannot shadow built-in system roles.
  */
-const partitions: RolePartition[] = [systemPartition, contentPartition];
+const partitions: RolePartition[] = [systemPartition, contentPartition, agentRunPartition];
 
 /** Look up a role by its name across all registered partitions. */
 export function getRoleByName(name: string): Role {
